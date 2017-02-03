@@ -1,9 +1,21 @@
 #!/usr/bin/env python
 
 import sys
+import numpy as np
 
-if (sys.version_info < (3, 0)):
-    raise Exception('Matrix Profile is only compatible with python3.x')
+import core
+
+class STAMP(object):
+    def __init__(self):
+        """
+        """
+        self.T = None
+        self.Q = None
+
+
 
 if __name__ == '__main__':
-    pass
+    core.check_python_version()
+    parser = core.get_parser()
+    args = parser.parse_args()
+    print(args)
