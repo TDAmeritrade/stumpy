@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import core
-import stamp
+from . import core
+from . import stamp
 
 class STOMP(stamp.STAMP):
 

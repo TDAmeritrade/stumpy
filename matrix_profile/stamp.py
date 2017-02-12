@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import core
+from . import core
 
 class STAMP(object):
 
