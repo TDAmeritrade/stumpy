@@ -20,14 +20,14 @@ class TestCore:
         T = np.array(range(10))
         Q = np.array([3,4,5])
         left = naive_rolling_window_dot_product(Q, T)
-        right = core.scipy_fftconvolve_sliding_dot_product(Q, T)
+        right = core.sliding_dot_product(Q, T)
         npt.assert_almost_equal(left, right)
 
     def test_sliding_dot_product_with_range_neg_10(self):
         T = np.negative(np.array(range(10)))
         Q = np.array([3,4,5])
         left = naive_rolling_window_dot_product(Q, T)
-        right = core.scipy_fftconvolve_sliding_dot_product(Q, T)
+        right = core.sliding_dot_product(Q, T)
         npt.assert_almost_equal(left, right)
 
     def test_sliding_dot_product_with_random_T50_Q5(self):
@@ -36,6 +36,6 @@ class TestCore:
         # Select 5 random floats in range [-1000, 1000]
         Q = np.random.uniform(-1000, 1000, [5])
         left = naive_rolling_window_dot_product(Q, T)
-        right = core.scipy_fftconvolve_sliding_dot_product(Q, T)
+        right = core.sliding_dot_product(Q, T)
         npt.assert_almost_equal(left, right)
 

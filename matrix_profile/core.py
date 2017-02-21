@@ -2,14 +2,9 @@
 
 import sys
 import argparse
-import pyfftw
 import numpy as np
-from scipy.fftpack import rfft, ifft
 import scipy.signal
 import time
-import multiprocessing
-
-nthread = multiprocessing.cpu_count()
 
 def check_python_version():
     if (sys.version_info < (3, 0)):
@@ -36,7 +31,7 @@ def timeit(func):
 
     return timed
 
-def scipy_fftconvolve_sliding_dot_product(Q, T):
+def sliding_dot_product(Q, T):
     """
     DOI: 10.1109/ICDM.2016.0179
     See Table I, Figure 4
@@ -49,19 +44,20 @@ def scipy_fftconvolve_sliding_dot_product(Q, T):
     n = len(T)
     m = len(Q)
     Qr = np.flipud(Q)  # Reverse/flip Q
-    QT = scipy.signal.fftconvolve(Qr, T)
+    QT = convolution(Qr, T)
     return QT.real[m-1:n]
 
+convolution = scipy.signal.fftconvolve  # Swap for other convolution function
 
 if __name__ == '__main__':
     check_python_version()
     #parser = get_parser()
     #args = parser.parse_args()
     N = 17279800  # GPU-STOMP Comparison
-    print("N = {}".format(N))
+    #print("N = {}".format(N))
     # Select 50 random floats in range [-1000, 1000]
     T = np.random.uniform(-1000, 1000, [N])
     # Select 5 random floats in range [-1000, 1000]
     Q = np.random.uniform(-1000, 1000, [2000])
     #out = numpy_sliding_dot_product(Q, T)
-    out = scipy_fftconvolve_sliding_dot_product(Q, T)
+    out = sliding_dot_product(Q, T)
