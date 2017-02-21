@@ -1,3 +1,3 @@
 #!/bin/sh
 
-nosetests
+nosetests --nocapture
