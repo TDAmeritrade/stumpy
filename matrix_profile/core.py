@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import sys
 import argparse
@@ -16,6 +17,11 @@ def get_parser():
     parser.add_argument('subseq_length', help='Subsequence length', type=int)
 
     return parser
+
+def rolling_window(a, window):
+    shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
+    strides = a.strides + (a.strides[-1],)
+    return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 def timeit(func):
     """
@@ -41,11 +47,66 @@ def sliding_dot_product(Q, T):
 
     Padding is done automatically in fftconvolve step
     """
-    n = len(T)
-    m = len(Q)
+    n = T.shape[0]
+    m = Q.shape[0]
     Qr = np.flipud(Q)  # Reverse/flip Q
     QT = convolution(Qr, T)
     return QT.real[m-1:n]
+
+def compute_mean_std(Q,T):
+    """
+    DOI: 10.1109/ICDM.2016.0179
+    See Table II
+
+    DOI: 10.1145/2339530.2339576
+    See Page 4
+
+    http://www.cs.unm.edu/~mueen/FastestSimilaritySearch.html
+
+    Note that Mueen's algorithm has an off-by-one bug where the
+    sum for the first subsequence is omitted and we fixed that!
+    """
+    n = T.shape[0]
+    m = Q.shape[0]
+
+    μ_Q = np.mean(Q)
+    σ_Q = np.sqrt(np.sum(np.square(Q))/m - np.square(np.mean(Q)))
+
+    cumsum_T = np.empty(len(T)+1)
+    np.cumsum(T, out=cumsum_T[1:])  # store output in cumsum_T[1:]
+    cumsum_T[0] = 0
+
+    cumsum_T_squared = np.empty(len(T)+1)
+    np.cumsum(np.square(T), out=cumsum_T_squared[1:])
+    cumsum_T_squared[0] = 0
+    
+    subseq_sum_T = cumsum_T[m:] - cumsum_T[:n-m+1]
+    subseq_sum_T_squared = cumsum_T_squared[m:] - cumsum_T_squared[:n-m+1]
+    M_T =  subseq_sum_T/m
+    Σ_T = np.sqrt((subseq_sum_T_squared/m)-np.square(M_T))
+
+    return μ_Q, σ_Q, M_T, Σ_T
+
+def calculate_distance_profile(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
+    """
+    DOI: 10.1109/ICDM.2016.0179
+    See Equation on Page 4
+    """
+
+    return None
+
+@timeit
+def mass(Q, T):
+    """
+    DOI: 10.1109/ICDM.2016.0179
+    See Table II
+    """
+
+    QT = sliding_dot_product(Q,T)
+    μ_Q, σ_Q, M_T, Σ_T = compute_mean_std(Q, T)
+    D = calculate_distance_profile(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T)
+
+    return
 
 convolution = scipy.signal.fftconvolve  # Swap for other convolution function
 
@@ -54,10 +115,8 @@ if __name__ == '__main__':
     #parser = get_parser()
     #args = parser.parse_args()
     N = 17279800  # GPU-STOMP Comparison
-    #print("N = {}".format(N))
     # Select 50 random floats in range [-1000, 1000]
     T = np.random.uniform(-1000, 1000, [N])
     # Select 5 random floats in range [-1000, 1000]
     Q = np.random.uniform(-1000, 1000, [2000])
-    #out = numpy_sliding_dot_product(Q, T)
-    out = sliding_dot_product(Q, T)
+    mass(Q, T)
