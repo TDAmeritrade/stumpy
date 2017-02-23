@@ -1,3 +1,3 @@
 #!/bin/sh
 
-nosetests --nocapture
+python3 `which nosetests` --nocapture

@@ -9,6 +9,11 @@ def naive_rolling_window_dot_product(Q, T):
         result[i] = np.dot(T[i:i + window], Q)
     return result
 
+def rolling_window(a, window):
+    shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
+    strides = a.strides + (a.strides[-1],)
+    return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
+
 class TestCore:
     def setUp(self):
         pass
@@ -31,11 +36,27 @@ class TestCore:
         npt.assert_almost_equal(left, right)
 
     def test_sliding_dot_product_with_random_T64_Q8(self):
-        # Select 50 random floats in range [-1000, 1000]
+        # Select 64 random floats in range [-1000, 1000]
         T = np.random.uniform(-1000, 1000, [64])
-        # Select 5 random floats in range [-1000, 1000]
+        # Select 8 random floats in range [-1000, 1000]
         Q = np.random.uniform(-1000, 1000, [8])
         left = naive_rolling_window_dot_product(Q, T)
         right = core.sliding_dot_product(Q, T)
         npt.assert_almost_equal(left, right)
 
+    def test_compute_mean_std(self):
+        # Select 64 random floats in range [-1000, 1000]
+        T = np.random.uniform(-1000, 1000, [64])
+        # Select 8 random floats in range [-1000, 1000]
+        Q = np.random.uniform(-1000, 1000, [8])
+        m = Q.shape[0]
+        left_μ_Q = np.sum(Q)/m
+        left_σ_Q = np.sqrt(np.sum(np.square(Q-left_μ_Q)/m))
+        left_M_T = np.mean(rolling_window(T, m), 1)
+        left_Σ_T = np.std(rolling_window(T,m), 1)
+        right_μ_Q, right_σ_Q, right_M_T, right_Σ_T = core.compute_mean_std(Q, T)
+        
+        npt.assert_almost_equal(left_μ_Q, right_μ_Q)
+        npt.assert_almost_equal(left_σ_Q, right_σ_Q)
+        npt.assert_almost_equal(left_M_T, right_M_T)
+        npt.assert_almost_equal(left_Σ_T, right_Σ_T)
