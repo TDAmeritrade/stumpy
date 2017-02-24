@@ -51,11 +51,11 @@ class TestCore:
         Q = np.random.uniform(-1000, 1000, [8])
         m = Q.shape[0]
         left_μ_Q = np.sum(Q)/m
-        left_σ_Q = np.sqrt(np.sum(np.square(Q-left_μ_Q)/m))
+        left_σ_Q = np.sqrt(np.sum(np.square(Q))/m - np.square(left_μ_Q))
         left_M_T = np.mean(rolling_window(T, m), 1)
         left_Σ_T = np.std(rolling_window(T,m), 1)
         right_μ_Q, right_σ_Q, right_M_T, right_Σ_T = core.compute_mean_std(Q, T)
-        
+
         npt.assert_almost_equal(left_μ_Q, right_μ_Q)
         npt.assert_almost_equal(left_σ_Q, right_σ_Q)
         npt.assert_almost_equal(left_M_T, right_M_T)

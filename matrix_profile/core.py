@@ -65,7 +65,7 @@ def compute_mean_std(Q,T):
     m = Q.shape[0]
 
     μ_Q = np.mean(Q)
-    σ_Q = np.sqrt(np.sum(np.square(Q))/m - np.square(np.mean(Q)))
+    σ_Q = np.std(Q)
 
     cumsum_T = np.empty(len(T)+1)
     np.cumsum(T, out=cumsum_T[1:])  # store output in cumsum_T[1:]
