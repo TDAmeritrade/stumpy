@@ -14,6 +14,9 @@ def rolling_window(a, window):
     strides = a.strides + (a.strides[-1],)
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
+def z_norm(x, axis=0):
+    return (x - np.mean(x, axis, keepdims=True))/np.std(x, axis, keepdims=True)
+
 class TestCore:
     def setUp(self):
         pass
@@ -60,3 +63,13 @@ class TestCore:
         npt.assert_almost_equal(left_σ_Q, right_σ_Q)
         npt.assert_almost_equal(left_M_T, right_M_T)
         npt.assert_almost_equal(left_Σ_T, right_Σ_T)
+
+    def test_calculate_distance_profile(self):
+        T = np.array(range(6))
+        Q = np.array(range(3))
+        m = Q.shape[0]
+        left = np.linalg.norm(z_norm(rolling_window(T,m), 1) - z_norm(Q), axis=1)
+        QT = core.sliding_dot_product(Q, T)
+        μ_Q, σ_Q, M_T, Σ_T = core.compute_mean_std(Q, T)
+        right = core.calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
+        npt.assert_almost_equal(left, right)

@@ -53,6 +53,9 @@ def compute_mean_std(Q,T):
     DOI: 10.1109/ICDM.2016.0179
     See Table II
 
+    DOI: 10.1145/2020408.2020587
+    See Page 2 and Equations 1, 2
+
     DOI: 10.1145/2339530.2339576
     See Page 4
 
@@ -82,26 +85,31 @@ def compute_mean_std(Q,T):
 
     return μ_Q, σ_Q, M_T, Σ_T
 
-def calculate_distance_profile(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
+def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     DOI: 10.1109/ICDM.2016.0179
     See Equation on Page 4
     """
 
-    return None
+    return np.sqrt(2*m*(1.0-(QT-m*μ_Q*M_T)/(m*σ_Q*Σ_T)))
+    #x = np.sqrt(2*m*(1.0-(QT-m*μ_Q*M_T)/(m*σ_Q*Σ_T)))
+    #y =
+    #return
 
 @timeit
 def mass(Q, T):
     """
     DOI: 10.1109/ICDM.2016.0179
     See Table II
+
+    Note that Q, T are not directly required to calculate D 
     """
 
     QT = sliding_dot_product(Q,T)
     μ_Q, σ_Q, M_T, Σ_T = compute_mean_std(Q, T)
-    D = calculate_distance_profile(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T)
+    m = Q.shape[0]
 
-    return
+    return calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
 
 convolution = scipy.signal.fftconvolve  # Swap for other convolution function
 
