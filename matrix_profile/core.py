@@ -18,6 +18,14 @@ def get_parser():
 
     return parser
 
+def rolling_window(a, window):
+    shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
+    strides = a.strides + (a.strides[-1],)
+    return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
+
+def z_norm(x, axis=0):
+    return (x - np.mean(x, axis, keepdims=True))/np.std(x, axis, keepdims=True)
+
 def timeit(func):
     """
     Timing decorator
@@ -48,7 +56,7 @@ def sliding_dot_product(Q, T):
     QT = convolution(Qr, T)
     return QT.real[m-1:n]
 
-def compute_mean_std(Q,T):
+def calculate_distance_profile(Q, T):
     """
     DOI: 10.1109/ICDM.2016.0179
     See Table II
@@ -63,14 +71,21 @@ def compute_mean_std(Q,T):
 
     Note that Mueen's algorithm has an off-by-one bug where the
     sum for the first subsequence is omitted and we fixed that!
+
+    DOI: 10.1109/ICDM.2016.0179
+    Note that distance equation on Page 4 leads to catostrophic 
+    cancellation! So we are using Mueen's code
     """
     n = T.shape[0]
     m = Q.shape[0]
 
-    μ_Q = np.mean(Q)
-    σ_Q = np.std(Q)
+    μ_Q = np.mean(Q, keepdims=True)
+    σ_Q = np.std(Q, keepdims=True)
+    Q_norm = (Q-μ_Q)/σ_Q
 
-    cumsum_T = np.empty(len(T)+1)
+    QT = sliding_dot_product(Q_norm, T)
+
+    cumsum_T = np.empty(len(T)+1)  # Add one element, fix off-by-one
     np.cumsum(T, out=cumsum_T[1:])  # store output in cumsum_T[1:]
     cumsum_T[0] = 0
 
@@ -81,35 +96,21 @@ def compute_mean_std(Q,T):
     subseq_sum_T = cumsum_T[m:] - cumsum_T[:n-m+1]
     subseq_sum_T_squared = cumsum_T_squared[m:] - cumsum_T_squared[:n-m+1]
     M_T =  subseq_sum_T/m
-    Σ_T = np.sqrt((subseq_sum_T_squared/m)-np.square(M_T))
+    Σ_T_squared = subseq_sum_T_squared/m-np.square(M_T)
+    Σ_T = np.sqrt(Σ_T_squared)
 
-    return μ_Q, σ_Q, M_T, Σ_T
+    D = np.abs((subseq_sum_T_squared-2*subseq_sum_T*M_T+m*np.square(M_T))/Σ_T_squared - 2*QT/Σ_T + m)
+    
+    return np.sqrt(D) 
 
-def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
-    """
-    DOI: 10.1109/ICDM.2016.0179
-    See Equation on Page 4
-    """
-
-    return np.sqrt(2*m*(1.0-(QT-m*μ_Q*M_T)/(m*σ_Q*Σ_T)))
-    #x = np.sqrt(2*m*(1.0-(QT-m*μ_Q*M_T)/(m*σ_Q*Σ_T)))
-    #y =
-    #return
-
-@timeit
 def mass(Q, T):
     """
     DOI: 10.1109/ICDM.2016.0179
     See Table II
 
-    Note that Q, T are not directly required to calculate D 
     """
 
-    QT = sliding_dot_product(Q,T)
-    μ_Q, σ_Q, M_T, Σ_T = compute_mean_std(Q, T)
-    m = Q.shape[0]
-
-    return calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
+    return calculate_distance_profile(Q, T)
 
 convolution = scipy.signal.fftconvolve  # Swap for other convolution function
 
