@@ -23,6 +23,8 @@ class TestCore:
         arrays = [
                   (np.array([-1,1,2], dtype=np.float64),
                    np.array(range(5), dtype=np.float64)),
+                  (np.array([9,8100,-60], dtype=np.float64),
+                   np.array([584,-11,23,79,1001], dtype=np.float64)),
                   (np.random.uniform(-1000, 1000, [8]),
                    np.random.uniform(-1000, 1000, [64])),
                  ]
@@ -30,7 +32,7 @@ class TestCore:
         for func in funcs:
             for i, (Q, T) in enumerate(arrays):
                 f = partial(getattr(self, func), Q, T)
-                f.description = '{}.{}.{} {}'.format(cls, name, func, i+1) 
+                f.description = '{}.{}.{} {}'.format(name, cls, func, i+1) 
                 yield f
 
     def setUp(self):
