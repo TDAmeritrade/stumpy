@@ -17,7 +17,6 @@ def z_norm(x, axis=0):
 class TestCore:
     def test_generator(self):
 
-# now you can call it directly with basename
         cls = self.__class__.__name__
         base = os.path.basename(__file__)
         name = os.path.splitext(base)[0]
