@@ -27,22 +27,23 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     check_dtype(T_A)
     check_dtype(T_B)
     subseq_T_B = core.rolling_window(T_B, m)
+    zone = int(np.ceil(m/2))
 
     # Create new function that calls MASS and handles idx, profile
-    def subseq_mass(Q, T, trivial_idx=None):
+    def subseq_mass(Q, T, trivial_idx=None, excl_zone=0):
         D = core.mass(Q, T)
         if trivial_idx is not None:
-            D[trivial_idx] = np.inf
+            start = max(0, trivial_idx-excl_zone)
+            stop = trivial_idx+excl_zone+1
+            D[start:stop] = np.inf
         # Element-wise Min
         I = np.argmin(D)
         P = D[I]
         return P, I
 
-    # Check if T_A and T_B are the same (i.e., self-join)
-
     # Add exclusionary zone
     if ignore_trivial:
-        out = [subseq_mass(subseq, T_A, i) for i, subseq in enumerate(subseq_T_B)]
+        out = [subseq_mass(subseq, T_A, i, zone) for i, subseq in enumerate(subseq_T_B)]
     else:
         out = [subseq_mass(subseq, T_A) for subseq in subseq_T_B]
     out = np.array(out, dtype=object)

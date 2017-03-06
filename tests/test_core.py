@@ -12,11 +12,14 @@ def naive_rolling_window_dot_product(Q, T):
     return result
 
 class TestCore:
-    def test_generator(self):
+    def get_description(self):
         test_dir = os.path.basename(os.path.dirname(__file__))
         cls = self.__class__.__name__
         base = os.path.basename(__file__)
         name = os.path.splitext(base)[0]
+        return '{}.{}.{}'.format(test_dir, name, cls)
+
+    def test_generator(self):
         arrays = [
                   (np.array([-1,1,2], dtype=np.float64),
                    np.array(range(5), dtype=np.float64)),
@@ -29,7 +32,8 @@ class TestCore:
         for func in funcs:
             for i, (Q, T) in enumerate(arrays):
                 f = partial(getattr(self, func), Q, T)
-                f.description = '{}.{}.{}.{} {}'.format(test_dir, name, cls, func, i+1) 
+                descr = self.get_description()
+                f.description = '{}.{} {}'.format(descr, func, i+1) 
                 yield f
 
     def setUp(self):
