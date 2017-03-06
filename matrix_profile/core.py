@@ -56,7 +56,7 @@ def sliding_dot_product(Q, T):
     QT = convolution(Qr, T)
     return QT.real[m-1:n]
 
-def calculate_distance_profile(Q, T):
+def compute_mean_std(Q,T):
     """
     DOI: 10.1109/ICDM.2016.0179
     See Table II
@@ -71,10 +71,56 @@ def calculate_distance_profile(Q, T):
 
     Note that Mueen's algorithm has an off-by-one bug where the
     sum for the first subsequence is omitted and we fixed that!
+    """
+    n = T.shape[0]
+    m = Q.shape[0]
 
+    μ_Q = np.mean(Q)
+    σ_Q = np.std(Q)
+
+    cumsum_T = np.empty(len(T)+1)
+    np.cumsum(T, out=cumsum_T[1:])  # store output in cumsum_T[1:]
+    cumsum_T[0] = 0
+
+    cumsum_T_squared = np.empty(len(T)+1)
+    np.cumsum(np.square(T), out=cumsum_T_squared[1:])
+    cumsum_T_squared[0] = 0
+    
+    subseq_sum_T = cumsum_T[m:] - cumsum_T[:n-m+1]
+    subseq_sum_T_squared = cumsum_T_squared[m:] - cumsum_T_squared[:n-m+1]
+    M_T =  subseq_sum_T/m
+    Σ_T = np.sqrt((subseq_sum_T_squared/m)-np.square(M_T))
+
+    return μ_Q, σ_Q, M_T, Σ_T
+
+def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
+    """
     DOI: 10.1109/ICDM.2016.0179
-    Note that distance equation on Page 4 leads to catostrophic 
-    cancellation! So we are using Mueen's code
+    See Equation on Page 4
+    """
+
+    m_μ_Q = m*μ_Q
+    m_σ_Q = m*σ_Q
+    m_2 = 2.0*m
+
+    D_squared = np.abs(2*m*(1.0-(QT-m_μ_Q*M_T)/(m*σ_Q*Σ_T)))
+    return np.sqrt(D_squared)
+
+def mueen_calculate_distance_profile(Q, T):
+    """
+    DOI: 10.1109/ICDM.2016.0179
+    See Table II
+
+    DOI: 10.1145/2020408.2020587
+    See Page 2 and Equations 1, 2
+
+    DOI: 10.1145/2339530.2339576
+    See Page 4
+
+    http://www.cs.unm.edu/~mueen/FastestSimilaritySearch.html
+
+    Note that Mueen's algorithm has an off-by-one bug where the
+    sum for the first subsequence is omitted and we fixed that!
     """
     n = T.shape[0]
     m = Q.shape[0]
@@ -82,7 +128,6 @@ def calculate_distance_profile(Q, T):
     μ_Q = np.mean(Q, keepdims=True)
     σ_Q = np.std(Q, keepdims=True)
     Q_norm = (Q-μ_Q)/σ_Q
-
     QT = sliding_dot_product(Q_norm, T)
 
     cumsum_T = np.empty(len(T)+1)  # Add one element, fix off-by-one
@@ -99,8 +144,8 @@ def calculate_distance_profile(Q, T):
     Σ_T_squared = subseq_sum_T_squared/m-np.square(M_T)
     Σ_T = np.sqrt(Σ_T_squared)
 
-    D = np.abs((subseq_sum_T_squared-2*subseq_sum_T*M_T+m*np.square(M_T))/Σ_T_squared - 2*QT/Σ_T + m)
-    
+    D = np.abs((subseq_sum_T_squared-2*subseq_sum_T*M_T+m*np.square(M_T))/Σ_T_squared-2*QT/Σ_T+m)
+    D = (subseq_sum_T_squared-2*subseq_sum_T*M_T+m*np.square(M_T))/Σ_T_squared-2*QT/Σ_T+m
     return np.sqrt(D) 
 
 def mass(Q, T):
@@ -108,9 +153,14 @@ def mass(Q, T):
     DOI: 10.1109/ICDM.2016.0179
     See Table II
 
+    Note that Q, T are not directly required to calculate D 
     """
 
-    return calculate_distance_profile(Q, T)
+    QT = sliding_dot_product(Q,T)
+    μ_Q, σ_Q, M_T, Σ_T = compute_mean_std(Q, T)
+    m = Q.shape[0]
+
+    return calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
 
 convolution = scipy.signal.fftconvolve  # Swap for other convolution function
 
