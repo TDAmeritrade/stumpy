@@ -11,9 +11,6 @@ def naive_rolling_window_dot_product(Q, T):
         result[i] = np.dot(T[i:i + window], Q)
     return result
 
-def z_norm(x, axis=0):
-    return (x - np.mean(x, axis, keepdims=True))/np.std(x, axis, keepdims=True)
-
 class TestCore:
     def test_generator(self):
         test_dir = os.path.basename(os.path.dirname(__file__))
@@ -60,7 +57,7 @@ class TestCore:
 
     def run_calculate_distance_profile(self, Q, T):
         m = Q.shape[0]
-        left = np.linalg.norm(z_norm(core.rolling_window(T, m), 1) - z_norm(Q), axis=1)
+        left = np.linalg.norm(core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1)
         QT = core.sliding_dot_product(Q, T)
         μ_Q, σ_Q, M_T, Σ_T = core.compute_mean_std(Q, T)
         right = core.calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
@@ -68,12 +65,12 @@ class TestCore:
 
     def run_mueen_calculate_distance_profile(self, Q, T):
         m = Q.shape[0]       
-        left = np.linalg.norm(z_norm(core.rolling_window(T, m), 1) - z_norm(Q), axis=1)
+        left = np.linalg.norm(core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1)
         right = core.mueen_calculate_distance_profile(Q,T)
         npt.assert_almost_equal(left, right)
 
     def run_mass(self, Q, T):
         m = Q.shape[0]
-        left = np.linalg.norm(z_norm(core.rolling_window(T, m), 1) - z_norm(Q), axis=1)
+        left = np.linalg.norm(core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1)
         right = core.mass(Q, T)
         npt.assert_almost_equal(left, right)
