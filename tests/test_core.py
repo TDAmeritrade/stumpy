@@ -16,7 +16,7 @@ def z_norm(x, axis=0):
 
 class TestCore:
     def test_generator(self):
-
+        test_dir = os.path.basename(os.path.dirname(__file__))
         cls = self.__class__.__name__
         base = os.path.basename(__file__)
         name = os.path.splitext(base)[0]
@@ -32,7 +32,7 @@ class TestCore:
         for func in funcs:
             for i, (Q, T) in enumerate(arrays):
                 f = partial(getattr(self, func), Q, T)
-                f.description = '{}.{}.{} {}'.format(name, cls, func, i+1) 
+                f.description = '{}.{}.{}.{} {}'.format(test_dir, name, cls, func, i+1) 
                 yield f
 
     def setUp(self):
