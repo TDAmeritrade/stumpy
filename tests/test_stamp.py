@@ -34,8 +34,8 @@ class TestStamp:
                  ]
         funcs = [f for f in dir(self) if f.startswith('run')]
         for func in funcs:
-            for i, (Q, T) in enumerate(arrays):
-                f = partial(getattr(self, func), Q, T)
+            for i, (T_A, T_B) in enumerate(arrays):
+                f = partial(getattr(self, func), T_A, T_B)
                 f.description = '{}.{}.{}.{} {}'.format(test_dir, name, cls, func, i+1) 
                 yield f
 
