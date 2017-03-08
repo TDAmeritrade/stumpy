@@ -150,6 +150,9 @@ def mass(Q, T):
     See Table II
 
     Note that Q, T are not directly required to calculate D 
+
+    Note that M_T, Σ_T are being recalculated for all subsequences
+    of Q so there is some redundancy here that can be optimized
     """
 
     QT = sliding_dot_product(Q,T)
