@@ -29,7 +29,8 @@ def test_compute_mean_std(Q, T):
     left_σ_Q = np.sqrt(np.sum(np.square(Q-left_μ_Q)/m))
     left_M_T = np.mean(core.rolling_window(T, m), axis=1)
     left_Σ_T = np.std(core.rolling_window(T, m), axis=1)
-    right_μ_Q, right_σ_Q, right_M_T, right_Σ_T = core.compute_mean_std(Q, T)
+    right_μ_Q, right_σ_Q = core.compute_mean_std(Q, m)
+    right_M_T, right_Σ_T = core.compute_mean_std(T, m)
     npt.assert_almost_equal(left_μ_Q, right_μ_Q)
     npt.assert_almost_equal(left_σ_Q, right_σ_Q)
     npt.assert_almost_equal(left_M_T, right_M_T)
@@ -40,7 +41,8 @@ def test_calculate_distance_profile(Q, T):
     m = Q.shape[0]
     left = np.linalg.norm(core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1)
     QT = core.sliding_dot_product(Q, T)
-    μ_Q, σ_Q, M_T, Σ_T = core.compute_mean_std(Q, T)
+    μ_Q, σ_Q = core.compute_mean_std(Q, m)
+    M_T, Σ_T = core.compute_mean_std(T, m)
     right = core.calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
     npt.assert_almost_equal(left, right)
 

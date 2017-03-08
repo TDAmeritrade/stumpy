@@ -56,7 +56,7 @@ def sliding_dot_product(Q, T):
     QT = convolution(Qr, T)
     return QT.real[m-1:n]
 
-def compute_mean_std(Q,T):
+def compute_mean_std(T, m):
     """
     DOI: 10.1109/ICDM.2016.0179
     See Table II
@@ -73,10 +73,6 @@ def compute_mean_std(Q,T):
     sum for the first subsequence is omitted and we fixed that!
     """
     n = T.shape[0]
-    m = Q.shape[0]
-
-    μ_Q = np.mean(Q)
-    σ_Q = np.std(Q)
 
     cumsum_T = np.empty(len(T)+1)
     np.cumsum(T, out=cumsum_T[1:])  # store output in cumsum_T[1:]
@@ -91,7 +87,7 @@ def compute_mean_std(Q,T):
     M_T =  subseq_sum_T/m
     Σ_T = np.sqrt((subseq_sum_T_squared/m)-np.square(M_T))
 
-    return μ_Q, σ_Q, M_T, Σ_T
+    return M_T, Σ_T
 
 def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
@@ -157,8 +153,9 @@ def mass(Q, T):
     """
 
     QT = sliding_dot_product(Q,T)
-    μ_Q, σ_Q, M_T, Σ_T = compute_mean_std(Q, T)
     m = Q.shape[0]
+    μ_Q, σ_Q = compute_mean_std(Q, m)
+    M_T, Σ_T = compute_mean_std(T, m)
 
     return calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
 
