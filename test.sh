@@ -1,5 +1,5 @@
 #!/bin/sh
 
-python3 `which nosetests` -v --nocapture
+python3 `which pytest`
 
-#python3 `which nosetests` -v --nocapture tests/test_core.py:TestCore.test_calculate_distance_profile
+#python3 `which pytest` tests/test_stamp.py::test_stamp_A_B_join
