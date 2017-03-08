@@ -1,4 +1,5 @@
 from matrix_profile import stomp
 
-def test_nothing():
-    pass
+class TestStomp:
+    def test_stomp(self):
+        return
