@@ -21,7 +21,7 @@ def replace_inf(x, value=0):
 
 test_data = [
     (np.array([9,8100,-60,7], dtype=np.float64), np.array([584,-11,23,79,1001,0,-19], dtype=np.float64)),
-    (np.random.uniform(-1000, 1000, [8]), np.random.uniform(-1000, 1000, [64])),
+    (np.random.uniform(-1000, 1000, [8]), np.random.uniform(-1000, 1000, [64]))
 ]
 
 @pytest.mark.parametrize("T_A, T_B", test_data)

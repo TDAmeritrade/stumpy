@@ -28,10 +28,11 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     check_dtype(T_B)
     subseq_T_B = core.rolling_window(T_B, m)
     zone = int(np.ceil(m/2))
+    M_T, Σ_T = core.compute_mean_std(T_A, m)
 
     # Create new function that calls MASS and handles idx, profile
-    def subseq_mass(Q, T, trivial_idx=None, excl_zone=0):
-        D = core.mass(Q, T)
+    def subseq_mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0):
+        D = core.mass(Q, T, M_T, Σ_T)
         if trivial_idx is not None:
             start = max(0, trivial_idx-excl_zone)
             stop = trivial_idx+excl_zone+1
@@ -43,9 +44,9 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
 
     # Add exclusionary zone
     if ignore_trivial:
-        out = [subseq_mass(subseq, T_A, i, zone) for i, subseq in enumerate(subseq_T_B)]
+        out = [subseq_mass(subseq, T_A, M_T, Σ_T, i, zone) for i, subseq in enumerate(subseq_T_B)]
     else:
-        out = [subseq_mass(subseq, T_A) for subseq in subseq_T_B]
+        out = [subseq_mass(subseq, T_A, M_T, Σ_T) for subseq in subseq_T_B]
     out = np.array(out, dtype=object)
     
     return out

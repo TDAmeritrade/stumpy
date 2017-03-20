@@ -144,21 +144,22 @@ def mueen_calculate_distance_profile(Q, T):
     D = (subseq_sum_T_squared-2*subseq_sum_T*M_T+m*np.square(M_T))/Σ_T_squared-2*QT/Σ_T+m
     return np.sqrt(D) 
 
-def mass(Q, T):
+def mass(Q, T, M_T=None, Σ_T=None):
     """
     DOI: 10.1109/ICDM.2016.0179
     See Table II
 
     Note that Q, T are not directly required to calculate D 
 
-    Note that M_T, Σ_T are being recalculated for all subsequences
-    of Q so there is some redundancy here that can be optimized
+    Note: Unlike the Matrix Profile I paper, here, M_T, Σ_T can be calculated
+    once for all subsequences of T and passed in so the redundancy is removed
     """
 
     QT = sliding_dot_product(Q,T)
     m = Q.shape[0]
     μ_Q, σ_Q = compute_mean_std(Q, m)
-    M_T, Σ_T = compute_mean_std(T, m)
+    if M_T is None or Σ_T is None:
+        M_T, Σ_T = compute_mean_std(T, m)
 
     return calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
 
