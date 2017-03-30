@@ -25,15 +25,15 @@ test_data = [
     (np.random.uniform(-1000, 1000, [8]).astype(np.float64), np.random.uniform(-1000, 1000, [64]).astype(np.float64))
 ]
 
-@pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stomp_self_join(T_A, T_B):
-    m = 3
-    zone = int(np.ceil(m/4))
-    left = np.array([naive_mass(Q, T_B, m, i, zone) for i, Q in enumerate(core.rolling_window(T_B, m))], dtype=object)
-    right = stomp.stomp(T_B, T_B, m, ignore_trivial=True)
-    replace_inf(left)
-    replace_inf(right)
-    npt.assert_almost_equal(left, right)
+# @pytest.mark.parametrize("T_A, T_B", test_data)
+# def test_stomp_self_join(T_A, T_B):
+#     m = 3
+#     zone = int(np.ceil(m/4))
+#     left = np.array([naive_mass(Q, T_B, m, i, zone) for i, Q in enumerate(core.rolling_window(T_B, m))], dtype=object)
+#     right = stomp.stomp(T_B, T_B, m, ignore_trivial=True)
+#     replace_inf(left)
+#     replace_inf(right)
+#     npt.assert_almost_equal(left, right)
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stomp_A_B_join(T_A, T_B):
