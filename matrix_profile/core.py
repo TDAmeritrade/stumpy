@@ -26,6 +26,14 @@ def rolling_window(a, window):
 def z_norm(x, axis=0):
     return (x - np.mean(x, axis, keepdims=True))/np.std(x, axis, keepdims=True)
 
+def check_dtype(arr, dtype=np.float):
+    """
+    Check if array has correct dtype
+    """
+    if not issubclass(arr.dtype.type, dtype):
+        msg = '{} type expected but found {}'.format(dtype, arr.dtype.type)
+        raise TypeError(msg)
+
 def timeit(func):
     """
     Timing decorator

@@ -4,13 +4,16 @@
 import numpy as np
 from matrix_profile import core
 
-def check_dtype(arr, dtype=np.float):
-    """
-    Check if array has correct dtype
-    """
-    if not issubclass(arr.dtype.type, dtype):
-        msg = '{} type expected but found {}'.format(dtype, arr.dtype.type)
-        raise TypeError(msg)
+def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0):
+    D = core.mass(Q, T, M_T, Σ_T)
+    if trivial_idx is not None:
+        start = max(0, trivial_idx-excl_zone)
+        stop = trivial_idx+excl_zone+1
+        D[start:stop] = np.inf
+    # Element-wise Min
+    I = np.argmin(D)
+    P = D[I]
+    return P, I
 
 def stamp(T_A, T_B, m, ignore_trivial=False):
     """
@@ -24,29 +27,17 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     and index for the closest subsequence in T_A. Thus, the array
     returned will have length T_B.shape[0]-m+1
     """
-    check_dtype(T_A)
-    check_dtype(T_B)
+    core.check_dtype(T_A)
+    core.check_dtype(T_B)
     subseq_T_B = core.rolling_window(T_B, m)
     zone = int(np.ceil(m/2))
     M_T, Σ_T = core.compute_mean_std(T_A, m)
 
-    # Create new function that calls MASS and handles idx, profile
-    def subseq_mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0):
-        D = core.mass(Q, T, M_T, Σ_T)
-        if trivial_idx is not None:
-            start = max(0, trivial_idx-excl_zone)
-            stop = trivial_idx+excl_zone+1
-            D[start:stop] = np.inf
-        # Element-wise Min
-        I = np.argmin(D)
-        P = D[I]
-        return P, I
-
     # Add exclusionary zone
     if ignore_trivial:
-        out = [subseq_mass(subseq, T_A, M_T, Σ_T, i, zone) for i, subseq in enumerate(subseq_T_B)]
+        out = [mass(subseq, T_A, M_T, Σ_T, i, zone) for i, subseq in enumerate(subseq_T_B)]
     else:
-        out = [subseq_mass(subseq, T_A, M_T, Σ_T) for subseq in subseq_T_B]
+        out = [mass(subseq, T_A, M_T, Σ_T) for subseq in subseq_T_B]
     out = np.array(out, dtype=object)
     
     return out
