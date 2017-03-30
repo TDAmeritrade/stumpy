@@ -45,6 +45,10 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
         QT[1:] = QT[:k-1] - T_B[i-1]*T_A[:k-1] + T_B[i-1+m]*T_A[-(k-1):]
         QT[0] = QT_first[i]
         D = core.calculate_distance_profile(m, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
+        if ignore_trivial:
+            start = max(0, i-zone)
+            stop = i+zone+1
+            D[start:stop] = np.inf
         I = np.argmin(D)
         P = D[I]
         out[i] = P, I
