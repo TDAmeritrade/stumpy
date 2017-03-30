@@ -99,12 +99,8 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
         out[0] = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
 
     k = T_A.shape[0]-m+1
-    # Expand and vectorize - T_B[i-1]*T_A[:k-1] + T_B[i-1+m]*T_A[-(k-1):]
-    shift = -T_B[:l-1, np.newaxis]*T_A[:k-1, np.newaxis].T + T_B[m:l-1+m, np.newaxis]*T_A[-(k-1):, np.newaxis].T
-    
     for i in range(1, l):
-        #QT[1:] = QT[:k-1] - T_B[i-1]*T_A[:k-1] + T_B[i-1+m]*T_A[-(k-1):]
-        QT[1:] = QT[:k-1] + shift[i-1]
+        QT[1:] = QT[:k-1] - T_B[i-1]*T_A[:k-1] + T_B[i-1+m]*T_A[-(k-1):]
         QT[0] = QT_first[i]
         D = core.calculate_distance_profile(m, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
         if ignore_trivial:
