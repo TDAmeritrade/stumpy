@@ -20,7 +20,6 @@ def replace_inf(x, value=0):
     return
 
 test_data = [
-    #(np.array(range(1,7), dtype=np.float64), np.array(range(11,17), dtype=np.float64)),
     (np.array([9,8100,-60,7], dtype=np.float64), np.array([584,-11,23,79,1001,0,-19], dtype=np.float64)),
     (np.random.uniform(-1000, 1000, [8]).astype(np.float64), np.random.uniform(-1000, 1000, [64]).astype(np.float64))
 ]
