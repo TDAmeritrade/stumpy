@@ -93,7 +93,8 @@ def compute_mean_std(T, m):
     subseq_sum_T = cumsum_T[m:] - cumsum_T[:n-m+1]
     subseq_sum_T_squared = cumsum_T_squared[m:] - cumsum_T_squared[:n-m+1]
     M_T =  subseq_sum_T/m
-    Σ_T = np.sqrt((subseq_sum_T_squared/m)-np.square(M_T))
+    Σ_T = np.abs((subseq_sum_T_squared/m)-np.square(M_T))
+    Σ_T = np.sqrt(Σ_T)
 
     return M_T, Σ_T
 
@@ -107,7 +108,9 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     m_σ_Q = m*σ_Q
     m_2 = 2.0*m
 
-    D_squared = np.abs(2*m*(1.0-(QT-m_μ_Q*M_T)/(m*σ_Q*Σ_T)))
+    denom = (m*σ_Q*Σ_T)
+    denom[denom == 0] = 1E-10  # Avoid divide by zero
+    D_squared = np.abs(2*m*(1.0-(QT-m_μ_Q*M_T)/denom))
     return np.sqrt(D_squared)
 
 def mueen_calculate_distance_profile(Q, T):
@@ -145,11 +148,10 @@ def mueen_calculate_distance_profile(Q, T):
     subseq_sum_T = cumsum_T[m:] - cumsum_T[:n-m+1]
     subseq_sum_T_squared = cumsum_T_squared[m:] - cumsum_T_squared[:n-m+1]
     M_T =  subseq_sum_T/m
-    Σ_T_squared = subseq_sum_T_squared/m-np.square(M_T)
+    Σ_T_squared = np.abs(subseq_sum_T_squared/m-np.square(M_T))
     Σ_T = np.sqrt(Σ_T_squared)
 
     D = np.abs((subseq_sum_T_squared-2*subseq_sum_T*M_T+m*np.square(M_T))/Σ_T_squared-2*QT/Σ_T+m)
-    D = (subseq_sum_T_squared-2*subseq_sum_T*M_T+m*np.square(M_T))/Σ_T_squared-2*QT/Σ_T+m
     return np.sqrt(D) 
 
 def mass(Q, T, M_T=None, Σ_T=None):
