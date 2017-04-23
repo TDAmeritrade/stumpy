@@ -22,6 +22,10 @@ def _stomp(T_A, T_B, m, ignore_trivial=False):
     reference purposes only and thus should not be used in practice 
     since it is not vectorized. See vectorized STOMP documentation and
     implementation below. 
+
+    Note: Instead of calculating the distance profile, we could calculate
+    and sort by the squared distance profile and reduce the number of square 
+    root calculations.
     """
     core.check_dtype(T_A)
     core.check_dtype(T_B)
