@@ -2,3 +2,4 @@
 *checkout
 *pyc
 .cache
+*ipynb_checkpoints
