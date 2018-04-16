@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from matrix_profile import core
+from . import core
 
 def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0):
     D = core.mass(Q, T, M_T, Σ_T)

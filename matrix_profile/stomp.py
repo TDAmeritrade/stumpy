@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from matrix_profile import core, stamp
+from . import core, stamp
 
 def _stomp(T_A, T_B, m, ignore_trivial=False):
     """
