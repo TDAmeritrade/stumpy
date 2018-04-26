@@ -98,11 +98,13 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
 
     # Handle first subsequence, add exclusionary zone
     if ignore_trivial:
-        out[0] = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone)
+        P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone)
     else:
-        out[0] = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
+        P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
+    out[0] = P, I , np.NaN, I
 
     k = T_A.shape[0]-m+1
+    mask = np.zeros((2, k), dtype=bool)
     for i in range(1, l):
         QT[1:] = QT[:k-1] - T_B[i-1]*T_A[:k-1] + T_B[i-1+m]*T_A[-(k-1):]
         QT[0] = QT_first[i]
@@ -113,7 +115,26 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
             D[start:stop] = np.inf
         I = np.argmin(D)
         P = D[I]
-        out[i] = P, I
+
+        # Get left and right matrix profiles
+        # See http://seanlaw.github.io/2015/09/10/numpy-argmin-with-a-condition
+        mask.fill(False)
+        mask[0, :i] = True  # Left mask 
+        mask[1, i+1:] = True  # Right mask
+
+        try:
+            left_subset_idx = np.argmin(D[mask[0]])
+            IL = np.arange(D.shape[0])[mask[0]][left_subset_idx]
+        except ValueError:
+            IL = np.NaN
+
+        try:
+            right_subset_idx = np.argmin(D[mask[1]])
+            IR = np.arange(D.shape[0])[mask[1]][right_subset_idx]
+        except ValueError:
+            IR = np.NaN
+
+        out[i] = P, I, IL, IR
     out = np.array(out, dtype=object)
     
     return out
