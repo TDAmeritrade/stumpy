@@ -101,7 +101,7 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
         P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone)
     else:
         P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
-    out[0] = P, I , np.NaN, I
+    out[0] = P, I , -1, I
 
     k = T_A.shape[0]-m+1
     mask = np.zeros((2, k), dtype=bool)
@@ -126,13 +126,13 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
             left_subset_idx = np.argmin(D[mask[0]])
             IL = np.arange(D.shape[0])[mask[0]][left_subset_idx]
         except ValueError:
-            IL = np.NaN
+            IL = -1
 
         try:
             right_subset_idx = np.argmin(D[mask[1]])
             IR = np.arange(D.shape[0])[mask[1]][right_subset_idx]
         except ValueError:
-            IR = np.NaN
+            IR = -1
 
         out[i] = P, I, IL, IR
     out = np.array(out, dtype=object)
