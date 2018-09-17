@@ -3,6 +3,9 @@
 
 import numpy as np
 from . import core, stamp
+import logging
+
+logger = logging.getLogger(__name__)
 
 def _stomp(T_A, T_B, m, ignore_trivial=False):
     """
@@ -73,7 +76,8 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
 
     Return: For every subsequence, Q, in T_B, you will get a distance
     and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1
+    returned will have length T_B.shape[0]-m+1. Additionally, the 
+    left and right matrix profiles are also returned.
 
     Note: Unlike in the Table II where T_A.shape is expected to be equal 
     to T_B.shape, this implementation is generalized so that the shapes of 
@@ -82,6 +86,9 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
 
     Additionally, unlike STAMP where the exclusion zone is m/2, the default 
     exclusion zone for STOMP is m/4 (See Definition 3 and Figure 3).
+
+    For self-joins, set `ignore_trivial = True` in order to avoid the 
+    trivial match. 
     """
     core.check_dtype(T_A)
     core.check_dtype(T_B)
@@ -136,9 +143,13 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
 
         out[i] = P, I, IL, IR
     out = np.array(out, dtype=object)
+
+    threshold = 10e-6
+    if core.are_distances_too_small(out[:, 0], threshold=threshold):
+        logger.warn(f"A large number of values are smaller than {threshold}.")
+        logger.warn("For a self-join, try setting `ignore_trivial = True`.")
     
     return out
-
 
 if __name__ == '__main__':
     core.check_python_version()

@@ -34,6 +34,19 @@ def check_dtype(arr, dtype=np.float):
         msg = '{} type expected but found {}'.format(dtype, arr.dtype.type)
         raise TypeError(msg)
 
+def are_distances_too_small(x, threshold=10e-6):
+    """
+    Check the distance values from a matrix profile.
+
+    If the values are smaller than the threshold (i.e., less than 10e-6) then 
+    it could suggest that this is a self-join.
+    """
+
+    if x.mean() < threshold or np.all(x < threshold):
+        return True
+
+    return False        
+
 def timeit(func):
     """
     Timing decorator
