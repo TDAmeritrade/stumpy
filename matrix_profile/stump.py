@@ -90,6 +90,11 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
 def stump(T_A, T_B, m, ignore_trivial=False):
     core.check_dtype(T_A)
     core.check_dtype(T_B)
+
+    if ignore_trivial == False and core.are_arrays_equal(T_A, T_B):
+        logger.warn("Arrays T_A, T_B are equal, which implies a self-join.")
+        logger.warn("Try setting `ignore_trivial = True`.")
+    
     n = T_B.shape[0]
     l = n-m+1
     zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3

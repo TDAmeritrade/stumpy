@@ -34,6 +34,17 @@ def check_dtype(arr, dtype=np.float):
         msg = '{} type expected but found {}'.format(dtype, arr.dtype.type)
         raise TypeError(msg)
 
+def are_arrays_equal(arr1, arr2):
+    """
+    Check if two arrays are equal; first by comparing memory addresses, 
+    and secondly by their values
+    """
+
+    if id(arr1) == id(arr2):
+        return True
+    
+    return np.array_equal(arr1, arr2)
+
 def are_distances_too_small(x, threshold=10e-6):
     """
     Check the distance values from a matrix profile.
@@ -45,7 +56,7 @@ def are_distances_too_small(x, threshold=10e-6):
     if x.mean() < threshold or np.all(x < threshold):
         return True
 
-    return False        
+    return False
 
 def timeit(func):
     """
@@ -71,10 +82,12 @@ def sliding_dot_product(Q, T):
 
     Padding is done automatically in fftconvolve step
     """
+    
     n = T.shape[0]
     m = Q.shape[0]
     Qr = np.flipud(Q)  # Reverse/flip Q
     QT = convolution(Qr, T)
+
     return QT.real[m-1:n]
 
 def compute_mean_std(T, m):
