@@ -1,1 +1,1 @@
-from . import core, stamp, stomp
+from . import core, stamp, stomp, stump
