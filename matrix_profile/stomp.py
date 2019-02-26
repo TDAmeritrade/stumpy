@@ -129,16 +129,16 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
         mask[0, :i] = True  # Left mask 
         mask[1, i+1:] = True  # Right mask
 
-        try:
+        if D[mask[0]].size > 0:
             left_subset_idx = np.argmin(D[mask[0]])
             IL = np.arange(D.shape[0])[mask[0]][left_subset_idx]
-        except ValueError:
+        else:
             IL = -1
 
-        try:
+        if D[mask[1]].size > 0:
             right_subset_idx = np.argmin(D[mask[1]])
             IR = np.arange(D.shape[0])[mask[1]][right_subset_idx]
-        except ValueError:
+        else:
             IR = -1
 
         out[i] = P, I, IL, IR
