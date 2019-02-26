@@ -3,12 +3,12 @@
 
 import numpy as np
 from . import core, stamp
-from numba import jit
+from numba import njit
 import logging
 
 logger = logging.getLogger(__name__)
 
-@jit(nopython=True)
+@njit()
 def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     DOI: 10.1109/ICDM.2016.0179
@@ -25,7 +25,7 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     
     return np.sqrt(D_squared)
 
-@jit(nopython=True)
+@njit()
 def _stump(T_A, T_B, m, profile, indices, l, zone, 
            M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, mask, ignore_trivial=False):
     """
