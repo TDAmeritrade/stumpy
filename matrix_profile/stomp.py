@@ -101,7 +101,7 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
 
     μ_Q, σ_Q = core.compute_mean_std(T_B, m)
 
-    out = [None] * l
+    out = np.empty((l, 4), dtype=object)
 
     # Handle first subsequence, add exclusionary zone
     if ignore_trivial:
@@ -142,7 +142,6 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
             IR = -1
 
         out[i] = P, I, IL, IR
-    out = np.array(out, dtype=object)
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):
