@@ -89,11 +89,9 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
     
     return profile, indices
 
-def stump(T_A, T_B, m, ignore_trivial=False, parallel=False):
+def stump(T_A, T_B, m, ignore_trivial=False):
     """
     """
-
-    global _stump
 
     core.check_dtype(T_A)
     core.check_dtype(T_B)
@@ -127,10 +125,8 @@ def stump(T_A, T_B, m, ignore_trivial=False, parallel=False):
     k = T_A.shape[0]-m+1
     mask = np.zeros((2, k), dtype=bool)
 
-    jitted_stump = njit(_stump, parallel=parallel)
-    
-    jitted_stump(T_A, T_B, m, profile, indices, l, zone, 
-                 M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, mask, ignore_trivial)
+    _stump(T_A, T_B, m, profile, indices, l, zone, 
+           M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, mask, ignore_trivial)
     
     out[:, 0] = profile
     out[:, 1:4] = indices
