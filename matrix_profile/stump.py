@@ -25,7 +25,6 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     
     return np.sqrt(D_squared)
 
-@njit()
 def _stump(T_A, T_B, m, profile, indices, l, zone, 
            M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, mask, ignore_trivial=False):
     """
@@ -50,6 +49,9 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
 
     For self-joins, set `ignore_trivial = True` in order to avoid the 
     trivial match. 
+
+    Note that the Numba jit compilation happens within the wrapper function
+    `stump`
     """
     
     for i in range(1, l):
@@ -87,7 +89,12 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
     
     return profile, indices
 
-def stump(T_A, T_B, m, ignore_trivial=False):
+def stump(T_A, T_B, m, ignore_trivial=False, parallel=False):
+    """
+    """
+
+    global _stump
+
     core.check_dtype(T_A)
     core.check_dtype(T_B)
 
@@ -120,8 +127,10 @@ def stump(T_A, T_B, m, ignore_trivial=False):
     k = T_A.shape[0]-m+1
     mask = np.zeros((2, k), dtype=bool)
 
-    _stump(T_A, T_B, m, profile, indices, l, zone, 
-           M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, mask, ignore_trivial)
+    jitted_stump = njit(_stump, parallel=parallel)
+    
+    jitted_stump(T_A, T_B, m, profile, indices, l, zone, 
+                 M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, mask, ignore_trivial)
     
     out[:, 0] = profile
     out[:, 1:4] = indices
