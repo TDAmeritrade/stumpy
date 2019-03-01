@@ -129,20 +129,15 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
         P = D[I]
 
         # Get left and right matrix profiles
-        # See http://seanlaw.github.io/2015/09/10/numpy-argmin-with-a-condition
-        mask.fill(False)
-        mask[0, :i] = True  # Left mask 
-        mask[1, i+1:] = True  # Right mask
-
-        if D[mask[0]].size > 0:
-            left_subset_idx = np.argmin(D[mask[0]])
-            IL = np.arange(D.shape[0])[mask[0]][left_subset_idx]
+        if i > 0:
+            left_subset_idx = np.argmin(D[:i])
+            IL = np.arange(D.shape[0])[:i][left_subset_idx]
         else:
             IL = -1
 
-        if D[mask[1]].size > 0:
-            right_subset_idx = np.argmin(D[mask[1]])
-            IR = np.arange(D.shape[0])[mask[1]][right_subset_idx]
+        if i+1 < D.shape[0]:
+            right_subset_idx = np.argmin(D[i+1:])
+            IR = np.arange(D.shape[0])[i+1:][right_subset_idx]
         else:
             IR = -1
 

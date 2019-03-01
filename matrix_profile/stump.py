@@ -3,7 +3,7 @@
 
 import numpy as np
 from . import core, stamp
-from numba import njit
+from numba import njit, prange
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return np.sqrt(D_squared)
 
 def _stump(T_A, T_B, m, profile, indices, l, zone, 
-           M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, mask, ignore_trivial=False):
+           M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, ignore_trivial=False):
     """
     DOI: 10.1109/ICDM.2016.0085
     See Table II
@@ -54,9 +54,8 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
     `stump`
     """
     
-    for i in range(1, l):
-        for j in range(k-1,0,-1):
-            QT[j] = QT[j-1] - T_B[i-1]*T_A[j-1] + T_B[i+m-1]*T_A[j+m-1]
+    for i in prange(1, l):
+        QT[1:] = QT[:k-1] - T_B[i-1]*T_A[:k-1] + T_B[i-1+m]*T_A[-(k-1):]
         QT[0] = QT_first[i]
         D = calculate_distance_profile(m, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
         if ignore_trivial:
@@ -67,27 +66,22 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
         P = D[I]
 
         # Get left and right matrix profiles
-        # See http://seanlaw.github.io/2015/09/10/numpy-argmin-with-a-condition
-        mask.fill(False)
-        mask[0, :i] = True  # Left mask 
-        mask[1, i+1:] = True  # Right mask
-
-        if D[mask[0]].size > 0:
-            left_subset_idx = np.argmin(D[mask[0]])
-            IL = np.arange(D.shape[0])[mask[0]][left_subset_idx]
+        if i > 0:
+            left_subset_idx = np.argmin(D[:i])
+            IL = np.arange(D.shape[0])[:i][left_subset_idx]
         else:
             IL = -1
 
-        if D[mask[1]].size > 0:
-            right_subset_idx = np.argmin(D[mask[1]])
-            IR = np.arange(D.shape[0])[mask[1]][right_subset_idx]
+        if i+1 < D.shape[0]:
+            right_subset_idx = np.argmin(D[i+1:])
+            IR = np.arange(D.shape[0])[i+1:][right_subset_idx]
         else:
             IR = -1
 
         profile[i] = P
         indices[i] = I, IL, IR
     
-    return profile, indices
+    return
 
 def stump(T_A, T_B, m, ignore_trivial=False):
     """
@@ -125,12 +119,11 @@ def stump(T_A, T_B, m, ignore_trivial=False):
     indices[0] = I , -1, I
     
     k = T_A.shape[0]-m+1
-    mask = np.zeros((2, k), dtype=bool)
 
     jitted_stump = njit(_stump)
 
     jitted_stump(T_A, T_B, m, profile, indices, l, zone, 
-                 M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, mask, 
+                 M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k,
                  ignore_trivial)
     
     out[:, 0] = profile
