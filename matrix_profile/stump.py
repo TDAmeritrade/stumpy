@@ -56,6 +56,7 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
 
     QT_odd = QT.copy()
     QT_even = QT.copy()
+    tmp_indices = np.arange(k)
     
     for i in range(1, l):
         # Numba's prange requires incrementing a range by 1 so replace
@@ -89,13 +90,13 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
         # Get left and right matrix profiles
         if i > 0:
             left_subset_idx = np.argmin(D[:i])
-            IL = np.arange(D.shape[0])[:i][left_subset_idx]
+            IL = tmp_indices[:i][left_subset_idx]
         else:
             IL = -1
 
         if i+1 < D.shape[0]:
             right_subset_idx = np.argmin(D[i+1:])
-            IR = np.arange(D.shape[0])[i+1:][right_subset_idx]
+            IR = tmp_indices[i+1:][right_subset_idx]
         else:
             IR = -1
 
