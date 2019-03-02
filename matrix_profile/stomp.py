@@ -130,8 +130,7 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
 
         # Get left and right matrix profiles
         if i > 0:
-            left_subset_idx = np.argmin(D[:i])
-            IL = np.arange(D.shape[0])[:i][left_subset_idx]
+            IL = np.argmin(D[:i])
         else:
             IL = -1
 

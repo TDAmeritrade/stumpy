@@ -8,23 +8,20 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-@njit()
-def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
+@njit(parallel=True, fastmath=True)
+def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     DOI: 10.1109/ICDM.2016.0179
     See Equation on Page 4
     """
 
-    m_μ_Q = m*μ_Q
-    m_σ_Q = m*σ_Q
-    m_2 = 2.0*m
-
     denom = (m*σ_Q*Σ_T)
     denom[denom == 0] = 1E-10  # Avoid divide by zero
-    D_squared = np.abs(2*m*(1.0-(QT-m_μ_Q*M_T)/denom))
+    D_squared = np.abs(2*m*(1.0-(QT-m*μ_Q*M_T)/denom))
     
-    return np.sqrt(D_squared)
+    return D_squared
 
+@njit(parallel=True, fastmath=True)
 def _stump(T_A, T_B, m, profile, indices, l, zone, 
            M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, ignore_trivial=False):
     """
@@ -49,9 +46,6 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
 
     For self-joins, set `ignore_trivial = True` in order to avoid the 
     trivial match. 
-
-    Note that the Numba jit compilation happens within the wrapper function
-    `stump`
     """
 
     QT_odd = QT.copy()
@@ -75,22 +69,21 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
 
         if i % 2 == 0:
             QT_even[0] = QT_first[i]
-            D = calculate_distance_profile(m, QT_even, μ_Q[i], σ_Q[i], M_T, Σ_T)
+            D = _calculate_squared_distance_profile(m, QT_even, μ_Q[i], σ_Q[i], M_T, Σ_T)
         else:
             QT_odd[0] = QT_first[i]
-            D = calculate_distance_profile(m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T)
+            D = _calculate_squared_distance_profile(m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T)
 
         if ignore_trivial:
             start = max(0, i-zone)
             stop = i+zone+1
             D[start:stop] = np.inf
         I = np.argmin(D)
-        P = D[I]
+        P = np.sqrt(D[I])
 
         # Get left and right matrix profiles
         if i > 0:
-            left_subset_idx = np.argmin(D[:i])
-            IL = tmp_indices[:i][left_subset_idx]
+            IL = np.argmin(D[:i])
         else:
             IL = -1
 
@@ -105,7 +98,7 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
     
     return
 
-def stump(T_A, T_B, m, ignore_trivial=False, parallel=False):
+def stump(T_A, T_B, m, ignore_trivial=False):
     """
     """
 
@@ -130,7 +123,7 @@ def stump(T_A, T_B, m, ignore_trivial=False, parallel=False):
 
     out = np.empty((l, 4), dtype=object)
     profile = np.empty((l,), dtype='float64')
-    indices = np.empty((l,3), dtype='int64')
+    indices = np.empty((l, 3), dtype='int64')
 
     # Handle first subsequence, add exclusionary zone
     if ignore_trivial:
@@ -142,11 +135,8 @@ def stump(T_A, T_B, m, ignore_trivial=False, parallel=False):
     
     k = T_A.shape[0]-m+1
 
-    jitted_stump = njit(_stump, parallel=parallel)
-
-    jitted_stump(T_A, T_B, m, profile, indices, l, zone, 
-                 M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k,
-                 ignore_trivial)
+    _stump(T_A, T_B, m, profile, indices, l, zone, 
+           M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, ignore_trivial)
     
     out[:, 0] = profile
     out[:, 1:4] = indices

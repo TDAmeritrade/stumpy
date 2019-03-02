@@ -42,22 +42,3 @@ def test_stump_A_B_join(T_A, T_B):
     replace_inf(left)
     replace_inf(right)
     npt.assert_almost_equal(left, right)
-
-@pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stump_self_join_parallel(T_A, T_B):
-    m = 3
-    zone = int(np.ceil(m/4))
-    left = np.array([naive_mass(Q, T_B, m, i, zone) for i, Q in enumerate(core.rolling_window(T_B, m))], dtype=object)
-    right = stump.stump(T_B, T_B, m, ignore_trivial=True, parallel=True)[:, :2]
-    replace_inf(left)
-    replace_inf(right)
-    npt.assert_almost_equal(left, right)
-
-@pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stump_A_B_join_parallel(T_A, T_B):
-    m = 3
-    left = np.array([naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object)
-    right = stump.stump(T_A, T_B, m, parallel=True)[:, :2]
-    replace_inf(left)
-    replace_inf(right)
-    npt.assert_almost_equal(left, right)

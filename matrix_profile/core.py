@@ -130,13 +130,9 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     See Equation on Page 4
     """
 
-    m_μ_Q = m*μ_Q
-    m_σ_Q = m*σ_Q
-    m_2 = 2.0*m
-
     denom = (m*σ_Q*Σ_T)
     denom[denom == 0] = 1E-10  # Avoid divide by zero
-    D_squared = np.abs(2*m*(1.0-(QT-m_μ_Q*M_T)/denom))
+    D_squared = np.abs(2*m*(1.0-(QT-m*μ_Q*M_T)/denom))
     return np.sqrt(D_squared)
 
 def mueen_calculate_distance_profile(Q, T):
