@@ -53,11 +53,32 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
     Note that the Numba jit compilation happens within the wrapper function
     `stump`
     """
+
+    QT_odd = QT.copy()
+    QT_even = QT.copy()
     
-    for i in prange(1, l):
-        QT[1:] = QT[:k-1] - T_B[i-1]*T_A[:k-1] + T_B[i-1+m]*T_A[-(k-1):]
-        QT[0] = QT_first[i]
-        D = calculate_distance_profile(m, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
+    for i in range(1, l):
+        # Numba's prange requires incrementing a range by 1 so replace
+        # `for j in range(k-1,0,-1)` with its incrementing compliment
+        for rev_j in prange(1, k):
+            j = k - rev_j
+            # GPU Stomp Parallel Implementation with Numba
+            # DOI: 10.1109/ICDM.2016.0085
+            # See Figure 5
+            if i % 2 == 0:
+                # Even
+                QT_even[j] = QT_odd[j-1] - T_B[i-1]*T_A[j-1] + T_B[i+m-1]*T_A[j+m-1]
+            else:
+                # Odd
+                QT_odd[j] = QT_even[j-1] - T_B[i-1]*T_A[j-1] + T_B[i+m-1]*T_A[j+m-1]
+
+        if i % 2 == 0:
+            QT_even[0] = QT_first[i]
+            D = calculate_distance_profile(m, QT_even, μ_Q[i], σ_Q[i], M_T, Σ_T)
+        else:
+            QT_odd[0] = QT_first[i]
+            D = calculate_distance_profile(m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T)
+
         if ignore_trivial:
             start = max(0, i-zone)
             stop = i+zone+1
@@ -83,7 +104,7 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
     
     return
 
-def stump(T_A, T_B, m, ignore_trivial=False):
+def stump(T_A, T_B, m, ignore_trivial=False, parallel=False):
     """
     """
 
@@ -120,7 +141,7 @@ def stump(T_A, T_B, m, ignore_trivial=False):
     
     k = T_A.shape[0]-m+1
 
-    jitted_stump = njit(_stump)
+    jitted_stump = njit(_stump, parallel=parallel)
 
     jitted_stump(T_A, T_B, m, profile, indices, l, zone, 
                  M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k,
