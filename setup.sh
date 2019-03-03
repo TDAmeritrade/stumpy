@@ -1,6 +1,5 @@
 #!/bin/sh
 
-conda install -y cython
-conda install -y scipy
+pip install -r requirements.txt
 pip uninstall -y matrix_profile
 pip install .
