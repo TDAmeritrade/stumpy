@@ -3,6 +3,9 @@
 import matrix_profile as mp
 import numpy as np
 from timeit import default_timer as timer
+import logging
+
+logger = logging.getLogger(__name__)
 
 def get_human_readable_time(total_time):
         hours, rem = divmod(total_time, 3600)
@@ -25,4 +28,4 @@ if __name__ == '__main__':
         mp.stump.stump(x, x, 50, ignore_trivial=True)
         end = timer()
         elapsed_time = get_human_readable_time(end-start)
-        print(f'i: {i}  n: {n}  time: {elapsed_time}')
+        logger.warning(f'i: {i}  n: {n}  time: {elapsed_time}')
