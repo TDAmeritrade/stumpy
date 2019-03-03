@@ -18,7 +18,15 @@ pip install matrix_profile
 
 ## Installation from sources
 
-To install matrix_profile from source, you'll need to install the dependencies above. For your convenience, you can also install these dependencies using the requirements.txt file (found in the `matrix_profile` directory (same directory where you found this file after cloning the git repo)):
+To install matrix_profile from source, you'll need to install the dependencies above. For maximum performance, it is recommended that you install all dependencies using `conda`:
+
+```sh
+conda install -y numpy
+conda install -y scipy
+conda install -y numba
+```
+
+Alternatively, but with lower performance, you can also install these dependencies using the requirements.txt file (found in the `matrix_profile` directory (same directory where you found this file after cloning the git repo)):
 
 ```sh
 pip install -r requirements.txt
