@@ -89,6 +89,8 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
 
     For self-joins, set `ignore_trivial = True` in order to avoid the 
     trivial match. 
+
+    Note that left and right matrix profiles are only available for self-joins.
     """
     core.check_dtype(T_A)
     core.check_dtype(T_B)
@@ -111,9 +113,11 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
     # Handle first subsequence, add exclusionary zone
     if ignore_trivial:
         P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone)
+        PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone, include_first=False)
     else:
         P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
-    out[0] = P, I , -1, I
+        IR = -1  # No left and right matrix profile available
+    out[0] = P, I , -1, IR
 
     k = T_A.shape[0]-m+1
     mask = np.zeros((2, k), dtype=bool)
@@ -128,15 +132,19 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
         I = np.argmin(D)
         P = D[I]
 
-        # Get left and right matrix profiles
-        if i > 0:
+        # Get left and right matrix profiles for self-joins
+        if ignore_trivial and i > 0:
             IL = np.argmin(D[:i])
+            if start <= IL < stop:
+                IL = -1
         else:
             IL = -1
 
-        if i+1 < D.shape[0]:
+        if ignore_trivial and i+1 < D.shape[0]:
             right_subset_idx = np.argmin(D[i+1:])
             IR = np.arange(D.shape[0])[i+1:][right_subset_idx]
+            if start <= IR < stop:
+                IR = -1
         else:
             IR = -1
 

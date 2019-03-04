@@ -4,15 +4,23 @@
 import numpy as np
 from . import core
 
-def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0):
+def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, include_first=True):
     D = core.mass(Q, T, M_T, Σ_T)
     if trivial_idx is not None:
         start = max(0, trivial_idx-excl_zone)
         stop = trivial_idx+excl_zone+1
         D[start:stop] = np.inf
     # Element-wise Min
-    I = np.argmin(D)
-    P = D[I]
+    if include_first:
+        I = np.argmin(D)
+        P = D[I]
+    else:
+        # This is equivalent to finding the right matrix profile
+        # for the first window
+        I = np.argmin(D[1:])
+        I = np.arange(D.shape[0])[1:][I]
+        P = D[I]
+
     return P, I
 
 def stamp(T_A, T_B, m, ignore_trivial=False):

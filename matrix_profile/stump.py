@@ -46,6 +46,8 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
 
     For self-joins, set `ignore_trivial = True` in order to avoid the 
     trivial match. 
+
+    Note that left and right matrix profiles are only available for self-joins.
     """
 
     QT_odd = QT.copy()
@@ -81,15 +83,19 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
         I = np.argmin(D)
         P = np.sqrt(D[I])
 
-        # Get left and right matrix profiles
-        if i > 0:
+        # Get left and right matrix profiles for self-joins
+        if ignore_trivial and i > 0:
             IL = np.argmin(D[:i])
+            if start <= IL < stop:
+                IL = -1
         else:
             IL = -1
 
-        if i+1 < D.shape[0]:
+        if ignore_trivial and i+1 < D.shape[0]:
             right_subset_idx = np.argmin(D[i+1:])
             IR = tmp_indices[i+1:][right_subset_idx]
+            if start <= IR < stop:
+                IR = -1
         else:
             IR = -1
 
@@ -128,10 +134,12 @@ def stump(T_A, T_B, m, ignore_trivial=False):
     # Handle first subsequence, add exclusionary zone
     if ignore_trivial:
         P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone)
+        PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone, include_first=False)
     else:
         P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
+        IR = -1  # No left and right matrix profile available
     profile[0] = P
-    indices[0] = I , -1, I
+    indices[0] = I , -1, IR
     
     k = T_A.shape[0]-m+1
 
