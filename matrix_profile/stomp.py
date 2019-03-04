@@ -141,8 +141,7 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
             IL = -1
 
         if ignore_trivial and i+1 < D.shape[0]:
-            right_subset_idx = np.argmin(D[i+1:])
-            IR = np.arange(D.shape[0])[i+1:][right_subset_idx]
+            IR = i + 1 + np.argmin(D[i+1:])
             if start <= IR < stop:
                 IR = -1
         else:
