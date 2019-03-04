@@ -2,6 +2,7 @@ import os
 import numpy as np
 import numpy.testing as npt
 from matrix_profile import stump, core
+import numba as nb
 import pytest
 
 def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
@@ -45,6 +46,17 @@ test_data = [
     (np.array([9,8100,-60,7], dtype=np.float64), np.array([584,-11,23,79,1001,0,-19], dtype=np.float64)),
     (np.random.uniform(-1000, 1000, [8]).astype(np.float64), np.random.uniform(-1000, 1000, [64]).astype(np.float64))
 ]
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_calculate_squared_distance_profile(Q, T):
+    m = Q.shape[0]
+    left = np.linalg.norm(core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1)
+    left = np.square(left[0])
+    M_T, Σ_T = core.compute_mean_std(Q, m)
+    QT = core.sliding_dot_product(T[:m], Q)
+    μ_Q, σ_Q = core.compute_mean_std(T, m)
+    right = stump._calculate_squared_distance_profile(m, QT, μ_Q[0], σ_Q[0], M_T, Σ_T)
+    npt.assert_almost_equal(left, right)
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_self_join(T_A, T_B):

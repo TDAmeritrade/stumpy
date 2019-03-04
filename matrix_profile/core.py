@@ -7,11 +7,11 @@ import numpy as np
 import scipy.signal
 import time
 
-def check_python_version():
+def check_python_version():  # pragma: no cover
     if (sys.version_info < (3, 0)):
         raise Exception('Matrix Profile is only compatible with python3.x')
 
-def get_parser():
+def get_parser():  # pragma: no cover
     parser = argparse.ArgumentParser()
     parser.add_argument('ts_file', help='Time series input file')
     parser.add_argument('subseq_length', help='Subsequence length', type=int)
@@ -26,7 +26,7 @@ def rolling_window(a, window):
 def z_norm(x, axis=0):
     return (x - np.mean(x, axis, keepdims=True))/np.std(x, axis, keepdims=True)
 
-def check_dtype(arr, dtype=np.float):
+def check_dtype(arr, dtype=np.float):  # pragma: no cover
     """
     Check if array has correct dtype
     """
@@ -34,7 +34,7 @@ def check_dtype(arr, dtype=np.float):
         msg = '{} type expected but found {}'.format(dtype, arr.dtype.type)
         raise TypeError(msg)
 
-def are_arrays_equal(arr1, arr2):
+def are_arrays_equal(arr1, arr2):  # pragma: no cover
     """
     Check if two arrays are equal; first by comparing memory addresses, 
     and secondly by their values
@@ -45,7 +45,7 @@ def are_arrays_equal(arr1, arr2):
     
     return np.array_equal(arr1, arr2)
 
-def are_distances_too_small(x, threshold=10e-6):
+def are_distances_too_small(x, threshold=10e-6):  # pragma: no cover
     """
     Check the distance values from a matrix profile.
 
@@ -58,7 +58,7 @@ def are_distances_too_small(x, threshold=10e-6):
 
     return False
 
-def timeit(func):
+def timeit(func):  # pragma: no cover
     """
     Timing decorator
     """
@@ -196,14 +196,3 @@ def mass(Q, T, M_T=None, Σ_T=None):
     return calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
 
 convolution = scipy.signal.fftconvolve  # Swap for other convolution function
-
-if __name__ == '__main__':
-    check_python_version()
-    #parser = get_parser()
-    #args = parser.parse_args()
-    N = 17279800  # GPU-STOMP Comparison
-    # Select 50 random floats in range [-1000, 1000]
-    T = np.random.uniform(-1000, 1000, [N])
-    # Select 5 random floats in range [-1000, 1000]
-    Q = np.random.uniform(-1000, 1000, [2000])
-    mass(Q, T)

@@ -49,16 +49,3 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     out = np.array(out, dtype=object)
     
     return out
-
-
-if __name__ == '__main__':
-    core.check_python_version()
-    #parser = get_parser()
-    #args = parser.parse_args()
-    #N = 17279800  # GPU-STOMP Comparison
-    N = 12*24*365  # Every 5 minutes: 12 times an hour, 24 hours, 365 days
-    M = 12*24
-    # Select 50 random floats in range [-1000, 1000]
-    T = np.random.uniform(-1000, 1000, [N])
-    # Select 5 random floats in range [-1000, 1000]
-    Q = np.random.uniform(-1000, 1000, [M])

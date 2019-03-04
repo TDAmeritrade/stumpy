@@ -6,3 +6,4 @@
 .pytest_cache
 LOG*
 PID
+.coverage

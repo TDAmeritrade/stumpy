@@ -7,7 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def _stomp(T_A, T_B, m, ignore_trivial=False):
+def _stomp(T_A, T_B, m, ignore_trivial=False):  # pragma: no cover
     """
     DO NOT USE! Here for reference only.
 
@@ -95,7 +95,7 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
     core.check_dtype(T_A)
     core.check_dtype(T_B)
 
-    if ignore_trivial == False and core.are_arrays_equal(T_A, T_B):
+    if ignore_trivial == False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
         logger.warn("Arrays T_A, T_B are equal, which implies a self-join.")
         logger.warn("Try setting `ignore_trivial = True`.")
 
@@ -150,23 +150,8 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
         out[i] = P, I, IL, IR
 
     threshold = 10e-6
-    if core.are_distances_too_small(out[:, 0], threshold=threshold):
+    if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
         logger.warn(f"A large number of values are smaller than {threshold}.")
         logger.warn("For a self-join, try setting `ignore_trivial = True`.")
     
     return out
-
-if __name__ == '__main__':
-    core.check_python_version()
-    #parser = get_parser()
-    #args = parser.parse_args()
-    #N = 17279800  # GPU-STOMP Comparison
-    #N = 12*24*365  # Every 5 minutes: 12 times an hour, 24 hours, 365 days
-    #M = 12*24
-    N = 1000
-    M = 100
-    # Select 50 random floats in range [-1000, 1000]
-    T = np.random.uniform(-1000, 1000, [N])
-    # Select 5 random floats in range [-1000, 1000]
-    Q = np.random.uniform(-1000, 1000, [M])
-    stomp(Q, T, 10)
