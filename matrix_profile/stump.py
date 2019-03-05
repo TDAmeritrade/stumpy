@@ -8,6 +8,41 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def _get_QT(range_begin, range_end, T_A, T_B, m, profile, indices, 
+            zone, M_T, Σ_T, μ_Q, σ_Q, k, ignore_trivial):
+    """
+    Note that `range_begin` is related but different from `range_start`.
+    `range_begin` is the beginning of the range (i.e., i=0) and is where
+    Q_first is calculated. `range_start` is the next element (i.e., i=1): 
+
+    range_start = range_begin + 1
+
+    `range_end` and `range_stop` should be the same
+    """
+
+    range_start = range_begin + 1
+    range_stop = range_end
+
+    # Handle first subsequence, add exclusionary zone
+    if range_begin == 0:
+        if ignore_trivial:
+            P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone)
+            PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone, include_first=False)
+        else:
+            P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
+            # No left and right matrix profile available
+            IR = -1
+        profile[0] = P
+        indices[0] = I , -1, IR
+
+        QT = core.sliding_dot_product(T_B[:m], T_A)
+        QT_first = core.sliding_dot_product(T_A[:m], T_B)
+    else:
+        QT = core.sliding_dot_product(T_B[range_begin:range_begin+m], T_A)
+        QT_first = core.sliding_dot_product(T_A[range_begin:range_begin+m], T_B)
+
+    return QT, QT_first
+
 @njit(parallel=True, fastmath=True)
 def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
@@ -104,7 +139,7 @@ def _stump(T_A, T_B, m, profile, indices, range_stop, zone,
     
     return
 
-def stump(T_A, T_B, m, ignore_trivial=False, dask_client=None):
+def stump(T_A, T_B, m, ignore_trivial=False):
     """
     DOI: 10.1109/ICDM.2016.0085
     See Table II
@@ -141,38 +176,51 @@ def stump(T_A, T_B, m, ignore_trivial=False, dask_client=None):
         logger.warn("Try setting `ignore_trivial = True`.")
     
     n = T_B.shape[0]
+    k = T_A.shape[0]-m+1
     l = n-m+1
     zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
 
     M_T, Σ_T = core.compute_mean_std(T_A, m)
     μ_Q, σ_Q = core.compute_mean_std(T_B, m)
 
-    QT = core.sliding_dot_product(T_B[:m], T_A)
-    QT_first = core.sliding_dot_product(T_A[:m], T_B)
-
     out = np.empty((l, 4), dtype=object)
     profile = np.empty((l,), dtype='float64')
     indices = np.empty((l, 3), dtype='int64')
 
-    # Handle first subsequence, add exclusionary zone
-    if ignore_trivial:
-        P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone)
-        PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone, include_first=False)
-    else:
-        P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
-        IR = -1  # No left and right matrix profile available
-    profile[0] = P
-    indices[0] = I , -1, IR
-    
-    k = T_A.shape[0]-m+1
+    # # Handle first subsequence, add exclusionary zone
+    # if ignore_trivial:
+    #     P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone)
+    #     PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone, include_first=False)
+    # else:
+    #     P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
+    #     IR = -1  # No left and right matrix profile available
+    # profile[0] = P
+    # indices[0] = I , -1, IR
 
-    range_start = 1
-    range_stop = l
+    # QT = core.sliding_dot_product(T_B[:m], T_A)
+    # QT_first = core.sliding_dot_product(T_A[:m], T_B)
+
+    # range_start = 1
+    # range_stop = l
     
+    # _stump(T_A, T_B, m, profile[range_start:range_stop], 
+    #        indices[range_start:range_stop, :], range_stop, 
+    #        zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, 
+    #        ignore_trivial, range_start)
+
+    range_begin = 0
+    range_end = l
+    QT, QT_first = _get_QT(range_begin, range_end, T_A, T_B, m, profile, 
+                           indices, zone, M_T, Σ_T, μ_Q, σ_Q, k, 
+                           ignore_trivial)
+
+    range_start = range_begin + 1
+    range_stop = range_end
     _stump(T_A, T_B, m, profile[range_start:range_stop], 
            indices[range_start:range_stop, :], range_stop, 
            zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, 
            ignore_trivial, range_start)
+
     
     out[:, 0] = profile
     out[:, 1:4] = indices
@@ -183,3 +231,6 @@ def stump(T_A, T_B, m, ignore_trivial=False, dask_client=None):
         logger.warn("For a self-join, try setting `ignore_trivial = True`.")
         
     return out
+
+    def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
+        pass
