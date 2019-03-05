@@ -98,8 +98,9 @@ def _stump(T_A, T_B, m, profile, indices, range_stop, zone,
         else:
             IR = -1
 
-        profile[i] = P
-        indices[i] = I, IL, IR
+        # Only a part of the profile/indices array are passed
+        profile[i-range_start] = P
+        indices[i-range_start] = I, IL, IR
     
     return
 
@@ -144,10 +145,10 @@ def stump(T_A, T_B, m, ignore_trivial=False, dask_client=None):
     zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
 
     M_T, Σ_T = core.compute_mean_std(T_A, m)
+    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
+
     QT = core.sliding_dot_product(T_B[:m], T_A)
     QT_first = core.sliding_dot_product(T_A[:m], T_B)
-
-    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
 
     out = np.empty((l, 4), dtype=object)
     profile = np.empty((l,), dtype='float64')
@@ -165,8 +166,13 @@ def stump(T_A, T_B, m, ignore_trivial=False, dask_client=None):
     
     k = T_A.shape[0]-m+1
 
-    _stump(T_A, T_B, m, profile, indices, l, zone, 
-           M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, ignore_trivial)
+    range_start = 1
+    range_stop = l
+    
+    _stump(T_A, T_B, m, profile[range_start:range_stop], 
+           indices[range_start:range_stop, :], range_stop, 
+           zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, 
+           ignore_trivial, range_start)
     
     out[:, 0] = profile
     out[:, 1:4] = indices
