@@ -113,7 +113,7 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
     # Handle first subsequence, add exclusionary zone
     if ignore_trivial:
         P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone)
-        PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone, include_first=False)
+        PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone, right=True)
     else:
         P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
         IR = -1  # No left and right matrix profile available

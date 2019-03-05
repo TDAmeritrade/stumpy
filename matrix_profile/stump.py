@@ -8,38 +8,26 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def _get_QT(range_begin, range_end, T_A, T_B, m, profile, indices, 
+def _get_QT(range_start, T_A, T_B, m, profile, indices, 
             zone, M_T, Σ_T, μ_Q, σ_Q, k, ignore_trivial):
     """
-    Note that `range_begin` is related but different from `range_start`.
-    `range_begin` is the beginning of the range (i.e., i=0) and is where
-    Q_first is calculated. `range_start` is the next element (i.e., i=1): 
-
-    range_start = range_begin + 1
-
-    `range_end` and `range_stop` should be the same
     """
 
-    range_start = range_begin + 1
-    range_stop = range_end
-
     # Handle first subsequence, add exclusionary zone
-    if range_begin == 0:
-        if ignore_trivial:
-            P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone)
-            PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone, include_first=False)
-        else:
-            P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
-            # No left and right matrix profile available
-            IR = -1
-        profile[0] = P
-        indices[0] = I , -1, IR
-
-        QT = core.sliding_dot_product(T_B[:m], T_A)
-        QT_first = core.sliding_dot_product(T_A[:m], T_B)
+    if ignore_trivial:
+        P, I = stamp.mass(T_B[range_start-1:range_start-1+m], T_A, M_T, Σ_T, range_start-1, zone)
+        PR, IR = stamp.mass(T_B[range_start-1:range_start-1+m], T_A, M_T, Σ_T, range_start-1, zone, right=True)
+        LR = -1
     else:
-        QT = core.sliding_dot_product(T_B[range_begin:range_begin+m], T_A)
-        QT_first = core.sliding_dot_product(T_A[range_begin:range_begin+m], T_B)
+        P, I = stamp.mass(T_B[range_start-1:range_start-1+m], T_A, M_T, Σ_T)
+        # No left and right matrix profile available
+        LR = -1
+        IR = -1
+    profile[range_start-1] = P
+    indices[range_start-1] = I , LR, IR
+
+    QT = core.sliding_dot_product(T_B[range_start-1:range_start-1+m], T_A)
+    QT_first = core.sliding_dot_product(T_A[range_start-1:range_start-1+m], T_B)
 
     return QT, QT_first
 
@@ -187,41 +175,17 @@ def stump(T_A, T_B, m, ignore_trivial=False):
     profile = np.empty((l,), dtype='float64')
     indices = np.empty((l, 3), dtype='int64')
 
-    # # Handle first subsequence, add exclusionary zone
-    # if ignore_trivial:
-    #     P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone)
-    #     PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone, include_first=False)
-    # else:
-    #     P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
-    #     IR = -1  # No left and right matrix profile available
-    # profile[0] = P
-    # indices[0] = I , -1, IR
-
-    # QT = core.sliding_dot_product(T_B[:m], T_A)
-    # QT_first = core.sliding_dot_product(T_A[:m], T_B)
-
-    # range_start = 1
-    # range_stop = l
-    
-    # _stump(T_A, T_B, m, profile[range_start:range_stop], 
-    #        indices[range_start:range_stop, :], range_stop, 
-    #        zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, 
-    #        ignore_trivial, range_start)
-
-    range_begin = 0
-    range_end = l
-    QT, QT_first = _get_QT(range_begin, range_end, T_A, T_B, m, profile, 
+    range_start = 1
+    range_stop = l
+    QT, QT_first = _get_QT(range_start, T_A, T_B, m, profile, 
                            indices, zone, M_T, Σ_T, μ_Q, σ_Q, k, 
                            ignore_trivial)
 
-    range_start = range_begin + 1
-    range_stop = range_end
     _stump(T_A, T_B, m, profile[range_start:range_stop], 
            indices[range_start:range_stop, :], range_stop, 
            zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, 
            ignore_trivial, range_start)
 
-    
     out[:, 0] = profile
     out[:, 1:4] = indices
     

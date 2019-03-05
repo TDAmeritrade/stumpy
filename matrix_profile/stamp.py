@@ -4,22 +4,41 @@
 import numpy as np
 from . import core
 
-def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, include_first=True):
+def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False):
     D = core.mass(Q, T, M_T, Σ_T)
     if trivial_idx is not None:
-        start = max(0, trivial_idx-excl_zone)
-        stop = trivial_idx+excl_zone+1
-        D[start:stop] = np.inf
+        zone_start = max(0, trivial_idx-excl_zone)
+        zone_stop = trivial_idx+excl_zone+1
+        D[zone_start:zone_stop] = np.inf
+
+        #Get left and right matrix profiles
+        IL = -1
+        PL = np.inf
+        if D[:trivial_idx].size:
+            IL = np.argmin(D[:trivial_idx])
+            PL = D[IL]
+        if zone_start <= IL < zone_stop:
+            IL = -1
+
+        IR = -1
+        PR = -1
+        if D[trivial_idx:].size:
+            IR = trivial_idx +  np.argmin(D[trivial_idx:])
+            PR = D[IR]
+        if zone_start <= IR < zone_stop:
+            IR = -1
+
     # Element-wise Min
-    if include_first:
-        I = np.argmin(D)
-        P = D[I]
-    else:
-        # This is equivalent to finding the right matrix profile
-        # for the first window
-        I = np.argmin(D[1:])
-        I = np.arange(D.shape[0])[1:][I]
-        P = D[I]
+    I = np.argmin(D)
+    P = D[I]
+
+    if trivial_idx is not None and left:
+        I = IL
+        P = PL
+
+    if trivial_idx is not None and right:
+        I = IR
+        P = PR
 
     return P, I
 
