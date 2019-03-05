@@ -51,10 +51,10 @@ test_data = [
 def test_calculate_squared_distance_profile(Q, T):
     m = Q.shape[0]
     left = np.linalg.norm(core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1)
-    left = np.square(left[0])
-    M_T, Σ_T = core.compute_mean_std(Q, m)
-    QT = core.sliding_dot_product(T[:m], Q)
-    μ_Q, σ_Q = core.compute_mean_std(T, m)
+    left = np.square(left)
+    M_T, Σ_T = core.compute_mean_std(T, m)
+    QT = core.sliding_dot_product(Q, T)
+    μ_Q, σ_Q = core.compute_mean_std(Q, m)
     right = stump._calculate_squared_distance_profile(m, QT, μ_Q[0], σ_Q[0], M_T, Σ_T)
     npt.assert_almost_equal(left, right)
 

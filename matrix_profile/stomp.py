@@ -56,9 +56,9 @@ def _stomp(T_A, T_B, m, ignore_trivial=False):  # pragma: no cover
         QT[0] =QT_first[i]
         D = core.calculate_distance_profile(m, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
         if ignore_trivial:
-             start = max(0, i-zone)
-             stop = i+zone+1
-             D[start:stop] = np.inf
+             zone_start = max(0, i-zone)
+             zone_stop = i+zone+1
+             D[zone_start:zone_stop] = np.inf
         I = np.argmin(D)
         P = D[I]
         out[i] = P, I
@@ -126,23 +126,23 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
         QT[0] = QT_first[i]
         D = core.calculate_distance_profile(m, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
         if ignore_trivial:
-            start = max(0, i-zone)
-            stop = i+zone+1
-            D[start:stop] = np.inf
+            zone_start = max(0, i-zone)
+            zone_stop = i+zone+1
+            D[zone_start:zone_stop] = np.inf
         I = np.argmin(D)
         P = D[I]
 
         # Get left and right matrix profiles for self-joins
         if ignore_trivial and i > 0:
             IL = np.argmin(D[:i])
-            if start <= IL < stop:
+            if zone_start <= IL < zone_stop:
                 IL = -1
         else:
             IL = -1
 
         if ignore_trivial and i+1 < D.shape[0]:
             IR = i + 1 + np.argmin(D[i+1:])
-            if start <= IR < stop:
+            if zone_start <= IR < zone_stop:
                 IR = -1
         else:
             IR = -1

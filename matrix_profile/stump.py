@@ -22,8 +22,9 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return D_squared
 
 @njit(parallel=True, fastmath=True) 
-def _stump(T_A, T_B, m, profile, indices, l, zone, 
-           M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, ignore_trivial=False):
+def _stump(T_A, T_B, m, profile, indices, range_stop, zone, 
+           M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, 
+           ignore_trivial=False, range_start=1):
     """
     DOI: 10.1109/ICDM.2016.0085
     See Table II
@@ -53,7 +54,7 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
     QT_odd = QT.copy()
     QT_even = QT.copy()
     
-    for i in range(1, l):
+    for i in range(range_start, range_stop):
         # Numba's prange requires incrementing a range by 1 so replace
         # `for j in range(k-1,0,-1)` with its incrementing compliment
         for rev_j in prange(1, k):
@@ -76,23 +77,23 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
             D = _calculate_squared_distance_profile(m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T)
 
         if ignore_trivial:
-            start = max(0, i-zone)
-            stop = i+zone+1
-            D[start:stop] = np.inf
+            zone_start = max(0, i-zone)
+            zone_stop = i+zone+1
+            D[zone_start:zone_stop] = np.inf
         I = np.argmin(D)
         P = np.sqrt(D[I])
 
         # Get left and right matrix profiles for self-joins
         if ignore_trivial and i > 0:
             IL = np.argmin(D[:i])
-            if start <= IL < stop:
+            if zone_start <= IL < zone_stop:
                 IL = -1
         else:
             IL = -1
 
         if ignore_trivial and i+1 < D.shape[0]:
             IR = i + 1 + np.argmin(D[i+1:])
-            if start <= IR < stop:
+            if zone_start <= IR < zone_stop:
                 IR = -1
         else:
             IR = -1
@@ -102,11 +103,34 @@ def _stump(T_A, T_B, m, profile, indices, l, zone,
     
     return
 
-def stump(T_A, T_B, m, ignore_trivial=False):
+def stump(T_A, T_B, m, ignore_trivial=False, dask_client=None):
     """
-    """
+    DOI: 10.1109/ICDM.2016.0085
+    See Table II
 
-    global _stump
+    This is a convenience wrapper around the parallelized `_stump` function
+
+    Timeseries, T_B, will be annotated with the distance location
+    (or index) of all its subsequences in another times series, T_A.
+
+    Return: For every subsequence, Q, in T_B, you will get a distance
+    and index for the closest subsequence in T_A. Thus, the array
+    returned will have length T_B.shape[0]-m+1. Additionally, the 
+    left and right matrix profiles are also returned.
+
+    Note: Unlike in the Table II where T_A.shape is expected to be equal 
+    to T_B.shape, this implementation is generalized so that the shapes of 
+    T_A and T_B can be different. In the case where T_A.shape == T_B.shape, 
+    then our algorithm reduces down to the same algorithm found in Table II. 
+
+    Additionally, unlike STAMP where the exclusion zone is m/2, the default 
+    exclusion zone for STOMP is m/4 (See Definition 3 and Figure 3).
+
+    For self-joins, set `ignore_trivial = True` in order to avoid the 
+    trivial match. 
+
+    Note that left and right matrix profiles are only available for self-joins.
+    """
 
     core.check_dtype(T_A)
     core.check_dtype(T_B)
