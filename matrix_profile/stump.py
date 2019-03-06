@@ -15,16 +15,19 @@ def _get_QT(range_start, T_A, T_B, m, profile, indices,
 
     # Handle first subsequence, add exclusionary zone
     if ignore_trivial:
-        P, I = stamp.mass(T_B[range_start-1:range_start-1+m], T_A, M_T, Σ_T, range_start-1, zone)
-        PR, IR = stamp.mass(T_B[range_start-1:range_start-1+m], T_A, M_T, Σ_T, range_start-1, zone, right=True)
-        LR = -1
+        P, I = stamp.mass(T_B[range_start-1:range_start-1+m], T_A, M_T, Σ_T, 
+                          range_start-1, zone)
+        PL, IL = stamp.mass(T_B[range_start-1:range_start-1+m], T_A, M_T, Σ_T, 
+                            range_start-1, zone, left=True)        
+        PR, IR = stamp.mass(T_B[range_start-1:range_start-1+m], T_A, M_T, Σ_T, 
+                            range_start-1, zone, right=True)
     else:
         P, I = stamp.mass(T_B[range_start-1:range_start-1+m], T_A, M_T, Σ_T)
         # No left and right matrix profile available
-        LR = -1
+        IL = -1
         IR = -1
     profile[range_start-1] = P
-    indices[range_start-1] = I , LR, IR
+    indices[range_start-1] = I , IL, IR
 
     QT = core.sliding_dot_product(T_B[range_start-1:range_start-1+m], T_A)
     QT_first = core.sliding_dot_product(T_A[range_start-1:range_start-1+m], T_B)
