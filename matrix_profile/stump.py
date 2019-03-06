@@ -8,9 +8,16 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def _get_QT(range_start, T_A, T_B, m, profile, indices, 
-            zone, M_T, Σ_T, μ_Q, σ_Q, k, ignore_trivial):
+def _set_first_profile_index(range_start, T_A, T_B, m, profile, indices, 
+                             zone, M_T, Σ_T, μ_Q, σ_Q, ignore_trivial):
     """
+    Given `range_start` set the corresponding `profile` and `indices`
+    that correspond to `range_start-1`. Essentially, this is the value
+    of the matrix profile for the first window of a given range.
+
+    Note: If you have chunk that begins at 0  and ends at 100, 
+    `range_start = 1`. However, the profile and index is assessed
+    from (range_start-1, range_start-1+m).
     """
 
     # Handle first subsequence, add exclusionary zone
@@ -29,8 +36,14 @@ def _get_QT(range_start, T_A, T_B, m, profile, indices,
     profile[range_start-1] = P
     indices[range_start-1] = I , IL, IR
 
+
+def _get_QT(range_start, T_A, T_B, m):
+    """
+    Given `range_start` return the corresponding QT and QT_first
+    that correspond to (range_start-1, range_start-1+m).
+    """
+
     QT = core.sliding_dot_product(T_B[range_start-1:range_start-1+m], T_A)
-    #QT_first = core.sliding_dot_product(T_A[range_start-1:range_start-1+m], T_B)
     QT_first = core.sliding_dot_product(T_A[:m], T_B)
 
     return QT, QT_first
@@ -182,6 +195,7 @@ def stump(T_A, T_B, m, ignore_trivial=False, dask_client=None):
     range_start = 1
     range_stop = l
 
+    nworkers = 1
     if dask_client is None:
         nworkers = 1
 
@@ -189,9 +203,11 @@ def stump(T_A, T_B, m, ignore_trivial=False, dask_client=None):
     for range_start in range(1, l, step):
         range_stop = min(l, range_start + step)
 
-        QT, QT_first = _get_QT(range_start, T_A, T_B, m, profile, 
-                               indices, zone, M_T, Σ_T, μ_Q, σ_Q, k, 
-                               ignore_trivial)
+        _set_first_profile_index(range_start, T_A, T_B, m, profile, 
+                                 indices, zone, M_T, Σ_T, μ_Q, σ_Q, 
+                                 ignore_trivial)
+
+        QT, QT_first = _get_QT(range_start, T_A, T_B, m)
 
         _stump(T_A, T_B, m, profile[range_start:range_stop], 
                indices[range_start:range_stop, :], range_stop, 
