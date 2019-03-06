@@ -30,7 +30,8 @@ def _get_QT(range_start, T_A, T_B, m, profile, indices,
     indices[range_start-1] = I , IL, IR
 
     QT = core.sliding_dot_product(T_B[range_start-1:range_start-1+m], T_A)
-    QT_first = core.sliding_dot_product(T_A[range_start-1:range_start-1+m], T_B)
+    #QT_first = core.sliding_dot_product(T_A[range_start-1:range_start-1+m], T_B)
+    QT_first = core.sliding_dot_product(T_A[:m], T_B)
 
     return QT, QT_first
 
@@ -130,7 +131,7 @@ def _stump(T_A, T_B, m, profile, indices, range_stop, zone,
     
     return
 
-def stump(T_A, T_B, m, ignore_trivial=False):
+def stump(T_A, T_B, m, ignore_trivial=False, dask_client=None):
     """
     DOI: 10.1109/ICDM.2016.0085
     See Table II
@@ -180,14 +181,22 @@ def stump(T_A, T_B, m, ignore_trivial=False):
 
     range_start = 1
     range_stop = l
-    QT, QT_first = _get_QT(range_start, T_A, T_B, m, profile, 
-                           indices, zone, M_T, Σ_T, μ_Q, σ_Q, k, 
-                           ignore_trivial)
 
-    _stump(T_A, T_B, m, profile[range_start:range_stop], 
-           indices[range_start:range_stop, :], range_stop, 
-           zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, 
-           ignore_trivial, range_start)
+    if dask_client is None:
+        nworkers = 1
+
+    step = l//nworkers
+    for range_start in range(1, l, step):
+        range_stop = min(l, range_start + step)
+
+        QT, QT_first = _get_QT(range_start, T_A, T_B, m, profile, 
+                               indices, zone, M_T, Σ_T, μ_Q, σ_Q, k, 
+                               ignore_trivial)
+
+        _stump(T_A, T_B, m, profile[range_start:range_stop], 
+               indices[range_start:range_stop, :], range_stop, 
+               zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, 
+               ignore_trivial, range_start)
 
     out[:, 0] = profile
     out[:, 1:4] = indices
@@ -198,6 +207,3 @@ def stump(T_A, T_B, m, ignore_trivial=False):
         logger.warn("For a self-join, try setting `ignore_trivial = True`.")
         
     return out
-
-    def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
-        pass

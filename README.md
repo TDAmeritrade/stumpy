@@ -45,6 +45,29 @@ Tests are written in the tests directory and processed using [PyTest](). Tests c
 ./test.sh
 ```
 
+## Performance
+
+We tested the performance using the Numba JIT compiled version of the code on data with various lengths. We used 16x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors on a single server.
+
+i: 6  n: 64  time: 00:00:00.00
+i: 7  n: 128  time: 00:00:00.00
+i: 8  n: 256  time: 00:00:00.01
+i: 9  n: 512  time: 00:00:00.02
+i: 10  n: 1024  time: 00:00:00.04
+i: 11  n: 2048  time: 00:00:00.09
+i: 12  n: 4096  time: 00:00:00.19
+i: 13  n: 8192  time: 00:00:00.41
+i: 14  n: 16384  time: 00:00:00.99
+i: 15  n: 32768  time: 00:00:02.39
+i: 16  n: 65536  time: 00:00:06.42
+i: 17  n: 131072  time: 00:00:19.52
+i: 18  n: 262144  time: 00:01:08.44
+i: 19  n: 524288  time: 00:03:56.82
+i: 20  n: 1048576  time: 00:19:54.75
+i: 21  n: 2097152  time: 03:05:07.64
+i: 22  n: 4194304  time: 10:37:51.21
+i: 23  n: 8388608  time: 38:42:51.42
+
 ## License
 [BSD 3](License)
 
