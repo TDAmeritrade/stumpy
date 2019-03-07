@@ -11,25 +11,19 @@ logger = logging.getLogger(__name__)
 def _get_first_stump_profile(start, T_A, T_B, m, zone, M_T, Σ_T, μ_Q, σ_Q, 
                              ignore_trivial):
     """
-    Given `start` set the corresponding `profile` and `indices`
-    that correspond to `start-1`. Essentially, this is the value
-    of the matrix profile for the first window of a given range.
-
-    Note: If you have chunk that begins at 0  and ends at 100, 
-    `start = 1`. However, the profile and index is assessed
-    from (start-1, start-1+m).
+    Given `start` get the corresponding `profile` and `indices`.
     """
 
     # Handle first subsequence, add exclusionary zone
     if ignore_trivial:
-        P, I = stamp.mass(T_B[start-1:start-1+m], T_A, M_T, Σ_T, 
-                          start-1, zone)
-        PL, IL = stamp.mass(T_B[start-1:start-1+m], T_A, M_T, Σ_T, 
-                            start-1, zone, left=True)        
-        PR, IR = stamp.mass(T_B[start-1:start-1+m], T_A, M_T, Σ_T, 
-                            start-1, zone, right=True)
+        P, I = stamp.mass(T_B[start:start+m], T_A, M_T, Σ_T, 
+                          start, zone)
+        PL, IL = stamp.mass(T_B[start:start+m], T_A, M_T, Σ_T, 
+                            start, zone, left=True)        
+        PR, IR = stamp.mass(T_B[start:start+m], T_A, M_T, Σ_T, 
+                            start, zone, right=True)
     else:
-        P, I = stamp.mass(T_B[start-1:start-1+m], T_A, M_T, Σ_T)
+        P, I = stamp.mass(T_B[start:start+m], T_A, M_T, Σ_T)
         # No left and right matrix profile available
         IL = -1
         IR = -1
@@ -39,11 +33,10 @@ def _get_first_stump_profile(start, T_A, T_B, m, zone, M_T, Σ_T, μ_Q, σ_Q,
 
 def _get_QT(start, T_A, T_B, m):
     """
-    Given `start` return the corresponding QT and QT_first
-    that correspond to (start-1, start-1+m).
+    Given `start` return the corresponding QT and QT_first.
     """
 
-    QT = core.sliding_dot_product(T_B[start-1:start-1+m], T_A)
+    QT = core.sliding_dot_product(T_B[start:start+m], T_A)
     QT_first = core.sliding_dot_product(T_A[:m], T_B)
 
     return QT, QT_first
@@ -62,9 +55,9 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return D_squared
 
 @njit(parallel=True, fastmath=True) 
-def _stump(T_A, T_B, m, stop, zone, 
+def _stump(T_A, T_B, m, range_stop, zone, 
            M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, 
-           ignore_trivial=False, start=1):
+           ignore_trivial=False, range_start=1):
     """
     DOI: 10.1109/ICDM.2016.0085
     See Table II
@@ -93,10 +86,10 @@ def _stump(T_A, T_B, m, stop, zone,
 
     QT_odd = QT.copy()
     QT_even = QT.copy()
-    profile = np.empty((stop-start,))  # float64
-    indices = np.empty((stop-start, 3))  # int64
+    profile = np.empty((range_stop-range_start,))  # float64
+    indices = np.empty((range_stop-range_start, 3))  # int64
     
-    for i in range(start, stop):
+    for i in range(range_start, range_stop):
         # Numba's prange requires incrementing a range by 1 so replace
         # `for j in range(k-1,0,-1)` with its incrementing compliment
         for rev_j in prange(1, k):
@@ -141,8 +134,8 @@ def _stump(T_A, T_B, m, stop, zone,
             IR = -1
 
         # Only a part of the profile/indices array are passed
-        profile[i-start] = P
-        indices[i-start] = I, IL, IR
+        profile[i-range_start] = P
+        indices[i-range_start] = I, IL, IR
     
     return profile, indices
 
@@ -194,30 +187,29 @@ def stump(T_A, T_B, m, ignore_trivial=False, dask_client=None):
     profile = np.empty((l,), dtype='float64')
     indices = np.empty((l, 3), dtype='int64')
 
-    start = 1
-    stop = l
-
     nworkers = 1
     if dask_client is not None:  # pragma: no cover
         nworkers = len(dask_client.ncores())
 
     step = l//nworkers
-    for start in range(1, l, step):
+    for start in range(0, l, step):
         stop = min(l, start + step)
 
-        profile[start-1], indices[start-1, :] = _get_first_stump_profile(start,
-                                                    T_A, T_B, m, zone, M_T, 
-                                                    Σ_T, μ_Q, σ_Q, 
-                                                    ignore_trivial)
+        profile[start], indices[start, :] = \
+            _get_first_stump_profile(start, T_A, T_B, m, zone, M_T, 
+                                     Σ_T, μ_Q, σ_Q, ignore_trivial)
 
         QT, QT_first = _get_QT(start, T_A, T_B, m)
 
-        profile[start:stop], indices[start:stop, :] = _stump(T_A, T_B, m, stop,
-                                                             zone, M_T, Σ_T, 
-                                                             QT, QT_first, μ_Q,
-                                                             σ_Q, k, 
-                                                             ignore_trivial, 
-                                                             start)
+        if dask_client is None:
+            profile[start+1:stop], indices[start+1:stop, :] = \
+                _stump(T_A, T_B, m, stop, zone, M_T, Σ_T, QT, QT_first, μ_Q,
+                       σ_Q, k, ignore_trivial, start+1)
+        else:
+            profile[start+1:stop], indices[start+1:stop, :] = \
+                dask_client.delayed(_stump(T_A, T_B, m, stop, zone, M_T, Σ_T, 
+                                           QT, QT_first, μ_Q, σ_Q, k, 
+                                           ignore_trivial, start+1))
 
     out[:, 0] = profile
     out[:, 1:4] = indices
