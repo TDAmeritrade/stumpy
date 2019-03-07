@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo "Testing Numba JIT Compiled Functions"
-py.test --capture=sys -s tests/test_stump.py
+py.test --capture=sys -s tests/test_stump.py tests/test_stumped.py
 
 echo "Disabling Numba JIT Compiled Functions"
 export NUMBA_DISABLE_JIT=1

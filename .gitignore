@@ -6,4 +6,5 @@
 .pytest_cache
 LOG*
 PID
-.coverage
+.coverage*
+dask-worker-space

@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import numpy as np
 from . import core, stamp
 from numba import njit, prange
@@ -139,7 +136,7 @@ def _stump(T_A, T_B, m, range_stop, zone,
     
     return profile, indices
 
-def stump(T_A, T_B, m, ignore_trivial=False, dask_client=None):
+def stump(T_A, T_B, m, ignore_trivial=False):
     """
     DOI: 10.1109/ICDM.2016.0085
     See Table II
@@ -187,29 +184,18 @@ def stump(T_A, T_B, m, ignore_trivial=False, dask_client=None):
     profile = np.empty((l,), dtype='float64')
     indices = np.empty((l, 3), dtype='int64')
 
-    nworkers = 1
-    if dask_client is not None:  # pragma: no cover
-        nworkers = len(dask_client.ncores())
+    start = 0
+    stop = l
 
-    step = l//nworkers
-    for start in range(0, l, step):
-        stop = min(l, start + step)
+    profile[start], indices[start, :] = \
+        _get_first_stump_profile(start, T_A, T_B, m, zone, M_T, 
+                                 Σ_T, μ_Q, σ_Q, ignore_trivial)
 
-        profile[start], indices[start, :] = \
-            _get_first_stump_profile(start, T_A, T_B, m, zone, M_T, 
-                                     Σ_T, μ_Q, σ_Q, ignore_trivial)
+    QT, QT_first = _get_QT(start, T_A, T_B, m)
 
-        QT, QT_first = _get_QT(start, T_A, T_B, m)
-
-        if dask_client is None:
-            profile[start+1:stop], indices[start+1:stop, :] = \
-                _stump(T_A, T_B, m, stop, zone, M_T, Σ_T, QT, QT_first, μ_Q,
-                       σ_Q, k, ignore_trivial, start+1)
-        else:
-            profile[start+1:stop], indices[start+1:stop, :] = \
-                dask_client.delayed(_stump(T_A, T_B, m, stop, zone, M_T, Σ_T, 
-                                           QT, QT_first, μ_Q, σ_Q, k, 
-                                           ignore_trivial, start+1))
+    profile[start+1:stop], indices[start+1:stop, :] = \
+        _stump(T_A, T_B, m, stop, zone, M_T, Σ_T, QT, QT_first, μ_Q,
+               σ_Q, k, ignore_trivial, start+1)
 
     out[:, 0] = profile
     out[:, 1:4] = indices

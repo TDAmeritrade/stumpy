@@ -1,0 +1,98 @@
+import numpy as np
+from . import core, stump
+
+def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
+    """
+    DOI: 10.1109/ICDM.2016.0085
+    See Table II
+
+    This is a Dask distributed implementation of stump that scales
+    across multiple servers and is a convenience wrapper around the 
+    parallelized `stump._stump` function
+
+    Timeseries, T_B, will be annotated with the distance location
+    (or index) of all its subsequences in another times series, T_A.
+
+    Return: For every subsequence, Q, in T_B, you will get a distance
+    and index for the closest subsequence in T_A. Thus, the array
+    returned will have length T_B.shape[0]-m+1. Additionally, the 
+    left and right matrix profiles are also returned.
+
+    Note: Unlike in the Table II where T_A.shape is expected to be equal 
+    to T_B.shape, this implementation is generalized so that the shapes of 
+    T_A and T_B can be different. In the case where T_A.shape == T_B.shape, 
+    then our algorithm reduces down to the same algorithm found in Table II. 
+
+    Additionally, unlike STAMP where the exclusion zone is m/2, the default 
+    exclusion zone for STOMP is m/4 (See Definition 3 and Figure 3).
+
+    For self-joins, set `ignore_trivial = True` in order to avoid the 
+    trivial match. 
+
+    Note that left and right matrix profiles are only available for self-joins.
+    """
+
+    core.check_dtype(T_A)
+    core.check_dtype(T_B)
+
+    if ignore_trivial == False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
+        logger.warn("Arrays T_A, T_B are equal, which implies a self-join.")
+        logger.warn("Try setting `ignore_trivial = True`.")
+    
+    n = T_B.shape[0]
+    k = T_A.shape[0]-m+1
+    l = n-m+1
+    zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
+
+    M_T, Σ_T = core.compute_mean_std(T_A, m)
+    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
+
+    out = np.empty((l, 4), dtype=object)
+    profile = np.empty((l,), dtype='float64')
+    indices = np.empty((l, 3), dtype='int64')
+
+    nworkers = len(dask_client.ncores())
+
+    # Scatter data to Dask cluster
+    T_A_future = dask_client.scatter(T_A)        
+    T_B_future = dask_client.scatter(T_B)
+    M_T_future = dask_client.scatter(M_T)
+    Σ_T_future = dask_client.scatter(Σ_T)
+    μ_Q_future = dask_client.scatter(μ_Q)
+    σ_Q_future = dask_client.scatter(σ_Q)
+
+    futures = []
+    step = l//nworkers
+    for start in range(0, l, step):
+        stop = min(l, start + step)
+
+        profile[start], indices[start, :] = \
+            stump._get_first_stump_profile(start, T_A, T_B, m, zone, M_T, 
+                                           Σ_T, μ_Q, σ_Q, ignore_trivial)
+
+        QT, QT_first = stump._get_QT(start, T_A, T_B, m)
+
+        QT_future = dask_client.scatter(QT)
+        QT_first_future = dask_client.scatter(QT_first)           
+        futures.append(
+            dask_client.submit(stump._stump, T_A_future, T_B_future, m, stop, 
+                               zone, M_T_future, Σ_T_future, QT_future, 
+                               QT_first_future, μ_Q_future, σ_Q_future, 
+                               k, ignore_trivial, start+1,
+                              )
+                      )
+
+    results = dask_client.gather(futures)
+    for i, start in enumerate(range(0, l, step)):
+        stop = min(l, start + step)
+        profile[start+1:stop], indices[start+1:stop, :] = results[i]
+
+    out[:, 0] = profile
+    out[:, 1:4] = indices
+    
+    threshold = 10e-6
+    if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
+        logger.warn(f"A large number of values are smaller than {threshold}.")
+        logger.warn("For a self-join, try setting `ignore_trivial = True`.")
+        
+    return out

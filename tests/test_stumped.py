@@ -1,8 +1,16 @@
 import os
 import numpy as np
 import numpy.testing as npt
-from matrix_profile import stump, core
+from matrix_profile import stumped, core
+from dask.distributed import Client, LocalCluster
 import pytest
+import warnings
+
+@pytest.fixture(scope='module')
+def dask_client():
+    cluster = LocalCluster(n_workers=None, threads_per_worker=2)
+    client = Client(cluster)
+    return client
 
 def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     D = np.linalg.norm(core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1)
@@ -46,32 +54,27 @@ test_data = [
     (np.random.uniform(-1000, 1000, [8]).astype(np.float64), np.random.uniform(-1000, 1000, [64]).astype(np.float64))
 ]
 
-@pytest.mark.parametrize("Q, T", test_data)
-def test_calculate_squared_distance_profile(Q, T):
-    m = Q.shape[0]
-    left = np.linalg.norm(core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1)
-    left = np.square(left)
-    M_T, Σ_T = core.compute_mean_std(T, m)
-    QT = core.sliding_dot_product(Q, T)
-    μ_Q, σ_Q = core.compute_mean_std(Q, m)
-    right = stump._calculate_squared_distance_profile(m, QT, μ_Q[0], σ_Q[0], M_T, Σ_T)
-    npt.assert_almost_equal(left, right)
-
+@pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stump_self_join(T_A, T_B):
+def test_stumped_self_join(T_A, T_B, dask_client):
     m = 3
     zone = int(np.ceil(m/4))
     left = np.array([naive_mass(Q, T_B, m, i, zone, True) for i, Q in enumerate(core.rolling_window(T_B, m))], dtype=object)
-    right = stump.stump(T_B, T_B, m, ignore_trivial=True)
+    right = stumped.stumped(dask_client, T_B, T_B, m, ignore_trivial=True)
     replace_inf(left)
     replace_inf(right)
     npt.assert_almost_equal(left, right)
 
+@pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stump_A_B_join(T_A, T_B):
+def test_stumped_A_B_join(T_A, T_B, dask_client):
     m = 3
     left = np.array([naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object)
-    right = stump.stump(T_A, T_B, m)
+    right = stumped.stumped(dask_client, T_A, T_B, m)
     replace_inf(left)
     replace_inf(right)
     npt.assert_almost_equal(left, right)
