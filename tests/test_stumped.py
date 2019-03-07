@@ -57,6 +57,7 @@ test_data = [
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stumped_self_join(T_A, T_B, dask_client):
     m = 3
@@ -70,6 +71,7 @@ def test_stumped_self_join(T_A, T_B, dask_client):
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stumped_A_B_join(T_A, T_B, dask_client):
     m = 3
