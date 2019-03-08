@@ -1,5 +1,8 @@
 import numpy as np
 from . import core, stump
+import logging
+
+logger = logging.getLogger(__name__)
 
 def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
     """
@@ -32,12 +35,16 @@ def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
     Note that left and right matrix profiles are only available for self-joins.
     """
 
+    logger.warning("Stumped is experimental implementation that is under active " 
+                "development and may change in the future. "
+                "Use at your own risk.")
+
     core.check_dtype(T_A)
     core.check_dtype(T_B)
 
     if ignore_trivial == False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
-        logger.warn("Arrays T_A, T_B are equal, which implies a self-join.")
-        logger.warn("Try setting `ignore_trivial = True`.")
+        logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
+        logger.warning("Try setting `ignore_trivial = True`.")
     
     n = T_B.shape[0]
     k = T_A.shape[0]-m+1
@@ -53,6 +60,7 @@ def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
 
     nworkers = len(dask_client.ncores())
 
+    logger.warning("Scattering data...")
     # Scatter data to Dask cluster
     T_A_future = dask_client.scatter(T_A)        
     T_B_future = dask_client.scatter(T_B)
@@ -73,7 +81,7 @@ def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
         QT, QT_first = stump._get_QT(start, T_A, T_B, m)
 
         QT_future = dask_client.scatter(QT)
-        QT_first_future = dask_client.scatter(QT_first)           
+        QT_first_future = dask_client.scatter(QT_first)
         futures.append(
             dask_client.submit(stump._stump, T_A_future, T_B_future, m, stop, 
                                zone, M_T_future, Σ_T_future, QT_future, 
@@ -92,7 +100,7 @@ def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
     
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
-        logger.warn(f"A large number of values are smaller than {threshold}.")
-        logger.warn("For a self-join, try setting `ignore_trivial = True`.")
+        logger.warning(f"A large number of values are smaller than {threshold}.")
+        logger.warning("For a self-join, try setting `ignore_trivial = True`.")
         
     return out

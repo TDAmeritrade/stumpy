@@ -93,8 +93,8 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
     core.check_dtype(T_B)
 
     if ignore_trivial == False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
-        logger.warn("Arrays T_A, T_B are equal, which implies a self-join.")
-        logger.warn("Try setting `ignore_trivial = True`.")
+        logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
+        logger.warning("Try setting `ignore_trivial = True`.")
 
     n = T_B.shape[0]
     l = n-m+1
@@ -148,7 +148,7 @@ def stomp(T_A, T_B, m, ignore_trivial=False):
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
-        logger.warn(f"A large number of values are smaller than {threshold}.")
-        logger.warn("For a self-join, try setting `ignore_trivial = True`.")
+        logger.warning(f"A large number of values are smaller than {threshold}.")
+        logger.warning("For a self-join, try setting `ignore_trivial = True`.")
     
     return out
