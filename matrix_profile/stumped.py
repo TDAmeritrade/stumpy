@@ -35,9 +35,9 @@ def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
     Note that left and right matrix profiles are only available for self-joins.
     """
 
-    logger.warning("Stumped is experimental implementation that is under active " 
-                "development and may change in the future. "
-                "Use at your own risk.")
+    logger.warning("Stumped is an experimental implementation that is still "
+                   "under development and may change in the future. "
+                   "Use at your own risk.")
 
     core.check_dtype(T_A)
     core.check_dtype(T_B)
@@ -60,17 +60,19 @@ def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
 
     nworkers = len(dask_client.ncores())
 
-    logger.warning("Scattering data...")
+    logger.warning("Scattering common data for distributed computation...")
     # Scatter data to Dask cluster
-    T_A_future = dask_client.scatter(T_A)        
-    T_B_future = dask_client.scatter(T_B)
-    M_T_future = dask_client.scatter(M_T)
-    Σ_T_future = dask_client.scatter(Σ_T)
-    μ_Q_future = dask_client.scatter(μ_Q)
-    σ_Q_future = dask_client.scatter(σ_Q)
-
-    futures = []
-    step = l//nworkers
+    T_A_future = dask_client.scatter(T_A, broadcast=True)
+    T_B_future = dask_client.scatter(T_B, broadcast=True)
+    M_T_future = dask_client.scatter(M_T, broadcast=True)
+    Σ_T_future = dask_client.scatter(Σ_T, broadcast=True)
+    μ_Q_future = dask_client.scatter(μ_Q, broadcast=True)
+    σ_Q_future = dask_client.scatter(σ_Q, broadcast=True)
+    
+    logger.warning("Scattering QT data for distributed computation...")    
+    step = 1+l//nworkers
+    QT_futures = []
+    QT_first_futures = []
     for start in range(0, l, step):
         stop = min(l, start + step)
 
@@ -80,16 +82,25 @@ def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
 
         QT, QT_first = stump._get_QT(start, T_A, T_B, m)
 
-        QT_future = dask_client.scatter(QT)
-        QT_first_future = dask_client.scatter(QT_first)
+        QT_future = dask_client.scatter(QT, broadcast=True)
+        QT_first_future = dask_client.scatter(QT_first, broadcast=True)
+        
+        QT_futures.append(QT_future)
+        QT_first_futures.append(QT_first_future)
+        
+    logger.warning("Starting distributed computation...")    
+    futures = []        
+    for i, start in enumerate(range(0, l, step)):
+        stop = min(l, start + step)
+                        
         futures.append(
             dask_client.submit(stump._stump, T_A_future, T_B_future, m, stop, 
-                               zone, M_T_future, Σ_T_future, QT_future, 
-                               QT_first_future, μ_Q_future, σ_Q_future, 
-                               k, ignore_trivial, start+1,
+                               zone, M_T_future, Σ_T_future, QT_futures[i], 
+                               QT_first_futures[i], μ_Q_future, σ_Q_future,
+                               k, ignore_trivial, start+1
                               )
                       )
-
+        
     results = dask_client.gather(futures)
     for i, start in enumerate(range(0, l, step)):
         stop = min(l, start + step)
