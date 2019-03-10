@@ -60,7 +60,6 @@ def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
 
     nworkers = len(dask_client.ncores())
 
-    logger.warning("Scattering common data for distributed computation...")
     # Scatter data to Dask cluster
     T_A_future = dask_client.scatter(T_A, broadcast=True)
     T_B_future = dask_client.scatter(T_B, broadcast=True)
@@ -69,7 +68,6 @@ def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
     μ_Q_future = dask_client.scatter(μ_Q, broadcast=True)
     σ_Q_future = dask_client.scatter(σ_Q, broadcast=True)
     
-    logger.warning("Scattering QT data for distributed computation...")    
     step = 1+l//nworkers
     QT_futures = []
     QT_first_futures = []
@@ -88,7 +86,6 @@ def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
         QT_futures.append(QT_future)
         QT_first_futures.append(QT_first_future)
         
-    logger.warning("Starting distributed computation...")    
     futures = []        
     for i, start in enumerate(range(0, l, step)):
         stop = min(l, start + step)
