@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
+def stumped(dask_client, T_A, T_B, m, ignore_trivial=False, disclaimer=True):
     """
     DOI: 10.1109/ICDM.2016.0085
     See Table II
@@ -35,9 +35,10 @@ def stumped(dask_client, T_A, T_B, m, ignore_trivial=False):
     Note that left and right matrix profiles are only available for self-joins.
     """
 
-    logger.warning("Stumped is an experimental implementation that is still "
-                   "under development and may change in the future. "
-                   "Use at your own risk.")
+    if disclaimer:
+        logger.warning("Stumped is an experimental implementation that is "
+                       "still under development and may change in the future. "
+                       "Use at your own risk.")
 
     core.check_dtype(T_A)
     core.check_dtype(T_B)
