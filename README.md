@@ -77,7 +77,6 @@ We tested the performance using the Numba JIT compiled version of the code on da
 | NaN      | 100000000 | 291:07:12:00 | NaN         | NaN         | NaN         |
 | 27       | 134217728 | NaN          | NaN         | NaN         | NaN         |
 
-<sup>
 GPU-STOMP: NVIDIA Tesla K80 (contains 2 GPUs) 
     
 STUMP.16: 16 CPUs in Total - 16x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors parallelized with Numba on a single server without Dask.
@@ -85,7 +84,6 @@ STUMP.16: 16 CPUs in Total - 16x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz proce
 STUMPED.128: 128 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors x 16 servers, parallelized with Numba, and distributed with Dask Distributed.
 
 STUMPED.256: 256 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors x 32 servers, parallelized with Numba, and distributed with Dask Distributed.
-</sup>
 
 ## License
 [BSD 3](License)
