@@ -49,70 +49,43 @@ Tests are written in the tests directory and processed using [PyTest](). Tests c
 
 We tested the performance using the Numba JIT compiled version of the code on data with various lengths.
 
-Hardware: 16 CPUs in Total - 16x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors on a single server.
 
-i: 6  n: 64  time: 00:00:00.00
-i: 7  n: 128  time: 00:00:00.00
-i: 8  n: 256  time: 00:00:00.01
-i: 9  n: 512  time: 00:00:00.02
-i: 10  n: 1024  time: 00:00:00.04
-i: 11  n: 2048  time: 00:00:00.09
-i: 12  n: 4096  time: 00:00:00.19
-i: 13  n: 8192  time: 00:00:00.41
-i: 14  n: 16384  time: 00:00:00.99
-i: 15  n: 32768  time: 00:00:02.39
-i: 16  n: 65536  time: 00:00:06.42
-i: 17  n: 131072  time: 00:00:19.52
-i: 18  n: 262144  time: 00:01:08.44
-i: 19  n: 524288  time: 00:03:56.82
-i: 20  n: 1048576  time: 00:19:54.75
-i: 21  n: 2097152  time: 03:05:07.64
-i: 22  n: 4194304  time: 10:37:51.21
-i: 23  n: 8388608  time: 38:42:51.42
+| <i>i</i> | <i>n = 2<sup>i</sup></i> | GPU-STOMP    | STUMP.16    | STUMPED.128 | STUMPED.256 |
+| -------- | ------------------------ | ------------ | ----------- | ----------- | ----------- |
+| 6        | 64                       | 00:00:10.00  | 00:00:00.00 | 00:00:05.77 | 00:00:06.08 |
+| 7        | 128                      | 00:00:10.00  | 00:00:00.00 | 00:00:05.93 | 00:00:07.29 |
+| 8        | 256                      | 00:00:10.00  | 00:00:00.01 | 00:00:05.95 | 00:00:07.59 |
+| 9        | 512                      | 00:00:10.00  | 00:00:00.02 | 00:00:05.97 | 00:00:07.47 |
+| 10       | 1024                     | 00:00:10.00  | 00:00:00.04 | 00:00:05.69 | 00:00:07.64 |
+| 11       | 2048                     | NaN          | 00:00:00.09 | 00:00:05.60 | 00:00:07.83 |
+| 12       | 4096                     | NaN          | 00:00:00.19 | 00:00:06.26 | 00:00:07.90 |
+| 13       | 8192                     | NaN          | 00:00:00.41 | 00:00:06.29 | 00:00:07.73 |
+| 14       | 16384                    | NaN          | 00:00:00.99 | 00:00:06.24 | 00:00:08.18 |
+| 15       | 32768                    | NaN          | 00:00:02.39 | 00:00:06.48 | 00:00:08.29 |
+| 16       | 65536                    | NaN          | 00:00:06.42 | 00:00:07.33 | 00:00:09.01 |
+| 17       | 131072                   | 00:00:10.00  | 00:00:19.52 | 00:00:09.75 | 00:00:10.53 |
+| 18       | 262144                   | 00:00:18.00  | 00:01:08.44 | 00:00:33.38 | 00:00:24.07 |
+| 19       | 524288                   | 00:00:46.00  | 00:03:56.82 | 00:01:35.27 | 00:03:43.66 |
+| 20       | 1048576                  | 00:02:30.00  | 00:19:54.75 | 00:04:37.15 | 00:03:01.16 |
+| 21       | 2097152                  | 00:09:15.00  | 03:05:07.64 | 00:13:36.51 | 00:08:47.47 |
+| 22       | 4194304                  | NaN          | 10:37:51.21 | 00:55:44.43 | 00:32:06.70 |
+| 23       | 8388608                  | NaN          | 38:42:51.42 | 03:33:30.53 | 02:00:49.37 |
+| 24       | 16777216                 | NaN          | NaN         | 13:03:43.86 | 07:13:47.12 |
+| NaN      | 17729800                 | 09:16:12:00  | NaN         | NaN         | NaN         |
+| 25       | 33554432                 | NaN          | NaN         | NaN         | NaN         |
+| 26       | 67108864                 | NaN          | NaN         | NaN         | NaN         |
+| NaN      | 100000000                | 291:07:12:00 | NaN         | NaN         | NaN         |
+| 27       | 134217728                | NaN          | NaN         | NaN         | NaN         |
 
-Hardware: 128 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors x 16 servers.
+<sup>
+[GPU-STOMP](#mp2): NVIDIA Tesla K80 (contains 2 GPUs) 
+    
+STUMP.16: 16 CPUs in Total - 16x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors parallelized with Numba on a single server without Dask.
 
-i: 6  n: 64  time: 00:00:05.77
-i: 7  n: 128  time: 00:00:05.93
-i: 8  n: 256  time: 00:00:05.95
-i: 9  n: 512  time: 00:00:05.97
-i: 10  n: 1024  time: 00:00:05.69
-i: 11  n: 2048  time: 00:00:05.60
-i: 12  n: 4096  time: 00:00:06.26
-i: 13  n: 8192  time: 00:00:06.29
-i: 14  n: 16384  time: 00:00:06.24
-i: 15  n: 32768  time: 00:00:06.48
-i: 16  n: 65536  time: 00:00:07.33
-i: 17  n: 131072  time: 00:00:09.75
-i: 18  n: 262144  time: 00:00:33.38
-i: 19  n: 524288  time: 00:01:35.27
-i: 20  n: 1048576  time: 00:04:37.15
-i: 21  n: 2097152  time: 00:13:36.51
-i: 22  n: 4194304  time: 00:55:44.43
-i: 23  n: 8388608  time: 03:33:30.53
-i: 24  n: 16777216  time: 13:03:43.86
+STUMPED.128: 128 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors x 16 servers, parallelized with Numba, and distributed with Dask Distributed.
 
-Hardware: 256 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors x 32 servers.
-
-i: 6  n: 64  time: 00:00:06.08
-i: 7  n: 128  time: 00:00:07.29
-i: 8  n: 256  time: 00:00:07.59
-i: 9  n: 512  time: 00:00:07.47
-i: 10  n: 1024  time: 00:00:07.64
-i: 11  n: 2048  time: 00:00:07.83
-i: 12  n: 4096  time: 00:00:07.90
-i: 13  n: 8192  time: 00:00:07.73
-i: 14  n: 16384  time: 00:00:08.18
-i: 15  n: 32768  time: 00:00:08.29
-i: 16  n: 65536  time: 00:00:09.01
-i: 17  n: 131072  time: 00:00:10.53
-i: 18  n: 262144  time: 00:00:24.07
-i: 19  n: 524288  time: 00:03:43.66
-i: 20  n: 1048576  time: 00:03:01.16
-i: 21  n: 2097152  time: 00:08:47.47
-i: 22  n: 4194304  time: 00:32:06.70
-i: 23  n: 8388608  time: 02:00:49.37
-i: 24  n: 16777216  time: 07:13:47.12
+STUMPED.256: 256 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors x 32 servers, parallelized with Numba, and distributed with Dask Distributed.
+</sup>
 
 ## License
 [BSD 3](License)
@@ -122,3 +95,7 @@ i: 24  n: 16777216  time: 07:13:47.12
 ## Getting Help
 
 ## References
+
+Yeh <i>et al.</i> (2016) Matrix Profile I: All Pairs Similarity Joins for Time Series: A Unifiying View that Includes Motifs, Discords, and Shapelets. <i>ICDM</i>:1317-1322. [Link](https://ieeexplore.ieee.org/abstract/document/7837992)
+
+<a name="mp2">Zhu</a> <i>et al.</i> (2016) Matrix Profile II: Exploiting a Novel Algorithm and GPUs to Break the One Hundred Million Barrier for TIme Series Motifs and Joins. <i>ICDM</i>:739-748. [Link](https://ieeexplore.ieee.org/abstract/document/7837898)
