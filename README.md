@@ -49,7 +49,7 @@ Tests are written in the tests directory and processed using [PyTest](). Tests c
 
 We tested the performance using the Numba JIT compiled version of the code on data with various lengths.
 
-
+Z
 |    i     |  n = 2^i  | GPU-STOMP    | STUMP.16    | STUMPED.128 | STUMPED.256 |
 | -------- | ----------| ------------ | ----------- | ----------- | ----------- |
 | 6        | 64        | 00:00:10.00  | 00:00:00.00 | 00:00:05.77 | 00:00:06.08 |
@@ -71,10 +71,10 @@ We tested the performance using the Numba JIT compiled version of the code on da
 | 22       | 4194304   | NaN          | 10:37:51.21 | 00:55:44.43 | 00:32:06.70 |
 | 23       | 8388608   | NaN          | 38:42:51.42 | 03:33:30.53 | 02:00:49.37 |
 | 24       | 16777216  | NaN          | NaN         | 13:03:43.86 | 07:13:47.12 |
-| NaN      | 17729800  | 09:16:12:00  | NaN         | NaN         | NaN         |
+| NaN      | 17729800  | 09:16:12.00  | NaN         | NaN         | NaN         |
 | 25       | 33554432  | NaN          | NaN         | NaN         | NaN         |
 | 26       | 67108864  | NaN          | NaN         | NaN         | NaN         |
-| NaN      | 100000000 | 291:07:12:00 | NaN         | NaN         | NaN         |
+| NaN      | 100000000 | 291:07:12.00 | NaN         | NaN         | NaN         |
 | 27       | 134217728 | NaN          | NaN         | NaN         | NaN         |
 
 GPU-STOMP: NVIDIA Tesla K80 (contains 2 GPUs) 
