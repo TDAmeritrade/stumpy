@@ -49,7 +49,6 @@ Tests are written in the tests directory and processed using [PyTest](). Tests c
 
 We tested the performance using the Numba JIT compiled version of the code on data with various lengths.
 
-Z
 |    i     |  n = 2^i  | GPU-STOMP    | STUMP.16    | STUMPED.128 | STUMPED.256 |
 | -------- | ----------| ------------ | ----------- | ----------- | ----------- |
 | 6        | 64        | 00:00:10.00  | 00:00:00.00 | 00:00:05.77 | 00:00:06.08 |
