@@ -54,7 +54,7 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 @njit(parallel=True, fastmath=True) 
 def _stump(T_A, T_B, m, range_stop, zone, 
            M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, 
-           ignore_trivial=False, range_start=1):
+           ignore_trivial=True, range_start=1):
     """
     DOI: 10.1109/ICDM.2016.0085
     See Table II
@@ -136,7 +136,7 @@ def _stump(T_A, T_B, m, range_stop, zone,
     
     return profile, indices
 
-def stump(T_A, T_B, m, ignore_trivial=False):
+def stump(T_A, T_B, m, ignore_trivial=True):
     """
     DOI: 10.1109/ICDM.2016.0085
     See Table II

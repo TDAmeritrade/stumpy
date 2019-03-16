@@ -71,7 +71,7 @@ def test_stump_self_join(T_A, T_B):
 def test_stump_A_B_join(T_A, T_B):
     m = 3
     left = np.array([naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object)
-    right = stump.stump(T_A, T_B, m)
+    right = stump.stump(T_A, T_B, m, ignore_trivial=False)
     replace_inf(left)
     replace_inf(right)
     npt.assert_almost_equal(left, right)

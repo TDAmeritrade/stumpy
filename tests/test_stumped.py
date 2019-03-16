@@ -76,7 +76,7 @@ def test_stumped_self_join(T_A, T_B, dask_client):
 def test_stumped_A_B_join(T_A, T_B, dask_client):
     m = 3
     left = np.array([naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object)
-    right = stumped.stumped(dask_client, T_A, T_B, m)
+    right = stumped.stumped(dask_client, T_A, T_B, m, ignore_trivial=False)
     replace_inf(left)
     replace_inf(right)
     npt.assert_almost_equal(left, right)

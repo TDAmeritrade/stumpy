@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def _stomp(T_A, T_B, m, ignore_trivial=False):  # pragma: no cover
+def _stomp(T_A, T_B, m, ignore_trivial=True):  # pragma: no cover
     """
     DO NOT USE! Here for reference only.
 
@@ -63,7 +63,7 @@ def _stomp(T_A, T_B, m, ignore_trivial=False):  # pragma: no cover
     
     return out
 
-def stomp(T_A, T_B, m, ignore_trivial=False):
+def stomp(T_A, T_B, m, ignore_trivial=True):
     """
     DOI: 10.1109/ICDM.2016.0085
     See Table II
