@@ -1,5 +1,5 @@
 import numpy as np
-from . import core, stump
+from . import core, _stump, _get_first_stump_profile, _get_QT
 import logging
 
 logger = logging.getLogger(__name__)
@@ -76,10 +76,10 @@ def stumped(dask_client, T_A, T_B, m, ignore_trivial=False, disclaimer=True):
         stop = min(l, start + step)
 
         profile[start], indices[start, :] = \
-            stump._get_first_stump_profile(start, T_A, T_B, m, zone, M_T, 
-                                           Σ_T, μ_Q, σ_Q, ignore_trivial)
+            _get_first_stump_profile(start, T_A, T_B, m, zone, M_T, 
+                                     Σ_T, μ_Q, σ_Q, ignore_trivial)
 
-        QT, QT_first = stump._get_QT(start, T_A, T_B, m)
+        QT, QT_first = _get_QT(start, T_A, T_B, m)
 
         QT_future = dask_client.scatter(QT, broadcast=True)
         QT_first_future = dask_client.scatter(QT_first, broadcast=True)
@@ -92,7 +92,7 @@ def stumped(dask_client, T_A, T_B, m, ignore_trivial=False, disclaimer=True):
         stop = min(l, start + step)
                         
         futures.append(
-            dask_client.submit(stump._stump, T_A_future, T_B_future, m, stop, 
+            dask_client.submit(_stump, T_A_future, T_B_future, m, stop, 
                                zone, M_T_future, Σ_T_future, QT_futures[i], 
                                QT_first_futures[i], μ_Q_future, σ_Q_future,
                                k, ignore_trivial, start+1
