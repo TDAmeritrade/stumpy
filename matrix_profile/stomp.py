@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def _stomp(T_A, T_B, m, ignore_trivial=True):  # pragma: no cover
+def _stomp(T_A, m, T_B=None, ignore_trivial=True):  # pragma: no cover
     """
     DO NOT USE! Here for reference only.
 
@@ -28,6 +28,8 @@ def _stomp(T_A, T_B, m, ignore_trivial=True):  # pragma: no cover
     root calculations.
     """
     core.check_dtype(T_A)
+    if T_B is None:
+        T_B = T_A
     core.check_dtype(T_B)
     n = T_B.shape[0]
     l = n-m+1
@@ -63,7 +65,7 @@ def _stomp(T_A, T_B, m, ignore_trivial=True):  # pragma: no cover
     
     return out
 
-def stomp(T_A, T_B, m, ignore_trivial=True):
+def stomp(T_A, m, T_B=None, ignore_trivial=True):
     """
     DOI: 10.1109/ICDM.2016.0085
     See Table II
@@ -90,6 +92,8 @@ def stomp(T_A, T_B, m, ignore_trivial=True):
     Note that left and right matrix profiles are only available for self-joins.
     """
     core.check_dtype(T_A)
+    if T_B is None:
+        T_B = T_A
     core.check_dtype(T_B)
 
     if ignore_trivial == False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover

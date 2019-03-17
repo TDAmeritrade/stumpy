@@ -62,7 +62,7 @@ def test_stump_self_join(T_A, T_B):
     m = 3
     zone = int(np.ceil(m/4))
     left = np.array([naive_mass(Q, T_B, m, i, zone, True) for i, Q in enumerate(core.rolling_window(T_B, m))], dtype=object)
-    right = stump(T_B, T_B, m, ignore_trivial=True)
+    right = stump(T_B, m, ignore_trivial=True)
     replace_inf(left)
     replace_inf(right)
     npt.assert_almost_equal(left, right)
@@ -71,7 +71,7 @@ def test_stump_self_join(T_A, T_B):
 def test_stump_A_B_join(T_A, T_B):
     m = 3
     left = np.array([naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object)
-    right = stump(T_A, T_B, m, ignore_trivial=False)
+    right = stump(T_A, m, T_B, ignore_trivial=False)
     replace_inf(left)
     replace_inf(right)
     npt.assert_almost_equal(left, right)

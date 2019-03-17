@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def stumped(dask_client, T_A, T_B, m, ignore_trivial=False, disclaimer=True):
+def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False, disclaimer=True):
     """
     DOI: 10.1109/ICDM.2016.0085
     See Table II
@@ -41,6 +41,8 @@ def stumped(dask_client, T_A, T_B, m, ignore_trivial=False, disclaimer=True):
                        "Use at your own risk.")
 
     core.check_dtype(T_A)
+    if T_B is None:
+        T_B = T_A
     core.check_dtype(T_B)
 
     if ignore_trivial == False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
