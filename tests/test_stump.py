@@ -1,4 +1,3 @@
-import os
 import numpy as np
 import numpy.testing as npt
 from matrix_profile import stump, _calculate_squared_distance_profile, core
