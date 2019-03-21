@@ -72,7 +72,7 @@ We tested the performance using the Numba JIT compiled version of the code on da
 | 24       | 16777216  | NaN          | NaN         | 13:03:43.86 | 07:13:47.12 |
 | NaN      | 17729800  | 09:16:12.00  | NaN         | NaN         | NaN         |
 | 25       | 33554432  | NaN          | NaN         | NaN         | 28:58:09.19 |
-| 26       | 67108864  | NaN          | NaN         | NaN         | NaN         |
+| 26       | 67108864  | NaN          | NaN         | NaN         | 111:17:08.22 |
 | NaN      | 100000000 | 291:07:12.00 | NaN         | NaN         | NaN         |
 | 27       | 134217728 | NaN          | NaN         | NaN         | NaN         |
 
@@ -93,6 +93,8 @@ STUMPED.256: 256 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz pr
 
 ## References
 
-Yeh et al. (2016) Matrix Profile I: All Pairs Similarity Joins for Time Series: A Unifiying View that Includes Motifs, Discords, and Shapelets. ICDM:1317-1322. [Link](https://ieeexplore.ieee.org/abstract/document/7837992)
+Yeh, Chin-Chia Michael, et al. (2016) Matrix Profile I: All Pairs Similarity Joins for Time Series: A Unifiying View that Includes Motifs, Discords, and Shapelets. ICDM:1317-1322. [Link](https://ieeexplore.ieee.org/abstract/document/7837992)
 
-Zhu et al. (2016) Matrix Profile II: Exploiting a Novel Algorithm and GPUs to Break the One Hundred Million Barrier for TIme Series Motifs and Joins. ICDM:739-748. [Link](https://ieeexplore.ieee.org/abstract/document/7837898)
+Zhu, Yan, et al. (2016) Matrix Profile II: Exploiting a Novel Algorithm and GPUs to Break the One Hundred Million Barrier for TIme Series Motifs and Joins. ICDM:739-748. [Link](https://ieeexplore.ieee.org/abstract/document/7837898)
+
+Zhu, Yan, et al. (2017) Matrix Profile VII: Time Series Chains: A New Primitive for Time Series Data Mining. ICDM:695-704. [Link](https://ieeexplore.ieee.org/abstract/document/8215542)
