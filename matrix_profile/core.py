@@ -4,73 +4,137 @@ import numpy as np
 import scipy.signal
 import time
 
-def check_python_version():  # pragma: no cover
-    if (sys.version_info < (3, 0)):
-        raise Exception('Matrix Profile is only compatible with python3.x')
+def get_pkg_name():  # pragma: no cover
+    """
+    Return package name
+    """
 
-def get_parser():  # pragma: no cover
-    parser = argparse.ArgumentParser()
-    parser.add_argument('ts_file', help='Time series input file')
-    parser.add_argument('subseq_length', help='Subsequence length', type=int)
-
-    return parser
+    return __name__.split('.')[0]
 
 def rolling_window(a, window):
+    """
+    Use strides to generate rolling/sliding windows for a numpy array
+
+    Parameters
+    ----------
+    a : ndarray
+        numpy array
+    window : int
+        Size of the rolling window
+
+    Returns
+    -------
+    output : ndarray
+        This will be a new view of the original input array.
+    """
+
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
     strides = a.strides + (a.strides[-1],)
+
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
-def z_norm(x, axis=0):
-    return (x - np.mean(x, axis, keepdims=True))/np.std(x, axis, keepdims=True)
+def z_norm(a, axis=0):
+    """
+    Calculate the z-normalized input array `a` by subtracting the mean and 
+    dividing by the standard deviation along a given axis.
 
-def check_dtype(arr, dtype=np.float):  # pragma: no cover
+    Parameters
+    ----------
+    a : ndarray
+        numpy array
+    axis : int
+        numpy axis
+
+    Returns
+    -------
+    output : ndarray
+        An ndarray with z-normalized values computed along a specified axis.
     """
-    Check if array has correct dtype
+
+    return (a - np.mean(a, axis, keepdims=True))/np.std(a, axis, keepdims=True)
+
+def check_dtype(a, dtype=np.float):  # pragma: no cover
     """
-    if not issubclass(arr.dtype.type, dtype):
-        msg = '{} type expected but found {}'.format(dtype, arr.dtype.type)
+    Check if the array type of `a` is of type specified by `dtype` parameter.
+
+    Raises
+    ------
+    TypeError
+        If the array type does not match `dtype`
+    """
+
+    if not issubclass(a.dtype.type, dtype):
+        msg = '{} type expected but found {}'.format(dtype, a.dtype.type)
         raise TypeError(msg)
 
-def are_arrays_equal(arr1, arr2):  # pragma: no cover
+def are_arrays_equal(a, b):  # pragma: no cover
     """
     Check if two arrays are equal; first by comparing memory addresses, 
-    and secondly by their values
+    and secondly by their values.
+
+    Parameters
+    ----------
+    a : ndarray
+        First argument.
+    b : ndarray
+        Second argument.
+
+    Returns
+    -------
+    output : bool
+        Returns `True` if the arrays are equal and `False` otherwise.
     """
 
-    if id(arr1) == id(arr2):
+    if id(a) == id(b):
         return True
     
-    return np.array_equal(arr1, arr2)
+    return np.array_equal(a, b)
 
-def are_distances_too_small(x, threshold=10e-6):  # pragma: no cover
+def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
     """
     Check the distance values from a matrix profile.
 
     If the values are smaller than the threshold (i.e., less than 10e-6) then 
     it could suggest that this is a self-join.
+
+    Parameters
+    ----------
+    a : ndarray
+        First argument.
+    threshold : float
+        Minimum value in which to compare the matrix profile to
+
+    Returns
+    -------
+    output : bool
+        Returns `True` if the matrix profile distances are all below the 
+        threshold and `False` if they are all above the threshold.
     """
 
-    if x.mean() < threshold or np.all(x < threshold):
+    if a.mean() < threshold or np.all(a < threshold):
         return True
 
     return False
 
-def timeit(func):  # pragma: no cover
-    """
-    Timing decorator
-    """
-    def timed(*args, **kw):
-        ts = time.time()
-        result = func(*args, **kw)
-        te = time.time()
-
-        print('{} sec {}'.format(te-ts, func.__name__))
-        return result
-
-    return timed
-
 def sliding_dot_product(Q, T):
     """
+    Use FFT convolution to calculate the sliding window dot product.
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array or subsequence
+    T : ndarray
+        Time series or sequence
+
+    Returns
+    -------
+    output : ndarray
+        Sliding dot product between `Q` and `T`.
+
+    Notes
+    -----
+    Calculate the sliding dot product
     DOI: 10.1109/ICDM.2016.0179
     See Table I, Figure 4
 
@@ -89,6 +153,25 @@ def sliding_dot_product(Q, T):
 
 def compute_mean_std(T, m):
     """
+    Compute the sliding mean and standard deviation for the array `T` with 
+    a window size of `m`
+
+    Parameters
+    ----------
+    T : ndarray
+        Time series or sequence
+    m : int
+        Window size
+
+    Returns
+    -------
+    M_T : ndarray
+        Sliding mean
+    Σ_T : ndarray
+        Sliding standard deviation
+
+    Notes
+    -----
     DOI: 10.1109/ICDM.2016.0179
     See Table II
 
@@ -123,6 +206,30 @@ def compute_mean_std(T, m):
 
 def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
+    Compute the distance profile
+
+    Parameters
+    ----------
+    m : int
+        Window size
+    QT : ndarray
+        Dot product between `Q` and `T`
+    μ_Q : ndarray
+        Mean of `Q`
+    σ_Q : ndarray
+        Standard deviation of `Q`
+    M_T : ndarray
+        Sliding mean of `T`
+    Σ_T : ndarray
+        Sliding standard deviation of `T`
+
+    Returns
+    -------
+    output : ndarray
+        Distance profile
+
+    Notes
+    -----
     DOI: 10.1109/ICDM.2016.0179
     See Equation on Page 4
     """
@@ -134,6 +241,22 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
 def mueen_calculate_distance_profile(Q, T):
     """
+    Compute the mueen distance profile
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array or subsequence
+    T : ndarray
+        Time series or sequence
+
+    Returns
+    -------
+    output : ndarray
+        Distance profile
+
+    Notes
+    -----
     DOI: 10.1109/ICDM.2016.0179
     See Table II
 
@@ -175,6 +298,26 @@ def mueen_calculate_distance_profile(Q, T):
 
 def mass(Q, T, M_T=None, Σ_T=None):
     """
+    Compute the distance profile using the MASS algorithm
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array or subsequence
+    T : ndarray
+        Time series or sequence
+    M_T : ndarray (optional)
+        Sliding mean of `T`
+    Σ_T : ndarray (optional)
+        Sliding standard deviation of `T`
+
+    Returns
+    -------
+    output : ndarray
+        Distance profile
+
+    Notes
+    -----
     DOI: 10.1109/ICDM.2016.0179
     See Table II
 
