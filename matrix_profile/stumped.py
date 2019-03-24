@@ -61,7 +61,8 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False, disclaimer=True
     profile = np.empty((l,), dtype='float64')
     indices = np.empty((l, 3), dtype='int64')
 
-    nworkers = len(dask_client.ncores())
+    hosts = list(dask_client.ncores().keys())
+    nworkers = len(hosts)
 
     # Scatter data to Dask cluster
     T_A_future = dask_client.scatter(T_A, broadcast=True)
@@ -74,7 +75,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False, disclaimer=True
     step = 1+l//nworkers
     QT_futures = []
     QT_first_futures = []
-    for start in range(0, l, step):
+    for i, start in enumerate(range(0, l, step)):
         stop = min(l, start + step)
 
         profile[start], indices[start, :] = \
@@ -83,8 +84,8 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False, disclaimer=True
 
         QT, QT_first = _get_QT(start, T_A, T_B, m)
 
-        QT_future = dask_client.scatter(QT, broadcast=True)
-        QT_first_future = dask_client.scatter(QT_first, broadcast=True)
+        QT_future = dask_client.scatter(QT, workers=[hosts[i]])
+        QT_first_future = dask_client.scatter(QT_first, workers=[hosts[i]])
         
         QT_futures.append(QT_future)
         QT_first_futures.append(QT_first_future)
