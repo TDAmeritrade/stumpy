@@ -2,6 +2,37 @@ import numpy as np
 from . import core
 
 def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False):
+    """
+    Compute mass
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array or subsequence
+    T : ndarray
+        Time series array or sequence
+    M_T : ndarray
+        Sliding mean for `T`
+    Σ_T : ndarray
+        Sliding standard deviation for `T`
+    trivial_idx : int
+        Index for the start of the trivial self-join
+    excl_zone : int
+        The half width for the exclusion zone relative to the `trivial_idx`.
+        If the `trivial_idx` is `None` then this parameter is ignored.
+    left : bool
+        Return the left matrix profile indices if `True`. If `right` is True
+        then this parameter is ignored.
+    right : bool
+        Return the right matrix profiles indices if `True`
+
+    Returns
+    -------
+    P : ndarray
+        Matrix profile
+    I : ndarray
+        Matrix profile indices
+    """
     D = core.mass(Q, T, M_T, Σ_T)
     if trivial_idx is not None:
         zone_start = max(0, trivial_idx-excl_zone)
@@ -41,6 +72,28 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
 
 def stamp(T_A, T_B, m, ignore_trivial=False):
     """
+    Compute matrix profile and indices using the STAMP algorithm and MASS.
+
+    Parameters
+    ----------
+    T_A : ndarray
+        The time series or sequence for which the matrix profile index will 
+        be returned
+    T_B : ndarray
+        The time series or sequence that contain your query subsequences
+    m : int
+        Window size
+    ignore_trivial : bool
+        `True` if this is a self join and `False` otherwise (i.e., AB-join).
+
+    Returns
+    -------
+    out : ndarray
+        Two column numpy array where the first column is the matrix profile 
+        and the second column is the matrix profile indices
+
+    Notes
+    ----- 
     DOI: 10.1109/ICDM.2016.0179
     See Table III
 
@@ -51,6 +104,7 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     and index for the closest subsequence in T_A. Thus, the array
     returned will have length T_B.shape[0]-m+1
     """
+    
     core.check_dtype(T_A)
     core.check_dtype(T_B)
     subseq_T_B = core.rolling_window(T_B, m)
