@@ -1,6 +1,8 @@
-# Matrix Profile: Automatically Finding Patterns in Time Series or Sequential Data
+# Matrix Profile: A Scalable Python Library for Time Series Data Mining
 
 ## What is it?
+
+Automatically discover patterns (motifs) or novelty/anomaly (discord) in any time series or sequential data
 
 ## Main Features
 
@@ -12,11 +14,11 @@ pip install matrix_profile
 ```
 
 ## Dependencies
-- [NumPy]()
-- [Numba]()
-- [SciPy]()
+- [NumPy](http://www.numpy.org/)
+- [Numba](http://numba.pydata.org/)
+- [SciPy](https://www.scipy.org/)
 
-## Installation from sources
+## Installation from Sources
 
 To install matrix_profile from source, you'll need to install the dependencies above. For maximum performance, it is recommended that you install all dependencies using `conda`:
 
@@ -39,7 +41,7 @@ pip install .
 
 ## Running Tests
 
-Tests are written in the tests directory and processed using [PyTest](). Tests can be executed with:
+Tests are written in the tests directory and processed using [PyTest](https://docs.pytest.org/en/latest/). Tests can be executed with:
 
 ```sh
 ./test.sh
@@ -47,7 +49,7 @@ Tests are written in the tests directory and processed using [PyTest](). Tests c
 
 ## Performance
 
-We tested the performance using the Numba JIT compiled version of the code on data with various lengths.
+We tested the performance using the Numba JIT compiled version of the code on randomly generated data with various lengths (i.e., `np.random.rand(n)`).
 
 |    i     |  n = 2^i  | GPU-STOMP    | STUMP.16    | STUMPED.128 | STUMPED.256 |
 | -------- | ----------| ------------ | ----------- | ----------- | ----------- |
@@ -72,11 +74,11 @@ We tested the performance using the Numba JIT compiled version of the code on da
 | 24       | 16777216  | NaN          | NaN         | 13:03:43.86 | 07:13:47.12 |
 | NaN      | 17729800  | 09:16:12.00  | NaN         | NaN         | NaN         |
 | 25       | 33554432  | NaN          | NaN         | NaN         | 28:58:09.19 |
-| 26       | 67108864  | NaN          | NaN         | NaN         | 111:17:08.22 |
+| 26       | 67108864  | NaN          | NaN         | NaN         | 111:17:08.22|
 | NaN      | 100000000 | 291:07:12.00 | NaN         | NaN         | NaN         |
 | 27       | 134217728 | NaN          | NaN         | NaN         | NaN         |
 
-GPU-STOMP: NVIDIA Tesla K80 (contains 2 GPUs) 
+GPU-STOMP: Results copied from the original [Matrix Profile II](https://ieeexplore.ieee.org/abstract/document/7837898) paper - NVIDIA Tesla K80 (contains 2 GPUs) 
     
 STUMP.16: 16 CPUs in Total - 16x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors parallelized with Numba on a single server without Dask.
 

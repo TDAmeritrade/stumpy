@@ -3,7 +3,7 @@ from . import core
 
 def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False):
     """
-    Compute mass
+    Compute "Mueen's Algorithm for Similarity Search" (MASS)
 
     Parameters
     ----------
@@ -72,7 +72,8 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
 
 def stamp(T_A, T_B, m, ignore_trivial=False):
     """
-    Compute matrix profile and indices using the STAMP algorithm and MASS.
+    Compute matrix profile and indices using the "Scalable Time series 
+    Anytime Matrix Profile" (STAMP) algorithm and MASS (2017 - with FFT).
 
     Parameters
     ----------
@@ -100,11 +101,11 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     Timeseries, T_B, will be annotated with the distance location
     (or index) of all its subsequences in another times series, T_A.
 
-    Return: For every subsequence, Q, in T_B, you will get a distance
-    and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1
+    For every subsequence, Q, in T_B, you will get a distance and index for 
+    the closest subsequence in T_A. Thus, the array returned will have length 
+    T_B.shape[0]-m+1
     """
-    
+
     core.check_dtype(T_A)
     core.check_dtype(T_B)
     subseq_T_B = core.rolling_window(T_B, m)

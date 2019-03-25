@@ -4,76 +4,38 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def _stomp(T_A, m, T_B=None, ignore_trivial=True):  # pragma: no cover
-    """
-    DO NOT USE! Here for reference only.
-
-    DOI: 10.1109/ICDM.2016.0085
-    See Table II
-
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
-
-    Return: For every subsequence, Q, in T_B, you will get a distance
-    and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1
-
-    Note that this implementation matches Table II but is here for
-    reference purposes only and thus should not be used in practice 
-    since it is not vectorized. See vectorized STOMP documentation and
-    implementation below. 
-
-    Note: Instead of calculating the distance profile, we could calculate
-    and sort by the squared distance profile and reduce the number of square 
-    root calculations.
-    """
-    core.check_dtype(T_A)
-    if T_B is None:
-        T_B = T_A
-    core.check_dtype(T_B)
-    n = T_B.shape[0]
-    l = n-m+1
-    zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
-    M_T, Σ_T = core.compute_mean_std(T_A, m)
-    QT = core.sliding_dot_product(T_B[:m], T_A)
-    QT_first = core.sliding_dot_product(T_A[:m], T_B)
-
-    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
-
-    out = [None] * l
-
-    # Handle first subsequence, add exclusionary zone
-    if ignore_trivial:
-        out[0] = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone)
-    else:
-        out[0] = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
-
-    k = T_A.shape[0]-m+1
-    for i in range(1, l):
-        for j in range(k-1,0,-1):
-            QT[j] = QT[j-1] - T_B[i-1]*T_A[j-1] + T_B[i+m-1]*T_A[j+m-1]
-        QT[0] =QT_first[i]
-        D = core.calculate_distance_profile(m, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
-        if ignore_trivial:
-             zone_start = max(0, i-zone)
-             zone_stop = i+zone+1
-             D[zone_start:zone_stop] = np.inf
-        I = np.argmin(D)
-        P = D[I]
-        out[i] = P, I
-    out = np.array(out, dtype=object)
-    
-    return out
-
 def stomp(T_A, m, T_B=None, ignore_trivial=True):
     """
+    Compute "Scalable Time series Ordered-search Matrix Profile" (STOMP)
+
+    Parameters
+    ----------
+    T_A : ndarray
+        The time series or sequence for which the matrix profile index will 
+        be returned
+    T_B : ndarray
+        The time series or sequence that contain your query subsequences
+    m : int
+        Window size
+    ignore_trivial : bool
+        `True` if this is a self join and `False` otherwise (i.e., AB-join).
+
+    Returns
+    -------
+    out : ndarray
+        A four column numpy array where the first column is the matrix profile,
+        the second column is the matrix profile indices. The third and fourth 
+        columns are the left and right matrix profile indices, respectively.
+
+    Notes
+    -----
     DOI: 10.1109/ICDM.2016.0085
     See Table II
 
     Timeseries, T_B, will be annotated with the distance location
     (or index) of all its subsequences in another times series, T_A.
 
-    Return: For every subsequence, Q, in T_B, you will get a distance
+    For every subsequence, Q, in T_B, you will get a distance
     and index for the closest subsequence in T_A. Thus, the array
     returned will have length T_B.shape[0]-m+1. Additionally, the 
     left and right matrix profiles are also returned.

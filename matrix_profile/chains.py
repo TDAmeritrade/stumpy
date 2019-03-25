@@ -3,13 +3,32 @@ import numpy as np
 
 def atsc(IL, IR, j):
     """
+    Compute the anchored time series chain (ATSC).
+
+    Parameters
+    ----------
+    IL : ndarray
+        Left matrix profile indices
+    IR : ndarray
+        Right matrix profile indices
+    j : int
+        The index value for which to compute the ATSC
+
+    Returns
+    -------
+    output : ndarray
+        Anchored time series chain for index, `j`
+
+    Notes
+    -----
     DOI: 10.1109/ICDM.2017.79
 
     See Table I
 
     This is the implementation for the anchored time series chains (ATSC).
 
-    Note that we replace the while-loop with a more stable for-loop.
+    Unlike the original paper, we've replaced the while-loop with a more stable
+    for-loop.
     """
     C = deque([j])
     for i in range(IL.size):
@@ -23,11 +42,30 @@ def atsc(IL, IR, j):
 
 def allc(IL, IR):
     """
+    Compute the all-chain set (ALLC)
+
+    Parameters
+    ----------
+    IL : ndarray
+        Left matrix profile indices
+    IR : ndarray
+        Right matrix profile indices
+        
+    Returns
+    -------
+    S : list(ndarray)
+        All-chain set
+    C : ndarray
+        Anchored time series chain for the longest chain
+
+    Notes
+    -----
     DOI: 10.1109/ICDM.2017.79
 
     See Table II
 
-    Note that we replace the while-loop with a more stable for-loop.
+    Unlike the original paper, we've replaced the while-loop with a more stable
+    for-loop.
 
     This is the implementation for the all-chain set (ALLC) and the unanchored
     chain is simply the longest one among the all-chain set. Both the 

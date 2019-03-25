@@ -5,20 +5,51 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def _get_first_stump_profile(start, T_A, T_B, m, zone, M_T, Σ_T, μ_Q, σ_Q, 
+def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, 
                              ignore_trivial):
     """
-    Given `start` get the corresponding `profile` and `indices`.
+    Compute the matrix profile, matrix profile index, left matrix profile 
+    index, and right matrix profile index for given window within the times
+    series or sequence that is denote by the `start` index. Essentially, this
+    is a convenience wrapper around `stamp.mass`
+
+    Parameters
+    ----------
+    start : int
+        The window index to calculate the first matrix profile, matrix profile
+        index, left matrix profile index, and right matrix profile index for.
+    T_A : ndarray
+        The time series or sequence for which the matrix profile index will 
+        be returned
+    T_B : ndarray
+        The time series or sequence that contain your query subsequences
+    m : int
+        Window size
+    excl_zone : int
+        The half width for the exclusion zone relative to the `start`.
+    M_T : ndarray
+        Sliding mean for `T_A`
+    Σ_T : ndarray
+        Sliding standard deviation for `T_A`
+    ignore_trivial : bool
+        `True` if this is a self join and `False` otherwise (i.e., AB-join).
+
+    Returns
+    -------
+    P : float64
+        Matrix profile for the window with index equal to `start`
+    I : int64
+        Matrix profile index for the window with index equal to `start`
     """
 
     # Handle first subsequence, add exclusionary zone
     if ignore_trivial:
         P, I = stamp.mass(T_B[start:start+m], T_A, M_T, Σ_T, 
-                          start, zone)
+                          start, excl_zone)
         PL, IL = stamp.mass(T_B[start:start+m], T_A, M_T, Σ_T, 
-                            start, zone, left=True)        
+                            start, excl_zone, left=True)        
         PR, IR = stamp.mass(T_B[start:start+m], T_A, M_T, Σ_T, 
-                            start, zone, right=True)
+                            start, excl_zone, right=True)
     else:
         P, I = stamp.mass(T_B[start:start+m], T_A, M_T, Σ_T)
         # No left and right matrix profile available
@@ -30,7 +61,28 @@ def _get_first_stump_profile(start, T_A, T_B, m, zone, M_T, Σ_T, μ_Q, σ_Q,
 
 def _get_QT(start, T_A, T_B, m):
     """
-    Given `start` return the corresponding QT and QT_first.
+    Compute the sliding dot product between the query, `T_B`, (from
+    [start:start+m]) and the time series, `T_A`. Additionally, compute
+    QT for the first window.
+
+    Parameters
+    ----------
+    start : int
+        The window index for T_B from which to calculate the QT dot product
+    T_A : ndarray
+        The time series or sequence for which to compute the dot product
+    T_B : ndarray
+        The time series or sequence that contain your query subsequence
+        of interest
+    m : int
+        Window size
+
+    Returns
+    ------- 
+    QT : ndarray
+        Given `start`, return the corresponding QT
+    QT_first : ndarray
+         QT for the first window
     """
 
     QT = core.sliding_dot_product(T_B[start:start+m], T_A)
@@ -41,8 +93,30 @@ def _get_QT(start, T_A, T_B, m):
 @njit(parallel=True, fastmath=True)
 def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
+    A Numba JIT-compiled algorithm for parallel computation of the squared 
+    distance profile according to:
+
     DOI: 10.1109/ICDM.2016.0179
     See Equation on Page 4
+
+    Parameters
+    ----------
+    QT : ndarray
+        Dot product between the query sequence,`Q`, and time series, `T`
+    μ_Q : ndarray
+        Mean of the query sequence, `Q`
+    σ_Q : ndarray
+        Standard deviation of the query sequence, `Q`
+    M_T : ndarray
+        Sliding mean of time series, `T`
+    Σ_T : ndarray
+        Sliding standard deviation of time series, `T`
+
+    Returns
+    -------
+    D_squared : ndarray
+        Squared z-normalized Eucldiean distances. The normal distances can
+        be obtained by calculating taking the square root.
     """
 
     denom = (m*σ_Q*Σ_T)
@@ -52,10 +126,63 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return D_squared
 
 @njit(parallel=True, fastmath=True) 
-def _stump(T_A, T_B, m, range_stop, zone, 
+def _stump(T_A, T_B, m, range_stop, excl_zone, 
            M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, 
            ignore_trivial=True, range_start=1):
     """
+    A Numba JIT-compiled version of STOMP for parallel computation of the
+    matrix profile, matrix profile indices, left matrix profile indices, 
+    and right matrix profile indices.
+
+    Parameters
+    ----------
+    T_A : ndarray
+        The time series or sequence for which to compute the matrix profile
+    T_B : ndarray
+        The time series or sequence that contain your query subsequences
+        of interest
+    m : int
+        Window size
+    range_stop : int
+        The index value along T_B for which to stop the matrix profile 
+        calculation. This parameter is here for consistency with the 
+        distributed `stumped` algorithm.
+    excl_zone : int
+        The half width for the exclusion zone relative to the current
+        sliding window
+    M_T : ndarray
+
+    Σ_T : ndarray
+
+    QT : ndarray
+        Dot product between some query sequence,`Q`, and time series, `T`
+    QT_first : ndarray
+        QT for the first window relative to the current sliding window
+    μ_Q : ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window
+    σ_Q : ndarray
+        Standard deviation of the query sequence, `Q`, relative to the current
+        sliding window
+    k : int
+        The total number of sliding windows to iterate over
+    ignore_trivial : bool
+        Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
+        `False`. Default is `True`.
+    range_start=1
+        The starting index value along T_B for which to start the matrix
+        profile claculation. Default is 1.
+
+    Returns
+    -------
+    profile : ndarray
+        Matrix profile
+    indices : ndarray
+        The first column consists of the matrix profile indices, the second
+        column consists of the left matrix profile indices, and the third
+        column consists of the right matrix profile indices.
+
+    Notes
+    -----
     DOI: 10.1109/ICDM.2016.0085
     See Table II
 
@@ -109,8 +236,8 @@ def _stump(T_A, T_B, m, range_stop, zone,
             D = _calculate_squared_distance_profile(m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T)
 
         if ignore_trivial:
-            zone_start = max(0, i-zone)
-            zone_stop = i+zone+1
+            zone_start = max(0, i-excl_zone)
+            zone_stop = i+excl_zone+1
             D[zone_start:zone_stop] = np.inf
         I = np.argmin(D)
         P = np.sqrt(D[I])
@@ -138,10 +265,35 @@ def _stump(T_A, T_B, m, range_stop, zone,
 
 def stump(T_A, m, T_B=None, ignore_trivial=True):
     """
+    This is a convenience wrapper around the Numba JIT-compiled parallelized 
+    `_stump` function which computes the matrix profile according to STOMP.
+
+    Parameters
+    ----------
+    T_A : ndarray
+        The time series or sequence for which to compute the matrix profile
+    m : int
+        Window size
+    T_B : ndarray
+        The time series or sequence that contain your query subsequences
+        of interest. Default is `None` which corresponds to a self-join.
+    ignore_trivial : bool
+        Set to `True` if this is a self-join. Otherwise, for AB-join, set this
+        to `False`. Default is `True`.
+
+    Returns
+    -------
+    out : ndarray
+        The first column consistsn of the matrix profile, the second column 
+        consists of the matrix profile indices, the third column consists of 
+        the left matrix profile indices, and the fourth column consists of 
+        the right matrix profile indices.
+
+    Notes
+    -----
+
     DOI: 10.1109/ICDM.2016.0085
     See Table II
-
-    This is a convenience wrapper around the parallelized `_stump` function
 
     Timeseries, T_B, will be annotated with the distance location
     (or index) of all its subsequences in another times series, T_A.
@@ -166,8 +318,9 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     """
 
     core.check_dtype(T_A)
-    if T_B is None:
+    if T_B is None:  # Self join!
         T_B = T_A
+        ignore_trivial = True
     core.check_dtype(T_B)
 
     if ignore_trivial == False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
@@ -191,7 +344,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
 
     profile[start], indices[start, :] = \
         _get_first_stump_profile(start, T_A, T_B, m, zone, M_T, 
-                                 Σ_T, μ_Q, σ_Q, ignore_trivial)
+                                 Σ_T, ignore_trivial)
 
     QT, QT_first = _get_QT(start, T_A, T_B, m)
 

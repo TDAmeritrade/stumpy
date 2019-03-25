@@ -4,8 +4,41 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False, disclaimer=True):
+def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False):
     """
+    This is high distributed implementation around the Numba JIT-compiled 
+    parallelized `_stump` function which computes the matrix profile according 
+    to STOMP.
+
+    Parameters
+    ----------
+    dask_client : client
+        A Dask Distributed client that is connected to a Dask scheduler and 
+        Dask workers. Setting up a Dask distributed cluster is beyond the 
+        scope of this library. Please refer to the Dask Distributed 
+        documentation. 
+    T_A : ndarray
+        The time series or sequence for which to compute the matrix profile
+    m : int
+        Window size
+    T_B : ndarray
+        The time series or sequence that contain your query subsequences
+        of interest. Default is `None` which corresponds to a self-join.
+    ignore_trivial : bool
+        Set to `True` if this is a self-join. Otherwise, for AB-join, set this 
+        to `False`. Default is `True`.
+
+    Returns
+    -------
+    out : ndarray
+        The first column consistsn of the matrix profile, the second column 
+        consists of the matrix profile indices, the third column consists of 
+        the left matrix profile indices, and the fourth column consists of 
+        the right matrix profile indices.
+
+    Notes
+    -----
+
     DOI: 10.1109/ICDM.2016.0085
     See Table II
 
@@ -35,11 +68,6 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False, disclaimer=True
     Note that left and right matrix profiles are only available for self-joins.
     """
 
-    if disclaimer:
-        logger.warning("Stumped is an experimental implementation that is "
-                       "still under development and may change in the future. "
-                       "Use at your own risk.")
-
     core.check_dtype(T_A)
     if T_B is None:
         T_B = T_A
@@ -52,7 +80,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False, disclaimer=True
     n = T_B.shape[0]
     k = T_A.shape[0]-m+1
     l = n-m+1
-    zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
+    excl_zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
 
     M_T, Σ_T = core.compute_mean_std(T_A, m)
     μ_Q, σ_Q = core.compute_mean_std(T_B, m)
@@ -79,8 +107,8 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False, disclaimer=True
         stop = min(l, start + step)
 
         profile[start], indices[start, :] = \
-            _get_first_stump_profile(start, T_A, T_B, m, zone, M_T, 
-                                     Σ_T, μ_Q, σ_Q, ignore_trivial)
+            _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, 
+                                     Σ_T, ignore_trivial)
 
         QT, QT_first = _get_QT(start, T_A, T_B, m)
 
@@ -96,9 +124,9 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False, disclaimer=True
                         
         futures.append(
             dask_client.submit(_stump, T_A_future, T_B_future, m, stop, 
-                               zone, M_T_future, Σ_T_future, QT_futures[i], 
-                               QT_first_futures[i], μ_Q_future, σ_Q_future,
-                               k, ignore_trivial, start+1
+                               excl_zone, M_T_future, Σ_T_future, 
+                               QT_futures[i], QT_first_futures[i], μ_Q_future, 
+                               σ_Q_future, k, ignore_trivial, start+1
                               )
                       )
         
