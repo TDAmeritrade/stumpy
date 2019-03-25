@@ -43,7 +43,7 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
     Note: Unlike in the Table II where T_A.shape is expected to be equal 
     to T_B.shape, this implementation is generalized so that the shapes of 
     T_A and T_B can be different. In the case where T_A.shape == T_B.shape, 
-    then our algorithm reduces down to the same algorithm found in Table II. 
+    then our algorithm reduces down to the same algorithm found in Table II.
 
     Additionally, unlike STAMP where the exclusion zone is m/2, the default 
     exclusion zone for STOMP is m/4 (See Definition 3 and Figure 3).
@@ -64,7 +64,7 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
 
     n = T_B.shape[0]
     l = n-m+1
-    zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
+    excl_zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
     M_T, Σ_T = core.compute_mean_std(T_A, m)
     QT = core.sliding_dot_product(T_B[:m], T_A)
     QT_first = core.sliding_dot_product(T_A[:m], T_B)
@@ -75,8 +75,8 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
 
     # Handle first subsequence, add exclusionary zone
     if ignore_trivial:
-        P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone)
-        PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, zone, right=True)
+        P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, excl_zone)
+        PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, excl_zone, right=True)
     else:
         P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
         IR = -1  # No left and right matrix profile available
@@ -89,8 +89,8 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
         QT[0] = QT_first[i]
         D = core.calculate_distance_profile(m, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
         if ignore_trivial:
-            zone_start = max(0, i-zone)
-            zone_stop = i+zone+1
+            zone_start = max(0, i-excl_zone)
+            zone_stop = i+excl_zone+1
             D[zone_start:zone_stop] = np.inf
         I = np.argmin(D)
         P = D[I]
