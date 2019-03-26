@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.testing as npt
-from matrix_profile import stumped, core
+from stumpy import stumped, core
 from dask.distributed import Client, LocalCluster
 import pytest
 import warnings

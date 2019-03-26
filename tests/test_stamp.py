@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.testing as npt
-from matrix_profile import stamp, core
+from stumpy import stamp, core
 import pytest
 
 def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0):

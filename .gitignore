@@ -8,3 +8,6 @@ LOG*
 PID
 .coverage*
 dask-worker-space
+stumpy.egg-info
+build
+dist

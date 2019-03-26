@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.testing as npt
-from matrix_profile import atsc, allc
+from stumpy import atsc, allc
 import pytest
 
 test_data = [

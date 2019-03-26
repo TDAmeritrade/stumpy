@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.testing as npt
-from matrix_profile import core
+from stumpy import core
 import pytest
 
 def naive_rolling_window_dot_product(Q, T):
