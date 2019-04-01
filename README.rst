@@ -54,7 +54,7 @@ Once the dependencies are installed (stay inside of the ``stumpy`` directory), e
 
 .. code:: bash
 
-    pip install .
+    python setup.py install 
 
 -------------
 Running Tests
