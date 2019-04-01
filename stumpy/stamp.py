@@ -9,20 +9,27 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
     ----------
     Q : ndarray
         Query array or subsequence
+
     T : ndarray
         Time series array or sequence
+
     M_T : ndarray
         Sliding mean for `T`
+
     Σ_T : ndarray
         Sliding standard deviation for `T`
+
     trivial_idx : int
         Index for the start of the trivial self-join
+
     excl_zone : int
         The half width for the exclusion zone relative to the `trivial_idx`.
         If the `trivial_idx` is `None` then this parameter is ignored.
+
     left : bool
         Return the left matrix profile indices if `True`. If `right` is True
         then this parameter is ignored.
+
     right : bool
         Return the right matrix profiles indices if `True`
 
@@ -30,6 +37,7 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
     -------
     P : ndarray
         Matrix profile
+
     I : ndarray
         Matrix profile indices
     """
@@ -80,10 +88,13 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     T_A : ndarray
         The time series or sequence for which the matrix profile index will 
         be returned
+
     T_B : ndarray
         The time series or sequence that contain your query subsequences
+
     m : int
         Window size
+        
     ignore_trivial : bool
         `True` if this is a self join and `False` otherwise (i.e., AB-join).
 

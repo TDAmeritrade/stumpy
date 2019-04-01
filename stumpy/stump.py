@@ -18,19 +18,26 @@ def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T,
     start : int
         The window index to calculate the first matrix profile, matrix profile
         index, left matrix profile index, and right matrix profile index for.
+
     T_A : ndarray
         The time series or sequence for which the matrix profile index will 
         be returned
+
     T_B : ndarray
         The time series or sequence that contain your query subsequences
+
     m : int
         Window size
+
     excl_zone : int
         The half width for the exclusion zone relative to the `start`.
+
     M_T : ndarray
         Sliding mean for `T_A`
+
     Σ_T : ndarray
         Sliding standard deviation for `T_A`
+
     ignore_trivial : bool
         `True` if this is a self join and `False` otherwise (i.e., AB-join).
 
@@ -38,6 +45,7 @@ def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T,
     -------
     P : float64
         Matrix profile for the window with index equal to `start`
+
     I : int64
         Matrix profile index for the window with index equal to `start`
     """
@@ -69,11 +77,14 @@ def _get_QT(start, T_A, T_B, m):
     ----------
     start : int
         The window index for T_B from which to calculate the QT dot product
+
     T_A : ndarray
         The time series or sequence for which to compute the dot product
+
     T_B : ndarray
         The time series or sequence that contain your query subsequence
         of interest
+
     m : int
         Window size
 
@@ -81,6 +92,7 @@ def _get_QT(start, T_A, T_B, m):
     ------- 
     QT : ndarray
         Given `start`, return the corresponding QT
+
     QT_first : ndarray
          QT for the first window
     """
@@ -103,12 +115,16 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     ----------
     QT : ndarray
         Dot product between the query sequence,`Q`, and time series, `T`
+
     μ_Q : ndarray
         Mean of the query sequence, `Q`
+
     σ_Q : ndarray
         Standard deviation of the query sequence, `Q`
+
     M_T : ndarray
         Sliding mean of time series, `T`
+
     Σ_T : ndarray
         Sliding standard deviation of time series, `T`
 
@@ -138,37 +154,50 @@ def _stump(T_A, T_B, m, range_stop, excl_zone,
     ----------
     T_A : ndarray
         The time series or sequence for which to compute the matrix profile
+
     T_B : ndarray
         The time series or sequence that contain your query subsequences
         of interest
+
     m : int
         Window size
+
     range_stop : int
         The index value along T_B for which to stop the matrix profile 
         calculation. This parameter is here for consistency with the 
         distributed `stumped` algorithm.
+
     excl_zone : int
         The half width for the exclusion zone relative to the current
         sliding window
+
     M_T : ndarray
+        Sliding mean of time series, `T`
 
     Σ_T : ndarray
+        Sliding standard deviation of time series, `T`
 
     QT : ndarray
         Dot product between some query sequence,`Q`, and time series, `T`
+
     QT_first : ndarray
         QT for the first window relative to the current sliding window
+
     μ_Q : ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window
+
     σ_Q : ndarray
         Standard deviation of the query sequence, `Q`, relative to the current
         sliding window
+
     k : int
         The total number of sliding windows to iterate over
+
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
-    range_start=1
+
+    range_start : int
         The starting index value along T_B for which to start the matrix
         profile claculation. Default is 1.
 
@@ -176,6 +205,7 @@ def _stump(T_A, T_B, m, range_stop, excl_zone,
     -------
     profile : ndarray
         Matrix profile
+
     indices : ndarray
         The first column consists of the matrix profile indices, the second
         column consists of the left matrix profile indices, and the third
@@ -326,6 +356,10 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     if ignore_trivial == False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
         logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
         logger.warning("Try setting `ignore_trivial = True`.")
+
+    if ignore_trivial and core.are_arrays_equal(T_A, T_B) == False:  # pragma: no cover
+        logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
+        logger.warning("Try setting `ignore_trivial = False`.")        
     
     n = T_B.shape[0]
     k = T_A.shape[0]-m+1

@@ -13,10 +13,13 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
     T_A : ndarray
         The time series or sequence for which the matrix profile index will 
         be returned
+
     T_B : ndarray
         The time series or sequence that contain your query subsequences
+
     m : int
         Window size
+
     ignore_trivial : bool
         `True` if this is a self join and `False` otherwise (i.e., AB-join).
 
@@ -61,6 +64,10 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
     if ignore_trivial == False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
         logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
         logger.warning("Try setting `ignore_trivial = True`.")
+
+    if ignore_trivial and core.are_arrays_equal(T_A, T_B) == False:  # pragma: no cover
+        logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
+        logger.warning("Try setting `ignore_trivial = False`.")        
 
     n = T_B.shape[0]
     l = n-m+1

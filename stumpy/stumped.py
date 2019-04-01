@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False):
     """
-    This is high distributed implementation around the Numba JIT-compiled 
+    This is highly distributed implementation around the Numba JIT-compiled 
     parallelized `_stump` function which computes the matrix profile according 
     to STOMP.
 
@@ -16,14 +16,18 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False):
         A Dask Distributed client that is connected to a Dask scheduler and 
         Dask workers. Setting up a Dask distributed cluster is beyond the 
         scope of this library. Please refer to the Dask Distributed 
-        documentation. 
+        documentation.
+
     T_A : ndarray
         The time series or sequence for which to compute the matrix profile
+
     m : int
         Window size
+
     T_B : ndarray
         The time series or sequence that contain your query subsequences
         of interest. Default is `None` which corresponds to a self-join.
+
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this 
         to `False`. Default is `True`.
@@ -76,6 +80,10 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False):
     if ignore_trivial == False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
         logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
         logger.warning("Try setting `ignore_trivial = True`.")
+        
+    if ignore_trivial and core.are_arrays_equal(T_A, T_B) == False:  # pragma: no cover
+        logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
+        logger.warning("Try setting `ignore_trivial = False`.")    
     
     n = T_B.shape[0]
     k = T_A.shape[0]-m+1

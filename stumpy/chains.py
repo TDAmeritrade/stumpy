@@ -9,8 +9,10 @@ def atsc(IL, IR, j):
     ----------
     IL : ndarray
         Left matrix profile indices
+
     IR : ndarray
         Right matrix profile indices
+
     j : int
         The index value for which to compute the ATSC
 
@@ -48,6 +50,7 @@ def allc(IL, IR):
     ----------
     IL : ndarray
         Left matrix profile indices
+
     IR : ndarray
         Right matrix profile indices
         
@@ -55,6 +58,7 @@ def allc(IL, IR):
     -------
     S : list(ndarray)
         All-chain set
+        
     C : ndarray
         Anchored time series chain for the longest chain
 

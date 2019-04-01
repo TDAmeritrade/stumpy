@@ -19,6 +19,7 @@ def rolling_window(a, window):
     ----------
     a : ndarray
         numpy array
+
     window : int
         Size of the rolling window
 
@@ -42,6 +43,7 @@ def z_norm(a, axis=0):
     ----------
     a : ndarray
         numpy array
+
     axis : int
         numpy axis
 
@@ -76,6 +78,7 @@ def are_arrays_equal(a, b):  # pragma: no cover
     ----------
     a : ndarray
         First argument.
+
     b : ndarray
         Second argument.
 
@@ -101,6 +104,7 @@ def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
     ----------
     a : ndarray
         First argument.
+
     threshold : float
         Minimum value in which to compare the matrix profile to
 
@@ -124,6 +128,7 @@ def sliding_dot_product(Q, T):
     ----------
     Q : ndarray
         Query array or subsequence
+
     T : ndarray
         Time series or sequence
 
@@ -160,6 +165,7 @@ def compute_mean_std(T, m):
     ----------
     T : ndarray
         Time series or sequence
+
     m : int
         Window size
 
@@ -167,6 +173,7 @@ def compute_mean_std(T, m):
     -------
     M_T : ndarray
         Sliding mean
+
     Σ_T : ndarray
         Sliding standard deviation
 
@@ -212,14 +219,19 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     ----------
     m : int
         Window size
+
     QT : ndarray
         Dot product between `Q` and `T`
+
     μ_Q : ndarray
         Mean of `Q`
+
     σ_Q : ndarray
         Standard deviation of `Q`
+
     M_T : ndarray
         Sliding mean of `T`
+
     Σ_T : ndarray
         Sliding standard deviation of `T`
 
@@ -247,6 +259,7 @@ def mueen_calculate_distance_profile(Q, T):
     ----------
     Q : ndarray
         Query array or subsequence
+
     T : ndarray
         Time series or sequence
 
@@ -304,10 +317,13 @@ def mass(Q, T, M_T=None, Σ_T=None):
     ----------
     Q : ndarray
         Query array or subsequence
+
     T : ndarray
         Time series or sequence
+
     M_T : ndarray (optional)
         Sliding mean of `T`
+        
     Σ_T : ndarray (optional)
         Sliding standard deviation of `T`
 
