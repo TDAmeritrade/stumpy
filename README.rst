@@ -23,10 +23,10 @@ Typical usage:
     import stumpy
     import numpy as np
     
-    random_time_series = np.random.rand(10000)
+    your_time_series = np.random.rand(10000)
     window_size = 50  # Approximately, how many data points might be found in a pattern 
     
-    matrix_profile = stumpy.stump(random_time_series, m=window_size)
+    matrix_profile = stumpy.stump(your_time_series, m=window_size)
 
 Distributed usage with Dask Distributed:
 
@@ -37,10 +37,10 @@ Distributed usage with Dask Distributed:
     from dask.distributed import Client
     dask_client = Client()
     
-    random_time_series = np.random.rand(10000)
+    your_time_series = np.random.rand(10000)
     window_size = 50  # Approximately, how many data points might be found in a pattern 
     
-    matrix_profile = stumpy.stumped(dask_client, random_time_series, m=window_size)
+    matrix_profile = stumpy.stumped(dask_client, your_time_series, m=window_size)
 
 Time Series Chains:
 
@@ -49,10 +49,10 @@ Time Series Chains:
     import stumpy
     import numpy as np
     
-    random_time_series = np.random.rand(10000)
+    your_time_series = np.random.rand(10000)
     window_size = 50  # Approximately, how many data points might be found in a pattern 
     
-    matrix_profile = stumpy.stump(random_time_series, m=window_size)
+    matrix_profile = stumpy.stump(your_time_series, m=window_size)
 
     left_matrix_profile_index = matrix_profile[2]
     right_matrix_profile_index = matrix_profile[3]
