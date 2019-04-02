@@ -2,7 +2,7 @@
 STUMPY
 ======
 
-STUMPY is powerful and scalable technique that can be used for time series data mining tasks such:
+STUMPY is powerful and scalable library that computes the `matrix profile`_, which can be used for a variety of time series data mining tasks such:
 
 * motif (approximately repeated subsequences within a longer time series) discovery
 * novelty/anomaly (discord) discovery
@@ -207,6 +207,7 @@ We welcome contributions in any form! Assistance with documentation, particularl
 References
 ----------
 
+.. _matrix profile:
 .. _publications:
 
 Yeh, Chin-Chia Michael, et al. (2016) Matrix Profile I: All Pairs Similarity Joins for Time Series: A Unifiying View that Includes Motifs, Discords, and Shapelets. ICDM:1317-1322. `Link <https://ieeexplore.ieee.org/abstract/document/7837992>`__
