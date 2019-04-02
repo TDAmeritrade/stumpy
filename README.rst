@@ -13,10 +13,54 @@ STUMPY is powerful and scalable technique that can be used for time series data 
 * and more...
 
 -------------------------
-How to use Matrix Profile
+How to use STUMPY
 -------------------------
 
+Typical usage:
 
+.. code:: python
+
+    import stumpy
+    import numpy as np
+    
+    random_time_series = np.random.rand(10000)
+    window_size = 50  # Approximately, how many data points might be found in a pattern 
+    
+    matrix_profile = stumpy.stump(random_time_series, m=window_size)
+
+Distributed usage with Dask Distributed:
+
+.. code:: python
+
+    import stumpy
+    import numpy as np
+    from dask.distributed import Client
+    dask_client = Client()
+    
+    random_time_series = np.random.rand(10000)
+    window_size = 50  # Approximately, how many data points might be found in a pattern 
+    
+    matrix_profile = stumpy.stumped(dask_client, random_time_series, m=window_size)
+
+Time Series Chains:
+
+.. code:: python
+
+    import stumpy
+    import numpy as np
+    
+    random_time_series = np.random.rand(10000)
+    window_size = 50  # Approximately, how many data points might be found in a pattern 
+    
+    matrix_profile = stumpy.stump(random_time_series, m=window_size)
+
+    left_matrix_profile_index = matrix_profile[2]
+    right_matrix_profile_index = matrix_profile[3]
+    idx = 10  # Subsequence index for which to retrieve the anchored time series chain for
+
+    anchored_chain = stumpy.atsc(left_matrix_profile_index, right_matrix_profile_index, idx)
+
+    all_chain_set, longest_unanchored_chain = stumpy.allc(left_matrix_profile_index, right_matrix_profile_index)
 
 ------------
 Dependencies
@@ -55,17 +99,6 @@ Once the dependencies are installed (stay inside of the ``stumpy`` directory), e
 .. code:: bash
 
     python setup.py install 
-
--------------
-Running Tests
--------------
-
-Tests are written in the tests directory and processed using `PyTest <https://docs.pytest.org/en/latest/>`_. Tests can be executed with:
-
-.. code:: bash
-
-    ./test.sh
-
 
 -----------
 Performance
@@ -137,13 +170,44 @@ STUMPED.256: 256 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz pr
 Documentation
 -------------
 
+In order to fully understand and appreciate the underlying algorithms and applications, it is imperative that you read the original publications_. For a more detailed example of how to use STUMPY please consult the details docstrings or explore the following tutorials:
+
+1. `Matrix Profile - Tutorial #1 <notebooks/Tutorial_1.ipynb>`_
+2. `Time Series Chains - Tutorial #2 <notebooks/Tutorial_2.ipynb>`_
+
+-------------
+Running Tests
+-------------
+
+Tests are written in the ``tests`` directory and processed using `PyTest <https://docs.pytest.org/en/latest/>`_. and requires ``coverage.py`` for code coverage analysis. Tests can be executed with:
+
+.. code:: bash
+
+    ./test.sh
+
+--------------
+Python Version
+--------------
+
+STUMPY supports Python 3.5+. Given the small dependencies, STUMPY may work on older versions of Python but this is beyond the scope of our support and we strongly recommend that you upgrade to the most recent version of Python.
+
 ------------
 Getting Help
 ------------
 
+First, please check the issues on github to see if your question has already been answered there. If no solution is available there feel free to open a new issue and the authors will attempt to respond in a reasonably timely fashion.
+
+------------
+Contributing
+------------
+
+We welcome contributions in any form! Assistance with documentation, particularly expanding tutorials, is always welcome. To contribute please fork the project make your changes and submit a pull request. We will do our best to work through any issues with you and get your code merged into the main branch.
+
 ----------
 References
 ----------
+
+.. _publications:
 
 Yeh, Chin-Chia Michael, et al. (2016) Matrix Profile I: All Pairs Similarity Joins for Time Series: A Unifiying View that Includes Motifs, Discords, and Shapelets. ICDM:1317-1322. `Link <https://ieeexplore.ieee.org/abstract/document/7837992>`__
 
@@ -151,8 +215,10 @@ Zhu, Yan, et al. (2016) Matrix Profile II: Exploiting a Novel Algorithm and GPUs
 
 Zhu, Yan, et al. (2017) Matrix Profile VII: Time Series Chains: A New Primitive for Time Series Data Mining. ICDM:695-704. `Link <https://ieeexplore.ieee.org/abstract/document/8215542>`__
 
--------
-License
--------
+-------------------
+License & Trademark
+-------------------
 
-3-Clause BSD License 
+STUMPY is open source software released under the terms of the 3-Clause BSD license. The source code is copyrighted by TD Ameritrade. 
+
+The STUMPY trademark and logo are owned by TD Ameritrade.
