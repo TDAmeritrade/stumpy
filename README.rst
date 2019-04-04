@@ -2,7 +2,7 @@
 STUMPY
 ======
 
-STUMPY is powerful and scalable library that efficiently computes something called the `matrix profile`_, which can be used for a variety of time series data mining tasks such:
+STUMPY is a powerful and scalable library that efficiently computes something called the `matrix profile`_, which can be used for a variety of time series data mining tasks such as:
 
 * pattern/motif (approximately repeated subsequences within a longer time series) discovery
 * anomaly/novelty (discord) discovery
