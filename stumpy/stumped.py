@@ -35,7 +35,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False):
     Returns
     -------
     out : ndarray
-        The first column consistsn of the matrix profile, the second column 
+        The first column consists of the matrix profile, the second column 
         consists of the matrix profile indices, the third column consists of 
         the left matrix profile indices, and the fourth column consists of 
         the right matrix profile indices.
