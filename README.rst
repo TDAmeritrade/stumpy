@@ -104,7 +104,7 @@ Once the dependencies are installed (stay inside of the ``stumpy`` directory), e
 Performance
 -----------
 
-We tested the performance using the Numba JIT compiled version of the code on randomly generated data with various lengths (i.e., ``np.random.rand(n)``).
+We tested the performance using the Numba JIT compiled version of the code on randomly generated data with various lengths (i.e., ``np.random.rand(n)``). Results are displayed as Hours:Minutes:Seconds.
 
 +----------+-------------------+--------------+-------------+-------------+-------------+
 |    i     |  n = 2\ :sup:`i`  | GPU-STOMP    | STUMP.16    | STUMPED.128 | STUMPED.256 |
@@ -158,7 +158,7 @@ We tested the performance using the Numba JIT compiled version of the code on ra
 | 27       | 134217728         | NaN          | NaN         | NaN         | NaN         |
 +----------+-------------------+--------------+-------------+-------------+-------------+
 
-GPU-STOMP: Results copied from the original `Matrix Profile II <https://ieeexplore.ieee.org/abstract/document/7837898>`_ paper - NVIDIA Tesla K80 (contains 2 GPUs) 
+GPU-STOMP: Results are reproduced from the original `Matrix Profile II <https://ieeexplore.ieee.org/abstract/document/7837898>`_ paper - NVIDIA Tesla K80 (contains 2 GPUs) 
     
 STUMP.16: 16 CPUs in Total - 16x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors parallelized with Numba on a single server without Dask.
 
