@@ -9,10 +9,10 @@ logger = logging.getLogger(__name__)
 def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T, 
                              ignore_trivial):
     """
-    Compute the matrix profile, matrix profile index, left matrix profile 
-    index, and right matrix profile index for given window within the times
-    series or sequence that is denote by the `start` index. Essentially, this
-    is a convenience wrapper around `stamp.mass`
+    multi-dimensional wrapper to compute the matrix profile, matrix profile index, 
+    left matrix profile index, and right matrix profile index for given window 
+    within the times series or sequence that is denote by the `start` index. 
+    Essentially, this is a convenience wrapper around `stamp.multi_mass`
 
     Parameters
     ----------
@@ -47,28 +47,33 @@ def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T,
     I : int64
         Matrix profile index for the window with index equal to `start`
     """
+    ndims = T.shape[0]
+    P = np.empty(ndims, dtype='float64')
+    I = np.empty(ndims, dtype='int64')
+    IL = np.empty(ndims, dtype='int64')
+    IR = np.empty(ndims, dtype='int64')
 
     # Handle first subsequence, add exclusionary zone
     if ignore_trivial:
-        P, I = stamp.mass(T[start:start+m], T, M_T, Σ_T, 
+        P, I = stamp.multi_mass(T[:, start:start+m], T, M_T, Σ_T, 
                           start, excl_zone)
-        PL, IL = stamp.mass(T[start:start+m], T, M_T, Σ_T, 
+        PL, IL = stamp.multi_mass(T[:, start:start+m], T, M_T, Σ_T, 
                             start, excl_zone, left=True)        
-        PR, IR = stamp.mass(T[start:start+m], T, M_T, Σ_T, 
+        PR, IR = stamp.multi_mass(T[:, start:start+m], T, M_T, Σ_T, 
                             start, excl_zone, right=True)
     else:
-        P, I = stamp.mass(T[start:start+m], T, M_T, Σ_T)
+        P, I = stamp.mass(T[:, start:start+m], T, M_T, Σ_T)
         # No left and right matrix profile available
         IL = -1
         IR = -1
 
-    return P, (I, IL, IR)
+    return P, np.array([I, IL, IR]).T
 
-def _get_QT(start, T, m):
+def _get_multi_QT(start, T, m):
     """
-    Compute the sliding dot product between the query, `T_B`, (from
-    [start:start+m]) and the time series, `T_A`. Additionally, compute
-    QT for the first window.
+    Multi-dimensional wrapper to compute the sliding dot product between 
+    the query, `T[:, start:start+m])` and the time series, `T`. 
+    Additionally, compute QT for the first window.
 
     Parameters
     ----------
@@ -90,8 +95,15 @@ def _get_QT(start, T, m):
          QT for the first window
     """
 
-    QT = core.sliding_dot_product(T[start:start+m], T)
-    QT_first = core.sliding_dot_product(T[:m], T)
+    ndims = T.shape[0]
+    k = T.shape[1]-m+1
+
+    QT = np.empty((ndims, k), dtype='float64')
+    QT_first = np.empty((ndims, k), dtype='float64')
+
+    for dim in range(ndims):
+        QT[dim] = core.sliding_dot_product(T[dim, start:start+m], T[dim])
+        QT_first[dim] = core.sliding_dot_product(T[dim, :m], T[dim])
 
     return QT, QT_first
 
@@ -311,26 +323,22 @@ def mstump(T, m):
     profile = np.empty((ndims, l,), dtype='float64')
     indices = np.empty((ndims, l, 3), dtype='int64')
 
-    QT = np.empty((ndims, k), dtype='float64')
-    QT_first = np.empty((ndims, k), dtype='float64')
-
     start = 0
     stop = l
 
-    for dim in range(ndims):
-        profile[dim, start], indices[dim, start, :] = \
-            _get_first_mstump_profile(start, T[dim], m, zone, M_T[dim], 
-                                     Σ_T[dim], ignore_trivial)
+    profile[:, start], indices[:, start, :] = \
+        _get_first_mstump_profile(start, T, m, zone, M_T, 
+                                 Σ_T, ignore_trivial)
 
-        QT[dim], QT_first[dim] = _get_QT(start, T[dim], m)
+    QT, QT_first = _get_multi_QT(start, T, m)
 
     for dim in range(ndims):
         profile[dim, start+1:stop], indices[dim, start+1:stop, :] = \
             _mstump(T[dim], T[dim], m, stop, zone, M_T[dim], Σ_T[dim], QT[dim], QT_first[dim], μ_Q[dim],
                    σ_Q[dim], k, ignore_trivial, start+1)
 
-        out[dim, :, 0] = profile[dim]
-        out[dim, :, 1:4] = indices[dim]
+    out[:, :, 0] = profile
+    out[:, :, 1:4] = indices
     
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover

@@ -78,6 +78,60 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
 
     return P, I
 
+def multi_mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False):
+    """
+    A wrapper around "Mueen's Algorithm for Similarity Search" (MASS) to compute
+    multi-dimensional MASS.
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array or subsequence
+
+    T : ndarray
+        Time series array or sequence
+
+    M_T : ndarray
+        Sliding mean for `T`
+
+    Σ_T : ndarray
+        Sliding standard deviation for `T`
+
+    trivial_idx : int
+        Index for the start of the trivial self-join
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the `trivial_idx`.
+        If the `trivial_idx` is `None` then this parameter is ignored.
+
+    left : bool
+        Return the left matrix profile indices if `True`. If `right` is True
+        then this parameter is ignored.
+
+    right : bool
+        Return the right matrix profiles indices if `True`
+
+    Returns
+    -------
+    P : ndarray
+        Matrix profile
+
+    I : ndarray
+        Matrix profile indices
+    """
+
+    ndims = T.shape[0]
+
+    P = np.empty(ndims, dtype='float64')
+    I = np.empty(ndims, dtype='int64')
+
+    for dim in range(ndims):
+        P[dim], I[dim] = mass(Q[dim], T[dim], M_T[dim], Σ_T[dim], 
+                              trivial_idx, excl_zone, left, right)
+
+    return P, I
+
+
 def stamp(T_A, T_B, m, ignore_trivial=False):
     """
     Compute matrix profile and indices using the "Scalable Time series 
