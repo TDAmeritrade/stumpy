@@ -1,10 +1,99 @@
 import numpy as np
-from . import core, stamp, _get_first_stump_profile, _get_QT, 
+from . import core, stamp
 from . import _calculate_squared_distance_profile
 from numba import njit, prange
 import logging
 
 logger = logging.getLogger(__name__)
+
+def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T, 
+                             ignore_trivial):
+    """
+    Compute the matrix profile, matrix profile index, left matrix profile 
+    index, and right matrix profile index for given window within the times
+    series or sequence that is denote by the `start` index. Essentially, this
+    is a convenience wrapper around `stamp.mass`
+
+    Parameters
+    ----------
+    start : int
+        The window index to calculate the first matrix profile, matrix profile
+        index, left matrix profile index, and right matrix profile index for.
+
+    T : ndarray
+        The time series or sequence for which the matrix profile index will 
+        be returned
+
+    m : int
+        Window size
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the `start`.
+
+    M_T : ndarray
+        Sliding mean for `T`
+
+    Σ_T : ndarray
+        Sliding standard deviation for `T`
+
+    ignore_trivial : bool
+        `True` if this is a self join and `False` otherwise (i.e., AB-join).
+
+    Returns
+    -------
+    P : float64
+        Matrix profile for the window with index equal to `start`
+
+    I : int64
+        Matrix profile index for the window with index equal to `start`
+    """
+
+    # Handle first subsequence, add exclusionary zone
+    if ignore_trivial:
+        P, I = stamp.mass(T[start:start+m], T, M_T, Σ_T, 
+                          start, excl_zone)
+        PL, IL = stamp.mass(T[start:start+m], T, M_T, Σ_T, 
+                            start, excl_zone, left=True)        
+        PR, IR = stamp.mass(T[start:start+m], T, M_T, Σ_T, 
+                            start, excl_zone, right=True)
+    else:
+        P, I = stamp.mass(T[start:start+m], T, M_T, Σ_T)
+        # No left and right matrix profile available
+        IL = -1
+        IR = -1
+
+    return P, (I, IL, IR)
+
+def _get_QT(start, T, m):
+    """
+    Compute the sliding dot product between the query, `T_B`, (from
+    [start:start+m]) and the time series, `T_A`. Additionally, compute
+    QT for the first window.
+
+    Parameters
+    ----------
+    start : int
+        The window index for T_B from which to calculate the QT dot product
+
+    T : ndarray
+        The time series or sequence for which to compute the dot product
+
+    m : int
+        Window size
+
+    Returns
+    ------- 
+    QT : ndarray
+        Given `start`, return the corresponding QT
+
+    QT_first : ndarray
+         QT for the first window
+    """
+
+    QT = core.sliding_dot_product(T[start:start+m], T)
+    QT_first = core.sliding_dot_product(T[:m], T)
+
+    return QT, QT_first
 
 @njit(parallel=True, fastmath=True) 
 def _mstump(T_A, T_B, m, range_stop, excl_zone, 
@@ -158,23 +247,17 @@ def _mstump(T_A, T_B, m, range_stop, excl_zone,
     
     return profile, indices
 
-def mstump(T_A, m, T_B=None, ignore_trivial=True):
+def mstump(T, m):
     """
     This is a convenience wrapper around the Numba JIT-compiled parallelized 
     `_stump` function which computes the matrix profile according to STOMP.
 
     Parameters
     ----------
-    T_A : ndarray
+    T : ndarray
         The time series or sequence for which to compute the matrix profile
     m : int
         Window size
-    T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest. Default is `None` which corresponds to a self-join.
-    ignore_trivial : bool
-        Set to `True` if this is a self-join. Otherwise, for AB-join, set this
-        to `False`. Default is `True`.
 
     Returns
     -------
@@ -212,47 +295,42 @@ def mstump(T_A, m, T_B=None, ignore_trivial=True):
     Note that left and right matrix profiles are only available for self-joins.
     """
 
-    core.check_dtype(T_A)
-    if T_B is None:  # Self join!
-        T_B = T_A
-        ignore_trivial = True
-    core.check_dtype(T_B)
-
-    if ignore_trivial == False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
-        logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
-        logger.warning("Try setting `ignore_trivial = True`.")
-
-    if ignore_trivial and core.are_arrays_equal(T_A, T_B) == False:  # pragma: no cover
-        logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
-        logger.warning("Try setting `ignore_trivial = False`.")        
+    ignore_trivial = True
+    core.check_dtype(T)
     
-    n = T_B.shape[0]
-    k = T_A.shape[0]-m+1
+    ndims = T.shape[0]
+    n = T.shape[1]
+    k = T.shape[1]-m+1
     l = n-m+1
     zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
 
-    M_T, Σ_T = core.compute_mean_std(T_A, m)
-    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
+    M_T, Σ_T = core.multi_compute_mean_std(T, m)
+    μ_Q, σ_Q = core.multi_compute_mean_std(T, m)
 
-    out = np.empty((l, 4), dtype=object)
-    profile = np.empty((l,), dtype='float64')
-    indices = np.empty((l, 3), dtype='int64')
+    out = np.empty((ndims, l, 4), dtype=object)
+    profile = np.empty((ndims, l,), dtype='float64')
+    indices = np.empty((ndims, l, 3), dtype='int64')
+
+    QT = np.empty((ndims, k), dtype='float64')
+    QT_first = np.empty((ndims, k), dtype='float64')
 
     start = 0
     stop = l
 
-    profile[start], indices[start, :] = \
-        _get_first_stump_profile(start, T_A, T_B, m, zone, M_T, 
-                                 Σ_T, ignore_trivial)
+    for dim in range(ndims):
+        profile[dim, start], indices[dim, start, :] = \
+            _get_first_mstump_profile(start, T[dim], m, zone, M_T[dim], 
+                                     Σ_T[dim], ignore_trivial)
 
-    QT, QT_first = _get_QT(start, T_A, T_B, m)
+        QT[dim], QT_first[dim] = _get_QT(start, T[dim], m)
 
-    profile[start+1:stop], indices[start+1:stop, :] = \
-        _stump(T_A, T_B, m, stop, zone, M_T, Σ_T, QT, QT_first, μ_Q,
-               σ_Q, k, ignore_trivial, start+1)
+    for dim in range(ndims):
+        profile[dim, start+1:stop], indices[dim, start+1:stop, :] = \
+            _mstump(T[dim], T[dim], m, stop, zone, M_T[dim], Σ_T[dim], QT[dim], QT_first[dim], μ_Q[dim],
+                   σ_Q[dim], k, ignore_trivial, start+1)
 
-    out[:, 0] = profile
-    out[:, 1:4] = indices
+        out[dim, :, 0] = profile[dim]
+        out[dim, :, 1:4] = indices[dim]
     
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
