@@ -9,7 +9,10 @@ import warnings
 def dask_client():
     cluster = LocalCluster(n_workers=None, threads_per_worker=2)
     client = Client(cluster)
-    return client
+    yield client
+    # teardown
+    client.close()
+    cluster.close()
 
 def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     D = np.linalg.norm(core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1)
