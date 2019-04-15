@@ -267,7 +267,7 @@ def _stump(T_A, T_B, m, range_stop, excl_zone,
 
         if ignore_trivial:
             zone_start = max(0, i-excl_zone)
-            zone_stop = i+excl_zone+1
+            zone_stop = min(k, i+excl_zone)
             D[zone_start:zone_stop] = np.inf
         I = np.argmin(D)
         P = np.sqrt(D[I])
@@ -275,14 +275,14 @@ def _stump(T_A, T_B, m, range_stop, excl_zone,
         # Get left and right matrix profiles for self-joins
         if ignore_trivial and i > 0:
             IL = np.argmin(D[:i])
-            if zone_start <= IL < zone_stop:
+            if zone_start <= IL <= zone_stop:
                 IL = -1
         else:
             IL = -1
 
         if ignore_trivial and i+1 < D.shape[0]:
             IR = i + 1 + np.argmin(D[i+1:])
-            if zone_start <= IR < zone_stop:
+            if zone_start <= IR <= zone_stop:
                 IR = -1
         else:
             IR = -1

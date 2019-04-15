@@ -7,7 +7,7 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     D = np.linalg.norm(core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1)
     if ignore_trivial:
             start = max(0, trivial_idx - excl_zone)
-            stop = trivial_idx + excl_zone+1
+            stop = min(T.shape[0]-Q.shape[0]+1, trivial_idx + excl_zone)
             D[start:stop] = np.inf
     I = np.argmin(D)
     P = D[I]
@@ -20,6 +20,8 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
             if D[i] < PL:
                 IL = i
                 PL = D[i]
+        if start <= IL <= stop:
+            IL = -1
     else:
         IL = -1
 
@@ -30,6 +32,8 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
             if D[i] < PR:
                 IR = i
                 PR = D[i]
+        if start <= IR <= stop:
+            IR = -1
     else:
         IR = -1
 

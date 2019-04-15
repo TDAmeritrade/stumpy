@@ -6,8 +6,137 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T, 
-                             ignore_trivial):
+def multi_compute_mean_std(T, m):
+    """
+    Compute the sliding mean and standard deviation for the array `T` with 
+    a window size of `m`
+
+    Parameters
+    ----------
+    T : ndarray
+        Time series or sequence
+
+    m : int
+        Window size
+
+    Returns
+    -------
+    M_T : ndarray
+        Sliding mean
+
+    Σ_T : ndarray
+        Sliding standard deviation
+
+    Notes
+    -----
+    DOI: 10.1109/ICDM.2016.0179
+    See Table II
+
+    DOI: 10.1145/2020408.2020587
+    See Page 2 and Equations 1, 2
+
+    DOI: 10.1145/2339530.2339576
+    See Page 4
+
+    http://www.cs.unm.edu/~mueen/FastestSimilaritySearch.html
+
+    Note that Mueen's algorithm has an off-by-one bug where the
+    sum for the first subsequence is omitted and we fixed that!
+    """
+    n = T.shape[1]
+    nrows, ncols = T.shape
+
+    cumsum_T = np.empty((nrows, ncols+1))
+    np.cumsum(T, axis=1, out=cumsum_T[:, 1:])  # store output in cumsum_T[1:]
+    cumsum_T[:, 0] = 0
+
+    cumsum_T_squared = np.empty((nrows, ncols+1))
+    np.cumsum(np.square(T), axis=1, out=cumsum_T_squared[:, 1:])
+    cumsum_T_squared[:, 0] = 0
+    
+    subseq_sum_T = cumsum_T[:, m:] - cumsum_T[:, :n-m+1]
+    subseq_sum_T_squared = cumsum_T_squared[:, m:] - cumsum_T_squared[:, :n-m+1]
+    M_T =  subseq_sum_T/m
+    Σ_T = np.abs((subseq_sum_T_squared/m)-np.square(M_T))
+    Σ_T = np.sqrt(Σ_T)
+
+    return M_T, Σ_T
+
+def multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
+    """
+    A wrapper around "Mueen's Algorithm for Similarity Search" (MASS) to compute
+    multi-dimensional MASS.
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array or subsequence
+
+    T : ndarray
+        Time series array or sequence
+
+    M_T : ndarray
+        Sliding mean for `T`
+
+    Σ_T : ndarray
+        Sliding standard deviation for `T`
+
+    trivial_idx : int
+        Index for the start of the trivial self-join
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the `trivial_idx`.
+        If the `trivial_idx` is `None` then this parameter is ignored.
+
+    left : bool
+        Return the left matrix profile indices if `True`. If `right` is True
+        then this parameter is ignored.
+
+    right : bool
+        Return the right matrix profiles indices if `True`
+
+    Returns
+    -------
+    P : ndarray
+        Matrix profile
+
+    I : ndarray
+        Matrix profile indices
+    """
+
+    d = T.shape[0]
+    n = T.shape[1]
+    k = n-m+1
+
+    P = np.full((d, k), np.inf, dtype='float64')
+    D = np.empty((d, k), dtype='float64')
+    I = np.ones((d, k), dtype='int64') * -1
+
+    for i in range(d):
+        D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
+
+    zone_start = max(0, trivial_idx-excl_zone)
+    zone_stop = min(k, trivial_idx + excl_zone)  #**********************
+    D[:, zone_start:zone_stop] = np.inf
+
+    # Column-wise sort
+    #row_idx = np.argsort(D, axis=0)
+    #D = D[row_idx, np.arange(row_idx.shape[1])]
+    D = np.sort(D, axis=0)
+
+    D_prime = np.zeros(k)
+    for i in range(d):
+        D_prime = D_prime + D[i, :]
+        D_prime_prime = D_prime/(i+1)
+        # Element-wise Min
+        col_idx = np.argmin([P[i, :], D_prime_prime], axis=0)
+        col_mask = col_idx > 0
+        P[i, col_mask] = D_prime_prime[col_mask]
+        I[i, col_mask] = trivial_idx
+
+    return P, I
+
+def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T):
     """
     multi-dimensional wrapper to compute the matrix profile, matrix profile index, 
     left matrix profile index, and right matrix profile index for given window 
@@ -36,38 +165,16 @@ def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T,
     Σ_T : ndarray
         Sliding standard deviation for `T`
 
-    ignore_trivial : bool
-        `True` if this is a self join and `False` otherwise (i.e., AB-join).
-
     Returns
     -------
     P : float64
         Matrix profile for the window with index equal to `start`
-
-    I : int64
-        Matrix profile index for the window with index equal to `start`
     """
-    ndims = T.shape[0]
-    P = np.empty(ndims, dtype='float64')
-    I = np.empty(ndims, dtype='int64')
-    IL = np.empty(ndims, dtype='int64')
-    IR = np.empty(ndims, dtype='int64')
 
     # Handle first subsequence, add exclusionary zone
-    if ignore_trivial:
-        P, I = stamp.multi_mass(T[:, start:start+m], T, M_T, Σ_T, 
-                          start, excl_zone)
-        PL, IL = stamp.multi_mass(T[:, start:start+m], T, M_T, Σ_T, 
-                            start, excl_zone, left=True)        
-        PR, IR = stamp.multi_mass(T[:, start:start+m], T, M_T, Σ_T, 
-                            start, excl_zone, right=True)
-    else:
-        P, I = stamp.mass(T[:, start:start+m], T, M_T, Σ_T)
-        # No left and right matrix profile available
-        IL = -1
-        IR = -1
+    P, I = multi_mass(T[:, start:start+m], T, m, M_T, Σ_T, start, excl_zone)
 
-    return P, np.array([I, IL, IR]).T
+    return P, I
 
 def _get_multi_QT(start, T, m):
     """
@@ -95,22 +202,22 @@ def _get_multi_QT(start, T, m):
          QT for the first window
     """
 
-    ndims = T.shape[0]
+    d = T.shape[0]
     k = T.shape[1]-m+1
 
-    QT = np.empty((ndims, k), dtype='float64')
-    QT_first = np.empty((ndims, k), dtype='float64')
+    QT = np.empty((d, k), dtype='float64')
+    QT_first = np.empty((d, k), dtype='float64')
 
-    for dim in range(ndims):
+    for dim in range(d):
         QT[dim] = core.sliding_dot_product(T[dim, start:start+m], T[dim])
         QT_first[dim] = core.sliding_dot_product(T[dim, :m], T[dim])
 
     return QT, QT_first
 
 @njit(parallel=True, fastmath=True) 
-def _mstump(T_A, T_B, m, range_stop, excl_zone, 
+def _mstump(T, m, P, I, D, D_prime, range_stop, excl_zone, 
            M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, 
-           ignore_trivial=True, range_start=1):
+           range_start=1):
     """
     A Numba JIT-compiled version of STOMP for parallel computation of the
     matrix profile, matrix profile indices, left matrix profile indices, 
@@ -172,11 +279,6 @@ def _mstump(T_A, T_B, m, range_stop, excl_zone,
     profile : ndarray
         Matrix profile
 
-    indices : ndarray
-        The first column consists of the matrix profile indices, the second
-        column consists of the left matrix profile indices, and the third
-        column consists of the right matrix profile indices.
-
     Notes
     -----
     DOI: 10.1109/ICDM.2016.0085
@@ -206,58 +308,53 @@ def _mstump(T_A, T_B, m, range_stop, excl_zone,
 
     QT_odd = QT.copy()
     QT_even = QT.copy()
-    profile = np.empty((range_stop-range_start,))  # float64
-    indices = np.empty((range_stop-range_start, 3))  # int64
+    d = T.shape[0]
     
     for i in range(range_start, range_stop):
-        # Numba's prange requires incrementing a range by 1 so replace
-        # `for j in range(k-1,0,-1)` with its incrementing compliment
-        for rev_j in prange(1, k):
-            j = k - rev_j
-            # GPU Stomp Parallel Implementation with Numba
-            # DOI: 10.1109/ICDM.2016.0085
-            # See Figure 5
+        D[:, :] = 0.0
+        for dim in range(d):
+            # Numba's prange requires incrementing a range by 1 so replace
+            # `for j in range(k-1,0,-1)` with its incrementing compliment
+            for rev_j in prange(1, k):
+                j = k - rev_j
+                # GPU Stomp Parallel Implementation with Numba
+                # DOI: 10.1109/ICDM.2016.0085
+                # See Figure 5
+                if i % 2 == 0:
+                    # Even
+                    QT_even[dim, j] = QT_odd[dim, j-1] - T[dim, i-1]*T[dim, j-1] + T[dim, i+m-1]*T[dim, j+m-1]
+                else:
+                    # Odd
+                    QT_odd[dim, j] = QT_even[dim, j-1] - T[dim, i-1]*T[dim, j-1] + T[dim, i+m-1]*T[dim, j+m-1]
+
             if i % 2 == 0:
-                # Even
-                QT_even[j] = QT_odd[j-1] - T_B[i-1]*T_A[j-1] + T_B[i+m-1]*T_A[j+m-1]
+                QT_even[dim, 0] = QT_first[dim, i]
+                D[dim] = _calculate_squared_distance_profile(m, QT_even[dim], μ_Q[dim, i], σ_Q[dim, i], M_T[dim], Σ_T[dim])
             else:
-                # Odd
-                QT_odd[j] = QT_even[j-1] - T_B[i-1]*T_A[j-1] + T_B[i+m-1]*T_A[j+m-1]
+                QT_odd[dim, 0] = QT_first[dim, i]
+                D[dim] = _calculate_squared_distance_profile(m, QT_odd[dim], μ_Q[dim, i], σ_Q[dim, i], M_T[dim], Σ_T[dim])
 
-        if i % 2 == 0:
-            QT_even[0] = QT_first[i]
-            D = _calculate_squared_distance_profile(m, QT_even, μ_Q[i], σ_Q[i], M_T, Σ_T)
-        else:
-            QT_odd[0] = QT_first[i]
-            D = _calculate_squared_distance_profile(m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T)
+        zone_start = max(0, i-excl_zone)
+        zone_stop = min(k, i + excl_zone)   #********************
+        D[:, zone_start:zone_stop] = np.inf
 
-        if ignore_trivial:
-            zone_start = max(0, i-excl_zone)
-            zone_stop = i+excl_zone+1
-            D[zone_start:zone_stop] = np.inf
-        I = np.argmin(D)
-        P = np.sqrt(D[I])
+        D = np.sqrt(D)
+        # Column-wise sort
+        for col in range(k):
+            #row_idx[:, col] = np.argsort(D[:, col])
+            #D[:, col] = D[row_idx[:, col], col]
+            D[:, col] = np.sort(D[:, col])
+        D_prime[:] = 0.0
+        for dim in range(d):
+            D_prime = D_prime + D[dim, :]
+            D_prime_prime = D_prime / (dim + 1)
+            # Element-wise Min
+            for col in range(k):
+                if P[dim, col] > D_prime_prime[col]:
+                    P[dim, col] = D_prime_prime[col]
+                    I[dim, col] = i 
 
-        # Get left and right matrix profiles for self-joins
-        if ignore_trivial and i > 0:
-            IL = np.argmin(D[:i])
-            if zone_start <= IL < zone_stop:
-                IL = -1
-        else:
-            IL = -1
-
-        if ignore_trivial and i+1 < D.shape[0]:
-            IR = i + 1 + np.argmin(D[i+1:])
-            if zone_start <= IR < zone_stop:
-                IR = -1
-        else:
-            IR = -1
-
-        # Only a part of the profile/indices array are passed
-        profile[i-range_start] = P
-        indices[i-range_start] = I, IL, IR
-    
-    return profile, indices
+    return P, I
 
 def mstump(T, m):
     """
@@ -307,42 +404,28 @@ def mstump(T, m):
     Note that left and right matrix profiles are only available for self-joins.
     """
 
-    ignore_trivial = True
     core.check_dtype(T)
     
-    ndims = T.shape[0]
+    d = T.shape[0]
     n = T.shape[1]
-    k = T.shape[1]-m+1
-    l = n-m+1
-    zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
+    k = n-m+1
+    excl_zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
 
-    M_T, Σ_T = core.multi_compute_mean_std(T, m)
-    μ_Q, σ_Q = core.multi_compute_mean_std(T, m)
+    M_T, Σ_T = multi_compute_mean_std(T, m)
+    μ_Q, σ_Q = multi_compute_mean_std(T, m)
 
-    out = np.empty((ndims, l, 4), dtype=object)
-    profile = np.empty((ndims, l,), dtype='float64')
-    indices = np.empty((ndims, l, 3), dtype='int64')
+    P = np.empty((d, k), dtype='float64')
+    D = np.zeros((d, k), dtype='float64')
+    D_prime = np.zeros(k, dtype='float64')
+    I = np.ones((d, k), dtype='int64') * -1
 
     start = 0
-    stop = l
+    stop = k
 
-    profile[:, start], indices[:, start, :] = \
-        _get_first_mstump_profile(start, T, m, zone, M_T, 
-                                 Σ_T, ignore_trivial)
+    P, I = _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T)
 
     QT, QT_first = _get_multi_QT(start, T, m)
 
-    for dim in range(ndims):
-        profile[dim, start+1:stop], indices[dim, start+1:stop, :] = \
-            _mstump(T[dim], T[dim], m, stop, zone, M_T[dim], Σ_T[dim], QT[dim], QT_first[dim], μ_Q[dim],
-                   σ_Q[dim], k, ignore_trivial, start+1)
-
-    out[:, :, 0] = profile
-    out[:, :, 1:4] = indices
-    
-    threshold = 10e-6
-    if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
-        logger.warning(f"A large number of values are smaller than {threshold}.")
-        logger.warning("For a self-join, try setting `ignore_trivial = True`.")
-        
-    return out
+    _mstump(T, m, P, I, D, D_prime, stop, excl_zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, start+1)
+            
+    return P, I

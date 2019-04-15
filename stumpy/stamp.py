@@ -44,7 +44,7 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
     D = core.mass(Q, T, M_T, Σ_T)
     if trivial_idx is not None:
         zone_start = max(0, trivial_idx-excl_zone)
-        zone_stop = trivial_idx+excl_zone+1
+        zone_stop = min(T.shape[0]-Q.shape[0]+1, trivial_idx+excl_zone)
         D[zone_start:zone_stop] = np.inf
 
         #Get left and right matrix profiles
@@ -53,7 +53,7 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
         if D[:trivial_idx].size:
             IL = np.argmin(D[:trivial_idx])
             PL = D[IL]
-        if zone_start <= IL < zone_stop:
+        if zone_start <= IL <= zone_stop:
             IL = -1
 
         IR = -1
@@ -61,7 +61,7 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
         if D[trivial_idx:].size:
             IR = trivial_idx +  np.argmin(D[trivial_idx:])
             PR = D[IR]
-        if zone_start <= IR < zone_stop:
+        if zone_start <= IR <= zone_stop:
             IR = -1
 
     # Element-wise Min
@@ -77,60 +77,6 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
         P = PR
 
     return P, I
-
-def multi_mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False):
-    """
-    A wrapper around "Mueen's Algorithm for Similarity Search" (MASS) to compute
-    multi-dimensional MASS.
-
-    Parameters
-    ----------
-    Q : ndarray
-        Query array or subsequence
-
-    T : ndarray
-        Time series array or sequence
-
-    M_T : ndarray
-        Sliding mean for `T`
-
-    Σ_T : ndarray
-        Sliding standard deviation for `T`
-
-    trivial_idx : int
-        Index for the start of the trivial self-join
-
-    excl_zone : int
-        The half width for the exclusion zone relative to the `trivial_idx`.
-        If the `trivial_idx` is `None` then this parameter is ignored.
-
-    left : bool
-        Return the left matrix profile indices if `True`. If `right` is True
-        then this parameter is ignored.
-
-    right : bool
-        Return the right matrix profiles indices if `True`
-
-    Returns
-    -------
-    P : ndarray
-        Matrix profile
-
-    I : ndarray
-        Matrix profile indices
-    """
-
-    ndims = T.shape[0]
-
-    P = np.empty(ndims, dtype='float64')
-    I = np.empty(ndims, dtype='int64')
-
-    for dim in range(ndims):
-        P[dim], I[dim] = mass(Q[dim], T[dim], M_T[dim], Σ_T[dim], 
-                              trivial_idx, excl_zone, left, right)
-
-    return P, I
-
 
 def stamp(T_A, T_B, m, ignore_trivial=False):
     """

@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False):
+def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     """
     This is highly distributed implementation around the Numba JIT-compiled 
     parallelized `_stump` function which computes the matrix profile according 
@@ -112,8 +112,6 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=False):
     QT_futures = []
     QT_first_futures = []
     for i, start in enumerate(range(0, l, step)):
-        stop = min(l, start + step)
-
         profile[start], indices[start, :] = \
             _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, 
                                      Σ_T, ignore_trivial)
