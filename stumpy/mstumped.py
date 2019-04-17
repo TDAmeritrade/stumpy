@@ -1,15 +1,15 @@
 import numpy as np
 from . import core
-from . import _mstump, _get_first_mstump_profile, _get_multi_QT, multi_compute_mean_std
+from . import _mstump, _get_first_mstump_profile, _get_multi_QT, _multi_compute_mean_std
 import logging
 
 logger = logging.getLogger(__name__)
 
 def mstumped(dask_client, T, m):
     """
-    This is highly distributed implementation around the Numba JIT-compiled 
-    parallelized `_mstump` function which computes the matrix profile according 
-    to STOMP.
+    This is a highly distributed implementation around the Numba JIT-compiled 
+    parallelized `_mstump` function which computes the multi-dimensional matrix
+    profile according to STOMP. Note that only self-joins are supported.
 
     Parameters
     ----------
@@ -20,49 +20,27 @@ def mstumped(dask_client, T, m):
         documentation.
 
     T : ndarray
-        The time series or sequence for which to compute the matrix profile
+        The time series or sequence for which to compute the multi-dimensional
+        matrix profile
 
     m : int
         Window size
 
     Returns
     -------
-    out : ndarray
-        The first column consists of the matrix profile, the second column 
-        consists of the matrix profile indices, the third column consists of 
-        the left matrix profile indices, and the fourth column consists of 
-        the right matrix profile indices.
+    P : ndarray
+        The multi-dimensioanl matrix profile. Each row of the array corresponds 
+        to each matrix profile for a given dimension (i.e., the first row is the 
+        1-D matrix profile and the second row is the 2-D matrix profile).
+    I : ndarray
+        The multi-dimensional matrix profile index where each row of the array
+        correspondsto each matrix profile index for a given dimension.
 
     Notes
     -----
 
-    DOI: 10.1109/ICDM.2016.0085
-    See Table II
-
-    This is a Dask distributed implementation of stump that scales
-    across multiple servers and is a convenience wrapper around the 
-    parallelized `mstump._mstump` function
-
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
-
-    Return: For every subsequence, Q, in T_B, you will get a distance
-    and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the 
-    left and right matrix profiles are also returned.
-
-    Note: Unlike in the Table II where T_A.shape is expected to be equal 
-    to T_B.shape, this implementation is generalized so that the shapes of 
-    T_A and T_B can be different. In the case where T_A.shape == T_B.shape, 
-    then our algorithm reduces down to the same algorithm found in Table II. 
-
-    Additionally, unlike STAMP where the exclusion zone is m/2, the default 
-    exclusion zone for STOMP is m/4 (See Definition 3 and Figure 3).
-
-    For self-joins, set `ignore_trivial = True` in order to avoid the 
-    trivial match. 
-
-    Note that left and right matrix profiles are only available for self-joins.
+    DOI: 10.1109/ICDM.2017.66
+    See mSTAMP Algorithm
     """
 
     hosts = list(dask_client.ncores().keys())
@@ -75,8 +53,8 @@ def mstumped(dask_client, T, m):
     k = n-m+1
     excl_zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
 
-    M_T, Σ_T = multi_compute_mean_std(T, m)
-    μ_Q, σ_Q = multi_compute_mean_std(T, m)
+    M_T, Σ_T = _multi_compute_mean_std(T, m)
+    μ_Q, σ_Q = _multi_compute_mean_std(T, m)
 
     P = np.empty((nworkers, d, k), dtype='float64')
     D = np.zeros((nworkers, d, k), dtype='float64')

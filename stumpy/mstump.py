@@ -6,10 +6,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def multi_compute_mean_std(T, m):
+def _multi_compute_mean_std(T, m):
     """
-    Compute the sliding mean and standard deviation for the array `T` with 
-    a window size of `m`
+    Compute the sliding mean and standard deviation for the multi-dimensional 
+    array `T` with a window size of `m`
 
     Parameters
     ----------
@@ -62,10 +62,10 @@ def multi_compute_mean_std(T, m):
 
     return M_T, Σ_T
 
-def multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
+def _multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
     """
-    A wrapper around "Mueen's Algorithm for Similarity Search" (MASS) to compute
-    multi-dimensional MASS.
+    A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search" 
+    (MASS) to compute multi-dimensional MASS.
 
     Parameters
     ----------
@@ -88,20 +88,13 @@ def multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
         The half width for the exclusion zone relative to the `trivial_idx`.
         If the `trivial_idx` is `None` then this parameter is ignored.
 
-    left : bool
-        Return the left matrix profile indices if `True`. If `right` is True
-        then this parameter is ignored.
-
-    right : bool
-        Return the right matrix profiles indices if `True`
-
     Returns
     -------
     P : ndarray
-        Matrix profile
+        Multi-dimensional matrix profile
 
     I : ndarray
-        Matrix profile indices
+        Multi-dimensional matrix profile indices
     """
 
     d = T.shape[0]
@@ -115,8 +108,8 @@ def multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
     for i in range(d):
         D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
 
-    zone_start = max(0, trivial_idx-excl_zone)
-    zone_stop = min(k, trivial_idx + excl_zone)  #**********************
+    zone_start = max(0, trivial_idx - excl_zone)
+    zone_stop = min(k, trivial_idx + excl_zone)
     D[:, zone_start:zone_stop] = np.inf
 
     # Column-wise sort
@@ -126,11 +119,12 @@ def multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
 
     D_prime = np.zeros(k)
     for i in range(d):
-        D_prime = D_prime + D[i, :]
+        D_prime = D_prime + D[i]
         D_prime_prime = D_prime/(i+1)
         # Element-wise Min
-        col_idx = np.argmin([P[i, :], D_prime_prime], axis=0)
-        col_mask = col_idx > 0
+        #col_idx = np.argmin([P[i, :], D_prime_prime], axis=0)
+        #col_mask = col_idx > 0
+        col_mask = P[i] > D_prime_prime
         P[i, col_mask] = D_prime_prime[col_mask]
         I[i, col_mask] = trivial_idx
 
@@ -138,10 +132,10 @@ def multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
 
 def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T):
     """
-    multi-dimensional wrapper to compute the matrix profile, matrix profile index, 
-    left matrix profile index, and right matrix profile index for given window 
-    within the times series or sequence that is denote by the `start` index. 
-    Essentially, this is a convenience wrapper around `stamp.multi_mass`
+    Multi-dimensional wrapper to compute the multi-dimensional matrix profile
+    and multi-dimensional matrix profile index for a given window within the 
+    times series or sequence that is denote by the `start` index. 
+    Essentially, this is a convenience wrapper around `_multi_mass`
 
     Parameters
     ----------
@@ -167,12 +161,16 @@ def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T):
 
     Returns
     -------
-    P : float64
-        Matrix profile for the window with index equal to `start`
+    P : ndarray
+        Multi-dimensional matrix profile for the window with index equal to 
+        `start`
+    I : ndarray
+        Multi-dimensional matrix profile index for the window with index 
+        equal to `start`
     """
 
     # Handle first subsequence, add exclusionary zone
-    P, I = multi_mass(T[:, start:start+m], T, m, M_T, Σ_T, start, excl_zone)
+    P, I = _multi_mass(T[:, start:start+m], T, m, M_T, Σ_T, start, excl_zone)
 
     return P, I
 
@@ -196,10 +194,10 @@ def _get_multi_QT(start, T, m):
     Returns
     ------- 
     QT : ndarray
-        Given `start`, return the corresponding QT
+        Given `start`, return the corresponding multi-dimensional QT
 
     QT_first : ndarray
-         QT for the first window
+        Multi-dimensional QT for the first window
     """
 
     d = T.shape[0]
@@ -208,9 +206,9 @@ def _get_multi_QT(start, T, m):
     QT = np.empty((d, k), dtype='float64')
     QT_first = np.empty((d, k), dtype='float64')
 
-    for dim in range(d):
-        QT[dim] = core.sliding_dot_product(T[dim, start:start+m], T[dim])
-        QT_first[dim] = core.sliding_dot_product(T[dim, :m], T[dim])
+    for i in range(d):
+        QT[i] = core.sliding_dot_product(T[i, start:start+m], T[i])
+        QT_first[i] = core.sliding_dot_product(T[i, :m], T[i])
 
     return QT, QT_first
 
@@ -219,26 +217,35 @@ def _mstump(T, m, P, I, D, D_prime, range_stop, excl_zone,
            M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, 
            range_start=1):
     """
-    A Numba JIT-compiled version of STOMP for parallel computation of the
-    matrix profile, matrix profile indices, left matrix profile indices, 
-    and right matrix profile indices.
+    A Numba JIT-compiled version of mSTOMP, a variant of mSTAMP, for parallel 
+    computation of the multi-diemnsional matrix profile and multi-diemnsional 
+    matrix profile indices. Note that only self-joins are supported.
 
     Parameters
     ----------
-    T_A : ndarray
-        The time series or sequence for which to compute the matrix profile
-
-    T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest
+    T: ndarray
+        The time series or sequence for which to compute the multi-dimensional
+        matrix profile
 
     m : int
         Window size
 
+    P : ndarray
+        The output multi-dimensional matrix profile
+
+    I : ndarray
+        The output multi-dimensional matrix profile index
+
+    D : ndarray
+        Storage for the distance profile
+
+    D_prime : ndarray
+        Storage for the cumulative sum of the distance profile
+
     range_stop : int
-        The index value along T_B for which to stop the matrix profile 
+        The index value along T for which to stop the matrix profile 
         calculation. This parameter is here for consistency with the 
-        distributed `stumped` algorithm.
+        distributed `mstumped` algorithm.
 
     excl_zone : int
         The half width for the exclusion zone relative to the current
@@ -276,43 +283,28 @@ def _mstump(T, m, P, I, D, D_prime, range_stop, excl_zone,
 
     Returns
     -------
-    profile : ndarray
-        Matrix profile
+    P : ndarray
+        The multi-dimensioanl matrix profile. Each row of the array corresponds 
+        to each matrix profile for a given dimension (i.e., the first row is the 
+        1-D matrix profile and the second row is the 2-D matrix profile).
+    I : ndarray
+        The multi-dimensional matrix profile index where each row of the array
+        correspondsto each matrix profile index for a given dimension.
 
     Notes
     -----
-    DOI: 10.1109/ICDM.2016.0085
-    See Table II
 
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
-
-    Return: For every subsequence, Q, in T_B, you will get a distance
-    and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the 
-    left and right matrix profiles are also returned.
-
-    Note: Unlike in the Table II where T_A.shape is expected to be equal 
-    to T_B.shape, this implementation is generalized so that the shapes of 
-    T_A and T_B can be different. In the case where T_A.shape == T_B.shape, 
-    then our algorithm reduces down to the same algorithm found in Table II. 
-
-    Additionally, unlike STAMP where the exclusion zone is m/2, the default 
-    exclusion zone for STOMP is m/4 (See Definition 3 and Figure 3).
-
-    For self-joins, set `ignore_trivial = True` in order to avoid the 
-    trivial match. 
-
-    Note that left and right matrix profiles are only available for self-joins.
+    DOI: 10.1109/ICDM.2017.66
+    See mSTAMP Algorithm
     """
 
     QT_odd = QT.copy()
     QT_even = QT.copy()
     d = T.shape[0]
     
-    for i in range(range_start, range_stop):
+    for idx in range(range_start, range_stop):
         D[:, :] = 0.0
-        for dim in range(d):
+        for i in range(d):
             # Numba's prange requires incrementing a range by 1 so replace
             # `for j in range(k-1,0,-1)` with its incrementing compliment
             for rev_j in prange(1, k):
@@ -320,46 +312,49 @@ def _mstump(T, m, P, I, D, D_prime, range_stop, excl_zone,
                 # GPU Stomp Parallel Implementation with Numba
                 # DOI: 10.1109/ICDM.2016.0085
                 # See Figure 5
-                if i % 2 == 0:
+                if idx % 2 == 0:
                     # Even
-                    QT_even[dim, j] = QT_odd[dim, j-1] - T[dim, i-1]*T[dim, j-1] + T[dim, i+m-1]*T[dim, j+m-1]
+                    QT_even[i, j] = QT_odd[i, j-1] - T[i, idx-1]*T[i, j-1] + T[i, idx+m-1]*T[i, j+m-1]
                 else:
                     # Odd
-                    QT_odd[dim, j] = QT_even[dim, j-1] - T[dim, i-1]*T[dim, j-1] + T[dim, i+m-1]*T[dim, j+m-1]
+                    QT_odd[i, j] = QT_even[i, j-1] - T[i, idx-1]*T[i, j-1] + T[i, idx+m-1]*T[i, j+m-1]
 
-            if i % 2 == 0:
-                QT_even[dim, 0] = QT_first[dim, i]
-                D[dim] = _calculate_squared_distance_profile(m, QT_even[dim], μ_Q[dim, i], σ_Q[dim, i], M_T[dim], Σ_T[dim])
+            if idx % 2 == 0:
+                QT_even[i, 0] = QT_first[i, idx]
+                D[i] = _calculate_squared_distance_profile(m, QT_even[i], μ_Q[i, idx], σ_Q[i, idx], M_T[i], Σ_T[i])
             else:
-                QT_odd[dim, 0] = QT_first[dim, i]
-                D[dim] = _calculate_squared_distance_profile(m, QT_odd[dim], μ_Q[dim, i], σ_Q[dim, i], M_T[dim], Σ_T[dim])
+                QT_odd[i, 0] = QT_first[i, idx]
+                D[i] = _calculate_squared_distance_profile(m, QT_odd[i], μ_Q[i, idx], σ_Q[i, idx], M_T[i], Σ_T[i])
 
-        zone_start = max(0, i-excl_zone)
-        zone_stop = min(k, i + excl_zone)   #********************
+        zone_start = max(0, idx-excl_zone)
+        zone_stop = min(k, idx + excl_zone)
         D[:, zone_start:zone_stop] = np.inf
 
         D = np.sqrt(D)
+
         # Column-wise sort
         for col in range(k):
             #row_idx[:, col] = np.argsort(D[:, col])
             #D[:, col] = D[row_idx[:, col], col]
             D[:, col] = np.sort(D[:, col])
         D_prime[:] = 0.0
-        for dim in range(d):
-            D_prime = D_prime + D[dim, :]
-            D_prime_prime = D_prime / (dim + 1)
+        for i in range(d):
+            D_prime = D_prime + D[i]
+            D_prime_prime = D_prime / (i + 1)
             # Element-wise Min
             for col in range(k):
-                if P[dim, col] > D_prime_prime[col]:
-                    P[dim, col] = D_prime_prime[col]
-                    I[dim, col] = i 
+                if P[i, col] > D_prime_prime[col]:
+                    P[i, col] = D_prime_prime[col]
+                    I[i, col] = idx
 
     return P, I
 
 def mstump(T, m):
     """
     This is a convenience wrapper around the Numba JIT-compiled parallelized 
-    `_stump` function which computes the matrix profile according to STOMP.
+    `_mstump` function which computes the multi-dimensional matrix profile and
+    multi-dimensional matrix profile index according to mSTOMP, a variant of 
+    mSTAMP. Note that only self-joins are supported.
 
     Parameters
     ----------
@@ -370,38 +365,19 @@ def mstump(T, m):
 
     Returns
     -------
-    out : ndarray
-        The first column consists of the matrix profile, the second column 
-        consists of the matrix profile indices, the third column consists of 
-        the left matrix profile indices, and the fourth column consists of 
-        the right matrix profile indices.
+    P : ndarray
+        The multi-dimensioanl matrix profile. Each row of the array corresponds 
+        to each matrix profile for a given dimension (i.e., the first row is the 
+        1-D matrix profile and the second row is the 2-D matrix profile).
+    I : ndarray
+        The multi-dimensional matrix profile index where each row of the array
+        correspondsto each matrix profile index for a given dimension.
 
     Notes
     -----
 
-    DOI: 10.1109/ICDM.2016.0085
-    See Table II
-
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
-
-    Return: For every subsequence, Q, in T_B, you will get a distance
-    and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the 
-    left and right matrix profiles are also returned.
-
-    Note: Unlike in the Table II where T_A.shape is expected to be equal 
-    to T_B.shape, this implementation is generalized so that the shapes of 
-    T_A and T_B can be different. In the case where T_A.shape == T_B.shape, 
-    then our algorithm reduces down to the same algorithm found in Table II. 
-
-    Additionally, unlike STAMP where the exclusion zone is m/2, the default 
-    exclusion zone for STOMP is m/4 (See Definition 3 and Figure 3).
-
-    For self-joins, set `ignore_trivial = True` in order to avoid the 
-    trivial match. 
-
-    Note that left and right matrix profiles are only available for self-joins.
+    DOI: 10.1109/ICDM.2017.66
+    See mSTAMP Algorithm
     """
 
     core.check_dtype(T)
@@ -411,10 +387,10 @@ def mstump(T, m):
     k = n-m+1
     excl_zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
 
-    M_T, Σ_T = multi_compute_mean_std(T, m)
-    μ_Q, σ_Q = multi_compute_mean_std(T, m)
+    M_T, Σ_T = _multi_compute_mean_std(T, m)
+    μ_Q, σ_Q = _multi_compute_mean_std(T, m)
 
-    P = np.empty((d, k), dtype='float64')
+    P = np.full((d, k), np.inf, dtype='float64')
     D = np.zeros((d, k), dtype='float64')
     D_prime = np.zeros(k, dtype='float64')
     I = np.ones((d, k), dtype='int64') * -1

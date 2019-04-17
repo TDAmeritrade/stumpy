@@ -70,7 +70,6 @@ def test_stumped_self_join(T_A, T_B, dask_client):
     zone = int(np.ceil(m/4))
     left = np.array([naive_mass(Q, T_B, m, i, zone, True) for i, Q in enumerate(core.rolling_window(T_B, m))], dtype=object)
     right = stumped(dask_client, T_B, m, ignore_trivial=True)
-    print(left, right)
     replace_inf(left)
     replace_inf(right)
     npt.assert_almost_equal(left, right)

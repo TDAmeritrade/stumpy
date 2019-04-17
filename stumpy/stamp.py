@@ -120,12 +120,12 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     core.check_dtype(T_A)
     core.check_dtype(T_B)
     subseq_T_B = core.rolling_window(T_B, m)
-    zone = int(np.ceil(m/2))
+    excl_zone = int(np.ceil(m/2))
     M_T, Σ_T = core.compute_mean_std(T_A, m)
 
     # Add exclusionary zone
     if ignore_trivial:
-        out = [mass(subseq, T_A, M_T, Σ_T, i, zone) for i, subseq in enumerate(subseq_T_B)]
+        out = [mass(subseq, T_A, M_T, Σ_T, i, excl_zone) for i, subseq in enumerate(subseq_T_B)]
     else:
         out = [mass(subseq, T_A, M_T, Σ_T) for subseq in subseq_T_B]
     out = np.array(out, dtype=object)

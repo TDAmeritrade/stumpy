@@ -364,7 +364,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     n = T_B.shape[0]
     k = T_A.shape[0]-m+1
     l = n-m+1
-    zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
+    excl_zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
 
     M_T, Σ_T = core.compute_mean_std(T_A, m)
     μ_Q, σ_Q = core.compute_mean_std(T_B, m)
@@ -377,13 +377,13 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     stop = l
 
     profile[start], indices[start, :] = \
-        _get_first_stump_profile(start, T_A, T_B, m, zone, M_T, 
+        _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, 
                                  Σ_T, ignore_trivial)
 
     QT, QT_first = _get_QT(start, T_A, T_B, m)
 
     profile[start+1:stop], indices[start+1:stop, :] = \
-        _stump(T_A, T_B, m, stop, zone, M_T, Σ_T, QT, QT_first, μ_Q,
+        _stump(T_A, T_B, m, stop, excl_zone, M_T, Σ_T, QT, QT_first, μ_Q,
                σ_Q, k, ignore_trivial, start+1)
 
     out[:, 0] = profile
