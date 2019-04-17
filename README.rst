@@ -16,7 +16,7 @@ STUMPY is a powerful and scalable library that efficiently computes something ca
 How to use STUMPY
 -------------------------
 
-Typical usage:
+Typical usage (1-dimensional time series data) with `STUMP`:
 
 .. code:: python
 
@@ -28,7 +28,7 @@ Typical usage:
     
     matrix_profile = stumpy.stump(your_time_series, m=window_size)
 
-Distributed usage with Dask Distributed:
+Distributed usage for 1-dimensional time series data with Dask Distributed via `STUMPED`:
 
 .. code:: python
 
@@ -41,6 +41,32 @@ Distributed usage with Dask Distributed:
     window_size = 50  # Approximately, how many data points might be found in a pattern 
     
     matrix_profile = stumpy.stumped(dask_client, your_time_series, m=window_size)
+
+Multi-dimensional time series data with `MSTUMP`:
+
+.. code:: python
+
+    import stumpy
+    import numpy as np
+
+    your_time_series = np.random.rand(3, 1000)
+    window_size = 50  # Approximately, how many data points might be found in a pattern
+
+    matrix_profile, matrix_profile_indices = stumpy.mstump(your_time_series, m=window_size)
+
+Distributed usage with Dask Distributed `STUMPED`:
+
+.. code:: python
+
+    import stumpy
+    import numpy as np
+    from dask.distributed import Client
+    dask_client = Client()
+
+    your_time_series = np.random.rand(3, 1000)
+    window_size = 50  # Approximately, how many data points might be found in a pattern
+
+    matrix_profile, matrix_profile_indices = stumpy.mstumped(dask_client, your_time_series, m=window_size)
 
 Time Series Chains:
 
