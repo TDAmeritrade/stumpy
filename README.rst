@@ -248,6 +248,6 @@ Zhu, Yan, et al. (2017) Matrix Profile VII: Time Series Chains: A New Primitive 
 License & Trademark
 -------------------
 
-STUMPY is open source software released under the terms of the 3-Clause BSD license. The source code is copyrighted by TD Ameritrade. 
-
-The STUMPY trademark and logo are owned by TD Ameritrade.
+STUMPY
+Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
+STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.

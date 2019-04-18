@@ -1,3 +1,7 @@
+# STUMPY
+# Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
+# STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
+
 import numpy as np
 from . import core
 from . import _mstump, _get_first_mstump_profile, _get_multi_QT, _multi_compute_mean_std
