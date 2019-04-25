@@ -1,3 +1,6 @@
+.. image:: docs/images/stumpy_logo_small.png
+   :alt: STUMPY Logo
+
 ======
 STUMPY
 ======
