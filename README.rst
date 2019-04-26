@@ -199,7 +199,7 @@ STUMPED.256: 256 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz pr
 Documentation
 -------------
 
-In order to fully understand and appreciate the underlying algorithms and applications, it is imperative that you read the original publications_. For a more detailed example of how to use STUMPY please consult the details docstrings or explore the following tutorials:
+In order to fully understand and appreciate the underlying algorithms and applications, it is imperative that you read the original publications_. For a more detailed example of how to use STUMPY please consult the detailed docstrings or explore the following tutorials:
 
 1. `Matrix Profile - Tutorial #1 <notebooks/Tutorial_1.ipynb>`_
 2. `Time Series Chains - Tutorial #2 <notebooks/Tutorial_2.ipynb>`_
