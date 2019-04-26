@@ -251,6 +251,6 @@ Zhu, Yan, et al. (2017) Matrix Profile VII: Time Series Chains: A New Primitive 
 License & Trademark
 -------------------
 
-STUMPY
-Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
-STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
+| STUMPY
+| Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
+| STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
