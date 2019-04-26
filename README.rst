@@ -57,7 +57,7 @@ Multi-dimensional time series data with `MSTUMP`:
 
     matrix_profile, matrix_profile_indices = stumpy.mstump(your_time_series, m=window_size)
 
-Distributed usage with Dask Distributed `STUMPED`:
+Distributed multi-dimensional time series data analysis with Dask Distributed `MSTUMPED`:
 
 .. code:: python
 
