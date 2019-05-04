@@ -11,7 +11,7 @@ configuration = {
 
     'author' : 'Sean M Law',
     'author_email' : 'seanmylaw@gmail.com',
-    'description' : 'A powerful and scalable technique that can be used for time series data mining',
+    'description' : 'A powerful and scalable library that can be used for a variety of time series data mining tasks',
     'long_description' : readme(),
     'classifiers' : [
         'Development Status :: 1 - Alpha',
@@ -28,10 +28,10 @@ configuration = {
         'Programming Language :: Python :: 3.5',
     ],
     'keywords' : 'time series matrix profile motif discord',
-    'url' : 'http://github.com//',
+    'url' : 'https://github.com/TDAmeritrade/stumpy',
     'maintainer' : 'Sean M. Law',
     'maintainer_email' : 'seanmylaw@gmail.com',
-    'license' : 'BSD',
+    'license' : 'BSD-3',
     'packages' : ['stumpy'],
     'install_requires': ['numpy >= 1.13',
                          'scipy >= 1.2.1',
