@@ -14,7 +14,7 @@ configuration = {
     'description' : 'A powerful and scalable library that can be used for a variety of time series data mining tasks',
     'long_description' : readme(),
     'classifiers' : [
-        'Development Status :: 1 - Alpha',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',
         'Intended Audience :: Developers',
         'License :: OSI Approved',
