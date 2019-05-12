@@ -113,9 +113,7 @@ To install stumpy from source, you'll need to install the dependencies above. Fo
 
 .. code:: bash
 
-    conda install -y numpy
-    conda install -y scipy
-    conda install -y numba
+    conda install -y numpy scipy numba
 
 Alternatively, but with lower performance, you can also install these dependencies using the requirements.txt file (found in the ``stumpy`` directory (same directory where you found this file after cloning the git repo)):
 
