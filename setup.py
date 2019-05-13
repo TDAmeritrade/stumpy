@@ -9,7 +9,7 @@ configuration = {
     'version' : '1.0',
     #'python_requires=' : >=3.5',
 
-    'author' : 'Sean M Law',
+    'author' : 'Sean M. Law',
     'author_email' : 'seanmylaw@gmail.com',
     'description' : 'A powerful and scalable library that can be used for a variety of time series data mining tasks',
     'long_description' : readme(),
