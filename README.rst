@@ -103,6 +103,12 @@ Dependencies
 Where to get it
 ---------------
 
+Conda install (preferred):
+
+.. code:: bash
+    
+    conda install -c conda-forge stumpy
+
 PyPI install, presuming you have numpy, scipy, and numba installed: 
 
 .. code:: bash
