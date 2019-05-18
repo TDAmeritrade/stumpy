@@ -11,7 +11,7 @@ pool:
 strategy:
   matrix:
     Python35:
-      python.version: '3.5'
+      python.version: '3.6'
 
 
 steps:
