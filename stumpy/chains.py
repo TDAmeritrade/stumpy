@@ -1,9 +1,10 @@
 # STUMPY
-# Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
+# Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.  # noqa: E501
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 from collections import deque
 import numpy as np
+
 
 def atsc(IL, IR, j):
     """
@@ -46,6 +47,7 @@ def atsc(IL, IR, j):
 
     return np.array(list(C), dtype=np.int64)
 
+
 def allc(IL, IR):
     """
     Compute the all-chain set (ALLC)
@@ -57,12 +59,12 @@ def allc(IL, IR):
 
     IR : ndarray
         Right matrix profile indices
-        
+
     Returns
     -------
     S : list(ndarray)
         All-chain set
-        
+
     C : ndarray
         Anchored time series chain for the longest chain
 
@@ -76,7 +78,7 @@ def allc(IL, IR):
     for-loop.
 
     This is the implementation for the all-chain set (ALLC) and the unanchored
-    chain is simply the longest one among the all-chain set. Both the 
+    chain is simply the longest one among the all-chain set. Both the
     all-chain set and unanchored chain are returned.
 
     The all-chain set, S, is returned as a list of unique numpy arrays.
