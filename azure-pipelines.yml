@@ -22,8 +22,12 @@ steps:
 
 - script: |
     python -m pip install --upgrade pip
-    pip install -r requirements.txt
+    pip install -r pipeline-requirements.txt
   displayName: 'Install dependencies'
+
+- script: | 
+    flake8 ./
+  displayName: "flake8"
 
 - script: |
     pip install --editable .
