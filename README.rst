@@ -146,6 +146,15 @@ Once the dependencies are installed (stay inside of the ``stumpy`` directory), e
 
     python setup.py install 
 
+-------------
+Documentation
+-------------
+
+In order to fully understand and appreciate the underlying algorithms and applications, it is imperative that you read the original publications_. For a more detailed example of how to use STUMPY please consult the detailed docstrings or explore the following tutorials:
+
+1. `Matrix Profile - Tutorial #1 <notebooks/Tutorial_1.ipynb>`_
+2. `Time Series Chains - Tutorial #2 <notebooks/Tutorial_2.ipynb>`_
+
 -----------
 Performance
 -----------
@@ -211,15 +220,6 @@ STUMP.16: 16 CPUs in Total - 16x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz proce
 STUMPED.128: 128 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors x 16 servers, parallelized with Numba, and distributed with Dask Distributed.
 
 STUMPED.256: 256 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors x 32 servers, parallelized with Numba, and distributed with Dask Distributed.
-
--------------
-Documentation
--------------
-
-In order to fully understand and appreciate the underlying algorithms and applications, it is imperative that you read the original publications_. For a more detailed example of how to use STUMPY please consult the detailed docstrings or explore the following tutorials:
-
-1. `Matrix Profile - Tutorial #1 <notebooks/Tutorial_1.ipynb>`_
-2. `Time Series Chains - Tutorial #2 <notebooks/Tutorial_2.ipynb>`_
 
 -------------
 Running Tests
