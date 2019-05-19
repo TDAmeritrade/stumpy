@@ -9,18 +9,19 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def mstumped(dask_client, T, m):
     """
-    This is a highly distributed implementation around the Numba JIT-compiled 
+    This is a highly distributed implementation around the Numba JIT-compiled
     parallelized `_mstump` function which computes the multi-dimensional matrix
     profile according to STOMP. Note that only self-joins are supported.
 
     Parameters
     ----------
     dask_client : client
-        A Dask Distributed client that is connected to a Dask scheduler and 
-        Dask workers. Setting up a Dask distributed cluster is beyond the 
-        scope of this library. Please refer to the Dask Distributed 
+        A Dask Distributed client that is connected to a Dask scheduler and
+        Dask workers. Setting up a Dask distributed cluster is beyond the
+        scope of this library. Please refer to the Dask Distributed
         documentation.
 
     T : ndarray
@@ -33,8 +34,8 @@ def mstumped(dask_client, T, m):
     Returns
     -------
     P : ndarray
-        The multi-dimensioanl matrix profile. Each row of the array corresponds 
-        to each matrix profile for a given dimension (i.e., the first row is the 
+        The multi-dimensioanl matrix profile. Each row of the array corresponds
+        to each matrix profile for a given dimension (i.e., the first row is the
         1-D matrix profile and the second row is the 2-D matrix profile).
     I : ndarray
         The multi-dimensional matrix profile index where each row of the array
@@ -51,19 +52,19 @@ def mstumped(dask_client, T, m):
     nworkers = len(hosts)
 
     core.check_dtype(T)
-    
+
     d = T.shape[0]
     n = T.shape[1]
-    k = n-m+1
-    excl_zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
+    k = n - m + 1
+    excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
 
     M_T, Σ_T = _multi_compute_mean_std(T, m)
     μ_Q, σ_Q = _multi_compute_mean_std(T, m)
 
-    P = np.empty((nworkers, d, k), dtype='float64')
-    D = np.zeros((nworkers, d, k), dtype='float64')
-    D_prime = np.zeros((nworkers, k), dtype='float64')
-    I = np.ones((nworkers, d, k), dtype='int64') * -1
+    P = np.empty((nworkers, d, k), dtype="float64")
+    D = np.zeros((nworkers, d, k), dtype="float64")
+    D_prime = np.zeros((nworkers, k), dtype="float64")
+    I = np.ones((nworkers, d, k), dtype="int64") * -1
 
     # Scatter data to Dask cluster
     T_future = dask_client.scatter(T, broadcast=True)
@@ -71,8 +72,8 @@ def mstumped(dask_client, T, m):
     Σ_T_future = dask_client.scatter(Σ_T, broadcast=True)
     μ_Q_future = dask_client.scatter(μ_Q, broadcast=True)
     σ_Q_future = dask_client.scatter(σ_Q, broadcast=True)
-    
-    step = 1+k//nworkers
+
+    step = 1 + k // nworkers
     QT_futures = []
     QT_first_futures = []
     P_futures = []
@@ -97,22 +98,35 @@ def mstumped(dask_client, T, m):
 
         QT_future = dask_client.scatter(QT, workers=[hosts[i]])
         QT_first_future = dask_client.scatter(QT_first, workers=[hosts[i]])
-        
+
         QT_futures.append(QT_future)
         QT_first_futures.append(QT_first_future)
-        
+
     futures = []
     for i, start in enumerate(range(0, k, step)):
         stop = min(k, start + step)
 
         futures.append(
-            dask_client.submit(_mstump, T_future, m, P_futures[i], I_futures[i], 
-                               D_futures[i], D_prime_futures[i], stop, excl_zone, 
-                               M_T_future, Σ_T_future, QT_futures[i], 
-                               QT_first_futures[i], μ_Q_future, σ_Q_future, k, 
-                               start+1
-                              )
-                       )
+            dask_client.submit(
+                _mstump,
+                T_future,
+                m,
+                P_futures[i],
+                I_futures[i],
+                D_futures[i],
+                D_prime_futures[i],
+                stop,
+                excl_zone,
+                M_T_future,
+                Σ_T_future,
+                QT_futures[i],
+                QT_first_futures[i],
+                μ_Q_future,
+                σ_Q_future,
+                k,
+                start + 1,
+            )
+        )
 
     results = dask_client.gather(futures)
     for i, start in enumerate(range(0, k, step)):

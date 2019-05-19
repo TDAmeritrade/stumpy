@@ -9,10 +9,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, 
-                             ignore_trivial):
+
+def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial):
     """
-    Compute the matrix profile, matrix profile index, left matrix profile 
+    Compute the matrix profile, matrix profile index, left matrix profile
     index, and right matrix profile index for given window within the times
     series or sequence that is denote by the `start` index. Essentially, this
     is a convenience wrapper around `stamp.mass`
@@ -24,7 +24,7 @@ def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T,
         index, left matrix profile index, and right matrix profile index for.
 
     T_A : ndarray
-        The time series or sequence for which the matrix profile index will 
+        The time series or sequence for which the matrix profile index will
         be returned
 
     T_B : ndarray
@@ -56,14 +56,15 @@ def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T,
 
     # Handle first subsequence, add exclusionary zone
     if ignore_trivial:
-        P, I = stamp.mass(T_B[start:start+m], T_A, M_T, Σ_T, 
-                          start, excl_zone)
-        PL, IL = stamp.mass(T_B[start:start+m], T_A, M_T, Σ_T, 
-                            start, excl_zone, left=True)        
-        PR, IR = stamp.mass(T_B[start:start+m], T_A, M_T, Σ_T, 
-                            start, excl_zone, right=True)
+        P, I = stamp.mass(T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone)
+        PL, IL = stamp.mass(
+            T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone, left=True
+        )
+        PR, IR = stamp.mass(
+            T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone, right=True
+        )
     else:
-        P, I = stamp.mass(T_B[start:start+m], T_A, M_T, Σ_T)
+        P, I = stamp.mass(T_B[start : start + m], T_A, M_T, Σ_T)
         # No left and right matrix profile available
         IL = -1
         IR = -1
@@ -93,7 +94,7 @@ def _get_QT(start, T_A, T_B, m):
         Window size
 
     Returns
-    ------- 
+    -------
     QT : ndarray
         Given `start`, return the corresponding QT
 
@@ -101,15 +102,16 @@ def _get_QT(start, T_A, T_B, m):
          QT for the first window
     """
 
-    QT = core.sliding_dot_product(T_B[start:start+m], T_A)
+    QT = core.sliding_dot_product(T_B[start : start + m], T_A)
     QT_first = core.sliding_dot_product(T_A[:m], T_B)
 
     return QT, QT_first
 
+
 @njit(parallel=True, fastmath=True)
 def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
-    A Numba JIT-compiled algorithm for parallel computation of the squared 
+    A Numba JIT-compiled algorithm for parallel computation of the squared
     distance profile according to:
 
     DOI: 10.1109/ICDM.2016.0179
@@ -139,19 +141,33 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
         be obtained by calculating taking the square root.
     """
 
-    denom = (m*σ_Q*Σ_T)
-    denom[denom == 0] = 1E-10  # Avoid divide by zero
-    D_squared = np.abs(2*m*(1.0-(QT-m*μ_Q*M_T)/denom))
-    
+    denom = m * σ_Q * Σ_T
+    denom[denom == 0] = 1e-10  # Avoid divide by zero
+    D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
+
     return D_squared
 
-@njit(parallel=True, fastmath=True) 
-def _stump(T_A, T_B, m, range_stop, excl_zone, 
-           M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, 
-           ignore_trivial=True, range_start=1):
+
+@njit(parallel=True, fastmath=True)
+def _stump(
+    T_A,
+    T_B,
+    m,
+    range_stop,
+    excl_zone,
+    M_T,
+    Σ_T,
+    QT,
+    QT_first,
+    μ_Q,
+    σ_Q,
+    k,
+    ignore_trivial=True,
+    range_start=1,
+):
     """
     A Numba JIT-compiled version of STOMP for parallel computation of the
-    matrix profile, matrix profile indices, left matrix profile indices, 
+    matrix profile, matrix profile indices, left matrix profile indices,
     and right matrix profile indices.
 
     Parameters
@@ -167,8 +183,8 @@ def _stump(T_A, T_B, m, range_stop, excl_zone,
         Window size
 
     range_stop : int
-        The index value along T_B for which to stop the matrix profile 
-        calculation. This parameter is here for consistency with the 
+        The index value along T_B for which to stop the matrix profile
+        calculation. This parameter is here for consistency with the
         distributed `stumped` algorithm.
 
     excl_zone : int
@@ -225,28 +241,28 @@ def _stump(T_A, T_B, m, range_stop, excl_zone,
 
     Return: For every subsequence, Q, in T_B, you will get a distance
     and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the 
+    returned will have length T_B.shape[0]-m+1. Additionally, the
     left and right matrix profiles are also returned.
 
-    Note: Unlike in the Table II where T_A.shape is expected to be equal 
-    to T_B.shape, this implementation is generalized so that the shapes of 
-    T_A and T_B can be different. In the case where T_A.shape == T_B.shape, 
-    then our algorithm reduces down to the same algorithm found in Table II. 
+    Note: Unlike in the Table II where T_A.shape is expected to be equal
+    to T_B.shape, this implementation is generalized so that the shapes of
+    T_A and T_B can be different. In the case where T_A.shape == T_B.shape,
+    then our algorithm reduces down to the same algorithm found in Table II.
 
-    Additionally, unlike STAMP where the exclusion zone is m/2, the default 
+    Additionally, unlike STAMP where the exclusion zone is m/2, the default
     exclusion zone for STOMP is m/4 (See Definition 3 and Figure 3).
 
-    For self-joins, set `ignore_trivial = True` in order to avoid the 
-    trivial match. 
+    For self-joins, set `ignore_trivial = True` in order to avoid the
+    trivial match.
 
     Note that left and right matrix profiles are only available for self-joins.
     """
 
     QT_odd = QT.copy()
     QT_even = QT.copy()
-    profile = np.empty((range_stop-range_start,))  # float64
-    indices = np.empty((range_stop-range_start, 3))  # int64
-    
+    profile = np.empty((range_stop - range_start,))  # float64
+    indices = np.empty((range_stop - range_start, 3))  # int64
+
     for i in range(range_start, range_stop):
         # Numba's prange requires incrementing a range by 1 so replace
         # `for j in range(k-1,0,-1)` with its incrementing compliment
@@ -257,21 +273,31 @@ def _stump(T_A, T_B, m, range_stop, excl_zone,
             # See Figure 5
             if i % 2 == 0:
                 # Even
-                QT_even[j] = QT_odd[j-1] - T_B[i-1]*T_A[j-1] + T_B[i+m-1]*T_A[j+m-1]
+                QT_even[j] = (
+                    QT_odd[j - 1]
+                    - T_B[i - 1] * T_A[j - 1]
+                    + T_B[i + m - 1] * T_A[j + m - 1]
+                )
             else:
                 # Odd
-                QT_odd[j] = QT_even[j-1] - T_B[i-1]*T_A[j-1] + T_B[i+m-1]*T_A[j+m-1]
+                QT_odd[j] = (
+                    QT_even[j - 1]
+                    - T_B[i - 1] * T_A[j - 1]
+                    + T_B[i + m - 1] * T_A[j + m - 1]
+                )
 
         if i % 2 == 0:
             QT_even[0] = QT_first[i]
-            D = _calculate_squared_distance_profile(m, QT_even, μ_Q[i], σ_Q[i], M_T, Σ_T)
+            D = _calculate_squared_distance_profile(
+                m, QT_even, μ_Q[i], σ_Q[i], M_T, Σ_T
+            )
         else:
             QT_odd[0] = QT_first[i]
             D = _calculate_squared_distance_profile(m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T)
 
         if ignore_trivial:
-            zone_start = max(0, i-excl_zone)
-            zone_stop = min(k, i+excl_zone)
+            zone_start = max(0, i - excl_zone)
+            zone_stop = min(k, i + excl_zone)
             D[zone_start:zone_stop] = np.inf
         I = np.argmin(D)
         P = np.sqrt(D[I])
@@ -284,22 +310,23 @@ def _stump(T_A, T_B, m, range_stop, excl_zone,
         else:
             IL = -1
 
-        if ignore_trivial and i+1 < D.shape[0]:
-            IR = i + 1 + np.argmin(D[i+1:])
+        if ignore_trivial and i + 1 < D.shape[0]:
+            IR = i + 1 + np.argmin(D[i + 1 :])
             if zone_start <= IR <= zone_stop:
                 IR = -1
         else:
             IR = -1
 
         # Only a part of the profile/indices array are passed
-        profile[i-range_start] = P
-        indices[i-range_start] = I, IL, IR
-    
+        profile[i - range_start] = P
+        indices[i - range_start] = I, IL, IR
+
     return profile, indices
+
 
 def stump(T_A, m, T_B=None, ignore_trivial=True):
     """
-    This is a convenience wrapper around the Numba JIT-compiled parallelized 
+    This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_stump` function which computes the matrix profile according to STOMP.
 
     Parameters
@@ -318,9 +345,9 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     Returns
     -------
     out : ndarray
-        The first column consists of the matrix profile, the second column 
-        consists of the matrix profile indices, the third column consists of 
-        the left matrix profile indices, and the fourth column consists of 
+        The first column consists of the matrix profile, the second column
+        consists of the matrix profile indices, the third column consists of
+        the left matrix profile indices, and the fourth column consists of
         the right matrix profile indices.
 
     Notes
@@ -334,19 +361,19 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
 
     Return: For every subsequence, Q, in T_B, you will get a distance
     and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the 
+    returned will have length T_B.shape[0]-m+1. Additionally, the
     left and right matrix profiles are also returned.
 
-    Note: Unlike in the Table II where T_A.shape is expected to be equal 
-    to T_B.shape, this implementation is generalized so that the shapes of 
-    T_A and T_B can be different. In the case where T_A.shape == T_B.shape, 
-    then our algorithm reduces down to the same algorithm found in Table II. 
+    Note: Unlike in the Table II where T_A.shape is expected to be equal
+    to T_B.shape, this implementation is generalized so that the shapes of
+    T_A and T_B can be different. In the case where T_A.shape == T_B.shape,
+    then our algorithm reduces down to the same algorithm found in Table II.
 
-    Additionally, unlike STAMP where the exclusion zone is m/2, the default 
+    Additionally, unlike STAMP where the exclusion zone is m/2, the default
     exclusion zone for STOMP is m/4 (See Definition 3 and Figure 3).
 
-    For self-joins, set `ignore_trivial = True` in order to avoid the 
-    trivial match. 
+    For self-joins, set `ignore_trivial = True` in order to avoid the
+    trivial match.
 
     Note that left and right matrix profiles are only available for self-joins.
     """
@@ -357,45 +384,58 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
         ignore_trivial = True
     core.check_dtype(T_B)
 
-    if ignore_trivial == False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
+    if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
         logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
         logger.warning("Try setting `ignore_trivial = True`.")
 
-    if ignore_trivial and core.are_arrays_equal(T_A, T_B) == False:  # pragma: no cover
+    if ignore_trivial and core.are_arrays_equal(T_A, T_B) is False:  # pragma: no cover
         logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
-        logger.warning("Try setting `ignore_trivial = False`.")        
-    
+        logger.warning("Try setting `ignore_trivial = False`.")
+
     n = T_B.shape[0]
-    k = T_A.shape[0]-m+1
-    l = n-m+1
-    excl_zone = int(np.ceil(m/4))  # See Definition 3 and Figure 3
+    k = T_A.shape[0] - m + 1
+    l = n - m + 1
+    excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
 
     M_T, Σ_T = core.compute_mean_std(T_A, m)
     μ_Q, σ_Q = core.compute_mean_std(T_B, m)
 
     out = np.empty((l, 4), dtype=object)
-    profile = np.empty((l,), dtype='float64')
-    indices = np.empty((l, 3), dtype='int64')
+    profile = np.empty((l,), dtype="float64")
+    indices = np.empty((l, 3), dtype="int64")
 
     start = 0
     stop = l
 
-    profile[start], indices[start, :] = \
-        _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, 
-                                 Σ_T, ignore_trivial)
+    profile[start], indices[start, :] = _get_first_stump_profile(
+        start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial
+    )
 
     QT, QT_first = _get_QT(start, T_A, T_B, m)
 
-    profile[start+1:stop], indices[start+1:stop, :] = \
-        _stump(T_A, T_B, m, stop, excl_zone, M_T, Σ_T, QT, QT_first, μ_Q,
-               σ_Q, k, ignore_trivial, start+1)
+    profile[start + 1 : stop], indices[start + 1 : stop, :] = _stump(
+        T_A,
+        T_B,
+        m,
+        stop,
+        excl_zone,
+        M_T,
+        Σ_T,
+        QT,
+        QT_first,
+        μ_Q,
+        σ_Q,
+        k,
+        ignore_trivial,
+        start + 1,
+    )
 
     out[:, 0] = profile
     out[:, 1:4] = indices
-    
+
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
         logger.warning(f"A large number of values are smaller than {threshold}.")
         logger.warning("For a self-join, try setting `ignore_trivial = True`.")
-        
+
     return out
