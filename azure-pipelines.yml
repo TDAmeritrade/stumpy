@@ -43,5 +43,5 @@ steps:
 - script: |
     pip install --editable .
     pip install pytest pytest-azurepipelines
-    ./test.sh
+    pwsh ./test.ps1
   displayName: 'pytest'
