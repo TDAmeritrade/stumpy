@@ -26,8 +26,9 @@ steps:
   displayName: 'Install dependencies'
 
 - script: | 
+    black ./
     flake8 ./
-  displayName: "flake8"
+  displayName: "black && flake8"
 
 - script: |
     pip install --editable .

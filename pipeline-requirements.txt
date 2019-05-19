@@ -5,3 +5,4 @@ dask>=1.2.2
 distributed>=1.28.1
 coverage>=4.5.3
 flake8>=3.7.7
+black>=19.0
