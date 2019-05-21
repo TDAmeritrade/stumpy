@@ -31,19 +31,15 @@ steps:
   displayName: 'Use Python $(python.version)'
 
 - script: |
-    python -m pip install --upgrade pip
-    pip install -r pipeline-requirements.txt
-  displayName: 'Install dependencies'
+    pip install --editable .[ci]
+    pip install pytest-azurepipelines
+  displayName: 'Install stumpy and other dependencies'
 
 - script: | 
     black ./
     flake8 ./
   displayName: "black && flake8"
 
-- script: |
-    pip install --editable .
-    pip install pytest pytest-azurepipelines
-  displayName: 'Install pytest'
 
 - bash: ./test.sh
   displayName: "Running test"

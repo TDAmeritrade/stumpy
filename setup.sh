@@ -1,6 +1,5 @@
 #!/bin/sh
 
-pip install -r requirements.txt
 pip uninstall -y stumpy
-pip install -e .[deploy]
+python setup.py install
 rm -rf stumpy.egg-info build dist
