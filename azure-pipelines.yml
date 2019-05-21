@@ -43,5 +43,8 @@ steps:
 - script: |
     pip install --editable .
     pip install pytest pytest-azurepipelines
-    pwsh ./test.ps1
-  displayName: 'pytest'
+  displayName: 'Install pytest'
+
+- bash: ./test.sh
+  displayName: "Running test"
+
