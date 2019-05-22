@@ -1,0 +1,46 @@
+# Python package
+# Create and test a Python package on multiple Python versions.
+# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/python
+
+trigger:
+- master
+
+
+
+strategy:
+  matrix:
+    python36_linux:
+      imageName: "ubuntu-16.04"
+      python.version: "3.6"
+    python36_windows:
+      imageName: "vs2017-win2016"
+      python.version: "3.6"
+    python36_macos:
+      imageName: "macos-10.13"
+      python.version: "3.6"      
+  maxParallel: 3
+
+pool:
+  vmImage: $(imageName)
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '$(python.version)'
+  displayName: 'Use Python $(python.version)'
+
+- script: |
+    pip install --editable .[ci]
+    pip install pytest-azurepipelines
+  displayName: 'Install stumpy and other dependencies'
+
+- script: | 
+    black ./
+    flake8 ./
+  displayName: "black && flake8"
+
+
+- bash: ./test.sh
+  displayName: "Running test"
+

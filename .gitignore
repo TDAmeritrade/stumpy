@@ -11,3 +11,5 @@ dask-worker-space
 stumpy.egg-info
 build
 dist
+
+.vscode

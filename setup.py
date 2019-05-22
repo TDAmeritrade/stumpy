@@ -40,6 +40,16 @@ configuration = {
     "cmdclass": {},
     "tests_require": ["pytest"],
     "data_files": (),
+    "extras_require": {
+        "ci": [
+            "dask >= 1.2.2",
+            "distributed >= 1.28.1",
+            "coverage >= 4.5.3",
+            "flake8 >= 3.7.7",
+            "black >= 19.3b0",
+            "pytest >= 4.4.1"
+        ]
+    }
 }
 
 setup(**configuration)

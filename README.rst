@@ -10,6 +10,9 @@
 .. image:: https://img.shields.io/pypi/l/stumpy.svg
     :target: https://github.com/TDAmeritrade/stumpy/blob/master/LICENSE.txt
     :alt: License
+.. image:: https://dev.azure.com/stumpy-dev/stumpy/_apis/build/status/cuichenli.stumpy?branchName=master
+    :target: https://dev.azure.com/stumpy-dev/stumpy/_build/latest?definitionId=1&branchName=master
+    :alt: Build Status
 
 .. image:: docs/images/stumpy_logo_small.png
     :alt: STUMPY Logo
