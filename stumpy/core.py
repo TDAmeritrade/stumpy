@@ -60,7 +60,7 @@ def z_norm(a, axis=0):
     return (a - np.mean(a, axis, keepdims=True)) / np.std(a, axis, keepdims=True)
 
 
-def check_dtype(a, dtype=np.float):  # pragma: no cover
+def check_dtype(a, dtype=np.floating):  # pragma: no cover
     """
     Check if the array type of `a` is of type specified by `dtype` parameter.
 
@@ -70,10 +70,11 @@ def check_dtype(a, dtype=np.float):  # pragma: no cover
         If the array type does not match `dtype`
     """
 
-    if not issubclass(a.dtype.type, dtype):
-        msg = "{} type expected but found {}".format(dtype, a.dtype.type)
+    if not np.issubdtype(a.dtype, dtype):
+        msg = f"{dtype} type expected but found {a.dtype}"
         raise TypeError(msg)
 
+    return True
 
 def are_arrays_equal(a, b):  # pragma: no cover
     """
