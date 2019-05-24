@@ -13,6 +13,9 @@
 .. image:: https://dev.azure.com/stumpy-dev/stumpy/_apis/build/status/TDAmeritrade.stumpy?branchName=master
     :target: https://dev.azure.com/stumpy-dev/stumpy/_build/latest?definitionId=2&branchName=master
     :alt: Build Status
+.. image:: https://img.shields.io/twitter/follow/stumpy_dev.svg?style=social
+    :target: https://twitter.com/stumpy_dev
+    :alt: Twitter
 
 .. image:: docs/images/stumpy_logo_small.png
     :alt: STUMPY Logo
