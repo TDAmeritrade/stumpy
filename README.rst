@@ -17,7 +17,7 @@
     :target: https://twitter.com/stumpy_dev
     :alt: Twitter
 
-.. image:: docs/images/stumpy_logo_small.png
+.. figure:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/stumpy_logo_small.png
     :alt: STUMPY Logo
 
 ======
