@@ -8,7 +8,7 @@ STUMPY documentation
 
    install
    api
-   examples
+   tutorials
 
 .. include:: ../README.rst
 
