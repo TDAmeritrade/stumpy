@@ -15,25 +15,37 @@ stumpy API
     stumpy.atsc
     stumpy.allc
 
-STOMP
+stomp
 =====
 
 .. autofunction:: stumpy.stomp
 
-STUMP
+stump
 =====
 
 .. autofunction:: stumpy.stump
 
-STUMPED
+stumped
 =======
 
 .. autofunction:: stumpy.stumped
 
-MSTUMP
+mstump
 ======
 
 .. autofunction:: stumpy.mstump
+
+mstumped
+========
+
 .. autofunction:: stumpy.mstumped
+
+atsc
+====
+
 .. autofunction:: stumpy.atsc
+
+allc
+====
+
 .. autofunction:: stumpy.allc
