@@ -12,8 +12,10 @@ configuration = {
     # 'python_requires=' : >=3.5',
     "author": "Sean M. Law",
     "author_email": "seanmylaw@gmail.com",
-    "description": ("A powerful and scalable library that can be used"
-                    "for a variety of time series data mining tasks"),
+    "description": (
+        "A powerful and scalable library that can be used"
+        "for a variety of time series data mining tasks"
+    ),
     "long_description": readme(),
     "classifiers": [
         "Development Status :: 3 - Alpha",
@@ -47,9 +49,9 @@ configuration = {
             "coverage >= 4.5.3",
             "flake8 >= 3.7.7",
             "black >= 19.3b0",
-            "pytest >= 4.4.1"
+            "pytest >= 4.4.1",
         ]
-    }
+    },
 }
 
 setup(**configuration)

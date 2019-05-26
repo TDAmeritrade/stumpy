@@ -76,6 +76,7 @@ def check_dtype(a, dtype=np.floating):  # pragma: no cover
 
     return True
 
+
 def are_arrays_equal(a, b):  # pragma: no cover
     """
     Check if two arrays are equal; first by comparing memory addresses,
