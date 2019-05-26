@@ -13,3 +13,4 @@ build
 dist
 
 .vscode
+docs/_build
