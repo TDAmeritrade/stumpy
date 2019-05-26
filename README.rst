@@ -137,23 +137,7 @@ PyPI install, presuming you have numpy, scipy, and numba installed:
 
     pip install stumpy
 
-To install stumpy from source, you'll need to install the dependencies above. For maximum performance, it is recommended that you install all dependencies using `conda`:
-
-.. code:: bash
-
-    conda install -y numpy scipy numba
-
-Alternatively, but with lower performance, you can also install these dependencies using the requirements.txt file in the root of this repository:
-
-.. code:: bash
-
-    pip install -r requirements.txt
-
-Once the dependencies are installed (stay inside of the ``stumpy`` directory), execute:
-
-.. code:: bash
-
-    python setup.py install 
+To install stumpy from source, see the instructions in the documentation.
 
 -------------
 Documentation
