@@ -36,7 +36,7 @@ steps:
   displayName: 'Install stumpy and other dependencies'
 
 - script: | 
-    black ./
+    black --check ./
     flake8 ./
   displayName: "black && flake8"
 

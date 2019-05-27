@@ -20,11 +20,13 @@
 # -- Project information -----------------------------------------------------
 
 project = "stumpy"
-copyright = ("STUMPY\n"
-             "Copyright 2019 TD Ameritrade. "
-             "Released under the terms of the 3-Clause BSD license.\n"
-             "STUMPY is a trademark of TD Ameritrade IP Company, Inc. "
-             "All rights reserved.\n")
+copyright = (
+    "STUMPY\n"
+    "Copyright 2019 TD Ameritrade. "
+    "Released under the terms of the 3-Clause BSD license.\n"
+    "STUMPY is a trademark of TD Ameritrade IP Company, Inc. "
+    "All rights reserved.\n"
+)
 author = "Sean M. Law"
 
 # The short X.Y version
