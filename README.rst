@@ -13,11 +13,14 @@
 .. image:: https://dev.azure.com/stumpy-dev/stumpy/_apis/build/status/TDAmeritrade.stumpy?branchName=master
     :target: https://dev.azure.com/stumpy-dev/stumpy/_build/latest?definitionId=2&branchName=master
     :alt: Build Status
+.. image:: https://readthedocs.org/projects/stumpy/badge/?version=latest
+    :target: https://stumpy.readthedocs.io/
+    :alt: ReadTheDocs Status
 .. image:: https://img.shields.io/twitter/follow/stumpy_dev.svg?style=social
     :target: https://twitter.com/stumpy_dev
     :alt: Twitter
 
-.. image:: docs/images/stumpy_logo_small.png
+.. figure:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/stumpy_logo_small.png
     :alt: STUMPY Logo
 
 ======
@@ -134,23 +137,7 @@ PyPI install, presuming you have numpy, scipy, and numba installed:
 
     pip install stumpy
 
-To install stumpy from source, you'll need to install the dependencies above. For maximum performance, it is recommended that you install all dependencies using `conda`:
-
-.. code:: bash
-
-    conda install -y numpy scipy numba
-
-Alternatively, but with lower performance, you can also install these dependencies using the requirements.txt file in the root of this repository:
-
-.. code:: bash
-
-    pip install -r requirements.txt
-
-Once the dependencies are installed (stay inside of the ``stumpy`` directory), execute:
-
-.. code:: bash
-
-    python setup.py install 
+To install stumpy from source, see the instructions in the documentation.
 
 -------------
 Documentation

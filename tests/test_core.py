@@ -11,11 +11,14 @@ def naive_rolling_window_dot_product(Q, T):
         result[i] = np.dot(T[i : i + window], Q)
     return result
 
+
 def test_check_dtype_float32():
     assert core.check_dtype(np.random.rand(10).astype(np.float32))
 
+
 def test_check_dtype_float64():
     assert core.check_dtype(np.random.rand(10))
+
 
 test_data = [
     (np.array([-1, 1, 2], dtype=np.float64), np.array(range(5), dtype=np.float64)),
