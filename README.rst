@@ -137,13 +137,13 @@ PyPI install, presuming you have numpy, scipy, and numba installed:
 
     pip install stumpy
 
-To install stumpy from source, see the instructions in the documentation.
+To install stumpy from source, see the instructions in the `documentation <https://stumpy.readthedocs.io/en/latest/install.html>`_.
 
 -------------
 Documentation
 -------------
 
-In order to fully understand and appreciate the underlying algorithms and applications, it is imperative that you read the original publications_. For a more detailed example of how to use STUMPY please consult the detailed docstrings or explore the following tutorials:
+In order to fully understand and appreciate the underlying algorithms and applications, it is imperative that you read the original publications_. For a more detailed example of how to use STUMPY please consult the latest `documentation <https://stumpy.readthedocs.io/en/latest/>`_ or explore the following tutorials:
 
 1. `Matrix Profile - Tutorial #1 <notebooks/Tutorial_1.ipynb>`_
 2. `Time Series Chains - Tutorial #2 <notebooks/Tutorial_2.ipynb>`_
