@@ -8,7 +8,7 @@ import numpy as np
 
 def atsc(IL, IR, j):
     """
-    Compute the anchored time series chain (ATSC).
+    Compute the anchored time series chain (ATSC)
 
     Parameters
     ----------

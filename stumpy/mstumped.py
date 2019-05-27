@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 def mstumped(dask_client, T, m):
     """
+    Compute the multi-dimensional matrix profile with parallelized and
+    distributed mSTOMP
+
     This is a highly distributed implementation around the Numba JIT-compiled
     parallelized `_mstump` function which computes the multi-dimensional matrix
     profile according to STOMP. Note that only self-joins are supported.

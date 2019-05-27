@@ -7,18 +7,12 @@ stumpy API
 .. autosummary::
     :nosignatures:
 
-    stumpy.stomp
     stumpy.stump
     stumpy.stumped
     stumpy.mstump
     stumpy.mstumped
     stumpy.atsc
     stumpy.allc
-
-stomp
-=====
-
-.. autofunction:: stumpy.stomp
 
 stump
 =====

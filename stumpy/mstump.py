@@ -388,6 +388,8 @@ def _mstump(
 
 def mstump(T, m):
     """
+    Compute the multi-dimensional matrix profile with parallelized mSTOMP
+
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_mstump` function which computes the multi-dimensional matrix profile and
     multi-dimensional matrix profile index according to mSTOMP, a variant of
