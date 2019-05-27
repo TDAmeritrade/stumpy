@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = "stumpy"
-copyright = "2019, Sean M. Law"
+copyright = "STUMPY\nCopyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.\nSTUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved."
 author = "Sean M. Law"
 
 # The short X.Y version

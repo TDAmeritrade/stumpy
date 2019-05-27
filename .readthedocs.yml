@@ -1,0 +1,12 @@
+version: 2
+formats: all
+python:
+    install:
+        - requirements: requirements.txt
+        - method: pip
+          path: .
+          extra_requirements:
+            - nbsphinx
+submodules:
+    include: all
+    recursive: true
