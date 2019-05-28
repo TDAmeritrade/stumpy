@@ -10,6 +10,15 @@ trigger:
 
 strategy:
   matrix:
+    python35_linux:
+      imageName: "ubuntu-16.04"
+      python.version: "3.5"
+    python35_windows:
+      imageName: "vs2017-win2016"
+      python.version: "3.5"
+    python35_macos:
+      imageName: "macos-10.13"
+      python.version: "3.5"
     python36_linux:
       imageName: "ubuntu-16.04"
       python.version: "3.6"
@@ -18,7 +27,16 @@ strategy:
       python.version: "3.6"
     python36_macos:
       imageName: "macos-10.13"
-      python.version: "3.6"      
+      python.version: "3.6" 
+    python37_linux:
+      imageName: "ubuntu-16.04"
+      python.version: "3.7"
+    python37_windows:
+      imageName: "vs2017-win2016"
+      python.version: "3.7"
+    python37_macos:
+      imageName: "macos-10.13"
+      python.version: "3.7"     
   maxParallel: 3
 
 pool:
