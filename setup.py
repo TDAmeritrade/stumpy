@@ -50,6 +50,7 @@ configuration = {
             "flake8 >= 3.7.7",
             "black >= 19.3b0",
             "pytest >= 4.4.1",
+            "codecov",
         ]
     },
 }
