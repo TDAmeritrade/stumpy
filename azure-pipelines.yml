@@ -50,3 +50,8 @@ steps:
 - bash: ./test.sh
   displayName: "Running test"
 
+- script: |
+  codecov
+  displayName: "Upload test coverage results"
+  env:
+    CODECOV_TOKEN: 'S(CODECOV_TOKEN)'
