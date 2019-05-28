@@ -16,6 +16,9 @@
 .. image:: https://readthedocs.org/projects/stumpy/badge/?version=latest
     :target: https://stumpy.readthedocs.io/
     :alt: ReadTheDocs Status
+.. image:: https://codecov.io/gh/TDAmeritrade/stumpy/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/TDAmeritrade/stumpy
+    :alt: Code Coverage
 .. image:: https://img.shields.io/twitter/follow/stumpy_dev.svg?style=social
     :target: https://twitter.com/stumpy_dev
     :alt: Twitter
