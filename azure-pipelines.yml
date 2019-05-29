@@ -51,7 +51,5 @@ steps:
   displayName: "Running test"
 
 - script: |
-    codecov
+    codecov --token=$(CODECOV_TOKEN)
   displayName: "Upload test coverage results"
-  env:
-    CODECOV_TOKEN: 'S(CODECOV_TOKEN)'
