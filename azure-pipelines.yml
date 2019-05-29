@@ -26,7 +26,7 @@ strategy:
     python37_macos:
       imageName: "macos-10.13"
       python.version: "3.7"     
-  maxParallel: 3
+  maxParallel: 10
 
 pool:
   vmImage: $(imageName)
