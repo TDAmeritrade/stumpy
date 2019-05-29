@@ -4,7 +4,14 @@
 
 import numpy as np
 import scipy.signal
+import os
 
+def some_func():
+    """
+    This is a very very very very very very very very very very very very very very very very very very very very long line
+    """
+    
+    return
 
 def get_pkg_name():  # pragma: no cover
     """
