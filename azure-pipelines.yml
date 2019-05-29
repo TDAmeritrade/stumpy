@@ -43,9 +43,12 @@ steps:
   displayName: 'Install stumpy and other dependencies'
 
 - script: |
-    if ! black --check ./; then echo "Error: Some files need to be reformatted" && exit 0; fi
+    exit `black --check ./`
+  displayName: "black"
+
+- script: |
     flake8 ./
-  displayName: "black && flake8"
+  displayName: "flake8"
 
 - bash: ./test.sh
   displayName: "Running test"
