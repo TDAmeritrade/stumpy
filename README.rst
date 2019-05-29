@@ -243,7 +243,7 @@ First, please check the issues on github to see if your question has already bee
 Contributing
 ------------
 
-We welcome contributions in any form! Assistance with documentation, particularly expanding tutorials, is always welcome. To contribute please fork the project make your changes and submit a pull request. We will do our best to work through any issues with you and get your code merged into the main branch.
+We welcome contributions in any form! Assistance with documentation, particularly expanding tutorials, is always welcome. To contribute please fork the project, make your changes, and submit a pull request. We will do our best to work through any issues with you and get your code merged into the main branch.
 
 ----------
 References
