@@ -4,14 +4,14 @@
 
 import numpy as np
 import scipy.signal
-import os
+
 
 def some_func():
-    """
-    This is a very very very very very very very very very very very very very very very very very very very very long line
-    """
+    x = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 
+         20, 21, 22, 23)
     
-    return
+    return x
+
 
 def get_pkg_name():  # pragma: no cover
     """
