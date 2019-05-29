@@ -43,7 +43,7 @@ steps:
   displayName: 'Install stumpy and other dependencies'
 
 - script: |
-    exit `black --check ./`
+    black --check ./
   displayName: "black"
 
 - script: |
