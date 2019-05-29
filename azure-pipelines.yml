@@ -42,8 +42,8 @@ steps:
     pip install pytest-azurepipelines
   displayName: 'Install stumpy and other dependencies'
 
-- script: | 
-    black --check ./
+- script: |
+    if ! black --check ./; then echo "Error: Some files need to be reformatted" && exit 0; fi
     flake8 ./
   displayName: "black && flake8"
 
