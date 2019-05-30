@@ -155,7 +155,12 @@ In order to fully understand and appreciate the underlying algorithms and applic
 Performance
 -----------
 
-We tested the performance using the Numba JIT compiled version of the code on randomly generated data with various lengths (i.e., ``np.random.rand(n)``). Results are displayed as Hours:Minutes:Seconds.
+We tested the performance using the Numba JIT compiled version of the code on randomly generated data with various lengths (i.e., ``np.random.rand(n)``). 
+
+.. figure:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/performance.png
+    :alt: STUMPY Performance Plot
+
+The raw results are displayed below as Hours:Minutes:Seconds.
 
 +----------+-------------------+--------------+-------------+-------------+-------------+
 |    i     |  n = 2\ :sup:`i`  | GPU-STOMP    | STUMP.16    | STUMPED.128 | STUMPED.256 |
