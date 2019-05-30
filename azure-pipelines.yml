@@ -44,11 +44,11 @@ steps:
 
 - script: |
     black --check ./
-  displayName: "black"
+  displayName: "Running black"
 
 - script: |
     flake8 ./
-  displayName: "flake8"
+  displayName: "Running flake8"
 
 - bash: ./test.sh
   displayName: "Running test"
