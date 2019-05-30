@@ -16,6 +16,7 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import stumpy
 
 # -- Project information -----------------------------------------------------
 
@@ -30,9 +31,9 @@ copyright = (
 author = "Sean M. Law"
 
 # The short X.Y version
-version = "1.0"
+version = stumpy.__version__
 # The full version, including alpha/beta/rc tags
-release = "1.0"
+release = stumpy.__version__
 
 
 # -- General configuration ---------------------------------------------------
