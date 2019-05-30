@@ -29,7 +29,7 @@ try:
     if not here.startswith(os.path.join(dist_loc, "stumpy")):
         # not installed, but there is another version that *is*
         raise DistributionNotFound
-except DistributionNotFound:
+except DistributionNotFound:  # pragma: no cover
     __version__ = "Please install this project with setup.py"
 else:  # pragma: no cover
     __version__ = _dist.version
