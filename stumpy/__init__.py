@@ -31,5 +31,5 @@ try:
         raise DistributionNotFound
 except DistributionNotFound:
     __version__ = "Please install this project with setup.py"
-else:
+else:  # pragma: no cover
     __version__ = _dist.version
