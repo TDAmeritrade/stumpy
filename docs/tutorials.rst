@@ -7,4 +7,4 @@ Tutorials
     :caption: Tutorials
     :glob:
 
-    notebooks/Tutorial_*
+    Tutorial_*
