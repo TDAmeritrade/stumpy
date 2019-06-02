@@ -38,7 +38,7 @@ STUMPY is a powerful and scalable library that efficiently computes something ca
 * semantic segmentation 
 * density estimation
 * time series chains (temporally ordered set of subsequence patterns)
-* and more...
+* `and more ... <https://www.cs.ucr.edu/~eamonn/100_Time_Series_Data_Mining_Questions__with_Answers.pdf>`_
 
 -------------------------
 How to use STUMPY
@@ -248,7 +248,7 @@ First, please check the issues on github to see if your question has already bee
 Contributing
 ------------
 
-We welcome contributions in any form! Assistance with documentation, particularly expanding tutorials, is always welcome. To contribute please fork the project, make your changes, and submit a pull request. We will do our best to work through any issues with you and get your code merged into the main branch.
+We welcome `contributions <https://github.com/TDAmeritrade/stumpy/CONTRIBUTING.md>`_ in any form! Assistance with documentation, particularly expanding tutorials, is always welcome. To contribute please `fork the project<https://github.com/TDAmeritrade/stumpy/fork>`_, make your changes, and submit a pull request. We will do our best to work through any issues with you and get your code merged into the main branch.
 
 ----------
 References
