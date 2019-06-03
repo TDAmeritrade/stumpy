@@ -33,7 +33,7 @@
 STUMPY
 ======
 
-STUMPY is a powerful and scalable library that efficiently computes something called the `matrix profile`_, which can be used for a variety of time series data mining tasks such as:
+STUMPY is a powerful and scalable library that efficiently computes something called the `matrix profile <docs/Tutorial_0.ipynb>`_, which can be used for a variety of time series data mining tasks such as:
 
 * pattern/motif (approximately repeated subsequences within a longer time series) discovery
 * anomaly/novelty (discord) discovery
@@ -151,8 +151,9 @@ Documentation
 
 In order to fully understand and appreciate the underlying algorithms and applications, it is imperative that you read the original publications_. For a more detailed example of how to use STUMPY please consult the latest `documentation <https://stumpy.readthedocs.io/en/latest/>`_ or explore the following tutorials:
 
-1. `Matrix Profile - Tutorial #1 <docs/Tutorial_1.ipynb>`_
-2. `Time Series Chains - Tutorial #2 <docs/Tutorial_2.ipynb>`_
+1. `The Matrix Profile - Tutorial 0 <docs/Tutorial_0.ipynb>`_
+2. `STUMPY Basics - Tutorial #1 <docs/Tutorial_1.ipynb>`_
+3. `Time Series Chains - Tutorial #2 <docs/Tutorial_2.ipynb>`_
 
 -----------
 Performance
@@ -251,13 +252,12 @@ First, please check the issues on github to see if your question has already bee
 Contributing
 ------------
 
-We welcome `contributions <https://github.com/TDAmeritrade/stumpy/blob/master/CONTRIBUTING.md>`_ in any form! Assistance with documentation, particularly expanding tutorials, is always welcome. To contribute please `fork the project <https://github.com/TDAmeritrade/stumpy/fork>`_, make your changes, and submit a pull request. We will do our best to work through any issues with you and get your code merged into the main branch.
+We welcome `contributions <CONTRIBUTING.md>`_ in any form! Assistance with documentation, particularly expanding tutorials, is always welcome. To contribute please `fork the project <https://github.com/TDAmeritrade/stumpy/fork>`_, make your changes, and submit a pull request. We will do our best to work through any issues with you and get your code merged into the main branch.
 
 ----------
 References
 ----------
 
-.. _matrix profile:
 .. _publications:
 
 Yeh, Chin-Chia Michael, et al. (2016) Matrix Profile I: All Pairs Similarity Joins for Time Series: A Unifying View that Includes Motifs, Discords, and Shapelets. ICDM:1317-1322. `Link <https://ieeexplore.ieee.org/abstract/document/7837992>`__
