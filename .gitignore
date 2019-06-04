@@ -12,6 +12,6 @@ dask-worker-space
 stumpy.egg-info
 build
 dist
-
 .vscode
 docs/_build
+*DS_Store*
