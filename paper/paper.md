@@ -23,13 +23,13 @@ bibliography: paper.bib
 
 STUMPY is a powerful and scalable library that efficiently computes something called the matrix profile [@yeh2016], [@zhu2016], which can be used for a variety of time series data mining tasks such as:
 
-pattern/motif (approximately repeated subsequences within a longer time series) discovery
-anomaly/novelty (discord) discovery
-shapelet discovery
-semantic segmentation
-density estimation
-time series chains (temporally ordered set of subsequence patterns)
-and more ...
+* pattern/motif (approximately repeated subsequences within a longer time series) discovery
+* anomaly/novelty (discord) discovery
+* shapelet discovery
+* semantic segmentation
+* density estimation
+* time series chains (temporally ordered set of subsequence patterns)
+* and more ...
 
 ![Matrix Profile](matrix_profile.jpeg)
 
