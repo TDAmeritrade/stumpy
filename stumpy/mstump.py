@@ -419,6 +419,7 @@ def mstump(T, m):
     See mSTAMP Algorithm
     """
 
+    T = core.df_to_array(T)
     core.check_dtype(T)
 
     d = T.shape[0]

@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.testing as npt
+import pandas as pd
 from stumpy import stump, _calculate_squared_distance_profile, core
 import pytest
 
@@ -91,6 +92,10 @@ def test_stump_self_join(T_A, T_B):
     replace_inf(right)
     npt.assert_almost_equal(left, right)
 
+    right = stump(pd.Series(T_B), m, ignore_trivial=True)
+    replace_inf(right)
+    npt.assert_almost_equal(left, right)
+
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_A_B_join(T_A, T_B):
@@ -100,5 +105,9 @@ def test_stump_A_B_join(T_A, T_B):
     )
     right = stump(T_A, m, T_B, ignore_trivial=False)
     replace_inf(left)
+    replace_inf(right)
+    npt.assert_almost_equal(left, right)
+
+    right = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
     replace_inf(right)
     npt.assert_almost_equal(left, right)

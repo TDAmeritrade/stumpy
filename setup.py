@@ -44,6 +44,7 @@ configuration = {
     "data_files": (),
     "extras_require": {
         "ci": [
+            "pandas >= 0.20.0",
             "dask >= 1.2.2",
             "distributed >= 1.28.1",
             "coverage >= 4.5.3",

@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.testing as npt
+import pandas as pd
 from stumpy import stumped, core
 from dask.distributed import Client, LocalCluster
 import pytest
@@ -79,6 +80,7 @@ test_data = [
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stumped_self_join(T_A, T_B, dask_client):
+    dask_client.restart()
     m = 3
     zone = int(np.ceil(m / 4))
     left = np.array(
@@ -92,6 +94,12 @@ def test_stumped_self_join(T_A, T_B, dask_client):
     replace_inf(left)
     replace_inf(right)
     npt.assert_almost_equal(left, right)
+    dask_client.restart()
+
+    right = stumped(dask_client, pd.Series(T_B), m, ignore_trivial=True)
+    replace_inf(right)
+    npt.assert_almost_equal(left, right)
+    dask_client.restart()
 
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
@@ -100,6 +108,7 @@ def test_stumped_self_join(T_A, T_B, dask_client):
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stumped_A_B_join(T_A, T_B, dask_client):
+    dask_client.restart()
     m = 3
     left = np.array(
         [naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
@@ -108,3 +117,11 @@ def test_stumped_A_B_join(T_A, T_B, dask_client):
     replace_inf(left)
     replace_inf(right)
     npt.assert_almost_equal(left, right)
+    dask_client.restart()
+
+    right = stumped(
+        dask_client, pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
+    )
+    replace_inf(right)
+    npt.assert_almost_equal(left, right)
+    dask_client.restart()
