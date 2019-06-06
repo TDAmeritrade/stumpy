@@ -380,10 +380,12 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     Note that left and right matrix profiles are only available for self-joins.
     """
 
+    T_A = core.df_to_array(T_A)
     core.check_dtype(T_A)
     if T_B is None:  # Self join!
         T_B = T_A
         ignore_trivial = True
+    T_B = core.df_to_array(T_B)
     core.check_dtype(T_B)
 
     if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover

@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.testing as npt
+import pandas as pd
 from stumpy import core
 import pytest
 
@@ -18,6 +19,13 @@ def test_check_dtype_float32():
 
 def test_check_dtype_float64():
     assert core.check_dtype(np.random.rand(10))
+
+
+def test_df_to_array():
+    a = np.random.rand(10)
+    assert core.check_dtype(core.df_to_array(a))
+    df = pd.Series(a)
+    assert core.check_dtype(core.df_to_array(df))
 
 
 test_data = [

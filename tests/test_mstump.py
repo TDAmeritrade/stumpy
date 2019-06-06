@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.testing as npt
+import pandas as pd
 from stumpy import core
 from stumpy import (
     mstump,
@@ -214,6 +215,11 @@ def test_mstump(T, m):
 def test_mstump_wrapper(T, m):
     left_P, left_I = naive_mstump(T, m)
     right_P, right_I = mstump(T, m)
+
+    npt.assert_almost_equal(left_P, right_P)
+    npt.assert_almost_equal(left_I, right_I)
+
+    right_P, right_I = mstump(pd.DataFrame(T), m)
 
     npt.assert_almost_equal(left_P, right_P)
     npt.assert_almost_equal(left_I, right_I)

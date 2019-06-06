@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.testing as npt
+import pandas as pd
 from stumpy import core, mstumped
 import pytest
 from dask.distributed import Client, LocalCluster
@@ -78,8 +79,15 @@ test_data = [
 
 @pytest.mark.parametrize("T, m", test_data)
 def test_mstumped(T, m, dask_client):
+    dask_client.restart()
     left_P, left_I = naive_mstump(T, m)
     right_P, right_I = mstumped(dask_client, T, m)
+
+    npt.assert_almost_equal(left_P, right_P)
+    npt.assert_almost_equal(left_I, right_I)
+    dask_client.restart()
+
+    right_P, right_I = mstumped(dask_client, pd.DataFrame(T), m)
 
     npt.assert_almost_equal(left_P, right_P)
     npt.assert_almost_equal(left_I, right_I)

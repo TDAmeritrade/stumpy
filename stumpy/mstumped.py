@@ -54,6 +54,7 @@ def mstumped(dask_client, T, m):
     hosts = list(dask_client.ncores().keys())
     nworkers = len(hosts)
 
+    T = core.df_to_array(T)
     core.check_dtype(T)
 
     d = T.shape[0]
