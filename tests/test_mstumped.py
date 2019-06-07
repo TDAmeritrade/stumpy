@@ -79,14 +79,16 @@ test_data = [
 
 @pytest.mark.parametrize("T, m", test_data)
 def test_mstumped(T, m, dask_client):
-    dask_client.restart()
     left_P, left_I = naive_mstump(T, m)
     right_P, right_I = mstumped(dask_client, T, m)
 
     npt.assert_almost_equal(left_P, right_P)
     npt.assert_almost_equal(left_I, right_I)
-    dask_client.restart()
 
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_mstumped_df(T, m, dask_client):
+    left_P, left_I = naive_mstump(T, m)
     right_P, right_I = mstumped(dask_client, pd.DataFrame(T), m)
 
     npt.assert_almost_equal(left_P, right_P)
