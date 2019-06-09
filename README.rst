@@ -155,7 +155,7 @@ In order to fully understand and appreciate the underlying algorithms and applic
 
 1. `The Matrix Profile - Tutorial 0 <https://stumpy.readthedocs.io/en/latest/Tutorial_0.html>`_
 2. `STUMPY Basics - Tutorial 1 <https://stumpy.readthedocs.io/en/latest/Tutorial_1.html>`_
-3. `Time Series Chains - Tutorial 2 <https://stumpy.readthedocs.io/en/latest/Tutorial_0.html>`_
+3. `Time Series Chains - Tutorial 2 <https://stumpy.readthedocs.io/en/latest/Tutorial_2.html>`_
 
 -----------
 Performance
@@ -254,7 +254,7 @@ First, please check the issues on github to see if your question has already bee
 Contributing
 ------------
 
-We welcome `contributions <CONTRIBUTING.md>`_ in any form! Assistance with documentation, particularly expanding tutorials, is always welcome. To contribute please `fork the project <https://github.com/TDAmeritrade/stumpy/fork>`_, make your changes, and submit a pull request. We will do our best to work through any issues with you and get your code merged into the main branch.
+We welcome `contributions <https://github.com/TDAmeritrade/stumpy/blob/master/CONTRIBUTING.md>`_ in any form! Assistance with documentation, particularly expanding tutorials, is always welcome. To contribute please `fork the project <https://github.com/TDAmeritrade/stumpy/fork>`_, make your changes, and submit a pull request. We will do our best to work through any issues with you and get your code merged into the main branch.
 
 ----------
 References
