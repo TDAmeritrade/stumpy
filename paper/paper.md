@@ -21,7 +21,9 @@ bibliography: paper.bib
 
 ![STUMPY Logo](stumpy_logo_small.png)
 
-STUMPY is a powerful and scalable library that efficiently computes something called the matrix profile [@yeh2016], [@zhu2016], which can be used for a variety of time series data mining tasks such as:
+Direct visualization, summary statistics (i.e., minimum, maximum, mean, standard deviation), ARIMA models, anomaly detection, forecasting, clustering, and deep learning are all popular techniques for analyzing and understanding time series data. However, the simplest and most intuitive  approach of comparing all of the pairwise distances between each subsequence within a time series (i.e., a self-similarity join) has not seen much progress due to its inherent computational complexities. For a time series with length *n* and a subsequence comparison length *m*, the brute force self-similarity join for this sqeuence would have a computational complexity of  *O(n^2^m)*. To put this into perspective, assuming that each distance calculation took 0.0000001 seconds, a time series of length *n = 100,000,000* would require roughly 1,585.49 years to compute all of the pairwise distances in a brute force manner. The ability to accurately and efficiently compute the exact similarity join would enable, amongst other things, time series motif and time series discord discovery. While approximate methods exist, they are often inexact, lead to false positives or false dismissals, and do not generalize well to other time series data. Novel research for computing the exact similarity join has significantly improved the scalability for exploring larger datasets without compromise.
+
+Leveraging this work, we present STUMPY, a powerful and scalable library that efficiently computes something called the matrix profile (a vector that represents the distances between all subsequences within a time series and their nearest neighbors) [@yeh2016], [@zhu2016], which can be used for a variety of time series data mining tasks such as:
 
 * pattern/motif (approximately repeated subsequences within a longer time series) discovery
 * anomaly/novelty (discord) discovery
