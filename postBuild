@@ -1,3 +1,4 @@
 #!/bin/bash
 
 conda install pandas
+conda install matplotlib
