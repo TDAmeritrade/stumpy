@@ -1,3 +1,5 @@
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FTDAmeritrade%2Fstumpy.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FTDAmeritrade%2Fstumpy?ref=badge_shield)
+
 .. image:: https://img.shields.io/pypi/v/stumpy.svg
     :target: https://pypi.org/project/stumpy/
     :alt: PyPI Version
@@ -280,3 +282,6 @@ License & Trademark
 | STUMPY
 | Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 | STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FTDAmeritrade%2Fstumpy.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FTDAmeritrade%2Fstumpy?ref=badge_large)
