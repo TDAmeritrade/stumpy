@@ -28,6 +28,12 @@ def test_df_to_array():
     assert core.check_dtype(core.df_to_array(df))
 
 
+def test_check_window_size():
+    for m in range(-1, 3):
+        with pytest.raises(ValueError):
+            core.check_window_size(m)
+
+
 test_data = [
     (np.array([-1, 1, 2], dtype=np.float64), np.array(range(5), dtype=np.float64)),
     (

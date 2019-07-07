@@ -149,6 +149,22 @@ def df_to_array(a):
         return a
 
 
+def check_window_size(m):
+    if m <= 2:
+        raise ValueError(
+            "All window sizes must be greater than or equal to three",
+            """A window size that is less than or equal to two is meaningless when
+            it comes to computing the z-normalized Euclidean distance. In the case of
+            `m=1` produces a standard deviation of zero. In the case of `m=2`, both
+            the mean and standard deviation for any given subsequence are identical
+            and so the z-normalization for any sequence will either be [-1., 1.] or
+            [1., -1.]. Thus, the z-normalized Euclidean distance will be (very likely)
+            zero between any subsequence and its nearest neighbor (assuming that the
+            time series is large enough to contain both scenarios).
+            """,
+        )
+
+
 def sliding_dot_product(Q, T):
     """
     Use FFT convolution to calculate the sliding window dot product.

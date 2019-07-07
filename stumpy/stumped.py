@@ -85,6 +85,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
         T_B = T_A
     T_B = core.df_to_array(T_B)
     core.check_dtype(T_B)
+    core.check_window_size(m)
 
     if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
         logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")

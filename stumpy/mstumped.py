@@ -56,6 +56,7 @@ def mstumped(dask_client, T, m):
 
     T = core.df_to_array(T)
     core.check_dtype(T)
+    core.check_window_size(m)
 
     d = T.shape[0]
     n = T.shape[1]

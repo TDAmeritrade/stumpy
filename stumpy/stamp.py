@@ -125,6 +125,7 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
 
     core.check_dtype(T_A)
     core.check_dtype(T_B)
+    core.check_window_size(m)
     subseq_T_B = core.rolling_window(T_B, m)
     excl_zone = int(np.ceil(m / 2))
     M_T, Σ_T = core.compute_mean_std(T_A, m)
