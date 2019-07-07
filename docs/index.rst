@@ -6,6 +6,7 @@ STUMPY documentation
    :maxdepth: 2
    :caption: Contents:
 
+   motivation
    install
    api
    tutorials

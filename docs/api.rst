@@ -1,5 +1,5 @@
 ==========
-stumpy API
+STUMPY API
 ==========
 
 .. rubric:: Overview
