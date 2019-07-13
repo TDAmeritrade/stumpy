@@ -9,7 +9,7 @@ def readme():
 configuration = {
     "name": "stumpy",
     "version": "1.0.0",
-    "python_requires=": ">=3.5",
+    "python_requires=": ">=3.6",
     "author": "Sean M. Law",
     "author_email": "seanmylaw@gmail.com",
     "description": (
@@ -29,7 +29,7 @@ configuration = {
         "Operating System :: POSIX",
         "Operating System :: Unix",
         "Operating System :: MacOS",
-        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
     ],
     "keywords": "time series matrix profile motif discord",
     "url": "https://github.com/TDAmeritrade/stumpy",
