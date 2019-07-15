@@ -116,8 +116,8 @@ Time Series Chains:
     
     matrix_profile = stumpy.stump(your_time_series, m=window_size)
 
-    left_matrix_profile_index = matrix_profile[2]
-    right_matrix_profile_index = matrix_profile[3]
+    left_matrix_profile_index = matrix_profile[:, 2]
+    right_matrix_profile_index = matrix_profile[:, 3]
     idx = 10  # Subsequence index for which to retrieve the anchored time series chain for
 
     anchored_chain = stumpy.atsc(left_matrix_profile_index, right_matrix_profile_index, idx)
