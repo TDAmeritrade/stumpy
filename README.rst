@@ -25,6 +25,9 @@
 .. image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/TDAmeritrade/stumpy/master?filepath=notebooks
     :alt: Binder
+.. image:: https://zenodo.org/badge/184809315.svg
+    :target: https://zenodo.org/badge/184809315.svg
+    :alt: DOI
 .. image:: https://img.shields.io/twitter/follow/stumpy_dev.svg?style=social
     :target: https://twitter.com/stumpy_dev
     :alt: Twitter
