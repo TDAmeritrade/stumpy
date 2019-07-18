@@ -25,6 +25,9 @@
 .. image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/TDAmeritrade/stumpy/master?filepath=notebooks
     :alt: Binder
+.. image:: http://joss.theoj.org/papers/10.21105/joss.01504/status.svg
+    :target: https://doi.org/10.21105/joss.01504
+    :alt: JOSS
 .. image:: https://zenodo.org/badge/184809315.svg
     :target: https://zenodo.org/badge/latestdoi/184809315
     :alt: DOI
