@@ -285,8 +285,8 @@ Citing
 
 If you have used this codebase in a scientific publication and wish to cite it, please use the `Journal of Open Source Software article <http://joss.theoj.org/papers/10.21105/joss.01504>`_.
 
-    S. M. Law,, *STUMPY: A Powerful and Scalable Python Library for Time Series Data Mining*
-    In: Journal of Open Source Software, The Open Journal, volume 4, number 39.
+    S. M. Law, *STUMPY: A Powerful and Scalable Python Library for Time Series Data Mining*
+    In: Journal of Open Source Software, The Open Journal, Volume 4, Number 39.
     2019
     
 .. code:: bibtex
