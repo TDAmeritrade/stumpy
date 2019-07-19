@@ -419,7 +419,7 @@ def mstump(T, m):
     See mSTAMP Algorithm
     """
 
-    T = core.df_to_array(T)
+    T = np.asarray(T)
     core.check_dtype(T)
     core.check_window_size(m)
 

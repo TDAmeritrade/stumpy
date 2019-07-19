@@ -3,14 +3,6 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-
-try:
-    import pandas as pd
-
-    _PANDAS_INSTALLED = True
-except ImportError:  # pragma: no cover
-    _PANDAS_INSTALLED = False
-
 import scipy.signal
 
 
@@ -136,17 +128,6 @@ def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
         return True
 
     return False
-
-
-def df_to_array(a):
-    """
-    If the input is a pandas dataframe or series then return
-    a numpy array. Otherwise, return the input directly.
-    """
-    if _PANDAS_INSTALLED and isinstance(a, (pd.Series, pd.DataFrame)):
-        return a.values
-    else:
-        return a
 
 
 def check_window_size(m):
