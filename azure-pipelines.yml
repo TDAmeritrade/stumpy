@@ -4,15 +4,15 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
 stages:
-- stage: BuildStage
+- stage: Build
   displayName: "Building Stage"
-
-  trigger:
-  - master
 
   jobs:
   - job: BuildJob
     displayName: "Build on all platforms"
+
+    trigger:
+    - master
 
     strategy:
       matrix:
@@ -65,15 +65,27 @@ stages:
         codecov --token=$(CODECOV_TOKEN)
       displayName: "Upload test coverage results"
 
-- stage: ScanStage
+- stage: Scan
   displayName: "Scanning with FOSSA"
-  dependsOn: BuildStage
 
   jobs:
   - job: FOSSAJob
     displayName: "Analyze OSS licenses with FOSSA"
 
+    pool:
+      vmImage: "ubuntu-16.04"
+
     steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.7'
+      displayName: 'Use Python 3.7'
+
+    - script: |
+        pip install --editable .[ci]
+        pip install pytest-azurepipelines
+      displayName: 'Install stumpy and other dependencies'
+
     - task: GoTool@0
       inputs:
         version: 1.10
