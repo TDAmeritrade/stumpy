@@ -5,11 +5,13 @@
 
 stages:
 - stage: BuildStage
+  displayName: "Building Stage"
+
   trigger:
   - master
 
   jobs:
-  - job: Build
+  - job: BuildJob
     displayName: "Build on all platforms"
 
     strategy:
@@ -64,8 +66,11 @@ stages:
       displayName: "Upload test coverage results"
 
 - stage: ScanStage
+  displayName: "Scanning with FOSSA"
+  dependsOn: BuildStage
+
   jobs:
-  - job: FOSSA_Test
+  - job: FOSSAJob
     displayName: "Analyze OSS licenses with FOSSA"
 
     steps:
@@ -73,6 +78,4 @@ stages:
       inputs:
         version: 1.10
 
-    - bash: |
-      curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | bash
-      fossa -analyze
+    - bash: ./fossa.sh
