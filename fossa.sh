@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Install latest FOSSA
+# Install latest FOSSA cli
 curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | bash
 
 # Analyze the project
