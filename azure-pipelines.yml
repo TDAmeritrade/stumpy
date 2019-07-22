@@ -3,6 +3,9 @@
 # Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
+trigger:
+- master
+
 stages:
 - stage: Build
   displayName: "Building Stage"
@@ -10,9 +13,6 @@ stages:
   jobs:
   - job: BuildJob
     displayName: "Build on all platforms"
-
-    trigger:
-    - master
 
     strategy:
       matrix:
