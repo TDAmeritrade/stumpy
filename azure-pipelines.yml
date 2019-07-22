@@ -3,56 +3,70 @@
 # Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
-trigger:
-- master
+stages:
+- stage: Build
+  displayName: "Build on all platforms, across two Python versions"
 
-strategy:
-  matrix:
-    python36_linux:
-      imageName: "ubuntu-16.04"
-      python.version: "3.6"
-    python36_windows:
-      imageName: "vs2017-win2016"
-      python.version: "3.6"
-    python36_macos:
-      imageName: "macos-10.13"
-      python.version: "3.6" 
-    python37_linux:
-      imageName: "ubuntu-16.04"
-      python.version: "3.7"
-    python37_windows:
-      imageName: "vs2017-win2016"
-      python.version: "3.7"
-    python37_macos:
-      imageName: "macos-10.13"
-      python.version: "3.7"     
-  maxParallel: 10
+  trigger:
+  - master
 
-pool:
-  vmImage: $(imageName)
+  strategy:
+    matrix:
+      python36_linux:
+        imageName: "ubuntu-16.04"
+        python.version: "3.6"
+      python36_windows:
+        imageName: "vs2017-win2016"
+        python.version: "3.6"
+      python36_macos:
+        imageName: "macos-10.13"
+        python.version: "3.6"
+      python37_linux:
+        imageName: "ubuntu-16.04"
+        python.version: "3.7"
+      python37_windows:
+        imageName: "vs2017-win2016"
+        python.version: "3.7"
+      python37_macos:
+        imageName: "macos-10.13"
+        python.version: "3.7"
+    maxParallel: 10
 
-steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '$(python.version)'
-  displayName: 'Use Python $(python.version)'
+  pool:
+    vmImage: $(imageName)
 
-- script: |
-    pip install --editable .[ci]
-    pip install pytest-azurepipelines
-  displayName: 'Install stumpy and other dependencies'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.version)'
+    displayName: 'Use Python $(python.version)'
 
-- script: |
-    black --check ./
-  displayName: "Running black"
+  - script: |
+      pip install --editable .[ci]
+      pip install pytest-azurepipelines
+    displayName: 'Install stumpy and other dependencies'
 
-- script: |
-    flake8 ./
-  displayName: "Running flake8"
+  - script: |
+      black --check ./
+    displayName: "Running black"
 
-- bash: ./test.sh
-  displayName: "Running test"
+  - script: |
+      flake8 ./
+    displayName: "Running flake8"
 
-- script: |
-    codecov --token=$(CODECOV_TOKEN)
-  displayName: "Upload test coverage results"
+  - bash: ./test.sh
+    displayName: "Running test"
+
+  - script: |
+      codecov --token=$(CODECOV_TOKEN)
+    displayName: "Upload test coverage results"
+
+- stage: FOSSA_Test
+  displayName: "Analyze OSS licenses with FOSSA"
+
+  steps:
+  - bash: |
+      curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | bash
+      fossa
+    env:
+      FOSSA_API_KEY: 59a5cb358c757b5be7c2ed677b2f852b
