@@ -38,8 +38,6 @@ stages:
     pool:
       vmImage: $(imageName)
 
-    displayName: "Build on $(imageName) with Python $(python.version)"
-
     steps:
     - task: UsePythonVersion@0
       inputs:
