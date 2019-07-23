@@ -8,10 +8,9 @@ trigger:
 
 stages:
 - stage: Build
-  displayName: "Build"
 
   jobs:
-  - job: BuildJob
+  - job: Job
 
     strategy:
       matrix:
@@ -68,7 +67,7 @@ stages:
   displayName: "FOSSA"
 
   jobs:
-  - job: FOSSAJob
+  - job: FOSSA
     displayName: "Analyze OSS licenses with FOSSA cli"
 
     pool:
