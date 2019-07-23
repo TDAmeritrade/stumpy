@@ -11,7 +11,6 @@ curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa
 export FOSSA_API_KEY=$1
 
 # Generate the FOSSA yaml file to direct dependency discovery
-./fossa-cli/fossa init
 cat .fossa.yml
 
 # Analyze the project and submit to FOSSA
