@@ -31,6 +31,9 @@
 .. image:: https://zenodo.org/badge/184809315.svg
     :target: https://zenodo.org/badge/latestdoi/184809315
     :alt: DOI
+.. image:: https://app.fossa.com/api/projects/custom%2B9056%2Fgithub.com%2FTDAmeritrade%2Fstumpy.svg?type=shield
+    :target: https://app.fossa.io/projects/custom%2B9056%2Fgithub.com%2FTDAmeritrade%2Fstumpy?ref=badge_shield
+    :alt: FOSSA
 .. image:: https://img.shields.io/twitter/follow/stumpy_dev.svg?style=social
     :target: https://twitter.com/stumpy_dev
     :alt: Twitter

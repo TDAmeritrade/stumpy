@@ -6,53 +6,86 @@
 trigger:
 - master
 
-strategy:
-  matrix:
-    python36_linux:
-      imageName: "ubuntu-16.04"
-      python.version: "3.6"
-    python36_windows:
-      imageName: "vs2017-win2016"
-      python.version: "3.6"
-    python36_macos:
-      imageName: "macos-10.13"
-      python.version: "3.6" 
-    python37_linux:
-      imageName: "ubuntu-16.04"
-      python.version: "3.7"
-    python37_windows:
-      imageName: "vs2017-win2016"
-      python.version: "3.7"
-    python37_macos:
-      imageName: "macos-10.13"
-      python.version: "3.7"     
-  maxParallel: 10
+stages:
+- stage: Build
 
-pool:
-  vmImage: $(imageName)
+  jobs:
+  - job: Job
 
-steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '$(python.version)'
-  displayName: 'Use Python $(python.version)'
+    strategy:
+      matrix:
+        python36_linux:
+          imageName: "ubuntu-16.04"
+          python.version: "3.6"
+        python36_windows:
+          imageName: "vs2017-win2016"
+          python.version: "3.6"
+        python36_macos:
+          imageName: "macos-10.13"
+          python.version: "3.6"
+        python37_linux:
+          imageName: "ubuntu-16.04"
+          python.version: "3.7"
+        python37_windows:
+          imageName: "vs2017-win2016"
+          python.version: "3.7"
+        python37_macos:
+          imageName: "macos-10.13"
+          python.version: "3.7"
+      maxParallel: 10
 
-- script: |
-    pip install --editable .[ci]
-    pip install pytest-azurepipelines
-  displayName: 'Install stumpy and other dependencies'
+    pool:
+      vmImage: $(imageName)
 
-- script: |
-    black --check ./
-  displayName: "Running black"
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+      displayName: 'Use Python $(python.version)'
 
-- script: |
-    flake8 ./
-  displayName: "Running flake8"
+    - script: |
+        pip install --editable .[ci]
+        pip install pytest-azurepipelines
+      displayName: 'Install stumpy and other dependencies'
 
-- bash: ./test.sh
-  displayName: "Running test"
+    - script: |
+        black --check ./
+      displayName: "Running black"
 
-- script: |
-    codecov --token=$(CODECOV_TOKEN)
-  displayName: "Upload test coverage results"
+    - script: |
+        flake8 ./
+      displayName: "Running flake8"
+
+    - bash: ./test.sh
+      displayName: "Running test"
+
+    - script: |
+        codecov --token=$(CODECOV_TOKEN)
+      displayName: "Upload test coverage results"
+
+- stage: Scan
+  displayName: "FOSSA"
+
+  jobs:
+  - job: FOSSA
+    displayName: "Analyze OSS licenses with FOSSA cli"
+
+    pool:
+      vmImage: "ubuntu-16.04"
+
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.7'
+      displayName: 'Use Python 3.7'
+
+    - script: |
+        pip install --editable .[ci]
+        pip install pytest-azurepipelines
+      displayName: 'Install stumpy and other dependencies'
+
+    - task: GoTool@0
+      inputs:
+        version: 1.10
+
+    - bash: ./fossa.sh $(FOSSA_API_KEY)
