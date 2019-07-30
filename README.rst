@@ -175,7 +175,7 @@ Performance
 
 We tested the performance using the Numba JIT compiled version of the code on randomly generated data with various lengths (i.e., ``np.random.rand(n)``). 
 
-.. figure:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/performance.png
+.. image:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/performance.png
     :alt: STUMPY Performance Plot
 
 The raw results are displayed below as Hours:Minutes:Seconds.
