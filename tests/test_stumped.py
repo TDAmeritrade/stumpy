@@ -36,7 +36,7 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
             if D[i] < PL:
                 IL = i
                 PL = D[i]
-        if start <= IL <= stop:
+        if start <= IL < stop:
             IL = -1
     else:
         IL = -1
@@ -48,7 +48,7 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
             if D[i] < PR:
                 IR = i
                 PR = D[i]
-        if start <= IR <= stop:
+        if start <= IR < stop:
             IR = -1
     else:
         IR = -1
