@@ -305,14 +305,14 @@ def _stump(
         # Get left and right matrix profiles for self-joins
         if ignore_trivial and i > 0:
             IL = np.argmin(D[:i])
-            if zone_start <= IL < zone_stop:
+            if zone_start <= IL < zone_stop:  # pragma: no cover
                 IL = -1
         else:
             IL = -1
 
         if ignore_trivial and i + 1 < D.shape[0]:
             IR = i + 1 + np.argmin(D[i + 1 :])
-            if zone_start <= IR < zone_stop:
+            if zone_start <= IR < zone_stop:  # pragma: no cover
                 IR = -1
         else:
             IR = -1
