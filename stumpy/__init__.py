@@ -17,7 +17,7 @@ from .mstump import (  # noqa: F401
 )
 from .mstumped import mstumped  # noqa: F401
 from .chains import atsc, allc  # noqa: F401
-
+from .floss import floss, fluss, _nnmark, _iac, _cac, _rea  # noqa: F401
 from pkg_resources import get_distribution, DistributionNotFound
 import os.path
 
