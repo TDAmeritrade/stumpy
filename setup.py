@@ -16,6 +16,7 @@ configuration = {
         "A powerful and scalable library that can be used"
         "for a variety of time series data mining tasks"
     ),
+    "long_description_content_type": "text/x-rst",
     "long_description": readme(),
     "classifiers": [
         "Development Status :: 3 - Alpha",
