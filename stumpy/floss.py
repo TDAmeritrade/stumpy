@@ -289,6 +289,9 @@ def floss(
     custom_iac=None,
 ):
     """
+    Compute the Fast Low-cost Online Semantic Segmentation (FLOSS) for
+    streaming data.
+
     Parameters
     ----------
     mp : ndarray
