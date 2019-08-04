@@ -15,6 +15,9 @@
 # 5. Check the checkboxes in the PR
 # 6. Add a comment with "@conda-forge-admin, please rerender"
 #
+# For readthedocs
+# 1. Update the docs/api.rst to include new features/functions
+#
 # To check that the distribution is valid, execute:
 # twine check dist/* 
 

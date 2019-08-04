@@ -13,6 +13,8 @@ STUMPY API
     stumpy.mstumped
     stumpy.atsc
     stumpy.allc
+    stumpy.fluss
+    stumpy.floss
 
 stump
 =====
@@ -43,3 +45,13 @@ allc
 ====
 
 .. autofunction:: stumpy.allc
+
+fluss
+====
+
+.. autofunction:: stumpy.fluss
+
+floss
+====
+
+.. autofunction:: stumpy.floss
