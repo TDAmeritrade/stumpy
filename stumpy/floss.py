@@ -221,9 +221,9 @@ def _rea(cac, n_regimes, L, excl_factor=5):
 
 def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
     """
-    A wrapper to compute the corrected arc curve and regime locations.
-    Essentially, this is computing the Fast Low-cost Unipotent Semantic
-    Segmentation (FLUSS).
+    Compute the Fast Low-cost Unipotent Semantic Segmentation (FLUSS)
+    for static data. Essentially, this is wrapper to compute the corrected 
+    arc curve and regime locations.c
 
     Parameters
     ----------
