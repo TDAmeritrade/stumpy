@@ -24,7 +24,7 @@ def _nnmark(I):
 
     Notes
     -----
-    DOI: 10.1109/ICDM.2017.21
+    DOI: 10.1109/ICDM.2017.21 <https://www.cs.ucr.edu/~eamonn/Segmentation_ICDM.pdf>`__
 
     See Table I
 
@@ -146,7 +146,7 @@ def _cac(I, L, bidirectional=True, excl_factor=5, custom_iac=None, seed=0):
 
     Notes
     -----
-    DOI: 10.1109/ICDM.2017.21
+    DOI: 10.1109/ICDM.2017.21 <https://www.cs.ucr.edu/~eamonn/Segmentation_ICDM.pdf>`__
 
     See Table I
 
@@ -202,7 +202,7 @@ def _rea(cac, n_regimes, L, excl_factor=5):
 
     Notes
     -----
-    DOI: 10.1109/ICDM.2017.21
+    DOI: 10.1109/ICDM.2017.21 <https://www.cs.ucr.edu/~eamonn/Segmentation_ICDM.pdf>`__
 
     See Table II
 
@@ -222,8 +222,10 @@ def _rea(cac, n_regimes, L, excl_factor=5):
 def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
     """
     Compute the Fast Low-cost Unipotent Semantic Segmentation (FLUSS)
-    for static data. Essentially, this is wrapper to compute the corrected 
-    arc curve and regime locations.c
+    for static data.
+
+    Essentially, this is a wrapper to compute the corrected arc curve and
+    regime locations.
 
     Parameters
     ----------
@@ -263,7 +265,7 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
 
     Notes
     -----
-    DOI: 10.1109/ICDM.2017.21
+    `DOI: 10.1109/ICDM.2017.21 <https://www.cs.ucr.edu/~eamonn/Segmentation_ICDM.pdf>`__
 
     See Section A
 
@@ -368,7 +370,7 @@ def floss(
 
     Notes
     -----
-    DOI: 10.1109/ICDM.2017.21
+    DOI: 10.1109/ICDM.2017.21 <https://www.cs.ucr.edu/~eamonn/Segmentation_ICDM.pdf>`__
 
     See Section C
 
