@@ -34,16 +34,17 @@ def _multi_compute_mean_std(T, m):
 
     Notes
     -----
-    `DOI: 10.1109/ICDM.2016.0179 <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__  # noqa
+    `DOI: 10.1109/ICDM.2016.0179 \
+    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
 
     See Table II
 
     DOI: 10.1145/2020408.2020587
-    
+
     See Page 2 and Equations 1, 2
 
     DOI: 10.1145/2339530.2339576
-    
+
     See Page 4
 
     http://www.cs.unm.edu/~mueen/FastestSimilaritySearch.html
@@ -321,7 +322,8 @@ def _mstump(
     Notes
     -----
 
-    `DOI: 10.1109/ICDM.2017.66 <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__  # noqa
+    `DOI: 10.1109/ICDM.2017.66 \
+    <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
     See mSTAMP Algorithm
     """
@@ -419,7 +421,8 @@ def mstump(T, m):
     Notes
     -----
 
-    `DOI: 10.1109/ICDM.2017.66 <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__  # noqa
+    `DOI: 10.1109/ICDM.2017.66 \
+    <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
     See mSTAMP Algorithm
     """

@@ -114,7 +114,8 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     A Numba JIT-compiled algorithm for parallel computation of the squared
     distance profile according to:
 
-    `DOI: 10.1109/ICDM.2016.0179 <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__  # noqa
+    `DOI: 10.1109/ICDM.2016.0179 \
+    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
 
     See Equation on Page 4
 
@@ -234,7 +235,8 @@ def _stump(
 
     Notes
     -----
-    `DOI: 10.1109/ICDM.2016.0085 <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__  # noqa
+    `DOI: 10.1109/ICDM.2016.0085 \
+    <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
     See Table II
 
@@ -357,7 +359,8 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     Notes
     -----
 
-    `DOI: 10.1109/ICDM.2016.0085 <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__  # noqa
+    `DOI: 10.1109/ICDM.2016.0085 \
+    <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
     See Table II
 

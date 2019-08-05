@@ -167,7 +167,8 @@ def sliding_dot_product(Q, T):
     -----
     Calculate the sliding dot product
 
-    `DOI: 10.1109/ICDM.2016.0179 <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__  # noqa
+    `DOI: 10.1109/ICDM.2016.0179 \
+    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
 
     See Table I, Figure 4
 
@@ -208,16 +209,17 @@ def compute_mean_std(T, m):
 
     Notes
     -----
-    `DOI: 10.1109/ICDM.2016.0179 <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__  # noqa
+    `DOI: 10.1109/ICDM.2016.0179 \
+    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
 
     See Table II
 
     DOI: 10.1145/2020408.2020587
-    
+
     See Page 2 and Equations 1, 2
 
     DOI: 10.1145/2339530.2339576
-    
+
     See Page 4
 
     http://www.cs.unm.edu/~mueen/FastestSimilaritySearch.html
@@ -275,7 +277,8 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
     Notes
     -----
-    `DOI: 10.1109/ICDM.2016.0179 <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__  # noqa
+    `DOI: 10.1109/ICDM.2016.0179 \
+    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
 
     See Equation on Page 4
     """
@@ -305,16 +308,17 @@ def mueen_calculate_distance_profile(Q, T):
 
     Notes
     -----
-    `DOI: 10.1109/ICDM.2016.0179 <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__  # noqa
+    `DOI: 10.1109/ICDM.2016.0179 \
+    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
 
     See Table II
 
     DOI: 10.1145/2020408.2020587
-    
+
     See Page 2 and Equations 1, 2
 
     DOI: 10.1145/2339530.2339576
-    
+
     See Page 4
 
     http://www.cs.unm.edu/~mueen/FastestSimilaritySearch.html
@@ -378,7 +382,8 @@ def mass(Q, T, M_T=None, Σ_T=None):
 
     Notes
     -----
-    `DOI: 10.1109/ICDM.2016.0179 <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__  # noqa
+    `DOI: 10.1109/ICDM.2016.0179 \
+    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
 
     See Table II
 

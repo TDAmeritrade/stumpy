@@ -50,7 +50,8 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     Notes
     -----
 
-    `DOI: 10.1109/ICDM.2016.0085 <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__  # noqa
+    `DOI: 10.1109/ICDM.2016.0085 \
+    <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
     See Table II
 
