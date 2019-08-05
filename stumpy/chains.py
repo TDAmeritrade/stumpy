@@ -28,7 +28,7 @@ def atsc(IL, IR, j):
 
     Notes
     -----
-    DOI: 10.1109/ICDM.2017.79
+    `DOI: 10.1109/ICDM.2017.79 <https://www.cs.ucr.edu/~eamonn/chains_ICDM.pdf>`__
 
     See Table I
 
@@ -70,7 +70,7 @@ def allc(IL, IR):
 
     Notes
     -----
-    DOI: 10.1109/ICDM.2017.79
+    `DOI: 10.1109/ICDM.2017.79 <https://www.cs.ucr.edu/~eamonn/chains_ICDM.pdf>`__
 
     See Table II
 

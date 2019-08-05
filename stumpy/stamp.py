@@ -112,7 +112,8 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
 
     Notes
     -----
-    DOI: 10.1109/ICDM.2016.0179
+    `DOI: 10.1109/ICDM.2016.0179 <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__  # noqa
+
     See Table III
 
     Timeseries, T_B, will be annotated with the distance location

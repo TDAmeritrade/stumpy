@@ -47,7 +47,8 @@ def mstumped(dask_client, T, m):
     Notes
     -----
 
-    DOI: 10.1109/ICDM.2017.66
+    `DOI: 10.1109/ICDM.2017.66 <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__  # noqa
+
     See mSTAMP Algorithm
     """
 
