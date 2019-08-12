@@ -113,7 +113,7 @@ Distributed multi-dimensional time series data analysis with Dask Distributed `M
 
     matrix_profile, matrix_profile_indices = stumpy.mstumped(dask_client, your_time_series, m=window_size)
 
-Time Series Chains:
+Time Series Chains with `Anchored Time Series Chains (ATSC)`:
 
 .. code:: python
 
@@ -132,6 +132,25 @@ Time Series Chains:
     anchored_chain = stumpy.atsc(left_matrix_profile_index, right_matrix_profile_index, idx)
 
     all_chain_set, longest_unanchored_chain = stumpy.allc(left_matrix_profile_index, right_matrix_profile_index)
+
+Semantic Segmentation with `Fast Low-cost Unipotent Semantic Segmentation (FLUSS)`:
+
+.. code:: python
+
+    import stumpy
+    import numpy as np
+
+    your_time_series = np.random.rand(10000)
+    window_size = 50  # Approximately, how many data points might be found in a pattern
+
+    matrix_profile = stumpy.stump(your_time_series, m=window_size)
+
+    subseq_len = 50
+    correct_arc_curve, regime_locations = stumpy.fluss(matrix_profile[:, 1], 
+                                                       L=subseq_len, 
+                                                       n_regimes=2, 
+                                                       excl_factor=1
+                                                      )
 
 ------------
 Dependencies
@@ -168,6 +187,7 @@ In order to fully understand and appreciate the underlying algorithms and applic
 1. `The Matrix Profile - Tutorial 0 <https://stumpy.readthedocs.io/en/latest/Tutorial_0.html>`_
 2. `STUMPY Basics - Tutorial 1 <https://stumpy.readthedocs.io/en/latest/Tutorial_1.html>`_
 3. `Time Series Chains - Tutorial 2 <https://stumpy.readthedocs.io/en/latest/Tutorial_2.html>`_
+4. `Semantic Segmentation - Tutorial 3 <https://stumpy.readthedocs.io/en/latest/Tutorial_3.html>`_
 
 -----------
 Performance
