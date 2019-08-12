@@ -2,7 +2,7 @@
 
 # 1. Update version number in setup.py
 # 2. Update CHANGELOG
-# 3. Update README with new features/functions
+# 3. Update README with new features/functions/tutorials
 #
 # For conda-forge
 # 1. Fork the stumpy-feedstock
