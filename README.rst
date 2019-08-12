@@ -45,7 +45,7 @@
 STUMPY
 ======
 
-STUMPY is a powerful and scalable library that efficiently computes something called the `matrix profile <https://stumpy.readthedocs.io/en/latest/Tutorial_0.html>`_, which can be used for a variety of time series data mining tasks such as:
+STUMPY is a powerful and scalable library that efficiently computes something called the `matrix profile <https://stumpy.readthedocs.io/en/latest/Tutorial_The_Matrix_Profile.html>`_, which can be used for a variety of time series data mining tasks such as:
 
 * pattern/motif (approximately repeated subsequences within a longer time series) discovery
 * anomaly/novelty (discord) discovery
@@ -55,7 +55,7 @@ STUMPY is a powerful and scalable library that efficiently computes something ca
 * time series chains (temporally ordered set of subsequence patterns)
 * `and more ... <https://www.cs.ucr.edu/~eamonn/100_Time_Series_Data_Mining_Questions__with_Answers.pdf>`_
 
-Whether you are an academic, data scientist, software developer, or time series enthusiast, STUMPY is straightforward to install and allows you to compute the `matrix profile <https://stumpy.readthedocs.io/en/latest/Tutorial_0.html>`_ in the most efficient way. Our goal is to allow you to get to your time series insights faster. See `documentation <https://stumpy.readthedocs.io/en/latest/>`__ for more information.
+Whether you are an academic, data scientist, software developer, or time series enthusiast, STUMPY is straightforward to install and allows you to compute the `matrix profile <https://stumpy.readthedocs.io/en/latest/Tutorial_The_Matrix_Profile.html>`_ in the most efficient way. Our goal is to allow you to get to your time series insights faster. See `documentation <https://stumpy.readthedocs.io/en/latest/>`__ for more information.
 
 -------------------------
 How to use STUMPY
@@ -184,10 +184,10 @@ Documentation
 
 In order to fully understand and appreciate the underlying algorithms and applications, it is imperative that you read the original publications_. For a more detailed example of how to use STUMPY please consult the latest `documentation <https://stumpy.readthedocs.io/en/latest/>`__ or explore the following tutorials:
 
-1. `The Matrix Profile - Tutorial 0 <https://stumpy.readthedocs.io/en/latest/Tutorial_0.html>`_
-2. `STUMPY Basics - Tutorial 1 <https://stumpy.readthedocs.io/en/latest/Tutorial_1.html>`_
-3. `Time Series Chains - Tutorial 2 <https://stumpy.readthedocs.io/en/latest/Tutorial_2.html>`_
-4. `Semantic Segmentation - Tutorial 3 <https://stumpy.readthedocs.io/en/latest/Tutorial_3.html>`_
+1. `The Matrix Profile <https://stumpy.readthedocs.io/en/latest/Tutorial_The_Matrix_Profile.html>`_
+2. `STUMPY Basics <https://stumpy.readthedocs.io/en/latest/Tutorial_STUMPY_Basics.html>`_
+3. `Time Series Chains <https://stumpy.readthedocs.io/en/latest/Tutorial_Time_Series_Chains.html>`_
+4. `Semantic Segmentation <https://stumpy.readthedocs.io/en/latest/Tutorial_Semantic_Segmentation.html>`_
 
 -----------
 Performance
