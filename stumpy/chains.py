@@ -66,7 +66,8 @@ def allc(IL, IR):
         All-chain set
 
     C : ndarray
-        Anchored time series chain for the longest chain
+        Anchored time series chain for the longest chain (also known as the
+        unanchored chain)
 
     Notes
     -----
