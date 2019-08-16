@@ -393,6 +393,10 @@ def floss(
 
     concat_data = np.concatenate((old_data, add_data))
 
+    # Disable the bidirectional matrix profile indices and left indices
+    mp_out[:, 1] = -1
+    mp_out[:, 2] = -1
+
     # Update matrix profile distance to be right mp distance and not bidirectional.
     # Use right indices to perform direct distance calculations
     # Note that any -1 indices must have a np.inf matrix profile value
