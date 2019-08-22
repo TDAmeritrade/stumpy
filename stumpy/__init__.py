@@ -18,6 +18,11 @@ from .mstump import (  # noqa: F401
 from .mstumped import mstumped  # noqa: F401
 from .chains import atsc, allc  # noqa: F401
 from .floss import floss, fluss, _nnmark, _iac, _cac, _rea  # noqa: F401
+from .gpu_stump import (  # noqa: F401
+    gpu_stump,
+    _gpu_stump,
+    _gpu_calculate_squared_distance_profile,
+)
 from pkg_resources import get_distribution, DistributionNotFound
 import os.path
 
