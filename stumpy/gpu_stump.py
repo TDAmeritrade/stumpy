@@ -167,6 +167,8 @@ def _gpu_stump(
     Note that left and right matrix profiles are only available for self-joins.
     """
 
+    T_A = cp.asarray(T_A)
+    T_B = cp.asarray(T_B)
     QT = cp.asarray(QT)
     μ_Q = cp.asarray(μ_Q)
     σ_Q = cp.asarray(σ_Q)
@@ -178,27 +180,20 @@ def _gpu_stump(
     indices = cp.empty((range_stop - range_start, 3))  # int64
 
     for i in range(range_start, range_stop):
-        # Numba's prange requires incrementing a range by 1 so replace
-        # `for j in range(k-1,0,-1)` with its incrementing compliment
-        for rev_j in range(1, k):
-            j = k - rev_j
-            # GPU Stomp Parallel Implementation with Numba
-            # DOI: 10.1109/ICDM.2016.0085
-            # See Figure 5
-            if i % 2 == 0:
-                # Even
-                QT_even[j] = (
-                    QT_odd[j - 1]
-                    - T_B[i - 1] * T_A[j - 1]
-                    + T_B[i + m - 1] * T_A[j + m - 1]
-                )
-            else:
-                # Odd
-                QT_odd[j] = (
-                    QT_even[j - 1]
-                    - T_B[i - 1] * T_A[j - 1]
-                    + T_B[i + m - 1] * T_A[j + m - 1]
-                )
+        if i % 2 == 0:
+            # Even
+            QT_even[1:] = (
+                QT_odd[: k - 1]
+                - T_B[i - 1] * T_A[: k - 1]
+                + T_B[i + m - 1] * T_A[-(k - 1) :]
+            )
+        else:
+            # Odd
+            QT_odd[1:] = (
+                QT_even[: k - 1]
+                - T_B[i - 1] * T_A[: k - 1]
+                + T_B[i + m - 1] * T_A[-(k - 1) :]
+            )
 
         if i % 2 == 0:
             QT_even[0] = QT_first[i]
