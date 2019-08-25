@@ -57,7 +57,12 @@ def mstumped(dask_client, T, m):
     hosts = list(dask_client.ncores().keys())
     nworkers = len(hosts)
 
-    T = np.asarray(T)
+    T = np.asarray(core.transpose_dataframe(T))
+
+    if T.ndim <= 1:  # pragma: no cover
+        err = f"T is {T.ndim}-dimensional and must be greater than 1-dimensional"
+        raise ValueError(f"{err}")
+
     core.check_dtype(T)
     core.check_window_size(m)
 

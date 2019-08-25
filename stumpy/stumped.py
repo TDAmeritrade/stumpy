@@ -86,6 +86,12 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     if T_B is None:
         T_B = T_A
     T_B = np.asarray(T_B)
+
+    if T_A.ndim != 1:  # pragma: no cover
+        raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional")
+    if T_B.ndim != 1:  # pragma: no cover
+        raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional")
+
     core.check_dtype(T_B)
     core.check_window_size(m)
 

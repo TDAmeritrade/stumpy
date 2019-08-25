@@ -219,7 +219,8 @@ def test_mstump_wrapper(T, m):
     npt.assert_almost_equal(left_P, right_P)
     npt.assert_almost_equal(left_I, right_I)
 
-    right_P, right_I = mstump(pd.DataFrame(T), m)
+    df = pd.DataFrame(T.T)
+    right_P, right_I = mstump(df, m)
 
     npt.assert_almost_equal(left_P, right_P)
     npt.assert_almost_equal(left_I, right_I)

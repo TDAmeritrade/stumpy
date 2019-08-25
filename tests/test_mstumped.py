@@ -89,7 +89,8 @@ def test_mstumped(T, m, dask_client):
 @pytest.mark.parametrize("T, m", test_data)
 def test_mstumped_df(T, m, dask_client):
     left_P, left_I = naive_mstump(T, m)
-    right_P, right_I = mstumped(dask_client, pd.DataFrame(T), m)
+    df = pd.DataFrame(T.T)
+    right_P, right_I = mstumped(dask_client, df, m)
 
     npt.assert_almost_equal(left_P, right_P)
     npt.assert_almost_equal(left_I, right_I)
