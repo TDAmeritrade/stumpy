@@ -29,8 +29,9 @@ def mstumped(dask_client, T, m):
 
     T : ndarray
         The time series or sequence for which to compute the multi-dimensional
-        matrix profile
-
+        matrix profile. Each row in `T` represents data from a different
+        dimension while each column in `T` represents data from the same
+        dimension.
     m : int
         Window size
 

@@ -404,7 +404,10 @@ def mstump(T, m):
     Parameters
     ----------
     T : ndarray
-        The time series or sequence for which to compute the matrix profile
+        The time series or sequence for which to compute the multi-dimensional
+        matrix profile. Each row in `T` represents data from a different
+        dimension while each column in `T` represents data from the same
+        dimension.
     m : int
         Window size
 

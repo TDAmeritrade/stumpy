@@ -94,7 +94,7 @@ Multi-dimensional time series data with `MSTUMP`:
     import stumpy
     import numpy as np
 
-    your_time_series = np.random.rand(3, 1000)
+    your_time_series = np.random.rand(3, 1000)  # Each row represents data from a different dimension while each column represents data from the same dimension
     window_size = 50  # Approximately, how many data points might be found in a pattern
 
     matrix_profile, matrix_profile_indices = stumpy.mstump(your_time_series, m=window_size)
@@ -108,7 +108,7 @@ Distributed multi-dimensional time series data analysis with Dask Distributed `M
     from dask.distributed import Client
     dask_client = Client()
 
-    your_time_series = np.random.rand(3, 1000)
+    your_time_series = np.random.rand(3, 1000)   # Each row represents data from a different dimension while each column represents data from the same dimension
     window_size = 50  # Approximately, how many data points might be found in a pattern
 
     matrix_profile, matrix_profile_indices = stumpy.mstumped(dask_client, your_time_series, m=window_size)
