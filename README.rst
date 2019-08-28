@@ -264,7 +264,7 @@ STUMPED.256: 256 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz pr
 Running Tests
 -------------
 
-Tests are written in the ``tests`` directory and processed using `PyTest <https://docs.pytest.org/en/latest/>`_. and requires ``coverage.py`` for code coverage analysis. Tests can be executed with:
+Tests are written in the ``tests`` directory and processed using `PyTest <https://docs.pytest.org/en/latest/>`_ and requires ``coverage.py`` for code coverage analysis. Tests can be executed with:
 
 .. code:: bash
 
@@ -274,13 +274,13 @@ Tests are written in the ``tests`` directory and processed using `PyTest <https:
 Python Version
 --------------
 
-STUMPY supports Python 3.6+ and, due to the use of unicode variable names/identifiers, is not compatible with Python 2.x. Given the small dependencies, STUMPY may work on older versions of Python but this is beyond the scope of our support and we strongly recommend that you upgrade to the most recent version of Python.
+STUMPY supports `Python 3.6+ <https://python3statement.org/>`_ and, due to the use of unicode variable names/identifiers, is not compatible with Python 2.x. Given the small dependencies, STUMPY may work on older versions of Python but this is beyond the scope of our support and we strongly recommend that you upgrade to the most recent version of Python.
 
 ------------
 Getting Help
 ------------
 
-First, please check the issues on github to see if your question has already been answered there. If no solution is available there feel free to open a new issue and the authors will attempt to respond in a reasonably timely fashion.
+First, please check the `issues on github <https://github.com/TDAmeritrade/stumpy/issues?utf8=%E2%9C%93&q=>`_ to see if your question has already been answered there. If no solution is available there feel free to open a new issue and the authors will attempt to respond in a reasonably timely fashion.
 
 ------------
 Contributing
