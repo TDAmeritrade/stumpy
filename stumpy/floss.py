@@ -382,7 +382,7 @@ def floss(
     k = mp.shape[0]
     last_idx = n - m + 1  # This is dependent on the changing length of `old_data`
 
-    if custom_iac is None:  # pragma no cover
+    if custom_iac is None:  # pragma: no cover
         custom_iac = _iac(k, bidirectional=False, n_iter=n_iter, n_samples=n_samples)
     cac_out = np.ones(k)
     mp_out = copy.deepcopy(mp)

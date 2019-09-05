@@ -1,16 +1,14 @@
 import numpy as np
-
-try:
-    import cupy as cp
-except ModuleNotFoundError:
-    import numpy as cp
-
-    cp.asnumpy = np.asarray
 import numpy.testing as npt
 import pandas as pd
-from stumpy import gpu_stump, _gpu_calculate_squared_distance_profile, core
+from stumpy import gpu_stump, _calculate_squared_distance_kernel, core
 from stumpy import _calculate_squared_distance_profile
+from numba import cuda
+import math
 import pytest
+
+if not cuda.is_available():
+    pytest.skip("Skipping Tests No GPUs Available", allow_module_level=True)
 
 
 def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
@@ -80,13 +78,33 @@ def test_gpu_calculate_squared_distance_profile(Q, T):
     M_T, Σ_T = core.compute_mean_std(T, m)
     QT = core.sliding_dot_product(Q, T)
     μ_Q, σ_Q = core.compute_mean_std(Q, m)
-    QT = cp.asarray(QT)
-    μ_Q = cp.asarray(μ_Q)
-    σ_Q = cp.asarray(σ_Q)
-    M_T = cp.asarray(M_T)
-    Σ_T = cp.asarray(Σ_T)
-    right = _gpu_calculate_squared_distance_profile(m, QT, μ_Q[0], σ_Q[0], M_T, Σ_T)
-    right = cp.asnumpy(right)
+
+    device_M_T = cuda.to_device(M_T)
+    device_Σ_T = cuda.to_device(Σ_T)
+    device_QT = cuda.to_device(QT)
+    device_QT_first = cuda.to_device(QT)
+    device_μ_Q = cuda.to_device(μ_Q)
+    device_σ_Q = cuda.to_device(σ_Q)
+    device_D = cuda.device_array(QT.shape, dtype=np.float64)
+    device_denom = cuda.device_array(QT.shape, dtype=np.float64)
+
+    threads_per_block = 2
+    blocks_per_grid = math.ceil(QT.shape[0] / threads_per_block)
+
+    _calculate_squared_distance_kernel[blocks_per_grid, threads_per_block](
+        0,
+        m,
+        device_M_T,
+        device_Σ_T,
+        device_QT,
+        device_QT_first,
+        device_μ_Q,
+        device_σ_Q,
+        device_D,
+        device_denom,
+    )
+
+    right = device_D.copy_to_host()
     npt.assert_almost_equal(left, right)
 
 
@@ -101,12 +119,12 @@ def test_stump_self_join(T_A, T_B):
         ],
         dtype=object,
     )
-    right = gpu_stump(T_B, m, ignore_trivial=True)
+    right = gpu_stump(T_B, m, ignore_trivial=True, threads_per_block=2)
     replace_inf(left)
     replace_inf(right)
     npt.assert_almost_equal(left, right)
 
-    right = gpu_stump(pd.Series(T_B), m, ignore_trivial=True)
+    right = gpu_stump(pd.Series(T_B), m, ignore_trivial=True, threads_per_block=2)
     replace_inf(right)
     npt.assert_almost_equal(left, right)
 
@@ -117,11 +135,13 @@ def test_stump_A_B_join(T_A, T_B):
     left = np.array(
         [naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
     )
-    right = gpu_stump(T_A, m, T_B, ignore_trivial=False)
+    right = gpu_stump(T_A, m, T_B, ignore_trivial=False, threads_per_block=2)
     replace_inf(left)
     replace_inf(right)
     npt.assert_almost_equal(left, right)
 
-    right = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+    right = gpu_stump(
+        pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False, threads_per_block=2
+    )
     replace_inf(right)
     npt.assert_almost_equal(left, right)
