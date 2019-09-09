@@ -113,7 +113,7 @@ def test_get_QT_kernel(T_A, T_B):
 def test_calculate_squared_distance_kernel(T_A, T_B):
     m = 3
     for i in range(T_A.shape[0] - m + 1):
-        Q = T_A[i:i+m]
+        Q = T_A[i : i + m]
         left = np.linalg.norm(
             core.z_norm(core.rolling_window(T_B, m), 1) - core.z_norm(Q), axis=1
         )
