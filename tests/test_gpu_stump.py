@@ -109,6 +109,49 @@ def test_get_QT_kernel(T_A, T_B):
             npt.assert_almost_equal(left, right)
 
 
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_calculate_squared_distance_kernel(T_A, T_B):
+    m = 3
+    for i in range(T_A.shape[0] - m + 1):
+        Q = T_A[i:i+m]
+        left = np.linalg.norm(
+            core.z_norm(core.rolling_window(T_B, m), 1) - core.z_norm(Q), axis=1
+        )
+        left = np.square(left)
+        M_T, Σ_T = core.compute_mean_std(T_B, m)
+        QT = core.sliding_dot_product(Q, T_B)
+        μ_Q, σ_Q = core.compute_mean_std(T_A, m)
+
+        device_M_T = cuda.to_device(M_T)
+        device_Σ_T = cuda.to_device(Σ_T)
+        device_QT_even = cuda.to_device(QT)
+        device_QT_odd = cuda.to_device(QT)
+        device_QT_first = cuda.to_device(QT)
+        device_μ_Q = cuda.to_device(μ_Q)
+        device_σ_Q = cuda.to_device(σ_Q)
+        device_D = cuda.device_array(QT.shape, dtype=np.float64)
+        device_denom = cuda.device_array(QT.shape, dtype=np.float64)
+
+        threads_per_block = THREADS_PER_BLOCK
+        blocks_per_grid = math.ceil(QT.shape[0] / threads_per_block)
+
+        _calculate_squared_distance_kernel[blocks_per_grid, threads_per_block](
+            i,
+            m,
+            device_M_T,
+            device_Σ_T,
+            device_QT_even,
+            device_QT_odd,
+            device_μ_Q,
+            device_σ_Q,
+            device_D,
+            device_denom,
+        )
+
+        right = device_D.copy_to_host()
+        npt.assert_almost_equal(left, right)
+
+
 def test_ignore_trivial_kernel():
     D = np.random.rand(10)
 
@@ -123,47 +166,6 @@ def test_ignore_trivial_kernel():
         right = device_D.copy_to_host()
 
         npt.assert_almost_equal(left, right)
-
-
-@pytest.mark.parametrize("Q, T", test_data)
-def test_calculate_squared_distance_kernel(Q, T):
-    m = Q.shape[0]
-    left = np.linalg.norm(
-        core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
-    )
-    left = np.square(left)
-    M_T, Σ_T = core.compute_mean_std(T, m)
-    QT = core.sliding_dot_product(Q, T)
-    μ_Q, σ_Q = core.compute_mean_std(Q, m)
-
-    device_M_T = cuda.to_device(M_T)
-    device_Σ_T = cuda.to_device(Σ_T)
-    device_QT_even = cuda.to_device(QT)
-    device_QT_odd = cuda.to_device(QT)
-    device_QT_first = cuda.to_device(QT)
-    device_μ_Q = cuda.to_device(μ_Q)
-    device_σ_Q = cuda.to_device(σ_Q)
-    device_D = cuda.device_array(QT.shape, dtype=np.float64)
-    device_denom = cuda.device_array(QT.shape, dtype=np.float64)
-
-    threads_per_block = THREADS_PER_BLOCK
-    blocks_per_grid = math.ceil(QT.shape[0] / threads_per_block)
-
-    _calculate_squared_distance_kernel[blocks_per_grid, threads_per_block](
-        0,
-        m,
-        device_M_T,
-        device_Σ_T,
-        device_QT_even,
-        device_QT_odd,
-        device_μ_Q,
-        device_σ_Q,
-        device_D,
-        device_denom,
-    )
-
-    right = device_D.copy_to_host()
-    npt.assert_almost_equal(left, right)
 
 
 def test_update_PI_kernel():

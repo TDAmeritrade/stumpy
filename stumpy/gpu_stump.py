@@ -14,7 +14,7 @@ THREADS_PER_BLOCK = 512
 
 
 @cuda.jit
-def _get_QT_kernel(i, T_A, T_B, m, QT_even, QT_odd, QT_first):  # pragma: no gpu cover
+def _get_QT_kernel(i, T_A, T_B, m, QT_even, QT_odd, QT_first):
     """
     A Numba CUDA kernel for computing the sliding dot product between the
     query, `T_B`, and the time series, `T_A`.
@@ -75,7 +75,7 @@ def _get_QT_kernel(i, T_A, T_B, m, QT_even, QT_odd, QT_first):  # pragma: no gpu
 @cuda.jit
 def _calculate_squared_distance_kernel(
     i, m, M_T, Σ_T, QT_even, QT_odd, μ_Q, σ_Q, D, denom
-):  # pragma: no gpu cover
+):
     """
     A Numba CUDA kernel for computating the squared distance profile according to:
 
@@ -126,7 +126,7 @@ def _calculate_squared_distance_kernel(
 
     for j in range(start, D.shape[0], stride):
         denom[j] = m * σ_Q[i] * Σ_T[j]
-        if denom[j] == 0:
+        if denom[j] == 0:  # pragma: no cover
             denom[j] = 1e-10
 
         if i % 2 == 0:
@@ -138,7 +138,7 @@ def _calculate_squared_distance_kernel(
 
 
 @cuda.jit
-def _ignore_trivial_kernel(D, zone_start, zone_stop):  # pragma: no gpu cover
+def _ignore_trivial_kernel(D, zone_start, zone_stop):
     """
     A Numba CUDA GPU kernel to set distances to `np.inf` within the exclusion zone
     in the range `[zone_start, zone_stop]`
@@ -166,7 +166,7 @@ def _ignore_trivial_kernel(D, zone_start, zone_stop):  # pragma: no gpu cover
 
 
 @cuda.jit
-def _update_PI_kernel(i, D, ignore_trivial, profile, indices):  # pragma: no gpu cover
+def _update_PI_kernel(i, D, ignore_trivial, profile, indices):
     """
     A Numba CUDA kernel to update the matrix profile and matrix profile indices
 
@@ -215,7 +215,7 @@ def _gpu_stump(
     ignore_trivial=True,
     range_start=1,
     threads_per_block=THREADS_PER_BLOCK,
-):  # pragma: no gpu cover
+):
     """
     A Numba CUDA version of STOMP for parallel computation of the
     matrix profile, matrix profile indices, left matrix profile indices,
@@ -400,7 +400,7 @@ def _gpu_stump(
 
 def gpu_stump(
     T_A, m, T_B=None, ignore_trivial=True, threads_per_block=THREADS_PER_BLOCK
-):  # pragma: no gpu cover
+):
     """
     Compute the matrix profile with GPU-STOMP
 
