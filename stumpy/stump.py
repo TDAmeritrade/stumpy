@@ -339,11 +339,14 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     ----------
     T_A : ndarray
         The time series or sequence for which to compute the matrix profile
+
     m : int
         Window size
+
     T_B : ndarray
         The time series or sequence that contain your query subsequences
         of interest. Default is `None` which corresponds to a self-join.
+
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
         to `False`. Default is `True`.

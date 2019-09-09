@@ -23,6 +23,8 @@ from .gpu_stump import (  # noqa: F401
     _gpu_stump,
     _get_QT_kernel,
     _calculate_squared_distance_kernel,
+    _ignore_trivial_kernel,
+    _update_PI_kernel,
 )
 from pkg_resources import get_distribution, DistributionNotFound
 import os.path
