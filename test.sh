@@ -24,7 +24,8 @@ create_coveragerc
 ###############
 
 echo "Testing Numba JIT Compiled Functions"
-py.test -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump.py tests/test_stumped.py tests/test_mstump.py tests/test_mstumped.py
+py.test -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump.py tests/test_mstump.py 
+py.test -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped.py tests/test_mstumped.py
 
 echo "Disabling Numba JIT Compiled Functions"
 export NUMBA_DISABLE_JIT=1
