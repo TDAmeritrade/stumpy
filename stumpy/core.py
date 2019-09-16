@@ -4,7 +4,16 @@
 
 import numpy as np
 import scipy.signal
+from numba.cuda.cudadrv.driver import _raise_driver_not_found
 
+
+def driver_not_found():  # pragma: no cover
+    """
+    Helper function to raise CudaSupportError driver not found error
+    """
+        
+    _raise_driver_not_found()
+        
 
 def get_pkg_name():  # pragma: no cover
     """
