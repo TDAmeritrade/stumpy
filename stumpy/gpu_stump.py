@@ -13,16 +13,36 @@ logger = logging.getLogger(__name__)
 THREADS_PER_BLOCK = 512
 
 
-@cuda.jit
-def _get_QT_kernel(i, T_A, T_B, m, QT_even, QT_odd, QT_first):
+@cuda.jit(
+    "(i8, f8[:], f8[:], i8,  f8[:], f8[:], f8[:], f8[:], f8[:],"
+    "f8[:], f8[:], i8, b1, i8, f8[:, :], f8[:, :], b1)"
+)
+def _compute_and_update_PI_kernel(
+    i,
+    T_A,
+    T_B,
+    m,
+    QT_even,
+    QT_odd,
+    QT_first,
+    M_T,
+    Σ_T,
+    μ_Q,
+    σ_Q,
+    k,
+    ignore_trivial,
+    excl_zone,
+    profile,
+    indices,
+    compute_QT,
+):
     """
-    A Numba CUDA kernel for computing the sliding dot product between the
-    query, `T_B`, and the time series, `T_A`.
+    A Numba CUDA kernel to update the matrix profile and matrix profile indices
 
     Parameters
     ----------
     i : int
-        The window index for T_B from which to calculate the QT dot product
+        sliding window `i`
 
     T_A : ndarray
         The time series or sequence for which to compute the dot product
@@ -35,62 +55,15 @@ def _get_QT_kernel(i, T_A, T_B, m, QT_even, QT_odd, QT_first):
         Window size
 
     QT_even : ndarray
-        The input QT array to use when `i` is odd
+        The input QT array (dot product between the query sequence,`Q`, and
+        time series, `T`) to use when `i` is even
 
     QT_odd : ndarray
-        The input QT array to use when `i` is even
+        The input QT array (dot product between the query sequence,`Q`, and
+        time series, `T`) to use when `i` is odd
 
     QT_first : ndarray
         Dot product between the first query sequence,`Q`, and time series, `T`
-
-    Returns
-    -------
-    None
-    """
-
-    start = cuda.grid(1)
-    stride = cuda.gridsize(1)
-
-    for j in range(start, QT_even.shape[0], stride):
-        if j >= 1:
-            if i % 2 == 0:
-                QT_even[j] = (
-                    QT_odd[j - 1]
-                    - T_B[i - 1] * T_A[j - 1]
-                    + T_B[i + m - 1] * T_A[j + m - 1]
-                )
-            else:
-                QT_odd[j] = (
-                    QT_even[j - 1]
-                    - T_B[i - 1] * T_A[j - 1]
-                    + T_B[i + m - 1] * T_A[j + m - 1]
-                )
-
-    if i % 2 == 0:
-        QT_even[0] = QT_first[i]
-    else:
-        QT_odd[0] = QT_first[i]
-
-
-@cuda.jit
-def _calculate_squared_distance_kernel(
-    i, m, M_T, Σ_T, QT_even, QT_odd, μ_Q, σ_Q, D, denom
-):
-    """
-    A Numba CUDA kernel for computating the squared distance profile according to:
-
-    `DOI: 10.1109/ICDM.2016.0179 \
-    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
-
-    See Equation on Page 4
-
-    Parameters
-    ----------
-    i : int
-        sliding window `i`
-
-    m : int
-        Window size
 
     M_T : ndarray
         Sliding mean of time series, `T`
@@ -98,105 +71,87 @@ def _calculate_squared_distance_kernel(
     Σ_T : ndarray
         Sliding standard deviation of time series, `T`
 
-    QT_even : ndarray
-        Dot product between the query sequence,`Q`, and time series, `T`
-
-    QT_odd : ndarray
-        Dot product between the query sequence,`Q`, and time series, `T`
-
     μ_Q : ndarray
         Mean of the query sequence, `Q`
 
     σ_Q : ndarray
         Standard deviation of the query sequence, `Q`
 
-    D : ndarray
-        The distance profile is calculated and stored in this array
+    k : int
+        The total number of sliding windows to iterate over
 
-    denom : ndarray
-        Reusuable array for storing the denominator
+    ignore_trivial : bool
+        Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
+        `False`.
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the current
+        sliding window
+
+    profile : ndarray
+        Matrix profile. The first column consists of the global matrix profile,
+        the second column consists of the left matrix profile, and the third
+        column consists of the right matrix profile.
+
+    indices : ndarray
+        The first column consists of the matrix profile indices, the second
+        column consists of the left matrix profile indices, and the third
+        column consists of the right matrix profile indices.
+
+    compute_QT : bool
+        A boolean flag for whether or not to compute QT
 
     Returns
     -------
     None
+
+    Notes
+    -----
+    `DOI: 10.1109/ICDM.2016.0085 \
+    <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
+
+    See Table II, Figure 5, and Figure 6
     """
 
     start = cuda.grid(1)
     stride = cuda.gridsize(1)
 
-    for j in range(start, D.shape[0], stride):
-        denom[j] = m * σ_Q[i] * Σ_T[j]
-        if denom[j] == 0:  # pragma: no cover
-            denom[j] = 1e-10
+    if i % 2 == 0:
+        QT_out = QT_even
+        QT_in = QT_odd
+    else:
+        QT_out = QT_odd
+        QT_in = QT_even
 
-        if i % 2 == 0:
-            # Even
-            D[j] = abs(2 * m * (1.0 - (QT_even[j] - m * μ_Q[i] * M_T[j]) / denom[j]))
-        else:
-            # Odd
-            D[j] = abs(2 * m * (1.0 - (QT_odd[j] - m * μ_Q[i] * M_T[j]) / denom[j]))
+    zone_start = max(0, i)
+    zone_stop = min(k, i + 2 * excl_zone)
 
+    for j in range(start, QT_out.shape[0], stride):
+        denom = m * σ_Q[i] * Σ_T[j]
+        if denom == 0:  # pragma: no cover
+            denom = 1e-10
 
-@cuda.jit
-def _ignore_trivial_kernel(D, zone_start, zone_stop):
-    """
-    A Numba CUDA GPU kernel to set distances to `np.inf` within the exclusion zone
-    in the range `[zone_start, zone_stop]`
+        if compute_QT:
+            QT_out[j] = (
+                QT_in[j - 1] - T_B[i - 1] * T_A[j - 1] + T_B[i + m - 1] * T_A[j + m - 1]
+            )
 
-    Parameters
-    ----------
-    D : ndarray
-        The distance array
-    zone_start : int
-        The start of the exclusion zone (inclusive)
-    zone_stop : int
-        The end of the exclusion zone (exclusive)
+            QT_out[0] = QT_first[i]
+        D = abs(2 * m * (1.0 - (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom))
 
-    Returns
-    -------
-    None
-    """
-
-    start = cuda.grid(1)
-    stride = cuda.gridsize(1)
-
-    for j in range(start, D.shape[0], stride):
-        if j >= zone_start and j < zone_stop:
-            D[j] = np.inf
-
-
-@cuda.jit
-def _update_PI_kernel(i, D, ignore_trivial, profile, indices):
-    """
-    A Numba CUDA kernel to update the matrix profile and matrix profile indices
-
-    Parameters
-    ----------
-    D : ndarray
-        The distance array
-    zone_start : int
-        The start of the exclusion zone (inclusive)
-    zone_stop : int
-        The end of the exclusion zone (exclusive)
-
-    Returns
-    -------
-    None
-    """
-    start = cuda.grid(1)
-    stride = cuda.gridsize(1)
-
-    for j in range(start, D.shape[0], stride):
-        if D[j] < profile[j, 0]:
-            profile[j, 0] = D[j]
-            indices[j, 0] = i
         if ignore_trivial:
-            if D[j] < profile[j, 1] and i < j:
-                profile[j, 1] = D[j]
+            if j >= zone_start and j < zone_stop:
+                D = np.inf
+            if D < profile[j, 1] and i < j:
+                profile[j, 1] = D
                 indices[j, 1] = i
-            if D[j] < profile[j, 2] and i > j:
-                profile[j, 2] = D[j]
+            if D < profile[j, 2] and i > j:
+                profile[j, 2] = D
                 indices[j, 2] = i
+
+        if D < profile[j, 0]:
+            profile[j, 0] = D
+            indices[j, 0] = i
 
 
 def _gpu_stump(
@@ -324,8 +279,6 @@ def _gpu_stump(
     device_QT_first = cuda.to_device(QT_first)
     device_μ_Q = cuda.to_device(μ_Q)
     device_σ_Q = cuda.to_device(σ_Q)
-    device_D = cuda.device_array(k, dtype=np.float64)
-    device_denom = cuda.device_array(QT.shape, dtype=np.float64)
 
     profile = np.empty((k, 3))  # float64
     indices = np.empty((k, 3))  # int64
@@ -337,58 +290,45 @@ def _gpu_stump(
 
     blocks_per_grid = math.ceil(k / threads_per_block)
 
-    _calculate_squared_distance_kernel[blocks_per_grid, threads_per_block](
+    _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
         range_start - 1,
+        device_T_A,
+        device_T_B,
         m,
-        device_M_T,
-        device_Σ_T,
         device_QT_even,
         device_QT_odd,
+        device_QT_first,
+        device_M_T,
+        device_Σ_T,
         device_μ_Q,
         device_σ_Q,
-        device_D,
-        device_denom,
-    )
-
-    if ignore_trivial:
-        zone_start = max(0, range_start - 1)
-        zone_stop = min(k, range_start - 1 + 2 * excl_zone)
-        _ignore_trivial_kernel[blocks_per_grid, threads_per_block](
-            device_D, zone_start, zone_stop
-        )
-
-    _update_PI_kernel[blocks_per_grid, threads_per_block](
-        range_start - 1, device_D, ignore_trivial, device_profile, device_indices
+        k,
+        ignore_trivial,
+        excl_zone,
+        device_profile,
+        device_indices,
+        False,
     )
 
     for i in range(range_start, range_stop):
-        zone_start = max(0, i)
-        zone_stop = min(k, i + 2 * excl_zone)
-
-        _get_QT_kernel[blocks_per_grid, threads_per_block](
-            i, device_T_A, device_T_B, m, device_QT_even, device_QT_odd, device_QT_first
-        )
-
-        _calculate_squared_distance_kernel[blocks_per_grid, threads_per_block](
+        _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
             i,
+            device_T_A,
+            device_T_B,
             m,
-            device_M_T,
-            device_Σ_T,
             device_QT_even,
             device_QT_odd,
+            device_QT_first,
+            device_M_T,
+            device_Σ_T,
             device_μ_Q,
             device_σ_Q,
-            device_D,
-            device_denom,
-        )
-
-        if ignore_trivial:
-            _ignore_trivial_kernel[blocks_per_grid, threads_per_block](
-                device_D, zone_start, zone_stop
-            )
-
-        _update_PI_kernel[blocks_per_grid, threads_per_block](
-            i, device_D, ignore_trivial, device_profile, device_indices
+            k,
+            ignore_trivial,
+            excl_zone,
+            device_profile,
+            device_indices,
+            True,
         )
 
     profile = device_profile.copy_to_host()[:, 0]
