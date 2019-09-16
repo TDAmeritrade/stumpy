@@ -1,3 +1,5 @@
+from pkg_resources import get_distribution, DistributionNotFound
+import os.path
 from .stomp import stomp  # noqa: F401
 from .stump import (  # noqa: F401
     stump,
@@ -19,12 +21,11 @@ from .mstumped import mstumped  # noqa: F401
 from .chains import atsc, allc  # noqa: F401
 from .floss import floss, fluss, _nnmark, _iac, _cac, _rea  # noqa: F401
 from numba import cuda
+
 if cuda.is_available():
     from .gpu_stump import gpu_stump  # noqa: F401
 else:
-    from .core import driver_not_found as gpu_stump
-from pkg_resources import get_distribution, DistributionNotFound
-import os.path
+    from .core import driver_not_found as gpu_stump  # noqa: F401
 
 try:
     _dist = get_distribution("stumpy")
