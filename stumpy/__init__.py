@@ -24,7 +24,7 @@ from numba import cuda
 
 if cuda.is_available():
     from .gpu_stump import gpu_stump  # noqa: F401
-else:
+else:  # pragma: no cover
     from .core import driver_not_found as gpu_stump  # noqa: F401
 
 try:

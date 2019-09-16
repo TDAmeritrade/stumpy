@@ -4,7 +4,10 @@
 
 import numpy as np
 import scipy.signal
-from numba.cuda.cudadrv.driver import _raise_driver_not_found
+try:
+    from numba.cuda.cudadrv.driver import _raise_driver_not_found
+except ImportError:
+    pass
 
 
 def driver_not_found():  # pragma: no cover
