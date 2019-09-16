@@ -4,6 +4,7 @@
 
 import numpy as np
 import scipy.signal
+
 try:
     from numba.cuda.cudadrv.driver import _raise_driver_not_found
 except ImportError:
