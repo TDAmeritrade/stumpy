@@ -288,6 +288,28 @@ Contributing
 
 We welcome `contributions <https://github.com/TDAmeritrade/stumpy/blob/master/CONTRIBUTING.md>`_ in any form! Assistance with documentation, particularly expanding tutorials, is always welcome. To contribute please `fork the project <https://github.com/TDAmeritrade/stumpy/fork>`_, make your changes, and submit a pull request. We will do our best to work through any issues with you and get your code merged into the main branch.
 
+------
+Citing
+------
+
+If you have used this codebase in a scientific publication and wish to cite it, please use the `Journal of Open Source Software article <http://joss.theoj.org/papers/10.21105/joss.01504>`_.
+
+    S. M. Law, *STUMPY: A Powerful and Scalable Python Library for Time Series Data Mining*
+    In: Journal of Open Source Software, The Open Journal, Volume 4, Number 39.
+    2019
+
+.. code:: bibtex
+
+    @article{law2017stumpy,
+      title={{STUMPY: A Powerful and Scalable Python Library for Time Series Data Mining}},
+      author={Law, Sean M.},
+      journal={{The Journal of Open Source Software}},
+      volume={4},
+      number={39},
+      pages={1504},
+      year={2019}
+    }
+
 ----------
 References
 ----------
@@ -302,27 +324,7 @@ Yeh, Chin-Chia Michael, et al. (2017) Matrix Profile VI: Meaningful Multidimensi
 
 Zhu, Yan, et al. (2017) Matrix Profile VII: Time Series Chains: A New Primitive for Time Series Data Mining. ICDM:695-704. `Link <https://ieeexplore.ieee.org/abstract/document/8215542>`__
 
-------
-Citing
-------
-
-If you have used this codebase in a scientific publication and wish to cite it, please use the `Journal of Open Source Software article <http://joss.theoj.org/papers/10.21105/joss.01504>`_.
-
-    S. M. Law, *STUMPY: A Powerful and Scalable Python Library for Time Series Data Mining*
-    In: Journal of Open Source Software, The Open Journal, Volume 4, Number 39.
-    2019
-    
-.. code:: bibtex
-
-    @article{law2017stumpy,
-      title={{STUMPY: A Powerful and Scalable Python Library for Time Series Data Mining}},
-      author={Law, Sean M.},
-      journal={{The Journal of Open Source Software}},
-      volume={4},
-      number={39},
-      pages={1504},
-      year={2019}
-    }
+Gharghabi, Shaghayegh, et al. (2017) Matrix Profile VIII: Domain Agnostic Online Semantic Segmentation at Superhuman Performance Levels. ICDM:117-126. `Link <https://ieeexplore.ieee.org/abstract/document/8215484>`__
 
 -------------------
 License & Trademark
