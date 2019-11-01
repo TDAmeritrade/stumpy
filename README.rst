@@ -87,6 +87,18 @@ Distributed usage for 1-dimensional time series data with Dask Distributed via `
     
     matrix_profile = stumpy.stumped(dask_client, your_time_series, m=window_size)
 
+GPU support for 1-dimensional time series data with Dask Distributed via `GPU-STUMP`:
+
+.. code:: python
+
+    import stumpy
+    import numpy as np
+
+    your_time_series = np.random.rand(10000)
+    window_size = 50  # Approximately, how many data points might be found in a pattern
+
+    matrix_profile = stumpy.gpu_stump(your_time_series, m=window_size)
+
 Multi-dimensional time series data with `MSTUMP`:
 
 .. code:: python
