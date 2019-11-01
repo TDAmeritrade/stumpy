@@ -29,7 +29,7 @@ stumped
 gpu-stump
 =======
 
-.. autofunction:: stumpy.gpu-stump
+.. autofunction:: stumpy.gpu_stump
 
 mstump
 ======
