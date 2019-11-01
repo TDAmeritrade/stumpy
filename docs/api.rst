@@ -9,6 +9,7 @@ STUMPY API
 
     stumpy.stump
     stumpy.stumped
+    stumpy.gpu_stump
     stumpy.mstump
     stumpy.mstumped
     stumpy.atsc
