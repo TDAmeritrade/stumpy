@@ -26,6 +26,11 @@ stumped
 
 .. autofunction:: stumpy.stumped
 
+gpu-stump
+=======
+
+.. autofunction:: stumpy.gpu-stump
+
 mstump
 ======
 
