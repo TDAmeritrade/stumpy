@@ -5,12 +5,14 @@
 # 3. Update README with new features/functions/tutorials
 #
 # For conda-forge
-# 1. Fork the stumpy-feedstock
-# 2. Create a new branch for the new version
+# 1. Fork the stumpy-feedstock: https://github.com/conda-forge/stumpy-feedstock
+# 2. Create a new branch for the new version:
+#    git checkout -b v1.0.0
 # 3. In the recipe/meta.yaml file
 #    a) Update version number on line 2
 #    b) Update the sha256 on line 10 according to what is found on PyPI
-#       in the "Download files" section of the left navigation pane
+#       in the "Download files" section of the left navigation pane for
+#       the tar.gz file
 #    c) Reset the build number on line 14 since this is a new version
 # 4. Commit the changes and push upstream for a PR
 # 5. Check the checkboxes in the PR
@@ -21,6 +23,14 @@
 #
 # To check that the distribution is valid, execute:
 # twine check dist/* 
+#
+# Github Release
+# 1. Navigate to the Github release page: https://github.com/TDAmeritrade/stumpy/releases
+# 2. Click "Draft a new release": https://github.com/TDAmeritrade/stumpy/releases/new
+# 3. In the "Tag version" box, add the version number i.e., "v1.0.0"
+# 4. In the Release title" box, add the version number i.e., "v1.0.0"
+# 5. In the "Describe this release" box, add the description i.e., "Version 1.1.0 Release"
+# 6. Finally, click the "Publish release" button
 
 rm -rf dist
 python3 setup.py sdist bdist_wheel 
