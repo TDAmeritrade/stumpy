@@ -87,7 +87,7 @@ Distributed usage for 1-dimensional time series data with Dask Distributed via `
     
     matrix_profile = stumpy.stumped(dask_client, your_time_series, m=window_size)
 
-GPU support for 1-dimensional time series data with Dask Distributed via `GPU-STUMP`:
+GPU usage for 1-dimensional time series data with `GPU-STUMP`:
 
 .. code:: python
 
