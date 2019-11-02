@@ -11,7 +11,7 @@ except ImportError:
     pass
 
 
-def driver_not_found():  # pragma: no cover
+def driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Helper function to raise CudaSupportError driver not found error
     """
