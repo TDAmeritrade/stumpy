@@ -26,6 +26,22 @@ if cuda.is_available():
     from .gpu_stump import gpu_stump  # noqa: F401
 else:  # pragma: no cover
     from .core import driver_not_found as gpu_stump  # noqa: F401
+    import ast
+    import pathlib
+
+    gpu_stump.__doc__ = ""
+    filepath = pathlib.Path(__file__).parent / "gpu_stump.py"
+
+    file_contents = ""
+    with open(filepath) as f:
+        file_contents = f.read()
+    module = ast.parse(file_contents)
+    function_definitions = [
+        node for node in module.body if isinstance(node, ast.FunctionDef)
+    ]
+    for f in function_definitions:
+        if f.name == "gpu_stump":
+            gpu_stump.__doc__ = ast.get_docstring(f)
 
 try:
     _dist = get_distribution("stumpy")
