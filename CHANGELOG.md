@@ -1,4 +1,10 @@
-# 2019-08-03    [ 1.1.0 ]:
+# 2019-11-03    [ 1.2.1 ]:
+--------------------------
+* bugfixes
+  - Fixed driver not found function when no GPU present
+  - Fixed gpu_stump docstring in RTD
+
+# 2019-11-02    [ 1.2.0 ]:
 --------------------------
 * bugfixes
   - Fixed transposed Pandas DataFrame issue #66

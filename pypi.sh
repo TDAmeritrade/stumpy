@@ -12,7 +12,7 @@
 #    a) Update version number on line 2
 #    b) Update the sha256 on line 10 according to what is found on PyPI
 #       in the "Download files" section of the left navigation pane for
-#       the tar.gz file
+#       the tar.gz file: https://pypi.org/project/stumpy/#files
 #    c) Reset the build number on line 14 since this is a new version
 # 4. Commit the changes and push upstream for a PR
 # 5. Check the checkboxes in the PR
