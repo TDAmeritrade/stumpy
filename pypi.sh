@@ -3,6 +3,7 @@
 # 1. Update version number in setup.py
 # 2. Update CHANGELOG
 # 3. Update README with new features/functions/tutorials
+# 4. Commit all above changes and push
 #
 # For conda-forge
 # 1. Fork the stumpy-feedstock: https://github.com/conda-forge/stumpy-feedstock
