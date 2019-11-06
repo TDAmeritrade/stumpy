@@ -33,7 +33,7 @@ else:  # pragma: no cover
     filepath = pathlib.Path(__file__).parent / "gpu_stump.py"
 
     file_contents = ""
-    with open(filepath) as f:
+    with open(filepath, encoding="utf8") as f:
         file_contents = f.read()
     module = ast.parse(file_contents)
     function_definitions = [
