@@ -1,3 +1,8 @@
+# 2019-11-03    [ 1.2.2 ]:
+--------------------------
+* bugfixes
+  - Fixed Python AST utf8 file reading bug on Windows
+
 # 2019-11-03    [ 1.2.1 ]:
 --------------------------
 * bugfixes

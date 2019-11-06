@@ -8,7 +8,7 @@ def readme():
 
 configuration = {
     "name": "stumpy",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "python_requires=": ">=3.6",
     "author": "Sean M. Law",
     "author_email": "seanmylaw@gmail.com",
