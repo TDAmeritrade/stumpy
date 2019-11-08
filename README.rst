@@ -1,5 +1,3 @@
-.. role:: raw-html(raw)
-    :format: html
 .. image:: https://img.shields.io/pypi/v/stumpy.svg
     :target: https://pypi.org/project/stumpy/
     :alt: PyPI Version
@@ -39,9 +37,10 @@
 .. image:: https://img.shields.io/twitter/follow/stumpy_dev.svg?style=social
     :target: https://twitter.com/stumpy_dev
     :alt: Twitter
-:raw-html: `<br />`
-.. image:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/stumpy_logo_small.png
-    :alt: STUMPY Logo
+
+|
+    .. image:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/stumpy_logo_small.png
+        :alt: STUMPY Logo
 
 ======
 STUMPY
