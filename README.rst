@@ -39,8 +39,9 @@
     :alt: Twitter
 
 |
-    .. image:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/stumpy_logo_small.png
-        :alt: STUMPY Logo
+
+.. image:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/stumpy_logo_small.png
+    :alt: STUMPY Logo
 
 ======
 STUMPY
