@@ -10,6 +10,7 @@ STUMPY documentation
    install
    api
    tutorials
+   help
 
 .. include:: ../README.rst
 
