@@ -41,6 +41,7 @@
 |
 
 .. image:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/stumpy_logo_small.png
+    :target: https://github.com/TDAmeritrade/stumpy
     :alt: STUMPY Logo
 
 ======

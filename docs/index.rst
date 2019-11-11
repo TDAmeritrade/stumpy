@@ -11,6 +11,7 @@ STUMPY documentation
    api
    tutorials
    help
+   Code Repository <https://github.com/TDAmeritrade/stumpy>
 
 .. include:: ../README.rst
 
