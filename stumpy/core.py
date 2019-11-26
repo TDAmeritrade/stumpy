@@ -73,6 +73,23 @@ def z_norm(a, axis=0):
     return (a - np.mean(a, axis, keepdims=True)) / np.std(a, axis, keepdims=True)
 
 
+def check_nan(a):  # pragma: no cover
+    """
+    Check if the array contains NaNs
+
+    Raises
+    ------
+    ValueError
+        If the array contains a NaN
+    """
+
+    if np.any(np.isnan(a)):
+        msg = f"Input array contains one or more NaNs"
+        raise ValueError(msg)
+
+    return
+
+
 def check_dtype(a, dtype=np.floating):  # pragma: no cover
     """
     Check if the array type of `a` is of type specified by `dtype` parameter.

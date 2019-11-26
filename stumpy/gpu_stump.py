@@ -404,12 +404,14 @@ def gpu_stump(
 
     T_A = np.asarray(T_A)
     core.check_dtype(T_A)
+    core.check_nan(T_A)
     if T_B is None:  # Self join!
         T_B = T_A
         ignore_trivial = True
     T_B = np.asarray(T_B)
 
     core.check_dtype(T_B)
+    core.check_nan(T_B)
     core.check_window_size(m)
 
     if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover

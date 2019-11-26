@@ -437,6 +437,7 @@ def mstump(T, m):
         raise ValueError(f"{err}")
 
     core.check_dtype(T)
+    core.check_nan(T)
     core.check_window_size(m)
 
     d = T.shape[0]
