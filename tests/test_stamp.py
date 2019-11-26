@@ -14,6 +14,10 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0):
         D[start:stop] = np.inf
     I = np.argmin(D)
     P = D[I]
+
+    if P == np.inf:
+        I = -1
+
     return P, I
 
 

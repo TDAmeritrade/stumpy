@@ -28,6 +28,9 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     I = np.argmin(D)
     P = D[I]
 
+    if P == np.inf:
+        I = -1
+
     # Get left and right matrix profiles for self-joins
     if ignore_trivial and trivial_idx > 0:
         PL = np.inf
@@ -114,6 +117,52 @@ def test_stumped_self_join_df(T_A, T_B, dask_client):
     replace_inf(left)
     replace_inf(right)
     npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stump_self_join_larger_window(T_A, T_B, dask_client):
+    for m in [8, 16, 32]:
+        if len(T_B) > m:
+            zone = int(np.ceil(m / 4))
+            left = np.array(
+                [
+                    naive_mass(Q, T_B, m, i, zone, True)
+                    for i, Q in enumerate(core.rolling_window(T_B, m))
+                ],
+                dtype=object,
+            )
+            right = stumped(dask_client, T_B, m, ignore_trivial=True)
+            replace_inf(left)
+            replace_inf(right)
+
+            npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stump_self_join_larger_window_df(T_A, T_B, dask_client):
+    for m in [8, 16, 32]:
+        if len(T_B) > m:
+            zone = int(np.ceil(m / 4))
+            left = np.array(
+                [
+                    naive_mass(Q, T_B, m, i, zone, True)
+                    for i, Q in enumerate(core.rolling_window(T_B, m))
+                ],
+                dtype=object,
+            )
+            right = stumped(dask_client, pd.Series(T_B), m, ignore_trivial=True)
+            replace_inf(left)
+            replace_inf(right)
+
+            npt.assert_almost_equal(left, right)
 
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")

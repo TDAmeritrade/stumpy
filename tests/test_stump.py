@@ -16,6 +16,9 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     I = np.argmin(D)
     P = D[I]
 
+    if P == np.inf:
+        I = -1
+
     # Get left and right matrix profiles for self-joins
     if ignore_trivial and trivial_idx > 0:
         PL = np.inf

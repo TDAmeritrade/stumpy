@@ -17,12 +17,16 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     D = np.linalg.norm(
         core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
     )
+
     if ignore_trivial:
         start = max(0, trivial_idx - excl_zone)
         stop = min(T.shape[0] - Q.shape[0] + 1, trivial_idx + excl_zone)
         D[start:stop] = np.inf
     I = np.argmin(D)
     P = D[I]
+
+    if P == np.inf:
+        I = -1
 
     # Get left and right matrix profiles for self-joins
     if ignore_trivial and trivial_idx > 0:
@@ -91,6 +95,36 @@ def test_stump_self_join(T_A, T_B):
     )
     replace_inf(right)
     npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stump_self_join_larger_window(T_A, T_B):
+    for m in [8, 16, 32]:
+        if len(T_B) > m:
+            zone = int(np.ceil(m / 4))
+            left = np.array(
+                [
+                    naive_mass(Q, T_B, m, i, zone, True)
+                    for i, Q in enumerate(core.rolling_window(T_B, m))
+                ],
+                dtype=object,
+            )
+            right = gpu_stump(
+                T_B, m, ignore_trivial=True, threads_per_block=THREADS_PER_BLOCK
+            )
+            replace_inf(left)
+            replace_inf(right)
+
+            npt.assert_almost_equal(left, right)
+
+            right = gpu_stump(
+                pd.Series(T_B),
+                m,
+                ignore_trivial=True,
+                threads_per_block=THREADS_PER_BLOCK,
+            )
+            replace_inf(right)
+            npt.assert_almost_equal(left, right)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)

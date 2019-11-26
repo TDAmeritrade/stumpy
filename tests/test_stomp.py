@@ -15,6 +15,9 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     I = np.argmin(D)
     P = D[I]
 
+    if P == np.inf:
+        I = -1
+
     if ignore_trivial and trivial_idx > 0:
         PL = np.inf
         IL = -1
@@ -75,6 +78,25 @@ def test_stomp_self_join(T_A, T_B):
     replace_inf(left)
     replace_inf(right)
     npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stump_self_join_larger_window(T_A, T_B):
+    for m in [8, 16, 32]:
+        if len(T_B) > m:
+            zone = int(np.ceil(m / 4))
+            left = np.array(
+                [
+                    naive_mass(Q, T_B, m, i, zone, True)
+                    for i, Q in enumerate(core.rolling_window(T_B, m))
+                ],
+                dtype=object,
+            )
+            right = stomp(T_B, m, ignore_trivial=True)
+            replace_inf(left)
+            replace_inf(right)
+
+            npt.assert_almost_equal(left, right)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)

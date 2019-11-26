@@ -123,10 +123,9 @@ def _compute_and_update_PI_kernel(
         QT_out = QT_odd
         QT_in = QT_even
 
-    zone_start = max(0, i)
-    zone_stop = min(k, i + 2 * excl_zone)
-
     for j in range(start, QT_out.shape[0], stride):
+        zone_start = max(0, j - excl_zone)
+        zone_stop = min(k, j + excl_zone)
         denom = m * σ_Q[i] * Σ_T[j]
         if denom == 0:  # pragma: no cover
             denom = 1e-10
@@ -140,7 +139,7 @@ def _compute_and_update_PI_kernel(
         D = abs(2 * m * (1.0 - (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom))
 
         if ignore_trivial:
-            if j >= zone_start and j < zone_stop:
+            if i < zone_stop and i >= zone_start:
                 D = np.inf
             if D < profile[j, 1] and i < j:
                 profile[j, 1] = D
