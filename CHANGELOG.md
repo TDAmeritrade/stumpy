@@ -1,3 +1,16 @@
+# 2019-11-26    [ 1.2.3 ]:
+--------------------------
+* bugfixes
+  - Fixed incorrect GPU output for self joins
+* features
+  - Added array check for NaNs
+  - Improved test script for CI
+* tasks
+  - Added discourse group at stumpy.discourse.group
+  - Updated formatting and added newline before logo
+  - Made logo a hyperlink to Github repo
+  - Added custom CSS to sphinx theme
+
 # 2019-11-03    [ 1.2.2 ]:
 --------------------------
 * bugfixes
