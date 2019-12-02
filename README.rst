@@ -48,7 +48,7 @@
 STUMPY
 ======
 
-STUMPY is a powerful and scalable library that efficiently computes something called the `matrix profile <https://stumpy.readthedocs.io/en/latest/Tutorial_The_Matrix_Profile.html>`_, which can be used for a variety of time series data mining tasks such as:
+STUMPY is a powerful and scalable library that efficiently computes something called the `matrix profile <https://stumpy.readthedocs.io/en/latest/Tutorial_The_Matrix_Profile.html>`__, which can be used for a variety of time series data mining tasks such as:
 
 * pattern/motif (approximately repeated subsequences within a longer time series) discovery
 * anomaly/novelty (discord) discovery
@@ -56,9 +56,9 @@ STUMPY is a powerful and scalable library that efficiently computes something ca
 * semantic segmentation 
 * density estimation
 * time series chains (temporally ordered set of subsequence patterns)
-* `and more ... <https://www.cs.ucr.edu/~eamonn/100_Time_Series_Data_Mining_Questions__with_Answers.pdf>`_
+* `and more ... <https://www.cs.ucr.edu/~eamonn/100_Time_Series_Data_Mining_Questions__with_Answers.pdf>`__
 
-Whether you are an academic, data scientist, software developer, or time series enthusiast, STUMPY is straightforward to install and allows you to compute the `matrix profile <https://stumpy.readthedocs.io/en/latest/Tutorial_The_Matrix_Profile.html>`_ in the most efficient way. Our goal is to allow you to get to your time series insights faster. See `documentation <https://stumpy.readthedocs.io/en/latest/>`__ for more information.
+Whether you are an academic, data scientist, software developer, or time series enthusiast, STUMPY is straightforward to install and allows you to compute the `matrix profile <https://stumpy.readthedocs.io/en/latest/Tutorial_The_Matrix_Profile.html>`__ in the most efficient way. Our goal is to allow you to get to your time series insights faster. See `documentation <https://stumpy.readthedocs.io/en/latest/>`__ for more information.
 
 -------------------------
 How to use STUMPY
@@ -171,9 +171,9 @@ Semantic Segmentation with `Fast Low-cost Unipotent Semantic Segmentation (FLUSS
 Dependencies
 ------------
 
-* `NumPy <http://www.numpy.org/>`_
-* `Numba <http://numba.pydata.org/>`_
-* `SciPy <https://www.scipy.org/>`_
+* `NumPy <http://www.numpy.org/>`__
+* `Numba <http://numba.pydata.org/>`__
+* `SciPy <https://www.scipy.org/>`__
 
 ---------------
 Where to get it
@@ -199,10 +199,10 @@ Documentation
 
 In order to fully understand and appreciate the underlying algorithms and applications, it is imperative that you read the original publications_. For a more detailed example of how to use STUMPY please consult the latest `documentation <https://stumpy.readthedocs.io/en/latest/>`__ or explore the following tutorials:
 
-1. `The Matrix Profile <https://stumpy.readthedocs.io/en/latest/Tutorial_The_Matrix_Profile.html>`_
-2. `STUMPY Basics <https://stumpy.readthedocs.io/en/latest/Tutorial_STUMPY_Basics.html>`_
-3. `Time Series Chains <https://stumpy.readthedocs.io/en/latest/Tutorial_Time_Series_Chains.html>`_
-4. `Semantic Segmentation <https://stumpy.readthedocs.io/en/latest/Tutorial_Semantic_Segmentation.html>`_
+1. `The Matrix Profile <https://stumpy.readthedocs.io/en/latest/Tutorial_The_Matrix_Profile.html>`__
+2. `STUMPY Basics <https://stumpy.readthedocs.io/en/latest/Tutorial_STUMPY_Basics.html>`__
+3. `Time Series Chains <https://stumpy.readthedocs.io/en/latest/Tutorial_Time_Series_Chains.html>`__
+4. `Semantic Segmentation <https://stumpy.readthedocs.io/en/latest/Tutorial_Semantic_Segmentation.html>`__
 
 -----------
 Performance
@@ -267,7 +267,7 @@ The raw results are displayed below as Hours:Minutes:Seconds.
 | 27       | 134217728         | NaN          | NaN         | NaN         | NaN         |
 +----------+-------------------+--------------+-------------+-------------+-------------+
 
-GPU-STOMP: Results are reproduced from the original `Matrix Profile II <https://ieeexplore.ieee.org/abstract/document/7837898>`_ paper - NVIDIA Tesla K80 (contains 2 GPUs) 
+GPU-STOMP: Results are reproduced from the original `Matrix Profile II <https://ieeexplore.ieee.org/abstract/document/7837898>`__ paper - NVIDIA Tesla K80 (contains 2 GPUs) 
     
 STUMP.16: 16 CPUs in Total - 16x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors parallelized with Numba on a single server without Dask.
 
@@ -279,7 +279,7 @@ STUMPED.256: 256 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz pr
 Running Tests
 -------------
 
-Tests are written in the ``tests`` directory and processed using `PyTest <https://docs.pytest.org/en/latest/>`_ and requires ``coverage.py`` for code coverage analysis. Tests can be executed with:
+Tests are written in the ``tests`` directory and processed using `PyTest <https://docs.pytest.org/en/latest/>`__ and requires ``coverage.py`` for code coverage analysis. Tests can be executed with:
 
 .. code:: bash
 
@@ -289,27 +289,27 @@ Tests are written in the ``tests`` directory and processed using `PyTest <https:
 Python Version
 --------------
 
-STUMPY supports `Python 3.6+ <https://python3statement.org/>`_ and, due to the use of unicode variable names/identifiers, is not compatible with Python 2.x. Given the small dependencies, STUMPY may work on older versions of Python but this is beyond the scope of our support and we strongly recommend that you upgrade to the most recent version of Python.
+STUMPY supports `Python 3.6+ <https://python3statement.org/>`__ and, due to the use of unicode variable names/identifiers, is not compatible with Python 2.x. Given the small dependencies, STUMPY may work on older versions of Python but this is beyond the scope of our support and we strongly recommend that you upgrade to the most recent version of Python.
 
 ------------
 Getting Help
 ------------
 
-First, please check the `issues on github <https://github.com/TDAmeritrade/stumpy/issues?utf8=%E2%9C%93&q=>`_ to see if your question has already been answered there. If no solution is available there feel free to open a new issue and the authors will attempt to respond in a reasonably timely fashion.
+First, please check the `issues on github <https://github.com/TDAmeritrade/stumpy/issues?utf8=%E2%9C%93&q=>`__ to see if your question has already been answered there. If no solution is available there feel free to open a new issue and the authors will attempt to respond in a reasonably timely fashion.
 
-Alternatively, for general questions and comments, you can submit a post to the `STUMPY Discourse Group <https://stumpy.discourse.group/>`_.
+Alternatively, for general questions and comments, you can submit a post to the `STUMPY Discourse Group <https://stumpy.discourse.group/>`__.
 
 ------------
 Contributing
 ------------
 
-We welcome `contributions <https://github.com/TDAmeritrade/stumpy/blob/master/CONTRIBUTING.md>`_ in any form! Assistance with documentation, particularly expanding tutorials, is always welcome. To contribute please `fork the project <https://github.com/TDAmeritrade/stumpy/fork>`_, make your changes, and submit a pull request. We will do our best to work through any issues with you and get your code merged into the main branch.
+We welcome `contributions <https://github.com/TDAmeritrade/stumpy/blob/master/CONTRIBUTING.md>`__ in any form! Assistance with documentation, particularly expanding tutorials, is always welcome. To contribute please `fork the project <https://github.com/TDAmeritrade/stumpy/fork>`__, make your changes, and submit a pull request. We will do our best to work through any issues with you and get your code merged into the main branch.
 
 ------
 Citing
 ------
 
-If you have used this codebase in a scientific publication and wish to cite it, please use the `Journal of Open Source Software article <http://joss.theoj.org/papers/10.21105/joss.01504>`_.
+If you have used this codebase in a scientific publication and wish to cite it, please use the `Journal of Open Source Software article <http://joss.theoj.org/papers/10.21105/joss.01504>`__.
 
     S. M. Law, *STUMPY: A Powerful and Scalable Python Library for Time Series Data Mining*
     In: Journal of Open Source Software, The Open Journal, Volume 4, Number 39.
