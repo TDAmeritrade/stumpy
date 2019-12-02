@@ -1,5 +1,5 @@
 #!/bin/sh
 
-pip uninstall -y stumpy
-python setup.py install
+echo "y" |  python -m pip uninstall stumpy
+python -m pip install .
 rm -rf stumpy.egg-info build dist
