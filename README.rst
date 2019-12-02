@@ -64,7 +64,9 @@ Whether you are an academic, data scientist, software developer, or time series 
 How to use STUMPY
 -------------------------
 
-Typical usage (1-dimensional time series data) with `STUMP`:
+Please see our `API documentation <https://stumpy.readthedocs.io/en/latest/api.html>`__ for a complete list of available functions and see our informative `tutorials <https://stumpy.readthedocs.io/en/latest/tutorials.html>`__ for more comprehensive example use cases. Below, you will find code snippets that quickly demonstrate how to use STUMPY.
+
+Typical usage (1-dimensional time series data) with `STUMP <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.stump>`__:
 
 .. code:: python
 
@@ -76,7 +78,7 @@ Typical usage (1-dimensional time series data) with `STUMP`:
     
     matrix_profile = stumpy.stump(your_time_series, m=window_size)
 
-Distributed usage for 1-dimensional time series data with Dask Distributed via `STUMPED`:
+Distributed usage for 1-dimensional time series data with Dask Distributed via `STUMPED <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.stumped>`__:
 
 .. code:: python
 
@@ -90,7 +92,7 @@ Distributed usage for 1-dimensional time series data with Dask Distributed via `
     
     matrix_profile = stumpy.stumped(dask_client, your_time_series, m=window_size)
 
-GPU usage for 1-dimensional time series data with `GPU-STUMP`:
+GPU usage for 1-dimensional time series data with `GPU-STUMP <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.gpu_stump>`__:
 
 .. code:: python
 
@@ -102,7 +104,7 @@ GPU usage for 1-dimensional time series data with `GPU-STUMP`:
 
     matrix_profile = stumpy.gpu_stump(your_time_series, m=window_size)
 
-Multi-dimensional time series data with `MSTUMP`:
+Multi-dimensional time series data with `MSTUMP <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.mstump>`__:
 
 .. code:: python
 
@@ -114,7 +116,7 @@ Multi-dimensional time series data with `MSTUMP`:
 
     matrix_profile, matrix_profile_indices = stumpy.mstump(your_time_series, m=window_size)
 
-Distributed multi-dimensional time series data analysis with Dask Distributed `MSTUMPED`:
+Distributed multi-dimensional time series data analysis with Dask Distributed `MSTUMPED <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.mstumped>`__:
 
 .. code:: python
 
@@ -128,7 +130,7 @@ Distributed multi-dimensional time series data analysis with Dask Distributed `M
 
     matrix_profile, matrix_profile_indices = stumpy.mstumped(dask_client, your_time_series, m=window_size)
 
-Time Series Chains with `Anchored Time Series Chains (ATSC)`:
+Time Series Chains with `Anchored Time Series Chains (ATSC) <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.atsc>`__:
 
 .. code:: python
 
@@ -148,7 +150,7 @@ Time Series Chains with `Anchored Time Series Chains (ATSC)`:
 
     all_chain_set, longest_unanchored_chain = stumpy.allc(left_matrix_profile_index, right_matrix_profile_index)
 
-Semantic Segmentation with `Fast Low-cost Unipotent Semantic Segmentation (FLUSS)`:
+Semantic Segmentation with `Fast Low-cost Unipotent Semantic Segmentation (FLUSS) <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.fluss>`__:
 
 .. code:: python
 
