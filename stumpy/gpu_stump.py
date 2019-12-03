@@ -338,7 +338,12 @@ def _gpu_stump(
 
 
 def gpu_stump(
-    T_A, m, T_B=None, ignore_trivial=True, threads_per_block=THREADS_PER_BLOCK
+    T_A,
+    m,
+    T_B=None,
+    ignore_trivial=True,
+    threads_per_block=THREADS_PER_BLOCK,
+    device_id=0,
 ):
     """
     Compute the matrix profile with GPU-STOMP
@@ -363,6 +368,9 @@ def gpu_stump(
     threads_per_block : int
         The number of GPU threads to use for all kernels. The default value is
         set in `THREADS_PER_BLOCK=512`.
+
+    device_id : int
+        The (GPU) device number to use. The defailt value is `0`.
 
     Returns
     -------
@@ -442,6 +450,12 @@ def gpu_stump(
 
     start = 0
     stop = l
+
+    cuda.select_device(device_id)
+    if (
+        cuda.current_context().__class__.__name__ != "FakeCUDAContext"
+    ):  # pragma: no cover
+        cuda.current_context().deallocations.clear()
 
     QT, QT_first = _get_QT(start, T_A, T_B, m)
     profile[:], indices[:, :] = _gpu_stump(
