@@ -1,3 +1,14 @@
+# 2019-12-03    [ 1.2.4 ]:
+--------------------------
+* features
+  - Added ability to select GPU device in gpu_stump
+* tasks
+  - Changed all README hyperlinks to double underscores
+  - Added API links to README
+  - Added STUMPY circle image (logo)
+  - Suppressed pytest junit_family deprecation warning
+  - Replaced `python install` with `python -m pip install .`
+
 # 2019-11-26    [ 1.2.3 ]:
 --------------------------
 * bugfixes
