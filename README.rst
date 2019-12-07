@@ -215,7 +215,7 @@ We tested the performance using the Numba JIT compiled version of the code on ra
 .. image:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/performance.png
     :alt: STUMPY Performance Plot
 
-The raw results are displayed below as Hours:Minutes:Seconds.
+The raw results are displayed below as Hours:Minutes:Seconds and with a constant window size of `m = 50`.
 
 +----------+-------------------+--------------+-------------+-------------+-------------+
 |    i     |  n = 2\ :sup:`i`  | GPU-STOMP    | STUMP.16    | STUMPED.128 | STUMPED.256 |
