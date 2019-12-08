@@ -277,9 +277,9 @@ STUMPED.128: 128 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz pr
 
 STUMPED.256: 256 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors x 32 servers, parallelized with Numba, and distributed with Dask Distributed.
 
-GPU-STUMP.1: 1 GPUs in Total - GeForce GTX 1080 Ti
+GPU-STUMP.1: 1x NVIDIA GeForce GTX 1080 Ti GPU
 
-GPU-STUMP.2: 2 GPUs in Total - GeForce GTX 1080 Ti
+GPU-STUMP.2: 2x NVIDIA GeForce GTX 1080 Ti GPU
 
 -------------
 Running Tests
