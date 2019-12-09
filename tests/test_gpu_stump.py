@@ -75,7 +75,7 @@ test_data = [
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stump_self_join(T_A, T_B):
+def test_gpu_stump_self_join(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
     left = np.array(
@@ -98,7 +98,7 @@ def test_stump_self_join(T_A, T_B):
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stump_self_join_larger_window(T_A, T_B):
+def test_gpu_stump_self_join_larger_window(T_A, T_B):
     for m in [8, 16, 32]:
         if len(T_B) > m:
             zone = int(np.ceil(m / 4))
@@ -128,7 +128,7 @@ def test_stump_self_join_larger_window(T_A, T_B):
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stump_A_B_join(T_A, T_B):
+def test_gpu_stump_A_B_join(T_A, T_B):
     m = 3
     left = np.array(
         [naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
