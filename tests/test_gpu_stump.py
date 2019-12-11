@@ -149,3 +149,70 @@ def test_gpu_stump_A_B_join(T_A, T_B):
     )
     replace_inf(right)
     npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_parallel_gpu_stump_self_join(T_A, T_B):
+    device_ids = [device.id for device in cuda.list_devices()]
+    if len(T_B) > 10:
+        m = 3
+        zone = int(np.ceil(m / 4))
+        left = np.array(
+            [
+                naive_mass(Q, T_B, m, i, zone, True)
+                for i, Q in enumerate(core.rolling_window(T_B, m))
+            ],
+            dtype=object,
+        )
+        right = gpu_stump(
+            T_B,
+            m,
+            ignore_trivial=True,
+            threads_per_block=THREADS_PER_BLOCK,
+            device_id=device_ids,
+        )
+        replace_inf(left)
+        replace_inf(right)
+        npt.assert_almost_equal(left, right)
+
+        right = gpu_stump(
+            pd.Series(T_B),
+            m,
+            ignore_trivial=True,
+            threads_per_block=THREADS_PER_BLOCK,
+            device_id=device_ids,
+        )
+        replace_inf(right)
+        npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_parallel_gpu_stump_A_B_join(T_A, T_B):
+    device_ids = [device.id for device in cuda.list_devices()]
+    if len(T_B) > 10:
+        m = 3
+        left = np.array(
+            [naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
+        )
+        right = gpu_stump(
+            T_A,
+            m,
+            T_B,
+            ignore_trivial=False,
+            threads_per_block=THREADS_PER_BLOCK,
+            device_id=device_ids,
+        )
+        replace_inf(left)
+        replace_inf(right)
+        npt.assert_almost_equal(left, right)
+
+        right = gpu_stump(
+            pd.Series(T_A),
+            m,
+            pd.Series(T_B),
+            ignore_trivial=False,
+            threads_per_block=THREADS_PER_BLOCK,
+            device_id=device_ids,
+        )
+        replace_inf(right)
+        npt.assert_almost_equal(left, right)

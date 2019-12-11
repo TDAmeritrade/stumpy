@@ -169,6 +169,7 @@ def _gpu_stump(
     ignore_trivial=True,
     range_start=1,
     threads_per_block=THREADS_PER_BLOCK,
+    device_id=0,
 ):
     """
     A Numba CUDA version of STOMP for parallel computation of the
@@ -229,6 +230,9 @@ def _gpu_stump(
     threads_per_block : int
         The number of GPU threads to use for all kernels. The default value is
         set in `THREADS_PER_BLOCK=512`.
+    
+    device_id : int
+        The (GPU) device number to use. The defailt value is `0`.
 
     Returns
     -------
@@ -289,29 +293,9 @@ def _gpu_stump(
 
     blocks_per_grid = math.ceil(k / threads_per_block)
 
-    _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
-        range_start - 1,
-        device_T_A,
-        device_T_B,
-        m,
-        device_QT_even,
-        device_QT_odd,
-        device_QT_first,
-        device_M_T,
-        device_Σ_T,
-        device_μ_Q,
-        device_σ_Q,
-        k,
-        ignore_trivial,
-        excl_zone,
-        device_profile,
-        device_indices,
-        False,
-    )
-
-    for i in range(range_start, range_stop):
+    with cuda.gpus[device_id]:
         _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
-            i,
+            range_start - 1,
             device_T_A,
             device_T_B,
             m,
@@ -327,10 +311,32 @@ def _gpu_stump(
             excl_zone,
             device_profile,
             device_indices,
-            True,
+            False,
         )
 
-    profile = device_profile.copy_to_host()[:, 0]
+    for i in range(range_start, range_stop):
+        with cuda.gpus[device_id]:
+            _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
+                i,
+                device_T_A,
+                device_T_B,
+                m,
+                device_QT_even,
+                device_QT_odd,
+                device_QT_first,
+                device_M_T,
+                device_Σ_T,
+                device_μ_Q,
+                device_σ_Q,
+                k,
+                ignore_trivial,
+                excl_zone,
+                device_profile,
+                device_indices,
+                True,
+            )
+
+    profile = device_profile.copy_to_host()  # [:, 0]
     indices = device_indices.copy_to_host()
     profile = np.sqrt(profile)
 
@@ -369,8 +375,11 @@ def gpu_stump(
         The number of GPU threads to use for all kernels. The default value is
         set in `THREADS_PER_BLOCK=512`.
 
-    device_id : int
-        The (GPU) device number to use. The defailt value is `0`.
+    device_id : int or list
+        The (GPU) device number to use. The defailt value is `0`. A list of
+        valid device ids (int) may also be provided for parallel GPU-STUMP
+        computation. A list of all valid device ids can be obtained by
+        executing `[device.id for device in cuda.list_devices()]`.
 
     Returns
     -------
@@ -445,39 +454,60 @@ def gpu_stump(
     μ_Q, σ_Q = core.compute_mean_std(T_B, m)
 
     out = np.empty((k, 4), dtype=object)
-    profile = np.empty((k,), dtype="float64")
-    indices = np.empty((k, 3), dtype="int64")
+    # profile = np.empty((k, 3), dtype="float64")
+    # indices = np.empty((k, 3), dtype="int64")
 
-    start = 0
-    stop = l
+    if isinstance(device_id, int):
+        device_ids = [device_id]
+    else:
+        device_ids = device_id
 
-    cuda.select_device(device_id)
-    if (
-        cuda.current_context().__class__.__name__ != "FakeCUDAContext"
-    ):  # pragma: no cover
-        cuda.current_context().deallocations.clear()
+    profile = [None] * len(device_ids)
+    indices = [None] * len(device_ids)
 
-    QT, QT_first = _get_QT(start, T_A, T_B, m)
-    profile[:], indices[:, :] = _gpu_stump(
-        T_A,
-        T_B,
-        m,
-        stop,
-        excl_zone,
-        M_T,
-        Σ_T,
-        QT,
-        QT_first,
-        μ_Q,
-        σ_Q,
-        k,
-        ignore_trivial,
-        start + 1,
-        threads_per_block,
-    )
+    for _id in device_ids:
+        cuda.select_device(_id)
+        if (
+            cuda.current_context().__class__.__name__ != "FakeCUDAContext"
+        ):  # pragma: no cover
+            cuda.current_context().deallocations.clear()
 
-    out[:, 0] = profile
-    out[:, 1:4] = indices
+    step = 1 + l // len(device_ids)
+
+    for idx, start in enumerate(range(0, l, step)):
+        stop = min(l, start + step)
+
+        with cuda.gpus[device_ids[idx]]:
+            QT, QT_first = _get_QT(start, T_A, T_B, m)
+            profile[idx], indices[idx] = _gpu_stump(
+                T_A,
+                T_B,
+                m,
+                stop,
+                excl_zone,
+                M_T,
+                Σ_T,
+                QT,
+                QT_first,
+                μ_Q,
+                σ_Q,
+                k,
+                ignore_trivial,
+                start + 1,
+                threads_per_block,
+                device_ids[idx],
+            )
+
+    for i in range(1, len(device_ids)):
+        # Update all matrix profiles and matrix profile indices
+        # (global, left, right) and store in profile[0] and indices[0]
+        for col in range(profile[0].shape[1]):  # pragma: no cover
+            cond = profile[0][:, col] < profile[i][:, col]
+            profile[0][:, col] = np.where(cond, profile[0][:, col], profile[i][:, col])
+            indices[0][:, col] = np.where(cond, indices[0][:, col], indices[i][:, col])
+
+    out[:, 0] = profile[0][:, 0]
+    out[:, 1:4] = indices[0][:, :]
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
