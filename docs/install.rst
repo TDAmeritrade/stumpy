@@ -15,7 +15,7 @@ PyPI install with ``pip``:
 
 .. code:: bash
 
-    pip install stumpy
+    python -m pip install stumpy
 
 
 From source
@@ -31,10 +31,10 @@ Alternatively, but with lower performance, you can also install these dependenci
 
 .. code:: bash
 
-    pip install -r requirements.txt
+    python -m pip install -r requirements.txt
 
 Once the dependencies are installed (stay inside of the ``stumpy`` directory), execute:
 
 .. code:: bash
 
-    python setup.py install
+    python -m pip install .
