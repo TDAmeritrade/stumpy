@@ -230,7 +230,7 @@ def _gpu_stump(
     threads_per_block : int
         The number of GPU threads to use for all kernels. The default value is
         set in `THREADS_PER_BLOCK=512`.
-    
+
     device_id : int
         The (GPU) device number to use. The defailt value is `0`.
 
