@@ -273,27 +273,27 @@ def _gpu_stump(
     Note that left and right matrix profiles are only available for self-joins.
     """
 
-    device_T_A = cuda.to_device(T_A)
-    device_T_B = cuda.to_device(T_B)
-    device_M_T = cuda.to_device(M_T)
-    device_Σ_T = cuda.to_device(Σ_T)
-    device_QT_odd = cuda.to_device(QT)
-    device_QT_even = cuda.to_device(QT)
-    device_QT_first = cuda.to_device(QT_first)
-    device_μ_Q = cuda.to_device(μ_Q)
-    device_σ_Q = cuda.to_device(σ_Q)
-
-    profile = np.empty((k, 3))  # float64
-    indices = np.empty((k, 3))  # int64
-
-    profile[:] = np.inf
-    indices[:, :] = -1
-    device_profile = cuda.to_device(profile)
-    device_indices = cuda.to_device(indices)
-
     blocks_per_grid = math.ceil(k / threads_per_block)
 
     with cuda.gpus[device_id]:
+        device_T_A = cuda.to_device(T_A)
+        device_T_B = cuda.to_device(T_B)
+        device_M_T = cuda.to_device(M_T)
+        device_Σ_T = cuda.to_device(Σ_T)
+        device_QT_odd = cuda.to_device(QT)
+        device_QT_even = cuda.to_device(QT)
+        device_QT_first = cuda.to_device(QT_first)
+        device_μ_Q = cuda.to_device(μ_Q)
+        device_σ_Q = cuda.to_device(σ_Q)
+
+        profile = np.empty((k, 3))  # float64
+        indices = np.empty((k, 3))  # int64
+
+        profile[:] = np.inf
+        indices[:, :] = -1
+        device_profile = cuda.to_device(profile)
+        device_indices = cuda.to_device(indices)
+
         _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
             range_start - 1,
             device_T_A,
@@ -314,8 +314,7 @@ def _gpu_stump(
             False,
         )
 
-    for i in range(range_start, range_stop):
-        with cuda.gpus[device_id]:
+        for i in range(range_start, range_stop):
             _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
                 i,
                 device_T_A,
@@ -336,9 +335,9 @@ def _gpu_stump(
                 True,
             )
 
-    profile = device_profile.copy_to_host()  # [:, 0]
-    indices = device_indices.copy_to_host()
-    profile = np.sqrt(profile)
+        profile = device_profile.copy_to_host()
+        indices = device_indices.copy_to_host()
+        profile = np.sqrt(profile)
 
     return profile, indices
 
@@ -454,8 +453,6 @@ def gpu_stump(
     μ_Q, σ_Q = core.compute_mean_std(T_B, m)
 
     out = np.empty((k, 4), dtype=object)
-    # profile = np.empty((k, 3), dtype="float64")
-    # indices = np.empty((k, 3), dtype="int64")
 
     if isinstance(device_id, int):
         device_ids = [device_id]
@@ -477,26 +474,25 @@ def gpu_stump(
     for idx, start in enumerate(range(0, l, step)):
         stop = min(l, start + step)
 
-        with cuda.gpus[device_ids[idx]]:
-            QT, QT_first = _get_QT(start, T_A, T_B, m)
-            profile[idx], indices[idx] = _gpu_stump(
-                T_A,
-                T_B,
-                m,
-                stop,
-                excl_zone,
-                M_T,
-                Σ_T,
-                QT,
-                QT_first,
-                μ_Q,
-                σ_Q,
-                k,
-                ignore_trivial,
-                start + 1,
-                threads_per_block,
-                device_ids[idx],
-            )
+        QT, QT_first = _get_QT(start, T_A, T_B, m)
+        profile[idx], indices[idx] = _gpu_stump(
+            T_A,
+            T_B,
+            m,
+            stop,
+            excl_zone,
+            M_T,
+            Σ_T,
+            QT,
+            QT_first,
+            μ_Q,
+            σ_Q,
+            k,
+            ignore_trivial,
+            start + 1,
+            threads_per_block,
+            device_ids[idx],
+        )
 
     for i in range(1, len(device_ids)):
         # Update all matrix profiles and matrix profile indices
