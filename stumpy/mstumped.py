@@ -2,15 +2,18 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import numpy as np
-from . import core
-from . import _mstump, _get_first_mstump_profile, _get_multi_QT, _multi_compute_mean_std
 import logging
+from typing import Any, Tuple
+
+import numpy as np
+
+from . import _mstump, _get_first_mstump_profile, _get_multi_QT, _multi_compute_mean_std
+from . import core
 
 logger = logging.getLogger(__name__)
 
 
-def mstumped(dask_client, T, m):
+def mstumped(dask_client: Any, T: np.ndarray, m: int) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute the multi-dimensional matrix profile with parallelized and
     distributed mSTOMP
@@ -32,18 +35,20 @@ def mstumped(dask_client, T, m):
         matrix profile. Each row in `T` represents data from a different
         dimension while each column in `T` represents data from the same
         dimension.
+
     m : int
         Window size
 
     Returns
     -------
     P : ndarray
-        The multi-dimensioanl matrix profile. Each row of the array corresponds
+        The multi-dimensional matrix profile. Each row of the array corresponds
         to each matrix profile for a given dimension (i.e., the first row is the
         1-D matrix profile and the second row is the 2-D matrix profile).
+
     I : ndarray
         The multi-dimensional matrix profile index where each row of the array
-        correspondsto each matrix profile index for a given dimension.
+        corresponds to each matrix profile index for a given dimension.
 
     Notes
     -----

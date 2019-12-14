@@ -1,12 +1,23 @@
 # STUMPY
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
+from typing import Optional, Tuple
 
 import numpy as np
+
 from . import core
 
 
-def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False):
+def mass(
+    Q: np.ndarray,
+    T: np.ndarray,
+    M_T: np.ndarray,
+    Σ_T: np.ndarray,
+    trivial_idx: Optional[int] = None,
+    excl_zone: int = 0,
+    left: bool = False,
+    right: bool = False,
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute "Mueen's Algorithm for Similarity Search" (MASS)
 
@@ -24,7 +35,7 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
     Σ_T : ndarray
         Sliding standard deviation for `T`
 
-    trivial_idx : int
+    trivial_idx : (optional) int
         Index for the start of the trivial self-join
 
     excl_zone : int
@@ -84,7 +95,9 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
     return P, I
 
 
-def stamp(T_A, T_B, m, ignore_trivial=False):
+def stamp(
+    T_A: np.ndarray, T_B: np.ndarray, m: int, ignore_trivial: bool = False
+) -> np.ndarray:
     """
     Compute matrix profile and indices using the "Scalable Time series
     Anytime Matrix Profile" (STAMP) algorithm and MASS (2017 - with FFT).

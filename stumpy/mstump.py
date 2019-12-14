@@ -2,16 +2,19 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import numpy as np
-from . import core
-from . import _calculate_squared_distance_profile
-from numba import njit, prange
 import logging
+from typing import Tuple
+
+import numpy as np
+from numba import njit, prange
+
+from . import _calculate_squared_distance_profile
+from . import core
 
 logger = logging.getLogger(__name__)
 
 
-def _multi_compute_mean_std(T, m):
+def _multi_compute_mean_std(T: np.ndarray, m: int) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute the sliding mean and standard deviation for the multi-dimensional
     array `T` with a window size of `m`
@@ -72,7 +75,15 @@ def _multi_compute_mean_std(T, m):
     return M_T, Σ_T
 
 
-def _multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
+def _multi_mass(
+    Q: np.ndarray,
+    T: np.ndarray,
+    m: int,
+    M_T: np.ndarray,
+    Σ_T: np.ndarray,
+    trivial_idx: int,
+    excl_zone: int,
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
     (MASS) to compute multi-dimensional MASS.
@@ -84,6 +95,9 @@ def _multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
 
     T : ndarray
         Time series array or sequence
+
+    m : int
+        Window size
 
     M_T : ndarray
         Sliding mean for `T`
@@ -141,7 +155,9 @@ def _multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
     return P, I
 
 
-def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T):
+def _get_first_mstump_profile(
+    start: int, T: np.ndarray, m: int, excl_zone: int, M_T: np.ndarray, Σ_T: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Multi-dimensional wrapper to compute the multi-dimensional matrix profile
     and multi-dimensional matrix profile index for a given window within the
@@ -186,7 +202,7 @@ def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T):
     return P, I
 
 
-def _get_multi_QT(start, T, m):
+def _get_multi_QT(start: int, T: np.ndarray, m: int) -> Tuple[np.ndarray, np.ndarray]:
     """
     Multi-dimensional wrapper to compute the sliding dot product between
     the query, `T[:, start:start+m])` and the time series, `T`.
@@ -227,26 +243,26 @@ def _get_multi_QT(start, T, m):
 
 @njit(parallel=True, fastmath=True)
 def _mstump(
-    T,
-    m,
-    P,
-    I,
-    D,
-    D_prime,
-    range_stop,
-    excl_zone,
-    M_T,
-    Σ_T,
-    QT,
-    QT_first,
-    μ_Q,
-    σ_Q,
-    k,
-    range_start=1,
-):
+    T: np.ndarray,
+    m: int,
+    P: np.ndarray,
+    I: np.ndarray,
+    D: np.ndarray,
+    D_prime: np.ndarray,
+    range_stop: int,
+    excl_zone: int,
+    M_T: np.ndarray,
+    Σ_T: np.ndarray,
+    QT: np.ndarray,
+    QT_first: np.ndarray,
+    μ_Q: np.ndarray,
+    σ_Q: np.ndarray,
+    k: int,
+    range_start: int = 1,
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     A Numba JIT-compiled version of mSTOMP, a variant of mSTAMP, for parallel
-    computation of the multi-diemnsional matrix profile and multi-diemnsional
+    computation of the multi-dimensional matrix profile and multi-dimensional
     matrix profile indices. Note that only self-joins are supported.
 
     Parameters
@@ -301,23 +317,19 @@ def _mstump(
     k : int
         The total number of sliding windows to iterate over
 
-    ignore_trivial : bool
-        Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
-        `False`. Default is `True`.
-
     range_start : int
         The starting index value along T_B for which to start the matrix
-        profile claculation. Default is 1.
+        profile calculation. Default is 1.
 
     Returns
     -------
     P : ndarray
-        The multi-dimensioanl matrix profile. Each row of the array corresponds
+        The multi-dimensional matrix profile. Each row of the array corresponds
         to each matrix profile for a given dimension (i.e., the first row is the
         1-D matrix profile and the second row is the 2-D matrix profile).
     I : ndarray
         The multi-dimensional matrix profile index where each row of the array
-        correspondsto each matrix profile index for a given dimension.
+        corresponds to each matrix profile index for a given dimension.
 
     Notes
     -----
@@ -392,7 +404,7 @@ def _mstump(
     return P, I
 
 
-def mstump(T, m):
+def mstump(T: np.ndarray, m: int) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute the multi-dimensional matrix profile with parallelized mSTOMP
 
@@ -408,18 +420,20 @@ def mstump(T, m):
         matrix profile. Each row in `T` represents data from a different
         dimension while each column in `T` represents data from the same
         dimension.
+
     m : int
         Window size
 
     Returns
     -------
     P : ndarray
-        The multi-dimensioanl matrix profile. Each row of the array corresponds
+        The multi-dimensional matrix profile. Each row of the array corresponds
         to each matrix profile for a given dimension (i.e., the first row is the
         1-D matrix profile and the second row is the 2-D matrix profile).
+
     I : ndarray
         The multi-dimensional matrix profile index where each row of the array
-        correspondsto each matrix profile index for a given dimension.
+        corresponds to each matrix profile index for a given dimension.
 
     Notes
     -----

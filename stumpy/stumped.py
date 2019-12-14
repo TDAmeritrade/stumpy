@@ -1,15 +1,23 @@
 # STUMPY
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
+import logging
+from typing import Any, Optional
 
 import numpy as np
+
 from . import core, _stump, _get_first_stump_profile, _get_QT
-import logging
 
 logger = logging.getLogger(__name__)
 
 
-def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
+def stumped(
+    dask_client: Any,
+    T_A: np.ndarray,
+    m: int,
+    T_B: Optional[np.ndarray] = None,
+    ignore_trivial: bool = True,
+) -> np.ndarray:
     """
     Compute the matrix profile with parallelized and distributed STOMP
 
