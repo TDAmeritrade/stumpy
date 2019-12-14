@@ -2,6 +2,8 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
+from typing import Tuple
+
 import numpy as np
 from . import core
 from . import _mstump, _get_first_mstump_profile, _get_multi_QT, _multi_compute_mean_std
@@ -10,7 +12,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def mstumped(dask_client, T, m):
+def mstumped(
+    dask_client: object, T: np.ndarray, m: int
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute the multi-dimensional matrix profile with parallelized and
     distributed mSTOMP
@@ -32,6 +36,7 @@ def mstumped(dask_client, T, m):
         matrix profile. Each row in `T` represents data from a different
         dimension while each column in `T` represents data from the same
         dimension.
+
     m : int
         Window size
 

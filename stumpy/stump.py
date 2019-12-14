@@ -1,6 +1,7 @@
 # STUMPY
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
+from typing import Union, Tuple, Optional
 
 import numpy as np
 from . import core, stamp
@@ -10,7 +11,18 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial):
+def _get_first_stump_profile(
+    start: int,
+    T_A: np.ndarray,
+    T_B: np.ndarray,
+    m: int,
+    excl_zone: int,
+    M_T: np.ndarray,
+    Σ_T: np.ndarray,
+    ignore_trivial: bool,
+) -> Tuple[
+    np.ndarray, Tuple[np.ndarray, Union[np.ndarray, int], Union[np.ndarray, int]]
+]:
     """
     Compute the matrix profile, matrix profile index, left matrix profile
     index, and right matrix profile index for given window within the times
@@ -53,6 +65,8 @@ def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_tr
     I : int64
         Matrix profile index for the window with index equal to `start`
     """
+    # TODO: return value of I is not simply an int64, looks like it's a tuple.
+    # it's either: (np.ndarray, int, int) or (np.ndarray, np.ndarray, np.ndarray)
 
     # Handle first subsequence, add exclusionary zone
     if ignore_trivial:
@@ -72,7 +86,9 @@ def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_tr
     return P, (I, IL, IR)
 
 
-def _get_QT(start, T_A, T_B, m):
+def _get_QT(
+    start: int, T_A: np.ndarray, T_B: np.ndarray, m: int
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute the sliding dot product between the query, `T_B`, (from
     [start:start+m]) and the time series, `T_A`. Additionally, compute
@@ -109,7 +125,14 @@ def _get_QT(start, T_A, T_B, m):
 
 
 @njit(parallel=True, fastmath=True)
-def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
+def _calculate_squared_distance_profile(
+    m: int,
+    QT: np.ndarray,
+    μ_Q: np.ndarray,
+    σ_Q: np.ndarray,
+    M_T: np.ndarray,
+    Σ_T: np.ndarray,
+) -> np.ndarray:
     """
     A Numba JIT-compiled algorithm for parallel computation of the squared
     distance profile according to:
@@ -121,6 +144,9 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
     Parameters
     ----------
+    m : int
+        Window size
+
     QT : ndarray
         Dot product between the query sequence,`Q`, and time series, `T`
 
@@ -328,7 +354,12 @@ def _stump(
     return profile, indices
 
 
-def stump(T_A, m, T_B=None, ignore_trivial=True):
+def stump(
+    T_A: np.ndarray,
+    m: int,
+    T_B: Optional[np.ndarray] = None,
+    ignore_trivial: bool = True,
+) -> np.ndarray:
     """
     Compute the matrix profile with parallelized STOMP
 

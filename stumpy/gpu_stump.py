@@ -1,6 +1,7 @@
 # STUMPY
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
+from typing import Tuple, Optional
 
 import numpy as np
 from numba import cuda
@@ -18,24 +19,24 @@ THREADS_PER_BLOCK = 512
     "f8[:], f8[:], i8, b1, i8, f8[:, :], f8[:, :], b1)"
 )
 def _compute_and_update_PI_kernel(
-    i,
-    T_A,
-    T_B,
-    m,
-    QT_even,
-    QT_odd,
-    QT_first,
-    M_T,
-    Σ_T,
-    μ_Q,
-    σ_Q,
-    k,
-    ignore_trivial,
-    excl_zone,
-    profile,
-    indices,
-    compute_QT,
-):
+    i: int,
+    T_A: np.ndarray,
+    T_B: np.ndarray,
+    m: int,
+    QT_even: np.ndarray,
+    QT_odd: np.ndarray,
+    QT_first: np.ndarray,
+    M_T: np.ndarray,
+    Σ_T: np.ndarray,
+    μ_Q: np.ndarray,
+    σ_Q: np.ndarray,
+    k: int,
+    ignore_trivial: bool,
+    excl_zone: int,
+    profile: np.ndarray,
+    indices: np.ndarray,
+    compute_QT: bool,
+) -> None:
     """
     A Numba CUDA kernel to update the matrix profile and matrix profile indices
 
@@ -154,23 +155,23 @@ def _compute_and_update_PI_kernel(
 
 
 def _gpu_stump(
-    T_A,
-    T_B,
-    m,
-    range_stop,
-    excl_zone,
-    M_T,
-    Σ_T,
-    QT,
-    QT_first,
-    μ_Q,
-    σ_Q,
-    k,
-    ignore_trivial=True,
-    range_start=1,
-    threads_per_block=THREADS_PER_BLOCK,
-    device_id=0,
-):
+    T_A: np.ndarray,
+    T_B: np.ndarray,
+    m: int,
+    range_stop: int,
+    excl_zone: int,
+    M_T: np.ndarray,
+    Σ_T: np.ndarray,
+    QT: np.ndarray,
+    QT_first: np.ndarray,
+    μ_Q: np.ndarray,
+    σ_Q: np.ndarray,
+    k: int,
+    ignore_trivial: bool = True,
+    range_start: int = 1,
+    threads_per_block: int = THREADS_PER_BLOCK,
+    device_id: int = 0,
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     A Numba CUDA version of STOMP for parallel computation of the
     matrix profile, matrix profile indices, left matrix profile indices,
@@ -225,14 +226,14 @@ def _gpu_stump(
 
     range_start : int
         The starting index value along T_B for which to start the matrix
-        profile claculation. Default is 1.
+        profile calculation. Default is 1.
 
     threads_per_block : int
         The number of GPU threads to use for all kernels. The default value is
         set in `THREADS_PER_BLOCK=512`.
 
     device_id : int
-        The (GPU) device number to use. The defailt value is `0`.
+        The (GPU) device number to use. The default value is `0`.
 
     Returns
     -------
@@ -343,13 +344,13 @@ def _gpu_stump(
 
 
 def gpu_stump(
-    T_A,
-    m,
-    T_B=None,
-    ignore_trivial=True,
-    threads_per_block=THREADS_PER_BLOCK,
-    device_id=0,
-):
+    T_A: np.ndarray,
+    m: int,
+    T_B: Optional[np.ndarray] = None,
+    ignore_trivial: bool = True,
+    threads_per_block: int = THREADS_PER_BLOCK,
+    device_id: int = 0,
+) -> np.ndarray:
     """
     Compute the matrix profile with GPU-STOMP
 
@@ -360,9 +361,11 @@ def gpu_stump(
     ----------
     T_A : ndarray
         The time series or sequence for which to compute the matrix profile
+
     m : int
         Window size
-    T_B : ndarray
+
+    T_B : (optional) ndarray
         The time series or sequence that contain your query subsequences
         of interest. Default is `None` which corresponds to a self-join.
 
