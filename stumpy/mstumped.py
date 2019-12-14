@@ -43,12 +43,12 @@ def mstumped(
     Returns
     -------
     P : ndarray
-        The multi-dimensioanl matrix profile. Each row of the array corresponds
+        The multi-dimensional matrix profile. Each row of the array corresponds
         to each matrix profile for a given dimension (i.e., the first row is the
         1-D matrix profile and the second row is the 2-D matrix profile).
     I : ndarray
         The multi-dimensional matrix profile index where each row of the array
-        correspondsto each matrix profile index for a given dimension.
+        corresponds to each matrix profile index for a given dimension.
 
     Notes
     -----

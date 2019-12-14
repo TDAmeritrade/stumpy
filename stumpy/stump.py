@@ -247,7 +247,7 @@ def _stump(
 
     range_start : int
         The starting index value along T_B for which to start the matrix
-        profile claculation. Default is 1.
+        profile calculation. Default is 1.
 
     Returns
     -------
