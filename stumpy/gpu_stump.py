@@ -1,14 +1,15 @@
 # STUMPY
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
+import logging
+import math
 from typing import Tuple, Optional
 
 import numpy as np
 from numba import cuda
-import math
-from . import core
+
 from . import _get_QT
-import logging
+from . import core
 
 logger = logging.getLogger(__name__)
 THREADS_PER_BLOCK = 512

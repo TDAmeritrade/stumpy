@@ -2,11 +2,12 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
+import logging
 from typing import Optional
 
 import numpy as np
+
 from . import core, stamp
-import logging
 
 logger = logging.getLogger(__name__)
 

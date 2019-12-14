@@ -2,12 +2,13 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.  # noqa: E501
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
+import copy
 from typing import Optional, Tuple, Iterator
 
 import numpy as np
 import scipy.stats
+
 from . import core
-import copy
 
 
 def _nnmark(I: np.ndarray) -> np.ndarray:

@@ -2,9 +2,9 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.  # noqa: E501
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-from typing import Tuple, List
-
 from collections import deque
+from typing import List, Tuple
+
 import numpy as np
 
 

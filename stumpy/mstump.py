@@ -2,13 +2,14 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
+import logging
 from typing import Tuple
 
 import numpy as np
-from . import core
-from . import _calculate_squared_distance_profile
 from numba import njit, prange
-import logging
+
+from . import _calculate_squared_distance_profile
+from . import core
 
 logger = logging.getLogger(__name__)
 
