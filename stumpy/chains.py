@@ -102,6 +102,6 @@ def allc(IL: np.ndarray, IR: np.ndarray) -> Tuple[List[Any], Any]:
                     C.append(j)
             S.update([tuple(C)])
     C = atsc(IL, IR, L.argmax())
-    S = [np.array(s, dtype=np.int64) for s in S] # type: ignore
+    S = [np.array(s, dtype=np.int64) for s in S]  # type: ignore
 
     return S, C

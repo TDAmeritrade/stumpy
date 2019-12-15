@@ -13,9 +13,7 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
-def mstumped(
-    dask_client: Any, T: np.ndarray, m: int
-) -> Tuple[np.ndarray, np.ndarray]:
+def mstumped(dask_client: Any, T: np.ndarray, m: int) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute the multi-dimensional matrix profile with parallelized and
     distributed mSTOMP
