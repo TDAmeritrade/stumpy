@@ -3,7 +3,7 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 import logging
 import math
-from typing import Tuple, Optional
+from typing import Tuple, List, Optional
 
 import numpy as np
 from numba import cuda
@@ -463,8 +463,8 @@ def gpu_stump(
     else:
         device_ids = device_id
 
-    profile = [None] * len(device_ids)
-    indices = [None] * len(device_ids)
+    profile: List[np.ndarray] = [None] * len(device_ids)
+    indices: List[np.ndarray] = [None] * len(device_ids)
 
     for _id in device_ids:
         cuda.select_device(_id)

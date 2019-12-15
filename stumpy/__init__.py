@@ -39,9 +39,9 @@ else:  # pragma: no cover
     function_definitions = [
         node for node in module.body if isinstance(node, ast.FunctionDef)
     ]
-    for f in function_definitions:
-        if f.name == "gpu_stump":
-            gpu_stump.__doc__ = ast.get_docstring(f)
+    for fd in function_definitions:
+        if fd.name == "gpu_stump":
+            gpu_stump.__doc__ = ast.get_docstring(fd)
 
 try:
     _dist = get_distribution("stumpy")

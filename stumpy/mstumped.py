@@ -3,7 +3,7 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import logging
-from typing import Tuple
+from typing import Any, Tuple
 
 import numpy as np
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def mstumped(
-    dask_client: object, T: np.ndarray, m: int
+    dask_client: Any, T: np.ndarray, m: int
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute the multi-dimensional matrix profile with parallelized and
@@ -47,6 +47,7 @@ def mstumped(
         The multi-dimensional matrix profile. Each row of the array corresponds
         to each matrix profile for a given dimension (i.e., the first row is the
         1-D matrix profile and the second row is the 2-D matrix profile).
+
     I : ndarray
         The multi-dimensional matrix profile index where each row of the array
         corresponds to each matrix profile index for a given dimension.
