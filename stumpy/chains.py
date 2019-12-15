@@ -3,7 +3,7 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 from collections import deque
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Set, Union
 
 import numpy as np
 
