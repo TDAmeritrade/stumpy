@@ -3,7 +3,7 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 from collections import deque
-from typing import List, Tuple, Any, Set, Union
+from typing import List, Tuple, Any
 
 import numpy as np
 
@@ -87,7 +87,7 @@ def allc(IL: np.ndarray, IR: np.ndarray) -> Tuple[List[Any], Any]:
     The all-chain set, S, is returned as a list of unique numpy arrays.
     """
     L = np.ones(IL.size, dtype=np.int64)
-    S: Union[Set[np.ndarray], List[np.ndarray]] = set()  # type: ignore
+    S = set()  # type: ignore
     for i in range(IL.size):
         if L[i] == 1:
             j = i
@@ -104,4 +104,4 @@ def allc(IL: np.ndarray, IR: np.ndarray) -> Tuple[List[Any], Any]:
     C = atsc(IL, IR, L.argmax())
     S = [np.array(s, dtype=np.int64) for s in S]  # type: ignore
 
-    return S, C
+    return S, C  # type: ignore

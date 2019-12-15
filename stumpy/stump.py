@@ -2,7 +2,7 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 import logging
-from typing import Union, Tuple, Optional
+from typing import Tuple, Optional
 
 import numpy as np
 from numba import njit, prange
@@ -21,9 +21,7 @@ def _get_first_stump_profile(
     M_T: np.ndarray,
     Σ_T: np.ndarray,
     ignore_trivial: bool,
-) -> Tuple[
-    np.ndarray, Tuple[np.ndarray, Union[np.ndarray, int], Union[np.ndarray, int]]
-]:
+) -> Tuple[np.ndarray, Tuple[np.int64, np.int64, np.int64]]:
     """
     Compute the matrix profile, matrix profile index, left matrix profile
     index, and right matrix profile index for given window within the times
@@ -63,11 +61,9 @@ def _get_first_stump_profile(
     P : float64
         Matrix profile for the window with index equal to `start`
 
-    I : int64
+    I : Tuple[int64, int64, int64]
         Matrix profile index for the window with index equal to `start`
     """
-    # TODO: return value of I is not simply an int64, looks like it's a tuple.
-    # it's either: (np.ndarray, int, int) or (np.ndarray, np.ndarray, np.ndarray)
 
     # Handle first subsequence, add exclusionary zone
     if ignore_trivial:
