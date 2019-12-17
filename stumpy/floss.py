@@ -81,7 +81,8 @@ def _iac(
         Number of distribution samples to draw during each iteration
 
     seed : int
-        TODO
+        NumPy random seed used in sampling the beta distribution. Set this to your
+        desired value for reproducibility purposes. The default value is set to `0`.
 
     Returns
     -------
@@ -157,7 +158,9 @@ def _cac(
         arc curve
 
     seed : int
-        TODO
+        NumPy random seed used in sampling the `iac` beta distribution. Set this
+        to your desired value for reproducibility purposes. The default value is
+        set to `0`.
 
     Returns
     -------

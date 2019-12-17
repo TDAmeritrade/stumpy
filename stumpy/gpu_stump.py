@@ -478,7 +478,7 @@ def gpu_stump(
 
     # Start process pool for multi-GPU request
     if len(device_ids) > 1:  # pragma: no cover
-        mp.set_start_method('spawn', force=True)
+        mp.set_start_method("spawn", force=True)
         p = mp.Pool(processes=len(device_ids))
         results = [None] * len(device_ids)
 
@@ -489,24 +489,27 @@ def gpu_stump(
 
         if len(device_ids) > 1 and idx < len(device_ids) - 1:  # pragma: no cover
             # Spawn and execute in child process for multi-GPU request
-            results[idx] = p.apply_async(_gpu_stump, (
-                T_A,
-                T_B,
-                m,
-                stop,
-                excl_zone,
-                M_T,
-                Σ_T,
-                QT,
-                QT_first,
-                μ_Q,
-                σ_Q,
-                k,
-                ignore_trivial,
-                start + 1,
-                threads_per_block,
-                device_ids[idx],
-            ))
+            results[idx] = p.apply_async(
+                _gpu_stump,
+                (
+                    T_A,
+                    T_B,
+                    m,
+                    stop,
+                    excl_zone,
+                    M_T,
+                    Σ_T,
+                    QT,
+                    QT_first,
+                    μ_Q,
+                    σ_Q,
+                    k,
+                    ignore_trivial,
+                    start + 1,
+                    threads_per_block,
+                    device_ids[idx],
+                ),
+            )
         else:
             # Execute last chunk in parent process
             # Only parent process is executed when a single GPU is requested
@@ -528,9 +531,9 @@ def gpu_stump(
                 threads_per_block,
                 device_ids[idx],
             )
-    
+
     # Clean up process pool for multi-GPU request
-    if len(device_ids) > 1:  #pragma: no cover
+    if len(device_ids) > 1:  # pragma: no cover
         p.close()
         p.join()
 

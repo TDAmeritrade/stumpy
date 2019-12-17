@@ -62,7 +62,10 @@ def _get_first_stump_profile(
         Matrix profile for the window with index equal to `start`
 
     I : Tuple[int64, int64, int64]
-        Matrix profile index for the window with index equal to `start`
+        Matrix profile index, left matrix profile index, and right matrix profile
+        index for the window with index equal to `start`. The left and right matrix
+        profile indices are automatically set to `-1` for self-joins (i.e., when
+        `ignore_trivial` is set to `True`.
     """
 
     # Handle first subsequence, add exclusionary zone
