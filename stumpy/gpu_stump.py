@@ -380,7 +380,7 @@ def gpu_stump(
         set in `THREADS_PER_BLOCK=512`.
 
     device_id : int or list
-        The (GPU) device number to use. The defailt value is `0`. A list of
+        The (GPU) device number to use. The default value is `0`. A list of
         valid device ids (int) may also be provided for parallel GPU-STUMP
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in cuda.list_devices()]`.
