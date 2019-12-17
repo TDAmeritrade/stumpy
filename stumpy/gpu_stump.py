@@ -3,6 +3,7 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 import logging
 import math
+import multiprocessing as mp
 from typing import Tuple, List, Optional
 
 import numpy as np
@@ -475,28 +476,68 @@ def gpu_stump(
 
     step = 1 + l // len(device_ids)
 
+    # Start process pool for multi-GPU request
+    if len(device_ids) > 1:  # pragma: no cover
+        mp.set_start_method('spawn', force=True)
+        p = mp.Pool(processes=len(device_ids))
+        results = [None] * len(device_ids)
+
     for idx, start in enumerate(range(0, l, step)):
         stop = min(l, start + step)
 
         QT, QT_first = _get_QT(start, T_A, T_B, m)
-        profile[idx], indices[idx] = _gpu_stump(
-            T_A,
-            T_B,
-            m,
-            stop,
-            excl_zone,
-            M_T,
-            Σ_T,
-            QT,
-            QT_first,
-            μ_Q,
-            σ_Q,
-            k,
-            ignore_trivial,
-            start + 1,
-            threads_per_block,
-            device_ids[idx],
-        )
+
+        if len(device_ids) > 1 and idx < len(device_ids) - 1:  # pragma: no cover
+            # Spawn and execute in child process for multi-GPU request
+            results[idx] = p.apply_async(_gpu_stump, (
+                T_A,
+                T_B,
+                m,
+                stop,
+                excl_zone,
+                M_T,
+                Σ_T,
+                QT,
+                QT_first,
+                μ_Q,
+                σ_Q,
+                k,
+                ignore_trivial,
+                start + 1,
+                threads_per_block,
+                device_ids[idx],
+            ))
+        else:
+            # Execute last chunk in parent process
+            # Only parent process is executed when a single GPU is requested
+            profile[idx], indices[idx] = _gpu_stump(
+                T_A,
+                T_B,
+                m,
+                stop,
+                excl_zone,
+                M_T,
+                Σ_T,
+                QT,
+                QT_first,
+                μ_Q,
+                σ_Q,
+                k,
+                ignore_trivial,
+                start + 1,
+                threads_per_block,
+                device_ids[idx],
+            )
+    
+    # Clean up process pool for multi-GPU request
+    if len(device_ids) > 1:  #pragma: no cover
+        p.close()
+        p.join()
+
+        # Collect results from spawned child processes if they exist
+        for idx, result in enumerate(results):
+            if result is not None:
+                profile[idx], indices[idx] = result.get()
 
     for i in range(1, len(device_ids)):
         # Update all matrix profiles and matrix profile indices
