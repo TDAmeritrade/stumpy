@@ -2,14 +2,22 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import numpy as np
-from . import core, stamp
 import logging
+from typing import Optional
+
+import numpy as np
+
+from . import core, stamp
 
 logger = logging.getLogger(__name__)
 
 
-def stomp(T_A, m, T_B=None, ignore_trivial=True):
+def stomp(
+    T_A: np.ndarray,
+    m: np.ndarray,
+    T_B: Optional[np.ndarray] = None,
+    ignore_trivial: bool = True,
+) -> np.ndarray:
     """
     Compute "Scalable Time series Ordered-search Matrix Profile" (STOMP)
 
@@ -19,11 +27,11 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
         The time series or sequence for which the matrix profile index will
         be returned
 
-    T_B : ndarray
-        The time series or sequence that contain your query subsequences
-
     m : int
         Window size
+
+    T_B : ndarray
+        The time series or sequence that contain your query subsequences
 
     ignore_trivial : bool
         `True` if this is a self join and `False` otherwise (i.e., AB-join).
