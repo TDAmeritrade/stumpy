@@ -218,7 +218,7 @@ We tested the performance using the Numba JIT compiled version of the code on ra
 The raw results are displayed below as Hours:Minutes:Seconds and with a constant window size of `m = 50`.
 
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
-|    i     |  n = 2\ :sup:`i`  | GPU-STOMP    | STUMP.16    | STUMPED.128 | STUMPED.256 | GPU-STUMP.1 | GPU-STUMP.2 | GPU-STUMP.DGX1 | GPU-STUMP.DGX1 |
+|    i     |  n = 2\ :sup:`i`  | GPU-STOMP    | STUMP.16    | STUMPED.128 | STUMPED.256 | GPU-STUMP.1 | GPU-STUMP.2 | GPU-STUMP.DGX1 | GPU-STUMP.DGX2 |
 +==========+===================+==============+=============+=============+=============+=============+=============+================+================+
 | 6        | 64                | 00:00:10.00  | 00:00:00.00 | 00:00:05.77 | 00:00:06.08 | 00:00:00.01 | 00:00:01.63 | 00:00:07.95    | NaN            |
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
