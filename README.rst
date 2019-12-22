@@ -250,7 +250,7 @@ The raw results are displayed in the table below as Hours:Minutes:Seconds and wi
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
 | 20       | 1048576           | 00:02:30.00  | 01:51:13.43 | 00:19:54.75 | 00:04:37.15 | 00:03:01.16 | 00:04:45.29 | 00:02:25.16 | 00:00:34.97    | 00:00:44.65    |
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
-| 21       | 2097152           | 00:09:15.00  | NaN         | 03:05:07.64 | 00:13:36.51 | 00:08:47.47 | 00:18:56.13 | 00:09:38.73 | 00:01:06.49    | 00:01:01.75    |
+| 21       | 2097152           | 00:09:15.00  | 13:21:23.83 | 03:05:07.64 | 00:13:36.51 | 00:08:47.47 | 00:18:56.13 | 00:09:38.73 | 00:01:06.49    | 00:01:01.75    |
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
 | 22       | 4194304           | NaN          | NaN         | 10:37:51.21 | 00:55:44.43 | 00:32:06.70 | 01:15:26.53 | 00:38:18.65 | 00:04:02.03    | 00:02:20.49    |
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
@@ -271,6 +271,8 @@ The raw results are displayed in the table below as Hours:Minutes:Seconds and wi
 
 GPU-STOMP: Results are reproduced from the original `Matrix Profile II <https://ieeexplore.ieee.org/abstract/document/7837898>`__ paper - NVIDIA Tesla K80 (contains 2 GPUs) 
     
+STUMP.2: `stumpy.stump <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.stump>`__ executed with 2 CPUs in Total - 2x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors parallelized with Numba on a single server without Dask.
+
 STUMP.16: `stumpy.stump <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.stump>`__ executed with 16 CPUs in Total - 16x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors parallelized with Numba on a single server without Dask.
 
 STUMPED.128: `stumpy.stumped <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.stumped>`__ executed with 128 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors x 16 servers, parallelized with Numba, and distributed with Dask Distributed.
