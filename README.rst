@@ -215,7 +215,7 @@ We tested the performance using the Numba JIT compiled version of the code on ra
 .. image:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/performance.png
     :alt: STUMPY Performance Plot
 
-The raw results are displayed below as Hours:Minutes:Seconds and with a constant window size of `m = 50`.
+The raw results are displayed in the table below as Hours:Minutes:Seconds and with a constant window size of `m = 50`. You may need to scroll to the right side of the table to view all values.
 
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
 |    i     |  n = 2\ :sup:`i`  | GPU-STOMP    | STUMP.2     | STUMP.16    | STUMPED.128 | STUMPED.256 | GPU-STUMP.1 | GPU-STUMP.2 | GPU-STUMP.DGX1 | GPU-STUMP.DGX2 |
@@ -258,9 +258,9 @@ The raw results are displayed below as Hours:Minutes:Seconds and with a constant
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
 | 24       | 16777216          | NaN          | NaN         | NaN         | 13:03:43.86 | 07:13:47.12 | 20:02:01.23 | 10:08:28.85 | 01:01:30.35    | 00:29:15.26    |
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
-| NaN      | 17729800          | 09:16:12.00  | NaN         | NaN         | NaN         | 07:18:42.54 | NaN         | 10:53:47.37 | 01:07:26.87    | 00:32:55.77    |
+| NaN      | 17729800          | 09:16:12.00  | NaN         | NaN         | NaN         | 07:18:42.54 | 22:22:54.13 | 10:53:47.37 | 01:07:26.87    | 00:32:55.77    |
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
-| 25       | 33554432          | NaN          | NaN         | NaN         | NaN         | 26:27:41.29 | NaN         | NaN         | 03:59:17.11    | 01:55:33.41    |
+| 25       | 33554432          | NaN          | NaN         | NaN         | NaN         | 26:27:41.29 | NaN         | 39:05:30.07 | 03:59:17.11    | 01:55:33.41    |
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
 | 26       | 67108864          | NaN          | NaN         | NaN         | NaN         | 106:40:17.17| NaN         | NaN         | NaN            | NaN            |
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
@@ -271,19 +271,19 @@ The raw results are displayed below as Hours:Minutes:Seconds and with a constant
 
 GPU-STOMP: Results are reproduced from the original `Matrix Profile II <https://ieeexplore.ieee.org/abstract/document/7837898>`__ paper - NVIDIA Tesla K80 (contains 2 GPUs) 
     
-STUMP.16: 16 CPUs in Total - 16x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors parallelized with Numba on a single server without Dask.
+STUMP.16: `stumpy.stump <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.stump>`__ executed with 16 CPUs in Total - 16x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors parallelized with Numba on a single server without Dask.
 
-STUMPED.128: 128 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors x 16 servers, parallelized with Numba, and distributed with Dask Distributed.
+STUMPED.128: `stumpy.stumped <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.stumped>`__ executed with 128 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors x 16 servers, parallelized with Numba, and distributed with Dask Distributed.
 
-STUMPED.256: 256 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors x 32 servers, parallelized with Numba, and distributed with Dask Distributed.
+STUMPED.256: `stumpy.stumped <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.stumped>`__ executed with 256 CPUs in Total - 8x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors x 32 servers, parallelized with Numba, and distributed with Dask Distributed.
 
-GPU-STUMP.1: 1x NVIDIA GeForce GTX 1080 Ti GPU, 512 threads per block, 200W power limit, compiled to CUDA with Numba, and parallelized with Python multiprocessing
+GPU-STUMP.1: `stumpy.gpu_stump <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.gpu_stump>`__ executed with 1x NVIDIA GeForce GTX 1080 Ti GPU, 512 threads per block, 200W power limit, compiled to CUDA with Numba, and parallelized with Python multiprocessing
 
-GPU-STUMP.2: 2x NVIDIA GeForce GTX 1080 Ti GPU, 512 threads per block, 200W power limit, compiled to CUDA with Numba, and parallelized with Python multiprocessing
+GPU-STUMP.2: `stumpy.gpu_stump <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.gpu_stump>`__ executed with 2x NVIDIA GeForce GTX 1080 Ti GPU, 512 threads per block, 200W power limit, compiled to CUDA with Numba, and parallelized with Python multiprocessing
 
-GPU-STUMP.DGX1: 8x NVIDIA Tesla GP100, 512 threads per block, compiled to CUDA with Numba, and parallelized with Python multiprocessing
+GPU-STUMP.DGX1: `stumpy.gpu_stump <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.gpu_stump>`__ executed with 8x NVIDIA Tesla GP100, 512 threads per block, compiled to CUDA with Numba, and parallelized with Python multiprocessing
 
-GPU-STUMP.DGX2: 16x NVIDIA Tesla V100, 512 threads per block, compiled to CUDA with Numba, and parallelized with Python multiprocessing
+GPU-STUMP.DGX2: `stumpy.gpu_stump <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.gpu_stump>`__ executed with 16x NVIDIA Tesla V100, 512 threads per block, compiled to CUDA with Numba, and parallelized with Python multiprocessing
 
 -------------
 Running Tests
