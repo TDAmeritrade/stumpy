@@ -3,8 +3,8 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 import logging
 import math
-import multiprocessing as mp
-from typing import Tuple, List, Optional
+import threading
+from typing import List, Optional
 
 import numpy as np
 from numba import cuda
@@ -169,11 +169,13 @@ def _gpu_stump(
     μ_Q: np.ndarray,
     σ_Q: np.ndarray,
     k: int,
+    device_profile: np.ndarray,
+    device_indices: np.ndarray,
     ignore_trivial: bool = True,
     range_start: int = 1,
     threads_per_block: int = THREADS_PER_BLOCK,
     device_id: int = 0,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> None:
     """
     A Numba CUDA version of STOMP for parallel computation of the
     matrix profile, matrix profile indices, left matrix profile indices,
@@ -222,6 +224,12 @@ def _gpu_stump(
     k : int
         The total number of sliding windows to iterate over
 
+    device_profile : DeviceNDArray
+        The cuda device ndarray for the matrix profile
+
+    device_indiceis : DeviceNDArray
+        The cuda device ndarray for the matrix profile indices
+
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
@@ -239,13 +247,10 @@ def _gpu_stump(
 
     Returns
     -------
-    profile : ndarray
-        Matrix profile
-
-    indices : ndarray
-        The first column consists of the matrix profile indices, the second
-        column consists of the left matrix profile indices, and the third
-        column consists of the right matrix profile indices.
+    None
+        The matrix profile and matrix profile indices are stored in the `device_profile`
+        and the `device_indices`, respectively, and are not returned. It is up to the
+        user to retrieve the arrays directly from the appropriate GPU device.
 
     Notes
     -----
@@ -289,14 +294,6 @@ def _gpu_stump(
         device_μ_Q = cuda.to_device(μ_Q)
         device_σ_Q = cuda.to_device(σ_Q)
 
-        profile = np.empty((k, 3))  # float64
-        indices = np.empty((k, 3))  # int64
-
-        profile[:] = np.inf
-        indices[:, :] = -1
-        device_profile = cuda.to_device(profile)
-        device_indices = cuda.to_device(indices)
-
         _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
             range_start - 1,
             device_T_A,
@@ -338,11 +335,7 @@ def _gpu_stump(
                 True,
             )
 
-        profile = device_profile.copy_to_host()
-        indices = device_indices.copy_to_host()
-        profile = np.sqrt(profile)
-
-    return profile, indices
+    return
 
 
 def gpu_stump(
@@ -467,53 +460,36 @@ def gpu_stump(
     profile: List[np.ndarray] = [None] * len(device_ids)
     indices: List[np.ndarray] = [None] * len(device_ids)
 
-    for _id in device_ids:
-        cuda.select_device(_id)
-        if (
-            cuda.current_context().__class__.__name__ != "FakeCUDAContext"
-        ):  # pragma: no cover
-            cuda.current_context().deallocations.clear()
+    device_profile: List[np.ndarray] = [None] * len(device_ids)
+    device_indices: List[np.ndarray] = [None] * len(device_ids)
+
+    for idx, _id in enumerate(device_ids):
+        with cuda.gpus[_id]:
+            if (
+                cuda.current_context().__class__.__name__ != "FakeCUDAContext"
+            ):  # pragma: no cover
+                cuda.current_context().deallocations.clear()
+
+            profile[idx] = np.empty((k, 3))  # float64
+            indices[idx] = np.empty((k, 3))  # int64
+
+            profile[idx][:] = np.inf
+            indices[idx][:, :] = -1
+            device_profile[idx] = cuda.to_device(profile[idx])
+            device_indices[idx] = cuda.to_device(indices[idx])
 
     step = 1 + l // len(device_ids)
 
-    # Start process pool for multi-GPU request
-    if len(device_ids) > 1:  # pragma: no cover
-        mp.set_start_method("spawn", force=True)
-        p = mp.Pool(processes=len(device_ids))
-        results = [None] * len(device_ids)
+    thread_list = []
 
     for idx, start in enumerate(range(0, l, step)):
         stop = min(l, start + step)
 
         QT, QT_first = _get_QT(start, T_A, T_B, m)
 
-        if len(device_ids) > 1 and idx < len(device_ids) - 1:  # pragma: no cover
-            # Spawn and execute in child process for multi-GPU request
-            results[idx] = p.apply_async(
-                _gpu_stump,
-                (
-                    T_A,
-                    T_B,
-                    m,
-                    stop,
-                    excl_zone,
-                    M_T,
-                    Σ_T,
-                    QT,
-                    QT_first,
-                    μ_Q,
-                    σ_Q,
-                    k,
-                    ignore_trivial,
-                    start + 1,
-                    threads_per_block,
-                    device_ids[idx],
-                ),
-            )
-        else:
-            # Execute last chunk in parent process
-            # Only parent process is executed when a single GPU is requested
-            profile[idx], indices[idx] = _gpu_stump(
+        thread = threading.Thread(
+            target=_gpu_stump,
+            args=(
                 T_A,
                 T_B,
                 m,
@@ -526,21 +502,29 @@ def gpu_stump(
                 μ_Q,
                 σ_Q,
                 k,
+                device_profile[idx],
+                device_indices[idx],
                 ignore_trivial,
                 start + 1,
                 threads_per_block,
                 device_ids[idx],
-            )
+            ),
+        )
 
-    # Clean up process pool for multi-GPU request
-    if len(device_ids) > 1:  # pragma: no cover
-        p.close()
-        p.join()
+        thread_list.append(thread)
 
-        # Collect results from spawned child processes if they exist
-        for idx, result in enumerate(results):
-            if result is not None:
-                profile[idx], indices[idx] = result.get()
+    for thread in thread_list:
+        thread.start()
+
+    for thread in thread_list:
+        thread.join()
+
+    # Retrieve results from each GPU
+    for idx, _id in enumerate(device_ids):
+        with cuda.gpus[_id]:
+            profile[idx] = device_profile[idx].copy_to_host()
+            indices[idx] = device_indices[idx].copy_to_host()
+            profile[idx] = np.sqrt(profile[idx])
 
     for i in range(1, len(device_ids)):
         # Update all matrix profiles and matrix profile indices
