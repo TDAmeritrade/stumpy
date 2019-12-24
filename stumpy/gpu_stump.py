@@ -4,6 +4,7 @@
 import logging
 import math
 import multiprocessing as mp
+import os
 from typing import Tuple, List, Optional
 
 import numpy as np
@@ -162,18 +163,18 @@ def _gpu_stump(
     m: int,
     range_stop: int,
     excl_zone: int,
-    M_T: np.ndarray,
-    Σ_T: np.ndarray,
+    M_T_fname: str,
+    Σ_T_fname: str,
     QT: np.ndarray,
     QT_first: np.ndarray,
-    μ_Q: np.ndarray,
-    σ_Q: np.ndarray,
+    μ_Q_fname: str,
+    σ_Q_fname: str,
     k: int,
     ignore_trivial: bool = True,
     range_start: int = 1,
     threads_per_block: int = THREADS_PER_BLOCK,
     device_id: int = 0,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[str, str]:
     """
     A Numba CUDA version of STOMP for parallel computation of the
     matrix profile, matrix profile indices, left matrix profile indices,
@@ -200,11 +201,11 @@ def _gpu_stump(
         The half width for the exclusion zone relative to the current
         sliding window
 
-    M_T : ndarray
-        Sliding mean of time series, `T`
+    M_T_fname : str
+        The file name for the sliding mean of time series, `T`
 
-    Σ_T : ndarray
-        Sliding standard deviation of time series, `T`
+    Σ_T_fname : str
+        The file name for the sliding standard deviation of time series, `T`
 
     QT : ndarray
         Dot product between some query sequence,`Q`, and time series, `T`
@@ -212,12 +213,13 @@ def _gpu_stump(
     QT_first : ndarray
         QT for the first window relative to the current sliding window
 
-    μ_Q : ndarray
-        Mean of the query sequence, `Q`, relative to the current sliding window
+    μ_Q_fname : str
+        The file name for the mean of the query sequence, `Q`, relative to
+        the current sliding window
 
-    σ_Q : ndarray
-        Standard deviation of the query sequence, `Q`, relative to the current
-        sliding window
+    σ_Q_fname : str
+        The file name for the standard deviation of the query sequence, `Q`,
+        relative to the current sliding window
 
     k : int
         The total number of sliding windows to iterate over
@@ -239,13 +241,14 @@ def _gpu_stump(
 
     Returns
     -------
-    profile : ndarray
-        Matrix profile
+    profile_fname : str
+        The file name for the matrix profile
 
-    indices : ndarray
-        The first column consists of the matrix profile indices, the second
-        column consists of the left matrix profile indices, and the third
-        column consists of the right matrix profile indices.
+    indices_fname : str
+        The file name for the matrix profile indices. The first column of the
+        array consists of the matrix profile indices, the second column consists
+        of the left matrix profile indices, and the third column consists of the
+        right matrix profile indices.
 
     Notes
     -----
@@ -277,6 +280,11 @@ def _gpu_stump(
     """
 
     blocks_per_grid = math.ceil(k / threads_per_block)
+
+    M_T = np.load(M_T_fname, allow_pickle=False)
+    Σ_T = np.load(Σ_T_fname, allow_pickle=False)
+    μ_Q = np.load(μ_Q_fname, allow_pickle=False)
+    σ_Q = np.load(σ_Q_fname, allow_pickle=False)
 
     with cuda.gpus[device_id]:
         device_T_A = cuda.to_device(T_A)
@@ -342,7 +350,10 @@ def _gpu_stump(
         indices = device_indices.copy_to_host()
         profile = np.sqrt(profile)
 
-    return profile, indices
+        profile_fname = core.array_to_temp_file(profile)
+        indices_fname = core.array_to_temp_file(indices)
+
+    return profile_fname, indices_fname
 
 
 def gpu_stump(
@@ -457,6 +468,11 @@ def gpu_stump(
     M_T, Σ_T = core.compute_mean_std(T_A, m)
     μ_Q, σ_Q = core.compute_mean_std(T_B, m)
 
+    M_T_fname = core.array_to_temp_file(M_T)
+    Σ_T_fname = core.array_to_temp_file(Σ_T)
+    μ_Q_fname = core.array_to_temp_file(μ_Q)
+    σ_Q_fname = core.array_to_temp_file(σ_Q)
+
     out = np.empty((k, 4), dtype=object)
 
     if isinstance(device_id, int):
@@ -497,12 +513,12 @@ def gpu_stump(
                     m,
                     stop,
                     excl_zone,
-                    M_T,
-                    Σ_T,
+                    M_T_fname,
+                    Σ_T_fname,
                     QT,
                     QT_first,
-                    μ_Q,
-                    σ_Q,
+                    μ_Q_fname,
+                    σ_Q_fname,
                     k,
                     ignore_trivial,
                     start + 1,
@@ -519,12 +535,12 @@ def gpu_stump(
                 m,
                 stop,
                 excl_zone,
-                M_T,
-                Σ_T,
+                M_T_fname,
+                Σ_T_fname,
                 QT,
                 QT_first,
-                μ_Q,
-                σ_Q,
+                μ_Q_fname,
+                σ_Q_fname,
                 k,
                 ignore_trivial,
                 start + 1,
@@ -541,6 +557,19 @@ def gpu_stump(
         for idx, result in enumerate(results):
             if result is not None:
                 profile[idx], indices[idx] = result.get()
+
+    os.remove(M_T_fname)
+    os.remove(Σ_T_fname)
+    os.remove(μ_Q_fname)
+    os.remove(σ_Q_fname)
+
+    for idx in range(len(device_ids)):
+        profile_fname = profile[idx]
+        indices_fname = indices[idx]
+        profile[idx] = np.load(profile_fname, allow_pickle=False)
+        indices[idx] = np.load(indices_fname, allow_pickle=False)
+        os.remove(profile_fname)
+        os.remove(indices_fname)
 
     for i in range(1, len(device_ids)):
         # Update all matrix profiles and matrix profile indices

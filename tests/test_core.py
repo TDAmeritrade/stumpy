@@ -2,6 +2,7 @@ import numpy as np
 import numpy.testing as npt
 from stumpy import core
 import pytest
+import os
 
 
 def naive_rolling_window_dot_product(Q, T):
@@ -88,4 +89,13 @@ def test_mass(Q, T):
         core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
     )
     right = core.mass(Q, T)
+    npt.assert_almost_equal(left, right)
+
+
+def test_array_to_temp_file():
+    left = np.random.rand()
+    fname = core.array_to_temp_file(left)
+    right = np.load(fname, allow_pickle=False)
+    os.remove(fname)
+
     npt.assert_almost_equal(left, right)

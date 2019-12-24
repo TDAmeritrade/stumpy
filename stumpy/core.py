@@ -6,6 +6,7 @@ from typing import Optional, Tuple, Any
 
 import numpy as np
 import scipy.signal
+import tempfile
 
 try:
     from numba.cuda.cudadrv.driver import _raise_driver_not_found
@@ -483,6 +484,28 @@ def mass(
         M_T, Σ_T = compute_mean_std(T, m)
 
     return calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
+
+
+def array_to_temp_file(a: np.ndarray) -> str:
+    """
+    Write an ndarray to a file
+
+    Parameters
+    ----------
+    a : ndarray
+        An array to be written to a file
+
+    Returns
+    -------
+    fname : str
+        The output file name
+    """
+
+    fname = tempfile.NamedTemporaryFile(delete=False)
+    fname = fname.name + ".npy"
+    np.save(fname, a, allow_pickle=False)
+
+    return fname
 
 
 convolution = scipy.signal.fftconvolve  # Swap for other convolution function
