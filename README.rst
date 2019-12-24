@@ -98,11 +98,13 @@ GPU usage for 1-dimensional time series data with `GPU-STUMP <https://stumpy.rea
 
     import stumpy
     import numpy as np
+    from numba import cuda
 
     your_time_series = np.random.rand(10000)
     window_size = 50  # Approximately, how many data points might be found in a pattern
+    all_gpu_devices = [device.id for device in cuda.list_devices()]  # Get a list of all available GPU devices
 
-    matrix_profile = stumpy.gpu_stump(your_time_series, m=window_size)
+    matrix_profile = stumpy.gpu_stump(your_time_series, m=window_size, device_id=all_gpu_devices)
 
 Multi-dimensional time series data with `MSTUMP <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.mstump>`__:
 
