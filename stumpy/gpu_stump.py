@@ -484,11 +484,11 @@ def gpu_stump(
     indices: List[np.ndarray] = [None] * len(device_ids)
 
     for _id in device_ids:
-        cuda.select_device(_id)
-        if (
-            cuda.current_context().__class__.__name__ != "FakeCUDAContext"
-        ):  # pragma: no cover
-            cuda.current_context().deallocations.clear()
+        with cuda.gpus[_id]:
+            if (
+                cuda.current_context().__class__.__name__ != "FakeCUDAContext"
+            ):  # pragma: no cover
+                cuda.current_context().deallocations.clear()
 
     step = 1 + l // len(device_ids)
 
