@@ -158,15 +158,15 @@ def _compute_and_update_PI_kernel(
 
 
 def _gpu_stump(
-    T_A: np.ndarray,
-    T_B: np.ndarray,
+    T_A_fname: str,
+    T_B_fname: str,
     m: int,
     range_stop: int,
     excl_zone: int,
     M_T_fname: str,
     Σ_T_fname: str,
-    QT: np.ndarray,
-    QT_first: np.ndarray,
+    QT_fname: str,
+    QT_first_fname: str,
     μ_Q_fname: str,
     σ_Q_fname: str,
     k: int,
@@ -182,12 +182,13 @@ def _gpu_stump(
 
     Parameters
     ----------
-    T_A : ndarray
-        The time series or sequence for which to compute the matrix profile
+    T_A_fname : str
+        The file name for the time series or sequence for which to compute
+        the matrix profile
 
-    T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest
+    T_B_fname : str
+        The file name for the time series or sequence that contain your
+        query subsequences of interest
 
     m : int
         Window size
@@ -207,11 +208,13 @@ def _gpu_stump(
     Σ_T_fname : str
         The file name for the sliding standard deviation of time series, `T`
 
-    QT : ndarray
-        Dot product between some query sequence,`Q`, and time series, `T`
+    QT_fname : str
+        The file name for the dot product between some query sequence,`Q`,
+        and time series, `T`
 
-    QT_first : ndarray
-        QT for the first window relative to the current sliding window
+    QT_first_fname : str
+        The file name for the QT for the first window relative to the current
+        sliding window
 
     μ_Q_fname : str
         The file name for the mean of the query sequence, `Q`, relative to
@@ -281,6 +284,10 @@ def _gpu_stump(
 
     blocks_per_grid = math.ceil(k / threads_per_block)
 
+    T_A = np.load(T_A_fname, allow_pickle=False)
+    T_B = np.load(T_B_fname, allow_pickle=False)
+    QT = np.load(QT_fname, allow_pickle=False)
+    QT_first = np.load(QT_first_fname, allow_pickle=False)
     M_T = np.load(M_T_fname, allow_pickle=False)
     Σ_T = np.load(Σ_T_fname, allow_pickle=False)
     μ_Q = np.load(μ_Q_fname, allow_pickle=False)
@@ -459,7 +466,6 @@ def gpu_stump(
     tmp_T = T_A
     T_A = T_B
     T_B = tmp_T
-
     n = T_B.shape[0]
     k = T_A.shape[0] - m + 1
     l = n - m + 1
@@ -468,6 +474,8 @@ def gpu_stump(
     M_T, Σ_T = core.compute_mean_std(T_A, m)
     μ_Q, σ_Q = core.compute_mean_std(T_B, m)
 
+    T_A_fname = core.array_to_temp_file(T_A)
+    T_B_fname = core.array_to_temp_file(T_B)
     M_T_fname = core.array_to_temp_file(M_T)
     Σ_T_fname = core.array_to_temp_file(Σ_T)
     μ_Q_fname = core.array_to_temp_file(μ_Q)
@@ -498,25 +506,32 @@ def gpu_stump(
         p = mp.Pool(processes=len(device_ids))
         results = [None] * len(device_ids)
 
+    QT_fnames = []
+    QT_first_fnames = []
+
     for idx, start in enumerate(range(0, l, step)):
         stop = min(l, start + step)
 
         QT, QT_first = _get_QT(start, T_A, T_B, m)
+        QT_fname = core.array_to_temp_file(QT)
+        QT_first_fname = core.array_to_temp_file(QT_first)
+        QT_fnames.append(QT_fname)
+        QT_first_fnames.append(QT_first_fname)
 
         if len(device_ids) > 1 and idx < len(device_ids) - 1:  # pragma: no cover
             # Spawn and execute in child process for multi-GPU request
             results[idx] = p.apply_async(
                 _gpu_stump,
                 (
-                    T_A,
-                    T_B,
+                    T_A_fname,
+                    T_B_fname,
                     m,
                     stop,
                     excl_zone,
                     M_T_fname,
                     Σ_T_fname,
-                    QT,
-                    QT_first,
+                    QT_fname,
+                    QT_first_fname,
                     μ_Q_fname,
                     σ_Q_fname,
                     k,
@@ -530,15 +545,15 @@ def gpu_stump(
             # Execute last chunk in parent process
             # Only parent process is executed when a single GPU is requested
             profile[idx], indices[idx] = _gpu_stump(
-                T_A,
-                T_B,
+                T_A_fname,
+                T_B_fname,
                 m,
                 stop,
                 excl_zone,
                 M_T_fname,
                 Σ_T_fname,
-                QT,
-                QT_first,
+                QT_fname,
+                QT_first_fname,
                 μ_Q_fname,
                 σ_Q_fname,
                 k,
@@ -558,10 +573,16 @@ def gpu_stump(
             if result is not None:
                 profile[idx], indices[idx] = result.get()
 
+    os.remove(T_A_fname)
+    os.remove(T_B_fname)
     os.remove(M_T_fname)
     os.remove(Σ_T_fname)
     os.remove(μ_Q_fname)
     os.remove(σ_Q_fname)
+    for QT_fname in QT_fnames:
+        os.remove(QT_fname)
+    for QT_first_fname in QT_first_fnames:
+        os.remove(QT_first_fname)
 
     for idx in range(len(device_ids)):
         profile_fname = profile[idx]
