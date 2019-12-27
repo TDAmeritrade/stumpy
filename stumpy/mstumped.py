@@ -154,4 +154,4 @@ def mstumped(dask_client: Any, T: np.ndarray, m: int) -> Tuple[np.ndarray, np.nd
         P[0, col_mask] = P[i, col_mask]
         I[0, col_mask] = I[i, col_mask]
 
-    return P[0], I[0]
+    return P[0].T, I[0].T

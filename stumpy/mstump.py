@@ -493,4 +493,4 @@ def mstump(T: np.ndarray, m: int) -> Tuple[np.ndarray, np.ndarray]:
         start + 1,
     )
 
-    return P, I
+    return P.T, I.T
