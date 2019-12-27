@@ -285,7 +285,7 @@ GPU-STUMP.1: `stumpy.gpu_stump <https://stumpy.readthedocs.io/en/latest/api.html
 
 GPU-STUMP.2: `stumpy.gpu_stump <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.gpu_stump>`__ executed with 2x NVIDIA GeForce GTX 1080 Ti GPU, 512 threads per block, 200W power limit, compiled to CUDA with Numba, and parallelized with Python multiprocessing
 
-GPU-STUMP.DGX1: `stumpy.gpu_stump <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.gpu_stump>`__ executed with 8x NVIDIA Tesla GP100, 512 threads per block, compiled to CUDA with Numba, and parallelized with Python multiprocessing
+GPU-STUMP.DGX1: `stumpy.gpu_stump <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.gpu_stump>`__ executed with 8x NVIDIA Tesla V100, 512 threads per block, compiled to CUDA with Numba, and parallelized with Python multiprocessing
 
 GPU-STUMP.DGX2: `stumpy.gpu_stump <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.gpu_stump>`__ executed with 16x NVIDIA Tesla V100, 512 threads per block, compiled to CUDA with Numba, and parallelized with Python multiprocessing
 
