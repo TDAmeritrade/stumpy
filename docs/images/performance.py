@@ -4,6 +4,7 @@ import datetime
 import math
 import re
 
+
 def seconds_to_time(x):
     x = float(x)
     x = round(x, 2)
@@ -11,26 +12,26 @@ def seconds_to_time(x):
     milliseconds = math.ceil(milliseconds * 1000)
     seconds = int(seconds)
 
-    dt = datetime.timedelta(seconds=int(seconds),
-                            milliseconds=int(milliseconds)
-                           )
+    dt = datetime.timedelta(seconds=int(seconds), milliseconds=int(milliseconds))
 
     out = str(dt)[:-4]
-    if re.match(r'^\d:', out):
-        out = '0' + out
+    if re.match(r"^\d:", out):
+        out = "0" + out
 
     return out
 
+
 def perf_to_time(text):
     for line in text.split("\n"):
-        if re.match(r'^\s*$', line):
+        if re.match(r"^\s*$", line):
             continue
         line = line.strip()
         words = line.split()
         words[-1] = seconds_to_time(words[-1])
-        out = ' '.join(words)
+        out = " ".join(words)
         print(out)
-    
+
+
 if __name__ == "__main__":
     perf = """
            64 0.02545022964477539
