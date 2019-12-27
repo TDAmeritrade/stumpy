@@ -429,9 +429,15 @@ def stump(
     T_B = np.asarray(T_B)
 
     if T_A.ndim != 1:  # pragma: no cover
-        raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional")
+        raise ValueError(
+            f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. "
+            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
+        )
     if T_B.ndim != 1:  # pragma: no cover
-        raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional")
+        raise ValueError(
+            f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
+            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
+        )
 
     core.check_dtype(T_B)
     core.check_nan(T_B)
