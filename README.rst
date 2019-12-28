@@ -217,7 +217,7 @@ We tested the performance using the Numba JIT compiled version of the code on ra
 .. image:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/performance.png
     :alt: STUMPY Performance Plot
 
-The raw results are displayed in the table below as Hours:Minutes:Seconds.Milliseconds and with a constant window size of `m = 50`. Note that these reported runtimes include the time that it takes to move the data from the host to all of the GPU device(s). You may need to scroll to the right side of the table in order to see all of the runtimes..
+The raw results are displayed in the table below as Hours:Minutes:Seconds.Milliseconds and with a constant window size of `m = 50`. Note that these reported runtimes include the time that it takes to move the data from the host to all of the GPU device(s). You may need to scroll to the right side of the table in order to see all of the runtimes.
 
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
 |    i     |  n = 2\ :sup:`i`  | GPU-STOMP    | STUMP.2     | STUMP.16    | STUMPED.128 | STUMPED.256 | GPU-STUMP.1 | GPU-STUMP.2 | GPU-STUMP.DGX1 | GPU-STUMP.DGX2 |
