@@ -1,3 +1,22 @@
+# 2019-12-30    [ 1.3.0 ]:
+--------------------------
+* bugfixes
+  - Fixed MSTUMP/MSTUMPED input dimensions check
+  - Fixed inconsistent MSTUMP/MSTUMPED output
+* features
+  - Added parallel GPU-STUMP (i.e., multi-GPU support) using Python multiprocessing and file I/O
+  - Added Python type hints/type annotations
+* tasks
+  - Updated performance table and plots with STUMPY.2, GPU-STUMP.1, GPU-STUMP.2, GPU-STUMP.DGX1, and GPU-STUMP.DGX2 results
+  - Fixed test function names
+  - Added Python script for easier performance timing conversion
+* documentation
+  - Added window size (m = 50) for performance calculations
+  - Fixed various typos
+  - Added missing and improved docstrings
+  - Replaced Bokeh with Matplotlib
+  - Updated GPU-STUMP example with multi-GPU support
+
 # 2019-12-03    [ 1.2.4 ]:
 --------------------------
 * features
