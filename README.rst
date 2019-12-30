@@ -212,7 +212,7 @@ In order to fully understand and appreciate the underlying algorithms and applic
 Performance
 -----------
 
-We tested the performance using the Numba JIT compiled version of the code on randomly generated time series data with various lengths (i.e., ``np.random.rand(n)``). 
+We tested the performance of computing the exact matrix profile using the Numba JIT compiled version of the code on randomly generated time series data with various lengths (i.e., ``np.random.rand(n)``). 
 
 .. image:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/performance.png
     :alt: STUMPY Performance Plot
@@ -271,7 +271,7 @@ The raw results are displayed in the table below as Hours:Minutes:Seconds.Millis
 | 27       | 134217728         | NaN          | NaN         | NaN         | NaN         | NaN         | NaN         | NaN         | NaN            | 29:13:48.12    |
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
 
-GPU-STOMP: Results are reproduced from the original `Matrix Profile II <https://ieeexplore.ieee.org/abstract/document/7837898>`__ paper - NVIDIA Tesla K80 (contains 2 GPUs) 
+GPU-STOMP: These results are reproduced from the original `Matrix Profile II <https://ieeexplore.ieee.org/abstract/document/7837898>`__ paper - NVIDIA Tesla K80 (contains 2 GPUs) and serves as the performance benchmark to compare against.
     
 STUMP.2: `stumpy.stump <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.stump>`__ executed with 2 CPUs in Total - 2x Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz processors parallelized with Numba on a single server without Dask.
 
