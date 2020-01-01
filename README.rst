@@ -268,7 +268,7 @@ The raw results are displayed in the table below as Hours:Minutes:Seconds.Millis
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
 | NaN      | 100000000         | 291:07:12.00 | NaN         | NaN         | NaN         | 234:51:35.39| NaN         | NaN         | 35:03:44.61    | 16:22:40.81    |
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
-| 27       | 134217728         | NaN          | NaN         | NaN         | NaN         | NaN         | NaN         | NaN         | NaN            | 29:13:48.12    |
+| 27       | 134217728         | NaN          | NaN         | NaN         | NaN         | NaN         | NaN         | NaN         | 64:41:55.09    | 29:13:48.12    |
 +----------+-------------------+--------------+-------------+-------------+-------------+-------------+-------------+-------------+----------------+----------------+
 
 GPU-STOMP: These results are reproduced from the original `Matrix Profile II <https://ieeexplore.ieee.org/abstract/document/7837898>`__ paper - NVIDIA Tesla K80 (contains 2 GPUs) and serves as the performance benchmark to compare against.
