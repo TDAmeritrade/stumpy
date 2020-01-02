@@ -446,12 +446,12 @@ def mstump(T: np.ndarray, m: int) -> Tuple[np.ndarray, np.ndarray]:
 
     T = np.asarray(core.transpose_dataframe(T))
 
+    core.check_dtype(T)
+    core.check_nan(T)
     if T.ndim <= 1:  # pragma: no cover
         err = f"T is {T.ndim}-dimensional and must be greater than 1-dimensional"
         raise ValueError(f"{err}")
 
-    core.check_dtype(T)
-    core.check_nan(T)
     core.check_window_size(m)
 
     d = T.shape[0]

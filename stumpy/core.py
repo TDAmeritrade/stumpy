@@ -477,6 +477,19 @@ def mass(
     once for all subsequences of T and passed in so the redundancy is removed
     """
 
+    Q = np.asarray(Q)
+    check_dtype(Q)
+    check_nan(Q)
+
+    if Q.ndim != 1:  # pragma: no cover
+        raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
+    T = np.asarray(T)
+    check_dtype(T)
+    check_nan(T)
+
+    if T.ndim != 1:  # pragma: no cover
+        raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
+
     QT = sliding_dot_product(Q, T)
     m = Q.shape[0]
     μ_Q, σ_Q = compute_mean_std(Q, m)

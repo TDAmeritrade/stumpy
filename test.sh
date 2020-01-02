@@ -14,6 +14,14 @@ check_errs()
   fi
 }
 
+echo "Checking Black Code Formatting"
+black --check ./
+check_errs $?
+
+echo "Checking Flake8 Style Guide Enforcement"
+flake8 ./
+check_errs $?
+
 echo "Testing Numba JIT Compiled Functions"
 py.test -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_stump.py
 py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump.py tests/test_mstump.py 
