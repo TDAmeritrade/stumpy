@@ -331,7 +331,7 @@ If you have used this codebase in a scientific publication and wish to cite it, 
 
 .. code:: bibtex
 
-    @article{law2017stumpy,
+    @article{law2019stumpy,
       title={{STUMPY: A Powerful and Scalable Python Library for Time Series Data Mining}},
       author={Law, Sean M.},
       journal={{The Journal of Open Source Software}},
