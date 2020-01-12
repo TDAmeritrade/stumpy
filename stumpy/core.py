@@ -365,6 +365,11 @@ def calculate_distance_profile(
     denom = m * σ_Q * Σ_T
     denom[denom == 0] = 1e-10  # Avoid divide by zero
     D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
+    threshold = 1e-7
+    if σ_Q < threshold:  # pragma: no cover
+        D_squared[:] = m
+    D_squared[Σ_T < threshold] = m
+    D_squared[(Σ_T < threshold) & (σ_Q < threshold)] = 0
     return np.sqrt(D_squared)
 
 

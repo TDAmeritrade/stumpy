@@ -11,11 +11,12 @@ from stumpy import (
     _get_multi_QT,
 )
 import pytest
+import utils
 
 
 def naive_mass(Q, T, m, trivial_idx, excl_zone):
     D = np.linalg.norm(
-        core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
+        utils.z_norm(core.rolling_window(T, m), 1) - utils.z_norm(Q), axis=1
     )
     start = max(0, trivial_idx - excl_zone)
     stop = min(T.shape[0] - Q.shape[0] + 1, trivial_idx + excl_zone)
@@ -224,3 +225,14 @@ def test_mstump_wrapper(T, m):
 
     npt.assert_almost_equal(left_P.T, right_P)
     npt.assert_almost_equal(left_I.T, right_I)
+
+
+def test_constant_subsequence_self_join():
+    T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
+    T = np.array([T_A, T_A])
+    m = 3
+
+    left_P, left_I = naive_mstump(T, m)
+    right_P, right_I = mstump(T, m)
+
+    npt.assert_almost_equal(left_P.T, right_P)  # ignore indices

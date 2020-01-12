@@ -6,60 +6,12 @@ from stumpy import core, _get_QT
 from numba import cuda
 import math
 import pytest
+import utils
 
 THREADS_PER_BLOCK = 1
 
 if not cuda.is_available():
     pytest.skip("Skipping Tests No GPUs Available", allow_module_level=True)
-
-
-def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
-    D = np.linalg.norm(
-        core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
-    )
-
-    if ignore_trivial:
-        start = max(0, trivial_idx - excl_zone)
-        stop = min(T.shape[0] - Q.shape[0] + 1, trivial_idx + excl_zone)
-        D[start:stop] = np.inf
-    I = np.argmin(D)
-    P = D[I]
-
-    if P == np.inf:
-        I = -1
-
-    # Get left and right matrix profiles for self-joins
-    if ignore_trivial and trivial_idx > 0:
-        PL = np.inf
-        IL = -1
-        for i in range(trivial_idx):
-            if D[i] < PL:
-                IL = i
-                PL = D[i]
-        if start <= IL < stop:
-            IL = -1
-    else:
-        IL = -1
-
-    if ignore_trivial and trivial_idx + 1 < D.shape[0]:
-        PR = np.inf
-        IR = -1
-        for i in range(trivial_idx + 1, D.shape[0]):
-            if D[i] < PR:
-                IR = i
-                PR = D[i]
-        if start <= IR < stop:
-            IR = -1
-    else:
-        IR = -1
-
-    return P, I, IL, IR
-
-
-def replace_inf(x, value=0):
-    x[x == np.inf] = value
-    x[x == -np.inf] = value
-    return
 
 
 test_data = [
@@ -80,20 +32,20 @@ def test_gpu_stump_self_join(T_A, T_B):
     zone = int(np.ceil(m / 4))
     left = np.array(
         [
-            naive_mass(Q, T_B, m, i, zone, True)
+            utils.naive_mass(Q, T_B, m, i, zone, True)
             for i, Q in enumerate(core.rolling_window(T_B, m))
         ],
         dtype=object,
     )
     right = gpu_stump(T_B, m, ignore_trivial=True, threads_per_block=THREADS_PER_BLOCK)
-    replace_inf(left)
-    replace_inf(right)
+    utils.replace_inf(left)
+    utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
 
     right = gpu_stump(
         pd.Series(T_B), m, ignore_trivial=True, threads_per_block=THREADS_PER_BLOCK
     )
-    replace_inf(right)
+    utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
 
 
@@ -104,7 +56,7 @@ def test_gpu_stump_self_join_larger_window(T_A, T_B):
             zone = int(np.ceil(m / 4))
             left = np.array(
                 [
-                    naive_mass(Q, T_B, m, i, zone, True)
+                    utils.naive_mass(Q, T_B, m, i, zone, True)
                     for i, Q in enumerate(core.rolling_window(T_B, m))
                 ],
                 dtype=object,
@@ -112,8 +64,8 @@ def test_gpu_stump_self_join_larger_window(T_A, T_B):
             right = gpu_stump(
                 T_B, m, ignore_trivial=True, threads_per_block=THREADS_PER_BLOCK
             )
-            replace_inf(left)
-            replace_inf(right)
+            utils.replace_inf(left)
+            utils.replace_inf(right)
 
             npt.assert_almost_equal(left, right)
 
@@ -123,7 +75,7 @@ def test_gpu_stump_self_join_larger_window(T_A, T_B):
                 ignore_trivial=True,
                 threads_per_block=THREADS_PER_BLOCK,
             )
-            replace_inf(right)
+            utils.replace_inf(right)
             npt.assert_almost_equal(left, right)
 
 
@@ -131,13 +83,13 @@ def test_gpu_stump_self_join_larger_window(T_A, T_B):
 def test_gpu_stump_A_B_join(T_A, T_B):
     m = 3
     left = np.array(
-        [naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
+        [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
     )
     right = gpu_stump(
         T_A, m, T_B, ignore_trivial=False, threads_per_block=THREADS_PER_BLOCK
     )
-    replace_inf(left)
-    replace_inf(right)
+    utils.replace_inf(left)
+    utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
 
     right = gpu_stump(
@@ -147,7 +99,7 @@ def test_gpu_stump_A_B_join(T_A, T_B):
         ignore_trivial=False,
         threads_per_block=THREADS_PER_BLOCK,
     )
-    replace_inf(right)
+    utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
 
 
@@ -159,7 +111,7 @@ def test_parallel_gpu_stump_self_join(T_A, T_B):
         zone = int(np.ceil(m / 4))
         left = np.array(
             [
-                naive_mass(Q, T_B, m, i, zone, True)
+                utils.naive_mass(Q, T_B, m, i, zone, True)
                 for i, Q in enumerate(core.rolling_window(T_B, m))
             ],
             dtype=object,
@@ -171,8 +123,8 @@ def test_parallel_gpu_stump_self_join(T_A, T_B):
             threads_per_block=THREADS_PER_BLOCK,
             device_id=device_ids,
         )
-        replace_inf(left)
-        replace_inf(right)
+        utils.replace_inf(left)
+        utils.replace_inf(right)
         npt.assert_almost_equal(left, right)
 
         right = gpu_stump(
@@ -182,7 +134,7 @@ def test_parallel_gpu_stump_self_join(T_A, T_B):
             threads_per_block=THREADS_PER_BLOCK,
             device_id=device_ids,
         )
-        replace_inf(right)
+        utils.replace_inf(right)
         npt.assert_almost_equal(left, right)
 
 
@@ -192,7 +144,8 @@ def test_parallel_gpu_stump_A_B_join(T_A, T_B):
     if len(T_B) > 10:
         m = 3
         left = np.array(
-            [naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
+            [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)],
+            dtype=object,
         )
         right = gpu_stump(
             T_A,
@@ -202,8 +155,8 @@ def test_parallel_gpu_stump_A_B_join(T_A, T_B):
             threads_per_block=THREADS_PER_BLOCK,
             device_id=device_ids,
         )
-        replace_inf(left)
-        replace_inf(right)
+        utils.replace_inf(left)
+        utils.replace_inf(right)
         npt.assert_almost_equal(left, right)
 
         right = gpu_stump(
@@ -214,5 +167,56 @@ def test_parallel_gpu_stump_A_B_join(T_A, T_B):
             threads_per_block=THREADS_PER_BLOCK,
             device_id=device_ids,
         )
-        replace_inf(right)
+        utils.replace_inf(right)
         npt.assert_almost_equal(left, right)
+
+
+def test_constant_subsequence_self_join():
+    T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
+    m = 3
+    zone = int(np.ceil(m / 4))
+    left = np.array(
+        [
+            utils.naive_mass(Q, T_A, m, i, zone, True)
+            for i, Q in enumerate(core.rolling_window(T_A, m))
+        ],
+        dtype=object,
+    )
+    right = gpu_stump(T_A, m, ignore_trivial=True)
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+
+    right = gpu_stump(pd.Series(T_A), m, ignore_trivial=True)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+
+
+def test_constant_subsequence_A_B_join():
+    T_A = np.array([0, 0, 0, 0, 0, 1], dtype=np.float64)
+    T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
+    m = 3
+    left = np.array(
+        [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
+    )
+    right = gpu_stump(T_A, m, T_B, ignore_trivial=False)
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+
+    right = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+
+    # Swap inputs
+    left = np.array(
+        [utils.naive_mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)], dtype=object
+    )
+    right = gpu_stump(T_B, m, T_A, ignore_trivial=False)
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+
+    right = gpu_stump(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices

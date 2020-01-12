@@ -119,6 +119,7 @@ def _compute_and_update_PI_kernel(
 
     start = cuda.grid(1)
     stride = cuda.gridsize(1)
+    threshold = 1e-7
 
     if i % 2 == 0:
         QT_out = QT_even
@@ -141,6 +142,10 @@ def _compute_and_update_PI_kernel(
 
             QT_out[0] = QT_first[i]
         D = abs(2 * m * (1.0 - (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom))
+        if σ_Q[i] < threshold or Σ_T[j] < threshold:  # pragma: no cover
+            D = m
+        if Σ_T[j] < threshold and σ_Q[i] < threshold:  # pragma: no cover
+            D = 0
 
         if ignore_trivial:
             if i < zone_stop and i >= zone_start:

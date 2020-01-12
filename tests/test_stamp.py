@@ -2,11 +2,12 @@ import numpy as np
 import numpy.testing as npt
 from stumpy import stamp, core
 import pytest
+import utils
 
 
 def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0):
     D = np.linalg.norm(
-        core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
+        utils.z_norm(core.rolling_window(T, m), 1) - utils.z_norm(Q), axis=1
     )
     if trivial_idx is not None:
         start = max(0, trivial_idx - excl_zone)
@@ -19,12 +20,6 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0):
         I = -1
 
     return P, I
-
-
-def replace_inf(x, value=0):
-    x[x == np.inf] = value
-    x[x == -np.inf] = value
-    return
 
 
 test_data = [
@@ -51,8 +46,8 @@ def test_stamp_self_join(T_A, T_B):
         dtype=object,
     )
     right = stamp.stamp(T_B, T_B, m, ignore_trivial=True)
-    replace_inf(left)
-    replace_inf(right)
+    utils.replace_inf(left)
+    utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
 
 
@@ -63,6 +58,6 @@ def test_stamp_A_B_join(T_A, T_B):
         [naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
     )
     right = stamp.stamp(T_A, T_B, m)
-    replace_inf(left)
-    replace_inf(right)
+    utils.replace_inf(left)
+    utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
