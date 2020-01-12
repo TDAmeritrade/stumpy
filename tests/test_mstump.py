@@ -229,7 +229,7 @@ def test_mstump_wrapper(T, m):
 
 def test_constant_subsequence_self_join():
     T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
-    T = np.array([T_A, T_A])
+    T = np.array([T_A, T_A, np.random.rand(T_A.shape[0])])
     m = 3
 
     left_P, left_I = naive_mstump(T, m)
