@@ -90,7 +90,33 @@ def test_constant_subsequence_self_join():
     npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
 
 
-def test_constant_subsequence_A_B_join():
+def test_one_constant_subsequence_A_B_join():
+    T_A = np.random.rand(20)
+    T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
+    m = 3
+    left = np.array(
+        [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
+    )
+    right = stump(T_A, m, T_B, ignore_trivial=False)
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+
+    right = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+
+    # Swap inputs
+    left = np.array(
+        [utils.naive_mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)], dtype=object
+    )
+    right = stump(T_B, m, T_A, ignore_trivial=False)
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+
+
+def test_two_constant_subsequences_A_B_join():
     T_A = np.array([0, 0, 0, 0, 0, 1], dtype=np.float64)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
