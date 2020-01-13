@@ -8,9 +8,9 @@ import warnings
 import utils
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def dask_client():
-    cluster = LocalCluster(n_workers=None, threads_per_worker=2)
+    cluster = LocalCluster(n_workers=2, threads_per_worker=2)
     client = Client(cluster)
     yield client
     # teardown
