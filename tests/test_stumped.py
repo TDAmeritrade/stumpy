@@ -15,11 +15,11 @@ def dask_client():
     client = Client(cluster)
     yield client
     # teardown
-    try:
-        client.close()
-    except CancelledError:
-        pass
-    cluster.close()
+    #try:
+    #    client.close()
+    #except CancelledError:
+    #    pass
+    #cluster.close()
 
 
 test_data = [
