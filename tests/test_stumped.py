@@ -8,7 +8,6 @@ import warnings
 import utils
 import atexit
 
-
 @pytest.fixture(scope="module")
 def dask_client():
     cluster = LocalCluster(n_workers=None, threads_per_worker=2)
@@ -161,8 +160,8 @@ def test_stumped_A_B_join_df(T_A, T_B, dask_client):
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 def test_constant_subsequence_self_join(dask_client):
-    m = 3
     T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
+    m = 3
     zone = int(np.ceil(m / 4))
     left = np.array(
         [
@@ -184,8 +183,8 @@ def test_constant_subsequence_self_join(dask_client):
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 def test_constant_subsequence_self_join_df(dask_client):
-    m = 3
     T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
+    m = 3
     zone = int(np.ceil(m / 4))
     left = np.array(
         [
@@ -226,9 +225,9 @@ def test_one_constant_subsequence_A_B_join(dask_client):
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 def test_one_constant_subsequence_A_B_join_df(dask_client):
-    m = 3
     T_A = np.random.rand(20)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
+    m = 3
     left = np.array(
         [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
     )
@@ -247,9 +246,9 @@ def test_one_constant_subsequence_A_B_join_df(dask_client):
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 def test_two_constant_subsequences_A_B_join(dask_client):
-    m = 3
     T_A = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1], dtype=np.float64)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
+    m = 3
     left = np.array(
         [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
     )
@@ -266,9 +265,9 @@ def test_two_constant_subsequences_A_B_join(dask_client):
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 def test_constant_subsequence_A_B_join_df(dask_client):
-    m = 3
     T_A = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1], dtype=np.float64)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
+    m = 3
     left = np.array(
         [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
     )
@@ -287,9 +286,9 @@ def test_constant_subsequence_A_B_join_df(dask_client):
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 def test_two_constant_subsequences_A_B_join_swap(dask_client):
-    m = 3
     T_A = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1], dtype=np.float64)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
+    m = 3
     left = np.array(
         [utils.naive_mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)], dtype=object
     )
@@ -306,9 +305,9 @@ def test_two_constant_subsequences_A_B_join_swap(dask_client):
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 def test_constant_subsequence_A_B_join_df_swap(dask_client):
-    m = 3
     T_A = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1], dtype=np.float64)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
+    m = 3
     left = np.array(
         [utils.naive_mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)], dtype=object
     )
