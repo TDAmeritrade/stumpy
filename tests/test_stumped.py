@@ -285,10 +285,8 @@ def test_constant_subsequence_A_B_join_df(dask_client):
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 def test_two_constant_subsequences_A_B_join_swap(dask_client):
-    T_A = np.concatenate(
-        (np.zeros(10, dtype=np.float64), np.ones(10, dtype=np.float64))
-    )
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
+    T_A = np.flip(T_B)
     m = 3
     left = np.array(
         [utils.naive_mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)], dtype=object
