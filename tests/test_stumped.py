@@ -6,7 +6,7 @@ from dask.distributed import Client, LocalCluster
 import pytest
 import warnings
 import utils
-import atexit
+import time
 
 
 @pytest.fixture(scope="module")
@@ -15,8 +15,8 @@ def dask_client():
     client = Client(cluster)
     yield client
     # teardown
-    atexit.register(client.close)
-    # client.close()
+    time.sleep(2)
+    client.close()
     cluster.close()
 
 
