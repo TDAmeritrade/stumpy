@@ -1,7 +1,6 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from concurrent.futures._base import CancelledError
 from stumpy import stumped, core
 from dask.distributed import Client, LocalCluster
 import pytest
@@ -15,11 +14,11 @@ def dask_client():
     client = Client(cluster)
     yield client
     # teardown
-    #try:
-    #    client.close()
-    #except CancelledError:
-    #    pass
-    #cluster.close()
+    # try:
+    #     client.close()
+    # except CancelledError:
+    #     pass
+    # cluster.close()
 
 
 test_data = [
