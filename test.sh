@@ -24,9 +24,11 @@ check_errs $?
 
 echo "Testing Numba JIT Compiled Functions"
 py.test -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_stump.py
-py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump.py tests/test_mstump.py tests/test_scrimp.py
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump.py tests/test_mstump.py
 check_errs $?
 py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped.py tests/test_mstumped.py
+check_errs $?
+py.test -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_scrimp.py
 check_errs $?
 
 echo "Disabling Numba JIT  and CUDA Compiled Functions"
