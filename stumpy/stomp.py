@@ -3,7 +3,6 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import logging
-from typing import Optional
 
 import numpy as np
 
@@ -12,12 +11,7 @@ from . import core, stamp
 logger = logging.getLogger(__name__)
 
 
-def stomp(
-    T_A: np.ndarray,
-    m: np.ndarray,
-    T_B: Optional[np.ndarray] = None,
-    ignore_trivial: bool = True,
-) -> np.ndarray:
+def stomp(T_A, m, T_B=None, ignore_trivial=True):
     """
     Compute "Scalable Time series Ordered-search Matrix Profile" (STOMP)
 

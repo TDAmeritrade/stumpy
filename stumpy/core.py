@@ -2,8 +2,6 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.  # noqa: E501
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-from typing import Optional, Tuple, Any
-
 import numpy as np
 import scipy.signal
 import tempfile
@@ -14,7 +12,7 @@ except ImportError:
     pass
 
 
-def driver_not_found(*args: Any, **kwargs: Any) -> None:  # pragma: no cover
+def driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Helper function to raise CudaSupportError driver not found error
     """
@@ -22,7 +20,7 @@ def driver_not_found(*args: Any, **kwargs: Any) -> None:  # pragma: no cover
     _raise_driver_not_found()
 
 
-def get_pkg_name() -> str:  # pragma: no cover
+def get_pkg_name():  # pragma: no cover
     """
     Return package name
     """
@@ -30,7 +28,7 @@ def get_pkg_name() -> str:  # pragma: no cover
     return __name__.split(".")[0]
 
 
-def rolling_window(a: np.ndarray, window: int) -> np.ndarray:
+def rolling_window(a, window):
     """
     Use strides to generate rolling/sliding windows for a numpy array
 
@@ -54,7 +52,7 @@ def rolling_window(a: np.ndarray, window: int) -> np.ndarray:
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
-def z_norm(a: np.ndarray, axis: int = 0) -> np.ndarray:
+def z_norm(a, axis=0):
     """
     Calculate the z-normalized input array `a` by subtracting the mean and
     dividing by the standard deviation along a given axis.
@@ -76,7 +74,7 @@ def z_norm(a: np.ndarray, axis: int = 0) -> np.ndarray:
     return (a - np.mean(a, axis, keepdims=True)) / np.std(a, axis, keepdims=True)
 
 
-def check_nan(a: np.ndarray) -> None:  # pragma: no cover
+def check_nan(a):  # pragma: no cover
     """
     Check if the array contains NaNs
 
@@ -93,7 +91,7 @@ def check_nan(a: np.ndarray) -> None:  # pragma: no cover
     return
 
 
-def check_dtype(a: np.array, dtype: object = np.floating) -> bool:  # pragma: no cover
+def check_dtype(a, dtype=np.floating):  # pragma: no cover
     """
     Check if the array type of `a` is of type specified by `dtype` parameter.
 
@@ -110,7 +108,7 @@ def check_dtype(a: np.array, dtype: object = np.floating) -> bool:  # pragma: no
     return True
 
 
-def transpose_dataframe(a: np.ndarray) -> np.ndarray:  # pragma: no cover
+def transpose_dataframe(a):  # pragma: no cover
     """
     Check if the input is a column-wise Pandas `DataFrame`. If `True`, return a
     transpose dataframe since stumpy assumes that each row represents data from a
@@ -136,7 +134,7 @@ def transpose_dataframe(a: np.ndarray) -> np.ndarray:  # pragma: no cover
     return a
 
 
-def are_arrays_equal(a: np.ndarray, b: np.ndarray) -> bool:  # pragma: no cover
+def are_arrays_equal(a, b):  # pragma: no cover
     """
     Check if two arrays are equal; first by comparing memory addresses,
     and secondly by their values.
@@ -161,9 +159,7 @@ def are_arrays_equal(a: np.ndarray, b: np.ndarray) -> bool:  # pragma: no cover
     return np.array_equal(a, b)
 
 
-def are_distances_too_small(
-    a: np.ndarray, threshold: float = 10e-6
-) -> bool:  # pragma: no cover
+def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
     """
     Check the distance values from a matrix profile.
 
@@ -191,7 +187,7 @@ def are_distances_too_small(
     return False
 
 
-def check_window_size(m: int) -> None:
+def check_window_size(m):
     """
 
     Parameters
@@ -218,7 +214,7 @@ def check_window_size(m: int) -> None:
         )
 
 
-def sliding_dot_product(Q: np.ndarray, T: np.ndarray) -> np.ndarray:
+def sliding_dot_product(Q, T):
     """
     Use FFT convolution to calculate the sliding window dot product.
 
@@ -258,7 +254,7 @@ def sliding_dot_product(Q: np.ndarray, T: np.ndarray) -> np.ndarray:
     return QT.real[m - 1 : n]
 
 
-def compute_mean_std(T: np.ndarray, m: int) -> Tuple[np.ndarray, np.ndarray]:
+def compute_mean_std(T, m):
     """
     Compute the sliding mean and standard deviation for the array `T` with
     a window size of `m`
@@ -318,14 +314,7 @@ def compute_mean_std(T: np.ndarray, m: int) -> Tuple[np.ndarray, np.ndarray]:
     return M_T, Σ_T
 
 
-def calculate_distance_profile(
-    m: int,
-    QT: np.ndarray,
-    μ_Q: np.ndarray,
-    σ_Q: np.ndarray,
-    M_T: np.ndarray,
-    Σ_T: np.ndarray,
-) -> np.ndarray:
+def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     Compute the distance profile
 
@@ -373,7 +362,7 @@ def calculate_distance_profile(
     return np.sqrt(D_squared)
 
 
-def mueen_calculate_distance_profile(Q: np.ndarray, T: np.ndarray) -> np.ndarray:
+def mueen_calculate_distance_profile(Q, T):
     """
     Compute the mueen distance profile
 
@@ -441,12 +430,7 @@ def mueen_calculate_distance_profile(Q: np.ndarray, T: np.ndarray) -> np.ndarray
     return np.sqrt(D)
 
 
-def mass(
-    Q: np.ndarray,
-    T: np.ndarray,
-    M_T: Optional[np.ndarray] = None,
-    Σ_T: Optional[np.ndarray] = None,
-) -> np.ndarray:
+def mass(Q, T, M_T=None, Σ_T=None):
     """
     Compute the distance profile using the MASS algorithm
 
@@ -504,7 +488,7 @@ def mass(
     return calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
 
 
-def array_to_temp_file(a: np.ndarray) -> str:
+def array_to_temp_file(a):
     """
     Write an ndarray to a file
 

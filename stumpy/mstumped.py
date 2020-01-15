@@ -3,7 +3,6 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import logging
-from typing import Any, Tuple
 
 import numpy as np
 
@@ -13,7 +12,7 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
-def mstumped(dask_client: Any, T: np.ndarray, m: int) -> Tuple[np.ndarray, np.ndarray]:
+def mstumped(dask_client, T, m):
     """
     Compute the multi-dimensional matrix profile with parallelized and
     distributed mSTOMP

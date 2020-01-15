@@ -5,7 +5,6 @@ import logging
 import math
 import multiprocessing as mp
 import os
-from typing import Tuple, List, Optional
 
 import numpy as np
 from numba import cuda
@@ -22,24 +21,24 @@ THREADS_PER_BLOCK = 512
     "f8[:], f8[:], i8, b1, i8, f8[:, :], f8[:, :], b1)"
 )
 def _compute_and_update_PI_kernel(
-    i: int,
-    T_A: np.ndarray,
-    T_B: np.ndarray,
-    m: int,
-    QT_even: np.ndarray,
-    QT_odd: np.ndarray,
-    QT_first: np.ndarray,
-    M_T: np.ndarray,
-    Σ_T: np.ndarray,
-    μ_Q: np.ndarray,
-    σ_Q: np.ndarray,
-    k: int,
-    ignore_trivial: bool,
-    excl_zone: int,
-    profile: np.ndarray,
-    indices: np.ndarray,
-    compute_QT: bool,
-) -> None:
+    i,
+    T_A,
+    T_B,
+    m,
+    QT_even,
+    QT_odd,
+    QT_first,
+    M_T,
+    Σ_T,
+    μ_Q,
+    σ_Q,
+    k,
+    ignore_trivial,
+    excl_zone,
+    profile,
+    indices,
+    compute_QT,
+):
     """
     A Numba CUDA kernel to update the matrix profile and matrix profile indices
 
@@ -163,23 +162,23 @@ def _compute_and_update_PI_kernel(
 
 
 def _gpu_stump(
-    T_A_fname: str,
-    T_B_fname: str,
-    m: int,
-    range_stop: int,
-    excl_zone: int,
-    M_T_fname: str,
-    Σ_T_fname: str,
-    QT_fname: str,
-    QT_first_fname: str,
-    μ_Q_fname: str,
-    σ_Q_fname: str,
-    k: int,
-    ignore_trivial: bool = True,
-    range_start: int = 1,
-    threads_per_block: int = THREADS_PER_BLOCK,
-    device_id: int = 0,
-) -> Tuple[str, str]:
+    T_A_fname,
+    T_B_fname,
+    m,
+    range_stop,
+    excl_zone,
+    M_T_fname,
+    Σ_T_fname,
+    QT_fname,
+    QT_first_fname,
+    μ_Q_fname,
+    σ_Q_fname,
+    k,
+    ignore_trivial=True,
+    range_start=1,
+    threads_per_block=THREADS_PER_BLOCK,
+    device_id=0,
+):
     """
     A Numba CUDA version of STOMP for parallel computation of the
     matrix profile, matrix profile indices, left matrix profile indices,
@@ -369,13 +368,13 @@ def _gpu_stump(
 
 
 def gpu_stump(
-    T_A: np.ndarray,
-    m: int,
-    T_B: Optional[np.ndarray] = None,
-    ignore_trivial: bool = True,
-    threads_per_block: int = THREADS_PER_BLOCK,
-    device_id: int = 0,
-) -> np.ndarray:
+    T_A,
+    m,
+    T_B=None,
+    ignore_trivial=True,
+    threads_per_block=THREADS_PER_BLOCK,
+    device_id=0,
+):
     """
     Compute the matrix profile with GPU-STOMP
 
@@ -506,8 +505,8 @@ def gpu_stump(
     else:
         device_ids = device_id
 
-    profile: List[np.ndarray] = [None] * len(device_ids)
-    indices: List[np.ndarray] = [None] * len(device_ids)
+    profile = [None] * len(device_ids)
+    indices = [None] * len(device_ids)
 
     for _id in device_ids:
         with cuda.gpus[_id]:

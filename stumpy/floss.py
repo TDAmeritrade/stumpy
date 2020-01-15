@@ -3,7 +3,6 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import copy
-from typing import Optional, Tuple, Iterator
 
 import numpy as np
 import scipy.stats
@@ -11,7 +10,7 @@ import scipy.stats
 from . import core
 
 
-def _nnmark(I: np.ndarray) -> np.ndarray:
+def _nnmark(I):
     """
     Count the number of nearest neighbor overhead crossings or arcs.
 
@@ -49,12 +48,8 @@ def _nnmark(I: np.ndarray) -> np.ndarray:
 
 
 def _iac(
-    width: int,
-    bidirectional: bool = True,
-    n_iter: int = 1000,
-    n_samples: int = 1000,
-    seed: int = 0,
-) -> np.ndarray:  # pragma: no cover
+    width, bidirectional=True, n_iter=1000, n_samples=1000, seed=0
+):  # pragma: no cover
     """
     Compute the bidirectional idealized arc curve (IAC). This is based
     on a beta distribution that is scaled with a width that is identical
@@ -122,14 +117,7 @@ def _iac(
     return IAC
 
 
-def _cac(
-    I: np.ndarray,
-    L: int,
-    bidirectional: bool = True,
-    excl_factor: int = 5,
-    custom_iac: Optional[bool] = None,
-    seed: int = 0,
-) -> np.ndarray:
+def _cac(I, L, bidirectional=True, excl_factor=5, custom_iac=None, seed=0):
     """
     Compute the corrected arc curve (CAC)
 
@@ -194,7 +182,7 @@ def _cac(
     return CAC
 
 
-def _rea(cac: np.ndarray, n_regimes: int, L: int, excl_factor: int = 5) -> np.ndarray:
+def _rea(cac, n_regimes, L, excl_factor=5):
     """
     Find the location of the regimes using the regime extracting
     algorithm (REA)
@@ -242,13 +230,7 @@ def _rea(cac: np.ndarray, n_regimes: int, L: int, excl_factor: int = 5) -> np.nd
     return regime_locs
 
 
-def fluss(
-    I: int,
-    L: int,
-    n_regimes: int,
-    excl_factor: int = 5,
-    custom_iac: Optional[np.ndarray] = None,
-) -> Tuple[np.ndarray, np.ndarray]:
+def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
     """
     Compute the Fast Low-cost Unipotent Semantic Segmentation (FLUSS)
     for static data.
@@ -308,17 +290,17 @@ def fluss(
 
 
 def floss(
-    mp: np.ndarray,
-    old_data: np.ndarray,
-    add_data: np.ndarray,
-    m: int,
-    L: int,
-    excl_factor: int = 5,
-    n_iter: int = 1000,
-    n_samples: int = 1000,
-    skip: int = 0,
-    custom_iac: Optional[np.array] = None,
-) -> Iterator[Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    mp,
+    old_data,
+    add_data,
+    m,
+    L,
+    excl_factor=5,
+    n_iter=1000,
+    n_samples=1000,
+    skip=0,
+    custom_iac=None,
+):
     """
     Compute the Fast Low-cost Online Semantic Segmentation (FLOSS) for
     streaming data.

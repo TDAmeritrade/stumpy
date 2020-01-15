@@ -3,7 +3,6 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import logging
-from typing import Tuple
 
 import numpy as np
 from numba import njit, prange
@@ -14,7 +13,7 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
-def _multi_compute_mean_std(T: np.ndarray, m: int) -> Tuple[np.ndarray, np.ndarray]:
+def _multi_compute_mean_std(T, m):
     """
     Compute the sliding mean and standard deviation for the multi-dimensional
     array `T` with a window size of `m`
@@ -75,15 +74,7 @@ def _multi_compute_mean_std(T: np.ndarray, m: int) -> Tuple[np.ndarray, np.ndarr
     return M_T, Σ_T
 
 
-def _multi_mass(
-    Q: np.ndarray,
-    T: np.ndarray,
-    m: int,
-    M_T: np.ndarray,
-    Σ_T: np.ndarray,
-    trivial_idx: int,
-    excl_zone: int,
-) -> Tuple[np.ndarray, np.ndarray]:
+def _multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
     """
     A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
     (MASS) to compute multi-dimensional MASS.
@@ -155,9 +146,7 @@ def _multi_mass(
     return P, I
 
 
-def _get_first_mstump_profile(
-    start: int, T: np.ndarray, m: int, excl_zone: int, M_T: np.ndarray, Σ_T: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T):
     """
     Multi-dimensional wrapper to compute the multi-dimensional matrix profile
     and multi-dimensional matrix profile index for a given window within the
@@ -202,7 +191,7 @@ def _get_first_mstump_profile(
     return P, I
 
 
-def _get_multi_QT(start: int, T: np.ndarray, m: int) -> Tuple[np.ndarray, np.ndarray]:
+def _get_multi_QT(start, T, m):
     """
     Multi-dimensional wrapper to compute the sliding dot product between
     the query, `T[:, start:start+m])` and the time series, `T`.
@@ -243,23 +232,23 @@ def _get_multi_QT(start: int, T: np.ndarray, m: int) -> Tuple[np.ndarray, np.nda
 
 @njit(parallel=True, fastmath=True)
 def _mstump(
-    T: np.ndarray,
-    m: int,
-    P: np.ndarray,
-    I: np.ndarray,
-    D: np.ndarray,
-    D_prime: np.ndarray,
-    range_stop: int,
-    excl_zone: int,
-    M_T: np.ndarray,
-    Σ_T: np.ndarray,
-    QT: np.ndarray,
-    QT_first: np.ndarray,
-    μ_Q: np.ndarray,
-    σ_Q: np.ndarray,
-    k: int,
-    range_start: int = 1,
-) -> Tuple[np.ndarray, np.ndarray]:
+    T,
+    m,
+    P,
+    I,
+    D,
+    D_prime,
+    range_stop,
+    excl_zone,
+    M_T,
+    Σ_T,
+    QT,
+    QT_first,
+    μ_Q,
+    σ_Q,
+    k,
+    range_start=1,
+):
     """
     A Numba JIT-compiled version of mSTOMP, a variant of mSTAMP, for parallel
     computation of the multi-dimensional matrix profile and multi-dimensional
@@ -404,7 +393,7 @@ def _mstump(
     return P, I
 
 
-def mstump(T: np.ndarray, m: int) -> Tuple[np.ndarray, np.ndarray]:
+def mstump(T, m):
     """
     Compute the multi-dimensional matrix profile with parallelized mSTOMP
 

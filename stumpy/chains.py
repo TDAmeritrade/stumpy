@@ -3,12 +3,11 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 from collections import deque
-from typing import List, Tuple, Any
 
 import numpy as np
 
 
-def atsc(IL: np.ndarray, IR: np.ndarray, j: int) -> np.ndarray:
+def atsc(IL, IR, j):
     """
     Compute the anchored time series chain (ATSC)
 
@@ -50,7 +49,7 @@ def atsc(IL: np.ndarray, IR: np.ndarray, j: int) -> np.ndarray:
     return np.array(list(C), dtype=np.int64)
 
 
-def allc(IL: np.ndarray, IR: np.ndarray) -> Tuple[List[Any], Any]:
+def allc(IL, IR):
     """
     Compute the all-chain set (ALLC)
 
