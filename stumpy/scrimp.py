@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @njit(parallel=True, fastmath=True)
-def _scrimp(T, m, excl_zone):
+def _scrimp(T, m, μ, σ, orders, excl_zone, percentage=1.0):
     """
     A Numba JIT-compiled version of SCRIMP (self-join) for parallel computation
     of the matrix profile and matrix profile indices.
@@ -26,9 +26,21 @@ def _scrimp(T, m, excl_zone):
     m : int
         Window size
 
+    μ : ndarray
+        Sliding window mean for T
+
+    σ : ndarray
+        Sliding window standard deviation for T
+
+    orders : ndarray
+        The order of diagonals to process and compute
+
     excl_zone : int
         The half width for the exclusion zone relative to the current
         sliding window
+
+    percentage : float
+        Approximate percentage completed. The value is between 0.0 and 1.0.
 
     Returns
     -------
@@ -48,12 +60,17 @@ def _scrimp(T, m, excl_zone):
 
     n = len(T)
     l = n - m + 1
-    P = np.ones(l, dtype=np.float64) * np.inf
-    I = np.ones(l, dtype=np.int64) * -1
-    orders = np.random.permutation(range(excl_zone + 1, n - m + 2))
-    μ, σ = core.compute_mean_std(T, m)
+    P = np.empty((l,))
+    I = np.empty((l,))
+
+    P[:] = np.inf
+    I[:] = -1
+
+    n_dist_computed = 0
 
     for order in prange(orders.shape[0]):
+        if n_dist_computed / (l * l) > percentage:  # pragma: no cover
+            break
         k = orders[order]
         for i in range(0, n - m + 2 - k):
             if i == 0:
@@ -61,27 +78,32 @@ def _scrimp(T, m, excl_zone):
             else:
                 QT = QT - T[i - 1] * T[i + k - 2] + T[i + m - 1] * T[i + k + m - 2]
 
-            D = core.calculate_distance_profile(
-                m,
-                QT,
-                μ[i],
-                σ[i],
-                np.atleast_2d(μ[i + k - 1]),
-                np.atleast_2d(σ[i + k - 1]),
-            )
+            denom = m * σ[i] * σ[i + k - 1]
+            if denom == 0:
+                denom = 1e-10  # Avoid divide by zero
+            D = np.sqrt(np.abs(2 * m * (1.0 - (QT - m * μ[i] * μ[i + k - 1]) / denom)))
+            threshold = 1e-7
+            if σ[i] < threshold:  # pragma: no cover
+                D = np.sqrt(m)
+            if σ[i + k - 1] < threshold:  # pragma: no cover
+                D = np.sqrt(m)
+            if σ[i] < threshold and σ[i + k - 1] < threshold:
+                D = 0
 
             if D < P[i]:
-                P[i] = D[0][0]
+                P[i] = D
                 I[i] = i + k - 1
 
             if i < i + k - 1 - excl_zone and D < P[i + k - 1]:
-                P[i + k - 1] = D[0][0]
+                P[i + k - 1] = D
                 I[i + k - 1] = i
+
+            n_dist_computed = n_dist_computed + 1
 
     return P, I
 
 
-def scrimp(T, m):
+def scrimp(T, m, percentage=1.0):
     """
     Compute the matrix profile with parallelized SCRIMP (self-join)
 
@@ -95,6 +117,9 @@ def scrimp(T, m):
 
     m : int
         Window size
+
+    percentage : float
+        Approximate percentage completed. The value is between 0.0 and 1.0.
 
     Returns
     -------
@@ -122,9 +147,11 @@ def scrimp(T, m):
     l = n - m + 1
     out = np.empty((l, 2), dtype=object)
 
+    μ, σ = core.compute_mean_std(T, m)
     excl_zone = int(np.ceil(m / 4))
+    orders = np.random.permutation(range(excl_zone + 1, n - m + 2))
 
-    P, I = _scrimp(T, m, excl_zone)
+    P, I = _scrimp(T, m, μ, σ, orders, excl_zone, percentage)
 
     out[:, 0] = P
     out[:, 1] = I

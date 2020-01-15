@@ -15,6 +15,15 @@ test_data = [
 @pytest.mark.parametrize("T", test_data)
 def test_scrimp_self_join(T):
     m = 3
+    left = np.zeros(T.shape[0])
+    right = scrimp(T, m, percentage=0.0)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left, right[:, 0])
+
+
+@pytest.mark.parametrize("T", test_data)
+def test_scrimp_self_join(T):
+    m = 3
     zone = int(np.ceil(m / 4))
     left = np.array(
         [
