@@ -13,7 +13,7 @@ configuration = {
     "author": "Sean M. Law",
     "author_email": "seanmylaw@gmail.com",
     "description": (
-        "A powerful and scalable library that can be used"
+        "A powerful and scalable library that can be used "
         "for a variety of time series data mining tasks"
     ),
     "long_description_content_type": "text/x-rst",
