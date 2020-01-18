@@ -18,18 +18,6 @@ def dask_client():
     cluster.close()
 
 
-test_data = [
-    (
-        np.array([9, 8100, -60, 7], dtype=np.float64),
-        np.array([584, -11, 23, 79, 1001, 0, -19], dtype=np.float64),
-    ),
-    (
-        np.random.uniform(-1000, 1000, [8]).astype(np.float64),
-        np.random.uniform(-1000, 1000, [64]).astype(np.float64),
-    ),
-]
-
-
 @pytest.mark.filterwarnings("ignore:A large number of values are smaller")
 @pytest.mark.filterwarnings("ignore:For a self-join")
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
