@@ -154,4 +154,3 @@ def test_one_constant_subsequence_A_B_join_df_swap(dask_client):
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
-
