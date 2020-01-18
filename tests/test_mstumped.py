@@ -83,6 +83,7 @@ test_data = [
 ]
 
 
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T, m", test_data)
 def test_mstumped(T, m, dask_client):
     left_P, left_I = naive_mstump(T, m)
@@ -92,6 +93,7 @@ def test_mstumped(T, m, dask_client):
     npt.assert_almost_equal(left_I.T, right_I)
 
 
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T, m", test_data)
 def test_mstumped_df(T, m, dask_client):
     left_P, left_I = naive_mstump(T, m)
@@ -102,6 +104,7 @@ def test_mstumped_df(T, m, dask_client):
     npt.assert_almost_equal(left_I.T, right_I)
 
 
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 def test_constant_subsequence_self_join(dask_client):
     T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     T = np.array([T_A, T_A, np.random.rand(T_A.shape[0])])
