@@ -117,7 +117,9 @@ def test_one_constant_subsequence_A_B_join():
 
 
 def test_two_constant_subsequences_A_B_join():
-    T_A = np.concatenate((np.zeros(10, dtype=np.float64), np.ones(10, dtype=np.float64)))
+    T_A = np.concatenate(
+        (np.zeros(10, dtype=np.float64), np.ones(10, dtype=np.float64))
+    )
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
     left = np.array(
