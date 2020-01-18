@@ -6,15 +6,20 @@ import pytest
 from dask.distributed import Client, LocalCluster
 import warnings
 import utils
+import time
 
 
 @pytest.fixture(scope="module")
 def dask_client():
     cluster = LocalCluster(n_workers=2, threads_per_worker=2)
     client = Client(cluster)
+    client.restart()
     yield client
     # teardown
+    client.restart()
+    time.sleep(2)
     client.close()
+    time.sleep(2)
     cluster.close()
 
 
