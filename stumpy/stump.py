@@ -112,6 +112,7 @@ def _get_QT(start, T_A, T_B, m):
 
     return QT, QT_first
 
+
 @njit(parallel=True, fastmath=True)
 def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
@@ -153,7 +154,8 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     denom = m * σ_Q * Σ_T
     denom[denom == 0] = 1e-10  # Avoid divide by zero
     D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
-    D_squared_inf = np.isinf(D_squared) # In fastmath mode checking for np.nan is not possible, so here we use infs instead
+    # In fastmath mode checking for np.nan is not possible, so we use infs instead
+    D_squared_inf = np.isinf(D_squared)
 
     threshold = 1e-7
     if σ_Q < threshold:  # pragma: no cover
@@ -163,6 +165,7 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     D_squared[D_squared_inf] = np.inf
 
     return D_squared
+
 
 @njit(parallel=True, fastmath=True)
 def _stump(
@@ -313,7 +316,8 @@ def _stump(
             QT_odd[0] = QT_first[i]
             D = _calculate_squared_distance_profile(m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T)
 
-        if np.isinf(μ_Q[i]): # If the mean of the query is inf that mean this subsequence should be ignored
+        # If the mean of the query is inf that mean this subsequence should be ignored
+        if np.isinf(μ_Q[i]):
             D[:] = np.inf
 
         if ignore_trivial:
@@ -338,7 +342,7 @@ def _stump(
         IR = -1
         PR = np.inf
         if ignore_trivial and i + 1 < D.shape[0]:
-            IR = i + 1 + np.argmin(D[i+1:])
+            IR = i + 1 + np.argmin(D[i + 1 :])
             PR = D[IR]
             if PR == np.inf or zone_start <= IR < zone_stop:
                 IR = -1
@@ -413,20 +417,24 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
 
     T_A = np.asarray(T_A)
     if T_A.ndim != 1:  # pragma: no cover
-        raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
+        raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
     n = T_A.shape[0]
-    
+
     T_A = T_A.copy()
-    T_A[np.isinf(T_A)] = np.nan # Treat inf values the same as nan values, because z normalization is undefined in this case
+    # Treat inf values the same as nan values,
+    # because z normalization is undefined in this case
+    T_A[np.isinf(T_A)] = np.nan
     core.check_dtype(T_A)
-    
+
     if T_B is None:
         T_B = T_A
         ignore_trivial = True
 
     T_B = np.asarray(T_B)
     T_B = T_B.copy()
-    T_B[np.isinf(T_B)] = np.nan # Treat inf values the same as nan values, because z normalization is undefined in this case
+    # Treat inf values the same as nan values,
+    # because z normalization is undefined in this case
+    T_B[np.isinf(T_B)] = np.nan
     core.check_dtype(T_B)
 
     core.check_window_size(m)
@@ -460,7 +468,11 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
         start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial
     )
 
-    T_B[np.isnan(T_B)] = 0 # Only after calculating the first profile we can remove all nan values from T_B
+    T_B[
+        np.isnan(T_B)
+    ] = (
+        0
+    )  # Only after calculating the first profile we can remove all nan values from T_B
 
     QT, QT_first = _get_QT(start, T_A, T_B, m)
 

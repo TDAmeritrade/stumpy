@@ -151,8 +151,9 @@ def test_stumped_A_B_join_df(T_A, T_B, dask_client):
     utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
 
+
 def test_stumped_nan_selfjoin_beginning(dask_client):
-    m=3
+    m = 3
     T = np.array([np.nan, 1, 0, 0, 1, 0, 0])
 
     zone = int(np.ceil(m / 4))
@@ -170,8 +171,9 @@ def test_stumped_nan_selfjoin_beginning(dask_client):
     utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
 
+
 def test_stumped_inf_selfjoin_beginning(dask_client):
-    m=3
+    m = 3
     T = np.array([np.inf, 1, 0, 0, 1, 0, 0])
 
     zone = int(np.ceil(m / 4))
@@ -189,9 +191,10 @@ def test_stumped_inf_selfjoin_beginning(dask_client):
     utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
 
+
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stumped_nan_inf_selfjoin(T_A, T_B, dask_client):
-    m=3
+    m = 3
     T_B_nan_inf = np.random.uniform(size=len(T_B))
     T_B[T_B_nan_inf > 0.90] = np.nan
     T_B[T_B_nan_inf > 0.95] = np.inf
@@ -206,14 +209,15 @@ def test_stumped_nan_inf_selfjoin(T_A, T_B, dask_client):
     )
 
     right = stumped(dask_client, T_B, m, ignore_trivial=True)
-    
+
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
 
+
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stumped_nan_inf_A_B_join(T_A, T_B, dask_client):
-    m=3
+    m = 3
     T_A_nan_inf = np.random.uniform(size=len(T_A))
     T_B_nan_inf = np.random.uniform(size=len(T_B))
     T_A[T_A_nan_inf > 0.90] = np.nan
@@ -226,7 +230,7 @@ def test_stumped_nan_inf_A_B_join(T_A, T_B, dask_client):
     )
 
     right = stumped(dask_client, T_A, m, T_B, ignore_trivial=False)
-    
+
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left, right)

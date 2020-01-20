@@ -49,7 +49,7 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
     """
 
     D = core.mass(Q, T, M_T, Σ_T)
-    
+
     if trivial_idx is not None:
         zone_start = max(0, trivial_idx - excl_zone)
         zone_stop = min(T.shape[0] - Q.shape[0] + 1, trivial_idx + excl_zone)
@@ -68,8 +68,8 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
 
         IR = -1
         PR = np.inf
-        if D[trivial_idx+1:].size:
-            IR = trivial_idx + 1 + np.argmin(D[trivial_idx+1:])
+        if D[trivial_idx + 1 :].size:
+            IR = trivial_idx + 1 + np.argmin(D[trivial_idx + 1 :])
             PR = D[IR]
             if PR == np.inf:
                 IR = -1
@@ -136,15 +136,18 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
 
     # Preprocessing to remove nan and inf values
     if T_A.ndim != 1:  # pragma: no cover
-        raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
-    n = T_A.shape[0]
+        raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
 
     T_A = T_A.copy()
-    T_A[np.isinf(T_A)] = np.nan # Treat inf values the same as nan values, because z normalization is undefined in this case
+    # Treat inf values the same as nan values,
+    # because z normalization is undefined in this case
+    T_A[np.isinf(T_A)] = np.nan
     core.check_dtype(T_A)
 
     T_B = T_B.copy()
-    T_B[np.isinf(T_B)] = np.nan # Treat inf values the same as nan values, because z normalization is undefined in this case
+    # Treat inf values the same as nan values,
+    # because z normalization is undefined in this case
+    T_B[np.isinf(T_B)] = np.nan
     core.check_dtype(T_B)
 
     core.check_window_size(m)

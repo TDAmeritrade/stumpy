@@ -156,7 +156,7 @@ def are_arrays_equal(a, b):  # pragma: no cover
 
     if id(a) == id(b):
         return True
-    
+
     if a.shape != b.shape:
         return False
 
@@ -299,7 +299,7 @@ def compute_mean_std(T, m):
     Note that Mueen's algorithm has an off-by-one bug where the
     sum for the first subsequence is omitted and we fixed that!
     """
-    
+
     M_T = np.mean(rolling_window(T, m), axis=1)
     M_T[np.isnan(M_T)] = np.inf
     Σ_T = np.nanstd(rolling_window(T, m), axis=1)
@@ -356,7 +356,9 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
         D_squared[:] = m
     D_squared[(Σ_T < threshold)] = m
     D_squared[(Σ_T < threshold) & (σ_Q < threshold)] = 0
-    D_squared[D_squared_inf] = np.inf # If the profile had inf values, we set it to inf at these points
+    D_squared[
+        D_squared_inf
+    ] = np.inf  # If the profile had inf values, we set it to inf at these points
 
     return np.sqrt(D_squared)
 
@@ -479,10 +481,12 @@ def mass(Q, T, M_T=None, Σ_T=None):
     if T.ndim != 1:  # pragma: no cover
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
     n = T.shape[0]
-    
+
     if np.any(np.isnan(Q)):
-        distance_profile = np.empty(n-m+1)
-        distance_profile[:] = np.inf # Setting the Profile to inf if it cannot be calculated
+        distance_profile = np.empty(n - m + 1)
+        distance_profile[
+            :
+        ] = np.inf  # Setting the Profile to inf if it cannot be calculated
         return distance_profile
 
     QT = sliding_dot_product(Q, T)
@@ -513,5 +517,6 @@ def array_to_temp_file(a):
     np.save(fname, a, allow_pickle=False)
 
     return fname
+
 
 convolution = scipy.signal.fftconvolve  # Swap for other convolution function

@@ -86,14 +86,17 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     T_A = np.asarray(T_A)
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
-            f"T is {T.ndim}-dimensional and must be 1-dimensional. "
-            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`")
+            f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. "
+            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
+        )
     n = T_A.shape[0]
-    
+
     T_A = T_A.copy()
-    T_A[np.isinf(T_A)] = np.nan # Treat inf values the same as nan values, because z normalization is undefined in this case
+    # Treat inf values the same as nan values,
+    # because z normalization is undefined in this case
+    T_A[np.isinf(T_A)] = np.nan
     core.check_dtype(T_A)
-    
+
     if T_B is None:
         T_B = T_A
         ignore_trivial = True
@@ -102,9 +105,12 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
-            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`")
+            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
+        )
     T_B = T_B.copy()
-    T_B[np.isinf(T_B)] = np.nan # Treat inf values the same as nan values, because z normalization is undefined in this case
+    # Treat inf values the same as nan values,
+    # because z normalization is undefined in this case
+    T_B[np.isinf(T_B)] = np.nan
     core.check_dtype(T_B)
 
     core.check_window_size(m)
@@ -142,7 +148,9 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
             start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial
         )
 
-    T_B[np.isnan(T_B)] = 0 #After having calculated all first profiles, we can remove nans from T_B
+    T_B[
+        np.isnan(T_B)
+    ] = 0  # After having calculated all first profiles, we can remove nans from T_B
 
     # Scatter data to Dask cluster
     T_A_future = dask_client.scatter(T_A, broadcast=True)

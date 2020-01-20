@@ -67,19 +67,23 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
     """
     # Preprocessing to remove nan and inf values
     if T_A.ndim != 1:  # pragma: no cover
-        raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
+        raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
     n = T_A.shape[0]
-    
+
     T_A = T_A.copy()
-    T_A[np.isinf(T_A)] = np.nan # Treat inf values the same as nan values, because z normalization is undefined in this case
+    # Treat inf values the same as nan values,
+    # because z normalization is undefined in this case
+    T_A[np.isinf(T_A)] = np.nan
     core.check_dtype(T_A)
-    
+
     if T_B is None:
         T_B = T_A
         ignore_trivial = True
 
     T_B = T_B.copy()
-    T_B[np.isinf(T_B)] = np.nan # Treat inf values the same as nan values, because z normalization is undefined in this case
+    # Treat inf values the same as nan values,
+    # because z normalization is undefined in this case
+    T_B[np.isinf(T_B)] = np.nan
     core.check_dtype(T_B)
 
     core.check_window_size(m)
@@ -95,7 +99,7 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
     n = T_B.shape[0]
     l = n - m + 1
     excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
-    
+
     M_T, Σ_T = core.compute_mean_std(T_A, m)
     μ_Q, σ_Q = core.compute_mean_std(T_B, m)
 
@@ -129,15 +133,16 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
             zone_start = max(0, i - excl_zone)
             zone_stop = min(k, i + excl_zone)
             D[zone_start:zone_stop] = np.inf
-            
-        if np.isinf(μ_Q[i]): # If the mean of the query is nan that mean this subsequence should be ignored
+
+        # If the mean of the query is nan that mean this subsequence should be ignored
+        if np.isinf(μ_Q[i]):
             D[:] = np.inf
 
         I = np.argmin(D)
         P = D[I]
         if P == np.inf:
             I = -1
-            
+
         # Get left and right matrix profiles
         IL = -1
         PL = np.inf
@@ -150,7 +155,7 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
         IR = -1
         PR = np.inf
         if ignore_trivial and i + 1 < D.shape[0]:
-            IR = i + 1 + np.argmin(D[i+1:])
+            IR = i + 1 + np.argmin(D[i + 1 :])
             PR = D[IR]
             if PR == np.inf or zone_start <= IR < zone_stop:
                 IR = -1
