@@ -107,7 +107,9 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
             QT[: k - 1] - T_B[i - 1] * T_A[: k - 1] + T_B[i - 1 + m] * T_A[-(k - 1) :]
         )
         QT[0] = QT_first[i]
-        D = core.calculate_distance_profile(m, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
+        D = core.calculate_distance_profile(
+            m, QT, μ_Q[i].item(0), σ_Q[i].item(0), M_T, Σ_T
+        )
         if ignore_trivial:
             zone_start = max(0, i - excl_zone)
             zone_stop = min(k, i + excl_zone)

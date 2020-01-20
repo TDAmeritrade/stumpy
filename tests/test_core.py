@@ -68,7 +68,7 @@ def test_calculate_distance_profile(Q, T):
     QT = core.sliding_dot_product(Q, T)
     μ_Q, σ_Q = core.compute_mean_std(Q, m)
     M_T, Σ_T = core.compute_mean_std(T, m)
-    right = core.calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
+    right = core.calculate_distance_profile(m, QT, μ_Q.item(0), σ_Q.item(0), M_T, Σ_T)
     npt.assert_almost_equal(left, right)
 
 

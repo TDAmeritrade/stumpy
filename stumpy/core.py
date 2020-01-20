@@ -3,6 +3,7 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
+from numba import njit
 import scipy.signal
 import tempfile
 
@@ -314,6 +315,7 @@ def compute_mean_std(T, m):
     return M_T, Σ_T
 
 
+@njit(parallel=True, fastmath=True)
 def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     Compute the distance profile
@@ -352,6 +354,7 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
 
     denom = m * σ_Q * Σ_T
+    denom = np.asarray(denom)
     denom[denom == 0] = 1e-10  # Avoid divide by zero
     D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
     threshold = 1e-7
@@ -485,7 +488,7 @@ def mass(Q, T, M_T=None, Σ_T=None):
     if M_T is None or Σ_T is None:
         M_T, Σ_T = compute_mean_std(T, m)
 
-    return calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
+    return calculate_distance_profile(m, QT, μ_Q.item(0), σ_Q.item(0), M_T, Σ_T)
 
 
 def array_to_temp_file(a):
