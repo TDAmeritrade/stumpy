@@ -146,3 +146,83 @@ def test_two_constant_subsequences_A_B_join():
     right = stump(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+
+def test_stump_nan_selfjoin_beginning():
+    m=3
+    T = np.array([np.nan, 1, 0, 0, 1, 0, 0])
+
+    zone = int(np.ceil(m / 4))
+    left = np.array(
+        [
+            utils.naive_mass(Q, T, m, i, zone, ignore_trivial=True)
+            for i, Q in enumerate(core.rolling_window(T, m))
+        ],
+        dtype=object,
+    )
+
+    right = stump(T, m, ignore_trivial=True)
+
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left, right)
+
+def test_stump_inf_selfjoin_beginning():
+    m=3
+    T = np.array([np.inf, 1, 0, 0, 1, 0, 0])
+
+    zone = int(np.ceil(m / 4))
+    left = np.array(
+        [
+            utils.naive_mass(Q, T, m, i, zone, ignore_trivial=True)
+            for i, Q in enumerate(core.rolling_window(T, m))
+        ],
+        dtype=object,
+    )
+
+    right = stump(T, m, ignore_trivial=True)
+
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left, right)
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stump_nan_inf_selfjoin(T_A, T_B):
+    m=3
+    T_B_nan_inf = np.random.uniform(size=len(T_B))
+    T_B[T_B_nan_inf > 0.90] = np.nan
+    T_B[T_B_nan_inf > 0.95] = np.inf
+
+    zone = int(np.ceil(m / 4))
+    left = np.array(
+        [
+            utils.naive_mass(Q, T_B, m, i, zone, ignore_trivial=True)
+            for i, Q in enumerate(core.rolling_window(T_B, m))
+        ],
+        dtype=object,
+    )
+
+    right = stump(T_B, m, ignore_trivial=True)
+    
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left, right)
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stump_nan_inf_A_B_join(T_A, T_B):
+    m=3
+    T_A_nan_inf = np.random.uniform(size=len(T_A))
+    T_B_nan_inf = np.random.uniform(size=len(T_B))
+    T_A[T_A_nan_inf > 0.90] = np.nan
+    T_A[T_A_nan_inf > 0.95] = np.inf
+    T_B[T_B_nan_inf > 0.90] = np.nan
+    T_B[T_B_nan_inf > 0.95] = np.inf
+
+    left = np.array(
+        [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
+    )
+
+    right = stump(T_A, m, T_B, ignore_trivial=False)
+    
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left, right)

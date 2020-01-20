@@ -47,7 +47,9 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
     I : ndarray
         Matrix profile indices
     """
+
     D = core.mass(Q, T, M_T, Σ_T)
+    
     if trivial_idx is not None:
         zone_start = max(0, trivial_idx - excl_zone)
         zone_stop = min(T.shape[0] - Q.shape[0] + 1, trivial_idx + excl_zone)
@@ -59,20 +61,26 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
         if D[:trivial_idx].size:
             IL = np.argmin(D[:trivial_idx])
             PL = D[IL]
+            if PL == np.inf:
+                IL = -1
         if zone_start <= IL < zone_stop:
             IL = -1
 
         IR = -1
         PR = np.inf
-        if D[trivial_idx:].size:
-            IR = trivial_idx + np.argmin(D[trivial_idx:])
+        if D[trivial_idx+1:].size:
+            IR = trivial_idx + 1 + np.argmin(D[trivial_idx+1:])
             PR = D[IR]
+            if PR == np.inf:
+                IR = -1
         if zone_start <= IR < zone_stop:
             IR = -1
 
     # Element-wise Min
     I = np.argmin(D)
     P = D[I]
+    if P == np.inf:
+        I = -1
 
     if trivial_idx is not None and left:
         I = IL
@@ -126,14 +134,25 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     T_B.shape[0]-m+1
     """
 
+    # Preprocessing to remove nan and inf values
+    if T_A.ndim != 1:  # pragma: no cover
+        raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
+    n = T_A.shape[0]
+
+    T_A = T_A.copy()
+    T_A[np.isinf(T_A)] = np.nan # Treat inf values the same as nan values, because z normalization is undefined in this case
     core.check_dtype(T_A)
-    core.check_nan(T_A)
+
+    T_B = T_B.copy()
+    T_B[np.isinf(T_B)] = np.nan # Treat inf values the same as nan values, because z normalization is undefined in this case
     core.check_dtype(T_B)
-    core.check_nan(T_B)
+
     core.check_window_size(m)
     subseq_T_B = core.rolling_window(T_B, m)
     excl_zone = int(np.ceil(m / 2))
     M_T, Σ_T = core.compute_mean_std(T_A, m)
+
+    T_A[np.isnan(T_A)] = 0
 
     # Add exclusionary zone
     if ignore_trivial:

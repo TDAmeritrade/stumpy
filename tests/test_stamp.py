@@ -40,7 +40,7 @@ def test_stamp_self_join(T_A, T_B):
     zone = int(np.ceil(m / 2))
     left = np.array(
         [
-            naive_mass(Q, T_B, m, i, zone)
+            utils.naive_mass(Q, T_B, m, i, zone, ignore_trivial=True)[0:2]
             for i, Q in enumerate(core.rolling_window(T_B, m))
         ],
         dtype=object,
@@ -55,9 +55,89 @@ def test_stamp_self_join(T_A, T_B):
 def test_stamp_A_B_join(T_A, T_B):
     m = 3
     left = np.array(
-        [naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
+        [utils.naive_mass(Q, T_A, m)[0:2] for Q in core.rolling_window(T_B, m)], dtype=object
     )
     right = stamp.stamp(T_A, T_B, m)
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left, right)
+
+def test_stamp_nan_selfjoin_beginning():
+    m=3
+    T = np.array([np.nan, 1, 0, 0, 1, 0, 0])
+
+    zone = int(np.ceil(m / 2))
+    left = np.array(
+        [
+            utils.naive_mass(Q, T, m, i, zone, ignore_trivial=True)[0:2]
+            for i, Q in enumerate(core.rolling_window(T, m))
+        ],
+        dtype=object,
+    )
+
+    right = stamp.stamp(T, T, m, ignore_trivial=True)
+
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left, right)
+
+def test_stamp_inf_selfjoin_beginning():
+    m=3
+    T = np.array([np.inf, 1, 0, 0, 1, 0, 0])
+
+    zone = int(np.ceil(m / 2))
+    left = np.array(
+        [
+            utils.naive_mass(Q, T, m, i, zone, ignore_trivial=True)[0:2]
+            for i, Q in enumerate(core.rolling_window(T, m))
+        ],
+        dtype=object,
+    )
+
+    right = stamp.stamp(T, T, m, ignore_trivial=True)
+
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left, right)
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stamp_nan_inf_selfjoin(T_A, T_B):
+    m=3
+    T_B_nan_inf = np.random.uniform(size=len(T_B))
+    T_B[T_B_nan_inf > 0.90] = np.nan
+    T_B[T_B_nan_inf > 0.95] = np.inf
+
+    zone = int(np.ceil(m / 2))
+    left = np.array(
+        [
+            utils.naive_mass(Q, T_B, m, i, zone, ignore_trivial=True)[0:2]
+            for i, Q in enumerate(core.rolling_window(T_B, m))
+        ],
+        dtype=object,
+    )
+
+    right = stamp.stamp(T_B, T_B, m, ignore_trivial=True)
+    
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left, right)
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stamp_nan_inf_A_B_join(T_A, T_B):
+    m=3
+    T_A_nan_inf = np.random.uniform(size=len(T_A))
+    T_B_nan_inf = np.random.uniform(size=len(T_B))
+    T_A[T_A_nan_inf > 0.90] = np.nan
+    T_A[T_A_nan_inf > 0.95] = np.inf
+    T_B[T_B_nan_inf > 0.90] = np.nan
+    T_B[T_B_nan_inf > 0.95] = np.inf
+
+    left = np.array(
+        [utils.naive_mass(Q, T_A, m)[0:2] for Q in core.rolling_window(T_B, m)], dtype=object
+    )
+
+    right = stamp.stamp(T_A, T_B, m)
+    
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
