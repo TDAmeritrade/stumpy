@@ -328,6 +328,15 @@ def _stump(
 
         I = np.argmin(D)
         print(i, I)
+
+        if i == 3: 
+            if D[1] < D[4]:
+                print("Index 1 is smaller")
+            elif D[4] < D[1]:
+                print("index 4 is smaller")
+            else:
+                print("Both numbers are identical!")
+
         P = np.sqrt(D[I])
         if P == np.inf:
             I = -1
