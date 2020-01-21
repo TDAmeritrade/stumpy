@@ -319,13 +319,15 @@ def _stump(
         # If the mean of the query is inf that mean this subsequence should be ignored
         if np.isinf(μ_Q[i]):
             D[:] = np.inf
-
+        print(i, D)
         if ignore_trivial:
             zone_start = max(0, i - excl_zone)
             zone_stop = min(k, i + excl_zone)
             D[zone_start:zone_stop] = np.inf
+        print(i, D)
 
         I = np.argmin(D)
+        print(i, I)
         P = np.sqrt(D[I])
         if P == np.inf:
             I = -1
