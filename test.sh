@@ -15,7 +15,7 @@ check_errs()
 }
 
 echo "Checking Black Code Formatting"
-black --check ./
+black --check --diff ./
 check_errs $?
 
 echo "Checking Flake8 Style Guide Enforcement"
