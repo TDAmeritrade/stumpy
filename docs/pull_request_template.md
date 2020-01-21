@@ -7,5 +7,5 @@
 - [ ] Install `pytest-cov` (i.e., `python -m pip install pytest-cov` or `conda install pytest-cov`)
 - [ ] Run `black .` in the root stumpy directory
 - [ ] Run `flake8 .` in the root stumpy directory
-- [ ] Run `./test.sh` in the root stumpy directory
+- [ ] Run `./setup.py && ./test.sh` in the root stumpy directory
 - [ ] Reference a Github issue (and create one if one doesn't already exist)
