@@ -468,11 +468,8 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
         start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial
     )
 
-    T_B[
-        np.isnan(T_B)
-    ] = (
-        0
-    )  # Only after calculating the first profile we can remove all nan values from T_B
+    # Only after calculating the first profile we can remove all nan values from T_B
+    T_B[np.isnan(T_B)] = 0
 
     QT, QT_first = _get_QT(start, T_A, T_B, m)
 
