@@ -165,6 +165,10 @@ def test_stump_nan_selfjoin_beginning():
 
     utils.replace_inf(left)
     utils.replace_inf(right)
+
+    print(left)
+    print(right)
+
     npt.assert_almost_equal(left, right)
 
 
