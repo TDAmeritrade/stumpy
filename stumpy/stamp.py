@@ -61,20 +61,16 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
         if D[:trivial_idx].size:
             IL = np.argmin(D[:trivial_idx])
             PL = D[IL]
-            if PL == np.inf:
+            if PL == np.inf or zone_start <= IL < zone_stop:
                 IL = -1
-        if zone_start <= IL < zone_stop:
-            IL = -1
 
         IR = -1
         PR = np.inf
         if D[trivial_idx + 1 :].size:
             IR = trivial_idx + 1 + np.argmin(D[trivial_idx + 1 :])
             PR = D[IR]
-            if PR == np.inf:
+            if PR == np.inf or zone_start <= IR < zone_stop:
                 IR = -1
-        if zone_start <= IR < zone_stop:
-            IR = -1
 
     # Element-wise Min
     I = np.argmin(D)
