@@ -49,7 +49,7 @@ stages:
       displayName: 'Install stumpy and other dependencies'
 
     - script: |
-        black --check ./
+        black --check --diff ./
       displayName: "Running black"
 
     - script: |
