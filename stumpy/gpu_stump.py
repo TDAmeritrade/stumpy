@@ -299,14 +299,19 @@ def _gpu_stump(
 
     with cuda.gpus[device_id]:
         device_T_A = cuda.to_device(T_A)
-        device_T_B = cuda.to_device(T_B)
-        device_M_T = cuda.to_device(M_T)
-        device_Σ_T = cuda.to_device(Σ_T)
         device_QT_odd = cuda.to_device(QT)
         device_QT_even = cuda.to_device(QT)
         device_QT_first = cuda.to_device(QT_first)
         device_μ_Q = cuda.to_device(μ_Q)
         device_σ_Q = cuda.to_device(σ_Q)
+        if ignore_trivial:
+            device_T_B = device_T_A
+            device_M_T = device_μ_Q
+            device_Σ_T = device_σ_Q
+        else:
+            device_T_B = cuda.to_device(T_B)
+            device_M_T = cuda.to_device(M_T)
+            device_Σ_T = cuda.to_device(Σ_T)
 
         profile = np.empty((k, 3))  # float64
         indices = np.empty((k, 3))  # int64
