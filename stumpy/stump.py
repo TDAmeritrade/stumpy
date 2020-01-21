@@ -329,7 +329,7 @@ def _stump(
         I = np.argmin(D)
         print(i, I)
 
-        if i == 3: 
+        if i == 3:
             if D[1] < D[4]:
                 print("Index 1 is smaller")
             elif D[4] < D[1]:
