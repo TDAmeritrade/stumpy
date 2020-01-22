@@ -212,7 +212,7 @@ In order to fully understand and appreciate the underlying algorithms and applic
 Performance
 -----------
 
-We tested the performance of computing the exact matrix profile using the Numba JIT compiled version of the code on randomly generated time series data with various lengths (i.e., ``np.random.rand(n)``) along with different CPU and GPU hardware resources. 
+We tested the performance of computing the exact matrix profile using the Numba JIT compiled version of the code on randomly generated time series data with various lengths (i.e., ``np.random.rand(n)``) along with different :ref:`CPU and GPU hardware resources<hardware>`. 
 
 .. image:: https://raw.githubusercontent.com/TDAmeritrade/stumpy/master/docs/images/performance.png
     :alt: STUMPY Performance Plot
@@ -274,6 +274,8 @@ The raw results are displayed in the table below as Hours:Minutes:Seconds.Millis
 ^^^^^^^^^^^^^^^^^^
 Hardware Resources
 ^^^^^^^^^^^^^^^^^^
+
+.. _hardware:
 
 GPU-STOMP: These results are reproduced from the original `Matrix Profile II <https://ieeexplore.ieee.org/abstract/document/7837898>`__ paper - NVIDIA Tesla K80 (contains 2 GPUs) and serves as the performance benchmark to compare against.
     
