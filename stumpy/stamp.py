@@ -135,15 +135,16 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
         raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
 
     T_A = T_A.copy()
-    # Treat inf values the same as nan values,
-    # because z normalization is undefined in this case
     T_A[np.isinf(T_A)] = np.nan
     core.check_dtype(T_A)
 
     T_B = T_B.copy()
-    # Treat inf values the same as nan values,
-    # because z normalization is undefined in this case
     T_B[np.isinf(T_B)] = np.nan
+    if T_B.ndim != 1:  # pragma: no cover
+        raise ValueError(
+            f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
+            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
+        )
     core.check_dtype(T_B)
 
     core.check_window_size(m)

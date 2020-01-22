@@ -154,15 +154,14 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     denom = m * σ_Q * Σ_T
     denom[denom == 0] = 1e-10  # Avoid divide by zero
     D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
-    # In fastmath mode checking for np.nan is not possible, so we use infs instead
-    D_squared_inf = np.isinf(D_squared)
+    inf_mask = np.isinf(D_squared)
 
     threshold = 1e-7
     if σ_Q < threshold:  # pragma: no cover
         D_squared[:] = m
     D_squared[Σ_T < threshold] = m
     D_squared[(Σ_T < threshold) & (σ_Q < threshold)] = 0
-    D_squared[D_squared_inf] = np.inf
+    D_squared[inf_mask] = np.inf
 
     return D_squared
 
@@ -316,27 +315,15 @@ def _stump(
             QT_odd[0] = QT_first[i]
             D = _calculate_squared_distance_profile(m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T)
 
-        # If the mean of the query is inf that mean this subsequence should be ignored
+        # Ignore distance profile if query mean is np.nan
         if np.isinf(μ_Q[i]):
             D[:] = np.inf
-        print(i, D)
         if ignore_trivial:
             zone_start = max(0, i - excl_zone)
             zone_stop = min(k, i + excl_zone)
             D[zone_start:zone_stop] = np.inf
-        print(i, D)
 
         I = np.argmin(D)
-        print(i, I)
-
-        if i == 3:
-            if D[1] < D[4]:
-                print("Index 1 is smaller")
-            elif D[4] < D[1]:
-                print("index 4 is smaller")
-            else:
-                print("Both numbers are identical!")
-
         P = np.sqrt(D[I])
         if P == np.inf:
             I = -1
@@ -428,12 +415,13 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
 
     T_A = np.asarray(T_A)
     if T_A.ndim != 1:  # pragma: no cover
-        raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
+        raise ValueError(
+            f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. "
+            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
+        )
     n = T_A.shape[0]
 
     T_A = T_A.copy()
-    # Treat inf values the same as nan values,
-    # because z normalization is undefined in this case
     T_A[np.isinf(T_A)] = np.nan
     core.check_dtype(T_A)
 
@@ -443,8 +431,11 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
 
     T_B = np.asarray(T_B)
     T_B = T_B.copy()
-    # Treat inf values the same as nan values,
-    # because z normalization is undefined in this case
+    if T_B.ndim != 1:  # pragma: no cover
+        raise ValueError(
+            f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
+            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
+        )
     T_B[np.isinf(T_B)] = np.nan
     core.check_dtype(T_B)
 
@@ -479,8 +470,9 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
         start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial
     )
 
-    # Only after calculating the first profile we can remove all nan values from T_B
-    T_B[np.isnan(T_B)] = 0
+    T_B[
+        np.isnan(T_B)
+    ] = 0  # Remove all nan values from T_B only after first profile is calculated
 
     QT, QT_first = _get_QT(start, T_A, T_B, m)
 

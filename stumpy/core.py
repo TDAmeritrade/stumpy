@@ -274,7 +274,7 @@ def compute_mean_std(T, m):
     Returns
     -------
     M_T : ndarray
-        Sliding mean. All nan values are replaces with np.inf
+        Sliding mean. All nan values are replaced with np.inf
 
     Σ_T : ndarray
         Sliding standard deviation
@@ -349,16 +349,14 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     denom = np.asarray(denom)
     denom[denom == 0] = 1e-10  # Avoid divide by zero
     D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
-    D_squared_inf = np.isinf(D_squared)
+    inf_mask = np.isinf(D_squared)
 
     threshold = 1e-7
     if σ_Q < threshold:  # pragma: no cover
         D_squared[:] = m
-    D_squared[(Σ_T < threshold)] = m
+    D_squared[Σ_T < threshold] = m
     D_squared[(Σ_T < threshold) & (σ_Q < threshold)] = 0
-    D_squared[
-        D_squared_inf
-    ] = np.inf  # If the profile had inf values, we set it to inf at these points
+    D_squared[inf_mask] = np.inf
 
     return np.sqrt(D_squared)
 
@@ -482,19 +480,19 @@ def mass(Q, T, M_T=None, Σ_T=None):
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
     n = T.shape[0]
 
+    distance_profile = np.empty(n - m + 1)
     if np.any(np.isnan(Q)):
-        distance_profile = np.empty(n - m + 1)
-        distance_profile[
-            :
-        ] = np.inf  # Setting the Profile to inf if it cannot be calculated
-        return distance_profile
+        distance_profile[:] = np.inf
+    else:
+        QT = sliding_dot_product(Q, T)
+        μ_Q, σ_Q = compute_mean_std(Q, m)
+        if M_T is None or Σ_T is None:
+            M_T, Σ_T = compute_mean_std(T, m)
+        distance_profile = calculate_distance_profile(
+            m, QT, μ_Q.item(0), σ_Q.item(0), M_T, Σ_T
+        )
 
-    QT = sliding_dot_product(Q, T)
-    μ_Q, σ_Q = compute_mean_std(Q, m)
-    if M_T is None or Σ_T is None:
-        M_T, Σ_T = compute_mean_std(T, m)
-
-    return calculate_distance_profile(m, QT, μ_Q.item(0), σ_Q.item(0), M_T, Σ_T)
+    return distance_profile
 
 
 def array_to_temp_file(a):

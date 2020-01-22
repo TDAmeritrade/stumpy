@@ -71,8 +71,6 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
     n = T_A.shape[0]
 
     T_A = T_A.copy()
-    # Treat inf values the same as nan values,
-    # because z normalization is undefined in this case
     T_A[np.isinf(T_A)] = np.nan
     core.check_dtype(T_A)
 
@@ -81,8 +79,11 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
         ignore_trivial = True
 
     T_B = T_B.copy()
-    # Treat inf values the same as nan values,
-    # because z normalization is undefined in this case
+    if T_B.ndim != 1:  # pragma: no cover
+        raise ValueError(
+            f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
+            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
+        )
     T_B[np.isinf(T_B)] = np.nan
     core.check_dtype(T_B)
 
@@ -134,7 +135,7 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
             zone_stop = min(k, i + excl_zone)
             D[zone_start:zone_stop] = np.inf
 
-        # If the mean of the query is nan that mean this subsequence should be ignored
+        # Ignore distance profile if query mean is np.nan
         if np.isinf(μ_Q[i]):
             D[:] = np.inf
 

@@ -92,8 +92,6 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     n = T_A.shape[0]
 
     T_A = T_A.copy()
-    # Treat inf values the same as nan values,
-    # because z normalization is undefined in this case
     T_A[np.isinf(T_A)] = np.nan
     core.check_dtype(T_A)
 
@@ -108,8 +106,6 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
     T_B = T_B.copy()
-    # Treat inf values the same as nan values,
-    # because z normalization is undefined in this case
     T_B[np.isinf(T_B)] = np.nan
     core.check_dtype(T_B)
 
@@ -150,7 +146,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
 
     T_B[
         np.isnan(T_B)
-    ] = 0  # After having calculated all first profiles, we can remove nans from T_B
+    ] = 0  # Remove all nan values from T_B only after first profile is calculated
 
     # Scatter data to Dask cluster
     T_A_future = dask_client.scatter(T_A, broadcast=True)
