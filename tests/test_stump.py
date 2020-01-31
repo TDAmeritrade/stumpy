@@ -17,6 +17,9 @@ test_data = [
     ),
 ]
 
+substitution_locations = [slice(0, 0), 0, -1, slice(1, 3), [0, 3]]
+substitution_values = [np.nan, np.inf]
+
 
 @pytest.mark.parametrize("Q, T", test_data)
 def test_calculate_squared_distance_profile(Q, T):
@@ -148,89 +151,60 @@ def test_two_constant_subsequences_A_B_join():
     npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
 
 
-def test_stump_nan_self_join_beginning():
+@pytest.mark.parametrize("T_A, T_B", test_data)
+@pytest.mark.parametrize("substitute_B", substitution_values)
+def test_stump_nan_inf_self_join(T_A, T_B, substitute_B):
     m = 3
-    T = np.array([np.nan, 1, 0, 0, 1, 0, 0])
 
-    zone = int(np.ceil(m / 4))
-    left = np.array(
-        [
-            utils.naive_mass(Q, T, m, i, zone, ignore_trivial=True)
-            for i, Q in enumerate(core.rolling_window(T, m))
-        ],
-        dtype=object,
-    )
+    for substitution_location_B in substitution_locations:
+        T_B_sub = T_B.copy()
+        T_B_sub[substitution_location_B] = substitute_B
 
-    right = stump(T, m, ignore_trivial=True)
+        zone = int(np.ceil(m / 4))
+        left = np.array(
+            [
+                utils.naive_mass(Q, T_B_sub, m, i, zone, True)
+                for i, Q in enumerate(core.rolling_window(T_B_sub, m))
+            ],
+            dtype=object,
+        )
+        right = stump(T_B_sub, m, ignore_trivial=True)
+        utils.replace_inf(left)
+        utils.replace_inf(right)
+        npt.assert_almost_equal(left, right)
 
-    utils.replace_inf(left)
-    utils.replace_inf(right)
-
-    print(left)
-    print(right)
-
-    npt.assert_almost_equal(left[:, 0], right[:, 0])
-
-
-def test_stump_inf_self_join_beginning():
-    m = 3
-    T = np.array([np.inf, 1, 0, 0, 1, 0, 0])
-
-    zone = int(np.ceil(m / 4))
-    left = np.array(
-        [
-            utils.naive_mass(Q, T, m, i, zone, ignore_trivial=True)
-            for i, Q in enumerate(core.rolling_window(T, m))
-        ],
-        dtype=object,
-    )
-
-    right = stump(T, m, ignore_trivial=True)
-
-    utils.replace_inf(left)
-    utils.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])
+        right = stump(pd.Series(T_B_sub), m, ignore_trivial=True)
+        utils.replace_inf(right)
+        npt.assert_almost_equal(left, right)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stump_nan_inf_self_join(T_A, T_B):
+@pytest.mark.parametrize("substitute_A", substitution_values)
+@pytest.mark.parametrize("substitute_B", substitution_values)
+def test_stump_nan_inf_A_B_join(T_A, T_B, substitute_A, substitute_B):
     m = 3
-    nan_inf_sample_B = np.random.permutation(np.arange(len(T_B)))
-    T_B[nan_inf_sample_B[: len(T_B) // 20]] = np.nan
-    T_B[nan_inf_sample_B[-len(T_B) // 20 :]] = np.inf
 
-    zone = int(np.ceil(m / 4))
-    left = np.array(
-        [
-            utils.naive_mass(Q, T_B, m, i, zone, ignore_trivial=True)
-            for i, Q in enumerate(core.rolling_window(T_B, m))
-        ],
-        dtype=object,
-    )
+    for substitution_location_B in substitution_locations:
+        for substitution_location_A in substitution_locations:
+            T_A_sub = T_A.copy()
+            T_B_sub = T_B.copy()
+            T_A_sub[substitution_location_A] = substitute_A
+            T_B_sub[substitution_location_B] = substitute_B
 
-    right = stump(T_B, m, ignore_trivial=True)
+            left = np.array(
+                [
+                    utils.naive_mass(Q, T_A_sub, m)
+                    for Q in core.rolling_window(T_B_sub, m)
+                ],
+                dtype=object,
+            )
+            right = stump(T_A_sub, m, T_B_sub, ignore_trivial=False)
+            utils.replace_inf(left)
+            utils.replace_inf(right)
+            npt.assert_almost_equal(left, right)
 
-    utils.replace_inf(left)
-    utils.replace_inf(right)
-    npt.assert_almost_equal(left, right)
-
-
-@pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stump_nan_inf_A_B_join(T_A, T_B):
-    m = 3
-    nan_inf_sample_A = np.random.permutation(np.arange(len(T_A)))
-    nan_inf_sample_B = np.random.permutation(np.arange(len(T_B)))
-    T_A[nan_inf_sample_A[: len(T_A) // 10]] = np.nan
-    T_A[nan_inf_sample_A[-len(T_A) // 10 :]] = np.inf
-    T_B[nan_inf_sample_B[: len(T_B) // 10]] = np.nan
-    T_B[nan_inf_sample_B[-len(T_B) // 10 :]] = np.inf
-
-    left = np.array(
-        [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
-    )
-
-    right = stump(T_A, m, T_B, ignore_trivial=False)
-
-    utils.replace_inf(left)
-    utils.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+            right = stump(
+                pd.Series(T_A_sub), m, pd.Series(T_B_sub), ignore_trivial=False
+            )
+            utils.replace_inf(right)
+            npt.assert_almost_equal(left, right)

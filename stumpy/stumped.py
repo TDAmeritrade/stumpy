@@ -144,9 +144,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
             start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial
         )
 
-    T_B[
-        np.isnan(T_B)
-    ] = 0  # Remove all nan values from T_B only after first profile is calculated
+    T_B[np.isnan(T_B)] = 0
 
     # Scatter data to Dask cluster
     T_A_future = dask_client.scatter(T_A, broadcast=True)

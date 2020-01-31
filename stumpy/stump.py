@@ -318,6 +318,7 @@ def _stump(
         # Ignore distance profile if query mean is np.nan
         if np.isinf(μ_Q[i]):
             D[:] = np.inf
+
         if ignore_trivial:
             zone_start = max(0, i - excl_zone)
             zone_stop = min(k, i + excl_zone)
