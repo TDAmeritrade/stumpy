@@ -163,9 +163,11 @@ def test_stumped_A_B_join_df(T_A, T_B, dask_client):
 def test_stumped_nan_inf_self_join(T_A, T_B, substitute_B, dask_client):
     m = 3
 
+    T_B_sub = T_B.copy()
+
     substitution_locations = [0, -1, slice(1, 3), [0, 3]]
     for substitution_location_B in substitution_locations:
-        T_B_sub = T_B.copy()
+        T_B_sub[:] = T_B[:]
         T_B_sub[substitution_location_B] = substitute_B
 
         zone = int(np.ceil(m / 4))
@@ -180,34 +182,3 @@ def test_stumped_nan_inf_self_join(T_A, T_B, substitute_B, dask_client):
         utils.replace_inf(left)
         utils.replace_inf(right)
         npt.assert_almost_equal(left, right)
-
-
-@pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
-@pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
-@pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
-@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-@pytest.mark.parametrize("T_A, T_B", test_data)
-@pytest.mark.parametrize("substitute_A", substitution_values)
-@pytest.mark.parametrize("substitute_B", substitution_values)
-def test_stumped_nan_inf_A_B_join(T_A, T_B, substitute_A, substitute_B, dask_client):
-    m = 3
-
-    substitution_locations = [slice(0, 0), 0, -1, slice(1, 3), [0, 3]]
-    for substitution_location_B in substitution_locations:
-        for substitution_location_A in substitution_locations:
-            T_A_sub = T_A.copy()
-            T_B_sub = T_B.copy()
-            T_A_sub[substitution_location_A] = substitute_A
-            T_B_sub[substitution_location_B] = substitute_B
-
-            left = np.array(
-                [
-                    utils.naive_mass(Q, T_A_sub, m)
-                    for Q in core.rolling_window(T_B_sub, m)
-                ],
-                dtype=object,
-            )
-            right = stumped(dask_client, T_A_sub, m, T_B_sub, ignore_trivial=False)
-            utils.replace_inf(left)
-            utils.replace_inf(right)
-            npt.assert_almost_equal(left, right)

@@ -156,8 +156,11 @@ def test_two_constant_subsequences_A_B_join():
 def test_stump_nan_inf_self_join(T_A, T_B, substitute_B):
     m = 3
 
+    T_B_sub = T_B.copy()
+
+    substitution_locations = [slice(0, 0), 0, -1, slice(1, 3), [0, 3]]
     for substitution_location_B in substitution_locations:
-        T_B_sub = T_B.copy()
+        T_B_sub[:] = T_B[:]
         T_B_sub[substitution_location_B] = substitute_B
 
         zone = int(np.ceil(m / 4))
@@ -184,10 +187,14 @@ def test_stump_nan_inf_self_join(T_A, T_B, substitute_B):
 def test_stump_nan_inf_A_B_join(T_A, T_B, substitute_A, substitute_B):
     m = 3
 
+    T_A_sub = T_A.copy()
+    T_B_sub = T_B.copy()
+
+    substitution_locations = [slice(0, 0), 0, -1, slice(1, 3), [0, 3]]
     for substitution_location_B in substitution_locations:
         for substitution_location_A in substitution_locations:
-            T_A_sub = T_A.copy()
-            T_B_sub = T_B.copy()
+            T_A_sub[:] = T_A[:]
+            T_B_sub[:] = T_B[:]
             T_A_sub[substitution_location_A] = substitute_A
             T_B_sub[substitution_location_B] = substitute_B
 
