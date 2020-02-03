@@ -29,8 +29,7 @@ test_data = [
     ),
 ]
 
-substitution_values = [np.nan, np.inf]
-substitution_locations = [slice(0, 0), 0, -1, slice(1, 3), [0, 3]]
+substitution_locations = [(0, 1), (-1, slice(1, 3)), (slice(1, 3), 1), ([0, 3], 1)]
 
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
@@ -38,25 +37,18 @@ substitution_locations = [slice(0, 0), 0, -1, slice(1, 3), [0, 3]]
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T_A, T_B", test_data)
-@pytest.mark.parametrize("substitute_A", substitution_values)
-@pytest.mark.parametrize("substitution_location_A", substitution_locations)
-@pytest.mark.parametrize("substitute_B", substitution_values)
-@pytest.mark.parametrize("substitution_location_B", substitution_locations)
-def test_stumped_nan_inf_A_B_join(
-    T_A,
-    T_B,
-    substitute_A,
-    substitution_location_A,
-    substitute_B,
-    substitution_location_B,
-    dask_client,
+@pytest.mark.parametrize(
+    "substitution_location_A, substitution_location_B", substitution_locations
+)
+def test_stumped_two_subsequences_nan_inf_A_B_join(
+    T_A, T_B, substitution_location_A, substitution_location_B, dask_client
 ):
     m = 3
 
     T_A_sub = T_A.copy()
     T_B_sub = T_B.copy()
-    T_A_sub[substitution_location_A] = substitute_A
-    T_B_sub[substitution_location_B] = substitute_B
+    T_A_sub[substitution_location_A] = np.inf
+    T_B_sub[substitution_location_B] = np.nan
 
     left = np.array(
         [utils.naive_mass(Q, T_A_sub, m) for Q in core.rolling_window(T_B_sub, m)],
