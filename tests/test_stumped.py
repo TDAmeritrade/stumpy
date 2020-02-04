@@ -29,6 +29,8 @@ test_data = [
     ),
 ]
 
+substitution_values = [np.nan, np.inf]
+
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")

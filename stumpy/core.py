@@ -157,7 +157,10 @@ def are_arrays_equal(a, b):  # pragma: no cover
     if id(a) == id(b):
         return True
 
-    return np.array_equal(a, b)
+    if a.shape != b.shape:
+        return False
+
+    return ((a == b) | (np.isnan(a) & np.isnan(b))).all()
 
 
 def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
@@ -271,7 +274,7 @@ def compute_mean_std(T, m):
     Returns
     -------
     M_T : ndarray
-        Sliding mean
+        Sliding mean. All nan values are replaced with np.inf
 
     Σ_T : ndarray
         Sliding standard deviation
@@ -296,21 +299,10 @@ def compute_mean_std(T, m):
     Note that Mueen's algorithm has an off-by-one bug where the
     sum for the first subsequence is omitted and we fixed that!
     """
-    n = T.shape[0]
 
-    cumsum_T = np.empty(len(T) + 1)
-    np.cumsum(T, out=cumsum_T[1:])  # store output in cumsum_T[1:]
-    cumsum_T[0] = 0
-
-    cumsum_T_squared = np.empty(len(T) + 1)
-    np.cumsum(np.square(T), out=cumsum_T_squared[1:])
-    cumsum_T_squared[0] = 0
-
-    subseq_sum_T = cumsum_T[m:] - cumsum_T[: n - m + 1]
-    subseq_sum_T_squared = cumsum_T_squared[m:] - cumsum_T_squared[: n - m + 1]
-    M_T = subseq_sum_T / m
-    Σ_T = np.abs((subseq_sum_T_squared / m) - np.square(M_T))
-    Σ_T = np.sqrt(Σ_T)
+    M_T = np.mean(rolling_window(T, m), axis=1)
+    M_T[np.isnan(M_T)] = np.inf
+    Σ_T = np.nanstd(rolling_window(T, m), axis=1)
 
     return M_T, Σ_T
 
@@ -357,11 +349,15 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     denom = np.asarray(denom)
     denom[denom == 0] = 1e-10  # Avoid divide by zero
     D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
+    inf_mask = np.isinf(D_squared)
+
     threshold = 1e-7
     if σ_Q < threshold:  # pragma: no cover
         D_squared[:] = m
     D_squared[Σ_T < threshold] = m
     D_squared[(Σ_T < threshold) & (σ_Q < threshold)] = 0
+    D_squared[inf_mask] = np.inf
+
     return np.sqrt(D_squared)
 
 
@@ -471,24 +467,32 @@ def mass(Q, T, M_T=None, Σ_T=None):
 
     Q = np.asarray(Q)
     check_dtype(Q)
-    check_nan(Q)
 
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
+    m = Q.shape[0]
+
     T = np.asarray(T)
     check_dtype(T)
     check_nan(T)
 
     if T.ndim != 1:  # pragma: no cover
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
+    n = T.shape[0]
 
-    QT = sliding_dot_product(Q, T)
-    m = Q.shape[0]
-    μ_Q, σ_Q = compute_mean_std(Q, m)
-    if M_T is None or Σ_T is None:
-        M_T, Σ_T = compute_mean_std(T, m)
+    distance_profile = np.empty(n - m + 1)
+    if np.any(np.isnan(Q)):
+        distance_profile[:] = np.inf
+    else:
+        QT = sliding_dot_product(Q, T)
+        μ_Q, σ_Q = compute_mean_std(Q, m)
+        if M_T is None or Σ_T is None:
+            M_T, Σ_T = compute_mean_std(T, m)
+        distance_profile = calculate_distance_profile(
+            m, QT, μ_Q.item(0), σ_Q.item(0), M_T, Σ_T
+        )
 
-    return calculate_distance_profile(m, QT, μ_Q.item(0), σ_Q.item(0), M_T, Σ_T)
+    return distance_profile
 
 
 def array_to_temp_file(a):

@@ -4,17 +4,21 @@ from stumpy import core
 
 def z_norm(a, axis=0, threshold=1e-7):
     std = np.std(a, axis, keepdims=True)
-    std[std < threshold] = 1.0
+    std[np.less(std, threshold, where=~np.isnan(std))] = 1.0
 
     return (a - np.mean(a, axis, keepdims=True)) / std
 
 
 def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
+    T[np.isinf(T)] = np.nan
+    Q[np.isinf(Q)] = np.nan
+
     D = np.linalg.norm(z_norm(core.rolling_window(T, m), 1) - z_norm(Q), axis=1)
     if ignore_trivial:
         start = max(0, trivial_idx - excl_zone)
         stop = min(T.shape[0] - Q.shape[0] + 1, trivial_idx + excl_zone)
         D[start:stop] = np.inf
+    D[np.isnan(D)] = np.inf
 
     I = np.argmin(D)
     P = D[I]
