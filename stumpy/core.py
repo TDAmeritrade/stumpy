@@ -474,7 +474,6 @@ def mass(Q, T, M_T=None, Σ_T=None):
 
     T = np.asarray(T)
     check_dtype(T)
-    check_nan(T)
 
     if T.ndim != 1:  # pragma: no cover
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")

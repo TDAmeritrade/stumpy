@@ -61,16 +61,16 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
         if D[:trivial_idx].size:
             IL = np.argmin(D[:trivial_idx])
             PL = D[IL]
-            if PL == np.inf or zone_start <= IL < zone_stop:
-                IL = -1
+        if PL == np.inf or zone_start <= IL < zone_stop:
+            IL = -1
 
         IR = -1
         PR = np.inf
         if D[trivial_idx + 1 :].size:
             IR = trivial_idx + 1 + np.argmin(D[trivial_idx + 1 :])
             PR = D[IR]
-            if PR == np.inf or zone_start <= IR < zone_stop:
-                IR = -1
+        if PR == np.inf or zone_start <= IR < zone_stop:
+            IR = -1
 
     # Element-wise Min
     I = np.argmin(D)
@@ -130,7 +130,6 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     T_B.shape[0]-m+1
     """
 
-    # Preprocessing to remove nan and inf values
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
 
@@ -143,7 +142,6 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
-            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
     core.check_dtype(T_B)
 

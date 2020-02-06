@@ -65,7 +65,6 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-    # Preprocessing to remove nan and inf values
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
     n = T_A.shape[0]
@@ -82,7 +81,6 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
-            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
     T_B[np.isinf(T_B)] = np.nan
     core.check_dtype(T_B)
@@ -137,10 +135,6 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
             zone_stop = min(k, i + excl_zone)
             D[zone_start:zone_stop] = np.inf
 
-        # Ignore distance profile if query mean is np.nan
-        if np.isinf(μ_Q[i]):
-            D[:] = np.inf
-
         I = np.argmin(D)
         P = D[I]
         if P == np.inf:
@@ -152,16 +146,16 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
         if ignore_trivial and i > 0:
             IL = np.argmin(D[:i])
             PL = D[IL]
-            if PL == np.inf or zone_start <= IL < zone_stop:
-                IL = -1
+        if PL == np.inf or zone_start <= IL < zone_stop:
+            IL = -1
 
         IR = -1
         PR = np.inf
         if ignore_trivial and i + 1 < D.shape[0]:
             IR = i + 1 + np.argmin(D[i + 1 :])
             PR = D[IR]
-            if PR == np.inf or zone_start <= IR < zone_stop:
-                IR = -1
+        if PR == np.inf or zone_start <= IR < zone_stop:
+            IR = -1
 
         out[i] = P, I, IL, IR
 

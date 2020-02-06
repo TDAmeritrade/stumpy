@@ -335,16 +335,16 @@ def _stump(
         if ignore_trivial and i > 0:
             IL = np.argmin(D[:i])
             PL = D[IL]
-            if PL == np.inf or zone_start <= IL < zone_stop:
-                IL = -1
+        if PL == np.inf or zone_start <= IL < zone_stop:
+            IL = -1
 
         IR = -1
         PR = np.inf
         if ignore_trivial and i + 1 < D.shape[0]:
             IR = i + 1 + np.argmin(D[i + 1 :])
             PR = D[IR]
-            if PR == np.inf or zone_start <= IR < zone_stop:
-                IR = -1
+        if PR == np.inf or zone_start <= IR < zone_stop:
+            IR = -1
 
         # Only a part of the profile/indices array are passed
         profile[i - range_start] = P
