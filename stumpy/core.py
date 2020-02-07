@@ -6,6 +6,7 @@ import numpy as np
 from numba import njit
 import scipy.signal
 import tempfile
+import math
 
 try:
     from numba.cuda.cudadrv.driver import _raise_driver_not_found
@@ -258,6 +259,25 @@ def sliding_dot_product(Q, T):
     return QT.real[m - 1 : n]
 
 
+def rolling_chunked_std(T, m):
+    n_chunks = 1
+    while True:
+        try:
+            chunk_size = math.ceil((T.shape[0] + 1)/n_chunks)
+            std_chunks = []
+            for chunk in range(n_chunks):
+                start = chunk * chunk_size
+                stop = min(start + chunk_size + m - 1, T.shape[0])
+                tmp_std = np.nanstd(rolling_window(T[start:stop], m), axis=1)
+                std_chunks.append(tmp_std)
+            chunked_std = np.hstack(std_chunks)  # Note the use of hstack instead of concatenate
+            break
+
+        except MemoryError:
+            n_chunks *= 2
+    return chunked_std
+
+
 def compute_mean_std(T, m):
     """
     Compute the sliding mean and standard deviation for the array `T` with
@@ -302,7 +322,8 @@ def compute_mean_std(T, m):
 
     M_T = np.mean(rolling_window(T, m), axis=1)
     M_T[np.isnan(M_T)] = np.inf
-    Σ_T = np.nanstd(rolling_window(T, m), axis=1)
+    #Σ_T = np.nanstd(rolling_window(T, m), axis=1)
+    Σ_T = rolling_chunked_std(T, m)
 
     return M_T, Σ_T
 
