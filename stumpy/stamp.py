@@ -140,9 +140,7 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     T_B = T_B.copy()
     T_B[np.isinf(T_B)] = np.nan
     if T_B.ndim != 1:  # pragma: no cover
-        raise ValueError(
-            f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
-        )
+        raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
     core.check_dtype(T_B)
 
     core.check_window_size(m)
