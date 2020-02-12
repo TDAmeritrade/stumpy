@@ -16,6 +16,7 @@ test_data = [
 ]
 
 substitution_values = [np.nan, np.inf]
+substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -49,12 +50,12 @@ def test_stamp_A_B_join(T_A, T_B):
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 @pytest.mark.parametrize("substitute_B", substitution_values)
-def test_stamp_nan_inf_self_join(T_A, T_B, substitute_B):
+@pytest.mark.parametrize("substitution_locations", substitution_locations)
+def test_stamp_nan_inf_self_join(T_A, T_B, substitute_B, substitution_locations):
     m = 3
 
     T_B_sub = T_B.copy()
 
-    substitution_locations = [slice(0, 0), 0, -1, slice(1, 3), [0, 3]]
     for substitution_location_B in substitution_locations:
         T_B_sub[:] = T_B[:]
         T_B_sub[substitution_location_B] = substitute_B
@@ -76,13 +77,15 @@ def test_stamp_nan_inf_self_join(T_A, T_B, substitute_B):
 @pytest.mark.parametrize("T_A, T_B", test_data)
 @pytest.mark.parametrize("substitute_A", substitution_values)
 @pytest.mark.parametrize("substitute_B", substitution_values)
-def test_stamp_nan_inf_A_B_join(T_A, T_B, substitute_A, substitute_B):
+@pytest.mark.parametrize("substitution_locations", substitution_locations)
+def test_stamp_nan_inf_A_B_join(
+    T_A, T_B, substitute_A, substitute_B, substitution_locations
+):
     m = 3
 
     T_A_sub = T_A.copy()
     T_B_sub = T_B.copy()
 
-    substitution_locations = [slice(0, 0), 0, -1, slice(1, 3), [0, 3]]
     for substitution_location_B in substitution_locations:
         for substitution_location_A in substitution_locations:
             T_A_sub[:] = T_A[:]

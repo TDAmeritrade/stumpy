@@ -259,7 +259,7 @@ def sliding_dot_product(Q, T):
     return QT.real[m - 1 : n]
 
 
-def rolling_chunked_std(T, m):
+def rolling_nanstd_chunked(T, m):
     """
     Compute the sliding standard deviation for the array `T` with
     a window size of `m` by splitting T into smaller chunks if memory
@@ -289,10 +289,10 @@ def rolling_chunked_std(T, m):
                 stop = min(start + chunk_size + m - 1, T.shape[0])
                 tmp_std = np.nanstd(rolling_window(T[start:stop], m), axis=1)
                 std_chunks.append(tmp_std)
-            Σ_T = np.hstack(std_chunks)  # Note the use of hstack instead of concatenate
+            Σ_T = np.hstack(std_chunks)
             break
 
-        except MemoryError:
+        except MemoryError:  # pragma nocover
             n_chunks *= 2
     return Σ_T
 
@@ -341,9 +341,64 @@ def compute_mean_std(T, m):
 
     M_T = np.mean(rolling_window(T, m), axis=1)
     M_T[np.isnan(M_T)] = np.inf
-    Σ_T = rolling_chunked_std(T, m)
+    Σ_T = rolling_nanstd_chunked(T, m)
+    Σ_T[np.isnan(Σ_T)] = 0
 
     return M_T, Σ_T
+
+
+@njit(parallel=True, fastmath=True)
+def calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
+    """
+    Compute the distance profile
+
+    Parameters
+    ----------
+    m : int
+        Window size
+
+    QT : ndarray
+        Dot product between `Q` and `T`
+
+    μ_Q : ndarray
+        Mean of `Q`
+
+    σ_Q : ndarray
+        Standard deviation of `Q`
+
+    M_T : ndarray
+        Sliding mean of `T`
+
+    Σ_T : ndarray
+        Sliding standard deviation of `T`
+
+    Returns
+    -------
+    output : ndarray
+        Distance profile squared
+
+    Notes
+    -----
+    `DOI: 10.1109/ICDM.2016.0179 \
+    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
+
+    See Equation on Page 4
+    """
+
+    denom = m * σ_Q * Σ_T
+    denom = np.asarray(denom)
+    denom[denom == 0] = 1e-10  # Avoid divide by zero
+    D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
+    inf_mask = np.isinf(D_squared)
+
+    threshold = 1e-7
+    if σ_Q < threshold:  # pragma: no cover
+        D_squared[:] = m
+    D_squared[Σ_T < threshold] = m
+    D_squared[(Σ_T < threshold) & (σ_Q < threshold)] = 0
+    D_squared[inf_mask] = np.inf
+
+    return D_squared
 
 
 @njit(parallel=True, fastmath=True)
@@ -384,18 +439,7 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     See Equation on Page 4
     """
 
-    denom = m * σ_Q * Σ_T
-    denom = np.asarray(denom)
-    denom[denom == 0] = 1e-10  # Avoid divide by zero
-    D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
-    inf_mask = np.isinf(D_squared)
-
-    threshold = 1e-7
-    if σ_Q < threshold:  # pragma: no cover
-        D_squared[:] = m
-    D_squared[Σ_T < threshold] = m
-    D_squared[(Σ_T < threshold) & (σ_Q < threshold)] = 0
-    D_squared[inf_mask] = np.inf
+    D_squared = calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
 
     return np.sqrt(D_squared)
 

@@ -114,59 +114,6 @@ def _get_QT(start, T_A, T_B, m):
 
 
 @njit(parallel=True, fastmath=True)
-def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
-    """
-    A Numba JIT-compiled algorithm for parallel computation of the squared
-    distance profile according to:
-
-    `DOI: 10.1109/ICDM.2016.0179 \
-    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
-
-    See Equation on Page 4
-
-    Parameters
-    ----------
-    m : int
-        Window size
-
-    QT : ndarray
-        Dot product between the query sequence,`Q`, and time series, `T`
-
-    μ_Q : ndarray
-        Mean of the query sequence, `Q`
-
-    σ_Q : ndarray
-        Standard deviation of the query sequence, `Q`
-
-    M_T : ndarray
-        Sliding mean of time series, `T`
-
-    Σ_T : ndarray
-        Sliding standard deviation of time series, `T`
-
-    Returns
-    -------
-    D_squared : ndarray
-        Squared z-normalized Eucldiean distances. The normal distances can
-        be obtained by calculating taking the square root.
-    """
-
-    denom = m * σ_Q * Σ_T
-    denom[denom == 0] = 1e-10  # Avoid divide by zero
-    D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
-    inf_mask = np.isinf(D_squared)
-
-    threshold = 1e-7
-    if σ_Q < threshold:  # pragma: no cover
-        D_squared[:] = m
-    D_squared[Σ_T < threshold] = m
-    D_squared[(Σ_T < threshold) & (σ_Q < threshold)] = 0
-    D_squared[inf_mask] = np.inf
-
-    return D_squared
-
-
-@njit(parallel=True, fastmath=True)
 def _stump(
     T_A,
     T_B,
@@ -308,16 +255,14 @@ def _stump(
 
         if i % 2 == 0:
             QT_even[0] = QT_first[i]
-            D = _calculate_squared_distance_profile(
+            D = core.calculate_squared_distance_profile(
                 m, QT_even, μ_Q[i], σ_Q[i], M_T, Σ_T
             )
         else:
             QT_odd[0] = QT_first[i]
-            D = _calculate_squared_distance_profile(m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T)
-
-        # Ignore distance profile if query mean is np.nan
-        if np.isinf(μ_Q[i]):
-            D[:] = np.inf
+            D = core.calculate_squared_distance_profile(
+                m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T
+            )
 
         if ignore_trivial:
             zone_start = max(0, i - excl_zone)
