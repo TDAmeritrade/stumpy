@@ -114,56 +114,6 @@ def _get_QT(start, T_A, T_B, m):
 
 
 @njit(parallel=True, fastmath=True)
-def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
-    """
-    A Numba JIT-compiled algorithm for parallel computation of the squared
-    distance profile according to:
-
-    `DOI: 10.1109/ICDM.2016.0179 \
-    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
-
-    See Equation on Page 4
-
-    Parameters
-    ----------
-    m : int
-        Window size
-
-    QT : ndarray
-        Dot product between the query sequence,`Q`, and time series, `T`
-
-    μ_Q : ndarray
-        Mean of the query sequence, `Q`
-
-    σ_Q : ndarray
-        Standard deviation of the query sequence, `Q`
-
-    M_T : ndarray
-        Sliding mean of time series, `T`
-
-    Σ_T : ndarray
-        Sliding standard deviation of time series, `T`
-
-    Returns
-    -------
-    D_squared : ndarray
-        Squared z-normalized Eucldiean distances. The normal distances can
-        be obtained by calculating taking the square root.
-    """
-
-    denom = m * σ_Q * Σ_T
-    denom[denom == 0] = 1e-10  # Avoid divide by zero
-    D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
-    threshold = 1e-7
-    if σ_Q < threshold:  # pragma: no cover
-        D_squared[:] = m
-    D_squared[Σ_T < threshold] = m
-    D_squared[(Σ_T < threshold) & (σ_Q < threshold)] = 0
-
-    return D_squared
-
-
-@njit(parallel=True, fastmath=True)
 def _stump(
     T_A,
     T_B,
@@ -305,12 +255,14 @@ def _stump(
 
         if i % 2 == 0:
             QT_even[0] = QT_first[i]
-            D = _calculate_squared_distance_profile(
+            D = core._calculate_squared_distance_profile(
                 m, QT_even, μ_Q[i], σ_Q[i], M_T, Σ_T
             )
         else:
             QT_odd[0] = QT_first[i]
-            D = _calculate_squared_distance_profile(m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T)
+            D = core._calculate_squared_distance_profile(
+                m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T
+            )
 
         if ignore_trivial:
             zone_start = max(0, i - excl_zone)
@@ -319,20 +271,24 @@ def _stump(
 
         I = np.argmin(D)
         P = np.sqrt(D[I])
+        if P == np.inf:
+            I = -1
 
-        # Get left and right matrix profiles for self-joins
+        # Get left and right matrix profiles
+        IL = -1
+        PL = np.inf
         if ignore_trivial and i > 0:
             IL = np.argmin(D[:i])
-            if zone_start <= IL < zone_stop:  # pragma: no cover
-                IL = -1
-        else:
+            PL = D[IL]
+        if PL == np.inf or zone_start <= IL < zone_stop:
             IL = -1
 
+        IR = -1
+        PR = np.inf
         if ignore_trivial and i + 1 < D.shape[0]:
             IR = i + 1 + np.argmin(D[i + 1 :])
-            if zone_start <= IR < zone_stop:  # pragma: no cover
-                IR = -1
-        else:
+            PR = D[IR]
+        if PR == np.inf or zone_start <= IR < zone_stop:
             IR = -1
 
         # Only a part of the profile/indices array are passed
@@ -404,26 +360,30 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     """
 
     T_A = np.asarray(T_A)
-    core.check_dtype(T_A)
-    core.check_nan(T_A)
-
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
+    n = T_A.shape[0]
 
-    if T_B is None:  # Self join!
+    T_A = T_A.copy()
+    T_A[np.isinf(T_A)] = np.nan
+    core.check_dtype(T_A)
+
+    if T_B is None:
         T_B = T_A
         ignore_trivial = True
+
     T_B = np.asarray(T_B)
-    core.check_dtype(T_B)
-    core.check_nan(T_B)
+    T_B = T_B.copy()
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
+    T_B[np.isinf(T_B)] = np.nan
+    core.check_dtype(T_B)
 
     core.check_window_size(m)
 
@@ -443,6 +403,8 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     M_T, Σ_T = core.compute_mean_std(T_A, m)
     μ_Q, σ_Q = core.compute_mean_std(T_B, m)
 
+    T_A[np.isnan(T_A)] = 0
+
     out = np.empty((l, 4), dtype=object)
     profile = np.empty((l,), dtype="float64")
     indices = np.empty((l, 3), dtype="int64")
@@ -453,6 +415,10 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     profile[start], indices[start, :] = _get_first_stump_profile(
         start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial
     )
+
+    T_B[
+        np.isnan(T_B)
+    ] = 0  # Remove all nan values from T_B only after first profile is calculated
 
     QT, QT_first = _get_QT(start, T_A, T_B, m)
 

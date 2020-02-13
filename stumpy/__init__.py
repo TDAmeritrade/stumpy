@@ -1,13 +1,7 @@
 from pkg_resources import get_distribution, DistributionNotFound
 import os.path
 from .stomp import stomp  # noqa: F401
-from .stump import (  # noqa: F401
-    stump,
-    _stump,
-    _calculate_squared_distance_profile,
-    _get_first_stump_profile,
-    _get_QT,
-)
+from .stump import stump, _stump, _get_first_stump_profile, _get_QT  # noqa: F401
 from .stumped import stumped  # noqa: F401
 from .mstump import (  # noqa: F401
     mstump,

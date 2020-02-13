@@ -6,6 +6,7 @@ import numpy as np
 from numba import njit
 import scipy.signal
 import tempfile
+import math
 
 try:
     from numba.cuda.cudadrv.driver import _raise_driver_not_found
@@ -157,7 +158,10 @@ def are_arrays_equal(a, b):  # pragma: no cover
     if id(a) == id(b):
         return True
 
-    return np.array_equal(a, b)
+    if a.shape != b.shape:
+        return False
+
+    return ((a == b) | (np.isnan(a) & np.isnan(b))).all()
 
 
 def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
@@ -255,10 +259,10 @@ def sliding_dot_product(Q, T):
     return QT.real[m - 1 : n]
 
 
-def compute_mean_std(T, m):
+def compute_mean_std(T, m, num_chunks=1, max_iter=10):
     """
     Compute the sliding mean and standard deviation for the array `T` with
-    a window size of `m`
+    a window size of `m` by splitting up T in `n_chunks`
 
     Parameters
     ----------
@@ -268,10 +272,17 @@ def compute_mean_std(T, m):
     m : int
         Window size
 
+    num_chunks : int
+        Number of chunks to use for the first iteration. If a Memory Error is raised,
+        this number is doubled and the computation tried again.
+
+    max_iter : int
+        Maximum number of iterations
+
     Returns
     -------
     M_T : ndarray
-        Sliding mean
+        Sliding mean. All nan values are replaced with np.inf
 
     Σ_T : ndarray
         Sliding standard deviation
@@ -296,23 +307,93 @@ def compute_mean_std(T, m):
     Note that Mueen's algorithm has an off-by-one bug where the
     sum for the first subsequence is omitted and we fixed that!
     """
-    n = T.shape[0]
 
-    cumsum_T = np.empty(len(T) + 1)
-    np.cumsum(T, out=cumsum_T[1:])  # store output in cumsum_T[1:]
-    cumsum_T[0] = 0
+    for iteration in range(max_iter):
+        try:
+            chunk_size = math.ceil((T.shape[0] + 1) / num_chunks)
 
-    cumsum_T_squared = np.empty(len(T) + 1)
-    np.cumsum(np.square(T), out=cumsum_T_squared[1:])
-    cumsum_T_squared[0] = 0
+            mean_chunks = []
+            std_chunks = []
+            for chunk in range(num_chunks):
+                start = chunk * chunk_size
+                stop = min(start + chunk_size + m - 1, T.shape[0])
 
-    subseq_sum_T = cumsum_T[m:] - cumsum_T[: n - m + 1]
-    subseq_sum_T_squared = cumsum_T_squared[m:] - cumsum_T_squared[: n - m + 1]
-    M_T = subseq_sum_T / m
-    Σ_T = np.abs((subseq_sum_T_squared / m) - np.square(M_T))
-    Σ_T = np.sqrt(Σ_T)
+                tmp_mean = np.mean(rolling_window(T[start:stop], m), axis=1)
+                mean_chunks.append(tmp_mean)
+                tmp_std = np.nanstd(rolling_window(T[start:stop], m), axis=1)
+                std_chunks.append(tmp_std)
 
-    return M_T, Σ_T
+            M_T = np.hstack(mean_chunks)
+            Σ_T = np.hstack(std_chunks)
+            break
+
+        except MemoryError:  # pragma nocover
+            num_chunks *= 2
+
+    if iteration < max_iter - 1:
+        M_T[np.isnan(M_T)] = np.inf
+        Σ_T[np.isnan(Σ_T)] = 0
+
+        return M_T, Σ_T
+    else:  # pragma nocover
+        raise MemoryError(
+            "Could not calculate mean and standard deviation. "
+            "Increase the number of chunks or maximal iterations."
+        )
+
+
+@njit(parallel=True, fastmath=True)
+def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
+    """
+    Compute the squared distance profile
+
+    Parameters
+    ----------
+    m : int
+        Window size
+
+    QT : ndarray
+        Dot product between `Q` and `T`
+
+    μ_Q : ndarray
+        Mean of `Q`
+
+    σ_Q : ndarray
+        Standard deviation of `Q`
+
+    M_T : ndarray
+        Sliding mean of `T`
+
+    Σ_T : ndarray
+        Sliding standard deviation of `T`
+
+    Returns
+    -------
+    output : ndarray
+        Distance profile squared
+
+    Notes
+    -----
+    `DOI: 10.1109/ICDM.2016.0179 \
+    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
+
+    See Equation on Page 4
+    """
+
+    denom = m * σ_Q * Σ_T
+    denom = np.asarray(denom)
+    denom[denom == 0] = 1e-10  # Avoid divide by zero
+    D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
+    inf_mask = np.isinf(D_squared)
+
+    threshold = 1e-7
+    if σ_Q < threshold:  # pragma: no cover
+        D_squared[:] = m
+    D_squared[Σ_T < threshold] = m
+    D_squared[(Σ_T < threshold) & (σ_Q < threshold)] = 0
+    D_squared[inf_mask] = np.inf
+
+    return D_squared
 
 
 @njit(parallel=True, fastmath=True)
@@ -353,15 +434,8 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     See Equation on Page 4
     """
 
-    denom = m * σ_Q * Σ_T
-    denom = np.asarray(denom)
-    denom[denom == 0] = 1e-10  # Avoid divide by zero
-    D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
-    threshold = 1e-7
-    if σ_Q < threshold:  # pragma: no cover
-        D_squared[:] = m
-    D_squared[Σ_T < threshold] = m
-    D_squared[(Σ_T < threshold) & (σ_Q < threshold)] = 0
+    D_squared = _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
+
     return np.sqrt(D_squared)
 
 
@@ -471,24 +545,31 @@ def mass(Q, T, M_T=None, Σ_T=None):
 
     Q = np.asarray(Q)
     check_dtype(Q)
-    check_nan(Q)
 
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
+    m = Q.shape[0]
+
     T = np.asarray(T)
     check_dtype(T)
-    check_nan(T)
 
     if T.ndim != 1:  # pragma: no cover
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
+    n = T.shape[0]
 
-    QT = sliding_dot_product(Q, T)
-    m = Q.shape[0]
-    μ_Q, σ_Q = compute_mean_std(Q, m)
-    if M_T is None or Σ_T is None:
-        M_T, Σ_T = compute_mean_std(T, m)
+    distance_profile = np.empty(n - m + 1)
+    if np.any(np.isnan(Q)):
+        distance_profile[:] = np.inf
+    else:
+        QT = sliding_dot_product(Q, T)
+        μ_Q, σ_Q = compute_mean_std(Q, m)
+        if M_T is None or Σ_T is None:
+            M_T, Σ_T = compute_mean_std(T, m)
+        distance_profile = calculate_distance_profile(
+            m, QT, μ_Q.item(0), σ_Q.item(0), M_T, Σ_T
+        )
 
-    return calculate_distance_profile(m, QT, μ_Q.item(0), σ_Q.item(0), M_T, Σ_T)
+    return distance_profile
 
 
 def array_to_temp_file(a):

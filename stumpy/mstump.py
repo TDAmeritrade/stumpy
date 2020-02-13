@@ -7,7 +7,6 @@ import logging
 import numpy as np
 from numba import njit, prange
 
-from . import _calculate_squared_distance_profile
 from . import core
 
 logger = logging.getLogger(__name__)
@@ -360,12 +359,12 @@ def _mstump(
 
             if idx % 2 == 0:
                 QT_even[i, 0] = QT_first[i, idx]
-                D[i] = _calculate_squared_distance_profile(
+                D[i] = core._calculate_squared_distance_profile(
                     m, QT_even[i], μ_Q[i, idx], σ_Q[i, idx], M_T[i], Σ_T[i]
                 )
             else:
                 QT_odd[i, 0] = QT_first[i, idx]
-                D[i] = _calculate_squared_distance_profile(
+                D[i] = core._calculate_squared_distance_profile(
                     m, QT_odd[i], μ_Q[i, idx], σ_Q[i, idx], M_T[i], Σ_T[i]
                 )
 

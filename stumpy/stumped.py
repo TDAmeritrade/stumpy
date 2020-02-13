@@ -84,27 +84,30 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     """
 
     T_A = np.asarray(T_A)
-    core.check_dtype(T_A)
-    core.check_nan(T_A)
-
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
+    n = T_A.shape[0]
+
+    T_A = T_A.copy()
+    T_A[np.isinf(T_A)] = np.nan
+    core.check_dtype(T_A)
 
     if T_B is None:
         T_B = T_A
+        ignore_trivial = True
+
     T_B = np.asarray(T_B)
-
-    core.check_dtype(T_B)
-    core.check_nan(T_B)
-
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
+    T_B = T_B.copy()
+    T_B[np.isinf(T_B)] = np.nan
+    core.check_dtype(T_B)
 
     core.check_window_size(m)
 
@@ -124,20 +127,14 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     M_T, Σ_T = core.compute_mean_std(T_A, m)
     μ_Q, σ_Q = core.compute_mean_std(T_B, m)
 
+    T_A[np.isnan(T_A)] = 0
+
     out = np.empty((l, 4), dtype=object)
     profile = np.empty((l,), dtype="float64")
     indices = np.empty((l, 3), dtype="int64")
 
     hosts = list(dask_client.ncores().keys())
     nworkers = len(hosts)
-
-    # Scatter data to Dask cluster
-    T_A_future = dask_client.scatter(T_A, broadcast=True)
-    T_B_future = dask_client.scatter(T_B, broadcast=True)
-    M_T_future = dask_client.scatter(M_T, broadcast=True)
-    Σ_T_future = dask_client.scatter(Σ_T, broadcast=True)
-    μ_Q_future = dask_client.scatter(μ_Q, broadcast=True)
-    σ_Q_future = dask_client.scatter(σ_Q, broadcast=True)
 
     step = 1 + l // nworkers
     QT_futures = []
@@ -147,6 +144,17 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
             start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial
         )
 
+    T_B[np.isnan(T_B)] = 0
+
+    # Scatter data to Dask cluster
+    T_A_future = dask_client.scatter(T_A, broadcast=True)
+    T_B_future = dask_client.scatter(T_B, broadcast=True)
+    M_T_future = dask_client.scatter(M_T, broadcast=True)
+    Σ_T_future = dask_client.scatter(Σ_T, broadcast=True)
+    μ_Q_future = dask_client.scatter(μ_Q, broadcast=True)
+    σ_Q_future = dask_client.scatter(σ_Q, broadcast=True)
+
+    for i, start in enumerate(range(0, l, step)):
         QT, QT_first = _get_QT(start, T_A, T_B, m)
 
         QT_future = dask_client.scatter(QT, workers=[hosts[i]])
