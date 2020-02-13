@@ -259,48 +259,10 @@ def sliding_dot_product(Q, T):
     return QT.real[m - 1 : n]
 
 
-def rolling_nanstd_chunked(T, m):
-    """
-    Compute the sliding standard deviation for the array `T` with
-    a window size of `m` by splitting T into smaller chunks if memory
-    errors arise.
-
-    Parameters
-    ----------
-    T : ndarray
-        Time series or sequence
-
-    m : int
-        Window size
-
-    Returns
-    -------
-    Σ_T : ndarray
-        Sliding standard deviation
-    """
-
-    n_chunks = 1
-    while True:
-        try:
-            chunk_size = math.ceil((T.shape[0] + 1) / n_chunks)
-            std_chunks = []
-            for chunk in range(n_chunks):
-                start = chunk * chunk_size
-                stop = min(start + chunk_size + m - 1, T.shape[0])
-                tmp_std = np.nanstd(rolling_window(T[start:stop], m), axis=1)
-                std_chunks.append(tmp_std)
-            Σ_T = np.hstack(std_chunks)
-            break
-
-        except MemoryError:  # pragma nocover
-            n_chunks *= 2
-    return Σ_T
-
-
-def compute_mean_std(T, m):
+def compute_mean_std(T, m, num_chunks=1, max_iter=10):
     """
     Compute the sliding mean and standard deviation for the array `T` with
-    a window size of `m`
+    a window size of `m` by splitting up T in `n_chunks`
 
     Parameters
     ----------
@@ -309,6 +271,13 @@ def compute_mean_std(T, m):
 
     m : int
         Window size
+
+    num_chunks : int
+        Number of chunks to use for the first iteration. If a Memory Error is raised,
+        this number is doubled and the computation tried again.
+
+    max_iter : int
+        Maximum number of iterations
 
     Returns
     -------
@@ -339,18 +308,44 @@ def compute_mean_std(T, m):
     sum for the first subsequence is omitted and we fixed that!
     """
 
-    M_T = np.mean(rolling_window(T, m), axis=1)
-    M_T[np.isnan(M_T)] = np.inf
-    Σ_T = rolling_nanstd_chunked(T, m)
-    Σ_T[np.isnan(Σ_T)] = 0
+    for iteration in range(max_iter):
+        try:
+            chunk_size = math.ceil((T.shape[0] + 1) / num_chunks)
 
-    return M_T, Σ_T
+            mean_chunks = []
+            std_chunks = []
+            for chunk in range(num_chunks):
+                start = chunk * chunk_size
+                stop = min(start + chunk_size + m - 1, T.shape[0])
+
+                tmp_mean = np.mean(rolling_window(T[start:stop], m), axis=1)
+                mean_chunks.append(tmp_mean)
+                tmp_std = np.nanstd(rolling_window(T[start:stop], m), axis=1)
+                std_chunks.append(tmp_std)
+
+            M_T = np.hstack(mean_chunks)
+            Σ_T = np.hstack(std_chunks)
+            break
+
+        except MemoryError:  # pragma nocover
+            num_chunks *= 2
+
+    if iteration < max_iter - 1:
+        M_T[np.isnan(M_T)] = np.inf
+        Σ_T[np.isnan(Σ_T)] = 0
+
+        return M_T, Σ_T
+    else:  # pragma nocover
+        raise MemoryError(
+            "Could not calculate mean and standard deviation. "
+            "Increase the number of chunks or maximal iterations."
+        )
 
 
 @njit(parallel=True, fastmath=True)
-def calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
+def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
-    Compute the distance profile
+    Compute the squared distance profile
 
     Parameters
     ----------
@@ -439,7 +434,7 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     See Equation on Page 4
     """
 
-    D_squared = calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
+    D_squared = _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
 
     return np.sqrt(D_squared)
 

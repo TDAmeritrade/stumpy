@@ -60,6 +60,24 @@ def test_compute_mean_std(Q, T):
 
 
 @pytest.mark.parametrize("Q, T", test_data)
+def test_calculate_squared_distance_profile(Q, T):
+    m = Q.shape[0]
+    left = (
+        np.linalg.norm(
+            core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
+        )
+        ** 2
+    )
+    QT = core.sliding_dot_product(Q, T)
+    μ_Q, σ_Q = core.compute_mean_std(Q, m)
+    M_T, Σ_T = core.compute_mean_std(T, m)
+    right = core._calculate_squared_distance_profile(
+        m, QT, μ_Q.item(0), σ_Q.item(0), M_T, Σ_T
+    )
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
 def test_calculate_distance_profile(Q, T):
     m = Q.shape[0]
     left = np.linalg.norm(

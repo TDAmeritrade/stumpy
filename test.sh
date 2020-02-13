@@ -30,7 +30,7 @@ py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_st
 check_errs $?
 py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_one_subsequence_nan_self_join.py tests/test_stumped_one_subsequence_inf_self_join.py tests/test_stumped_one_subsequence_nan_A_B_join.py tests/test_stumped_one_subsequence_inf_A_B_join.py
 check_errs $?
-py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_two_subsequences_nan_A_B_join.py tests/test_stumped_two_subsequences_inf_A_B_join.py tests/test_stumped_two_subsequences_nan_inf_A_B_join.py
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_two_subsequences_nan_A_B_join.py tests/test_stumped_two_subsequences_inf_A_B_join.py tests/test_stumped_two_subsequences_nan_inf_A_B_join.py tests/test_stumped_two_subsequences_nan_inf_A_B_join_swap.py
 check_errs $?
 py.test -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_scrimp.py
 check_errs $?

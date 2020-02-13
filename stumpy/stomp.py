@@ -125,7 +125,7 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
         )
         QT[0] = QT_first[i]
 
-        D = core.calculate_distance_profile(
+        D = core._calculate_squared_distance_profile(
             m, QT, μ_Q[i].item(0), σ_Q[i].item(0), M_T, Σ_T
         )
         if ignore_trivial:
@@ -134,7 +134,7 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
             D[zone_start:zone_stop] = np.inf
 
         I = np.argmin(D)
-        P = D[I]
+        P = np.sqrt(D[I])
         if P == np.inf:
             I = -1
 

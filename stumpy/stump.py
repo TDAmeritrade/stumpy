@@ -255,12 +255,12 @@ def _stump(
 
         if i % 2 == 0:
             QT_even[0] = QT_first[i]
-            D = core.calculate_squared_distance_profile(
+            D = core._calculate_squared_distance_profile(
                 m, QT_even, μ_Q[i], σ_Q[i], M_T, Σ_T
             )
         else:
             QT_odd[0] = QT_first[i]
-            D = core.calculate_squared_distance_profile(
+            D = core._calculate_squared_distance_profile(
                 m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T
             )
 
