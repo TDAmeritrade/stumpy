@@ -8,7 +8,6 @@ from .mstump import (  # noqa: F401
     _mstump,
     _get_first_mstump_profile,
     _get_multi_QT,
-    _multi_compute_mean_std,
     _multi_mass,
 )
 from .mstumped import mstumped  # noqa: F401

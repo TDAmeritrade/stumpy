@@ -307,20 +307,22 @@ def compute_mean_std(T, m, num_chunks=1, max_iter=10):
     Note that Mueen's algorithm has an off-by-one bug where the
     sum for the first subsequence is omitted and we fixed that!
     """
+    if T.ndim > 2:  # pragma nocover
+        raise ValueError("T has to be one or two dimensional!")
 
     for iteration in range(max_iter):
         try:
-            chunk_size = math.ceil((T.shape[0] + 1) / num_chunks)
+            chunk_size = math.ceil((T.shape[-1] + 1) / num_chunks)
 
             mean_chunks = []
             std_chunks = []
             for chunk in range(num_chunks):
                 start = chunk * chunk_size
-                stop = min(start + chunk_size + m - 1, T.shape[0])
+                stop = min(start + chunk_size + m - 1, T.shape[-1])
 
-                tmp_mean = np.mean(rolling_window(T[start:stop], m), axis=1)
+                tmp_mean = np.mean(rolling_window(T[start:stop], m), axis=T.ndim)
                 mean_chunks.append(tmp_mean)
-                tmp_std = np.nanstd(rolling_window(T[start:stop], m), axis=1)
+                tmp_std = np.nanstd(rolling_window(T[start:stop], m), axis=T.ndim)
                 std_chunks.append(tmp_std)
 
             M_T = np.hstack(mean_chunks)
