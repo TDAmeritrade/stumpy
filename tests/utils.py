@@ -54,47 +54,6 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     return P, I, IL, IR
 
 
-def naive_compute_mean_std(T, m):
-    n = T.shape[0]
-
-    cumsum_T = np.empty(len(T) + 1)
-    np.cumsum(T, out=cumsum_T[1:])  # store output in cumsum_T[1:]
-    cumsum_T[0] = 0
-
-    cumsum_T_squared = np.empty(len(T) + 1)
-    np.cumsum(np.square(T), out=cumsum_T_squared[1:])
-    cumsum_T_squared[0] = 0
-
-    subseq_sum_T = cumsum_T[m:] - cumsum_T[: n - m + 1]
-    subseq_sum_T_squared = cumsum_T_squared[m:] - cumsum_T_squared[: n - m + 1]
-    M_T = subseq_sum_T / m
-    Σ_T = np.abs((subseq_sum_T_squared / m) - np.square(M_T))
-    Σ_T = np.sqrt(Σ_T)
-
-    return M_T, Σ_T
-
-
-def naive_compute_mean_std_multidimensional(T, m):
-    n = T.shape[1]
-    nrows, ncols = T.shape
-
-    cumsum_T = np.empty((nrows, ncols + 1))
-    np.cumsum(T, axis=1, out=cumsum_T[:, 1:])  # store output in cumsum_T[1:]
-    cumsum_T[:, 0] = 0
-
-    cumsum_T_squared = np.empty((nrows, ncols + 1))
-    np.cumsum(np.square(T), axis=1, out=cumsum_T_squared[:, 1:])
-    cumsum_T_squared[:, 0] = 0
-
-    subseq_sum_T = cumsum_T[:, m:] - cumsum_T[:, : n - m + 1]
-    subseq_sum_T_squared = cumsum_T_squared[:, m:] - cumsum_T_squared[:, : n - m + 1]
-    M_T = subseq_sum_T / m
-    Σ_T = np.abs((subseq_sum_T_squared / m) - np.square(M_T))
-    Σ_T = np.sqrt(Σ_T)
-
-    return M_T, Σ_T
-
-
 def replace_inf(x, value=0):
     x[x == np.inf] = value
     x[x == -np.inf] = value

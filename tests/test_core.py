@@ -29,6 +29,47 @@ def test_check_window_size():
             core.check_window_size(m)
 
 
+def naive_compute_mean_std(T, m):
+    n = T.shape[0]
+
+    cumsum_T = np.empty(len(T) + 1)
+    np.cumsum(T, out=cumsum_T[1:])  # store output in cumsum_T[1:]
+    cumsum_T[0] = 0
+
+    cumsum_T_squared = np.empty(len(T) + 1)
+    np.cumsum(np.square(T), out=cumsum_T_squared[1:])
+    cumsum_T_squared[0] = 0
+
+    subseq_sum_T = cumsum_T[m:] - cumsum_T[: n - m + 1]
+    subseq_sum_T_squared = cumsum_T_squared[m:] - cumsum_T_squared[: n - m + 1]
+    M_T = subseq_sum_T / m
+    Σ_T = np.abs((subseq_sum_T_squared / m) - np.square(M_T))
+    Σ_T = np.sqrt(Σ_T)
+
+    return M_T, Σ_T
+
+
+def naive_compute_mean_std_multidimensional(T, m):
+    n = T.shape[1]
+    nrows, ncols = T.shape
+
+    cumsum_T = np.empty((nrows, ncols + 1))
+    np.cumsum(T, axis=1, out=cumsum_T[:, 1:])  # store output in cumsum_T[1:]
+    cumsum_T[:, 0] = 0
+
+    cumsum_T_squared = np.empty((nrows, ncols + 1))
+    np.cumsum(np.square(T), axis=1, out=cumsum_T_squared[:, 1:])
+    cumsum_T_squared[:, 0] = 0
+
+    subseq_sum_T = cumsum_T[:, m:] - cumsum_T[:, : n - m + 1]
+    subseq_sum_T_squared = cumsum_T_squared[:, m:] - cumsum_T_squared[:, : n - m + 1]
+    M_T = subseq_sum_T / m
+    Σ_T = np.abs((subseq_sum_T_squared / m) - np.square(M_T))
+    Σ_T = np.sqrt(Σ_T)
+
+    return M_T, Σ_T
+
+
 test_data = [
     (np.array([-1, 1, 2], dtype=np.float64), np.array(range(5), dtype=np.float64)),
     (
@@ -50,8 +91,8 @@ def test_sliding_dot_product(Q, T):
 def test_compute_mean_std(Q, T):
     m = Q.shape[0]
 
-    left_μ_Q, left_σ_Q = utils.naive_compute_mean_std(Q, m)
-    left_M_T, left_Σ_T = utils.naive_compute_mean_std(T, m)
+    left_μ_Q, left_σ_Q = naive_compute_mean_std(Q, m)
+    left_M_T, left_Σ_T = naive_compute_mean_std(T, m)
     right_μ_Q, right_σ_Q = core.compute_mean_std(Q, m)
     right_M_T, right_Σ_T = core.compute_mean_std(T, m)
 
@@ -68,8 +109,8 @@ def test_compute_mean_std_multidimensional(Q, T):
     Q = np.array([Q, np.random.uniform(-1000, 1000, [Q.shape[0]])])
     T = np.array([T, T, np.random.uniform(-1000, 1000, [T.shape[0]])])
 
-    left_μ_Q, left_σ_Q = utils.naive_compute_mean_std_multidimensional(Q, m)
-    left_M_T, left_Σ_T = utils.naive_compute_mean_std_multidimensional(T, m)
+    left_μ_Q, left_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
+    left_M_T, left_Σ_T = naive_compute_mean_std_multidimensional(T, m)
     right_μ_Q, right_σ_Q = core.compute_mean_std(Q, m)
     right_M_T, right_Σ_T = core.compute_mean_std(T, m)
 
