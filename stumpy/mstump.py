@@ -124,7 +124,7 @@ def _multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
 
     zone_start = max(0, trivial_idx - excl_zone)
     zone_stop = min(k, trivial_idx + excl_zone)
-    D[:, zone_start:zone_stop] = np.inf
+    D[:, zone_start : zone_stop + 1] = np.inf
 
     # Column-wise sort
     # row_idx = np.argsort(D, axis=0)
@@ -370,7 +370,7 @@ def _mstump(
 
         zone_start = max(0, idx - excl_zone)
         zone_stop = min(k, idx + excl_zone)
-        D[:, zone_start:zone_stop] = np.inf
+        D[:, zone_start : zone_stop + 1] = np.inf
 
         D = np.sqrt(D)
 
