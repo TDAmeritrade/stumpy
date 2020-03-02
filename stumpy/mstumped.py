@@ -6,7 +6,7 @@ import logging
 
 import numpy as np
 
-from . import _mstump, _get_first_mstump_profile, _get_multi_QT, _multi_compute_mean_std
+from . import _mstump, _get_first_mstump_profile, _get_multi_QT
 from . import core
 
 logger = logging.getLogger(__name__)
@@ -76,8 +76,8 @@ def mstumped(dask_client, T, m):
     k = n - m + 1
     excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
 
-    M_T, Σ_T = _multi_compute_mean_std(T, m)
-    μ_Q, σ_Q = _multi_compute_mean_std(T, m)
+    M_T, Σ_T = core.compute_mean_std(T, m)
+    μ_Q, σ_Q = core.compute_mean_std(T, m)
 
     P = np.empty((nworkers, d, k), dtype="float64")
     D = np.zeros((nworkers, d, k), dtype="float64")

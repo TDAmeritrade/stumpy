@@ -12,67 +12,6 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
-def _multi_compute_mean_std(T, m):
-    """
-    Compute the sliding mean and standard deviation for the multi-dimensional
-    array `T` with a window size of `m`
-
-    Parameters
-    ----------
-    T : ndarray
-        Time series or sequence
-
-    m : int
-        Window size
-
-    Returns
-    -------
-    M_T : ndarray
-        Sliding mean
-
-    Σ_T : ndarray
-        Sliding standard deviation
-
-    Notes
-    -----
-    `DOI: 10.1109/ICDM.2016.0179 \
-    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
-
-    See Table II
-
-    DOI: 10.1145/2020408.2020587
-
-    See Page 2 and Equations 1, 2
-
-    DOI: 10.1145/2339530.2339576
-
-    See Page 4
-
-    http://www.cs.unm.edu/~mueen/FastestSimilaritySearch.html
-
-    Note that Mueen's algorithm has an off-by-one bug where the
-    sum for the first subsequence is omitted and we fixed that!
-    """
-    n = T.shape[1]
-    nrows, ncols = T.shape
-
-    cumsum_T = np.empty((nrows, ncols + 1))
-    np.cumsum(T, axis=1, out=cumsum_T[:, 1:])  # store output in cumsum_T[1:]
-    cumsum_T[:, 0] = 0
-
-    cumsum_T_squared = np.empty((nrows, ncols + 1))
-    np.cumsum(np.square(T), axis=1, out=cumsum_T_squared[:, 1:])
-    cumsum_T_squared[:, 0] = 0
-
-    subseq_sum_T = cumsum_T[:, m:] - cumsum_T[:, : n - m + 1]
-    subseq_sum_T_squared = cumsum_T_squared[:, m:] - cumsum_T_squared[:, : n - m + 1]
-    M_T = subseq_sum_T / m
-    Σ_T = np.abs((subseq_sum_T_squared / m) - np.square(M_T))
-    Σ_T = np.sqrt(Σ_T)
-
-    return M_T, Σ_T
-
-
 def _multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
     """
     A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
@@ -447,8 +386,8 @@ def mstump(T, m):
     k = n - m + 1
     excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
 
-    M_T, Σ_T = _multi_compute_mean_std(T, m)
-    μ_Q, σ_Q = _multi_compute_mean_std(T, m)
+    M_T, Σ_T = core.compute_mean_std(T, m)
+    μ_Q, σ_Q = core.compute_mean_std(T, m)
 
     P = np.full((d, k), np.inf, dtype="float64")
     D = np.zeros((d, k), dtype="float64")

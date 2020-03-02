@@ -259,6 +259,46 @@ def sliding_dot_product(Q, T):
     return QT.real[m - 1 : n]
 
 
+def _rolling_mean_std(T, m, num_chunks):
+    chunk_size = math.ceil((T.shape[0] + 1) / num_chunks)
+
+    mean_chunks = []
+    std_chunks = []
+    for chunk in range(num_chunks):
+        start = chunk * chunk_size
+        stop = min(start + chunk_size + m - 1, T.shape[0])
+
+        tmp_mean = np.mean(rolling_window(T[start:stop], m), axis=1)
+        mean_chunks.append(tmp_mean)
+        tmp_std = np.nanstd(rolling_window(T[start:stop], m), axis=1)
+        std_chunks.append(tmp_std)
+
+    M_T = np.hstack(mean_chunks)
+    Σ_T = np.hstack(std_chunks)
+
+    return M_T, Σ_T
+
+
+def _rolling_mean_std_multidimensional(T, m, num_chunks):
+    chunk_size = math.ceil((T.shape[0] + 1) / num_chunks)
+
+    mean_chunks = []
+    std_chunks = []
+    for chunk in range(num_chunks):
+        start = chunk * chunk_size
+        stop = min(start + chunk_size + m - 1, T.shape[1])
+
+        tmp_mean = np.mean(rolling_window(T[start:stop], m), axis=2)
+        mean_chunks.append(tmp_mean)
+        tmp_std = np.nanstd(rolling_window(T[start:stop], m), axis=2)
+        std_chunks.append(tmp_std)
+
+    M_T = np.hstack(mean_chunks)
+    Σ_T = np.hstack(std_chunks)
+
+    return M_T, Σ_T
+
+
 def compute_mean_std(T, m, num_chunks=1, max_iter=10):
     """
     Compute the sliding mean and standard deviation for the array `T` with
@@ -307,24 +347,19 @@ def compute_mean_std(T, m, num_chunks=1, max_iter=10):
     Note that Mueen's algorithm has an off-by-one bug where the
     sum for the first subsequence is omitted and we fixed that!
     """
+    if len(T.shape) == 1:
+        multidim = False
+    elif len(T.shape) == 2:
+        multidim = True
+    else:  # pragma nocover
+        raise ValueError("T has to be one or two dimensional!")
 
     for iteration in range(max_iter):
         try:
-            chunk_size = math.ceil((T.shape[0] + 1) / num_chunks)
-
-            mean_chunks = []
-            std_chunks = []
-            for chunk in range(num_chunks):
-                start = chunk * chunk_size
-                stop = min(start + chunk_size + m - 1, T.shape[0])
-
-                tmp_mean = np.mean(rolling_window(T[start:stop], m), axis=1)
-                mean_chunks.append(tmp_mean)
-                tmp_std = np.nanstd(rolling_window(T[start:stop], m), axis=1)
-                std_chunks.append(tmp_std)
-
-            M_T = np.hstack(mean_chunks)
-            Σ_T = np.hstack(std_chunks)
+            if not multidim:
+                M_T, Σ_T = _rolling_mean_std(T, m, num_chunks)
+            else:
+                M_T, Σ_T = _rolling_mean_std_multidimensional(T, m, num_chunks)
             break
 
         except MemoryError:  # pragma nocover
