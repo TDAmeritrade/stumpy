@@ -147,7 +147,7 @@ def _compute_and_update_PI_kernel(
             D = 0
 
         if ignore_trivial:
-            if i < zone_stop and i >= zone_start:
+            if i <= zone_stop and i >= zone_start:
                 D = np.inf
             if D < profile[j, 1] and i < j:
                 profile[j, 1] = D

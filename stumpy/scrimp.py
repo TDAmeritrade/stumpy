@@ -90,7 +90,7 @@ def _scrimp(T, m, μ, σ, orders, excl_zone, percentage=1.0):
             if σ[i] < threshold and σ[i + k - 1] < threshold:
                 D = 0
 
-            if D < P[i]:
+            if i < i + k - 1 - excl_zone and D < P[i]:
                 P[i] = D
                 I[i] = i + k - 1
 

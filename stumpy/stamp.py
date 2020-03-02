@@ -53,7 +53,7 @@ def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False
     if trivial_idx is not None:
         zone_start = max(0, trivial_idx - excl_zone)
         zone_stop = min(T.shape[0] - Q.shape[0] + 1, trivial_idx + excl_zone)
-        D[zone_start:zone_stop] = np.inf
+        D[zone_start : zone_stop + 1] = np.inf
 
         # Get left and right matrix profiles
         IL = -1

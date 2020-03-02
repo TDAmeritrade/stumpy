@@ -17,7 +17,7 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     if ignore_trivial:
         start = max(0, trivial_idx - excl_zone)
         stop = min(T.shape[0] - Q.shape[0] + 1, trivial_idx + excl_zone)
-        D[start:stop] = np.inf
+        D[start : stop + 1] = np.inf
     D[np.isnan(D)] = np.inf
 
     I = np.argmin(D)

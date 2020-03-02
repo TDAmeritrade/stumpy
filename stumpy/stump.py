@@ -267,7 +267,7 @@ def _stump(
         if ignore_trivial:
             zone_start = max(0, i - excl_zone)
             zone_stop = min(k, i + excl_zone)
-            D[zone_start:zone_stop] = np.inf
+            D[zone_start : zone_stop + 1] = np.inf
 
         I = np.argmin(D)
         P = np.sqrt(D[I])
