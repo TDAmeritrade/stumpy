@@ -5,7 +5,6 @@ from stumpy import core
 from stumpy import (
     mstump,
     _mstump,
-    _multi_compute_mean_std,
     _multi_mass,
     _get_first_mstump_profile,
     _get_multi_QT,
@@ -80,19 +79,6 @@ test_data = [
     (np.array([[584, -11, 23, 79, 1001, 0, -19]], dtype=np.float64), 3),
     (np.random.uniform(-1000, 1000, [3, 10]).astype(np.float64), 5),
 ]
-
-
-@pytest.mark.parametrize("T, m", test_data)
-def test_multi_compute_mean_std(T, m):
-    Q = core.rolling_window(T, m)
-    left_M_T = np.empty((Q.shape[0], Q.shape[1]))
-    left_Σ_T = np.empty((Q.shape[0], Q.shape[1]))
-    for i in range(Q.shape[0]):
-        left_M_T[i] = np.mean(Q[i], axis=1)
-        left_Σ_T[i] = np.std(Q[i], axis=1)
-    right_M_T, right_Σ_T = _multi_compute_mean_std(T, m)
-    npt.assert_almost_equal(left_M_T, right_M_T)
-    npt.assert_almost_equal(left_Σ_T, right_Σ_T)
 
 
 @pytest.mark.parametrize("T, m", test_data)
@@ -174,8 +160,8 @@ def test_mstump(T, m):
     k = n - m + 1
     excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
 
-    M_T, Σ_T = _multi_compute_mean_std(T, m)
-    μ_Q, σ_Q = _multi_compute_mean_std(T, m)
+    M_T, Σ_T = core.compute_mean_std(T, m)
+    μ_Q, σ_Q = core.compute_mean_std(T, m)
 
     P = np.empty((d, k), dtype="float64")
     D = np.zeros((d, k), dtype="float64")
