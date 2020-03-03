@@ -12,10 +12,10 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
-def _multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
+def _multi_mass(Q, T, m, M_T, Σ_T):
     """
     A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
-    (MASS) to compute multi-dimensional MASS.
+    (MASS) to compute multi-dimensional distance profile.
 
     Parameters
     ----------
@@ -34,54 +34,29 @@ def _multi_mass(Q, T, m, M_T, Σ_T, trivial_idx, excl_zone):
     Σ_T : ndarray
         Sliding standard deviation for `T`
 
-    trivial_idx : int
-        Index for the start of the trivial self-join
-
-    excl_zone : int
-        The half width for the exclusion zone relative to the `trivial_idx`.
-        If the `trivial_idx` is `None` then this parameter is ignored.
-
     Returns
     -------
-    P : ndarray
-        Multi-dimensional matrix profile
-
-    I : ndarray
-        Multi-dimensional matrix profile indices
+    D : ndarray
+        Multi-dimensional distance profile
     """
 
-    d = T.shape[0]
-    n = T.shape[1]
+    d, n = T.shape
     k = n - m + 1
 
-    P = np.full((d, k), np.inf, dtype="float64")
     D = np.empty((d, k), dtype="float64")
-    I = np.ones((d, k), dtype="int64") * -1
 
     for i in range(d):
         D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
 
-    zone_start = max(0, trivial_idx - excl_zone)
-    zone_stop = min(k, trivial_idx + excl_zone)
-    D[:, zone_start : zone_stop + 1] = np.inf
-
     # Column-wise sort
-    # row_idx = np.argsort(D, axis=0)
-    # D = D[row_idx, np.arange(row_idx.shape[1])]
     D = np.sort(D, axis=0)
 
     D_prime = np.zeros(k)
     for i in range(d):
-        D_prime = D_prime + D[i]
-        D_prime_prime = D_prime / (i + 1)
-        # Element-wise Min
-        # col_idx = np.argmin([P[i, :], D_prime_prime], axis=0)
-        # col_mask = col_idx > 0
-        col_mask = P[i] > D_prime_prime
-        P[i, col_mask] = D_prime_prime[col_mask]
-        I[i, col_mask] = trivial_idx
+        D_prime[:] = D_prime + D[i]
+        D[i, :] = D_prime / (i + 1)
 
-    return P, I
+    return D
 
 
 def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T):
@@ -123,8 +98,22 @@ def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T):
         equal to `start`
     """
 
-    # Handle first subsequence, add exclusionary zone
-    P, I = _multi_mass(T[:, start : start + m], T, m, M_T, Σ_T, start, excl_zone)
+    d, n = T.shape
+    D = _multi_mass(T[:, start : start + m], T, m, M_T, Σ_T)
+
+    zone_start = max(0, start - excl_zone)
+    zone_stop = min(n - m + 1, start + excl_zone)
+    D[:, zone_start : zone_stop + 1] = np.inf
+
+    P = np.full(d, np.inf, dtype="float64")
+    I = np.ones(d, dtype="int64") * -1
+
+    for i in range(d):
+        min_index = np.argmin(D[i])
+        I[i] = min_index
+        P[i] = D[i, min_index]
+        if np.isinf(P[i]):  # pragma nocover
+            I[i] = -1
 
     return P, I
 
@@ -314,19 +303,18 @@ def _mstump(
         D = np.sqrt(D)
 
         # Column-wise sort
-        for col in range(k):
-            # row_idx[:, col] = np.argsort(D[:, col])
-            # D[:, col] = D[row_idx[:, col], col]
+        for col in prange(k):
             D[:, col] = np.sort(D[:, col])
+
         D_prime[:] = 0.0
         for i in range(d):
             D_prime = D_prime + D[i]
-            D_prime_prime = D_prime / (i + 1)
-            # Element-wise Min
-            for col in range(k):
-                if P[i, col] > D_prime_prime[col]:
-                    P[i, col] = D_prime_prime[col]
-                    I[i, col] = idx
+
+            min_index = np.argmin(D_prime)
+            I[i, idx] = min_index
+            P[i, idx] = D_prime[min_index] / (i + 1)
+            if np.isinf(P[i, idx]):  # pragma nocover
+                I[i, idx] = -1
 
     return P, I
 
@@ -354,12 +342,12 @@ def mstump(T, m):
     Returns
     -------
     P : ndarray
-        The multi-dimensional matrix profile. Each row of the array corresponds
-        to each matrix profile for a given dimension (i.e., the first row is the
-        1-D matrix profile and the second row is the 2-D matrix profile).
+        The multi-dimensional matrix profile. Each column of the array corresponds
+        to each matrix profile for a given dimension (i.e., the first column is
+        the 1-D matrix profile and the second column is the 2-D matrix profile).
 
     I : ndarray
-        The multi-dimensional matrix profile index where each row of the array
+        The multi-dimensional matrix profile index where each column of the array
         corresponds to each matrix profile index for a given dimension.
 
     Notes
@@ -397,7 +385,9 @@ def mstump(T, m):
     start = 0
     stop = k
 
-    P, I = _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T)
+    P[:, start], I[:, start] = _get_first_mstump_profile(
+        start, T, m, excl_zone, M_T, Σ_T
+    )
 
     QT, QT_first = _get_multi_QT(start, T, m)
 
