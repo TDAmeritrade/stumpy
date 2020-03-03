@@ -41,12 +41,12 @@ def mstumped(dask_client, T, m):
     Returns
     -------
     P : ndarray
-        The multi-dimensional matrix profile. Each row of the array corresponds
-        to each matrix profile for a given dimension (i.e., the first row is the
-        1-D matrix profile and the second row is the 2-D matrix profile).
+        The multi-dimensional matrix profile. Each column of the array corresponds
+        to each matrix profile for a given dimension (i.e., the first column is
+        the 1-D matrix profile and the second column is the 2-D matrix profile).
 
     I : ndarray
-        The multi-dimensional matrix profile index where each row of the array
+        The multi-dimensional matrix profile index where each column of the array
         corresponds to each matrix profile index for a given dimension.
 
     Notes
@@ -79,7 +79,7 @@ def mstumped(dask_client, T, m):
     M_T, Σ_T = core.compute_mean_std(T, m)
     μ_Q, σ_Q = core.compute_mean_std(T, m)
 
-    P = np.empty((nworkers, d, k), dtype="float64")
+    P = np.full((nworkers, d, k), np.inf, dtype="float64")
     D = np.zeros((nworkers, d, k), dtype="float64")
     D_prime = np.zeros((nworkers, k), dtype="float64")
     I = np.ones((nworkers, d, k), dtype="int64") * -1
@@ -100,7 +100,9 @@ def mstumped(dask_client, T, m):
     D_prime_futures = []
 
     for i, start in enumerate(range(0, k, step)):
-        P[i], I[i] = _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T)
+        P[i, :, start], I[i, :, start] = _get_first_mstump_profile(
+            start, T, m, excl_zone, M_T, Σ_T
+        )
 
         P_future = dask_client.scatter(P[i], workers=[hosts[i]])
         I_future = dask_client.scatter(I[i], workers=[hosts[i]])

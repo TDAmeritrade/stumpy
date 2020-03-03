@@ -58,3 +58,62 @@ def replace_inf(x, value=0):
     x[x == np.inf] = value
     x[x == -np.inf] = value
     return
+
+
+def naive_multi_mass(Q, T, m):
+    d, n = T.shape
+
+    D = np.empty((d, n - m + 1))
+    for i in range(d):
+        D[i] = np.linalg.norm(
+            z_norm(core.rolling_window(T[i], m), 1) - z_norm(Q[i]), axis=1
+        )
+
+    D = np.sort(D, axis=0)
+
+    D_prime = np.zeros(n - m + 1)
+    D_prime_prime = np.zeros((d, n - m + 1))
+    for i in range(d):
+        D_prime[:] = D_prime + D[i]
+        D_prime_prime[i, :] = D_prime / (i + 1)
+
+    return D_prime_prime
+
+
+def naive_PI(D, trivial_idx, excl_zone):
+    d, k = D.shape
+
+    P = np.full((d, k), np.inf)
+    I = np.ones((d, k), dtype="int64") * -1
+
+    zone_start = max(0, trivial_idx - excl_zone)
+    zone_end = min(k, trivial_idx + excl_zone)
+    D[:, zone_start : zone_end + 1] = np.inf
+
+    for i in range(d):
+        col_mask = P[i] > D[i]
+        P[i, col_mask] = D[i, col_mask]
+        I[i, col_mask] = trivial_idx
+
+    return P, I
+
+
+def naive_mstump(T, m, excl_zone):
+    d, n = T.shape
+    k = n - m + 1
+
+    P = np.full((d, k), np.inf)
+    I = np.ones((d, k), dtype="int64") * -1
+
+    for i in range(k):
+        Q = T[:, i : i + m]
+        D = naive_multi_mass(Q, T, m)
+
+        P_i, I_i = naive_PI(D, i, excl_zone)
+
+        for dim in range(T.shape[0]):
+            col_mask = P[dim] > P_i[dim]
+            P[dim, col_mask] = P_i[dim, col_mask]
+            I[dim, col_mask] = I_i[dim, col_mask]
+
+    return P.T, I.T
