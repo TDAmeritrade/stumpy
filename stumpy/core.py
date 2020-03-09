@@ -3,7 +3,7 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from numba import njit
+from numba import njit, prange
 import scipy.signal
 import tempfile
 import math
@@ -72,8 +72,10 @@ def z_norm(a, axis=0):
     output : ndarray
         An ndarray with z-normalized values computed along a specified axis.
     """
+    std = np.std(a, axis, keepdims=True)
+    std[std == 0] = 1
 
-    return (a - np.mean(a, axis, keepdims=True)) / np.std(a, axis, keepdims=True)
+    return (a - np.mean(a, axis, keepdims=True)) / std
 
 
 def check_nan(a):  # pragma: no cover
@@ -382,18 +384,26 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     See Equation on Page 4
     """
 
-    denom = m * σ_Q * Σ_T
-    denom = np.asarray(denom)
-    denom[denom == 0] = 1e-10  # Avoid divide by zero
-    D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
-    inf_mask = np.isinf(D_squared)
+    k = M_T.shape[0]
+    D_squared = np.empty(k)
 
-    threshold = 1e-7
-    if σ_Q < threshold:  # pragma: no cover
-        D_squared[:] = m
-    D_squared[Σ_T < threshold] = m
-    D_squared[(Σ_T < threshold) & (σ_Q < threshold)] = 0
-    D_squared[inf_mask] = np.inf
+    threshold = 1e-10
+    for i in prange(k):
+        if np.isinf(M_T[i]) or np.isinf(μ_Q):
+            D_squared[i] = np.inf
+        else:
+            if σ_Q < threshold or Σ_T[i] < threshold:
+                D_squared[i] = m
+            else:
+                denom = m * σ_Q * Σ_T[i]
+                if np.abs(denom) < threshold:  # pragma nocover
+                    denom = threshold
+                D_squared[i] = np.abs(
+                    2 * m * (1.0 - (QT[i] - m * μ_Q * M_T[i]) / denom)
+                )
+
+            if σ_Q < threshold and Σ_T[i] < threshold:
+                D_squared[i] = 0
 
     return D_squared
 

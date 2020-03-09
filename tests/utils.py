@@ -10,6 +10,8 @@ def z_norm(a, axis=0, threshold=1e-7):
 
 
 def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
+    T = T.copy()
+
     T[np.isinf(T)] = np.nan
     Q[np.isinf(Q)] = np.nan
 
@@ -99,6 +101,8 @@ def naive_PI(D, trivial_idx, excl_zone):
 
 
 def naive_mstump(T, m, excl_zone):
+    T = T.copy()
+
     d, n = T.shape
     k = n - m + 1
 
