@@ -58,3 +58,26 @@ def test_stumped_one_subsequence_inf_self_join(
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+def test_stumped_nan_zero_mean_self_join(dask_client):
+    T = np.array([-1, 0, 1, np.inf, 1, 0, -1])
+    m = 3
+
+    zone = int(np.ceil(m / 4))
+    left = np.array(
+        [
+            utils.naive_mass(Q, T, m, i, zone, True)
+            for i, Q in enumerate(core.rolling_window(T, m))
+        ],
+        dtype=object,
+    )
+    right = stumped(dask_client, T, m, ignore_trivial=True)
+
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left, right)

@@ -124,3 +124,22 @@ def test_stomp_nan_inf_A_B_join(
             utils.replace_inf(left)
             utils.replace_inf(right)
             npt.assert_almost_equal(left, right)
+
+
+def test_stomp_nan_zero_mean_self_join():
+    T = np.array([-1, 0, 1, np.inf, 1, 0, -1])
+    m = 3
+
+    zone = int(np.ceil(m / 4))
+    left = np.array(
+        [
+            utils.naive_mass(Q, T, m, i, zone, True)
+            for i, Q in enumerate(core.rolling_window(T, m))
+        ],
+        dtype=object,
+    )
+    right = stomp(T, m, ignore_trivial=True)
+
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left, right)
