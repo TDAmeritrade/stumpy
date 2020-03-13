@@ -30,7 +30,7 @@ def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_tr
         be returned
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequences
+        The time series or sequence that contains your query subsequences
 
     m : int
         Window size

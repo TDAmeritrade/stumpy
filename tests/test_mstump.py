@@ -26,6 +26,11 @@ test_data = [
     (np.random.uniform(-1000, 1000, [3, 10]).astype(np.float64), 5),
 ]
 
+substitution_locations = [
+    (slice(1, 3), [0, 3])
+]  # [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
+substitution_values = [np.nan, np.inf]
+
 
 @pytest.mark.parametrize("T, m", test_data)
 def test_multi_mass(T, m):
@@ -50,7 +55,7 @@ def test_get_first_mstump_profile(T, m):
     left_I = left_I[start, :]
 
     M_T, Σ_T = core.compute_mean_std(T, m)
-    right_P, right_I = _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T)
+    right_P, right_I = _get_first_mstump_profile(start, T, T, m, excl_zone, M_T, Σ_T)
 
     npt.assert_almost_equal(left_P, right_P)
     npt.assert_equal(left_I, right_I)
@@ -138,3 +143,43 @@ def test_constant_subsequence_self_join():
     right_P, right_I = mstump(T, m)
 
     npt.assert_almost_equal(left_P, right_P)  # ignore indices
+
+
+@pytest.mark.parametrize("T, m", test_data)
+@pytest.mark.parametrize("substitute", substitution_values)
+@pytest.mark.parametrize("substitution_locations", substitution_locations)
+def test_mstump_nan_inf_self_join_first_dimension(
+    T, m, substitute, substitution_locations
+):
+    excl_zone = int(np.ceil(m / 4))
+
+    T_sub = T.copy()
+
+    for substitution_location in substitution_locations:
+        T_sub[:] = T[:]
+        T_sub[0, substitution_location] = substitute
+
+        left_P, left_I = utils.naive_mstump(T_sub, m, excl_zone)
+        right_P, right_I = mstump(T_sub, m)
+
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+@pytest.mark.parametrize("substitute", substitution_values)
+@pytest.mark.parametrize("substitution_locations", substitution_locations)
+def test_mstump_nan_self_join_all_dimensions(T, m, substitute, substitution_locations):
+    excl_zone = int(np.ceil(m / 4))
+
+    T_sub = T.copy()
+
+    for substitution_location in substitution_locations:
+        T_sub[:] = T[:]
+        T_sub[:, substitution_location] = substitute
+
+        left_P, left_I = utils.naive_mstump(T_sub, m, excl_zone)
+        right_P, right_I = mstump(T_sub, m)
+
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)

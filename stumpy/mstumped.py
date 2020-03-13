@@ -58,63 +58,55 @@ def mstumped(dask_client, T, m):
     See mSTAMP Algorithm
     """
 
-    hosts = list(dask_client.ncores().keys())
-    nworkers = len(hosts)
+    T_A = np.asarray(core.transpose_dataframe(T)).copy()
+    T_B = T_A.copy()
 
-    T = np.asarray(core.transpose_dataframe(T))
+    T_A[np.isinf(T_A)] = np.nan
+    T_B[np.isinf(T_B)] = np.nan
 
-    core.check_dtype(T)
-    core.check_nan(T)
-    if T.ndim <= 1:  # pragma: no cover
-        err = f"T is {T.ndim}-dimensional and must be greater than 1-dimensional"
+    core.check_dtype(T_A)
+    if T_A.ndim <= 1:  # pragma: no cover
+        err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
         raise ValueError(f"{err}")
 
     core.check_window_size(m)
 
-    d = T.shape[0]
-    n = T.shape[1]
+    d, n = T_A.shape
     k = n - m + 1
     excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
 
-    M_T, Σ_T = core.compute_mean_std(T, m)
-    μ_Q, σ_Q = core.compute_mean_std(T, m)
+    M_T, Σ_T = core.compute_mean_std(T_A, m)
+    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
 
-    P = np.full((nworkers, d, k), np.inf, dtype="float64")
-    D = np.zeros((nworkers, d, k), dtype="float64")
-    D_prime = np.zeros((nworkers, k), dtype="float64")
-    I = np.ones((nworkers, d, k), dtype="int64") * -1
+    T_A[np.isnan(T_A)] = 0
+
+    P = np.empty((d, k), dtype="float64")
+    I = np.empty((d, k), dtype="int64")
+
+    hosts = list(dask_client.ncores().keys())
+    nworkers = len(hosts)
+
+    step = 1 + k // nworkers
+
+    for i, start in enumerate(range(0, k, step)):
+        P[:, start], I[:, start] = _get_first_mstump_profile(
+            start, T_A, T_B, m, excl_zone, M_T, Σ_T
+        )
+
+    T_B[np.isnan(T_B)] = 0
 
     # Scatter data to Dask cluster
-    T_future = dask_client.scatter(T, broadcast=True)
+    T_A_future = dask_client.scatter(T_A, broadcast=True)
     M_T_future = dask_client.scatter(M_T, broadcast=True)
     Σ_T_future = dask_client.scatter(Σ_T, broadcast=True)
     μ_Q_future = dask_client.scatter(μ_Q, broadcast=True)
     σ_Q_future = dask_client.scatter(σ_Q, broadcast=True)
 
-    step = 1 + k // nworkers
     QT_futures = []
     QT_first_futures = []
-    P_futures = []
-    I_futures = []
-    D_futures = []
-    D_prime_futures = []
 
     for i, start in enumerate(range(0, k, step)):
-        P[i, :, start], I[i, :, start] = _get_first_mstump_profile(
-            start, T, m, excl_zone, M_T, Σ_T
-        )
-
-        P_future = dask_client.scatter(P[i], workers=[hosts[i]])
-        I_future = dask_client.scatter(I[i], workers=[hosts[i]])
-        D_future = dask_client.scatter(D[i], workers=[hosts[i]])
-        D_prime_future = dask_client.scatter(D_prime[i], workers=[hosts[i]])
-
-        P_futures.append(P_future)
-        I_futures.append(I_future)
-        D_futures.append(D_future)
-        D_prime_futures.append(D_prime_future)
-
-        QT, QT_first = _get_multi_QT(start, T, m)
+        QT, QT_first = _get_multi_QT(start, T_A, m)
 
         QT_future = dask_client.scatter(QT, workers=[hosts[i]])
         QT_first_future = dask_client.scatter(QT_first, workers=[hosts[i]])
@@ -129,12 +121,8 @@ def mstumped(dask_client, T, m):
         futures.append(
             dask_client.submit(
                 _mstump,
-                T_future,
+                T_A_future,
                 m,
-                P_futures[i],
-                I_futures[i],
-                D_futures[i],
-                D_prime_futures[i],
                 stop,
                 excl_zone,
                 M_T_future,
@@ -150,9 +138,7 @@ def mstumped(dask_client, T, m):
 
     results = dask_client.gather(futures)
     for i, start in enumerate(range(0, k, step)):
-        P[i], I[i] = results[i]
-        col_mask = P[0] > P[i]
-        P[0, col_mask] = P[i, col_mask]
-        I[0, col_mask] = I[i, col_mask]
+        stop = min(k, start + step)
+        P[:, start + 1 : stop], I[:, start + 1 : stop] = results[i]
 
-    return P[0].T, I[0].T
+    return P.T, I.T

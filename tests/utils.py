@@ -11,6 +11,7 @@ def z_norm(a, axis=0, threshold=1e-7):
 
 def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     T = T.copy()
+    Q = Q.copy()
 
     T[np.isinf(T)] = np.nan
     Q[np.isinf(Q)] = np.nan
@@ -63,6 +64,12 @@ def replace_inf(x, value=0):
 
 
 def naive_multi_mass(Q, T, m):
+    T = T.copy()
+    Q = Q.copy()
+
+    T[np.isinf(T)] = np.nan
+    Q[np.isinf(Q)] = np.nan
+
     d, n = T.shape
 
     D = np.empty((d, n - m + 1))
@@ -70,6 +77,7 @@ def naive_multi_mass(Q, T, m):
         D[i] = np.linalg.norm(
             z_norm(core.rolling_window(T[i], m), 1) - z_norm(Q[i]), axis=1
         )
+    D[np.isnan(D)] = np.inf
 
     D = np.sort(D, axis=0)
 
