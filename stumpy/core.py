@@ -115,7 +115,7 @@ def check_dtype(a, dtype=np.floating):  # pragma: no cover
 def transpose_dataframe(a):  # pragma: no cover
     """
     Check if the input is a column-wise Pandas `DataFrame`. If `True`, return a
-    transpose dataframe since stumpy assumes that each row represents data from a
+    transposed dataframe since stumpy assumes that each row represents data from a
     different dimension while each column represents data from the same dimension.
     If `False`, return `a` unchanged. Pandas `Series` do not need to be transposed.
 
