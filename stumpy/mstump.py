@@ -373,7 +373,7 @@ def mstump(T, m):
         start, T_A, T_B, m, excl_zone, M_T, Σ_T
     )
 
-    T_B[np.isnan(T_A)] = 0
+    T_B[np.isnan(T_B)] = 0
 
     QT, QT_first = _get_multi_QT(start, T_A, m)
 
