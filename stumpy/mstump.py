@@ -59,7 +59,7 @@ def _multi_mass(Q, T, m, M_T, Σ_T):
     return D
 
 
-def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T):
+def _get_first_mstump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T):
     """
     Multi-dimensional wrapper to compute the multi-dimensional matrix profile
     and multi-dimensional matrix profile index for a given window within the
@@ -72,9 +72,12 @@ def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T):
         The window index to calculate the first matrix profile, matrix profile
         index, left matrix profile index, and right matrix profile index for.
 
-    T : ndarray
+    T_A : ndarray
         The time series or sequence for which the matrix profile index will
         be returned
+
+    T_B : ndarray
+        The time series or sequence that contains your query subsequences
 
     m : int
         Window size
@@ -98,8 +101,8 @@ def _get_first_mstump_profile(start, T, m, excl_zone, M_T, Σ_T):
         equal to `start`
     """
 
-    d, n = T.shape
-    D = _multi_mass(T[:, start : start + m], T, m, M_T, Σ_T)
+    d, n = T_A.shape
+    D = _multi_mass(T_B[:, start : start + m], T_A, m, M_T, Σ_T)
 
     zone_start = max(0, start - excl_zone)
     zone_stop = min(n - m + 1, start + excl_zone)
@@ -159,22 +162,7 @@ def _get_multi_QT(start, T, m):
 
 @njit(parallel=True, fastmath=True)
 def _mstump(
-    T,
-    m,
-    P,
-    I,
-    D,
-    D_prime,
-    range_stop,
-    excl_zone,
-    M_T,
-    Σ_T,
-    QT,
-    QT_first,
-    μ_Q,
-    σ_Q,
-    k,
-    range_start=1,
+    T, m, range_stop, excl_zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, range_start=1
 ):
     """
     A Numba JIT-compiled version of mSTOMP, a variant of mSTAMP, for parallel
@@ -189,18 +177,6 @@ def _mstump(
 
     m : int
         Window size
-
-    P : ndarray
-        The output multi-dimensional matrix profile
-
-    I : ndarray
-        The output multi-dimensional matrix profile index
-
-    D : ndarray
-        Storage for the distance profile
-
-    D_prime : ndarray
-        Storage for the cumulative sum of the distance profile
 
     range_stop : int
         The index value along T for which to stop the matrix profile
@@ -260,8 +236,12 @@ def _mstump(
     QT_even = QT.copy()
     d = T.shape[0]
 
+    P = np.empty((d, range_stop - range_start))
+    I = np.empty((d, range_stop - range_start))
+    D = np.empty((d, k))
+    D_prime = np.empty(k)
+
     for idx in range(range_start, range_stop):
-        D[:, :] = 0.0
         for i in range(d):
             # Numba's prange requires incrementing a range by 1 so replace
             # `for j in range(k-1,0,-1)` with its incrementing compliment
@@ -311,10 +291,11 @@ def _mstump(
             D_prime = D_prime + D[i]
 
             min_index = np.argmin(D_prime)
-            I[i, idx] = min_index
-            P[i, idx] = D_prime[min_index] / (i + 1)
-            if np.isinf(P[i, idx]):  # pragma nocover
-                I[i, idx] = -1
+            pos = idx - range_start
+            I[i, pos] = min_index
+            P[i, pos] = D_prime[min_index] / (i + 1)
+            if np.isinf(P[i, pos]):  # pragma nocover
+                I[i, pos] = -1
 
     return P, I
 
@@ -359,55 +340,45 @@ def mstump(T, m):
     See mSTAMP Algorithm
     """
 
-    T = np.asarray(core.transpose_dataframe(T))
+    T_A = np.asarray(core.transpose_dataframe(T)).copy()
+    T_B = T_A.copy()
 
-    core.check_dtype(T)
-    core.check_nan(T)
-    if T.ndim <= 1:  # pragma: no cover
-        err = f"T is {T.ndim}-dimensional and must be greater than 1-dimensional"
+    T_A[np.isinf(T_A)] = np.nan
+    T_B[np.isinf(T_B)] = np.nan
+
+    core.check_dtype(T_A)
+    if T_A.ndim <= 1:  # pragma: no cover
+        err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
         raise ValueError(f"{err}")
 
     core.check_window_size(m)
 
-    d = T.shape[0]
-    n = T.shape[1]
+    d = T_A.shape[0]
+    n = T_A.shape[1]
     k = n - m + 1
     excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
 
-    M_T, Σ_T = core.compute_mean_std(T, m)
-    μ_Q, σ_Q = core.compute_mean_std(T, m)
+    M_T, Σ_T = core.compute_mean_std(T_A, m)
+    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
 
-    P = np.full((d, k), np.inf, dtype="float64")
-    D = np.zeros((d, k), dtype="float64")
-    D_prime = np.zeros(k, dtype="float64")
-    I = np.ones((d, k), dtype="int64") * -1
+    T_A[np.isnan(T_A)] = 0
+
+    P = np.empty((d, k), dtype="float64")
+    I = np.empty((d, k), dtype="int64")
 
     start = 0
     stop = k
 
     P[:, start], I[:, start] = _get_first_mstump_profile(
-        start, T, m, excl_zone, M_T, Σ_T
+        start, T_A, T_B, m, excl_zone, M_T, Σ_T
     )
 
-    QT, QT_first = _get_multi_QT(start, T, m)
+    T_B[np.isnan(T_B)] = 0
 
-    _mstump(
-        T,
-        m,
-        P,
-        I,
-        D,
-        D_prime,
-        stop,
-        excl_zone,
-        M_T,
-        Σ_T,
-        QT,
-        QT_first,
-        μ_Q,
-        σ_Q,
-        k,
-        start + 1,
+    QT, QT_first = _get_multi_QT(start, T_A, m)
+
+    P[:, start + 1 : stop], I[:, start + 1 : stop] = _mstump(
+        T_A, m, stop, excl_zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, start + 1
     )
 
     return P.T, I.T
