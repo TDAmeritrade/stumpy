@@ -33,5 +33,9 @@ def test_allc(Value, IR, IL):
     ]
     C_left = np.array([2, 4, 6, 8, 10], dtype=np.int64)
     S_right, C_right = allc(IL, IR)
+
+    S_left = sorted(S_left, key=lambda x: (len(x), list(x)))
+    S_right = sorted(S_right, key=lambda x: (len(x), list(x)))
+
     npt.assert_equal(S_left, S_right)
     npt.assert_equal(C_left, C_right)
