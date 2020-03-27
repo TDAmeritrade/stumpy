@@ -1,3 +1,31 @@
+# 2020-03-27    [ 1.3.1 ]:
+--------------------------
+* bugfixes
+  - Fixed MSTUMP/MSTUMPED input dimensions check
+  - Fixed inconsistent MSTUMP/MSTUMPED output
+* features
+  - Added support for constant subsequences and added unit tests
+  - Improved GPU memory consumption for self-join
+  - Added ability to handle NaN and inf values in all matrix profile algorithms (except gpu_stump)
+* tasks
+  - Updated performance table with new performance results, better color scheme, intuitive hardware grouping
+  - Re-organized ndarray input verification steps
+  - Added more unit tests and rearranged test order
+  - Removed Python type hints or type annotations
+  - Split failing dask unit tests into multiple test files
+  - Added PR template
+  - Updated Mac OS X image for Azure Pipelines
+  - Replaced stddev computation with a memory efficient rolling chunked stddev 
+  - Modified exclusion zone to be symmetrical
+  - Refactored multi-dimensional mass
+  - Fixed scenarios where subsequence contains zero mean
+  - Added explicit PR trigger to Azure Pipelines
+  - Updated installation instructions to use conda-forge channel
+  - Fixed time series chains all_c test to handle differences in Python set order
+* documentation
+  - Fixed various typos
+  - Refactored tutorials for clarity
+
 # 2019-12-30    [ 1.3.0 ]:
 --------------------------
 * bugfixes

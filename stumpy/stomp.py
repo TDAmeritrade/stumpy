@@ -65,6 +65,14 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
 
     Note that left and right matrix profiles are only available for self-joins.
     """
+
+    logger.warning(
+        "stumpy.stomp is only provided for reference purposes and should never be used."
+    )
+    logger.warning(
+        "Please use the Numba JIT-compiled stumpy.stump or stump.gpu_stump instead."
+    )
+
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
     n = T_A.shape[0]
