@@ -18,3 +18,4 @@ docs/_build
 *DS_Store*
 .venv
 .mypy_cache
+.directory

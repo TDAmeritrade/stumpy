@@ -161,6 +161,68 @@ def _get_multi_QT(start, T, m):
 
 
 @njit(parallel=True, fastmath=True)
+def _compute_multi_D(
+    d, k, idx, D, T, m, excl_zone, M_T, Σ_T, QT_even, QT_odd, QT_first, μ_Q, σ_Q
+):
+    for i in range(d):
+        # Numba's prange requires incrementing a range by 1 so replace
+        # `for j in range(k-1,0,-1)` with its incrementing compliment
+        for rev_j in prange(1, k):
+            j = k - rev_j
+            # GPU Stomp Parallel Implementation with Numba
+            # DOI: 10.1109/ICDM.2016.0085
+            # See Figure 5
+            if idx % 2 == 0:
+                # Even
+                QT_even[i, j] = (
+                    QT_odd[i, j - 1]
+                    - T[i, idx - 1] * T[i, j - 1]
+                    + T[i, idx + m - 1] * T[i, j + m - 1]
+                )
+            else:
+                # Odd
+                QT_odd[i, j] = (
+                    QT_even[i, j - 1]
+                    - T[i, idx - 1] * T[i, j - 1]
+                    + T[i, idx + m - 1] * T[i, j + m - 1]
+                )
+
+        if idx % 2 == 0:
+            QT_even[i, 0] = QT_first[i, idx]
+            D[i] = core._calculate_squared_distance_profile(
+                m, QT_even[i], μ_Q[i, idx], σ_Q[i, idx], M_T[i], Σ_T[i]
+            )
+        else:
+            QT_odd[i, 0] = QT_first[i, idx]
+            D[i] = core._calculate_squared_distance_profile(
+                m, QT_odd[i], μ_Q[i, idx], σ_Q[i, idx], M_T[i], Σ_T[i]
+            )
+
+    zone_start = max(0, idx - excl_zone)
+    zone_stop = min(k, idx + excl_zone)
+    D[:, zone_start : zone_stop + 1] = np.inf
+
+    # D = np.sqrt(D)
+
+
+def _sort_columnwise(D):
+    D.sort(axis=0)
+
+
+@njit(parallel=True, fastmath=True)
+def _compute_PI(d, idx, D, D_prime, range_start, P, I):
+    D_prime[:] = 0.0
+    for i in range(d):
+        D_prime = D_prime + np.sqrt(D[i])
+
+        min_index = np.argmin(D_prime)
+        pos = idx - range_start
+        I[i, pos] = min_index
+        P[i, pos] = D_prime[min_index] / (i + 1)
+        if np.isinf(P[i, pos]):  # pragma nocover
+            I[i, pos] = -1
+
+
 def _mstump(
     T, m, range_stop, excl_zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, range_start=1
 ):
@@ -242,60 +304,11 @@ def _mstump(
     D_prime = np.empty(k)
 
     for idx in range(range_start, range_stop):
-        for i in range(d):
-            # Numba's prange requires incrementing a range by 1 so replace
-            # `for j in range(k-1,0,-1)` with its incrementing compliment
-            for rev_j in prange(1, k):
-                j = k - rev_j
-                # GPU Stomp Parallel Implementation with Numba
-                # DOI: 10.1109/ICDM.2016.0085
-                # See Figure 5
-                if idx % 2 == 0:
-                    # Even
-                    QT_even[i, j] = (
-                        QT_odd[i, j - 1]
-                        - T[i, idx - 1] * T[i, j - 1]
-                        + T[i, idx + m - 1] * T[i, j + m - 1]
-                    )
-                else:
-                    # Odd
-                    QT_odd[i, j] = (
-                        QT_even[i, j - 1]
-                        - T[i, idx - 1] * T[i, j - 1]
-                        + T[i, idx + m - 1] * T[i, j + m - 1]
-                    )
-
-            if idx % 2 == 0:
-                QT_even[i, 0] = QT_first[i, idx]
-                D[i] = core._calculate_squared_distance_profile(
-                    m, QT_even[i], μ_Q[i, idx], σ_Q[i, idx], M_T[i], Σ_T[i]
-                )
-            else:
-                QT_odd[i, 0] = QT_first[i, idx]
-                D[i] = core._calculate_squared_distance_profile(
-                    m, QT_odd[i], μ_Q[i, idx], σ_Q[i, idx], M_T[i], Σ_T[i]
-                )
-
-        zone_start = max(0, idx - excl_zone)
-        zone_stop = min(k, idx + excl_zone)
-        D[:, zone_start : zone_stop + 1] = np.inf
-
-        D = np.sqrt(D)
-
-        # Column-wise sort
-        for col in prange(k):
-            D[:, col] = np.sort(D[:, col])
-
-        D_prime[:] = 0.0
-        for i in range(d):
-            D_prime = D_prime + D[i]
-
-            min_index = np.argmin(D_prime)
-            pos = idx - range_start
-            I[i, pos] = min_index
-            P[i, pos] = D_prime[min_index] / (i + 1)
-            if np.isinf(P[i, pos]):  # pragma nocover
-                I[i, pos] = -1
+        _compute_multi_D(
+            d, k, idx, D, T, m, excl_zone, M_T, Σ_T, QT_even, QT_odd, QT_first, μ_Q, σ_Q
+        )
+        _sort_columnwise(D)
+        _compute_PI(d, idx, D, D_prime, range_start, P, I)
 
     return P, I
 
