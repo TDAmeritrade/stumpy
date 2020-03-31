@@ -4,6 +4,9 @@
 
 import logging
 
+import multiprocessing
+import os
+import ctypes
 import numpy as np
 from numba import njit, prange
 
@@ -205,8 +208,11 @@ def _compute_multi_D(
     # D = np.sqrt(D)
 
 
-def _sort_columnwise(D):
-    D.sort(axis=0)
+_D = None
+
+
+def _sort_columnwise(s):
+    _D[:, s].sort(axis=0)
 
 
 @njit(parallel=True, fastmath=True)
@@ -223,8 +229,43 @@ def _compute_PI(d, idx, D, D_prime, range_start, P, I):
             I[i, pos] = -1
 
 
+def _prepare_parallel(d, k, num_cores):
+    shared_array_base = multiprocessing.Array(ctypes.c_double, d * k)
+
+    global _D
+    _D = np.frombuffer(shared_array_base.get_obj())
+    _D = _D.reshape(d, k)
+
+    if num_cores is None:
+        num_cores = os.cpu_count()
+    if num_cores is None or k < num_cores:
+        num_cores = 1
+
+    if num_cores == 1:
+        return None, None
+    else:
+        pool = multiprocessing.Pool(num_cores)
+
+        step = 1 + k // num_cores
+        slices = [slice(step * i, step * (i + 1)) for i in range(num_cores)]
+
+        return pool, slices
+
+
 def _mstump(
-    T, m, range_stop, excl_zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, range_start=1
+    T,
+    m,
+    range_stop,
+    excl_zone,
+    M_T,
+    Σ_T,
+    QT,
+    QT_first,
+    μ_Q,
+    σ_Q,
+    k,
+    range_start=1,
+    num_cores=None,
 ):
     """
     A Numba JIT-compiled version of mSTOMP, a variant of mSTAMP, for parallel
@@ -275,6 +316,10 @@ def _mstump(
         The starting index value along T_B for which to start the matrix
         profile calculation. Default is 1.
 
+    num_cores : int or None
+        The number of cores to be used for columnswise sorting. If one it defaults to
+        a pure numpy implementation. If None, os.cpu_count() cores are used.
+
     Returns
     -------
     P : ndarray
@@ -300,15 +345,34 @@ def _mstump(
 
     P = np.empty((d, range_stop - range_start))
     I = np.empty((d, range_stop - range_start))
-    D = np.empty((d, k))
     D_prime = np.empty(k)
+
+    pool, slices = _prepare_parallel(d, k, num_cores)
 
     for idx in range(range_start, range_stop):
         _compute_multi_D(
-            d, k, idx, D, T, m, excl_zone, M_T, Σ_T, QT_even, QT_odd, QT_first, μ_Q, σ_Q
+            d,
+            k,
+            idx,
+            _D,
+            T,
+            m,
+            excl_zone,
+            M_T,
+            Σ_T,
+            QT_even,
+            QT_odd,
+            QT_first,
+            μ_Q,
+            σ_Q,
         )
-        _sort_columnwise(D)
-        _compute_PI(d, idx, D, D_prime, range_start, P, I)
+
+        if pool is None:
+            _sort_columnwise(slices)
+        else:
+            pool.map(_sort_columnwise, slices)
+
+        _compute_PI(d, idx, _D, D_prime, range_start, P, I)
 
     return P, I
 
@@ -391,7 +455,7 @@ def mstump(T, m):
     QT, QT_first = _get_multi_QT(start, T_A, m)
 
     P[:, start + 1 : stop], I[:, start + 1 : stop] = _mstump(
-        T_A, m, stop, excl_zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, start + 1
+        T_A, m, stop, excl_zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, start + 1, None
     )
 
     return P.T, I.T
