@@ -35,6 +35,15 @@ stages:
         python37_macos:
           imageName: "macos-10.14"
           python.version: "3.7"
+        python38_linux:
+          imageName: "ubuntu-16.04"
+          python.version: "3.8"
+        python38_windows:
+          imageName: "vs2017-win2016"
+          python.version: "3.8"
+        python38_macos:
+          imageName: "macos-10.14"
+          python.version: "3.8"
       maxParallel: 10
 
     pool:
