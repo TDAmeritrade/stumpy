@@ -11,7 +11,7 @@ from . import core, stamp
 logger = logging.getLogger(__name__)
 
 
-def stomp(T_A, m, T_B=None, ignore_trivial=True):
+def _stomp(T_A, m, T_B=None, ignore_trivial=True):
     """
     Compute "Scalable Time series Ordered-search Matrix Profile" (STOMP)
 
@@ -67,7 +67,7 @@ def stomp(T_A, m, T_B=None, ignore_trivial=True):
     """
 
     logger.warning(
-        "stumpy.stomp is only provided for reference purposes and should never be used."
+        "stumpy.stomp._stomp is not supported and only provided for reference."
     )
     logger.warning(
         "Please use the Numba JIT-compiled stumpy.stump or stump.gpu_stump instead."

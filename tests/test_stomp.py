@@ -31,7 +31,7 @@ def test_stomp_self_join(T_A, T_B):
         ],
         dtype=object,
     )
-    right = stomp(T_B, m, ignore_trivial=True)
+    right = stomp._stomp(T_B, m, ignore_trivial=True)
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
@@ -49,7 +49,7 @@ def test_stump_self_join_larger_window(T_A, T_B):
                 ],
                 dtype=object,
             )
-            right = stomp(T_B, m, ignore_trivial=True)
+            right = stomp._stomp(T_B, m, ignore_trivial=True)
             utils.replace_inf(left)
             utils.replace_inf(right)
 
@@ -62,7 +62,7 @@ def test_stomp_A_B_join(T_A, T_B):
     left = np.array(
         [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
     )
-    right = stomp(T_A, m, T_B, ignore_trivial=False)
+    right = stomp._stomp(T_A, m, T_B, ignore_trivial=False)
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
@@ -88,7 +88,7 @@ def test_stomp_nan_inf_self_join(T_A, T_B, substitute_B, substitution_locations)
             ],
             dtype=object,
         )
-        right = stomp(T_B_sub, m, ignore_trivial=True)
+        right = stomp._stomp(T_B_sub, m, ignore_trivial=True)
         utils.replace_inf(left)
         utils.replace_inf(right)
         npt.assert_almost_equal(left, right)
@@ -120,7 +120,7 @@ def test_stomp_nan_inf_A_B_join(
                 ],
                 dtype=object,
             )
-            right = stomp(T_A_sub, m, T_B_sub, ignore_trivial=False)
+            right = stomp._stomp(T_A_sub, m, T_B_sub, ignore_trivial=False)
             utils.replace_inf(left)
             utils.replace_inf(right)
             npt.assert_almost_equal(left, right)
@@ -138,7 +138,7 @@ def test_stomp_nan_zero_mean_self_join():
         ],
         dtype=object,
     )
-    right = stomp(T, m, ignore_trivial=True)
+    right = stomp._stomp(T, m, ignore_trivial=True)
 
     utils.replace_inf(left)
     utils.replace_inf(right)
