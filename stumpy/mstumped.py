@@ -133,7 +133,6 @@ def mstumped(dask_client, T, m):
                 σ_Q_future,
                 k,
                 start + 1,
-                1,
             )
         )
 
