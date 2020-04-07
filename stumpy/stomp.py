@@ -70,7 +70,7 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         "stumpy.stomp._stomp is not supported and only provided for reference."
     )
     logger.warning(
-        "Please use the Numba JIT-compiled stumpy.stump or stump.gpu_stump instead."
+        "Please use the Numba JIT-compiled stumpy.stump or stumpy.gpu_stump instead."
     )
 
     if T_A.ndim != 1:  # pragma: no cover
