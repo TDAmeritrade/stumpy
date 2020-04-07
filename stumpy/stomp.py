@@ -73,6 +73,7 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         "Please use the Numba JIT-compiled stumpy.stump or stumpy.gpu_stump instead."
     )
 
+    T_A = np.asarray(T_A)
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
     n = T_A.shape[0]
@@ -85,6 +86,7 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         T_B = T_A
         ignore_trivial = True
 
+    T_B = np.asarray(T_B)
     T_B = T_B.copy()
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
