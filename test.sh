@@ -26,7 +26,7 @@ echo "Testing Numba JIT Compiled Functions"
 py.test -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_stump.py
 py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump.py tests/test_mstump.py
 check_errs $?
-py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped.py tests/test_stumped_one_constant_subsequence.py tests/test_stumped_two_constant_subsequences.py tests/test_mstumped.py
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped.py tests/test_stumped_one_constant_subsequence.py tests/test_stumped_two_constant_subsequences.py tests/test_stumped_two_constant_subsequences_swap.py tests/test_mstumped.py
 check_errs $?
 py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_one_subsequence_nan_self_join.py tests/test_stumped_one_subsequence_inf_self_join.py tests/test_stumped_one_subsequence_nan_A_B_join.py tests/test_stumped_one_subsequence_inf_A_B_join.py
 check_errs $?
