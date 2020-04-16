@@ -9,12 +9,9 @@ import utils
 
 
 @pytest.fixture(scope="module")
-def dask_client():
+def dask_cluster():
     cluster = LocalCluster(n_workers=2, threads_per_worker=2)
-    client = Client(cluster)
-    yield client
-    # teardown
-    client.close()
+    yield cluster
     cluster.close()
 
 
@@ -41,20 +38,21 @@ substitution_locations = [(0, 1), (-1, slice(1, 3)), (slice(1, 3), 1), ([0, 3], 
     "substitution_location_A, substitution_location_B", substitution_locations
 )
 def test_stumped_two_subsequences_inf_A_B_join(
-    T_A, T_B, substitution_location_A, substitution_location_B, dask_client
+    T_A, T_B, substitution_location_A, substitution_location_B, dask_cluster
 ):
-    m = 3
+    with Client(dask_cluster) as dask_client:
+        m = 3
 
-    T_A_sub = T_A.copy()
-    T_B_sub = T_B.copy()
-    T_A_sub[substitution_location_A] = np.inf
-    T_B_sub[substitution_location_B] = np.inf
+        T_A_sub = T_A.copy()
+        T_B_sub = T_B.copy()
+        T_A_sub[substitution_location_A] = np.inf
+        T_B_sub[substitution_location_B] = np.inf
 
-    left = np.array(
-        [utils.naive_mass(Q, T_A_sub, m) for Q in core.rolling_window(T_B_sub, m)],
-        dtype=object,
-    )
-    right = stumped(dask_client, T_A_sub, m, T_B_sub, ignore_trivial=False)
-    utils.replace_inf(left)
-    utils.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+        left = np.array(
+            [utils.naive_mass(Q, T_A_sub, m) for Q in core.rolling_window(T_B_sub, m)],
+            dtype=object,
+        )
+        right = stumped(dask_client, T_A_sub, m, T_B_sub, ignore_trivial=False)
+        utils.replace_inf(left)
+        utils.replace_inf(right)
+        npt.assert_almost_equal(left, right)

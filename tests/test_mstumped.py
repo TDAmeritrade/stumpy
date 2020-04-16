@@ -9,12 +9,9 @@ import utils
 
 
 @pytest.fixture(scope="module")
-def dask_client():
+def dask_cluster():
     cluster = LocalCluster(n_workers=2, threads_per_worker=2)
-    client = Client(cluster)
-    yield client
-    # teardown
-    client.close()
+    yield cluster
     cluster.close()
 
 
@@ -26,38 +23,43 @@ test_data = [
 
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T, m", test_data)
-def test_mstumped(T, m, dask_client):
-    excl_zone = int(np.ceil(m / 4))
+def test_mstumped(T, m, dask_cluster):
+    with Client(dask_cluster) as dask_client:
+        excl_zone = int(np.ceil(m / 4))
 
-    left_P, left_I = utils.naive_mstump(T, m, excl_zone)
-    right_P, right_I = mstumped(dask_client, T, m)
+        left_P, left_I = utils.naive_mstump(T, m, excl_zone)
+        right_P, right_I = mstumped(dask_client, T, m)
 
-    npt.assert_almost_equal(left_P, right_P)
-    npt.assert_almost_equal(left_I, right_I)
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
 
 
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T, m", test_data)
-def test_mstumped_df(T, m, dask_client):
-    excl_zone = int(np.ceil(m / 4))
+def test_mstumped_df(T, m, dask_cluster):
+    with Client(dask_cluster) as dask_client:
+        excl_zone = int(np.ceil(m / 4))
 
-    left_P, left_I = utils.naive_mstump(T, m, excl_zone)
-    df = pd.DataFrame(T.T)
-    right_P, right_I = mstumped(dask_client, df, m)
+        left_P, left_I = utils.naive_mstump(T, m, excl_zone)
+        df = pd.DataFrame(T.T)
+        right_P, right_I = mstumped(dask_client, df, m)
 
-    npt.assert_almost_equal(left_P, right_P)
-    npt.assert_almost_equal(left_I, right_I)
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
 
 
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_constant_subsequence_self_join(dask_client):
-    T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
-    T = np.array([T_A, T_A, np.random.rand(T_A.shape[0])])
-    m = 3
+def test_constant_subsequence_self_join(dask_cluster):
+    with Client(dask_cluster) as dask_client:
+        T_A = np.concatenate(
+            (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
+        )
+        T = np.array([T_A, T_A, np.random.rand(T_A.shape[0])])
+        m = 3
 
-    excl_zone = int(np.ceil(m / 4))
+        excl_zone = int(np.ceil(m / 4))
 
-    left_P, left_I = utils.naive_mstump(T, m, excl_zone)
-    right_P, right_I = mstumped(dask_client, T, m)
+        left_P, left_I = utils.naive_mstump(T, m, excl_zone)
+        right_P, right_I = mstumped(dask_client, T, m)
 
-    npt.assert_almost_equal(left_P, right_P)  # ignore indices
+        npt.assert_almost_equal(left_P, right_P)  # ignore indices

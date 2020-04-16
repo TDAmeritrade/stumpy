@@ -9,12 +9,9 @@ import utils
 
 
 @pytest.fixture(scope="module")
-def dask_client():
+def dask_cluster():
     cluster = LocalCluster(n_workers=2, threads_per_worker=2)
-    client = Client(cluster)
-    yield client
-    # teardown
-    client.close()
+    yield cluster
     cluster.close()
 
 
@@ -24,19 +21,24 @@ def dask_client():
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_two_constant_subsequences_A_B_join_swap(dask_client):
-    T_A = np.concatenate(
-        (np.zeros(10, dtype=np.float64), np.ones(10, dtype=np.float64))
-    )
-    T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
-    m = 3
-    left = np.array(
-        [utils.naive_mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)], dtype=object
-    )
-    right = stumped(dask_client, T_B, m, T_A, ignore_trivial=False)
-    utils.replace_inf(left)
-    utils.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+# def test_two_constant_subsequences_A_B_join_swap(dask_cluster):
+def test_two_constant_subsequences_A_B_join_swap(dask_cluster):
+    with Client(dask_cluster) as dask_client:
+        T_A = np.concatenate(
+            (np.zeros(10, dtype=np.float64), np.ones(10, dtype=np.float64))
+        )
+        T_B = np.concatenate(
+            (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
+        )
+        m = 3
+        left = np.array(
+            [utils.naive_mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)],
+            dtype=object,
+        )
+        right = stumped(dask_client, T_B, m, T_A, ignore_trivial=False)
+        utils.replace_inf(left)
+        utils.replace_inf(right)
+        npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
 
 
 @pytest.mark.filterwarnings("ignore:\\s+A large number of values are smaller")
@@ -45,18 +47,23 @@ def test_two_constant_subsequences_A_B_join_swap(dask_client):
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_constant_subsequence_A_B_join_df_swap(dask_client):
-    T_A = np.concatenate(
-        (np.zeros(10, dtype=np.float64), np.ones(10, dtype=np.float64))
-    )
-    T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
-    m = 3
-    left = np.array(
-        [utils.naive_mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)], dtype=object
-    )
-    right = stumped(
-        dask_client, pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False
-    )
-    utils.replace_inf(left)
-    utils.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+# def test_constant_subsequence_A_B_join_df_swap(dask_cluster):
+def test_constant_subsequence_A_B_join_df_swap(dask_cluster):
+    with Client(dask_cluster) as dask_client:
+        T_A = np.concatenate(
+            (np.zeros(10, dtype=np.float64), np.ones(10, dtype=np.float64))
+        )
+        T_B = np.concatenate(
+            (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
+        )
+        m = 3
+        left = np.array(
+            [utils.naive_mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)],
+            dtype=object,
+        )
+        right = stumped(
+            dask_client, pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False
+        )
+        utils.replace_inf(left)
+        utils.replace_inf(right)
+        npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
