@@ -221,8 +221,6 @@ def check_window_size(m):
             """,
         )
 
-def 
-
 
 def sliding_dot_product(Q, T):
     """
