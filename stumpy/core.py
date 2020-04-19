@@ -358,7 +358,7 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
         Window size
 
     QT : float
-        Dot product between `Q[i]` and `T[]i`
+        Dot product between `Q[i]` and `T[i]`
 
     μ_Q : float
         Mean of `Q[i]`
