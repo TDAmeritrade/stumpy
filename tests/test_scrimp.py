@@ -32,12 +32,12 @@ def test_scrimp_self_join(T):
         ],
         dtype=object,
     )
-    right = scrimp(T, m)
+    right = scrimp(T, m, percentage=1.0)
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])
 
-    right = scrimp(pd.Series(T), m)
+    right = scrimp(pd.Series(T), m, percentage=1.0)
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])
 
@@ -54,12 +54,12 @@ def test_scrimp_self_join_larger_window(T):
                 ],
                 dtype=object,
             )
-            right = scrimp(T, m)
+            right = scrimp(T, m, percentage=1.0)
             utils.replace_inf(left)
             utils.replace_inf(right)
             npt.assert_almost_equal(left[:, 0], right[:, 0])
 
-            right = scrimp(pd.Series(T), m)
+            right = scrimp(pd.Series(T), m, percentage=1.0)
             utils.replace_inf(right)
             npt.assert_almost_equal(left[:, 0], right[:, 0])
 
@@ -75,11 +75,11 @@ def test_constant_subsequence_self_join():
         ],
         dtype=object,
     )
-    right = scrimp(T, m)
+    right = scrimp(T, m, percentage=1.0)
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
 
-    right = scrimp(pd.Series(T), m)
+    right = scrimp(pd.Series(T), m, percentage=1.0)
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices

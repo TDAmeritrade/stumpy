@@ -346,6 +346,63 @@ def compute_mean_std(T, m, num_chunks=1, max_iter=10):
         )
 
 
+@njit(fastmath=True)
+def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
+    """
+    Compute a single squared distance given all scalar inputs. This function serves as
+    the single source of truth for how all distances should be calculated.
+
+    Parameters
+    ----------
+    m : int
+        Window size
+
+    QT : float
+        Dot product between `Q[i]` and `T[]i`
+
+    μ_Q : float
+        Mean of `Q[i]`
+
+    σ_Q : float
+        Standard deviation of `Q[i]`
+
+    M_T : float
+        Sliding mean of `T[i]`
+
+    Σ_T : float
+        Sliding standard deviation of `T[i]`
+
+    Returns
+    -------
+    D_squared : float
+        Squared distance
+
+    Notes
+    -----
+    `DOI: 10.1109/ICDM.2016.0179 \
+    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
+
+    See Equation on Page 4
+    """
+
+    threshold = 1e-10
+    if np.isinf(M_T) or np.isinf(μ_Q):
+        D_squared = np.inf
+    else:
+        if σ_Q < threshold or Σ_T < threshold:
+            D_squared = m
+        else:
+            denom = m * σ_Q * Σ_T
+            if np.abs(denom) < threshold:  # pragma nocover
+                denom = threshold
+            D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
+
+        if σ_Q < threshold and Σ_T < threshold:
+            D_squared = 0
+
+    return D_squared
+
+
 @njit(parallel=True, fastmath=True)
 def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
@@ -373,8 +430,8 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
     Returns
     -------
-    output : ndarray
-        Distance profile squared
+    D_squared : ndarray
+        Squared distance profile
 
     Notes
     -----
@@ -387,23 +444,8 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     k = M_T.shape[0]
     D_squared = np.empty(k)
 
-    threshold = 1e-10
     for i in prange(k):
-        if np.isinf(M_T[i]) or np.isinf(μ_Q):
-            D_squared[i] = np.inf
-        else:
-            if σ_Q < threshold or Σ_T[i] < threshold:
-                D_squared[i] = m
-            else:
-                denom = m * σ_Q * Σ_T[i]
-                if np.abs(denom) < threshold:  # pragma nocover
-                    denom = threshold
-                D_squared[i] = np.abs(
-                    2 * m * (1.0 - (QT[i] - m * μ_Q * M_T[i]) / denom)
-                )
-
-            if σ_Q < threshold and Σ_T[i] < threshold:
-                D_squared[i] = 0
+        D_squared[i] = _calculate_squared_distance(m, QT[i], μ_Q, σ_Q, M_T[i], Σ_T[i])
 
     return D_squared
 

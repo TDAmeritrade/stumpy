@@ -5,15 +5,15 @@
 import logging
 
 import numpy as np
-from numba import njit, prange
+from numba import njit
 
 from . import core
 
 logger = logging.getLogger(__name__)
 
 
-@njit(parallel=True, fastmath=True)
-def _scrimp(T, m, μ, σ, orders, excl_zone, percentage=1.0):
+@njit(fastmath=True)
+def _scrimp(T, m, μ, σ, orders, excl_zone, percentage=0.1):
     """
     A Numba JIT-compiled version of SCRIMP (self-join) for parallel computation
     of the matrix profile and matrix profile indices.
@@ -68,7 +68,7 @@ def _scrimp(T, m, μ, σ, orders, excl_zone, percentage=1.0):
 
     n_dist_computed = 0
 
-    for order in prange(orders.shape[0]):
+    for order in range(orders.shape[0]):
         if n_dist_computed / (l * l) > percentage:  # pragma: no cover
             break
         k = orders[order]
@@ -78,32 +78,24 @@ def _scrimp(T, m, μ, σ, orders, excl_zone, percentage=1.0):
             else:
                 QT = QT - T[i - 1] * T[i + k - 2] + T[i + m - 1] * T[i + k + m - 2]
 
-            denom = m * σ[i] * σ[i + k - 1]
-            if denom == 0:
-                denom = 1e-10  # Avoid divide by zero
-            D = np.sqrt(np.abs(2 * m * (1.0 - (QT - m * μ[i] * μ[i + k - 1]) / denom)))
-            threshold = 1e-7
-            if σ[i] < threshold:  # pragma: no cover
-                D = np.sqrt(m)
-            if σ[i + k - 1] < threshold:  # pragma: no cover
-                D = np.sqrt(m)
-            if σ[i] < threshold and σ[i + k - 1] < threshold:
-                D = 0
+            D_squared = core._calculate_squared_distance(
+                m, QT, μ[i], σ[i], μ[i + k - 1], σ[i + k - 1],
+            )
 
-            if i < i + k - 1 - excl_zone and D < P[i]:
-                P[i] = D
+            if i < i + k - 1 - excl_zone and D_squared < P[i]:
+                P[i] = D_squared
                 I[i] = i + k - 1
 
-            if i < i + k - 1 - excl_zone and D < P[i + k - 1]:
-                P[i + k - 1] = D
+            if i < i + k - 1 - excl_zone and D_squared < P[i + k - 1]:
+                P[i + k - 1] = D_squared
                 I[i + k - 1] = i
 
             n_dist_computed = n_dist_computed + 1
 
-    return P, I
+    return np.sqrt(P), I
 
 
-def scrimp(T, m, percentage=1.0):
+def scrimp(T, m, percentage=0.1):
     """
     Compute the matrix profile with parallelized SCRIMP (self-join)
 
