@@ -196,6 +196,7 @@ def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
 
 def check_window_size(m):
     """
+    Check the window size and ensure that it is greater than or equal to 3
 
     Parameters
     ----------
@@ -219,6 +220,8 @@ def check_window_size(m):
             time series is large enough to contain both scenarios).
             """,
         )
+
+def 
 
 
 def sliding_dot_product(Q, T):
