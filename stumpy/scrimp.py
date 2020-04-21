@@ -37,15 +37,16 @@ def _get_max_order_idx(m, n, orders, percentage):
         The order index that corresponds to desired percentage of distances to compute
     """
 
-    l = n - m + 1
-    n_dist_computed = 0
-
+    max_n_dist = 0
     for order_idx in range(orders.shape[0]):
         k = orders[order_idx]
-        # Note that we double our count in the next line since we only compute
-        # the upper triangle of the distance matrix
-        n_dist_computed = n_dist_computed + 2 * (n - m + 2 - k)
-        if n_dist_computed / (l * l) > percentage:  # pragma: no cover
+        max_n_dist = max_n_dist + (n - m + 2 - k)
+
+    n_dist_computed = 0
+    for order_idx in range(orders.shape[0]):
+        k = orders[order_idx]
+        n_dist_computed = n_dist_computed + (n - m + 2 - k)
+        if n_dist_computed / max_n_dist > percentage:  # pragma: no cover
             break
 
     max_order_idx = order_idx + 1
