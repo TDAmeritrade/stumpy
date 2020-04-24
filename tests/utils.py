@@ -9,6 +9,18 @@ def z_norm(a, axis=0, threshold=1e-7):
     return (a - np.mean(a, axis, keepdims=True)) / std
 
 
+def naive_distance_profile(Q, T, m):
+    T = T.copy()
+    Q = Q.copy()
+
+    T[np.isinf(T)] = np.nan
+    Q[np.isinf(Q)] = np.nan
+
+    D = np.linalg.norm(z_norm(core.rolling_window(T, m), 1) - z_norm(Q), axis=1)
+
+    return D
+
+
 def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     T = T.copy()
     Q = Q.copy()

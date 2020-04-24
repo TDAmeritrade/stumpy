@@ -35,6 +35,9 @@ def _get_max_order_idx(m, n, orders, percentage):
     -------
     max_order_id : int
         The order index that corresponds to desired percentage of distances to compute
+
+    n_dist_computed : int
+        The number of distances computed
     """
 
     max_n_dist = 0
@@ -51,11 +54,71 @@ def _get_max_order_idx(m, n, orders, percentage):
 
     max_order_idx = order_idx + 1
 
-    return max_order_idx
+    return max_order_idx, n_dist_computed
 
 
 @njit(fastmath=True)
-def _compute_diagonal(T, m, μ, σ, orders, order_idx, excl_zone, P, I):
+def _get_orders_ranges(n_split, m, n, orders, percentage):
+    """
+    For the desired percentage of distances to be computed from orders, split the
+    orders into `n_split` chunks, and determine the appropriate start and stop
+    (exclusive) order index ranges for each chunk
+
+     Parameters
+    ----------
+    n_split : int
+        The number of chunks to split the percentage of desired orders into
+
+    m : int
+        Window size
+
+    n : int
+        Matrix profile length
+
+    orders : ndarray
+        The order of diagonals to process and compute
+
+    percentage : float
+        Approximate percentage completed. The value is between 0.0 and 1.0.
+
+    Returns
+    -------
+    ranges : int
+        The start (column 1) and (exclusive) stop (column 2) orders index ranges
+        that corresponds to a desired percentage of distances to compute
+    """
+
+    max_order_idx, n_dist_computed = _get_max_order_idx(m, n, orders, percentage)
+
+    orders_ranges = np.zeros((n_split, 2), np.int64)
+    ranges_idx = 0
+    range_start_idx = 0
+    max_n_dist_per_range = n_dist_computed / n_split
+
+    n_dist_computed = 0
+    for order_idx in range(max_order_idx):
+        k = orders[order_idx]
+        n_dist_computed = n_dist_computed + (n - m + 2 - k)
+        if n_dist_computed > max_n_dist_per_range:  # pragma: no cover
+            orders_ranges[ranges_idx, 0] = range_start_idx
+            orders_ranges[ranges_idx, 1] = min(
+                order_idx + 1, max_order_idx
+            )  # Exclusive stop index
+            # Reset and Update
+            range_start_idx = order_idx + 1
+            ranges_idx += 1
+            n_dist_computed = 0
+    # Handle final range outside of for loop
+    orders_ranges[ranges_idx, 0] = range_start_idx
+    orders_ranges[ranges_idx, 1] = max_order_idx
+
+    return orders_ranges
+
+
+@njit(fastmath=True)
+def _compute_diagonal(
+    T, m, μ, σ, orders, orders_start_idx, orders_stop_idx, excl_zone, thread_idx, P, I
+):
     """
     Compute (Numba JIT-compiled) and update P, I along a single diagonal using a single
     thread and avoiding race conditions
@@ -77,8 +140,11 @@ def _compute_diagonal(T, m, μ, σ, orders, order_idx, excl_zone, P, I):
     orders : ndarray
         The order of diagonals to process and compute
 
-    order_idx : int
-        The index for a given diagonal order to process and compute
+    orders_start_idx : int
+        The start index for a range of diagonal order to process and compute
+
+    orders_stop_idx : int
+        The (exclusive) stop index for a range of diagonal order to process and compute
 
     excl_zone : int
         The half width for the exclusion zone relative to the current
@@ -95,31 +161,30 @@ def _compute_diagonal(T, m, μ, σ, orders, order_idx, excl_zone, P, I):
     None
     """
     n = T.shape[0]
-    n_threads = config.NUMBA_NUM_THREADS
 
-    thread_idx = order_idx % n_threads
-    k = orders[order_idx]
-    for i in range(0, n - m + 2 - k):
-        if i == 0:
-            QT = np.dot(T[i : i + m], T[i + k - 1 : i + k - 1 + m])
-        else:
-            QT = QT - T[i - 1] * T[i + k - 2] + T[i + m - 1] * T[i + k + m - 2]
+    for order_idx in range(orders_start_idx, orders_stop_idx):
+        k = orders[order_idx]
+        for i in range(0, n - m + 2 - k):
+            if i == 0:
+                QT = np.dot(T[i : i + m], T[i + k - 1 : i + k - 1 + m])
+            else:
+                QT = QT - T[i - 1] * T[i + k - 2] + T[i + m - 1] * T[i + k + m - 2]
 
-        D_squared = core._calculate_squared_distance(
-            m, QT, μ[i], σ[i], μ[i + k - 1], σ[i + k - 1],
-        )
+            D_squared = core._calculate_squared_distance(
+                m, QT, μ[i], σ[i], μ[i + k - 1], σ[i + k - 1],
+            )
 
-        if i < i + k - 1 - excl_zone and D_squared < P[thread_idx, i]:
-            P[thread_idx, i] = D_squared
-            I[thread_idx, i] = i + k - 1
+            if i < i + k - 1 - excl_zone and D_squared < P[thread_idx, i]:
+                P[thread_idx, i] = D_squared
+                I[thread_idx, i] = i + k - 1
 
-        if i < i + k - 1 - excl_zone and D_squared < P[thread_idx, i + k - 1]:
-            P[thread_idx, i + k - 1] = D_squared
-            I[thread_idx, i + k - 1] = i
+            if i < i + k - 1 - excl_zone and D_squared < P[thread_idx, i + k - 1]:
+                P[thread_idx, i + k - 1] = D_squared
+                I[thread_idx, i + k - 1] = i
 
 
 @njit(parallel=True, fastmath=True)
-def _scrimp(T, m, μ, σ, orders, excl_zone, percentage=0.1):
+def _scrimp(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage=0.1):
     """
     A Numba JIT-compiled version of SCRIMP (self-join) for parallel computation
     of the matrix profile and matrix profile indices.
@@ -140,6 +205,10 @@ def _scrimp(T, m, μ, σ, orders, excl_zone, percentage=0.1):
 
     orders : ndarray
         The order of diagonals to process and compute
+
+    ranges : ndarray
+        The start (column 1) and (exclusive) stop (column 2) order indices for
+        each thread
 
     excl_zone : int
         The half width for the exclusion zone relative to the current
@@ -173,11 +242,21 @@ def _scrimp(T, m, μ, σ, orders, excl_zone, percentage=0.1):
     P[:, :] = np.inf
     I[:, :] = -1
 
-    max_order_idx = _get_max_order_idx(m, n, orders, percentage)
-
-    for order_idx in prange(max_order_idx):
+    for thread_idx in prange(n_threads):
         # Compute and pdate P, I within a single thread while avoiding race conditions
-        _compute_diagonal(T, m, μ, σ, orders, order_idx, excl_zone, P, I)
+        _compute_diagonal(
+            T,
+            m,
+            μ,
+            σ,
+            orders,
+            orders_ranges[thread_idx, 0],
+            orders_ranges[thread_idx, 1],
+            excl_zone,
+            thread_idx,
+            P,
+            I,
+        )
 
     # Reduction of results from all threads
     for thread_idx in range(1, n_threads):
@@ -237,8 +316,10 @@ def scrimp(T, m, percentage=0.1):
     μ, σ = core.compute_mean_std(T, m)
     excl_zone = int(np.ceil(m / 4))
     orders = np.random.permutation(range(excl_zone + 1, n - m + 2))
+    n_threads = config.NUMBA_NUM_THREADS
+    orders_ranges = _get_orders_ranges(n_threads, m, n, orders, percentage)
 
-    P, I = _scrimp(T, m, μ, σ, orders, excl_zone, percentage)
+    P, I = _scrimp(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage)
 
     out[:, 0] = P
     out[:, 1] = I
