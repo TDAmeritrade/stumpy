@@ -237,7 +237,7 @@ def _scrimp(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage=0.1):
     l = n - m + 1
     n_threads = config.NUMBA_NUM_THREADS
     P = np.empty((n_threads, l))
-    I = np.empty((n_threads, l))
+    I = np.empty((n_threads, l), np.int64)
 
     P[:, :] = np.inf
     I[:, :] = -1
@@ -314,6 +314,7 @@ def scrimp(T, m, percentage=0.1):
     out = np.empty((l, 2), dtype=object)
 
     μ, σ = core.compute_mean_std(T, m)
+    T[np.isnan(T)] = 0
     excl_zone = int(np.ceil(m / 4))
     orders = np.random.permutation(range(excl_zone + 1, n - m + 2))
     n_threads = config.NUMBA_NUM_THREADS

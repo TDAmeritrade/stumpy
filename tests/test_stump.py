@@ -58,7 +58,7 @@ def test_stump_A_B_join(T_A, T_B):
     npt.assert_almost_equal(left, right)
 
 
-def test_constant_subsequence_self_join():
+def test_stump_constant_subsequence_self_join():
     T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
     zone = int(np.ceil(m / 4))
@@ -79,7 +79,7 @@ def test_constant_subsequence_self_join():
     npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
 
 
-def test_one_constant_subsequence_A_B_join():
+def test_stump_one_constant_subsequence_A_B_join():
     T_A = np.random.rand(20)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
@@ -105,7 +105,7 @@ def test_one_constant_subsequence_A_B_join():
     npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
 
 
-def test_two_constant_subsequences_A_B_join():
+def test_stump_two_constant_subsequences_A_B_join():
     T_A = np.concatenate(
         (np.zeros(10, dtype=np.float64), np.ones(10, dtype=np.float64))
     )
