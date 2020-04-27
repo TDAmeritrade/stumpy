@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @njit(fastmath=True)
-def _get_max_order_idx(m, n, orders, percentage):
+def _get_max_order_idx(m, n, orders, start, percentage):
     """
     Determine the order index for when the desired percentage of distances is computed
 
@@ -27,6 +27,9 @@ def _get_max_order_idx(m, n, orders, percentage):
 
     orders : ndarray
         The order of diagonals to process and compute
+
+    start : int
+        The (inclusive) order index from which to start
 
     percentage : float
         Approximate percentage completed. The value is between 0.0 and 1.0.
@@ -46,7 +49,7 @@ def _get_max_order_idx(m, n, orders, percentage):
         max_n_dist = max_n_dist + (n - m + 2 - k)
 
     n_dist_computed = 0
-    for order_idx in range(orders.shape[0]):
+    for order_idx in range(start, orders.shape[0]):
         k = orders[order_idx]
         n_dist_computed = n_dist_computed + (n - m + 2 - k)
         if n_dist_computed / max_n_dist > percentage:  # pragma: no cover
@@ -58,7 +61,7 @@ def _get_max_order_idx(m, n, orders, percentage):
 
 
 @njit(fastmath=True)
-def _get_orders_ranges(n_split, m, n, orders, percentage):
+def _get_orders_ranges(n_split, m, n, orders, start, percentage):
     """
     For the desired percentage of distances to be computed from orders, split the
     orders into `n_split` chunks, and determine the appropriate start and stop
@@ -78,6 +81,9 @@ def _get_orders_ranges(n_split, m, n, orders, percentage):
     orders : ndarray
         The order of diagonals to process and compute
 
+    start : int
+        The (inclusive) order index from which to start
+
     percentage : float
         Approximate percentage completed. The value is between 0.0 and 1.0.
 
@@ -88,15 +94,15 @@ def _get_orders_ranges(n_split, m, n, orders, percentage):
         that corresponds to a desired percentage of distances to compute
     """
 
-    max_order_idx, n_dist_computed = _get_max_order_idx(m, n, orders, percentage)
+    max_order_idx, n_dist_computed = _get_max_order_idx(m, n, orders, start, percentage)
 
     orders_ranges = np.zeros((n_split, 2), np.int64)
     ranges_idx = 0
-    range_start_idx = 0
+    range_start_idx = start
     max_n_dist_per_range = n_dist_computed / n_split
 
     n_dist_computed = 0
-    for order_idx in range(max_order_idx):
+    for order_idx in range(start, max_order_idx):
         k = orders[order_idx]
         n_dist_computed = n_dist_computed + (n - m + 2 - k)
         if n_dist_computed > max_n_dist_per_range:  # pragma: no cover
@@ -268,9 +274,10 @@ def _scrimp(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage=0.1):
     return np.sqrt(P[0]), I[0]
 
 
-def scrimp(T, m, percentage=0.1):
+def scrimp(T, m, percentage=0.01):
     """
-    Compute the matrix profile with parallelized SCRIMP (self-join)
+    Compute the matrix profile with parallelized SCRIMP (self-join). This returns a
+    generator that can be incrementally iterated on.
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_scrimp` function which computes the matrix profile according to SCRIMP.
@@ -312,22 +319,28 @@ def scrimp(T, m, percentage=0.1):
     n = T.shape[0]
     l = n - m + 1
     out = np.empty((l, 2), dtype=object)
+    out[:, 0] = np.inf
+    out[:, 1] = -1
 
     μ, σ = core.compute_mean_std(T, m)
     T[np.isnan(T)] = 0
     excl_zone = int(np.ceil(m / 4))
     orders = np.random.permutation(range(excl_zone + 1, n - m + 2))
     n_threads = config.NUMBA_NUM_THREADS
-    orders_ranges = _get_orders_ranges(n_threads, m, n, orders, percentage)
+    percentage = min(percentage, 1.0)
+    percentage = max(percentage, 0.0)
+    generator_rounds = int(np.ceil(1.0 / percentage))
+    start = 0
+    for round in range(generator_rounds):
+        orders_ranges = _get_orders_ranges(n_threads, m, n, orders, start, percentage)
 
-    P, I = _scrimp(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage)
+        P, I = _scrimp(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage)
+        start = orders_ranges[:, 1].max()
 
-    out[:, 0] = P
-    out[:, 1] = I
+        # Update matrix profile and indices
+        for i in range(out.shape[0]):
+            if out[i, 0] > P[i]:
+                out[i, 0] = P[i]
+                out[i, 1] = I[i]
 
-    threshold = 10e-6
-    if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
-        logger.warning(f"A large number of values are smaller than {threshold}.")
-        logger.warning("For a self-join, try setting `ignore_trivial = True`.")
-
-    return out
+        yield out

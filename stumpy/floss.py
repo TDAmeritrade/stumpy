@@ -303,7 +303,7 @@ def floss(
 ):
     """
     Compute the Fast Low-cost Online Semantic Segmentation (FLOSS) for
-    streaming data.
+    streaming data. This returns a generator that can be incrementally iterated on.
 
     Parameters
     ----------

@@ -35,12 +35,14 @@ def test_scrimp_self_join(T):
         ],
         dtype=object,
     )
-    right = scrimp(T, m, percentage=1.0)
+    for right in scrimp(T, m):
+        continue
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])
 
-    right = scrimp(pd.Series(T), m, percentage=1.0)
+    for right in scrimp(pd.Series(T), m):
+        continue
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])
 
@@ -57,12 +59,14 @@ def test_scrimp_self_join_larger_window(T):
                 ],
                 dtype=object,
             )
-            right = scrimp(T, m, percentage=1.0)
+            for right in scrimp(T, m):
+                continue
             utils.replace_inf(left)
             utils.replace_inf(right)
             npt.assert_almost_equal(left[:, 0], right[:, 0])
 
-            right = scrimp(pd.Series(T), m, percentage=1.0)
+            for right in scrimp(pd.Series(T), m):
+                continue
             utils.replace_inf(right)
             npt.assert_almost_equal(left[:, 0], right[:, 0])
 
@@ -78,12 +82,14 @@ def test_scrimp_constant_subsequence_self_join():
         ],
         dtype=object,
     )
-    right = scrimp(T, m, percentage=1.0)
+    for right in scrimp(T, m):
+        continue
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])
 
-    right = scrimp(pd.Series(T), m, percentage=1.0)
+    for right in scrimp(pd.Series(T), m):
+        continue
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])
 
@@ -99,7 +105,6 @@ def test_scrimp_nan_inf_self_join(T, substitute, substitution_locations):
     for substitution_location in substitution_locations:
         T_sub[:] = T[:]
         T_sub[substitution_location] = substitute
-        print(substitute, substitution_location, T_sub)
 
         zone = int(np.ceil(m / 4))
         left = np.array(
@@ -109,12 +114,14 @@ def test_scrimp_nan_inf_self_join(T, substitute, substitution_locations):
             ],
             dtype=object,
         )
-        right = scrimp(T_sub, m, percentage=1.0)
+        for right in scrimp(T_sub, m):
+            continue
         utils.replace_inf(left)
         utils.replace_inf(right)
         npt.assert_almost_equal(left[:, 0], right[:, 0])
 
-        right = scrimp(pd.Series(T_sub), m, percentage=1.0)
+        for right in scrimp(pd.Series(T_sub), m):
+            continue
         utils.replace_inf(right)
         npt.assert_almost_equal(left[:, 0], right[:, 0])
 
@@ -131,7 +138,8 @@ def test_scrimp_nan_zero_mean_self_join():
         ],
         dtype=object,
     )
-    right = scrimp(T, m, percentage=1.0)
+    for right in scrimp(T, m):
+        continue
 
     utils.replace_inf(left)
     utils.replace_inf(right)
