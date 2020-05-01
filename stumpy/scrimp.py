@@ -274,10 +274,111 @@ def _scrimp(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage=0.1):
     return np.sqrt(P[0]), I[0]
 
 
-def scrimp(T, m, percentage=0.01):
+def _prescrimp(T, m, μ, σ, s=None):
+    """
+    A NumPy implementation of the preSCRIMP algorithm.
+
+    Parameters
+    ----------
+    T : ndarray
+        The time series or sequence for which to compute the matrix profile
+
+    m : int
+        Window size
+
+    μ : ndarray
+        Sliding window mean for T
+
+    σ : ndarray
+        Sliding window standard deviation for T
+
+    s : int
+        The sampling interval that defaults to `int(np.ceil(m / 4))`
+
+    Returns
+    -------
+    P : ndarray
+        Matrix profile
+
+    I : ndarray
+        Matrix profile indices
+
+    Notes
+    -----
+    `DOI: 10.1109/ICDM.2018.00099 \
+    <https://www.cs.ucr.edu/~eamonn/SCRIMP_ICDM_camera_ready_updated.pdf>`__
+
+    See Algorithm 2
+    """
+
+    n = T.shape[0]
+    l = n - m + 1
+    P = np.empty(l)
+    I = np.empty(l, np.int64)
+    excl_zone = int(np.ceil(m / 4))
+
+    if s is None:  # pragma: no cover
+        s = excl_zone
+
+    P[:] = np.inf
+    I[:] = -1
+
+    for i in np.random.permutation(range(0, l, s)):
+        Q = T[i : i + m]
+
+        # Update P[i] relative to all T[j : j + m]
+        D_squared = np.square(core.mass(Q, T, μ, σ))  # Use squared distances
+        zone_start = max(0, i - excl_zone)
+        zone_stop = min(l, i + excl_zone)
+        D_squared[zone_start : zone_stop + 1] = np.inf
+        I[i] = np.argmin(D_squared)
+        P[i] = D_squared[I[i]]
+        if P[i] == np.inf:  # pragma: no cover
+            I[i] = -1
+
+        # Update all P[j] relative to T[i : i + m] as this is still relevant info
+        # Note that this was not in the original paper but was included in the C++ code
+        for j in range(l):
+            if D_squared[j] < P[j]:
+                P[j] = D_squared[j]
+                I[j] = i
+
+        j = I[i]
+        # Given the squared distance, work backwards and compute QT
+        QT = (m - P[i] / 2.0) * (σ[i] * σ[j]) + (m * μ[i] * μ[j])
+        QT_prime = QT
+        for k in range(1, min(s, l - max(i, j))):
+            QT = QT - T[i + k - 1] * T[j + k - 1] + T[i + k + m - 1] * T[j + k + m - 1]
+            D_squared = core._calculate_squared_distance(
+                m, QT, μ[i + k], σ[i + k], μ[j + k], σ[j + k],
+            )
+            if D_squared < P[i + k]:
+                P[i + k] = D_squared
+                I[i + k] = j + k
+            if D_squared < P[j + k]:
+                P[j + k] = D_squared
+                I[j + k] = i + k
+        QT = QT_prime
+        for k in range(1, min(s, i + 1, j + 1)):
+            QT = QT - T[i - k + m] * T[j - k + m] + T[i - k] * T[j - k]
+            D_squared = core._calculate_squared_distance(
+                m, QT, μ[i - k], σ[i - k], μ[j - k], σ[j - k],
+            )
+            if D_squared < P[i - k]:
+                P[i - k] = D_squared
+                I[i - k] = j - k
+            if D_squared < P[j - k]:
+                P[j - k] = D_squared
+                I[j - k] = i - k
+
+    return np.sqrt(P), I
+
+
+def scrimp(T, m, percentage=0.01, prescrimp=False, s=None):
     """
     Compute the matrix profile with parallelized SCRIMP (self-join). This returns a
-    generator that can be incrementally iterated on.
+    generator that can be incrementally iterated on. For SCRIMP++, set
+    `prescrimp=True`.
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_scrimp` function which computes the matrix profile according to SCRIMP.
@@ -292,6 +393,16 @@ def scrimp(T, m, percentage=0.01):
 
     percentage : float
         Approximate percentage completed. The value is between 0.0 and 1.0.
+
+    prescrimp : bool
+        A flag for whether or not to perform the PreSCRIMP calculation prior to
+        computing SCRIMP. If set to `True`, this is equivalent to computing
+        SCRIMP++
+
+    s : int
+        The size of the PreSCRIMP fixed interval. If `prescrimp=True` and `s=None`,
+        then `s` will automatically be set to `s=int(np.ceil(m/4))`, the size of
+        the exclusion zone.
 
     Returns
     -------
@@ -325,6 +436,17 @@ def scrimp(T, m, percentage=0.01):
     μ, σ = core.compute_mean_std(T, m)
     T[np.isnan(T)] = 0
     excl_zone = int(np.ceil(m / 4))
+
+    if s is None:
+        s = excl_zone
+
+    if prescrimp:
+        P, I = _prescrimp(T, m, μ, σ, s)
+        for i in range(P.shape[0]):
+            if out[i, 0] > P[i]:
+                out[i, 0] = P[i]
+                out[i, 1] = I[i]
+
     orders = np.random.permutation(range(excl_zone + 1, n - m + 2))
     n_threads = config.NUMBA_NUM_THREADS
     percentage = min(percentage, 1.0)
