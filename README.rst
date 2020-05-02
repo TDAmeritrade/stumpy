@@ -361,6 +361,8 @@ Zhu, Yan, et al. (2017) Matrix Profile VII: Time Series Chains: A New Primitive 
 
 Gharghabi, Shaghayegh, et al. (2017) Matrix Profile VIII: Domain Agnostic Online Semantic Segmentation at Superhuman Performance Levels. ICDM:117-126. `Link <https://ieeexplore.ieee.org/abstract/document/8215484>`__
 
+Zhu, Yan, et al. (2018) Matrix Profile XI: SCRIMP++: Time Series Motif Discovery at Interactive Speeds. ICDM:837-846. `Link <https://ieeexplore.ieee.org/abstract/document/8594908>`__
+
 -------------------
 License & Trademark
 -------------------

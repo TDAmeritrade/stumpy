@@ -2,7 +2,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 from stumpy import scrimp, core, stump
-from stumpy.scrimp import _get_max_order_idx, _get_orders_ranges, _prescrimp
+from stumpy.scrimp import _get_max_order_idx, _get_orders_ranges, prescrimp
 import pytest
 import utils
 
@@ -75,7 +75,7 @@ def test_prescrimp(T):
     )
     μ, σ = core.compute_mean_std(T, m)
     # Note that the below code only works for `s=1`
-    right = _prescrimp(T, m, μ, σ, s=1)
+    right = prescrimp(T, m, μ, σ, s=1)
 
 
 @pytest.mark.parametrize("T", test_data)
@@ -121,13 +121,13 @@ def test_scrimp_plus_plus_self_join(T):
         ],
         dtype=object,
     )
-    for right in scrimp(T, m, prescrimp=True):
+    for right in scrimp(T, m, pre_scrimp=True):
         continue
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])
 
-    for right in scrimp(pd.Series(T), m, prescrimp=True):
+    for right in scrimp(pd.Series(T), m, pre_scrimp=True):
         continue
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])
@@ -169,13 +169,13 @@ def test_scrimp_plus_plus_self_join_larger_window(T):
                 ],
                 dtype=object,
             )
-            for right in scrimp(T, m, prescrimp=True):
+            for right in scrimp(T, m, pre_scrimp=True):
                 continue
             utils.replace_inf(left)
             utils.replace_inf(right)
             npt.assert_almost_equal(left[:, 0], right[:, 0])
 
-            for right in scrimp(pd.Series(T), m, prescrimp=True):
+            for right in scrimp(pd.Series(T), m, pre_scrimp=True):
                 continue
             utils.replace_inf(right)
             npt.assert_almost_equal(left[:, 0], right[:, 0])

@@ -562,9 +562,57 @@ def mueen_calculate_distance_profile(Q, T):
     return np.sqrt(D)
 
 
+@njit(fastmath=True)
+def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
+    """
+    This is the Numba JIT compiled algorithm for computing the distance profile
+    using the MASS algorithm
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array or subsequence
+
+    T : ndarray
+        Time series or sequence
+
+    QT : ndarray
+        The sliding dot product of Q and T
+
+    μ_Q : float
+        The scalar mean of Q
+
+    σ_Q : float
+        The scalar standard deviation of Q
+
+    M_T : ndarray
+        Sliding mean of `T`
+
+    Σ_T : ndarray
+        Sliding standard deviation of `T`
+
+    Notes
+    -----
+    `DOI: 10.1109/ICDM.2016.0179 \
+    <https://www.cs.ucr.edu/~eamonn/PID4481997_extend_Matrix%20Profile_I.pdf>`__
+
+    See Table II
+
+    Note that Q, T are not directly required to calculate D
+
+    Note: Unlike the Matrix Profile I paper, here, M_T, Σ_T can be calculated
+    once for all subsequences of T and passed in so the redundancy is removed
+    """
+
+    m = Q.shape[0]
+
+    return calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
+
+
 def mass(Q, T, M_T=None, Σ_T=None):
     """
-    Compute the distance profile using the MASS algorithm
+    Compute the distance profile using the MASS algorithm. This is a convenience
+    wrapper around the Numba JIT compiled `_mass` function.
 
     Parameters
     ----------
@@ -600,17 +648,17 @@ def mass(Q, T, M_T=None, Σ_T=None):
 
     Q = np.asarray(Q)
     check_dtype(Q)
+    m = Q.shape[0]
 
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
-    m = Q.shape[0]
 
     T = np.asarray(T)
     check_dtype(T)
+    n = T.shape[0]
 
     if T.ndim != 1:  # pragma: no cover
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
-    n = T.shape[0]
 
     distance_profile = np.empty(n - m + 1)
     if np.any(np.isnan(Q)):
@@ -618,11 +666,11 @@ def mass(Q, T, M_T=None, Σ_T=None):
     else:
         QT = sliding_dot_product(Q, T)
         μ_Q, σ_Q = compute_mean_std(Q, m)
+        μ_Q = μ_Q[0]
+        σ_Q = σ_Q[0]
         if M_T is None or Σ_T is None:
             M_T, Σ_T = compute_mean_std(T, m)
-        distance_profile = calculate_distance_profile(
-            m, QT, μ_Q.item(0), σ_Q.item(0), M_T, Σ_T
-        )
+        distance_profile[:] = _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T)
 
     return distance_profile
 

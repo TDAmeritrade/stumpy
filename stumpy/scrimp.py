@@ -274,9 +274,113 @@ def _scrimp(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage=0.1):
     return np.sqrt(P[0]), I[0]
 
 
-def _prescrimp(T, m, μ, σ, s=None):
+@njit(parallel=True, fastmath=True)
+def _prescrimp(
+    Q, T, QT, M_T, Σ_T, i, s, excl_zone, squared_distance_profile, P_squared, I
+):
     """
-    A NumPy implementation of the preSCRIMP algorithm.
+    A Numba JIT-compiled implementation of the preSCRIMP algorithm.
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array or subsequence
+
+    T : ndarray
+        The time series or sequence for which to compute the matrix profile
+
+    QT : ndarray
+        Sliding dot product between `Q` and `T`
+
+    M_T : ndarray
+        Sliding window mean for T
+
+    Σ_T : ndarray
+        Sliding window standard deviation for T
+
+    i : int
+        The subsequence index in `T` that corresponds to `Q`
+
+    s : int
+        The sampling interval that defaults to `int(np.ceil(m / 4))`
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the `i`.
+
+    squared_distance_profile : ndarray
+        A reusable array to store the computed squared distance profile
+
+    P_squared : ndarray
+        The squared matrix profile
+
+    I : ndarray
+        The matrix profile indices
+
+    Notes
+    -----
+    `DOI: 10.1109/ICDM.2018.00099 \
+    <https://www.cs.ucr.edu/~eamonn/SCRIMP_ICDM_camera_ready_updated.pdf>`__
+
+    See Algorithm 2
+    """
+    m = Q.shape[0]
+    l = QT.shape[0]
+    # Update P[i] relative to all T[j : j + m]
+    μ_Q = M_T[i]
+    σ_Q = Σ_T[i]
+    squared_distance_profile[:] = core._mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T)
+    squared_distance_profile[:] = np.square(squared_distance_profile)
+    zone_start = max(0, i - excl_zone)
+    zone_stop = min(l, i + excl_zone)
+    squared_distance_profile[zone_start : zone_stop + 1] = np.inf
+    I[i] = np.argmin(squared_distance_profile)
+    P_squared[i] = squared_distance_profile[I[i]]
+    if P_squared[i] == np.inf:  # pragma: no cover
+        I[i] = -1
+
+    # Update all P[j] relative to T[i : i + m] as this is still relevant info
+    # Note that this was not in the original paper but was included in the C++ code
+    for j in prange(l):
+        if squared_distance_profile[j] < P_squared[j]:
+            P_squared[j] = squared_distance_profile[j]
+            I[j] = i
+
+    j = I[i]
+    # Given the squared distance, work backwards and compute QT
+    QT_i = (m - P_squared[i] / 2.0) * (Σ_T[i] * Σ_T[j]) + (m * M_T[i] * M_T[j])
+    QT_i_prime = QT_i
+    for k in range(1, min(s, l - max(i, j))):
+        QT_i = QT_i - T[i + k - 1] * T[j + k - 1] + T[i + k + m - 1] * T[j + k + m - 1]
+        D_squared = core._calculate_squared_distance(
+            m, QT_i, M_T[i + k], Σ_T[i + k], M_T[j + k], Σ_T[j + k],
+        )
+        if D_squared < P_squared[i + k]:
+            P_squared[i + k] = D_squared
+            I[i + k] = j + k
+        if D_squared < P_squared[j + k]:
+            P_squared[j + k] = D_squared
+            I[j + k] = i + k
+    QT_i = QT_i_prime
+    for k in range(1, min(s, i + 1, j + 1)):
+        QT_i = QT_i - T[i - k + m] * T[j - k + m] + T[i - k] * T[j - k]
+        D_squared = core._calculate_squared_distance(
+            m, QT_i, M_T[i - k], Σ_T[i - k], M_T[j - k], Σ_T[j - k],
+        )
+        if D_squared < P_squared[i - k]:
+            P_squared[i - k] = D_squared
+            I[i - k] = j - k
+        if D_squared < P_squared[j - k]:
+            P_squared[j - k] = D_squared
+            I[j - k] = i - k
+
+    return
+
+
+def prescrimp(T, m, M_T, Σ_T, s=None):
+    """
+    This is a convenience wrapper around the Numba JIT-compiled parallelized
+    `_prescrimp` function which computes the approximate matrix profile according
+    to the preSCRIMP algorithm
 
     Parameters
     ----------
@@ -286,10 +390,10 @@ def _prescrimp(T, m, μ, σ, s=None):
     m : int
         Window size
 
-    μ : ndarray
+    M_T : ndarray
         Sliding window mean for T
 
-    σ : ndarray
+    Σ_T : ndarray
         Sliding window standard deviation for T
 
     s : int
@@ -313,72 +417,35 @@ def _prescrimp(T, m, μ, σ, s=None):
 
     n = T.shape[0]
     l = n - m + 1
-    P = np.empty(l)
+    P_squared = np.empty(l)
     I = np.empty(l, np.int64)
+    squared_distance_profile = np.empty(n - m + 1)
+    Q = np.empty(m)
     excl_zone = int(np.ceil(m / 4))
 
     if s is None:  # pragma: no cover
         s = excl_zone
 
-    P[:] = np.inf
+    P_squared[:] = np.inf
     I[:] = -1
 
     for i in np.random.permutation(range(0, l, s)):
-        Q = T[i : i + m]
+        Q[:] = T[i : i + m]
+        QT = core.sliding_dot_product(Q, T)
+        _prescrimp(
+            Q, T, QT, M_T, Σ_T, i, s, excl_zone, squared_distance_profile, P_squared, I,
+        )
 
-        # Update P[i] relative to all T[j : j + m]
-        D_squared = np.square(core.mass(Q, T, μ, σ))  # Use squared distances
-        zone_start = max(0, i - excl_zone)
-        zone_stop = min(l, i + excl_zone)
-        D_squared[zone_start : zone_stop + 1] = np.inf
-        I[i] = np.argmin(D_squared)
-        P[i] = D_squared[I[i]]
-        if P[i] == np.inf:  # pragma: no cover
-            I[i] = -1
+    P = np.sqrt(P_squared)
 
-        # Update all P[j] relative to T[i : i + m] as this is still relevant info
-        # Note that this was not in the original paper but was included in the C++ code
-        for j in range(l):
-            if D_squared[j] < P[j]:
-                P[j] = D_squared[j]
-                I[j] = i
-
-        j = I[i]
-        # Given the squared distance, work backwards and compute QT
-        QT = (m - P[i] / 2.0) * (σ[i] * σ[j]) + (m * μ[i] * μ[j])
-        QT_prime = QT
-        for k in range(1, min(s, l - max(i, j))):
-            QT = QT - T[i + k - 1] * T[j + k - 1] + T[i + k + m - 1] * T[j + k + m - 1]
-            D_squared = core._calculate_squared_distance(
-                m, QT, μ[i + k], σ[i + k], μ[j + k], σ[j + k],
-            )
-            if D_squared < P[i + k]:
-                P[i + k] = D_squared
-                I[i + k] = j + k
-            if D_squared < P[j + k]:
-                P[j + k] = D_squared
-                I[j + k] = i + k
-        QT = QT_prime
-        for k in range(1, min(s, i + 1, j + 1)):
-            QT = QT - T[i - k + m] * T[j - k + m] + T[i - k] * T[j - k]
-            D_squared = core._calculate_squared_distance(
-                m, QT, μ[i - k], σ[i - k], μ[j - k], σ[j - k],
-            )
-            if D_squared < P[i - k]:
-                P[i - k] = D_squared
-                I[i - k] = j - k
-            if D_squared < P[j - k]:
-                P[j - k] = D_squared
-                I[j - k] = i - k
-
-    return np.sqrt(P), I
+    return P, I
 
 
-def scrimp(T, m, percentage=0.01, prescrimp=False, s=None):
+def scrimp(T, m, percentage=0.01, pre_scrimp=False, s=None):
     """
     Compute the matrix profile with parallelized SCRIMP (self-join). This returns a
     generator that can be incrementally iterated on. For SCRIMP++, set
-    `prescrimp=True`.
+    `pre_scrimp=True`.
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_scrimp` function which computes the matrix profile according to SCRIMP.
@@ -394,7 +461,7 @@ def scrimp(T, m, percentage=0.01, prescrimp=False, s=None):
     percentage : float
         Approximate percentage completed. The value is between 0.0 and 1.0.
 
-    prescrimp : bool
+    pre_scrimp : bool
         A flag for whether or not to perform the PreSCRIMP calculation prior to
         computing SCRIMP. If set to `True`, this is equivalent to computing
         SCRIMP++
@@ -414,7 +481,7 @@ def scrimp(T, m, percentage=0.01, prescrimp=False, s=None):
     `DOI: 10.1109/ICDM.2018.00099 \
     <https://www.cs.ucr.edu/~eamonn/SCRIMP_ICDM_camera_ready_updated.pdf>`__
 
-    See Algorithm 1
+    See Algorithm 1 and Algorithm 2
     """
 
     T = np.asarray(T)
@@ -433,15 +500,15 @@ def scrimp(T, m, percentage=0.01, prescrimp=False, s=None):
     out[:, 0] = np.inf
     out[:, 1] = -1
 
-    μ, σ = core.compute_mean_std(T, m)
+    M_T, Σ_T = core.compute_mean_std(T, m)
     T[np.isnan(T)] = 0
     excl_zone = int(np.ceil(m / 4))
 
     if s is None:
         s = excl_zone
 
-    if prescrimp:
-        P, I = _prescrimp(T, m, μ, σ, s)
+    if pre_scrimp:
+        P, I = prescrimp(T, m, M_T, Σ_T, s)
         for i in range(P.shape[0]):
             if out[i, 0] > P[i]:
                 out[i, 0] = P[i]
@@ -456,7 +523,7 @@ def scrimp(T, m, percentage=0.01, prescrimp=False, s=None):
     for round in range(generator_rounds):
         orders_ranges = _get_orders_ranges(n_threads, m, n, orders, start, percentage)
 
-        P, I = _scrimp(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage)
+        P, I = _scrimp(T, m, M_T, Σ_T, orders, orders_ranges, excl_zone, percentage)
         start = orders_ranges[:, 1].max()
 
         # Update matrix profile and indices
