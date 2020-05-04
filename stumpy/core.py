@@ -4,6 +4,7 @@
 
 import numpy as np
 from numba import njit, prange
+import scipy.signal
 import tempfile
 import math
 
@@ -221,7 +222,6 @@ def check_window_size(m):
         )
 
 
-@njit(fastmath=True)
 def sliding_dot_product(Q, T):
     """
     Use FFT convolution to calculate the sliding window dot product.
@@ -256,8 +256,8 @@ def sliding_dot_product(Q, T):
 
     n = T.shape[0]
     m = Q.shape[0]
-    Qr = Q[::-1]  # Reverse/flip Q
-    QT = np.convolve(Qr, T)
+    Qr = np.flipud(Q)  # Reverse/flip Q
+    QT = convolution(Qr, T)
 
     return QT.real[m - 1 : n]
 
@@ -695,3 +695,6 @@ def array_to_temp_file(a):
     np.save(fname, a, allow_pickle=False)
 
     return fname
+
+
+convolution = scipy.signal.fftconvolve  # Swap for other convolution function
