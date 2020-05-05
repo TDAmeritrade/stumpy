@@ -1,8 +1,8 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import scrimp, core, stump
-from stumpy.scrimp import _get_max_order_idx, _get_orders_ranges, prescrimp
+from stumpy import scrump, core, stump
+from stumpy.scrump import _get_max_order_idx, _get_orders_ranges, prescrump
 import pytest
 import utils
 
@@ -63,7 +63,7 @@ def test_get_orders_ranges(T):
 
 
 @pytest.mark.parametrize("T", test_data)
-def test_prescrimp(T):
+def test_prescrump(T):
     m = 3
     zone = int(np.ceil(m / 4))
     left = np.array(
@@ -75,20 +75,20 @@ def test_prescrimp(T):
     )
     μ, σ = core.compute_mean_std(T, m)
     # Note that the below code only works for `s=1`
-    right = prescrimp(T, m, μ, σ, s=1)
+    right = prescrump(T, m, μ, σ, s=1)
 
 
 @pytest.mark.parametrize("T", test_data)
-def test_scrimp_self_join(T):
+def test_scrump_self_join(T):
     m = 3
     left = np.zeros(T.shape[0])
-    right = scrimp(T, m, percentage=0.0)
+    right = scrump(T, m, percentage=0.0)
     utils.replace_inf(right)
     npt.assert_almost_equal(left, right[:, 0])
 
 
 @pytest.mark.parametrize("T", test_data)
-def test_scrimp_self_join(T):
+def test_scrump_self_join(T):
     m = 3
     zone = int(np.ceil(m / 4))
     left = np.array(
@@ -98,20 +98,20 @@ def test_scrimp_self_join(T):
         ],
         dtype=object,
     )
-    for right in scrimp(T, m):
+    for right in scrump(T, m):
         continue
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])
 
-    for right in scrimp(pd.Series(T), m):
+    for right in scrump(pd.Series(T), m):
         continue
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])
 
 
 @pytest.mark.parametrize("T", test_data)
-def test_scrimp_plus_plus_self_join(T):
+def test_scrump_plus_plus_self_join(T):
     m = 3
     zone = int(np.ceil(m / 4))
     left = np.array(
@@ -121,20 +121,20 @@ def test_scrimp_plus_plus_self_join(T):
         ],
         dtype=object,
     )
-    for right in scrimp(T, m, pre_scrimp=True):
+    for right in scrump(T, m, pre_scrump=True):
         continue
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])
 
-    for right in scrimp(pd.Series(T), m, pre_scrimp=True):
+    for right in scrump(pd.Series(T), m, pre_scrump=True):
         continue
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])
 
 
 @pytest.mark.parametrize("T", test_data)
-def test_scrimp_self_join_larger_window(T):
+def test_scrump_self_join_larger_window(T):
     for m in [8, 16, 32]:
         if len(T) > m:
             zone = int(np.ceil(m / 4))
@@ -145,20 +145,20 @@ def test_scrimp_self_join_larger_window(T):
                 ],
                 dtype=object,
             )
-            for right in scrimp(T, m):
+            for right in scrump(T, m):
                 continue
             utils.replace_inf(left)
             utils.replace_inf(right)
             npt.assert_almost_equal(left[:, 0], right[:, 0])
 
-            for right in scrimp(pd.Series(T), m):
+            for right in scrump(pd.Series(T), m):
                 continue
             utils.replace_inf(right)
             npt.assert_almost_equal(left[:, 0], right[:, 0])
 
 
 @pytest.mark.parametrize("T", test_data)
-def test_scrimp_plus_plus_self_join_larger_window(T):
+def test_scrump_plus_plus_self_join_larger_window(T):
     for m in [8, 16, 32]:
         if len(T) > m:
             zone = int(np.ceil(m / 4))
@@ -169,19 +169,19 @@ def test_scrimp_plus_plus_self_join_larger_window(T):
                 ],
                 dtype=object,
             )
-            for right in scrimp(T, m, pre_scrimp=True):
+            for right in scrump(T, m, pre_scrump=True):
                 continue
             utils.replace_inf(left)
             utils.replace_inf(right)
             npt.assert_almost_equal(left[:, 0], right[:, 0])
 
-            for right in scrimp(pd.Series(T), m, pre_scrimp=True):
+            for right in scrump(pd.Series(T), m, pre_scrump=True):
                 continue
             utils.replace_inf(right)
             npt.assert_almost_equal(left[:, 0], right[:, 0])
 
 
-def test_scrimp_constant_subsequence_self_join():
+def test_scrump_constant_subsequence_self_join():
     T = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
     zone = int(np.ceil(m / 4))
@@ -192,13 +192,13 @@ def test_scrimp_constant_subsequence_self_join():
         ],
         dtype=object,
     )
-    for right in scrimp(T, m):
+    for right in scrump(T, m):
         continue
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])
 
-    for right in scrimp(pd.Series(T), m):
+    for right in scrump(pd.Series(T), m):
         continue
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])
@@ -207,7 +207,7 @@ def test_scrimp_constant_subsequence_self_join():
 @pytest.mark.parametrize("T", test_data)
 @pytest.mark.parametrize("substitute", substitution_values)
 @pytest.mark.parametrize("substitution_locations", substitution_locations)
-def test_scrimp_nan_inf_self_join(T, substitute, substitution_locations):
+def test_scrump_nan_inf_self_join(T, substitute, substitution_locations):
     m = 3
 
     T_sub = T.copy()
@@ -224,19 +224,19 @@ def test_scrimp_nan_inf_self_join(T, substitute, substitution_locations):
             ],
             dtype=object,
         )
-        for right in scrimp(T_sub, m):
+        for right in scrump(T_sub, m):
             continue
         utils.replace_inf(left)
         utils.replace_inf(right)
         npt.assert_almost_equal(left[:, 0], right[:, 0])
 
-        for right in scrimp(pd.Series(T_sub), m):
+        for right in scrump(pd.Series(T_sub), m):
             continue
         utils.replace_inf(right)
         npt.assert_almost_equal(left[:, 0], right[:, 0])
 
 
-def test_scrimp_nan_zero_mean_self_join():
+def test_scrump_nan_zero_mean_self_join():
     T = np.array([-1, 0, 1, np.inf, 1, 0, -1])
     m = 3
 
@@ -248,7 +248,7 @@ def test_scrimp_nan_zero_mean_self_join():
         ],
         dtype=object,
     )
-    for right in scrimp(T, m):
+    for right in scrump(T, m):
         continue
 
     utils.replace_inf(left)

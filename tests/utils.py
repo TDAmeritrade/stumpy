@@ -141,3 +141,30 @@ def naive_mstump(T, m, excl_zone):
             I[dim, col_mask] = I_i[dim, col_mask]
 
     return P.T, I.T
+
+
+def get_naive_array_ranges(a, n_chunks, truncate=False):
+    out = np.zeros((n_chunks, 2), np.int64)
+    ranges_idx = 0
+    range_start_idx = 0
+
+    sum = 0
+    for i in range(a.shape[0]):
+        sum += a[i]
+        if sum > a.sum() / n_chunks:
+            out[ranges_idx, 0] = range_start_idx
+            out[ranges_idx, 1] = min(i + 1, a.shape[0])  # Exclusive stop index
+            # Reset and Update
+            range_start_idx = i + 1
+            ranges_idx += 1
+            sum = 0
+    # Handle final range outside of for loop
+    out[ranges_idx, 0] = range_start_idx
+    out[ranges_idx, 1] = a.shape[0]
+    if ranges_idx < n_chunks - 1:
+        out[ranges_idx:] = a.shape[0]
+
+    if truncate:
+        out = out[:ranges_idx]
+
+    return out

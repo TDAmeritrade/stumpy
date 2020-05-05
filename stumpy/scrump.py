@@ -190,7 +190,7 @@ def _compute_diagonal(
 
 
 @njit(parallel=True, fastmath=True)
-def _scrimp(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage=0.1):
+def _scrump(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage=0.1):
     """
     A Numba JIT-compiled version of SCRIMP (self-join) for parallel computation
     of the matrix profile and matrix profile indices.
@@ -275,7 +275,7 @@ def _scrimp(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage=0.1):
 
 
 @njit(parallel=True, fastmath=True)
-def _prescrimp(
+def _prescrump(
     Q, T, QT, M_T, Σ_T, i, s, excl_zone, squared_distance_profile, P_squared, I
 ):
     """
@@ -376,10 +376,10 @@ def _prescrimp(
     return
 
 
-def prescrimp(T, m, M_T, Σ_T, s=None):
+def prescrump(T, m, M_T, Σ_T, s=None):
     """
     This is a convenience wrapper around the Numba JIT-compiled parallelized
-    `_prescrimp` function which computes the approximate matrix profile according
+    `_prescrump` function which computes the approximate matrix profile according
     to the preSCRIMP algorithm
 
     Parameters
@@ -432,7 +432,7 @@ def prescrimp(T, m, M_T, Σ_T, s=None):
     for i in np.random.permutation(range(0, l, s)):
         Q[:] = T[i : i + m]
         QT = core.sliding_dot_product(Q, T)
-        _prescrimp(
+        _prescrump(
             Q, T, QT, M_T, Σ_T, i, s, excl_zone, squared_distance_profile, P_squared, I,
         )
 
@@ -441,14 +441,14 @@ def prescrimp(T, m, M_T, Σ_T, s=None):
     return P, I
 
 
-def scrimp(T, m, percentage=0.01, pre_scrimp=False, s=None):
+def scrump(T, m, percentage=0.01, pre_scrump=False, s=None):
     """
     Compute the matrix profile with parallelized SCRIMP (self-join). This returns a
     generator that can be incrementally iterated on. For SCRIMP++, set
-    `pre_scrimp=True`.
+    `pre_scrump=True`.
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
-    `_scrimp` function which computes the matrix profile according to SCRIMP.
+    `_scrump` function which computes the matrix profile according to SCRIMP.
 
     Parameters
     ----------
@@ -461,13 +461,13 @@ def scrimp(T, m, percentage=0.01, pre_scrimp=False, s=None):
     percentage : float
         Approximate percentage completed. The value is between 0.0 and 1.0.
 
-    pre_scrimp : bool
+    pre_scrump : bool
         A flag for whether or not to perform the PreSCRIMP calculation prior to
         computing SCRIMP. If set to `True`, this is equivalent to computing
         SCRIMP++
 
     s : int
-        The size of the PreSCRIMP fixed interval. If `prescrimp=True` and `s=None`,
+        The size of the PreSCRIMP fixed interval. If `pre-scrump=True` and `s=None`,
         then `s` will automatically be set to `s=int(np.ceil(m/4))`, the size of
         the exclusion zone.
 
@@ -507,8 +507,8 @@ def scrimp(T, m, percentage=0.01, pre_scrimp=False, s=None):
     if s is None:
         s = excl_zone
 
-    if pre_scrimp:
-        P, I = prescrimp(T, m, M_T, Σ_T, s)
+    if pre_scrump:
+        P, I = prescrump(T, m, M_T, Σ_T, s)
         for i in range(P.shape[0]):
             if out[i, 0] > P[i]:
                 out[i, 0] = P[i]
@@ -523,7 +523,7 @@ def scrimp(T, m, percentage=0.01, pre_scrimp=False, s=None):
     for round in range(generator_rounds):
         orders_ranges = _get_orders_ranges(n_threads, m, n, orders, start, percentage)
 
-        P, I = _scrimp(T, m, M_T, Σ_T, orders, orders_ranges, excl_zone, percentage)
+        P, I = _scrump(T, m, M_T, Σ_T, orders, orders_ranges, excl_zone, percentage)
         start = orders_ranges[:, 1].max()
 
         # Update matrix profile and indices

@@ -178,3 +178,32 @@ def test_array_to_temp_file():
     os.remove(fname)
 
     npt.assert_almost_equal(left, right)
+
+
+def test_get_array_ranges():
+    x = np.array([3, 9, 2, 1, 5, 4, 7, 7, 8, 6])
+    for n_chunks in range(2, 5):
+        left = utils.get_naive_array_ranges(x, n_chunks)
+
+        right = core._get_array_ranges(x, n_chunks)
+        npt.assert_almost_equal(left, right)
+
+
+def test_get_array_ranges_exhausted():
+    x = np.array([3, 3, 3, 11, 11, 11])
+    n_chunks = 6
+
+    left = utils.get_naive_array_ranges(x, n_chunks)
+
+    right = core._get_array_ranges(x, n_chunks)
+    npt.assert_almost_equal(left, right)
+
+
+def test_get_array_ranges_exhausted():
+    x = np.array([3, 3, 3, 11, 11, 11])
+    n_chunks = 6
+
+    left = utils.get_naive_array_ranges(x, n_chunks, truncate=True)
+
+    right = core._get_array_ranges(x, n_chunks, truncate=True)
+    npt.assert_almost_equal(left, right)

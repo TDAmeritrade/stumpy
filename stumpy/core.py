@@ -697,4 +697,61 @@ def array_to_temp_file(a):
     return fname
 
 
+def _get_array_ranges(
+    a, n_chunks, custom_cumsum=None, custom_insert=None, truncate=False
+):
+    """
+    Given an input array, split it into `n_chunks`
+
+    Parameters
+    ----------
+
+    a : ndarray
+        An array to be split
+
+    n_chunks : int
+        Number of chunks to split the array into
+
+    custom_cumsum : ndarray
+        Custom cumsum array
+
+    custom_insert : ndarray
+        Custom insertion array to be inserted into the cumsum array
+
+    truncate : bool
+        If `truncate=True`, truncate the rows of `array_ranges` if there are not enough
+        elements in `a` to be chunked up into `n_chunks`.  Otherwise, if
+        `truncate=False`, all extra chunks will have their start and stop indices set
+        to `a.shape[0]`.
+
+    Returns
+    -------
+
+    array_ranges : ndarray
+        A two column array where each row consists of a start and (exclusive) stop index
+        pair. The first column contains the start indices and the second column
+        contains the stop indices.
+    """
+
+    array_ranges = np.zeros((n_chunks, 2), np.int64)
+    if custom_cumsum is None:
+        custom_cumsum = a.cumsum() / a.sum()
+    if custom_insert is None:
+        custom_insert = np.linspace(0, 1, n_chunks, endpoint=False)[1:]
+    idx = 1 + np.searchsorted(custom_cumsum, custom_insert)
+    array_ranges[1:, 0] = idx  # Fill the first column with start indices
+    array_ranges[:-1, 1] = idx  # Fill the second column with exclusive stop indices
+    array_ranges[-1, 1] = a.shape[0]  # Handle the stop index for the final chunk
+
+    diff_idx = np.diff(idx)
+    if np.any(diff_idx == 0):
+        row_truncation_idx = np.argmin(diff_idx) + 2
+        array_ranges[row_truncation_idx:, 0] = a.shape[0]
+        array_ranges[row_truncation_idx - 1 :, 1] = a.shape[0]
+        if truncate:
+            array_ranges = array_ranges[:row_truncation_idx]
+
+    return array_ranges
+
+
 convolution = scipy.signal.fftconvolve  # Swap for other convolution function
