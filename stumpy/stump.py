@@ -49,8 +49,11 @@ def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_tr
 
     Returns
     -------
-    P : float64
-        Matrix profile for the window with index equal to `start`
+    P : Tuple[float64, float64, float64]
+        Matrix profile, left matrix profile index, and right matrix profile for the
+        window with index equal to `start`. The left and right matrix profile are
+        automatically set to `np.inf` for self-joins (i.e., when `ignore_trivial` is
+        set to `True`.
 
     I : Tuple[int64, int64, int64]
         Matrix profile index, left matrix profile index, and right matrix profile
@@ -71,10 +74,12 @@ def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_tr
     else:
         P, I = stamp.mass(T_B[start : start + m], T_A, M_T, Σ_T)
         # No left and right matrix profile available
+        PL = np.inf
+        PR = np.inf
         IL = -1
         IR = -1
 
-    return P, (I, IL, IR)
+    return (P, PL, PR), (I, IL, IR)
 
 
 def _get_QT(start, T_A, T_B, m):
@@ -412,9 +417,10 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     start = 0
     stop = l
 
-    profile[start], indices[start, :] = _get_first_stump_profile(
+    all_profiles, indices[start, :] = _get_first_stump_profile(
         start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial
     )
+    profile[start] = all_profiles[0]
 
     T_B[
         np.isnan(T_B)
