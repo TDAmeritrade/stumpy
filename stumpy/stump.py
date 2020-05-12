@@ -417,10 +417,10 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     start = 0
     stop = l
 
-    all_profiles, indices[start, :] = _get_first_stump_profile(
+    all_start_profiles, indices[start, :] = _get_first_stump_profile(
         start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial
     )
-    profile[start] = all_profiles[0]
+    profile[start] = all_start_profiles[0]
 
     T_B[
         np.isnan(T_B)

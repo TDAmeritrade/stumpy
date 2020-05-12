@@ -18,7 +18,7 @@ THREADS_PER_BLOCK = 512
 
 @cuda.jit(
     "(i8, f8[:], f8[:], i8,  f8[:], f8[:], f8[:], f8[:], f8[:],"
-    "f8[:], f8[:], i8, b1, i8, f8[:, :], f8[:, :], b1)"
+    "f8[:], f8[:], i8, b1, i8, f8[:, :], i8[:, :], b1)"
 )
 def _compute_and_update_PI_kernel(
     i,
@@ -314,7 +314,7 @@ def _gpu_stump(
             device_Σ_T = cuda.to_device(Σ_T)
 
         profile = np.empty((k, 3))  # float64
-        indices = np.empty((k, 3))  # int64
+        indices = np.empty((k, 3), dtype=np.int64)  # int64
 
         profile[:] = np.inf
         indices[:, :] = -1
