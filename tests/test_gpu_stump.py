@@ -25,6 +25,9 @@ test_data = [
     ),
 ]
 
+substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
+substitution_values = [np.nan, np.inf]
+
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_gpu_stump_self_join(T_A, T_B):
@@ -171,7 +174,7 @@ def test_parallel_gpu_stump_A_B_join(T_A, T_B):
         npt.assert_almost_equal(left, right)
 
 
-def test_constant_subsequence_self_join():
+def test_gpu_stump_constant_subsequence_self_join():
     T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
     zone = int(np.ceil(m / 4))
@@ -192,7 +195,7 @@ def test_constant_subsequence_self_join():
     npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
 
 
-def test_one_constant_subsequence_A_B_join():
+def test_gpu_stump_one_constant_subsequence_A_B_join():
     T_A = np.random.rand(20)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
@@ -222,7 +225,7 @@ def test_one_constant_subsequence_A_B_join():
     npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
 
 
-def test_two_constant_subsequences_A_B_join():
+def test_gpu_stump_two_constant_subsequences_A_B_join():
     T_A = np.array([0, 0, 0, 0, 0, 1], dtype=np.float64)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
@@ -250,3 +253,89 @@ def test_two_constant_subsequences_A_B_join():
     right = gpu_stump(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+@pytest.mark.parametrize("substitute_B", substitution_values)
+@pytest.mark.parametrize("substitution_locations", substitution_locations)
+def test_gpu_stump_nan_inf_self_join(T_A, T_B, substitute_B, substitution_locations):
+    m = 3
+
+    T_B_sub = T_B.copy()
+
+    for substitution_location_B in substitution_locations:
+        T_B_sub[:] = T_B[:]
+        T_B_sub[substitution_location_B] = substitute_B
+
+        zone = int(np.ceil(m / 4))
+        left = np.array(
+            [
+                utils.naive_mass(Q, T_B_sub, m, i, zone, True)
+                for i, Q in enumerate(core.rolling_window(T_B_sub, m))
+            ],
+            dtype=object,
+        )
+        right = gpu_stump(T_B_sub, m, ignore_trivial=True)
+        utils.replace_inf(left)
+        utils.replace_inf(right)
+        npt.assert_almost_equal(left, right)
+
+        right = gpu_stump(pd.Series(T_B_sub), m, ignore_trivial=True)
+        utils.replace_inf(right)
+        npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+@pytest.mark.parametrize("substitute_A", substitution_values)
+@pytest.mark.parametrize("substitute_B", substitution_values)
+@pytest.mark.parametrize("substitution_locations", substitution_locations)
+def test_gpu_stump_nan_inf_A_B_join(
+    T_A, T_B, substitute_A, substitute_B, substitution_locations
+):
+    m = 3
+
+    T_A_sub = T_A.copy()
+    T_B_sub = T_B.copy()
+
+    for substitution_location_B in substitution_locations:
+        for substitution_location_A in substitution_locations:
+            T_A_sub[:] = T_A[:]
+            T_B_sub[:] = T_B[:]
+            T_A_sub[substitution_location_A] = substitute_A
+            T_B_sub[substitution_location_B] = substitute_B
+
+            left = np.array(
+                [
+                    utils.naive_mass(Q, T_A_sub, m)
+                    for Q in core.rolling_window(T_B_sub, m)
+                ],
+                dtype=object,
+            )
+            right = gpu_stump(T_A_sub, m, T_B_sub, ignore_trivial=False)
+            utils.replace_inf(left)
+            utils.replace_inf(right)
+            npt.assert_almost_equal(left, right)
+
+            right = gpu_stump(
+                pd.Series(T_A_sub), m, pd.Series(T_B_sub), ignore_trivial=False
+            )
+            utils.replace_inf(right)
+            npt.assert_almost_equal(left, right)
+
+    def test_gpu_stump_nan_zero_mean_self_join():
+        T = np.array([-1, 0, 1, np.inf, 1, 0, -1])
+        m = 3
+
+        zone = int(np.ceil(m / 4))
+        left = np.array(
+            [
+                utils.naive_mass(Q, T, m, i, zone, True)
+                for i, Q in enumerate(core.rolling_window(T, m))
+            ],
+            dtype=object,
+        )
+        right = gpu_stump(T, m, ignore_trivial=True)
+
+        utils.replace_inf(left)
+        utils.replace_inf(right)
+        npt.assert_almost_equal(left, right)

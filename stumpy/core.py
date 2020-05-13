@@ -89,7 +89,7 @@ def check_nan(a):  # pragma: no cover
     """
 
     if np.any(np.isnan(a)):
-        msg = f"Input array contains one or more NaNs"
+        msg = "Input array contains one or more NaNs"
         raise ValueError(msg)
 
     return
