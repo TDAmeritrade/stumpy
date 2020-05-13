@@ -118,7 +118,7 @@ def _compute_and_update_PI_kernel(
 
     start = cuda.grid(1)
     stride = cuda.gridsize(1)
-    threshold = 1e-7
+    threshold = 1e-10
 
     if i % 2 == 0:
         QT_out = QT_even
@@ -130,9 +130,6 @@ def _compute_and_update_PI_kernel(
     for j in range(start, QT_out.shape[0], stride):
         zone_start = max(0, j - excl_zone)
         zone_stop = min(k, j + excl_zone)
-        denom = m * σ_Q[i] * Σ_T[j]
-        if denom == 0:  # pragma: no cover
-            denom = 1e-10
 
         if compute_QT:
             QT_out[j] = (
@@ -140,11 +137,19 @@ def _compute_and_update_PI_kernel(
             )
 
             QT_out[0] = QT_first[i]
-        D = abs(2 * m * (1.0 - (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom))
-        if σ_Q[i] < threshold or Σ_T[j] < threshold:  # pragma: no cover
-            D = m
-        if Σ_T[j] < threshold and σ_Q[i] < threshold:  # pragma: no cover
-            D = 0
+        if math.isinf(M_T[j]) or math.isinf(μ_Q[i]):
+            D = np.inf
+        else:
+            if σ_Q[i] < threshold or Σ_T[j] < threshold:
+                D = m
+            else:
+                denom = m * σ_Q[i] * Σ_T[j]
+                if math.fabs(denom) < threshold:  # pragma nocover
+                    denom = threshold
+                D = abs(2 * m * (1.0 - (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom))
+
+            if σ_Q[i] < threshold and Σ_T[j] < threshold:
+                D = 0
 
         if ignore_trivial:
             if i <= zone_stop and i >= zone_start:
@@ -320,7 +325,6 @@ def _gpu_stump(
         indices[:, :] = -1
         device_profile = cuda.to_device(profile)
         device_indices = cuda.to_device(indices)
-
         _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
             range_start - 1,
             device_T_A,
@@ -451,27 +455,30 @@ def gpu_stump(
     """
 
     T_A = np.asarray(T_A)
-    core.check_dtype(T_A)
-    core.check_nan(T_A)
-
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
+    T_A = T_A.copy()
+    T_A[np.isinf(T_A)] = np.nan
+    core.check_dtype(T_A)
 
     if T_B is None:  # Self join!
         T_B = T_A
         ignore_trivial = True
     T_B = np.asarray(T_B)
 
-    core.check_dtype(T_B)
-    core.check_nan(T_B)
+    T_B = np.asarray(T_B)
+    T_B = T_B.copy()
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
+
+    T_B[np.isinf(T_B)] = np.nan
+    core.check_dtype(T_B)
 
     core.check_window_size(m)
 
@@ -488,6 +495,7 @@ def gpu_stump(
     tmp_T = T_A
     T_A = T_B
     T_B = tmp_T
+
     n = T_B.shape[0]
     k = T_A.shape[0] - m + 1
     l = n - m + 1
@@ -495,6 +503,9 @@ def gpu_stump(
 
     M_T, Σ_T = core.compute_mean_std(T_A, m)
     μ_Q, σ_Q = core.compute_mean_std(T_B, m)
+
+    T_A[np.isnan(T_A)] = 0
+    T_B[np.isnan(T_B)] = 0
 
     T_A_fname = core.array_to_temp_file(T_A)
     T_B_fname = core.array_to_temp_file(T_B)
