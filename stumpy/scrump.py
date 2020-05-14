@@ -46,12 +46,12 @@ def _get_max_order_idx(m, n, orders, start, percentage):
     max_n_dist = 0
     for order_idx in range(orders.shape[0]):
         k = orders[order_idx]
-        max_n_dist = max_n_dist + (n - m + 2 - k)
+        max_n_dist = max_n_dist + (n - m + 1 - k)
 
     n_dist_computed = 0
     for order_idx in range(start, orders.shape[0]):
         k = orders[order_idx]
-        n_dist_computed = n_dist_computed + (n - m + 2 - k)
+        n_dist_computed = n_dist_computed + (n - m + 1 - k)
         if n_dist_computed / max_n_dist > percentage:  # pragma: no cover
             break
 
@@ -104,7 +104,7 @@ def _get_orders_ranges(n_split, m, n, orders, start, percentage):
     n_dist_computed = 0
     for order_idx in range(start, max_order_idx):
         k = orders[order_idx]
-        n_dist_computed = n_dist_computed + (n - m + 2 - k)
+        n_dist_computed = n_dist_computed + (n - m + 1 - k)
         if n_dist_computed > max_n_dist_per_range:  # pragma: no cover
             orders_ranges[ranges_idx, 0] = range_start_idx
             orders_ranges[ranges_idx, 1] = min(
@@ -123,7 +123,7 @@ def _get_orders_ranges(n_split, m, n, orders, start, percentage):
 
 @njit(fastmath=True)
 def _compute_diagonal(
-    T, m, μ, σ, orders, orders_start_idx, orders_stop_idx, excl_zone, thread_idx, P, I
+    T, m, μ, σ, orders, orders_start_idx, orders_stop_idx, thread_idx, P, I
 ):
     """
     Compute (Numba JIT-compiled) and update P, I along a single diagonal using a single
@@ -152,10 +152,6 @@ def _compute_diagonal(
     orders_stop_idx : int
         The (exclusive) stop index for a range of diagonal order to process and compute
 
-    excl_zone : int
-        The half width for the exclusion zone relative to the current
-        sliding window
-
     P : ndarray
         Matrix profile
 
@@ -170,27 +166,27 @@ def _compute_diagonal(
 
     for order_idx in range(orders_start_idx, orders_stop_idx):
         k = orders[order_idx]
-        for i in range(0, n - m + 2 - k):
+        for i in range(0, n - m + 1 - k):
             if i == 0:
-                QT = np.dot(T[i : i + m], T[i + k - 1 : i + k - 1 + m])
+                QT = np.dot(T[i : i + m], T[i + k : i + k + m])
             else:
-                QT = QT - T[i - 1] * T[i + k - 2] + T[i + m - 1] * T[i + k + m - 2]
+                QT = QT - T[i - 1] * T[i + k - 1] + T[i + m - 1] * T[i + k + m - 1]
 
             D_squared = core._calculate_squared_distance(
-                m, QT, μ[i], σ[i], μ[i + k - 1], σ[i + k - 1],
+                m, QT, μ[i], σ[i], μ[i + k], σ[i + k],
             )
 
-            if i < i + k - 1 - excl_zone and D_squared < P[thread_idx, i]:
+            if D_squared < P[thread_idx, i]:
                 P[thread_idx, i] = D_squared
-                I[thread_idx, i] = i + k - 1
+                I[thread_idx, i] = i + k
 
-            if i < i + k - 1 - excl_zone and D_squared < P[thread_idx, i + k - 1]:
-                P[thread_idx, i + k - 1] = D_squared
-                I[thread_idx, i + k - 1] = i
+            if D_squared < P[thread_idx, i + k]:
+                P[thread_idx, i + k] = D_squared
+                I[thread_idx, i + k] = i
 
 
 @njit(parallel=True, fastmath=True)
-def _scrump(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage=0.1):
+def _scrump(T, m, μ, σ, orders, orders_ranges, percentage=0.1):
     """
     A Numba JIT-compiled version of SCRIMP (self-join) for parallel computation
     of the matrix profile and matrix profile indices.
@@ -212,16 +208,9 @@ def _scrump(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage=0.1):
     orders : ndarray
         The order of diagonals to process and compute
 
-    ranges : ndarray
-        The start (column 1) and (exclusive) stop (column 2) order indices for
-        each thread
-
     excl_zone : int
         The half width for the exclusion zone relative to the current
         sliding window
-
-    percentage : float
-        Approximate percentage completed. The value is between 0.0 and 1.0.
 
     Returns
     -------
@@ -258,7 +247,6 @@ def _scrump(T, m, μ, σ, orders, orders_ranges, excl_zone, percentage=0.1):
             orders,
             orders_ranges[thread_idx, 0],
             orders_ranges[thread_idx, 1],
-            excl_zone,
             thread_idx,
             P,
             I,
@@ -514,7 +502,7 @@ def scrump(T, m, percentage=0.01, pre_scrump=False, s=None):
                 out[i, 0] = P[i]
                 out[i, 1] = I[i]
 
-    orders = np.random.permutation(range(excl_zone + 1, n - m + 2))
+    orders = np.random.permutation(range(excl_zone + 1, n - m + 1))
     n_threads = config.NUMBA_NUM_THREADS
     percentage = min(percentage, 1.0)
     percentage = max(percentage, 0.0)
@@ -523,7 +511,7 @@ def scrump(T, m, percentage=0.01, pre_scrump=False, s=None):
     for round in range(generator_rounds):
         orders_ranges = _get_orders_ranges(n_threads, m, n, orders, start, percentage)
 
-        P, I = _scrump(T, m, M_T, Σ_T, orders, orders_ranges, excl_zone, percentage)
+        P, I = _scrump(T, m, M_T, Σ_T, orders, orders_ranges)
         start = orders_ranges[:, 1].max()
 
         # Update matrix profile and indices

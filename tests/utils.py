@@ -69,6 +69,22 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     return P, I, IL, IR
 
 
+def naive_stamp(T_A, m, exclusion_zone=None, T_B=None):
+    if T_B is None:  # self-join
+        result = np.array(
+            [
+                naive_mass(Q, T_A, m, i, exclusion_zone, True)
+                for i, Q in enumerate(core.rolling_window(T_A, m))
+            ],
+            dtype=object,
+        )
+    else:
+        result = np.array(
+            [naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object,
+        )
+    return result
+
+
 def replace_inf(x, value=0):
     x[x == np.inf] = value
     x[x == -np.inf] = value
