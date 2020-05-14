@@ -121,7 +121,7 @@ def _get_orders_ranges(n_split, m, n, orders, start, percentage):
     return orders_ranges
 
 
-# @njit(fastmath=True)
+@njit(fastmath=True)
 def _compute_diagonal(
     T, m, μ, σ, orders, orders_start_idx, orders_stop_idx, thread_idx, P, I
 ):
@@ -185,7 +185,7 @@ def _compute_diagonal(
                 I[thread_idx, i + k] = i
 
 
-# @njit(parallel=True, fastmath=True)
+@njit(parallel=True, fastmath=True)
 def _scrump(T, m, μ, σ, orders, orders_ranges, percentage=0.1):
     """
     A Numba JIT-compiled version of SCRIMP (self-join) for parallel computation

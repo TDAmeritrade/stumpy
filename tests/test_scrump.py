@@ -193,6 +193,7 @@ def test_scrump_self_join_full(T):
     npt.assert_almost_equal(left[:, :2], right)
 
 
+@pytest.mark.skip(reason="naive PRESCRUMP is not yet implemented")
 @pytest.mark.parametrize("T", test_data)
 @pytest.mark.parametrize("percentages", percentages)
 def test_scrump_plus_plus_self_join(T, percentages):
