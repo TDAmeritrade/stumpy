@@ -260,11 +260,11 @@ def test_gpu_stump_two_constant_subsequences_A_B_join():
 @pytest.mark.parametrize("substitution_locations", substitution_locations)
 def test_gpu_stump_nan_inf_self_join(T_A, T_B, substitute_B, substitution_locations):
     m = 3
-
-    T_B_sub = T_B.copy()
+    stop = 16
+    T_B_sub = T_B.copy()[:stop]
 
     for substitution_location_B in substitution_locations:
-        T_B_sub[:] = T_B[:]
+        T_B_sub[:] = T_B[:stop]
         T_B_sub[substitution_location_B] = substitute_B
 
         zone = int(np.ceil(m / 4))
@@ -293,14 +293,14 @@ def test_gpu_stump_nan_inf_A_B_join(
     T_A, T_B, substitute_A, substitute_B, substitution_locations
 ):
     m = 3
-
+    stop = 16
     T_A_sub = T_A.copy()
-    T_B_sub = T_B.copy()
+    T_B_sub = T_B.copy()[:stop]
 
     for substitution_location_B in substitution_locations:
         for substitution_location_A in substitution_locations:
-            T_A_sub[:] = T_A[:]
-            T_B_sub[:] = T_B[:]
+            T_A_sub[:] = T_A
+            T_B_sub[:] = T_B[:stop]
             T_A_sub[substitution_location_A] = substitute_A
             T_B_sub[substitution_location_B] = substitute_B
 
@@ -322,20 +322,21 @@ def test_gpu_stump_nan_inf_A_B_join(
             utils.replace_inf(right)
             npt.assert_almost_equal(left, right)
 
-    def test_gpu_stump_nan_zero_mean_self_join():
-        T = np.array([-1, 0, 1, np.inf, 1, 0, -1])
-        m = 3
 
-        zone = int(np.ceil(m / 4))
-        left = np.array(
-            [
-                utils.naive_mass(Q, T, m, i, zone, True)
-                for i, Q in enumerate(core.rolling_window(T, m))
-            ],
-            dtype=object,
-        )
-        right = gpu_stump(T, m, ignore_trivial=True)
+def test_gpu_stump_nan_zero_mean_self_join():
+    T = np.array([-1, 0, 1, np.inf, 1, 0, -1])
+    m = 3
 
-        utils.replace_inf(left)
-        utils.replace_inf(right)
-        npt.assert_almost_equal(left, right)
+    zone = int(np.ceil(m / 4))
+    left = np.array(
+        [
+            utils.naive_mass(Q, T, m, i, zone, True)
+            for i, Q in enumerate(core.rolling_window(T, m))
+        ],
+        dtype=object,
+    )
+    right = gpu_stump(T, m, ignore_trivial=True)
+
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left, right)
