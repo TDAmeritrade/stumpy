@@ -9,11 +9,9 @@ import os
 import numpy as np
 from numba import cuda
 
-from . import _get_QT
-from . import core
+from . import core, _get_QT, config
 
 logger = logging.getLogger(__name__)
-THREADS_PER_BLOCK = 512
 
 
 @cuda.jit(
@@ -181,7 +179,6 @@ def _gpu_stump(
     k,
     ignore_trivial=True,
     range_start=1,
-    threads_per_block=THREADS_PER_BLOCK,
     device_id=0,
 ):
     """
@@ -244,10 +241,6 @@ def _gpu_stump(
         The starting index value along T_B for which to start the matrix
         profile calculation. Default is 1.
 
-    threads_per_block : int
-        The number of GPU threads to use for all kernels. The default value is
-        set in `THREADS_PER_BLOCK=512`.
-
     device_id : int
         The (GPU) device number to use. The default value is `0`.
 
@@ -291,6 +284,7 @@ def _gpu_stump(
     Note that left and right matrix profiles are only available for self-joins.
     """
 
+    threads_per_block = config.STUMPY_THREADS_PER_BLOCK
     blocks_per_grid = math.ceil(k / threads_per_block)
 
     T_A = np.load(T_A_fname, allow_pickle=False)
@@ -376,14 +370,7 @@ def _gpu_stump(
     return profile_fname, indices_fname
 
 
-def gpu_stump(
-    T_A,
-    m,
-    T_B=None,
-    ignore_trivial=True,
-    threads_per_block=THREADS_PER_BLOCK,
-    device_id=0,
-):
+def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     """
     Compute the matrix profile with GPU-STOMP
 
@@ -405,10 +392,6 @@ def gpu_stump(
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
         to `False`. Default is `True`.
-
-    threads_per_block : int
-        The number of GPU threads to use for all kernels. The default value is
-        set in `THREADS_PER_BLOCK=512`.
 
     device_id : int or list
         The (GPU) device number to use. The default value is `0`. A list of
@@ -570,7 +553,6 @@ def gpu_stump(
                     k,
                     ignore_trivial,
                     start + 1,
-                    threads_per_block,
                     device_ids[idx],
                 ),
             )
@@ -592,7 +574,6 @@ def gpu_stump(
                 k,
                 ignore_trivial,
                 start + 1,
-                threads_per_block,
                 device_ids[idx],
             )
 

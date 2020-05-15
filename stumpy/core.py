@@ -8,6 +8,8 @@ import scipy.signal
 import tempfile
 import math
 
+from . import config
+
 try:
     from numba.cuda.cudadrv.driver import _raise_driver_not_found
 except ImportError:
@@ -262,10 +264,10 @@ def sliding_dot_product(Q, T):
     return QT.real[m - 1 : n]
 
 
-def compute_mean_std(T, m, num_chunks=1, max_iter=10):
+def compute_mean_std(T, m):
     """
     Compute the sliding mean and standard deviation for the array `T` with
-    a window size of `m` by splitting up T in `n_chunks`
+    a window size of `m`
 
     Parameters
     ----------
@@ -274,13 +276,6 @@ def compute_mean_std(T, m, num_chunks=1, max_iter=10):
 
     m : int
         Window size
-
-    num_chunks : int
-        Number of chunks to use for the first iteration. If a Memory Error is raised,
-        this number is doubled and the computation tried again.
-
-    max_iter : int
-        Maximum number of iterations
 
     Returns
     -------
@@ -310,6 +305,10 @@ def compute_mean_std(T, m, num_chunks=1, max_iter=10):
     Note that Mueen's algorithm has an off-by-one bug where the
     sum for the first subsequence is omitted and we fixed that!
     """
+
+    num_chunks = config.STUMPY_MEAN_STD_NUM_CHUNKS
+    max_iter = config.STUMPY_MEAN_STD_MAX_ITER
+
     if T.ndim > 2:  # pragma nocover
         raise ValueError("T has to be one or two dimensional!")
 

@@ -2,13 +2,13 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 from stumpy import gpu_stump
-from stumpy import core, _get_QT
+from stumpy import core, _get_QT, config
 from numba import cuda
 import math
 import pytest
 import utils
 
-THREADS_PER_BLOCK = 1
+config.THREADS_PER_BLOCK = 1
 
 if not cuda.is_available():
     pytest.skip("Skipping Tests No GPUs Available", allow_module_level=True)
@@ -40,14 +40,12 @@ def test_gpu_stump_self_join(T_A, T_B):
         ],
         dtype=object,
     )
-    right = gpu_stump(T_B, m, ignore_trivial=True, threads_per_block=THREADS_PER_BLOCK)
+    right = gpu_stump(T_B, m, ignore_trivial=True)
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
 
-    right = gpu_stump(
-        pd.Series(T_B), m, ignore_trivial=True, threads_per_block=THREADS_PER_BLOCK
-    )
+    right = gpu_stump(pd.Series(T_B), m, ignore_trivial=True)
     utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
 
@@ -64,20 +62,13 @@ def test_gpu_stump_self_join_larger_window(T_A, T_B):
                 ],
                 dtype=object,
             )
-            right = gpu_stump(
-                T_B, m, ignore_trivial=True, threads_per_block=THREADS_PER_BLOCK
-            )
+            right = gpu_stump(T_B, m, ignore_trivial=True)
             utils.replace_inf(left)
             utils.replace_inf(right)
 
             npt.assert_almost_equal(left, right)
 
-            right = gpu_stump(
-                pd.Series(T_B),
-                m,
-                ignore_trivial=True,
-                threads_per_block=THREADS_PER_BLOCK,
-            )
+            right = gpu_stump(pd.Series(T_B), m, ignore_trivial=True,)
             utils.replace_inf(right)
             npt.assert_almost_equal(left, right)
 
@@ -88,20 +79,12 @@ def test_gpu_stump_A_B_join(T_A, T_B):
     left = np.array(
         [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
     )
-    right = gpu_stump(
-        T_A, m, T_B, ignore_trivial=False, threads_per_block=THREADS_PER_BLOCK
-    )
+    right = gpu_stump(T_A, m, T_B, ignore_trivial=False)
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
 
-    right = gpu_stump(
-        pd.Series(T_A),
-        m,
-        pd.Series(T_B),
-        ignore_trivial=False,
-        threads_per_block=THREADS_PER_BLOCK,
-    )
+    right = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
     utils.replace_inf(right)
     npt.assert_almost_equal(left, right)
 
@@ -119,24 +102,12 @@ def test_parallel_gpu_stump_self_join(T_A, T_B):
             ],
             dtype=object,
         )
-        right = gpu_stump(
-            T_B,
-            m,
-            ignore_trivial=True,
-            threads_per_block=THREADS_PER_BLOCK,
-            device_id=device_ids,
-        )
+        right = gpu_stump(T_B, m, ignore_trivial=True, device_id=device_ids,)
         utils.replace_inf(left)
         utils.replace_inf(right)
         npt.assert_almost_equal(left, right)
 
-        right = gpu_stump(
-            pd.Series(T_B),
-            m,
-            ignore_trivial=True,
-            threads_per_block=THREADS_PER_BLOCK,
-            device_id=device_ids,
-        )
+        right = gpu_stump(pd.Series(T_B), m, ignore_trivial=True, device_id=device_ids,)
         utils.replace_inf(right)
         npt.assert_almost_equal(left, right)
 
@@ -150,14 +121,7 @@ def test_parallel_gpu_stump_A_B_join(T_A, T_B):
             [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)],
             dtype=object,
         )
-        right = gpu_stump(
-            T_A,
-            m,
-            T_B,
-            ignore_trivial=False,
-            threads_per_block=THREADS_PER_BLOCK,
-            device_id=device_ids,
-        )
+        right = gpu_stump(T_A, m, T_B, ignore_trivial=False, device_id=device_ids,)
         utils.replace_inf(left)
         utils.replace_inf(right)
         npt.assert_almost_equal(left, right)
@@ -167,7 +131,6 @@ def test_parallel_gpu_stump_A_B_join(T_A, T_B):
             m,
             pd.Series(T_B),
             ignore_trivial=False,
-            threads_per_block=THREADS_PER_BLOCK,
             device_id=device_ids,
         )
         utils.replace_inf(right)
