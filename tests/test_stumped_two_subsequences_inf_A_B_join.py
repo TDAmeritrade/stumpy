@@ -48,10 +48,7 @@ def test_stumped_two_subsequences_inf_A_B_join(
         T_A_sub[substitution_location_A] = np.inf
         T_B_sub[substitution_location_B] = np.inf
 
-        left = np.array(
-            [utils.naive_mass(Q, T_A_sub, m) for Q in core.rolling_window(T_B_sub, m)],
-            dtype=object,
-        )
+        left = utils.naive_stamp(T_A_sub, m, T_B=T_B_sub)
         right = stumped(dask_client, T_A_sub, m, T_B_sub, ignore_trivial=False)
         utils.replace_inf(left)
         utils.replace_inf(right)

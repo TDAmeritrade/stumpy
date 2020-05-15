@@ -44,10 +44,7 @@ def test_stumped_one_subsequence_nan_A_B_join(
         T_B_sub = T_B.copy()
         T_B_sub[substitution_location_B] = np.nan
 
-        left = np.array(
-            [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B_sub, m)],
-            dtype=object,
-        )
+        left = utils.naive_stamp(T_A, m, T_B=T_B_sub)
         right = stumped(dask_client, T_A, m, T_B_sub, ignore_trivial=False)
         utils.replace_inf(left)
         utils.replace_inf(right)

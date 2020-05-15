@@ -45,13 +45,7 @@ def test_stumped_one_subsequence_inf_self_join(
         T_B_sub[substitution_location_B] = np.inf
 
         zone = int(np.ceil(m / 4))
-        left = np.array(
-            [
-                utils.naive_mass(Q, T_B_sub, m, i, zone, True)
-                for i, Q in enumerate(core.rolling_window(T_B_sub, m))
-            ],
-            dtype=object,
-        )
+        left = utils.naive_stamp(T_B_sub, m, exclusion_zone=zone)
         right = stumped(dask_client, T_B_sub, m, ignore_trivial=True)
         utils.replace_inf(left)
         utils.replace_inf(right)
@@ -68,13 +62,7 @@ def test_stumped_nan_zero_mean_self_join(dask_cluster):
         m = 3
 
         zone = int(np.ceil(m / 4))
-        left = np.array(
-            [
-                utils.naive_mass(Q, T, m, i, zone, True)
-                for i, Q in enumerate(core.rolling_window(T, m))
-            ],
-            dtype=object,
-        )
+        left = utils.naive_stamp(T, m, exclusion_zone=zone)
         right = stumped(dask_client, T, m, ignore_trivial=True)
 
         utils.replace_inf(left)

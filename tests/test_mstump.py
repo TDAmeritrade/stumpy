@@ -84,21 +84,13 @@ def test_naive_mstump():
     T = np.random.uniform(-1000, 1000, [1, 1000]).astype(np.float64)
     m = 20
 
-    excl_zone = int(np.ceil(m / 4))
+    zone = int(np.ceil(m / 4))
 
-    left = np.array(
-        [
-            utils.naive_mass(
-                Q, T[0], m, trivial_idx=i, ignore_trivial=True, excl_zone=excl_zone
-            )
-            for i, Q in enumerate(core.rolling_window(T[0], m))
-        ],
-        dtype=object,
-    )
+    left = utils.naive_stamp(T[0], m, exclusion_zone=zone)
     left_P = left[np.newaxis, :, 0].T
     left_I = left[np.newaxis, :, 1].T
 
-    right_P, right_I = utils.naive_mstump(T, m, excl_zone)
+    right_P, right_I = utils.naive_mstump(T, m, zone)
 
     npt.assert_almost_equal(left_P, right_P)
     npt.assert_almost_equal(left_I, right_I)

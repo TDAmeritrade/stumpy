@@ -28,13 +28,7 @@ def test_one_constant_subsequence_self_join(dask_cluster):
         )
         m = 3
         zone = int(np.ceil(m / 4))
-        left = np.array(
-            [
-                utils.naive_mass(Q, T_A, m, i, zone, True)
-                for i, Q in enumerate(core.rolling_window(T_A, m))
-            ],
-            dtype=object,
-        )
+        left = utils.naive_stamp(T_A, m, exclusion_zone=zone)
         right = stumped(dask_client, T_A, m, ignore_trivial=True)
         utils.replace_inf(left)
         utils.replace_inf(right)
@@ -54,13 +48,7 @@ def test_one_constant_subsequence_self_join_df(dask_cluster):
         )
         m = 3
         zone = int(np.ceil(m / 4))
-        left = np.array(
-            [
-                utils.naive_mass(Q, T_A, m, i, zone, True)
-                for i, Q in enumerate(core.rolling_window(T_A, m))
-            ],
-            dtype=object,
-        )
+        left = utils.naive_stamp(T_A, m, exclusion_zone=zone)
         right = stumped(dask_client, pd.Series(T_A), m, ignore_trivial=True)
         utils.replace_inf(left)
         utils.replace_inf(right)
@@ -80,10 +68,7 @@ def test_one_constant_subsequence_A_B_join(dask_cluster):
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = np.array(
-            [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)],
-            dtype=object,
-        )
+        left = utils.naive_stamp(T_A, m, T_B=T_B)
         right = stumped(dask_client, T_A, m, T_B, ignore_trivial=False)
         utils.replace_inf(left)
         utils.replace_inf(right)
@@ -103,10 +88,7 @@ def test_one_constant_subsequence_A_B_join_df(dask_cluster):
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = np.array(
-            [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)],
-            dtype=object,
-        )
+        left = utils.naive_stamp(T_A, m, T_B=T_B)
         right = stumped(
             dask_client, pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
         )
@@ -128,10 +110,7 @@ def test_one_constant_subsequence_A_B_join_swap(dask_cluster):
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = np.array(
-            [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)],
-            dtype=object,
-        )
+        left = utils.naive_stamp(T_A, m, T_B=T_B)
         right = stumped(dask_client, T_A, m, T_B, ignore_trivial=False)
         utils.replace_inf(left)
         utils.replace_inf(right)
@@ -151,10 +130,7 @@ def test_one_constant_subsequence_A_B_join_df_swap(dask_cluster):
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = np.array(
-            [utils.naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)],
-            dtype=object,
-        )
+        left = utils.naive_stamp(T_A, m, T_B=T_B)
         right = stumped(
             dask_client, pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
         )

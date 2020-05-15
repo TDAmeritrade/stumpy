@@ -31,10 +31,7 @@ def test_two_constant_subsequences_A_B_join_swap(dask_cluster):
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = np.array(
-            [utils.naive_mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)],
-            dtype=object,
-        )
+        left = utils.naive_stamp(T_B, m, T_B=T_A)
         right = stumped(dask_client, T_B, m, T_A, ignore_trivial=False)
         utils.replace_inf(left)
         utils.replace_inf(right)
@@ -57,10 +54,7 @@ def test_constant_subsequence_A_B_join_df_swap(dask_cluster):
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = np.array(
-            [utils.naive_mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)],
-            dtype=object,
-        )
+        left = utils.naive_stamp(T_B, m, T_B=T_A)
         right = stumped(
             dask_client, pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False
         )

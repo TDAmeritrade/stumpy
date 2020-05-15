@@ -45,13 +45,7 @@ def test_stumped_one_subsequence_nan_self_join(
         T_B_sub[substitution_location_B] = np.nan
 
         zone = int(np.ceil(m / 4))
-        left = np.array(
-            [
-                utils.naive_mass(Q, T_B_sub, m, i, zone, True)
-                for i, Q in enumerate(core.rolling_window(T_B_sub, m))
-            ],
-            dtype=object,
-        )
+        left = utils.naive_stamp(T_B_sub, m, exclusion_zone=zone)
         right = stumped(dask_client, T_B_sub, m, ignore_trivial=True)
         utils.replace_inf(left)
         utils.replace_inf(right)

@@ -148,7 +148,7 @@ def test_get_max_order_idx(T_A, T_B, percentages):
         npt.assert_almost_equal(left_max_order_idx, right_max_order_idx)
         npt.assert_almost_equal(left_n_dist_computed, right_n_dist_computed)
 
-        # A-B-joins
+        # AB-joins
         orders = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
         start = 0
         left_max_order_idx, left_n_dist_computed = naive_get_max_order_idx(
@@ -197,13 +197,7 @@ def test_get_orders_ranges(T_A, T_B, percentages):
 def test_prescrump_self_join(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
-    left = np.array(
-        [
-            utils.naive_mass(Q, T_B, m, i, zone, True)
-            for i, Q in enumerate(core.rolling_window(T_B, m))
-        ],
-        dtype=object,
-    )
+    left = utils.naive_stamp(T_B, m, exclusion_zone=zone)
     μ, σ = core.compute_mean_std(T_B, m)
     # Note that the below code only works for `s=1`
     right = prescrump(T_B, m, μ, σ, s=1)
