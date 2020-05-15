@@ -370,7 +370,6 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
             f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
-    n = T_A.shape[0]
 
     T_A = T_A.copy()
     T_A[np.isinf(T_A)] = np.nan

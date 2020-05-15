@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @njit(fastmath=True)
-def _get_max_order_idx(m, n, orders, start, percentage):
+def _get_max_order_idx(m, n_A, n_B, orders, start, percentage):
     """
     Determine the order index for when the desired percentage of distances is computed
 
@@ -22,8 +22,11 @@ def _get_max_order_idx(m, n, orders, start, percentage):
     m : int
         Window size
 
-    n : int
-        Matrix profile length
+    n_A : int
+        Length of the first time series
+
+    n_B : int
+        Lenght of the second time series
 
     orders : ndarray
         The order of diagonals to process and compute
@@ -46,12 +49,19 @@ def _get_max_order_idx(m, n, orders, start, percentage):
     max_n_dist = 0
     for order_idx in range(orders.shape[0]):
         k = orders[order_idx]
-        max_n_dist = max_n_dist + (n - m + 1 - k)
+        if k >= 0:
+            max_n_dist += min(n_B - m + 1 - k, n_A - m + 1)
+        else:
+            max_n_dist += min(n_B - m + 1, n_A - m + 1 + k)
 
     n_dist_computed = 0
     for order_idx in range(start, orders.shape[0]):
         k = orders[order_idx]
-        n_dist_computed = n_dist_computed + (n - m + 1 - k)
+        if k >= 0:
+            n_dist_computed += min(n_B - m + 1 - k, n_A - m + 1)
+        else:
+            n_dist_computed += min(n_B - m + 1, n_A - m + 1 + k)
+
         if n_dist_computed / max_n_dist > percentage:  # pragma: no cover
             break
 
@@ -61,7 +71,7 @@ def _get_max_order_idx(m, n, orders, start, percentage):
 
 
 @njit(fastmath=True)
-def _get_orders_ranges(n_split, m, n, orders, start, percentage):
+def _get_orders_ranges(n_split, m, n_A, n_B, orders, start, percentage):
     """
     For the desired percentage of distances to be computed from orders, split the
     orders into `n_split` chunks, and determine the appropriate start and stop
@@ -75,8 +85,11 @@ def _get_orders_ranges(n_split, m, n, orders, start, percentage):
     m : int
         Window size
 
-    n : int
-        Matrix profile length
+    n_A : int
+        Length of the first time series
+
+    n_B : int
+        Lenght of the second time series
 
     orders : ndarray
         The order of diagonals to process and compute
@@ -94,7 +107,9 @@ def _get_orders_ranges(n_split, m, n, orders, start, percentage):
         that corresponds to a desired percentage of distances to compute
     """
 
-    max_order_idx, n_dist_computed = _get_max_order_idx(m, n, orders, start, percentage)
+    max_order_idx, n_dist_computed = _get_max_order_idx(
+        m, n_A, n_B, orders, start, percentage
+    )
 
     orders_ranges = np.zeros((n_split, 2), np.int64)
     ranges_idx = 0
@@ -104,7 +119,11 @@ def _get_orders_ranges(n_split, m, n, orders, start, percentage):
     n_dist_computed = 0
     for order_idx in range(start, max_order_idx):
         k = orders[order_idx]
-        n_dist_computed = n_dist_computed + (n - m + 1 - k)
+        if k >= 0:
+            n_dist_computed += min(n_B - m + 1 - k, n_A - m + 1)
+        else:
+            n_dist_computed += min(n_B - m + 1, n_A - m + 1 + k)
+
         if n_dist_computed > max_n_dist_per_range:  # pragma: no cover
             orders_ranges[ranges_idx, 0] = range_start_idx
             orders_ranges[ranges_idx, 1] = min(
@@ -114,16 +133,31 @@ def _get_orders_ranges(n_split, m, n, orders, start, percentage):
             range_start_idx = order_idx + 1
             ranges_idx += 1
             n_dist_computed = 0
-    # Handle final range outside of for loop
-    orders_ranges[ranges_idx, 0] = range_start_idx
-    orders_ranges[ranges_idx, 1] = max_order_idx
+
+    # Handle final range outside of for loop if it was not saturated
+    if ranges_idx < orders_ranges.shape[0]:
+        orders_ranges[ranges_idx, 0] = range_start_idx
+        orders_ranges[ranges_idx, 1] = max_order_idx
 
     return orders_ranges
 
 
 @njit(fastmath=True)
 def _compute_diagonal(
-    T, m, μ, σ, orders, orders_start_idx, orders_stop_idx, thread_idx, P, I
+    T_A,
+    T_B,
+    m,
+    M_T,
+    Σ_T,
+    μ_Q,
+    σ_Q,
+    orders,
+    orders_start_idx,
+    orders_stop_idx,
+    thread_idx,
+    P,
+    I,
+    ignore_trivial,
 ):
     """
     Compute (Numba JIT-compiled) and update P, I along a single diagonal using a single
@@ -131,17 +165,29 @@ def _compute_diagonal(
 
     Parameters
     ----------
-    T : ndarray
+    T_A : ndarray
         The time series or sequence for which to compute the matrix profile
+
+    T_B : ndarray
+        The time series or sequence that contain your query subsequences
+        of interest
 
     m : int
         Window size
 
-    μ : ndarray
-        Sliding window mean for T
+    M_T : ndarray
+        Sliding mean of time series, `T`
 
-    σ : ndarray
-        Sliding window standard deviation for T
+    Σ_T : ndarray
+        Sliding standard deviation of time series, `T`μ_Q : ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window
+
+    μ_Q : ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window
+
+    σ_Q : ndarray
+        Standard deviation of the query sequence, `Q`, relative to the current
+        sliding window
 
     orders : ndarray
         The order of diagonals to process and compute
@@ -158,25 +204,43 @@ def _compute_diagonal(
     I : ndarray
         Matrix profile indices
 
+    thread_idx : int
+
+
+    ignore_trivial : bool
+        Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
+        `False`. Default is `True`.
+
     Returns
     -------
     None
     """
-    n = T.shape[0]
+
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
 
     for order_idx in range(orders_start_idx, orders_stop_idx):
         k = orders[order_idx]
-        for i in range(0, n - m + 1 - k):
-            if i == 0:
-                QT = np.dot(T[i : i + m], T[i + k : i + k + m])
+        if k >= 0:
+            iter_range = range(0, min(n_B - m + 1 - k, n_A - m + 1))
+        else:
+            iter_range = range(-k, min(n_B - m + 1 - k, n_A - m + 1))
+
+        for i in iter_range:
+            if i == 0 or (k < 0 and i == -k):
+                QT = np.dot(T_A[i : i + m], T_B[i + k : i + k + m])
             else:
-                QT = QT - T[i - 1] * T[i + k - 1] + T[i + m - 1] * T[i + k + m - 1]
+                QT = (
+                    QT
+                    - T_A[i - 1] * T_B[i + k - 1]
+                    + T_A[i + m - 1] * T_B[i + k + m - 1]
+                )
 
             D_squared = core._calculate_squared_distance(
-                m, QT, μ[i], σ[i], μ[i + k], σ[i + k],
+                m, QT, M_T[i], Σ_T[i], μ_Q[i + k], σ_Q[i + k],
             )
 
-            if D_squared < P[thread_idx, i]:
+            if ignore_trivial and D_squared < P[thread_idx, i]:
                 P[thread_idx, i] = D_squared
                 I[thread_idx, i] = i + k
 
@@ -186,31 +250,48 @@ def _compute_diagonal(
 
 
 @njit(parallel=True, fastmath=True)
-def _scrump(T, m, μ, σ, orders, orders_ranges, percentage=0.1):
+def _scrump(T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, orders, orders_ranges, ignore_trivial):
     """
     A Numba JIT-compiled version of SCRIMP (self-join) for parallel computation
     of the matrix profile and matrix profile indices.
 
     Parameters
     ----------
-    T : ndarray
+    T_A : ndarray
         The time series or sequence for which to compute the matrix profile
+
+    T_B : ndarray
+        The time series or sequence that contain your query subsequences
+        of interest
 
     m : int
         Window size
 
-    μ : ndarray
-        Sliding window mean for T
+    M_T : ndarray
+        Sliding mean of time series, `T`
 
-    σ : ndarray
-        Sliding window standard deviation for T
+    Σ_T : ndarray
+        Sliding standard deviation of time series, `T`μ_Q : ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window
+
+    μ_Q : ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window
+
+    σ_Q : ndarray
+        Standard deviation of the query sequence, `Q`, relative to the current
+        sliding window
 
     orders : ndarray
         The order of diagonals to process and compute
 
-    excl_zone : int
-        The half width for the exclusion zone relative to the current
-        sliding window
+    orders_ranges : ndarray
+        The start (column 1) and (exclusive) stop (column 2) order indices for
+        each thread
+
+
+    ignore_trivial : bool
+        Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
+        `False`. Default is `True`.
 
     Returns
     -------
@@ -228,7 +309,7 @@ def _scrump(T, m, μ, σ, orders, orders_ranges, percentage=0.1):
     See Algorithm 1
     """
 
-    n = T.shape[0]
+    n = T_B.shape[0]
     l = n - m + 1
     n_threads = config.NUMBA_NUM_THREADS
     P = np.empty((n_threads, l))
@@ -240,16 +321,20 @@ def _scrump(T, m, μ, σ, orders, orders_ranges, percentage=0.1):
     for thread_idx in prange(n_threads):
         # Compute and pdate P, I within a single thread while avoiding race conditions
         _compute_diagonal(
-            T,
+            T_A,
+            T_B,
             m,
-            μ,
-            σ,
+            M_T,
+            Σ_T,
+            μ_Q,
+            σ_Q,
             orders,
             orders_ranges[thread_idx, 0],
             orders_ranges[thread_idx, 1],
             thread_idx,
             P,
             I,
+            ignore_trivial,
         )
 
     # Reduction of results from all threads
@@ -311,6 +396,7 @@ def _prescrump(
 
     See Algorithm 2
     """
+
     m = Q.shape[0]
     l = QT.shape[0]
     # Update P[i] relative to all T[j : j + m]
@@ -429,7 +515,9 @@ def prescrump(T, m, M_T, Σ_T, s=None):
     return P, I
 
 
-def scrump(T, m, percentage=0.01, pre_scrump=False, s=None):
+def scrump(
+    T_A, m, T_B=None, ignore_trivial=True, percentage=0.01, pre_scrump=False, s=None
+):
     """
     Compute the matrix profile with parallelized SCRIMP (self-join). This returns a
     generator that can be incrementally iterated on. For SCRIMP++, set
@@ -440,11 +528,19 @@ def scrump(T, m, percentage=0.01, pre_scrump=False, s=None):
 
     Parameters
     ----------
-    T : ndarray
+    T_A : ndarray
         The time series or sequence for which to compute the matrix profile
+
+    T_B : ndarray
+        The time series or sequence that contain your query subsequences
+        of interest
 
     m : int
         Window size
+
+    ignore_trivial : bool
+        Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
+        `False`. Default is `True`.
 
     percentage : float
         Approximate percentage completed. The value is between 0.0 and 1.0.
@@ -472,46 +568,90 @@ def scrump(T, m, percentage=0.01, pre_scrump=False, s=None):
     See Algorithm 1 and Algorithm 2
     """
 
-    T = np.asarray(T)
-    T = T.copy()
-    T[np.isinf(T)] = np.nan
-    core.check_dtype(T)
+    if T_B is not None and pre_scrump:  # pragma: no cover
+        raise NotImplementedError(
+            "AB joins with preprocessing are not yet implemented."
+        )
 
-    if T.ndim != 1:  # pragma: no cover
-        raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
+    T_A = np.asarray(T_A)
+    if T_A.ndim != 1:  # pragma: no cover
+        raise ValueError(
+            f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. "
+            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
+        )
+
+    T_A = T_A.copy()
+    T_A[np.isinf(T_A)] = np.nan
+    core.check_dtype(T_A)
+
+    if T_B is None:
+        T_B = T_A
+        ignore_trivial = True
+
+    T_B = np.asarray(T_B)
+    T_B = T_B.copy()
+    if T_B.ndim != 1:  # pragma: no cover
+        raise ValueError(
+            f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
+            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
+        )
+    T_B[np.isinf(T_B)] = np.nan
+    core.check_dtype(T_B)
 
     core.check_window_size(m)
 
-    n = T.shape[0]
-    l = n - m + 1
+    if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
+        logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
+        logger.warning("Try setting `ignore_trivial = True`.")
+
+    if ignore_trivial and core.are_arrays_equal(T_A, T_B) is False:  # pragma: no cover
+        logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
+        logger.warning("Try setting `ignore_trivial = False`.")
+
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_B - m + 1
+
     out = np.empty((l, 2), dtype=object)
     out[:, 0] = np.inf
     out[:, 1] = -1
 
-    M_T, Σ_T = core.compute_mean_std(T, m)
-    T[np.isnan(T)] = 0
+    M_T, Σ_T = core.compute_mean_std(T_A, m)
+    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
+
+    T_A[np.isnan(T_A)] = 0
+    T_B[np.isnan(T_B)] = 0
+
     excl_zone = int(np.ceil(m / 4))
 
     if s is None:
         s = excl_zone
 
     if pre_scrump:
-        P, I = prescrump(T, m, M_T, Σ_T, s)
+        P, I = prescrump(T_A, m, M_T, Σ_T, s)
         for i in range(P.shape[0]):
             if out[i, 0] > P[i]:
                 out[i, 0] = P[i]
                 out[i, 1] = I[i]
 
-    orders = np.random.permutation(range(excl_zone + 1, n - m + 1))
+    if ignore_trivial:
+        orders = np.random.permutation(range(excl_zone + 1, n_B - m + 1))
+    else:
+        orders = np.random.permutation(range(-(n_A - m + 1) + 1, n_B - m + 1))
+
     n_threads = config.NUMBA_NUM_THREADS
     percentage = min(percentage, 1.0)
     percentage = max(percentage, 0.0)
     generator_rounds = int(np.ceil(1.0 / percentage))
     start = 0
     for round in range(generator_rounds):
-        orders_ranges = _get_orders_ranges(n_threads, m, n, orders, start, percentage)
+        orders_ranges = _get_orders_ranges(
+            n_threads, m, n_A, n_B, orders, start, percentage
+        )
 
-        P, I = _scrump(T, m, M_T, Σ_T, orders, orders_ranges)
+        P, I = _scrump(
+            T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, orders, orders_ranges, ignore_trivial
+        )
         start = orders_ranges[:, 1].max()
 
         # Update matrix profile and indices
