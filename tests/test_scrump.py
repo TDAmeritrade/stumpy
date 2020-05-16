@@ -249,10 +249,9 @@ def test_prescrump_self_join(T_A, T_B):
 
         np.random.seed(seed)
         left_P, left_I = naive_prescrump(T_B, m, T_B, s=s, exclusion_zone=zone)
-        μ, σ = core.compute_mean_std(T_B, m)
 
         np.random.seed(seed)
-        right_P, right_I = prescrump(T_B, m, μ, σ, s=s)
+        right_P, right_I = prescrump(T_B, m, s=s)
 
         npt.assert_almost_equal(left_P, right_P)
         npt.assert_almost_equal(left_I, right_I)
@@ -268,10 +267,9 @@ def test_prescrump_self_join_larger_window(T_A, T_B):
 
                 np.random.seed(seed)
                 left_P, left_I = naive_prescrump(T_B, m, T_B, s=s, exclusion_zone=zone)
-                μ, σ = core.compute_mean_std(T_B, m)
 
                 np.random.seed(seed)
-                right_P, right_I = prescrump(T_B, m, μ, σ, s=s)
+                right_P, right_I = prescrump(T_B, m, s=s)
 
                 npt.assert_almost_equal(left_P, right_P)
                 npt.assert_almost_equal(left_I, right_I)

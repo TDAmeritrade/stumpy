@@ -23,10 +23,12 @@ def _get_max_order_idx(m, n_A, n_B, orders, start, percentage):
         Window size
 
     n_A : int
-        Length of the first time series
+        The length of the time series or sequence for which to compute the matrix
+        profile `T_A`
 
     n_B : int
-        Lenght of the second time series
+        The length of the time series or sequence that contain your query subsequences
+        of interest `T_B`
 
     orders : ndarray
         The order of diagonals to process and compute
@@ -86,10 +88,12 @@ def _get_orders_ranges(n_split, m, n_A, n_B, orders, start, percentage):
         Window size
 
     n_A : int
-        Length of the first time series
+        The length of the time series or sequence for which to compute the matrix
+        profile `T_A`
 
     n_B : int
-        Lenght of the second time series
+        The length of the time series or sequence that contain your query subsequences
+        of interest `T_B`
 
     orders : ndarray
         The order of diagonals to process and compute
@@ -176,18 +180,17 @@ def _compute_diagonal(
         Window size
 
     M_T : ndarray
-        Sliding mean of time series, `T`
+        Sliding mean of time series, `T_A`
 
     Σ_T : ndarray
-        Sliding standard deviation of time series, `T`μ_Q : ndarray
-        Mean of the query sequence, `Q`, relative to the current sliding window
+        Sliding standard deviation of time series, `T_A`
 
     μ_Q : ndarray
-        Mean of the query sequence, `Q`, relative to the current sliding window
+        Mean of the query sequence, `Q`, relative to the current sliding window in `T_B`
 
     σ_Q : ndarray
         Standard deviation of the query sequence, `Q`, relative to the current
-        sliding window
+        sliding window in `T_B`
 
     orders : ndarray
         The order of diagonals to process and compute
@@ -252,8 +255,8 @@ def _compute_diagonal(
 @njit(parallel=True, fastmath=True)
 def _scrump(T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, orders, orders_ranges, ignore_trivial):
     """
-    A Numba JIT-compiled version of SCRIMP (self-join) for parallel computation
-    of the matrix profile and matrix profile indices.
+    A Numba JIT-compiled version of SCRIMP for parallel computation of the matrix
+    profile and matrix profile indices.
 
     Parameters
     ----------
@@ -268,18 +271,17 @@ def _scrump(T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, orders, orders_ranges, ignore_tr
         Window size
 
     M_T : ndarray
-        Sliding mean of time series, `T`
+        Sliding mean of time series, `T_A`
 
     Σ_T : ndarray
-        Sliding standard deviation of time series, `T`μ_Q : ndarray
-        Mean of the query sequence, `Q`, relative to the current sliding window
+        Sliding standard deviation of time series, `T_A`
 
     μ_Q : ndarray
-        Mean of the query sequence, `Q`, relative to the current sliding window
+        Mean of the query sequence, `Q`, relative to the current sliding window in `T_B`
 
     σ_Q : ndarray
         Standard deviation of the query sequence, `Q`, relative to the current
-        sliding window
+        sliding window in `T_B`
 
     orders : ndarray
         The order of diagonals to process and compute
@@ -287,7 +289,6 @@ def _scrump(T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, orders, orders_ranges, ignore_tr
     orders_ranges : ndarray
         The start (column 1) and (exclusive) stop (column 2) order indices for
         each thread
-
 
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
@@ -349,30 +350,54 @@ def _scrump(T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, orders, orders_ranges, ignore_tr
 
 @njit(parallel=True, fastmath=True)
 def _prescrump(
-    Q, T, QT, M_T, Σ_T, i, s, excl_zone, squared_distance_profile, P_squared, I
+    T_A,
+    T_B,
+    m,
+    M_T,
+    Σ_T,
+    μ_Q,
+    σ_Q,
+    QT,
+    i,
+    s,
+    excl_zone,
+    squared_distance_profile,
+    P_squared,
+    I,
 ):
     """
     A Numba JIT-compiled implementation of the preSCRIMP algorithm.
 
     Parameters
     ----------
-    Q : ndarray
-        Query array or subsequence
-
-    T : ndarray
+    T_A : ndarray
         The time series or sequence for which to compute the matrix profile
 
-    QT : ndarray
-        Sliding dot product between `Q` and `T`
+    T_B : ndarray
+        The time series or sequence that contain your query subsequences
+        of interest
+
+    m : int
+        Window size
 
     M_T : ndarray
-        Sliding window mean for T
+        Sliding window mean for T_A
 
     Σ_T : ndarray
-        Sliding window standard deviation for T
+        Sliding window standard deviation for T_A
+
+    μ_Q : ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window in `T_B`
+
+    σ_Q : ndarray
+        Standard deviation of the query sequence, `Q`, relative to the current
+        sliding window in `T_B`
+
+    QT : ndarray
+        Sliding dot product between `Q` in `T_B` and `T_A`
 
     i : int
-        The subsequence index in `T` that corresponds to `Q`
+        The subsequence index in `T_B` that corresponds to `Q`
 
     s : int
         The sampling interval that defaults to `int(np.ceil(m / 4))`
@@ -397,12 +422,10 @@ def _prescrump(
     See Algorithm 2
     """
 
-    m = Q.shape[0]
     l = QT.shape[0]
     # Update P[i] relative to all T[j : j + m]
-    μ_Q = M_T[i]
-    σ_Q = Σ_T[i]
-    squared_distance_profile[:] = core._mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T)
+    Q = T_B[i : i + m]
+    squared_distance_profile[:] = core._mass(Q, T_A, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
     squared_distance_profile[:] = np.square(squared_distance_profile)
     zone_start = max(0, i - excl_zone)
     zone_stop = min(l, i + excl_zone)
@@ -412,7 +435,7 @@ def _prescrump(
     if P_squared[i] == np.inf:  # pragma: no cover
         I[i] = -1
 
-    # Update all P[j] relative to T[i : i + m] as this is still relevant info
+    # Update all P[j] relative to T_B[i : i + m] as this is still relevant info
     # Note that this was not in the original paper but was included in the C++ code
     for j in prange(l):
         if squared_distance_profile[j] < P_squared[j]:
@@ -421,12 +444,16 @@ def _prescrump(
 
     j = I[i]
     # Given the squared distance, work backwards and compute QT
-    QT_i = (m - P_squared[i] / 2.0) * (Σ_T[i] * Σ_T[j]) + (m * M_T[i] * M_T[j])
-    QT_i_prime = QT_i
+    QT_j = (m - P_squared[i] / 2.0) * (Σ_T[i] * σ_Q[j]) + (m * M_T[i] * μ_Q[j])
+    QT_j_prime = QT_j
     for k in range(1, min(s, l - max(i, j))):
-        QT_i = QT_i - T[i + k - 1] * T[j + k - 1] + T[i + k + m - 1] * T[j + k + m - 1]
+        QT_j = (
+            QT_j
+            - T_A[i + k - 1] * T_B[j + k - 1]
+            + T_A[i + k + m - 1] * T_B[j + k + m - 1]
+        )
         D_squared = core._calculate_squared_distance(
-            m, QT_i, M_T[i + k], Σ_T[i + k], M_T[j + k], Σ_T[j + k],
+            m, QT_j, M_T[i + k], Σ_T[i + k], μ_Q[j + k], σ_Q[j + k],
         )
         if D_squared < P_squared[i + k]:
             P_squared[i + k] = D_squared
@@ -434,11 +461,11 @@ def _prescrump(
         if D_squared < P_squared[j + k]:
             P_squared[j + k] = D_squared
             I[j + k] = i + k
-    QT_i = QT_i_prime
+    QT_j = QT_j_prime
     for k in range(1, min(s, i + 1, j + 1)):
-        QT_i = QT_i - T[i - k + m] * T[j - k + m] + T[i - k] * T[j - k]
+        QT_j = QT_j - T_A[i - k + m] * T_B[j - k + m] + T_A[i - k] * T_B[j - k]
         D_squared = core._calculate_squared_distance(
-            m, QT_i, M_T[i - k], Σ_T[i - k], M_T[j - k], Σ_T[j - k],
+            m, QT_j, M_T[i - k], Σ_T[i - k], μ_Q[j - k], σ_Q[j - k],
         )
         if D_squared < P_squared[i - k]:
             P_squared[i - k] = D_squared
@@ -450,7 +477,7 @@ def _prescrump(
     return
 
 
-def prescrump(T, m, M_T, Σ_T, s=None):
+def prescrump(T_A, m, T_B=None, s=None):
     """
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_prescrump` function which computes the approximate matrix profile according
@@ -458,17 +485,15 @@ def prescrump(T, m, M_T, Σ_T, s=None):
 
     Parameters
     ----------
-    T : ndarray
+    T_A : ndarray
         The time series or sequence for which to compute the matrix profile
 
     m : int
         Window size
 
-    M_T : ndarray
-        Sliding window mean for T
-
-    Σ_T : ndarray
-        Sliding window standard deviation for T
+    T_B : ndarray
+        The time series or sequence that contain your query subsequences
+        of interest
 
     s : int
         The sampling interval that defaults to `int(np.ceil(m / 4))`
@@ -489,12 +514,32 @@ def prescrump(T, m, M_T, Σ_T, s=None):
     See Algorithm 2
     """
 
-    n = T.shape[0]
+    T_A = np.asarray(T_A)
+    T_A = T_A.copy()
+    T_A[np.isinf(T_A)] = np.nan
+    core.check_dtype(T_A)
+
+    if T_B is None:
+        T_B = T_A
+
+    T_B = np.asarray(T_B)
+    T_B = T_B.copy()
+    T_B[np.isinf(T_B)] = np.nan
+    core.check_dtype(T_B)
+
+    core.check_window_size(m)
+
+    M_T, Σ_T = core.compute_mean_std(T_A, m)
+    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
+
+    T_A[np.isnan(T_A)] = 0
+    T_B[np.isnan(T_B)] = 0
+
+    n = T_B.shape[0]
     l = n - m + 1
     P_squared = np.empty(l)
     I = np.empty(l, dtype=np.int64)
     squared_distance_profile = np.empty(n - m + 1)
-    Q = np.empty(m)
     excl_zone = int(np.ceil(m / 4))
 
     if s is None:  # pragma: no cover
@@ -504,10 +549,22 @@ def prescrump(T, m, M_T, Σ_T, s=None):
     I[:] = -1
 
     for i in np.random.permutation(range(0, l, s)):
-        Q[:] = T[i : i + m]
-        QT = core.sliding_dot_product(Q, T)
+        QT = core.sliding_dot_product(T_B[i : i + m], T_A)
         _prescrump(
-            Q, T, QT, M_T, Σ_T, i, s, excl_zone, squared_distance_profile, P_squared, I,
+            T_A,
+            T_B,
+            m,
+            M_T,
+            Σ_T,
+            μ_Q,
+            σ_Q,
+            QT,
+            i,
+            s,
+            excl_zone,
+            squared_distance_profile,
+            P_squared,
+            I,
         )
 
     P = np.sqrt(P_squared)
@@ -519,9 +576,8 @@ def scrump(
     T_A, m, T_B=None, ignore_trivial=True, percentage=0.01, pre_scrump=False, s=None
 ):
     """
-    Compute the matrix profile with parallelized SCRIMP (self-join). This returns a
-    generator that can be incrementally iterated on. For SCRIMP++, set
-    `pre_scrump=True`.
+    Compute the matrix profile with parallelized SCRIMP. This returns a generator that
+    can be incrementally iterated on. For SCRIMP++, set `pre_scrump=True`.
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_scrump` function which computes the matrix profile according to SCRIMP.
@@ -628,7 +684,7 @@ def scrump(
         s = excl_zone
 
     if pre_scrump:
-        P, I = prescrump(T_A, m, M_T, Σ_T, s)
+        P, I = prescrump(T_A, m, s=s)
         for i in range(P.shape[0]):
             if out[i, 0] > P[i]:
                 out[i, 0] = P[i]
