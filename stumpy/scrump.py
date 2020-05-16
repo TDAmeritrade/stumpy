@@ -492,7 +492,7 @@ def prescrump(T, m, M_T, Σ_T, s=None):
     n = T.shape[0]
     l = n - m + 1
     P_squared = np.empty(l)
-    I = np.empty(l, np.int64)
+    I = np.empty(l, dtype=np.int64)
     squared_distance_profile = np.empty(n - m + 1)
     Q = np.empty(m)
     excl_zone = int(np.ceil(m / 4))
