@@ -38,7 +38,7 @@ def mstumped(dask_client, T, m, include=None):
     m : int
         Window size
 
-    include : ndarray
+    include : list, ndarray
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
