@@ -12,7 +12,7 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
-def mstumped(dask_client, T, m):
+def mstumped(dask_client, T, m, include=None):
     """
     Compute the multi-dimensional matrix profile with parallelized and
     distributed mSTOMP
@@ -37,6 +37,14 @@ def mstumped(dask_client, T, m):
 
     m : int
         Window size
+
+    include : ndarray
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
     Returns
     -------
@@ -71,6 +79,9 @@ def mstumped(dask_client, T, m):
 
     core.check_window_size(m)
 
+    if include is not None:
+        include = np.asarray(include)
+
     d, n = T_A.shape
     k = n - m + 1
     excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
@@ -90,7 +101,7 @@ def mstumped(dask_client, T, m):
 
     for i, start in enumerate(range(0, k, step)):
         P[:, start], I[:, start] = _get_first_mstump_profile(
-            start, T_A, T_B, m, excl_zone, M_T, Σ_T
+            start, T_A, T_B, m, excl_zone, M_T, Σ_T, include
         )
 
     T_B[np.isnan(T_B)] = 0
@@ -133,6 +144,7 @@ def mstumped(dask_client, T, m):
                 σ_Q_future,
                 k,
                 start + 1,
+                include,
             )
         )
 

@@ -12,7 +12,7 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
-def _multi_mass(Q, T, m, M_T, Σ_T):
+def _multi_mass(Q, T, m, M_T, Σ_T, include=None):
     """
     A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
     (MASS) to compute multi-dimensional distance profile.
@@ -34,6 +34,14 @@ def _multi_mass(Q, T, m, M_T, Σ_T):
     Σ_T : ndarray
         Sliding standard deviation for `T`
 
+    include : ndarray
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
     Returns
     -------
     D : ndarray
@@ -49,7 +57,13 @@ def _multi_mass(Q, T, m, M_T, Σ_T):
         D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
 
     # Column-wise sort
-    D = np.sort(D, axis=0)
+    if include is not None:
+        tmp_swap = D[: include.shape[0]].copy()
+        D[: include.shape[0]] = D[include]
+        D[include] = tmp_swap
+        D[include.shape[0] :].sort(axis=0)
+    else:
+        D = np.sort(D, axis=0)
 
     D_prime = np.zeros(k)
     for i in range(d):
@@ -59,7 +73,7 @@ def _multi_mass(Q, T, m, M_T, Σ_T):
     return D
 
 
-def _get_first_mstump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T):
+def _get_first_mstump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, include=None):
     """
     Multi-dimensional wrapper to compute the multi-dimensional matrix profile
     and multi-dimensional matrix profile index for a given window within the
@@ -91,18 +105,27 @@ def _get_first_mstump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T):
     Σ_T : ndarray
         Sliding standard deviation for `T`
 
+    include : ndarray
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
     Returns
     -------
     P : ndarray
         Multi-dimensional matrix profile for the window with index equal to
         `start`
+
     I : ndarray
         Multi-dimensional matrix profile index for the window with index
         equal to `start`
     """
 
     d, n = T_A.shape
-    D = _multi_mass(T_B[:, start : start + m], T_A, m, M_T, Σ_T)
+    D = _multi_mass(T_B[:, start : start + m], T_A, m, M_T, Σ_T, include)
 
     zone_start = max(0, start - excl_zone)
     zone_stop = min(n - m + 1, start + excl_zone)
@@ -218,7 +241,19 @@ def _compute_PI(d, idx, D, D_prime, range_start, P, I):
 
 
 def _mstump(
-    T, m, range_stop, excl_zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, range_start=1,
+    T,
+    m,
+    range_stop,
+    excl_zone,
+    M_T,
+    Σ_T,
+    QT,
+    QT_first,
+    μ_Q,
+    σ_Q,
+    k,
+    range_start=1,
+    include=None,
 ):
     """
     A Numba JIT-compiled version of mSTOMP, a variant of mSTAMP, for parallel
@@ -269,12 +304,21 @@ def _mstump(
         The starting index value along T_B for which to start the matrix
         profile calculation. Default is 1.
 
+    include : ndarray
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
     Returns
     -------
     P : ndarray
         The multi-dimensional matrix profile. Each row of the array corresponds
         to each matrix profile for a given dimension (i.e., the first row is the
         1-D matrix profile and the second row is the 2-D matrix profile).
+
     I : ndarray
         The multi-dimensional matrix profile index where each row of the array
         corresponds to each matrix profile index for a given dimension.
@@ -297,6 +341,9 @@ def _mstump(
     D = np.empty((d, k), dtype=float)
     D_prime = np.empty(k, dtype=float)
 
+    if include is not None:
+        tmp_swap = np.empty((include.shape[0], k))
+
     for idx in range(range_start, range_stop):
         _compute_multi_D(
             d,
@@ -315,13 +362,19 @@ def _mstump(
             σ_Q,
         )
 
-        D.sort(axis=0)
+        if include is not None:
+            tmp_swap[:] = D[: include.shape[0]]  # Change to tmp_swap[:]
+            D[: include.shape[0]] = D[include]
+            D[include] = tmp_swap
+            D[include.shape[0] :].sort(axis=0)
+        else:
+            D.sort(axis=0)
         _compute_PI(d, idx, D, D_prime, range_start, P, I)
 
     return P, I
 
 
-def mstump(T, m):
+def mstump(T, m, include=None):
     """
     Compute the multi-dimensional matrix profile with parallelized mSTOMP
 
@@ -340,6 +393,14 @@ def mstump(T, m):
 
     m : int
         Window size
+
+    include : list, ndarray
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
     Returns
     -------
@@ -374,6 +435,9 @@ def mstump(T, m):
 
     core.check_window_size(m)
 
+    if include is not None:
+        include = np.asarray(include)
+
     d = T_A.shape[0]
     n = T_A.shape[1]
     k = n - m + 1
@@ -391,7 +455,7 @@ def mstump(T, m):
     stop = k
 
     P[:, start], I[:, start] = _get_first_mstump_profile(
-        start, T_A, T_B, m, excl_zone, M_T, Σ_T
+        start, T_A, T_B, m, excl_zone, M_T, Σ_T, include
     )
 
     T_B[np.isnan(T_B)] = 0
@@ -399,7 +463,7 @@ def mstump(T, m):
     QT, QT_first = _get_multi_QT(start, T_A, m)
 
     P[:, start + 1 : stop], I[:, start + 1 : stop] = _mstump(
-        T_A, m, stop, excl_zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, start + 1
+        T_A, m, stop, excl_zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, start + 1, include
     )
 
     return P.T, I.T

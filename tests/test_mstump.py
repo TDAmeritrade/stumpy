@@ -108,6 +108,19 @@ def test_mstump(T, m):
 
 
 @pytest.mark.parametrize("T, m", test_data)
+def test_mstump_include(T, m):
+    for i in range(T.shape[0]):
+        include = np.asarray([i])
+        excl_zone = int(np.ceil(m / 4))
+
+        left_P, left_I = utils.naive_mstump(T, m, excl_zone, include)
+        right_P, right_I = mstump(T, m, include)
+
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
+
+
+@pytest.mark.parametrize("T, m", test_data)
 def test_mstump_wrapper(T, m):
     excl_zone = int(np.ceil(m / 4))
 
@@ -122,6 +135,26 @@ def test_mstump_wrapper(T, m):
 
     npt.assert_almost_equal(left_P, right_P)
     npt.assert_almost_equal(left_I, right_I)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_mstump_wrapper_include(T, m):
+    for i in range(T.shape[0]):
+        include = np.asarray([i])
+
+        excl_zone = int(np.ceil(m / 4))
+
+        left_P, left_I = utils.naive_mstump(T, m, excl_zone, include)
+        right_P, right_I = mstump(T, m, include)
+
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
+
+        df = pd.DataFrame(T.T)
+        right_P, right_I = mstump(df, m, include)
+
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
 
 
 def test_constant_subsequence_self_join():
