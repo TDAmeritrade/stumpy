@@ -58,9 +58,13 @@ def _multi_mass(Q, T, m, M_T, Σ_T, include=None):
 
     # Column-wise sort
     if include is not None:
+        restricted_indices = include[include < include.shape[0]]
+        unrestricted_indices = include[include >= include.shape[0]]
+        mask = np.ones(include.shape[0], bool)
+        mask[restricted_indices] = False
         tmp_swap = D[: include.shape[0]].copy()
         D[: include.shape[0]] = D[include]
-        D[include] = tmp_swap
+        D[unrestricted_indices] = tmp_swap[mask]
         D[include.shape[0] :].sort(axis=0)
     else:
         D = np.sort(D, axis=0)
@@ -343,6 +347,10 @@ def _mstump(
 
     if include is not None:
         tmp_swap = np.empty((include.shape[0], k))
+        restricted_indices = include[include < include.shape[0]]
+        unrestricted_indices = include[include >= include.shape[0]]
+        mask = np.ones(include.shape[0], bool)
+        mask[restricted_indices] = False
 
     for idx in range(range_start, range_stop):
         _compute_multi_D(
@@ -363,9 +371,9 @@ def _mstump(
         )
 
         if include is not None:
-            tmp_swap[:] = D[: include.shape[0]]  # Change to tmp_swap[:]
+            tmp_swap[:] = D[: include.shape[0]]
             D[: include.shape[0]] = D[include]
-            D[include] = tmp_swap
+            D[unrestricted_indices] = tmp_swap[mask]
             D[include.shape[0] :].sort(axis=0)
         else:
             D.sort(axis=0)
@@ -437,6 +445,10 @@ def mstump(T, m, include=None):
 
     if include is not None:
         include = np.asarray(include)
+        _, idx = np.unique(include, return_index=True)
+        if include.shape[0] != idx.shape[0]:  # pragma: no cover
+            logger.warning("Removed repeating indices in `include`")
+            include = include[np.sort(idx)]
 
     d = T_A.shape[0]
     n = T_A.shape[1]

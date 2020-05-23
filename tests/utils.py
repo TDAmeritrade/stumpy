@@ -108,9 +108,13 @@ def naive_multi_mass(Q, T, m, include=None):
     D[np.isnan(D)] = np.inf
 
     if include is not None:
+        restricted_indices = include[include < include.shape[0]]
+        unrestricted_indices = include[include >= include.shape[0]]
+        mask = np.ones(include.shape[0], bool)
+        mask[restricted_indices] = False
         tmp_swap = D[: include.shape[0]].copy()
         D[: include.shape[0]] = D[include]
-        D[include] = tmp_swap
+        D[unrestricted_indices] = tmp_swap[mask]
         D[include.shape[0] :].sort(axis=0)
     else:
         D = np.sort(D, axis=0)

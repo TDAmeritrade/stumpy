@@ -81,6 +81,10 @@ def mstumped(dask_client, T, m, include=None):
 
     if include is not None:
         include = np.asarray(include)
+        _, idx = np.unique(include, return_index=True)
+        if include.shape[0] != idx.shape[0]:  # pragma: no cover
+            logger.warning("Removed repeating indices in `include`")
+            include = include[np.sort(idx)]
 
     d, n = T_A.shape
     k = n - m + 1
