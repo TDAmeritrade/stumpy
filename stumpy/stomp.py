@@ -83,8 +83,6 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
 
-    n = T_A.shape[0]
-
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
 
@@ -108,17 +106,17 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
     out = np.empty((l, 4), dtype=object)
 
     # Handle first subsequence, add exclusionary zone
-    if not np.isinf(μ_Q[0]):
+    if np.isinf(μ_Q[0]):
+        P = np.inf
+        I = -1
+        IR = -1
+    else:
         if ignore_trivial:
             P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, excl_zone)
             PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, excl_zone, right=True)
         else:
             P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
             IR = -1  # No left and right matrix profile available
-    else:
-        P = np.inf
-        I = -1
-        IR = -1
 
     out[0] = P, I, -1, IR
 

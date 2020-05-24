@@ -72,7 +72,15 @@ def _get_first_stump_profile(
 
     # Handle first subsequence, add exclusionary zone
 
-    if not np.isinf(μ_Q[start]):
+    if np.isinf(μ_Q[start]):
+        P = np.inf
+        PL = np.inf
+        PR = np.inf
+
+        I = -1
+        IL = -1
+        IR = -1
+    else:
         if ignore_trivial:
             P, I = stamp.mass(T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone)
             PL, IL = stamp.mass(
@@ -88,14 +96,6 @@ def _get_first_stump_profile(
             PR = np.inf
             IL = -1
             IR = -1
-    else:
-        P = np.inf
-        PL = np.inf
-        PR = np.inf
-
-        I = -1
-        IL = -1
-        IR = -1
 
     return (P, PL, PR), (I, IL, IR)
 

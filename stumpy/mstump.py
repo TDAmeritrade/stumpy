@@ -12,7 +12,7 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
-def _multi_mass(Q, T, m, M_T, Σ_T, include=None):
+def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, include=None):
     """
     A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
     (MASS) to compute multi-dimensional distance profile.
@@ -29,10 +29,16 @@ def _multi_mass(Q, T, m, M_T, Σ_T, include=None):
         Window size
 
     M_T : ndarray
-        Sliding mean for `T`
+        Sliding mean for `T_A`
 
     Σ_T : ndarray
-        Sliding standard deviation for `T`
+        Sliding standard deviation for `T_A`
+
+    μ_Q : ndarray
+        Mean value of `Q`
+
+    σ_Q : ndarray
+        Standard deviation of `Q`
 
     include : ndarray
         A list of (zero-based) indices corresponding to the dimensions in `T` that
@@ -54,7 +60,10 @@ def _multi_mass(Q, T, m, M_T, Σ_T, include=None):
     D = np.empty((d, k), dtype="float64")
 
     for i in range(d):
-        D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
+        if np.isinf(μ_Q[i]):
+            D[i, :] = np.inf
+        else:
+            D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
 
     # Column-wise sort
     if include is not None:
@@ -77,7 +86,9 @@ def _multi_mass(Q, T, m, M_T, Σ_T, include=None):
     return D
 
 
-def _get_first_mstump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, include=None):
+def _get_first_mstump_profile(
+    start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include=None
+):
     """
     Multi-dimensional wrapper to compute the multi-dimensional matrix profile
     and multi-dimensional matrix profile index for a given window within the
@@ -104,10 +115,16 @@ def _get_first_mstump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, include=
         The half width for the exclusion zone relative to the `start`.
 
     M_T : ndarray
-        Sliding mean for `T`
+        Sliding mean for `T_A`
 
     Σ_T : ndarray
-        Sliding standard deviation for `T`
+        Sliding standard deviation for `T_A`
+
+    μ_Q : ndarray
+        Sliding mean for `T_B`
+
+    σ_Q : ndarray
+        Sliding standard deviation for `T_B`
 
     include : ndarray
         A list of (zero-based) indices corresponding to the dimensions in `T` that
@@ -129,7 +146,16 @@ def _get_first_mstump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, include=
     """
 
     d, n = T_A.shape
-    D = _multi_mass(T_B[:, start : start + m], T_A, m, M_T, Σ_T, include)
+    D = _multi_mass(
+        T_B[:, start : start + m],
+        T_A,
+        m,
+        M_T,
+        Σ_T,
+        μ_Q[:, start],
+        σ_Q[:, start],
+        include,
+    )
 
     zone_start = max(0, start - excl_zone)
     zone_stop = min(n - m + 1, start + excl_zone)
@@ -430,16 +456,18 @@ def mstump(T, m, include=None):
     See mSTAMP Algorithm
     """
 
-    T_A = np.asarray(core.transpose_dataframe(T)).copy()
-    T_B = T_A.copy()
+    T_A = core.transpose_dataframe(T)
+    T_B = T_A
 
-    T_A[np.isinf(T_A)] = np.nan
-    T_B[np.isinf(T_B)] = np.nan
+    T_A, M_T, Σ_T = core.preprocess(T_A, m)
+    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
 
-    core.check_dtype(T_A)
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
         raise ValueError(f"{err}")
+
+    core.check_dtype(T_A)
+    core.check_dtype(T_B)
 
     core.check_window_size(m)
 
@@ -450,15 +478,9 @@ def mstump(T, m, include=None):
             logger.warning("Removed repeating indices in `include`")
             include = include[np.sort(idx)]
 
-    d = T_A.shape[0]
-    n = T_A.shape[1]
+    d, n = T_B.shape
     k = n - m + 1
     excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
-
-    M_T, Σ_T = core.compute_mean_std(T_A, m)
-    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
-
-    T_A[np.isnan(T_A)] = 0
 
     P = np.empty((d, k), dtype="float64")
     I = np.empty((d, k), dtype="int64")
@@ -467,10 +489,8 @@ def mstump(T, m, include=None):
     stop = k
 
     P[:, start], I[:, start] = _get_first_mstump_profile(
-        start, T_A, T_B, m, excl_zone, M_T, Σ_T, include
+        start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include
     )
-
-    T_B[np.isnan(T_B)] = 0
 
     QT, QT_first = _get_multi_QT(start, T_A, m)
 
