@@ -157,9 +157,7 @@ def _get_first_mstump_profile(
         include,
     )
 
-    zone_start = max(0, start - excl_zone)
-    zone_stop = min(n - m + 1, start + excl_zone)
-    D[:, zone_start : zone_stop + 1] = np.inf
+    core.apply_exclusion_zone(D, start, excl_zone)
 
     P = np.full(d, np.inf, dtype="float64")
     I = np.ones(d, dtype="int64") * -1
@@ -251,9 +249,7 @@ def _compute_multi_D(
                 m, QT_odd[i], μ_Q[i, idx], σ_Q[i, idx], M_T[i], Σ_T[i]
             )
 
-    zone_start = max(0, idx - excl_zone)
-    zone_stop = min(k, idx + excl_zone)
-    D[:, zone_start : zone_stop + 1] = np.inf
+    core.apply_exclusion_zone(D, idx, excl_zone)
 
 
 @njit(parallel=True, fastmath=True)

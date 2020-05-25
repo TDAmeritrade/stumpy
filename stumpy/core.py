@@ -697,8 +697,8 @@ def apply_exclusion_zone(D, idx, excl_zone):
     """
 
     zone_start = max(0, idx - excl_zone)
-    zone_stop = min(D.shape[0], idx + excl_zone)
-    D[zone_start : zone_stop + 1] = np.inf
+    zone_stop = min(D.shape[-1], idx + excl_zone)
+    D[..., zone_start : zone_stop + 1] = np.inf
 
 
 def preprocess(T, m):
