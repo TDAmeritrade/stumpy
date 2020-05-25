@@ -52,17 +52,17 @@ def _get_max_order_idx(m, n_A, n_B, orders, start, percentage):
     for order_idx in range(orders.shape[0]):
         k = orders[order_idx]
         if k >= 0:
-            max_n_dist += min(n_B - m + 1 - k, n_A - m + 1)
+            max_n_dist += min(n_A - m + 1 - k, n_B - m + 1)
         else:
-            max_n_dist += min(n_B - m + 1, n_A - m + 1 + k)
+            max_n_dist += min(n_A - m + 1, n_B - m + 1 + k)
 
     n_dist_computed = 0
     for order_idx in range(start, orders.shape[0]):
         k = orders[order_idx]
         if k >= 0:
-            n_dist_computed += min(n_B - m + 1 - k, n_A - m + 1)
+            n_dist_computed += min(n_A - m + 1 - k, n_B - m + 1)
         else:
-            n_dist_computed += min(n_B - m + 1, n_A - m + 1 + k)
+            n_dist_computed += min(n_A - m + 1, n_B - m + 1 + k)
 
         if n_dist_computed / max_n_dist > percentage:  # pragma: no cover
             break
@@ -124,9 +124,9 @@ def _get_orders_ranges(n_split, m, n_A, n_B, orders, start, percentage):
     for order_idx in range(start, max_order_idx):
         k = orders[order_idx]
         if k >= 0:
-            n_dist_computed += min(n_B - m + 1 - k, n_A - m + 1)
+            n_dist_computed += min(n_A - m + 1 - k, n_B - m + 1)
         else:
-            n_dist_computed += min(n_B - m + 1, n_A - m + 1 + k)
+            n_dist_computed += min(n_A - m + 1, n_B - m + 1 + k)
 
         if n_dist_computed > max_n_dist_per_range:  # pragma: no cover
             orders_ranges[ranges_idx, 0] = range_start_idx
@@ -208,7 +208,7 @@ def _compute_diagonal(
         Matrix profile indices
 
     thread_idx : int
-
+        The thread index
 
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
@@ -224,30 +224,31 @@ def _compute_diagonal(
 
     for order_idx in range(orders_start_idx, orders_stop_idx):
         k = orders[order_idx]
+
         if k >= 0:
-            iter_range = range(0, min(n_B - m + 1 - k, n_A - m + 1))
+            iter_range = range(0, min(n_B - m + 1, n_A - m + 1 - k))
         else:
-            iter_range = range(-k, min(n_B - m + 1 - k, n_A - m + 1))
+            iter_range = range(-k, min(n_B - m + 1, n_A - m + 1 - k))
 
         for i in iter_range:
-            if i == 0 or (k < 0 and i == -k):
-                QT = np.dot(T_A[i : i + m], T_B[i + k : i + k + m])
+            if i == 0 or i == k or (k < 0 and i == -k):
+                QT = np.dot(T_A[i + k : i + k + m], T_B[i : i + m])
             else:
                 QT = (
                     QT
-                    - T_A[i - 1] * T_B[i + k - 1]
-                    + T_A[i + m - 1] * T_B[i + k + m - 1]
+                    - T_A[i + k - 1] * T_B[i - 1]
+                    + T_A[i + k + m - 1] * T_B[i + m - 1]
                 )
 
             D_squared = core._calculate_squared_distance(
-                m, QT, M_T[i], Σ_T[i], μ_Q[i + k], σ_Q[i + k],
+                m, QT, M_T[i + k], Σ_T[i + k], μ_Q[i], σ_Q[i],
             )
 
-            if ignore_trivial and D_squared < P[thread_idx, i]:
+            if D_squared < P[thread_idx, i]:
                 P[thread_idx, i] = D_squared
                 I[thread_idx, i] = i + k
 
-            if D_squared < P[thread_idx, i + k]:
+            if ignore_trivial and D_squared < P[thread_idx, i + k]:
                 P[thread_idx, i + k] = D_squared
                 I[thread_idx, i + k] = i
 
@@ -360,10 +361,10 @@ def _prescrump(
     QT,
     i,
     s,
-    excl_zone,
     squared_distance_profile,
     P_squared,
     I,
+    excl_zone=None,
 ):
     """
     A Numba JIT-compiled implementation of the preSCRIMP algorithm.
@@ -402,9 +403,6 @@ def _prescrump(
     s : int
         The sampling interval that defaults to `int(np.ceil(m / 4))`
 
-    excl_zone : int
-        The half width for the exclusion zone relative to the `i`.
-
     squared_distance_profile : ndarray
         A reusable array to store the computed squared distance profile
 
@@ -413,6 +411,9 @@ def _prescrump(
 
     I : ndarray
         The matrix profile indices
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the `i`.
 
     Notes
     -----
@@ -427,24 +428,18 @@ def _prescrump(
     Q = T_B[i : i + m]
     squared_distance_profile[:] = core._mass(Q, T_A, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
     squared_distance_profile[:] = np.square(squared_distance_profile)
-    zone_start = max(0, i - excl_zone)
-    zone_stop = min(l, i + excl_zone)
-    squared_distance_profile[zone_start : zone_stop + 1] = np.inf
+    if excl_zone is not None:
+        zone_start = max(0, i - excl_zone)
+        zone_stop = min(l, i + excl_zone)
+        squared_distance_profile[zone_start : zone_stop + 1] = np.inf
     I[i] = np.argmin(squared_distance_profile)
     P_squared[i] = squared_distance_profile[I[i]]
     if P_squared[i] == np.inf:  # pragma: no cover
         I[i] = -1
 
-    # Update all P[j] relative to T_B[i : i + m] as this is still relevant info
-    # Note that this was not in the original paper but was included in the C++ code
-    for j in prange(l):
-        if squared_distance_profile[j] < P_squared[j]:
-            P_squared[j] = squared_distance_profile[j]
-            I[j] = i
-
     j = I[i]
     # Given the squared distance, work backwards and compute QT
-    QT_j = (m - P_squared[i] / 2.0) * (Σ_T[i] * σ_Q[j]) + (m * M_T[i] * μ_Q[j])
+    QT_j = (m - P_squared[i] / 2.0) * (Σ_T[j] * σ_Q[i]) + (m * M_T[j] * μ_Q[i])
     QT_j_prime = QT_j
     for k in range(1, min(s, l - max(i, j))):
         QT_j = (
@@ -521,6 +516,9 @@ def prescrump(T_A, m, T_B=None, s=None):
 
     if T_B is None:
         T_B = T_A
+        excl_zone = int(np.ceil(m / 4))
+    else:
+        excl_zone = None
 
     T_B = np.asarray(T_B)
     T_B = T_B.copy()
@@ -535,12 +533,12 @@ def prescrump(T_A, m, T_B=None, s=None):
     T_A[np.isnan(T_A)] = 0
     T_B[np.isnan(T_B)] = 0
 
-    n = T_B.shape[0]
-    l = n - m + 1
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_B - m + 1
     P_squared = np.empty(l)
     I = np.empty(l, dtype=np.int64)
-    squared_distance_profile = np.empty(n - m + 1)
-    excl_zone = int(np.ceil(m / 4))
+    squared_distance_profile = np.empty(n_A - m + 1)
 
     if s is None:  # pragma: no cover
         s = excl_zone
@@ -561,10 +559,10 @@ def prescrump(T_A, m, T_B=None, s=None):
             QT,
             i,
             s,
-            excl_zone,
             squared_distance_profile,
             P_squared,
             I,
+            excl_zone,
         )
 
     P = np.sqrt(P_squared)
@@ -624,11 +622,6 @@ def scrump(
     See Algorithm 1 and Algorithm 2
     """
 
-    if T_B is not None and pre_scrump:  # pragma: no cover
-        raise NotImplementedError(
-            "AB joins with preprocessing are not yet implemented."
-        )
-
     T_A = np.asarray(T_A)
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
@@ -684,7 +677,10 @@ def scrump(
         s = excl_zone
 
     if pre_scrump:
-        P, I = prescrump(T_A, m, s=s)
+        if ignore_trivial:
+            P, I = prescrump(T_A, m, s=s)
+        else:
+            P, I = prescrump(T_A, m, T_B=T_B, s=s)
         for i in range(P.shape[0]):
             if out[i, 0] > P[i]:
                 out[i, 0] = P[i]
@@ -693,7 +689,7 @@ def scrump(
     if ignore_trivial:
         orders = np.random.permutation(range(excl_zone + 1, n_B - m + 1))
     else:
-        orders = np.random.permutation(range(-(n_A - m + 1) + 1, n_B - m + 1))
+        orders = np.random.permutation(range(-(n_B - m + 1) + 1, n_A - m + 1))
 
     n_threads = config.NUMBA_NUM_THREADS
     percentage = min(percentage, 1.0)
