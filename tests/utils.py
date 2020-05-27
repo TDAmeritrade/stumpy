@@ -91,7 +91,7 @@ def replace_inf(x, value=0):
     return
 
 
-def naive_multi_mass(Q, T, m, include=None):
+def naive_multi_mass(Q, T, m, include=None, discords=False):
     T = T.copy()
     Q = Q.copy()
 
@@ -107,6 +107,7 @@ def naive_multi_mass(Q, T, m, include=None):
         )
     D[np.isnan(D)] = np.inf
 
+    start_row_idx = 0
     if include is not None:
         restricted_indices = include[include < include.shape[0]]
         unrestricted_indices = include[include >= include.shape[0]]
@@ -115,9 +116,12 @@ def naive_multi_mass(Q, T, m, include=None):
         tmp_swap = D[: include.shape[0]].copy()
         D[: include.shape[0]] = D[include]
         D[unrestricted_indices] = tmp_swap[mask]
-        D[include.shape[0] :].sort(axis=0)
+        start_row_idx = include.shape[0]
+
+    if discords:
+        D[start_row_idx:][::-1].sort(axis=0)
     else:
-        D = np.sort(D, axis=0)
+        D[start_row_idx:].sort(axis=0)
 
     D_prime = np.zeros(n - m + 1)
     D_prime_prime = np.zeros((d, n - m + 1))
@@ -146,7 +150,7 @@ def naive_PI(D, trivial_idx, excl_zone):
     return P, I
 
 
-def naive_mstump(T, m, excl_zone, include=None):
+def naive_mstump(T, m, excl_zone, include=None, discords=False):
     T = T.copy()
 
     d, n = T.shape
@@ -157,7 +161,7 @@ def naive_mstump(T, m, excl_zone, include=None):
 
     for i in range(k):
         Q = T[:, i : i + m]
-        D = naive_multi_mass(Q, T, m, include)
+        D = naive_multi_mass(Q, T, m, include, discords)
 
         P_i, I_i = naive_PI(D, i, excl_zone)
 

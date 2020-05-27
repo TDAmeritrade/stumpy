@@ -24,7 +24,7 @@ percentages = [(0.01, 0.1, 1.0)]
 
 
 def naive_get_max_order_idx(m, n_A, n_B, orders, start, percentage):
-    matrix = np.empty((n_A - m + 1, n_B - m + 1))
+    matrix = np.empty((n_B - m + 1, n_A - m + 1))
     for i in range(matrix.shape[0]):
         for j in range(matrix.shape[1]):
             matrix[i, j] = j - i
@@ -52,7 +52,7 @@ def naive_get_orders_ranges(n_split, m, n_A, n_B, orders, start, percentage):
     )
     number_of_distances_per_thread = number_of_distances / n_split
 
-    matrix = np.empty((n_A - m + 1, n_B - m + 1))
+    matrix = np.empty((n_B - m + 1, n_A - m + 1))
     for i in range(matrix.shape[0]):
         for j in range(matrix.shape[1]):
             matrix[i, j] = j - i
@@ -82,7 +82,7 @@ def naive_get_orders_ranges(n_split, m, n_A, n_B, orders, start, percentage):
 
 def naive_prescrump(T_A, m, T_B, s, exclusion_zone=None):
     distance_matrix = np.array(
-        [utils.naive_distance_profile(Q, T_B, m) for Q in core.rolling_window(T_A, m)]
+        [utils.naive_distance_profile(Q, T_A, m) for Q in core.rolling_window(T_B, m)]
     )
 
     n_A = T_A.shape[0]
@@ -95,19 +95,15 @@ def naive_prescrump(T_A, m, T_B, s, exclusion_zone=None):
     I[:] = -1
 
     for i in np.random.permutation(range(0, l, s)):
-        zone_start = max(0, i - exclusion_zone)
-        zone_stop = min(l, i + exclusion_zone)
         distance_profile = distance_matrix[i]
-        distance_profile[zone_start : zone_stop + 1] = np.inf
+        if exclusion_zone is not None:
+            zone_start = max(0, i - exclusion_zone)
+            zone_stop = min(l, i + exclusion_zone)
+            distance_profile[zone_start : zone_stop + 1] = np.inf
         I[i] = np.argmin(distance_profile)
         P[i] = distance_profile[I[i]]
         if P[i] == np.inf:
             I[i] = -1
-
-        for j in range(l):
-            if distance_profile[j] < P[j]:
-                P[j] = distance_profile[j]
-                I[j] = i
 
         j = I[i]
         for k in range(1, min(s, l - max(i, j))):
@@ -133,7 +129,7 @@ def naive_prescrump(T_A, m, T_B, s, exclusion_zone=None):
 
 def naive_scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
     distance_matrix = np.array(
-        [utils.naive_distance_profile(Q, T_B, m) for Q in core.rolling_window(T_A, m)]
+        [utils.naive_distance_profile(Q, T_A, m) for Q in core.rolling_window(T_B, m)]
     )
 
     n_A = T_A.shape[0]
@@ -143,7 +139,7 @@ def naive_scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
     if exclusion_zone is not None:
         orders = np.random.permutation(range(exclusion_zone + 1, n_B - m + 1))
     else:
-        orders = np.random.permutation(range(-(n_A - m + 1) + 1, n_B - m + 1))
+        orders = np.random.permutation(range(-(n_B - m + 1) + 1, n_A - m + 1))
 
     orders_ranges = naive_get_orders_ranges(1, m, n_A, n_B, orders, 0, percentage)
     orders_ranges_start = orders_ranges[0][0]
@@ -155,18 +151,19 @@ def naive_scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
     for order_idx in range(orders_ranges_start, orders_ranges_stop):
         k = orders[order_idx]
 
-        current_diagonal = np.array(
-            [[i - j == k for i in range(n_B - m + 1)] for j in range(n_A - m + 1)]
-        )
-        current_diagonal_values = distance_matrix[current_diagonal]
+        for i in range(n_B - m + 1):
+            for j in range(n_A - m + 1):
+                if j - i == k:
+                    if distance_matrix[i, j] < out[i, 0]:
+                        out[i, 0] = distance_matrix[i, j]
+                        out[i, 1] = i + k
 
-        for i in range(current_diagonal_values.size):
-            if exclusion_zone is not None and current_diagonal_values[i] < out[i, 0]:
-                out[i, 0] = current_diagonal_values[i]
-                out[i, 1] = i + k
-            if current_diagonal_values[i] < out[i + max(0, k), 0]:
-                out[i + max(0, k), 0] = current_diagonal_values[i]
-                out[i + max(0, k), 1] = i - min(0, k)
+                    if (
+                        exclusion_zone is not None
+                        and distance_matrix[i, j] < out[i + k, 0]
+                    ):
+                        out[i + k, 0] = distance_matrix[i, j]
+                        out[i + k, 1] = i
 
     return out
 
@@ -179,7 +176,7 @@ def test_get_max_order_idx(T_A, T_B, percentages):
     m = 3
 
     for percentage in percentages:
-        # self-joins
+        # self-join
         zone = int(np.ceil(m / 4))
         orders = np.arange(zone + 1, n_B - m + 1)
         start = 0
@@ -195,8 +192,8 @@ def test_get_max_order_idx(T_A, T_B, percentages):
         npt.assert_almost_equal(left_max_order_idx, right_max_order_idx)
         npt.assert_almost_equal(left_n_dist_computed, right_n_dist_computed)
 
-        # AB-joins
-        orders = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
+        # AB-join
+        orders = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
         start = 0
         left_max_order_idx, left_n_dist_computed = naive_get_max_order_idx(
             m, n_A, n_B, orders, start, percentage
@@ -218,7 +215,7 @@ def test_get_orders_ranges(T_A, T_B, percentages):
     m = 3
 
     for percentage in percentages:
-        # self-joins
+        # self-join
         zone = int(np.ceil(m / 4))
         orders = np.arange(zone + 1, n_B - m + 1)
         n_split = 2
@@ -229,8 +226,9 @@ def test_get_orders_ranges(T_A, T_B, percentages):
 
         npt.assert_almost_equal(left, right)
 
-        # A-B-joins
-        orders = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
+        # AB-join
+        orders = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
+
         n_split = 2
         start = 0
 
@@ -252,6 +250,40 @@ def test_prescrump_self_join(T_A, T_B):
 
         np.random.seed(seed)
         right_P, right_I = prescrump(T_B, m, s=s)
+
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_prescrump_A_B_join(T_A, T_B):
+    m = 3
+    zone = int(np.ceil(m / 4))
+    for s in range(1, zone + 1):
+        seed = np.random.randint(100000)
+
+        np.random.seed(seed)
+        left_P, left_I = naive_prescrump(T_A, m, T_B, s=s)
+
+        np.random.seed(seed)
+        right_P, right_I = prescrump(T_A, m, T_B=T_B, s=s)
+
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_prescrump_A_B_join_swap(T_A, T_B):
+    m = 3
+    zone = int(np.ceil(m / 4))
+    for s in range(1, zone + 1):
+        seed = np.random.randint(100000)
+
+        np.random.seed(seed)
+        left_P, left_I = naive_prescrump(T_B, m, T_A, s=s)
+
+        np.random.seed(seed)
+        right_P, right_I = prescrump(T_B, m, T_B=T_A, s=s)
 
         npt.assert_almost_equal(left_P, right_P)
         npt.assert_almost_equal(left_I, right_I)
@@ -317,7 +349,55 @@ def test_scrump_A_B_join(T_A, T_B, percentages):
 
         utils.replace_inf(left)
         utils.replace_inf(right)
+
         npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+@pytest.mark.parametrize("percentages", percentages)
+def test_scrump_A_B_join_swap(T_A, T_B, percentages):
+    m = 3
+
+    for percentage in percentages:
+        seed = np.random.randint(100000)
+
+        np.random.seed(seed)
+        left = naive_scrump(T_B, m, T_A, percentage, None, False, None)
+
+        np.random.seed(seed)
+        right_gen = scrump(
+            T_B, m, T_A, ignore_trivial=False, percentage=percentage, pre_scrump=False
+        )
+        right = next(right_gen)
+
+        utils.replace_inf(left)
+        utils.replace_inf(right)
+
+        npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+@pytest.mark.parametrize("percentages", percentages)
+def test_scrump_self_join_larger_window(T_A, T_B, percentages):
+    for m in [8, 16, 32]:
+        if len(T_B) > m:
+            zone = int(np.ceil(m / 4))
+
+            for percentage in percentages:
+                seed = np.random.randint(100000)
+
+                np.random.seed(seed)
+                left = naive_scrump(T_B, m, T_B, percentage, zone, False, None)
+
+                np.random.seed(seed)
+                right_gen = scrump(
+                    T_B, m, ignore_trivial=True, percentage=percentage, pre_scrump=False
+                )
+                right = next(right_gen)
+
+                utils.replace_inf(left)
+                utils.replace_inf(right)
+                npt.assert_almost_equal(left, right)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -337,6 +417,7 @@ def test_scrump_self_join_full(T_A, T_B):
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_scrump_A_B_join_full(T_A, T_B):
+
     m = 3
     zone = int(np.ceil(m / 4))
 
@@ -349,9 +430,16 @@ def test_scrump_A_B_join_full(T_A, T_B):
 
     utils.replace_inf(left)
     utils.replace_inf(right)
+
     npt.assert_almost_equal(left[:, :2], right)
 
-    # change roles
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_scrump_A_B_join_full_swap(T_A, T_B):
+
+    m = 3
+    zone = int(np.ceil(m / 4))
+
     left = utils.naive_stamp(T_B, m, T_B=T_A)
 
     right_gen = scrump(
@@ -362,6 +450,24 @@ def test_scrump_A_B_join_full(T_A, T_B):
     utils.replace_inf(left)
     utils.replace_inf(right)
     npt.assert_almost_equal(left[:, :2], right)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_scrump_self_join_full_larger_window(T_A, T_B):
+    for m in [8, 16, 32]:
+        if len(T_B) > m:
+            zone = int(np.ceil(m / 4))
+
+            left = utils.naive_stamp(T_B, m, exclusion_zone=zone)
+
+            right_gen = scrump(
+                T_B, m, ignore_trivial=True, percentage=1.0, pre_scrump=False
+            )
+            right = next(right_gen)
+
+            utils.replace_inf(left)
+            utils.replace_inf(right)
+            npt.assert_almost_equal(left[:, :2], right)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -394,6 +500,41 @@ def test_scrump_plus_plus_self_join(T_A, T_B, percentages):
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
+@pytest.mark.parametrize("percentages", percentages)
+def test_scrump_plus_plus_A_B_join(T_A, T_B, percentages):
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    for s in range(1, zone + 1):
+        for percentage in percentages:
+            seed = np.random.randint(100000)
+
+            np.random.seed(seed)
+            left_P, left_I = naive_prescrump(T_A, m, T_B, s=s)
+            left = naive_scrump(T_A, m, T_B, percentage, None, False, None)
+            for i in range(left.shape[0]):
+                if left_P[i] < left[i, 0]:
+                    left[i, 0] = left_P[i]
+                    left[i, 1] = left_I[i]
+
+            np.random.seed(seed)
+            right_gen = scrump(
+                T_A,
+                m,
+                T_B,
+                ignore_trivial=False,
+                percentage=percentage,
+                pre_scrump=True,
+                s=s,
+            )
+            right = next(right_gen)
+
+            utils.replace_inf(left)
+            utils.replace_inf(right)
+            npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
 def test_scrump_plus_plus_self_join_full(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
@@ -411,27 +552,37 @@ def test_scrump_plus_plus_self_join_full(T_A, T_B):
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
-@pytest.mark.parametrize("percentages", percentages)
-def test_scrump_self_join_larger_window(T_A, T_B, percentages):
-    for m in [8, 16, 32]:
-        if len(T_B) > m:
-            zone = int(np.ceil(m / 4))
+def test_scrump_plus_plus_A_B_join_full(T_A, T_B):
+    m = 3
+    zone = int(np.ceil(m / 4))
 
-            for percentage in percentages:
-                seed = np.random.randint(100000)
+    left = utils.naive_stamp(T_A, m, T_B=T_B)
 
-                np.random.seed(seed)
-                left = naive_scrump(T_B, m, T_B, percentage, zone, False, None)
+    right_gen = scrump(
+        T_A, m, T_B=T_B, ignore_trivial=False, percentage=1.0, pre_scrump=True, s=zone
+    )
+    right = next(right_gen)
 
-                np.random.seed(seed)
-                right_gen = scrump(
-                    T_B, m, ignore_trivial=True, percentage=percentage, pre_scrump=False
-                )
-                right = next(right_gen)
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left[:, :2], right)
 
-                utils.replace_inf(left)
-                utils.replace_inf(right)
-                npt.assert_almost_equal(left, right)
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_scrump_plus_plus_A_B_join_full_swap(T_A, T_B):
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    left = utils.naive_stamp(T_B, m, T_B=T_A)
+
+    right_gen = scrump(
+        T_B, m, T_B=T_A, ignore_trivial=False, percentage=1.0, pre_scrump=True, s=zone
+    )
+    right = next(right_gen)
+
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_almost_equal(left[:, :2], right)
 
 
 @pytest.mark.parametrize("percentages", percentages)
