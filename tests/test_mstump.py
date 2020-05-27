@@ -40,7 +40,7 @@ def test_multi_mass(T, m):
     left = utils.naive_multi_mass(Q, T, m)
 
     M_T, Σ_T = core.compute_mean_std(T, m)
-    right = _multi_mass(Q, T, m, M_T, Σ_T)
+    right = _multi_mass(Q, T, m, M_T, Σ_T, M_T[:, trivial_idx], Σ_T[:, trivial_idx])
 
     npt.assert_almost_equal(left, right)
 
@@ -55,7 +55,9 @@ def test_get_first_mstump_profile(T, m):
     left_I = left_I[start, :]
 
     M_T, Σ_T = core.compute_mean_std(T, m)
-    right_P, right_I = _get_first_mstump_profile(start, T, T, m, excl_zone, M_T, Σ_T)
+    right_P, right_I = _get_first_mstump_profile(
+        start, T, T, m, excl_zone, M_T, Σ_T, M_T, Σ_T
+    )
 
     npt.assert_almost_equal(left_P, right_P)
     npt.assert_equal(left_I, right_I)

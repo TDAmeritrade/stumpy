@@ -437,30 +437,32 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     Note that left and right matrix profiles are only available for self-joins.
     """
 
-    T_A = np.asarray(T_A)
+    if T_B is None:  # Self join!
+        T_B = T_A
+        ignore_trivial = True
+
+    # Swap T_A and T_B for GPU implementation
+    # This keeps the API identical to and compatible with `stumpy.stump`
+    tmp_T = T_A
+    T_A = T_B
+    T_B = tmp_T
+
+    T_A, M_T, Σ_T = core.preprocess(T_A, m)
+    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
+
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
-    T_A = T_A.copy()
-    T_A[np.isinf(T_A)] = np.nan
-    core.check_dtype(T_A)
 
-    if T_B is None:  # Self join!
-        T_B = T_A
-        ignore_trivial = True
-    T_B = np.asarray(T_B)
-
-    T_B = np.asarray(T_B)
-    T_B = T_B.copy()
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
 
-    T_B[np.isinf(T_B)] = np.nan
+    core.check_dtype(T_A)
     core.check_dtype(T_B)
 
     core.check_window_size(m)
@@ -473,22 +475,10 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
         logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
         logger.warning("Try setting `ignore_trivial = False`.")
 
-    # Swap T_A and T_B for GPU implementation
-    # This keeps the API identical to and compatible with `stumpy.stump`
-    tmp_T = T_A
-    T_A = T_B
-    T_B = tmp_T
-
     n = T_B.shape[0]
     k = T_A.shape[0] - m + 1
     l = n - m + 1
     excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
-
-    M_T, Σ_T = core.compute_mean_std(T_A, m)
-    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
-
-    T_A[np.isnan(T_A)] = 0
-    T_B[np.isnan(T_B)] = 0
 
     T_A_fname = core.array_to_temp_file(T_A)
     T_B_fname = core.array_to_temp_file(T_B)

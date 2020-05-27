@@ -73,24 +73,20 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         "Please use the Numba JIT-compiled stumpy.stump or stumpy.gpu_stump instead."
     )
 
-    T_A = np.asarray(T_A)
-    if T_A.ndim != 1:  # pragma: no cover
-        raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
-    n = T_A.shape[0]
-
-    T_A = T_A.copy()
-    T_A[np.isinf(T_A)] = np.nan
-    core.check_dtype(T_A)
-
     if T_B is None:
         T_B = T_A
         ignore_trivial = True
 
-    T_B = np.asarray(T_B)
-    T_B = T_B.copy()
+    T_A, M_T, Σ_T = core.preprocess(T_A, m)
+    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
+
+    if T_A.ndim != 1:  # pragma: no cover
+        raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
+
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
-    T_B[np.isinf(T_B)] = np.nan
+
+    core.check_dtype(T_A)
     core.check_dtype(T_B)
 
     core.check_window_size(m)
@@ -107,23 +103,22 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
     l = n - m + 1
     excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
 
-    M_T, Σ_T = core.compute_mean_std(T_A, m)
-    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
-
-    T_A[np.isnan(T_A)] = 0
-
     out = np.empty((l, 4), dtype=object)
 
     # Handle first subsequence, add exclusionary zone
-    if ignore_trivial:
-        P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, excl_zone)
-        PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, excl_zone, right=True)
+    if np.isinf(μ_Q[0]):
+        P = np.inf
+        I = -1
+        IR = -1
     else:
-        P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
-        IR = -1  # No left and right matrix profile available
-    out[0] = P, I, -1, IR
+        if ignore_trivial:
+            P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, excl_zone)
+            PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, excl_zone, right=True)
+        else:
+            P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
+            IR = -1  # No left and right matrix profile available
 
-    T_B[np.isnan(T_B)] = 0
+    out[0] = P, I, -1, IR
 
     QT = core.sliding_dot_product(T_B[:m], T_A)
     QT_first = core.sliding_dot_product(T_A[:m], T_B)
@@ -139,9 +134,7 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
             m, QT, μ_Q[i].item(0), σ_Q[i].item(0), M_T, Σ_T
         )
         if ignore_trivial:
-            zone_start = max(0, i - excl_zone)
-            zone_stop = min(k, i + excl_zone)
-            D[zone_start : zone_stop + 1] = np.inf
+            core.apply_exclusion_zone(D, i, excl_zone)
 
         I = np.argmin(D)
         P = np.sqrt(D[I])
@@ -154,7 +147,7 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         if ignore_trivial and i > 0:
             IL = np.argmin(D[:i])
             PL = D[IL]
-        if PL == np.inf or zone_start <= IL < zone_stop:
+        if PL == np.inf:
             IL = -1
 
         IR = -1
@@ -162,7 +155,7 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         if ignore_trivial and i + 1 < D.shape[0]:
             IR = i + 1 + np.argmin(D[i + 1 :])
             PR = D[IR]
-        if PR == np.inf or zone_start <= IR < zone_stop:
+        if PR == np.inf:
             IR = -1
 
         out[i] = P, I, IL, IR

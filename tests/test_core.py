@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.testing as npt
+import pandas as pd
 from stumpy import core
 import pytest
 import os
@@ -32,20 +33,18 @@ def test_check_window_size():
 def naive_compute_mean_std(T, m):
     n = T.shape[0]
 
-    cumsum_T = np.empty(len(T) + 1)
-    np.cumsum(T, out=cumsum_T[1:])  # store output in cumsum_T[1:]
-    cumsum_T[0] = 0
+    M_T = np.zeros(n - m + 1, dtype=float)
+    Σ_T = np.zeros(n - m + 1, dtype=float)
 
-    cumsum_T_squared = np.empty(len(T) + 1)
-    np.cumsum(np.square(T), out=cumsum_T_squared[1:])
-    cumsum_T_squared[0] = 0
+    for i in range(n - m + 1):
+        Q = T[i : i + m].copy()
+        Q[np.isinf(Q)] = np.nan
 
-    subseq_sum_T = cumsum_T[m:] - cumsum_T[: n - m + 1]
-    subseq_sum_T_squared = cumsum_T_squared[m:] - cumsum_T_squared[: n - m + 1]
-    M_T = subseq_sum_T / m
-    Σ_T = np.abs((subseq_sum_T_squared / m) - np.square(M_T))
-    Σ_T = np.sqrt(Σ_T)
+        M_T[i] = np.mean(Q)
+        Σ_T[i] = np.nanstd(Q)
 
+    M_T[np.isnan(M_T)] = np.inf
+    Σ_T[np.isnan(Σ_T)] = 0
     return M_T, Σ_T
 
 
@@ -169,6 +168,136 @@ def test_mass(Q, T):
     )
     right = core.mass(Q, T)
     npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_nan(Q, T):
+    T[1] = np.nan
+    m = Q.shape[0]
+
+    left = np.linalg.norm(
+        core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
+    )
+    left[np.isnan(left)] = np.inf
+
+    right = core.mass(Q, T)
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_inf(Q, T):
+    T[1] = np.inf
+    m = Q.shape[0]
+
+    left = np.linalg.norm(
+        core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
+    )
+    left[np.isnan(left)] = np.inf
+
+    right = core.mass(Q, T)
+    npt.assert_almost_equal(left, right)
+
+
+def test_apply_exclusion_zone():
+    T = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=float)
+    exclusion_zone = 2
+
+    index = 1
+    left = np.array([np.inf, np.inf, np.inf, np.inf, 4, 5, 6, 7, 8, 9])
+    right = T.copy()
+    core.apply_exclusion_zone(right, index, exclusion_zone)
+
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_array_equal(left, right)
+
+    index = 8
+    left = np.array([0, 1, 2, 3, 4, 5, np.inf, np.inf, np.inf, np.inf])
+    right = T.copy()
+    core.apply_exclusion_zone(right, index, exclusion_zone)
+
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_array_equal(left, right)
+
+    index = 4
+    left = np.array([0, 1, np.inf, np.inf, np.inf, np.inf, np.inf, 7, 8, 9])
+    right = T.copy()
+    core.apply_exclusion_zone(right, index, exclusion_zone)
+
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_array_equal(left, right)
+
+
+def test_apply_exclusion_zone_multidimensional():
+    T = np.array(
+        [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]], dtype=float
+    )
+    exclusion_zone = 2
+
+    index = 1
+    left = np.array(
+        [
+            [np.inf, np.inf, np.inf, np.inf, 4, 5, 6, 7, 8, 9],
+            [np.inf, np.inf, np.inf, np.inf, 4, 5, 6, 7, 8, 9],
+        ]
+    )
+    right = T.copy()
+    core.apply_exclusion_zone(right, index, exclusion_zone)
+
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_array_equal(left, right)
+
+    index = 8
+    left = np.array(
+        [
+            [0, 1, 2, 3, 4, 5, np.inf, np.inf, np.inf, np.inf],
+            [0, 1, 2, 3, 4, 5, np.inf, np.inf, np.inf, np.inf],
+        ]
+    )
+    right = T.copy()
+    core.apply_exclusion_zone(right, index, exclusion_zone)
+
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_array_equal(left, right)
+
+    index = 4
+    left = np.array(
+        [
+            [0, 1, np.inf, np.inf, np.inf, np.inf, np.inf, 7, 8, 9],
+            [0, 1, np.inf, np.inf, np.inf, np.inf, np.inf, 7, 8, 9],
+        ]
+    )
+    right = T.copy()
+    core.apply_exclusion_zone(right, index, exclusion_zone)
+
+    utils.replace_inf(left)
+    utils.replace_inf(right)
+    npt.assert_array_equal(left, right)
+
+
+def test_preprocess():
+    T = np.array([0, np.nan, 2, 3, 4, 5, 6, 7, np.inf, 9])
+    m = 3
+
+    left_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
+    left_M, left_Σ = naive_compute_mean_std(T, m)
+
+    right_T, right_M, right_Σ = core.preprocess(T, m)
+
+    npt.assert_almost_equal(left_T, right_T)
+    npt.assert_almost_equal(left_M, right_M)
+    npt.assert_almost_equal(left_Σ, right_Σ)
+
+    T = pd.Series(T)
+    right_T, right_M, right_Σ = core.preprocess(T, m)
+
+    npt.assert_almost_equal(left_T, right_T)
+    npt.assert_almost_equal(left_M, right_M)
+    npt.assert_almost_equal(left_Σ, right_Σ)
 
 
 def test_array_to_temp_file():

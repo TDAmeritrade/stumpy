@@ -12,7 +12,9 @@ from . import core, stamp
 logger = logging.getLogger(__name__)
 
 
-def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial):
+def _get_first_stump_profile(
+    start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, ignore_trivial
+):
     """
     Compute the matrix profile, matrix profile index, left matrix profile
     index, and right matrix profile index for given window within the times
@@ -44,6 +46,12 @@ def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_tr
     Σ_T : ndarray
         Sliding standard deviation for `T_A`
 
+    μ_Q : ndarray
+        Sliding mean for `T_B`
+
+    σ_Q : ndarray
+        Sliding standard deviation for `T_B`
+
     ignore_trivial : bool
         `True` if this is a self join and `False` otherwise (i.e., AB-join).
 
@@ -63,21 +71,31 @@ def _get_first_stump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_tr
     """
 
     # Handle first subsequence, add exclusionary zone
-    if ignore_trivial:
-        P, I = stamp.mass(T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone)
-        PL, IL = stamp.mass(
-            T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone, left=True
-        )
-        PR, IR = stamp.mass(
-            T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone, right=True
-        )
-    else:
-        P, I = stamp.mass(T_B[start : start + m], T_A, M_T, Σ_T)
-        # No left and right matrix profile available
+
+    if np.isinf(μ_Q[start]):
+        P = np.inf
         PL = np.inf
         PR = np.inf
+
+        I = -1
         IL = -1
         IR = -1
+    else:
+        if ignore_trivial:
+            P, I = stamp.mass(T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone)
+            PL, IL = stamp.mass(
+                T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone, left=True
+            )
+            PR, IR = stamp.mass(
+                T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone, right=True
+            )
+        else:
+            P, I = stamp.mass(T_B[start : start + m], T_A, M_T, Σ_T)
+            # No left and right matrix profile available
+            PL = np.inf
+            PR = np.inf
+            IL = -1
+            IR = -1
 
     return (P, PL, PR), (I, IL, IR)
 
@@ -270,9 +288,7 @@ def _stump(
             )
 
         if ignore_trivial:
-            zone_start = max(0, i - excl_zone)
-            zone_stop = min(k, i + excl_zone)
-            D[zone_start : zone_stop + 1] = np.inf
+            core.apply_exclusion_zone(D, i, excl_zone)
 
         I = np.argmin(D)
         P = np.sqrt(D[I])
@@ -285,7 +301,7 @@ def _stump(
         if ignore_trivial and i > 0:
             IL = np.argmin(D[:i])
             PL = D[IL]
-        if PL == np.inf or zone_start <= IL < zone_stop:
+        if PL == np.inf:
             IL = -1
 
         IR = -1
@@ -293,7 +309,7 @@ def _stump(
         if ignore_trivial and i + 1 < D.shape[0]:
             IR = i + 1 + np.argmin(D[i + 1 :])
             PR = D[IR]
-        if PR == np.inf or zone_start <= IR < zone_stop:
+        if PR == np.inf:
             IR = -1
 
         # Only a part of the profile/indices array are passed
@@ -364,29 +380,26 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     Note that left and right matrix profiles are only available for self-joins.
     """
 
-    T_A = np.asarray(T_A)
+    if T_B is None:
+        T_B = T_A
+        ignore_trivial = True
+
+    T_A, M_T, Σ_T = core.preprocess(T_A, m)
+    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
+
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
 
-    T_A = T_A.copy()
-    T_A[np.isinf(T_A)] = np.nan
-    core.check_dtype(T_A)
-
-    if T_B is None:
-        T_B = T_A
-        ignore_trivial = True
-
-    T_B = np.asarray(T_B)
-    T_B = T_B.copy()
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
-    T_B[np.isinf(T_B)] = np.nan
+
+    core.check_dtype(T_A)
     core.check_dtype(T_B)
 
     core.check_window_size(m)
@@ -404,11 +417,6 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     l = n - m + 1
     excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
 
-    M_T, Σ_T = core.compute_mean_std(T_A, m)
-    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
-
-    T_A[np.isnan(T_A)] = 0
-
     out = np.empty((l, 4), dtype=object)
     profile = np.empty((l,), dtype="float64")
     indices = np.empty((l, 3), dtype="int64")
@@ -417,13 +425,9 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     stop = l
 
     all_start_profiles, indices[start, :] = _get_first_stump_profile(
-        start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial
+        start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, ignore_trivial
     )
     profile[start] = all_start_profiles[0]
-
-    T_B[
-        np.isnan(T_B)
-    ] = 0  # Remove all nan values from T_B only after first profile is calculated
 
     QT, QT_first = _get_QT(start, T_A, T_B, m)
 

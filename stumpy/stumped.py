@@ -83,30 +83,26 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     Note that left and right matrix profiles are only available for self-joins.
     """
 
-    T_A = np.asarray(T_A)
+    if T_B is None:
+        T_B = T_A
+        ignore_trivial = True
+
+    T_A, M_T, Σ_T = core.preprocess(T_A, m)
+    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
+
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
-    n = T_A.shape[0]
 
-    T_A = T_A.copy()
-    T_A[np.isinf(T_A)] = np.nan
-    core.check_dtype(T_A)
-
-    if T_B is None:
-        T_B = T_A
-        ignore_trivial = True
-
-    T_B = np.asarray(T_B)
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
-    T_B = T_B.copy()
-    T_B[np.isinf(T_B)] = np.nan
+
+    core.check_dtype(T_A)
     core.check_dtype(T_B)
 
     core.check_window_size(m)
@@ -124,11 +120,6 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     l = n - m + 1
     excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
 
-    M_T, Σ_T = core.compute_mean_std(T_A, m)
-    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
-
-    T_A[np.isnan(T_A)] = 0
-
     out = np.empty((l, 4), dtype=object)
     profile = np.empty((l,), dtype="float64")
     indices = np.empty((l, 3), dtype="int64")
@@ -141,11 +132,9 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     QT_first_futures = []
     for i, start in enumerate(range(0, l, step)):
         all_start_profiles, indices[start, :] = _get_first_stump_profile(
-            start, T_A, T_B, m, excl_zone, M_T, Σ_T, ignore_trivial
+            start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, ignore_trivial
         )
         profile[start] = all_start_profiles[0]
-
-    T_B[np.isnan(T_B)] = 0
 
     # Scatter data to Dask cluster
     T_A_future = dask_client.scatter(T_A, broadcast=True)

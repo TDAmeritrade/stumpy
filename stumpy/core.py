@@ -663,15 +663,79 @@ def mass(Q, T, M_T=None, Σ_T=None):
     if np.any(np.isnan(Q)):
         distance_profile[:] = np.inf
     else:
+        if M_T is None or Σ_T is None:
+            T, M_T, Σ_T = preprocess(T, m)
+
         QT = sliding_dot_product(Q, T)
         μ_Q, σ_Q = compute_mean_std(Q, m)
         μ_Q = μ_Q[0]
         σ_Q = σ_Q[0]
-        if M_T is None or Σ_T is None:
-            M_T, Σ_T = compute_mean_std(T, m)
         distance_profile[:] = _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T)
 
     return distance_profile
+
+
+@njit(fastmath=True)
+def apply_exclusion_zone(D, idx, excl_zone):
+    """
+    Apply an exclusion zone to an array (inplace), i.e. set all values
+    to np.inf in a window around a given index.
+
+    All values in D in [idx - excl_zone, idx + excl_zone] (endpoints included)
+    will be set to np.inf.
+
+    Parameters
+    ----------
+    D : ndarray
+        The array you want to apply the exclusion zone to
+
+    idx : int
+        The index around which the window should be centered
+
+    excl_zone : int
+        Size of the exclusion zone.
+    """
+
+    zone_start = max(0, idx - excl_zone)
+    zone_stop = min(D.shape[-1], idx + excl_zone)
+    D[..., zone_start : zone_stop + 1] = np.inf
+
+
+def preprocess(T, m):
+    """
+    Creates a copy of the time series where all NaN and inf values
+    are replaced with zero. Also computes mean and standard deviation
+    for every subsequence. Every subsequence that contains at least
+    one NaN or inf value, will have a mean of np.inf. For the standard
+    deviation these values are ignored. If all values are illegal, the
+    standard deviation will be 0 (see `core.compute_mean_std`)
+
+    Parameters
+    ----------
+    T : ndarray
+        Time series or sequence
+
+    m : int
+        Window size
+
+    Returns
+    -------
+    T : ndarray
+        Modified time series
+    M_T : ndarray
+        Rolling mean
+    Σ_T : ndarray
+        Rolling standard deviation
+    """
+
+    T = T.copy()
+    T = np.asarray(T)
+
+    T[np.isinf(T)] = np.nan
+    M_T, Σ_T = compute_mean_std(T, m)
+    T[np.isnan(T)] = 0
+
+    return T, M_T, Σ_T
 
 
 def array_to_temp_file(a):
