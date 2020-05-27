@@ -51,6 +51,34 @@ def test_mstumped_include(T, m, dask_cluster):
 
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T, m", test_data)
+def test_mstumped_discords(T, m, dask_cluster):
+    with Client(dask_cluster) as dask_client:
+        excl_zone = int(np.ceil(m / 4))
+
+        left_P, left_I = utils.naive_mstump(T, m, excl_zone, discords=True)
+        right_P, right_I = mstumped(dask_client, T, m, discords=True)
+
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
+
+
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.parametrize("T, m", test_data)
+def test_mstumped_include_discords(T, m, dask_cluster):
+    with Client(dask_cluster) as dask_client:
+        for i in range(T.shape[0]):
+            include = np.asarray([i])
+            excl_zone = int(np.ceil(m / 4))
+
+            left_P, left_I = utils.naive_mstump(T, m, excl_zone, include, discords=True)
+            right_P, right_I = mstumped(dask_client, T, m, include, discords=True)
+
+            npt.assert_almost_equal(left_P, right_P)
+            npt.assert_almost_equal(left_I, right_I)
+
+
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.parametrize("T, m", test_data)
 def test_mstumped_df(T, m, dask_cluster):
     with Client(dask_cluster) as dask_client:
         excl_zone = int(np.ceil(m / 4))

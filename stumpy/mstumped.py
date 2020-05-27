@@ -12,7 +12,7 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
-def mstumped(dask_client, T, m, include=None):
+def mstumped(dask_client, T, m, include=None, discords=False):
     """
     Compute the multi-dimensional matrix profile with parallelized and
     distributed mSTOMP
@@ -45,6 +45,12 @@ def mstumped(dask_client, T, m, include=None):
 
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    discords : bool
+        When set to `True`, this reverses the distance matrix which results in a
+        multi-dimensional matrix profile that favors larger matrix profile values
+        (i.e., discords) rather than smaller values (i.e., motifs). Note that indices
+        in `include` are still maintained and respected.
 
     Returns
     -------
@@ -105,7 +111,7 @@ def mstumped(dask_client, T, m, include=None):
 
     for i, start in enumerate(range(0, k, step)):
         P[:, start], I[:, start] = _get_first_mstump_profile(
-            start, T_A, T_B, m, excl_zone, M_T, Σ_T, include
+            start, T_A, T_B, m, excl_zone, M_T, Σ_T, include, discords
         )
 
     T_B[np.isnan(T_B)] = 0
@@ -149,6 +155,7 @@ def mstumped(dask_client, T, m, include=None):
                 k,
                 start + 1,
                 include,
+                discords,
             )
         )
 

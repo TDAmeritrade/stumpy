@@ -12,7 +12,7 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
-def _multi_mass(Q, T, m, M_T, Σ_T, include=None):
+def _multi_mass(Q, T, m, M_T, Σ_T, include=None, discords=False):
     """
     A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
     (MASS) to compute multi-dimensional distance profile.
@@ -42,6 +42,10 @@ def _multi_mass(Q, T, m, M_T, Σ_T, include=None):
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
+    discords : bool
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
+
     Returns
     -------
     D : ndarray
@@ -57,6 +61,7 @@ def _multi_mass(Q, T, m, M_T, Σ_T, include=None):
         D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
 
     # Column-wise sort
+    start_row_idx = 0
     if include is not None:
         restricted_indices = include[include < include.shape[0]]
         unrestricted_indices = include[include >= include.shape[0]]
@@ -65,9 +70,13 @@ def _multi_mass(Q, T, m, M_T, Σ_T, include=None):
         tmp_swap = D[: include.shape[0]].copy()
         D[: include.shape[0]] = D[include]
         D[unrestricted_indices] = tmp_swap[mask]
-        D[include.shape[0] :].sort(axis=0)
+        # D[include.shape[0] :].sort(axis=0)
+        start_row_idx = include.shape[0]
+
+    if discords:
+        D[start_row_idx:][::-1].sort(axis=0)
     else:
-        D = np.sort(D, axis=0)
+        D[start_row_idx:].sort(axis=0)
 
     D_prime = np.zeros(k)
     for i in range(d):
@@ -77,7 +86,9 @@ def _multi_mass(Q, T, m, M_T, Σ_T, include=None):
     return D
 
 
-def _get_first_mstump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, include=None):
+def _get_first_mstump_profile(
+    start, T_A, T_B, m, excl_zone, M_T, Σ_T, include=None, discords=False
+):
     """
     Multi-dimensional wrapper to compute the multi-dimensional matrix profile
     and multi-dimensional matrix profile index for a given window within the
@@ -117,6 +128,10 @@ def _get_first_mstump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, include=
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
+    discords : bool
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
+
     Returns
     -------
     P : ndarray
@@ -129,7 +144,7 @@ def _get_first_mstump_profile(start, T_A, T_B, m, excl_zone, M_T, Σ_T, include=
     """
 
     d, n = T_A.shape
-    D = _multi_mass(T_B[:, start : start + m], T_A, m, M_T, Σ_T, include)
+    D = _multi_mass(T_B[:, start : start + m], T_A, m, M_T, Σ_T, include, discords)
 
     zone_start = max(0, start - excl_zone)
     zone_stop = min(n - m + 1, start + excl_zone)
@@ -191,6 +206,64 @@ def _get_multi_QT(start, T, m):
 def _compute_multi_D(
     d, k, idx, D, T, m, excl_zone, M_T, Σ_T, QT_even, QT_odd, QT_first, μ_Q, σ_Q
 ):
+    """
+    A Numba JIT-compiled version of mSTOMP for parallel computation of the
+    multi-dimensional distance profile
+
+    Parameters
+    ----------
+    d : int
+        The total number of dimensions in `T`
+
+    k : int
+        The total number of sliding windows to iterate over
+
+    idx : int
+        The row index in `T`
+
+    D : ndarray
+        The output distance profile
+
+    T : ndarray
+        The time series or sequence for which to compute the matrix profile
+
+    m : int
+        Window size
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the current
+        sliding window
+
+    M_T : ndarray
+        Sliding mean of time series, `T`
+
+    Σ_T : ndarray
+        Sliding standard deviation of time series, `T`
+
+    QT_even : ndarray
+        Dot product between some query sequence,`Q`, and time series, `T`
+
+    QT_odd : ndarray
+        Dot product between some query sequence,`Q`, and time series, `T`
+
+    QT_first : ndarray
+        QT for the first window relative to the current sliding window
+
+    μ_Q : ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window
+
+    σ_Q : ndarray
+        Standard deviation of the query sequence, `Q`, relative to the current
+        sliding window
+
+    Notes
+    -----
+
+    `DOI: 10.1109/ICDM.2017.66 \
+    <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    See mSTAMP Algorithm
+    """
     for i in range(d):
         # Numba's prange requires incrementing a range by 1 so replace
         # `for j in range(k-1,0,-1)` with its incrementing compliment
@@ -232,6 +305,34 @@ def _compute_multi_D(
 
 @njit(parallel=True, fastmath=True)
 def _compute_PI(d, idx, D, D_prime, range_start, P, I):
+    """
+    A Numba JIT-compiled version of mSTOMP for updating the matrix profile and matrix
+    profile indices
+
+    Parameters
+    ----------
+    d : int
+        The total number of dimensions in `T`
+
+    idx : int
+        The row index in `T`
+
+    D : ndarray
+        The distance profile
+
+    D_prime : ndarray
+        A reusable array for storing the column-wise cumulative sum of `D`
+
+    range_start : int
+        The starting index value along `T` for which to start the matrix
+        profile calculation
+
+    P : ndarray
+        The matrix profile
+
+    I : ndarray
+        The matrix profile indices
+    """
     D_prime[:] = 0.0
     for i in range(d):
         D_prime = D_prime + np.sqrt(D[i])
@@ -258,6 +359,7 @@ def _mstump(
     k,
     range_start=1,
     include=None,
+    discords=False,
 ):
     """
     A Numba JIT-compiled version of mSTOMP, a variant of mSTAMP, for parallel
@@ -316,6 +418,10 @@ def _mstump(
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
+    discords : bool
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
+
     Returns
     -------
     P : ndarray
@@ -370,19 +476,24 @@ def _mstump(
             σ_Q,
         )
 
+        start_row_idx = 0
         if include is not None:
             tmp_swap[:] = D[: include.shape[0]]
             D[: include.shape[0]] = D[include]
             D[unrestricted_indices] = tmp_swap[mask]
-            D[include.shape[0] :].sort(axis=0)
+            start_row_idx = include.shape[0]
+
+        if discords:
+            D[start_row_idx:][::-1].sort(axis=0)
         else:
-            D.sort(axis=0)
+            D[start_row_idx:].sort(axis=0)
+
         _compute_PI(d, idx, D, D_prime, range_start, P, I)
 
     return P, I
 
 
-def mstump(T, m, include=None):
+def mstump(T, m, include=None, discords=False):
     """
     Compute the multi-dimensional matrix profile with parallelized mSTOMP
 
@@ -409,6 +520,12 @@ def mstump(T, m, include=None):
 
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    discords : bool
+        When set to `True`, this reverses the distance matrix which results in a
+        multi-dimensional matrix profile that favors larger matrix profile values
+        (i.e., discords) rather than smaller values (i.e., motifs). Note that indices
+        in `include` are still maintained and respected.
 
     Returns
     -------
@@ -467,7 +584,7 @@ def mstump(T, m, include=None):
     stop = k
 
     P[:, start], I[:, start] = _get_first_mstump_profile(
-        start, T_A, T_B, m, excl_zone, M_T, Σ_T, include
+        start, T_A, T_B, m, excl_zone, M_T, Σ_T, include, discords
     )
 
     T_B[np.isnan(T_B)] = 0
@@ -475,7 +592,20 @@ def mstump(T, m, include=None):
     QT, QT_first = _get_multi_QT(start, T_A, m)
 
     P[:, start + 1 : stop], I[:, start + 1 : stop] = _mstump(
-        T_A, m, stop, excl_zone, M_T, Σ_T, QT, QT_first, μ_Q, σ_Q, k, start + 1, include
+        T_A,
+        m,
+        stop,
+        excl_zone,
+        M_T,
+        Σ_T,
+        QT,
+        QT_first,
+        μ_Q,
+        σ_Q,
+        k,
+        start + 1,
+        include,
+        discords,
     )
 
     return P.T, I.T

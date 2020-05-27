@@ -121,6 +121,30 @@ def test_mstump_include(T, m):
 
 
 @pytest.mark.parametrize("T, m", test_data)
+def test_mstump_discords(T, m):
+    excl_zone = int(np.ceil(m / 4))
+
+    left_P, left_I = utils.naive_mstump(T, m, excl_zone, discords=True)
+    right_P, right_I = mstump(T, m, discords=True)
+
+    npt.assert_almost_equal(left_P, right_P)
+    npt.assert_almost_equal(left_I, right_I)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_mstump_include_discords(T, m):
+    for i in range(T.shape[0]):
+        include = np.asarray([i])
+        excl_zone = int(np.ceil(m / 4))
+
+        left_P, left_I = utils.naive_mstump(T, m, excl_zone, include, discords=True)
+        right_P, right_I = mstump(T, m, include, discords=True)
+
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
+
+
+@pytest.mark.parametrize("T, m", test_data)
 def test_mstump_wrapper(T, m):
     excl_zone = int(np.ceil(m / 4))
 
