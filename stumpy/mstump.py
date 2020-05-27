@@ -12,7 +12,7 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
-def _multi_mass(Q, T, m, M_T, Σ_T, include=None, discords=False):
+def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, include=None, discords=False):
     """
     A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
     (MASS) to compute multi-dimensional distance profile.
@@ -96,7 +96,7 @@ def _multi_mass(Q, T, m, M_T, Σ_T, include=None, discords=False):
 
 
 def _get_first_mstump_profile(
-    start, T_A, T_B, m, excl_zone, M_T, Σ_T, include=None, discords=False
+    start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include=None, discords=False
 ):
     """
     Multi-dimensional wrapper to compute the multi-dimensional matrix profile
@@ -159,7 +159,17 @@ def _get_first_mstump_profile(
     """
 
     d, n = T_A.shape
-    D = _multi_mass(T_B[:, start : start + m], T_A, m, M_T, Σ_T, include, discords)
+    D = _multi_mass(
+        T_B[:, start : start + m],
+        T_A,
+        m,
+        M_T,
+        Σ_T,
+        μ_Q[:, start],
+        σ_Q[:, start],
+        include,
+        discords,
+    )
 
     core.apply_exclusion_zone(D, start, excl_zone)
 
@@ -591,7 +601,7 @@ def mstump(T, m, include=None, discords=False):
     stop = k
 
     P[:, start], I[:, start] = _get_first_mstump_profile(
-        start, T_A, T_B, m, excl_zone, M_T, Σ_T, include, discords
+        start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
     )
 
     QT, QT_first = _get_multi_QT(start, T_A, m)

@@ -112,10 +112,10 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         IR = -1
     else:
         if ignore_trivial:
-            P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, excl_zone)
-            PR, IR = stamp.mass(T_B[:m], T_A, M_T, Σ_T, 0, excl_zone, right=True)
+            P, I = stamp._mass_PI(T_B[:m], T_A, M_T, Σ_T, 0, excl_zone)
+            PR, IR = stamp._mass_PI(T_B[:m], T_A, M_T, Σ_T, 0, excl_zone, right=True)
         else:
-            P, I = stamp.mass(T_B[:m], T_A, M_T, Σ_T)
+            P, I = stamp._mass_PI(T_B[:m], T_A, M_T, Σ_T)
             IR = -1  # No left and right matrix profile available
 
     out[0] = P, I, -1, IR

@@ -108,7 +108,7 @@ def mstumped(dask_client, T, m, include=None, discords=False):
 
     for i, start in enumerate(range(0, k, step)):
         P[:, start], I[:, start] = _get_first_mstump_profile(
-            start, T_A, T_B, m, excl_zone, M_T, Σ_T, include, discords
+            start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
         )
 
     # Scatter data to Dask cluster

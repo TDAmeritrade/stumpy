@@ -19,7 +19,7 @@ def _get_first_stump_profile(
     Compute the matrix profile, matrix profile index, left matrix profile
     index, and right matrix profile index for given window within the times
     series or sequence that is denote by the `start` index. Essentially, this
-    is a convenience wrapper around `stamp.mass`
+    is a convenience wrapper around `stamp._mass_PI`
 
     Parameters
     ----------
@@ -82,15 +82,17 @@ def _get_first_stump_profile(
         IR = -1
     else:
         if ignore_trivial:
-            P, I = stamp.mass(T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone)
-            PL, IL = stamp.mass(
+            P, I = stamp._mass_PI(
+                T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone
+            )
+            PL, IL = stamp._mass_PI(
                 T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone, left=True
             )
-            PR, IR = stamp.mass(
+            PR, IR = stamp._mass_PI(
                 T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone, right=True
             )
         else:
-            P, I = stamp.mass(T_B[start : start + m], T_A, M_T, Σ_T)
+            P, I = stamp._mass_PI(T_B[start : start + m], T_A, M_T, Σ_T)
             # No left and right matrix profile available
             PL = np.inf
             PR = np.inf

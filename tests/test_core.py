@@ -200,83 +200,46 @@ def test_mass_inf(Q, T):
 
 def test_apply_exclusion_zone():
     T = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=float)
+    left = np.empty(T.shape)
+    right = np.empty(T.shape)
     exclusion_zone = 2
 
-    index = 1
-    left = np.array([np.inf, np.inf, np.inf, np.inf, 4, 5, 6, 7, 8, 9])
-    right = T.copy()
-    core.apply_exclusion_zone(right, index, exclusion_zone)
+    for i in range(T.shape[0]):
+        left[:] = T[:]
+        for j in range(
+            max(i - exclusion_zone, 0), min(i + exclusion_zone + 1, T.shape[0])
+        ):
+            left[j] = np.inf
 
-    utils.replace_inf(left)
-    utils.replace_inf(right)
-    npt.assert_array_equal(left, right)
+        right[:] = T[:]
+        core.apply_exclusion_zone(right, i, exclusion_zone)
 
-    index = 8
-    left = np.array([0, 1, 2, 3, 4, 5, np.inf, np.inf, np.inf, np.inf])
-    right = T.copy()
-    core.apply_exclusion_zone(right, index, exclusion_zone)
-
-    utils.replace_inf(left)
-    utils.replace_inf(right)
-    npt.assert_array_equal(left, right)
-
-    index = 4
-    left = np.array([0, 1, np.inf, np.inf, np.inf, np.inf, np.inf, 7, 8, 9])
-    right = T.copy()
-    core.apply_exclusion_zone(right, index, exclusion_zone)
-
-    utils.replace_inf(left)
-    utils.replace_inf(right)
-    npt.assert_array_equal(left, right)
+        utils.replace_inf(left)
+        utils.replace_inf(right)
+        npt.assert_array_equal(left, right)
 
 
 def test_apply_exclusion_zone_multidimensional():
     T = np.array(
         [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]], dtype=float
     )
+    left = np.empty(T.shape)
+    right = np.empty(T.shape)
     exclusion_zone = 2
 
-    index = 1
-    left = np.array(
-        [
-            [np.inf, np.inf, np.inf, np.inf, 4, 5, 6, 7, 8, 9],
-            [np.inf, np.inf, np.inf, np.inf, 4, 5, 6, 7, 8, 9],
-        ]
-    )
-    right = T.copy()
-    core.apply_exclusion_zone(right, index, exclusion_zone)
+    for i in range(T.shape[1]):
+        left[:, :] = T[:, :]
+        for j in range(
+            max(i - exclusion_zone, 0), min(i + exclusion_zone + 1, T.shape[1])
+        ):
+            left[:, j] = np.inf
 
-    utils.replace_inf(left)
-    utils.replace_inf(right)
-    npt.assert_array_equal(left, right)
+        right[:, :] = T[:, :]
+        core.apply_exclusion_zone(right, i, exclusion_zone)
 
-    index = 8
-    left = np.array(
-        [
-            [0, 1, 2, 3, 4, 5, np.inf, np.inf, np.inf, np.inf],
-            [0, 1, 2, 3, 4, 5, np.inf, np.inf, np.inf, np.inf],
-        ]
-    )
-    right = T.copy()
-    core.apply_exclusion_zone(right, index, exclusion_zone)
-
-    utils.replace_inf(left)
-    utils.replace_inf(right)
-    npt.assert_array_equal(left, right)
-
-    index = 4
-    left = np.array(
-        [
-            [0, 1, np.inf, np.inf, np.inf, np.inf, np.inf, 7, 8, 9],
-            [0, 1, np.inf, np.inf, np.inf, np.inf, np.inf, 7, 8, 9],
-        ]
-    )
-    right = T.copy()
-    core.apply_exclusion_zone(right, index, exclusion_zone)
-
-    utils.replace_inf(left)
-    utils.replace_inf(right)
-    npt.assert_array_equal(left, right)
+        utils.replace_inf(left)
+        utils.replace_inf(right)
+        npt.assert_array_equal(left, right)
 
 
 def test_preprocess():
