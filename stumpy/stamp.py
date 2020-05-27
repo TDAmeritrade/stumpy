@@ -7,7 +7,7 @@ import numpy as np
 from . import core
 
 
-def mass(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False):
+def _mass_PI(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False):
     """
     Compute "Mueen's Algorithm for Similarity Search" (MASS)
 
@@ -148,11 +148,11 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     # Add exclusionary zone
     if ignore_trivial:
         out = [
-            mass(subseq, T_A, M_T, Σ_T, i, excl_zone)
+            _mass_PI(subseq, T_A, M_T, Σ_T, i, excl_zone)
             for i, subseq in enumerate(subseq_T_B)
         ]
     else:
-        out = [mass(subseq, T_A, M_T, Σ_T) for subseq in subseq_T_B]
+        out = [_mass_PI(subseq, T_A, M_T, Σ_T) for subseq in subseq_T_B]
     out = np.array(out, dtype=object)
 
     return out
