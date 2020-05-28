@@ -84,7 +84,6 @@ def _iac(
     IAC : ndarray
         Idealized arc curve (IAC)
     """
-
     np.random.seed(seed)
 
     I = np.random.randint(0, width, size=width)
@@ -388,7 +387,6 @@ def floss(
     This is the implementation for Fast Low-cost Online Semantic
     Segmentation (FLOSS).
     """
-
     n = old_data.shape[0]
     k = mp.shape[0]
     last_idx = n - m + 1  # This is dependent on the changing length of `old_data`

@@ -50,6 +50,7 @@ configuration = {
             "distributed >= 1.28.1",
             "coverage >= 4.5.3",
             "flake8 >= 3.7.7",
+            "flake8-docstrings >= 1.5.0",
             "black >= 19.3b0",
             "pytest >= 4.4.1",
             "codecov",

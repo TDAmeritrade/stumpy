@@ -65,13 +65,11 @@ def mstumped(dask_client, T, m, include=None, discords=False):
 
     Notes
     -----
-
     `DOI: 10.1109/ICDM.2017.66 \
     <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
     See mSTAMP Algorithm
     """
-
     T_A = core.transpose_dataframe(T)
     T_B = T_A
 

@@ -51,7 +51,6 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
 
     Notes
     -----
-
     `DOI: 10.1109/ICDM.2016.0085 \
     <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
@@ -82,7 +81,6 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-
     if T_B is None:
         T_B = T_A
         ignore_trivial = True

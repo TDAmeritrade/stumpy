@@ -1,4 +1,18 @@
 [flake8]
-ignore = E741,W503,E203
+ignore = 
+    E741,
+    W503,
+    E203,
+    D100,
+    D401,
+    D200,
+    D205,
+    D400
 max-line-length = 88
-exclude = tests/*
+docstring-convention=numpy
+exclude = 
+    tests/*,
+    docs,
+    setup.py
+per-file-ignores =
+    stumpy/__init__.py:D104
