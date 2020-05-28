@@ -6,14 +6,12 @@ from . import core
 def search_k_motifs(
     T, P, k=1, excl_zone=None, min_neighbors=1, max_occurrences=10, atol=None, rtol=1.0,
 ):
-    """
-    Find the top k motifs of the time series `T`.
+    """Find the top k motifs of the time series `T`.
 
     A subsequence `Q` is considered a motif if there is at least one other
     occurrence in `T` (outside the exclusion zone) with distance smaller than
     `atol + rtol * profile_value`, where `profile_value` is the matrix profile
     value of `Q`.
-
 
     Parameters
     ----------
@@ -35,11 +33,11 @@ def search_k_motifs(
         to be considered a motif.
         Defaults to `1`. This means, that a subsequence has to have
         at least one similar occurence to be considered a motif.
-    
+
     max_occurrences : int
         The maximum amount of similar occurrences to be returned. The resulting
         occurrences are sorted by distance, so a value of `10` means that the
-        indices of the most similar `10` subsequences is returned. If `None`, 
+        indices of the most similar `10` subsequences is returned. If `None`,
         all occurrences are returned.
         Defaults to `10`
 
@@ -61,7 +59,6 @@ def search_k_motifs(
     top_motif_values : list
         The matrix profile values of the "original occurrences"
     """
-
     if k < 1:  # pragma: no cover
         raise ValueError("k (the number of motifs) has to be at least 1")
 
@@ -115,8 +112,7 @@ def search_k_motifs(
 
 
 def search_k_discords(T, P, k=1, excl_zone=None):
-    """
-    Find the top k discords of the time series `T`.
+    """Find the top k discords of the time series `T`.
 
     Parameters
     ----------
@@ -143,7 +139,6 @@ def search_k_discords(T, P, k=1, excl_zone=None):
     top_motif_values : list
         The matrix profile values of the "original occurrences"
     """
-
     if k < 1:  # pragma: no cover
         raise ValueError("k (the number of motifs) has to be at least 1")
 
@@ -237,7 +232,7 @@ def _search(
             rtol=rtol,
         )
 
-        if not candidate_idx in occurrences:
+        if candidate_idx not in occurrences:
             occurrences.append(candidate_idx)
 
         if len(occurrences) >= min_neighbors + 1:
@@ -280,8 +275,8 @@ def search_occurrences(
         The time series of interest
 
     dimensions : list or None
-        The dimensions of the time series you want to consider. Ignore if your time series
-        is one dimensional.
+        The dimensions of the time series you want to consider. Ignore if your
+        time series is one dimensional.
         If `None`, then all dimensions are used.
 
     M_T : ndarray or None
@@ -293,7 +288,7 @@ def search_occurrences(
     excl_zone : int or None
         Size of the exclusion zone.
         If `None`, defaults to `m/4`, where `m` is the length of `Q`.
-    
+
     max_occurrences : int or None
         The maximum amount of similar occurrences to be returned. The resulting
         occurrences are sorted by distance, so a value of `10` means that the

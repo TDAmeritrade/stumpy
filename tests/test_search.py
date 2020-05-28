@@ -63,17 +63,20 @@ def test_search_k_motifs_synthetic():
     T[12:28] = 2
     T[110:130] = 1
     T[112:128] = 2
+    T[129] = 1.1
 
     T[70:90] = np.arange(m) * 0.1
     T[170:190] = np.arange(m) * 0.1
 
     k = 2
 
-    left_indices = [[10, 110], [70, 170]]
-    left_profile_values = [0, 0]
-
     P = stump(T, m, ignore_trivial=True)
+
+    left_indices = [[70, 170], [10, 110]]
+    left_profile_values = [P[70, 0], P[10, 0]]
+
     right_indices, right_profile_values = search.search_k_motifs(T, P[:, 0], k=k)
+    right_indices = np.sort(right_indices, axis=1)
 
     npt.assert_array_equal(left_indices, right_indices)
     npt.assert_almost_equal(left_profile_values, right_profile_values, decimal=4)
