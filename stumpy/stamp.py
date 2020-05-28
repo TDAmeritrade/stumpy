@@ -47,7 +47,6 @@ def _mass_PI(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=F
     I : ndarray
         Matrix profile indices
     """
-
     D = core.mass(Q, T, M_T, Σ_T)
 
     if trivial_idx is not None:
@@ -127,7 +126,6 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     the closest subsequence in T_A. Thus, the array returned will have length
     T_B.shape[0]-m+1
     """
-
     T_A, M_T, Σ_T = core.preprocess(T_A, m)
     T_B = T_B.copy()
     T_B[np.isinf(T_B)] = np.nan

@@ -69,7 +69,6 @@ def _get_first_stump_profile(
         profile indices are automatically set to `-1` for self-joins (i.e., when
         `ignore_trivial` is set to `True`.
     """
-
     # Handle first subsequence, add exclusionary zone
 
     if np.isinf(μ_Q[start]):
@@ -131,7 +130,6 @@ def _get_QT(start, T_A, T_B, m):
     QT_first : ndarray
          QT for the first window
     """
-
     QT = core.sliding_dot_product(T_B[start : start + m], T_A)
     QT_first = core.sliding_dot_product(T_A[:m], T_B)
 
@@ -249,7 +247,6 @@ def _stump(
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-
     QT_odd = QT.copy()
     QT_even = QT.copy()
     profile = np.empty((range_stop - range_start,))  # float64
@@ -354,7 +351,6 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
 
     Notes
     -----
-
     `DOI: 10.1109/ICDM.2016.0085 \
     <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
@@ -381,7 +377,6 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-
     if T_B is None:
         T_B = T_A
         ignore_trivial = True

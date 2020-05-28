@@ -65,7 +65,6 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-
     logger.warning(
         "stumpy.stomp._stomp is not supported and only provided for reference."
     )

@@ -17,7 +17,7 @@ def _get_max_order_idx(m, n_A, n_B, orders, start, percentage):
     """
     Determine the order index for when the desired percentage of distances is computed
 
-     Parameters
+    Parameters
     ----------
     m : int
         Window size
@@ -47,7 +47,6 @@ def _get_max_order_idx(m, n_A, n_B, orders, start, percentage):
     n_dist_computed : int
         The number of distances computed
     """
-
     max_n_dist = 0
     for order_idx in range(orders.shape[0]):
         k = orders[order_idx]
@@ -79,7 +78,7 @@ def _get_orders_ranges(n_split, m, n_A, n_B, orders, start, percentage):
     orders into `n_split` chunks, and determine the appropriate start and stop
     (exclusive) order index ranges for each chunk
 
-     Parameters
+    Parameters
     ----------
     n_split : int
         The number of chunks to split the percentage of desired orders into
@@ -110,7 +109,6 @@ def _get_orders_ranges(n_split, m, n_A, n_B, orders, start, percentage):
         The start (column 1) and (exclusive) stop (column 2) orders index ranges
         that corresponds to a desired percentage of distances to compute
     """
-
     max_order_idx, n_dist_computed = _get_max_order_idx(
         m, n_A, n_B, orders, start, percentage
     )
@@ -218,7 +216,6 @@ def _compute_diagonal(
     -------
     None
     """
-
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
 
@@ -310,7 +307,6 @@ def _scrump(T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, orders, orders_ranges, ignore_tr
 
     See Algorithm 1
     """
-
     n = T_B.shape[0]
     l = n - m + 1
     n_threads = config.NUMBA_NUM_THREADS
@@ -422,7 +418,6 @@ def _prescrump(
 
     See Algorithm 2
     """
-
     l = QT.shape[0]
     # Update P[i] relative to all T[j : j + m]
     Q = T_B[i : i + m]
@@ -474,9 +469,9 @@ def _prescrump(
 
 def prescrump(T_A, m, T_B=None, s=None):
     """
-    This is a convenience wrapper around the Numba JIT-compiled parallelized
-    `_prescrump` function which computes the approximate matrix profile according
-    to the preSCRIMP algorithm
+    A convenience wrapper around the Numba JIT-compiled parallelized `_prescrump`
+    function which computes the approximate matrix profile according to the preSCRIMP
+    algorithm
 
     Parameters
     ----------
@@ -508,7 +503,6 @@ def prescrump(T_A, m, T_B=None, s=None):
 
     See Algorithm 2
     """
-
     T_A = np.asarray(T_A)
     T_A = T_A.copy()
     T_A[np.isinf(T_A)] = np.nan
@@ -621,7 +615,6 @@ def scrump(
 
     See Algorithm 1 and Algorithm 2
     """
-
     if T_B is None:
         T_B = T_A
         ignore_trivial = True

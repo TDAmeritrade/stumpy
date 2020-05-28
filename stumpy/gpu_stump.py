@@ -113,7 +113,6 @@ def _compute_and_update_PI_kernel(
 
     See Table II, Figure 5, and Figure 6
     """
-
     start = cuda.grid(1)
     stride = cuda.gridsize(1)
     threshold = 1e-10
@@ -283,7 +282,6 @@ def _gpu_stump(
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-
     threads_per_block = config.STUMPY_THREADS_PER_BLOCK
     blocks_per_grid = math.ceil(k / threads_per_block)
 
@@ -409,7 +407,6 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
 
     Notes
     -----
-
     `DOI: 10.1109/ICDM.2016.0085 \
     <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
@@ -436,7 +433,6 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-
     if T_B is None:  # Self join!
         T_B = T_A
         ignore_trivial = True

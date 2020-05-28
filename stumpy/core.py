@@ -18,23 +18,21 @@ except ImportError:
 
 def driver_not_found(*args, **kwargs):  # pragma: no cover
     """
-    Helper function to raise CudaSupportError driver not found error
+    Helper function to raise CudaSupportError driver not found error.
     """
-
     _raise_driver_not_found()
 
 
 def get_pkg_name():  # pragma: no cover
     """
-    Return package name
+    Return package name.
     """
-
     return __name__.split(".")[0]
 
 
 def rolling_window(a, window):
     """
-    Use strides to generate rolling/sliding windows for a numpy array
+    Use strides to generate rolling/sliding windows for a numpy array.
 
     Parameters
     ----------
@@ -49,7 +47,6 @@ def rolling_window(a, window):
     output : ndarray
         This will be a new view of the original input array.
     """
-
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
     strides = a.strides + (a.strides[-1],)
 
@@ -82,14 +79,13 @@ def z_norm(a, axis=0):
 
 def check_nan(a):  # pragma: no cover
     """
-    Check if the array contains NaNs
+    Check if the array contains NaNs.
 
     Raises
     ------
     ValueError
         If the array contains a NaN
     """
-
     if np.any(np.isnan(a)):
         msg = "Input array contains one or more NaNs"
         raise ValueError(msg)
@@ -106,7 +102,6 @@ def check_dtype(a, dtype=np.floating):  # pragma: no cover
     TypeError
         If the array type does not match `dtype`
     """
-
     if not np.issubdtype(a.dtype, dtype):
         msg = f"{dtype} type expected but found {a.dtype}"
         raise TypeError(msg)
@@ -133,7 +128,6 @@ def transpose_dataframe(a):  # pragma: no cover
     output : a
         If a is a Pandas `DataFrame` then return `a.T`. Otherwise, return `a`
     """
-
     if type(a).__name__ == "DataFrame":
         return a.T
 
@@ -158,7 +152,6 @@ def are_arrays_equal(a, b):  # pragma: no cover
     output : bool
         Returns `True` if the arrays are equal and `False` otherwise.
     """
-
     if id(a) == id(b):
         return True
 
@@ -189,7 +182,6 @@ def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
         Returns `True` if the matrix profile distances are all below the
         threshold and `False` if they are all above the threshold.
     """
-
     if a.mean() < threshold or np.all(a < threshold):
         return True
 
@@ -255,7 +247,6 @@ def sliding_dot_product(Q, T):
 
     Padding is done automatically in fftconvolve step
     """
-
     n = T.shape[0]
     m = Q.shape[0]
     Qr = np.flipud(Q)  # Reverse/flip Q
@@ -305,7 +296,6 @@ def compute_mean_std(T, m):
     Note that Mueen's algorithm has an off-by-one bug where the
     sum for the first subsequence is omitted and we fixed that!
     """
-
     num_chunks = config.STUMPY_MEAN_STD_NUM_CHUNKS
     max_iter = config.STUMPY_MEAN_STD_MAX_ITER
 
@@ -384,7 +374,6 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
     See Equation on Page 4
     """
-
     threshold = 1e-10
     if np.isinf(M_T) or np.isinf(μ_Q):
         D_squared = np.inf
@@ -440,7 +429,6 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
     See Equation on Page 4
     """
-
     k = M_T.shape[0]
     D_squared = np.empty(k)
 
@@ -487,7 +475,6 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
     See Equation on Page 4
     """
-
     D_squared = _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
 
     return np.sqrt(D_squared)
@@ -564,8 +551,8 @@ def mueen_calculate_distance_profile(Q, T):
 @njit(fastmath=True)
 def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
-    This is the Numba JIT compiled algorithm for computing the distance profile
-    using the MASS algorithm
+    A Numba JIT compiled algorithm for computing the distance profile using the MASS
+    algorithm.
 
     Parameters
     ----------
@@ -602,7 +589,6 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
     Note: Unlike the Matrix Profile I paper, here, M_T, Σ_T can be calculated
     once for all subsequences of T and passed in so the redundancy is removed
     """
-
     m = Q.shape[0]
 
     return calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
@@ -644,7 +630,6 @@ def mass(Q, T, M_T=None, Σ_T=None):
     Note: Unlike the Matrix Profile I paper, here, M_T, Σ_T can be calculated
     once for all subsequences of T and passed in so the redundancy is removed
     """
-
     Q = np.asarray(Q)
     check_dtype(Q)
     m = Q.shape[0]
@@ -695,7 +680,6 @@ def apply_exclusion_zone(D, idx, excl_zone):
     excl_zone : int
         Size of the exclusion zone.
     """
-
     zone_start = max(0, idx - excl_zone)
     zone_stop = min(D.shape[-1], idx + excl_zone)
     D[..., zone_start : zone_stop + 1] = np.inf
@@ -727,7 +711,6 @@ def preprocess(T, m):
     Σ_T : ndarray
         Rolling standard deviation
     """
-
     T = T.copy()
     T = np.asarray(T)
 
@@ -752,7 +735,6 @@ def array_to_temp_file(a):
     fname : str
         The output file name
     """
-
     fname = tempfile.NamedTemporaryFile(delete=False)
     fname = fname.name + ".npy"
     np.save(fname, a, allow_pickle=False)
@@ -764,11 +746,10 @@ def _get_array_ranges(
     a, n_chunks, custom_cumsum=None, custom_insert=None, truncate=False
 ):
     """
-    Given an input array, split it into `n_chunks`
+    Given an input array, split it into `n_chunks`.
 
     Parameters
     ----------
-
     a : ndarray
         An array to be split
 
@@ -789,13 +770,11 @@ def _get_array_ranges(
 
     Returns
     -------
-
     array_ranges : ndarray
         A two column array where each row consists of a start and (exclusive) stop index
         pair. The first column contains the start indices and the second column
         contains the stop indices.
     """
-
     array_ranges = np.zeros((n_chunks, 2), np.int64)
     if custom_cumsum is None:
         custom_cumsum = a.cumsum() / a.sum()

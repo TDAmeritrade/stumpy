@@ -57,7 +57,6 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, include=None, discords=False):
     D : ndarray
         Multi-dimensional distance profile
     """
-
     d, n = T.shape
     k = n - m + 1
 
@@ -157,7 +156,6 @@ def _get_first_mstump_profile(
         Multi-dimensional matrix profile index for the window with index
         equal to `start`
     """
-
     d, n = T_A.shape
     D = _multi_mass(
         T_B[:, start : start + m],
@@ -211,7 +209,6 @@ def _get_multi_QT(start, T, m):
     QT_first : ndarray
         Multi-dimensional QT for the first window
     """
-
     d = T.shape[0]
     k = T.shape[1] - m + 1
 
@@ -281,7 +278,6 @@ def _compute_multi_D(
 
     Notes
     -----
-
     `DOI: 10.1109/ICDM.2017.66 \
     <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
@@ -456,13 +452,11 @@ def _mstump(
 
     Notes
     -----
-
     `DOI: 10.1109/ICDM.2017.66 \
     <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
     See mSTAMP Algorithm
     """
-
     QT_odd = QT.copy()
     QT_even = QT.copy()
     d = T.shape[0]
@@ -561,13 +555,11 @@ def mstump(T, m, include=None, discords=False):
 
     Notes
     -----
-
     `DOI: 10.1109/ICDM.2017.66 \
     <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
     See mSTAMP Algorithm
     """
-
     T_A = core.transpose_dataframe(T)
     T_B = T_A
 
