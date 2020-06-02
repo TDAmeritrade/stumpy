@@ -32,9 +32,13 @@ substitution_locations = [
 substitution_values = [np.nan, np.inf]
 
 
-@pytest.mark.parametrize("T, m", test_data)
-def test_multi_mass(T, m):
+def test_multi_mass_seeded():
+    np.random.seed(5)
+    T = np.random.uniform(-1000, 1000, [3, 10]).astype(np.float64)
+    m = 5
+
     trivial_idx = 2
+
     Q = T[:, trivial_idx : trivial_idx + m]
 
     left = naive.multi_mass(Q, T, m)
@@ -42,7 +46,21 @@ def test_multi_mass(T, m):
     M_T, Σ_T = core.compute_mean_std(T, m)
     right = _multi_mass(Q, T, m, M_T, Σ_T, M_T[:, trivial_idx], Σ_T[:, trivial_idx])
 
-    npt.assert_almost_equal(left, right)
+    npt.assert_almost_equal(left, right, decimal=6)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_multi_mass(T, m):
+    trivial_idx = 2
+
+    Q = T[:, trivial_idx : trivial_idx + m]
+
+    left = naive.multi_mass(Q, T, m)
+
+    M_T, Σ_T = core.compute_mean_std(T, m)
+    right = _multi_mass(Q, T, m, M_T, Σ_T, M_T[:, trivial_idx], Σ_T[:, trivial_idx])
+
+    npt.assert_almost_equal(left, right, decimal=6)
 
 
 @pytest.mark.parametrize("T, m", test_data)

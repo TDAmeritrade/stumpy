@@ -105,11 +105,15 @@ def replace_inf(x, value=0):
 
 
 def multi_mass(Q, T, m, include=None, discords=False):
-    T = T.copy()
-    Q = Q.copy()
+    T_inf = np.isinf(T)
+    if np.any(T_inf):
+        T = T.copy()
+        T[T_inf] = np.nan
 
-    T[np.isinf(T)] = np.nan
-    Q[np.isinf(Q)] = np.nan
+    Q_inf = np.isinf(Q)
+    if np.any(Q_inf):
+        Q = Q.copy()
+        Q[Q_inf] = np.nan
 
     d, n = T.shape
 
