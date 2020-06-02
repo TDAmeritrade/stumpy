@@ -12,7 +12,7 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
-def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, include=None, discords=False):
+def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
     """
     A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
     (MASS) to compute multi-dimensional distance profile.
@@ -69,6 +69,65 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, include=None, discords=False):
             D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
 
     return D
+
+
+def _apply_include(
+    D,
+    include,
+    restricted_indices=None,
+    unrestricted_indices=None,
+    mask=None,
+    tmp_swap=None,
+):
+    """
+    Apply a transformation to the multi-dimensional distance profile so that specific
+    dimensions are always included. Essentially, it is swapping rows within the distance
+    profile.
+
+    Parameters
+    ----------
+    D : ndarray
+        The multi-dimensional distance profile
+
+    include : ndarray
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    restricted_indices : ndarray
+        A list of indices specified in `include` that reside in the first
+        `include.shape[0]` rows
+
+    unrestricted_indices : ndarray
+        A list of indices specified in `include` that do not reside in the first
+        `include.shape[0]` rows
+
+    mask : ndarray
+        A boolean mask to select for unrestricted indices
+
+    tmp_swap : ndarray
+        A reusable array to aid in array element swapping
+    """
+    if restricted_indices is None:
+        restricted_indices = include[include < include.shape[0]]
+
+    if unrestricted_indices is None:
+        unrestricted_indices = include[include >= include.shape[0]]
+
+    if mask is None:
+        mask = np.ones(include.shape[0], bool)
+        mask[restricted_indices] = False
+
+    if tmp_swap is None:
+        tmp_swap = D[: include.shape[0]].copy()
+    else:
+        tmp_swap[:] = D[: include.shape[0]]
+
+    D[: include.shape[0]] = D[include]
+    D[unrestricted_indices] = tmp_swap[mask]
 
 
 def _get_first_mstump_profile(
@@ -135,20 +194,13 @@ def _get_first_mstump_profile(
     """
     d, n = T_A.shape
     k = n - m + 1
+    start_row_idx = 0
     D = _multi_mass(
         T_B[:, start : start + m], T_A, m, M_T, Σ_T, μ_Q[:, start], σ_Q[:, start]
     )
 
-    # Column-wise sort
-    start_row_idx = 0
     if include is not None:
-        restricted_indices = include[include < include.shape[0]]
-        unrestricted_indices = include[include >= include.shape[0]]
-        mask = np.ones(include.shape[0], bool)
-        mask[restricted_indices] = False
-        tmp_swap = D[: include.shape[0]].copy()
-        D[: include.shape[0]] = D[include]
-        D[unrestricted_indices] = tmp_swap[mask]
+        _apply_include(D, include)
         start_row_idx = include.shape[0]
 
     if discords:
@@ -457,6 +509,7 @@ def _mstump(
     I = np.empty((d, range_stop - range_start), dtype=int)
     D = np.empty((d, k), dtype=float)
     D_prime = np.empty(k, dtype=float)
+    start_row_idx = 0
 
     if include is not None:
         tmp_swap = np.empty((include.shape[0], k))
@@ -483,11 +536,10 @@ def _mstump(
             σ_Q,
         )
 
-        start_row_idx = 0
         if include is not None:
-            tmp_swap[:] = D[: include.shape[0]]
-            D[: include.shape[0]] = D[include]
-            D[unrestricted_indices] = tmp_swap[mask]
+            _apply_include(
+                D, include, restricted_indices, unrestricted_indices, mask, tmp_swap,
+            )
             start_row_idx = include.shape[0]
 
         if discords:

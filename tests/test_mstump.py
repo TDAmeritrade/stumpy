@@ -23,12 +23,10 @@ def naive_rolling_window_dot_product(Q, T):
 
 test_data = [
     (np.array([[584, -11, 23, 79, 1001, 0, -19]], dtype=np.float64), 3),
-    (np.random.uniform(-1000, 1000, [3, 10]).astype(np.float64), 5),
+    (np.random.uniform(-1000, 1000, [5, 20]).astype(np.float64), 5),
 ]
 
-substitution_locations = [
-    (slice(1, 3), [0, 3])
-]  # [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
+substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 substitution_values = [np.nan, np.inf]
 
 
@@ -129,15 +127,16 @@ def test_mstump(T, m):
 
 @pytest.mark.parametrize("T, m", test_data)
 def test_mstump_include(T, m):
-    for i in range(T.shape[0]):
-        include = np.asarray([i])
-        excl_zone = int(np.ceil(m / 4))
+    for width in range(T.shape[0]):
+        for i in range(T.shape[0] - width):
+            include = np.asarray(range(i, i + width + 1))
+            excl_zone = int(np.ceil(m / 4))
 
-        left_P, left_I = naive.mstump(T, m, excl_zone, include)
-        right_P, right_I = mstump(T, m, include)
+            left_P, left_I = naive.mstump(T, m, excl_zone, include)
+            right_P, right_I = mstump(T, m, include)
 
-        npt.assert_almost_equal(left_P, right_P)
-        npt.assert_almost_equal(left_I, right_I)
+            npt.assert_almost_equal(left_P, right_P)
+            npt.assert_almost_equal(left_I, right_I)
 
 
 @pytest.mark.parametrize("T, m", test_data)
@@ -153,15 +152,17 @@ def test_mstump_discords(T, m):
 
 @pytest.mark.parametrize("T, m", test_data)
 def test_mstump_include_discords(T, m):
-    for i in range(T.shape[0]):
-        include = np.asarray([i])
-        excl_zone = int(np.ceil(m / 4))
+    for width in range(T.shape[0]):
+        for i in range(T.shape[0] - width):
+            include = np.asarray(range(i, i + width + 1))
 
-        left_P, left_I = naive.mstump(T, m, excl_zone, include, discords=True)
-        right_P, right_I = mstump(T, m, include, discords=True)
+            excl_zone = int(np.ceil(m / 4))
 
-        npt.assert_almost_equal(left_P, right_P)
-        npt.assert_almost_equal(left_I, right_I)
+            left_P, left_I = naive.mstump(T, m, excl_zone, include, discords=True)
+            right_P, right_I = mstump(T, m, include, discords=True)
+
+            npt.assert_almost_equal(left_P, right_P)
+            npt.assert_almost_equal(left_I, right_I)
 
 
 @pytest.mark.parametrize("T, m", test_data)
@@ -183,22 +184,23 @@ def test_mstump_wrapper(T, m):
 
 @pytest.mark.parametrize("T, m", test_data)
 def test_mstump_wrapper_include(T, m):
-    for i in range(T.shape[0]):
-        include = np.asarray([i])
+    for width in range(T.shape[0]):
+        for i in range(T.shape[0] - width):
+            include = np.asarray(range(i, i + width + 1))
 
-        excl_zone = int(np.ceil(m / 4))
+            excl_zone = int(np.ceil(m / 4))
 
-        left_P, left_I = naive.mstump(T, m, excl_zone, include)
-        right_P, right_I = mstump(T, m, include)
+            left_P, left_I = naive.mstump(T, m, excl_zone, include)
+            right_P, right_I = mstump(T, m, include)
 
-        npt.assert_almost_equal(left_P, right_P)
-        npt.assert_almost_equal(left_I, right_I)
+            npt.assert_almost_equal(left_P, right_P)
+            npt.assert_almost_equal(left_I, right_I)
 
-        df = pd.DataFrame(T.T)
-        right_P, right_I = mstump(df, m, include)
+            df = pd.DataFrame(T.T)
+            right_P, right_I = mstump(df, m, include)
 
-        npt.assert_almost_equal(left_P, right_P)
-        npt.assert_almost_equal(left_I, right_I)
+            npt.assert_almost_equal(left_P, right_P)
+            npt.assert_almost_equal(left_I, right_I)
 
 
 def test_constant_subsequence_self_join():
