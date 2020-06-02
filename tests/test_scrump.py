@@ -97,9 +97,7 @@ def naive_prescrump(T_A, m, T_B, s, exclusion_zone=None):
     for i in np.random.permutation(range(0, l, s)):
         distance_profile = distance_matrix[i]
         if exclusion_zone is not None:
-            zone_start = max(0, i - exclusion_zone)
-            zone_stop = min(l, i + exclusion_zone)
-            distance_profile[zone_start : zone_stop + 1] = np.inf
+            utils.apply_exclusion_zone(distance_profile, i, exclusion_zone)
         I[i] = np.argmin(distance_profile)
         P[i] = distance_profile[I[i]]
         if P[i] == np.inf:

@@ -206,10 +206,7 @@ def test_apply_exclusion_zone():
 
     for i in range(T.shape[0]):
         left[:] = T[:]
-        for j in range(
-            max(i - exclusion_zone, 0), min(i + exclusion_zone + 1, T.shape[0])
-        ):
-            left[j] = np.inf
+        utils.apply_exclusion_zone(left, i, exclusion_zone)
 
         right[:] = T[:]
         core.apply_exclusion_zone(right, i, exclusion_zone)
@@ -229,10 +226,7 @@ def test_apply_exclusion_zone_multidimensional():
 
     for i in range(T.shape[1]):
         left[:, :] = T[:, :]
-        for j in range(
-            max(i - exclusion_zone, 0), min(i + exclusion_zone + 1, T.shape[1])
-        ):
-            left[:, j] = np.inf
+        utils.apply_exclusion_zone(left, i, exclusion_zone)
 
         right[:, :] = T[:, :]
         core.apply_exclusion_zone(right, i, exclusion_zone)

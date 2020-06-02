@@ -9,6 +9,13 @@ def z_norm(a, axis=0, threshold=1e-7):
     return (a - np.mean(a, axis, keepdims=True)) / std
 
 
+def apply_exclusion_zone(D, trivial_idx, excl_zone):
+    start = max(0, trivial_idx - excl_zone)
+    stop = min(D.shape[-1], trivial_idx + excl_zone + 1)
+    for i in range(start, stop):
+        D[..., i] = np.inf
+
+
 def naive_distance_profile(Q, T, m):
     T = T.copy()
     Q = Q.copy()
@@ -30,9 +37,9 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
 
     D = np.linalg.norm(z_norm(core.rolling_window(T, m), 1) - z_norm(Q), axis=1)
     if ignore_trivial:
+        apply_exclusion_zone(D, trivial_idx, excl_zone)
         start = max(0, trivial_idx - excl_zone)
-        stop = min(T.shape[0] - Q.shape[0] + 1, trivial_idx + excl_zone)
-        D[start : stop + 1] = np.inf
+        stop = min(D.shape[0], trivial_idx + excl_zone + 1)
     D[np.isnan(D)] = np.inf
 
     I = np.argmin(D)
@@ -138,9 +145,7 @@ def naive_PI(D, trivial_idx, excl_zone):
     P = np.full((d, k), np.inf)
     I = np.ones((d, k), dtype="int64") * -1
 
-    zone_start = max(0, trivial_idx - excl_zone)
-    zone_end = min(k, trivial_idx + excl_zone)
-    D[:, zone_start : zone_end + 1] = np.inf
+    apply_exclusion_zone(D, trivial_idx, excl_zone)
 
     for i in range(d):
         col_mask = P[i] > D[i]
