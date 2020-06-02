@@ -5,7 +5,7 @@ from stumpy import core, mstumped
 import pytest
 from dask.distributed import Client, LocalCluster
 import warnings
-import utils
+import naive
 
 
 @pytest.fixture(scope="module")
@@ -35,7 +35,7 @@ def test_mstumped_one_subsequence_inf_self_join_first_dimension(
         T_sub = T.copy()
         T_sub[0, substitution_location] = np.inf
 
-        left_P, left_I = utils.naive_mstump(T_sub, m, excl_zone)
+        left_P, left_I = naive.mstump(T_sub, m, excl_zone)
         right_P, right_I = mstumped(dask_client, T_sub, m)
 
         npt.assert_almost_equal(left_P, right_P)
@@ -54,7 +54,7 @@ def test_mstumped_one_subsequence_inf_self_join_all_dimensions(
         T_sub = T.copy()
         T_sub[:, substitution_location] = np.inf
 
-        left_P, left_I = utils.naive_mstump(T_sub, m, excl_zone)
+        left_P, left_I = naive.mstump(T_sub, m, excl_zone)
         right_P, right_I = mstumped(dask_client, T_sub, m)
 
         npt.assert_almost_equal(left_P, right_P)

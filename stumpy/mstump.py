@@ -68,29 +68,6 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, include=None, discords=False):
         else:
             D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
 
-    # Column-wise sort
-    start_row_idx = 0
-    if include is not None:
-        restricted_indices = include[include < include.shape[0]]
-        unrestricted_indices = include[include >= include.shape[0]]
-        mask = np.ones(include.shape[0], bool)
-        mask[restricted_indices] = False
-        tmp_swap = D[: include.shape[0]].copy()
-        D[: include.shape[0]] = D[include]
-        D[unrestricted_indices] = tmp_swap[mask]
-        # D[include.shape[0] :].sort(axis=0)
-        start_row_idx = include.shape[0]
-
-    if discords:
-        D[start_row_idx:][::-1].sort(axis=0)
-    else:
-        D[start_row_idx:].sort(axis=0)
-
-    D_prime = np.zeros(k)
-    for i in range(d):
-        D_prime[:] = D_prime + D[i]
-        D[i, :] = D_prime / (i + 1)
-
     return D
 
 
@@ -157,17 +134,32 @@ def _get_first_mstump_profile(
         equal to `start`
     """
     d, n = T_A.shape
+    k = n - m + 1
     D = _multi_mass(
-        T_B[:, start : start + m],
-        T_A,
-        m,
-        M_T,
-        Σ_T,
-        μ_Q[:, start],
-        σ_Q[:, start],
-        include,
-        discords,
+        T_B[:, start : start + m], T_A, m, M_T, Σ_T, μ_Q[:, start], σ_Q[:, start]
     )
+
+    # Column-wise sort
+    start_row_idx = 0
+    if include is not None:
+        restricted_indices = include[include < include.shape[0]]
+        unrestricted_indices = include[include >= include.shape[0]]
+        mask = np.ones(include.shape[0], bool)
+        mask[restricted_indices] = False
+        tmp_swap = D[: include.shape[0]].copy()
+        D[: include.shape[0]] = D[include]
+        D[unrestricted_indices] = tmp_swap[mask]
+        start_row_idx = include.shape[0]
+
+    if discords:
+        D[start_row_idx:][::-1].sort(axis=0)
+    else:
+        D[start_row_idx:].sort(axis=0)
+
+    D_prime = np.zeros(k)
+    for i in range(d):
+        D_prime[:] = D_prime + D[i]
+        D[i, :] = D_prime / (i + 1)
 
     core.apply_exclusion_zone(D, start, excl_zone)
 

@@ -4,7 +4,7 @@ import pandas as pd
 from stumpy import scrump, core, stump
 from stumpy.scrump import _get_max_order_idx, _get_orders_ranges, prescrump
 import pytest
-import utils
+import naive
 
 
 test_data = [
@@ -81,9 +81,7 @@ def naive_get_orders_ranges(n_split, m, n_A, n_B, orders, start, percentage):
 
 
 def naive_prescrump(T_A, m, T_B, s, exclusion_zone=None):
-    distance_matrix = np.array(
-        [utils.naive_distance_profile(Q, T_A, m) for Q in core.rolling_window(T_B, m)]
-    )
+    distance_matrix = naive.distance_matrix(T_A, T_B, m)
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
@@ -97,7 +95,7 @@ def naive_prescrump(T_A, m, T_B, s, exclusion_zone=None):
     for i in np.random.permutation(range(0, l, s)):
         distance_profile = distance_matrix[i]
         if exclusion_zone is not None:
-            utils.apply_exclusion_zone(distance_profile, i, exclusion_zone)
+            naive.apply_exclusion_zone(distance_profile, i, exclusion_zone)
         I[i] = np.argmin(distance_profile)
         P[i] = distance_profile[I[i]]
         if P[i] == np.inf:
@@ -126,9 +124,7 @@ def naive_prescrump(T_A, m, T_B, s, exclusion_zone=None):
 
 
 def naive_scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
-    distance_matrix = np.array(
-        [utils.naive_distance_profile(Q, T_A, m) for Q in core.rolling_window(T_B, m)]
-    )
+    distance_matrix = naive.distance_matrix(T_A, T_B, m)
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
@@ -323,8 +319,8 @@ def test_scrump_self_join(T_A, T_B, percentages):
         )
         right = next(right_gen)
 
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
         npt.assert_almost_equal(left, right)
 
 
@@ -345,8 +341,8 @@ def test_scrump_A_B_join(T_A, T_B, percentages):
         )
         right = next(right_gen)
 
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
 
         npt.assert_almost_equal(left, right)
 
@@ -368,8 +364,8 @@ def test_scrump_A_B_join_swap(T_A, T_B, percentages):
         )
         right = next(right_gen)
 
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
 
         npt.assert_almost_equal(left, right)
 
@@ -393,8 +389,8 @@ def test_scrump_self_join_larger_window(T_A, T_B, percentages):
                 )
                 right = next(right_gen)
 
-                utils.replace_inf(left)
-                utils.replace_inf(right)
+                naive.replace_inf(left)
+                naive.replace_inf(right)
                 npt.assert_almost_equal(left, right)
 
 
@@ -403,13 +399,13 @@ def test_scrump_self_join_full(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
 
-    left = utils.naive_stamp(T_B, m, exclusion_zone=zone)
+    left = naive.stamp(T_B, m, exclusion_zone=zone)
 
     right_gen = scrump(T_B, m, ignore_trivial=True, percentage=1.0, pre_scrump=False)
     right = next(right_gen)
 
-    utils.replace_inf(left)
-    utils.replace_inf(right)
+    naive.replace_inf(left)
+    naive.replace_inf(right)
     npt.assert_almost_equal(left[:, :2], right)
 
 
@@ -419,15 +415,15 @@ def test_scrump_A_B_join_full(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
 
-    left = utils.naive_stamp(T_A, m, T_B=T_B)
+    left = naive.stamp(T_A, m, T_B=T_B)
 
     right_gen = scrump(
         T_A, m, T_B, ignore_trivial=False, percentage=1.0, pre_scrump=False
     )
     right = next(right_gen)
 
-    utils.replace_inf(left)
-    utils.replace_inf(right)
+    naive.replace_inf(left)
+    naive.replace_inf(right)
 
     npt.assert_almost_equal(left[:, :2], right)
 
@@ -438,15 +434,15 @@ def test_scrump_A_B_join_full_swap(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
 
-    left = utils.naive_stamp(T_B, m, T_B=T_A)
+    left = naive.stamp(T_B, m, T_B=T_A)
 
     right_gen = scrump(
         T_B, m, T_A, ignore_trivial=False, percentage=1.0, pre_scrump=False
     )
     right = next(right_gen)
 
-    utils.replace_inf(left)
-    utils.replace_inf(right)
+    naive.replace_inf(left)
+    naive.replace_inf(right)
     npt.assert_almost_equal(left[:, :2], right)
 
 
@@ -456,15 +452,15 @@ def test_scrump_self_join_full_larger_window(T_A, T_B):
         if len(T_B) > m:
             zone = int(np.ceil(m / 4))
 
-            left = utils.naive_stamp(T_B, m, exclusion_zone=zone)
+            left = naive.stamp(T_B, m, exclusion_zone=zone)
 
             right_gen = scrump(
                 T_B, m, ignore_trivial=True, percentage=1.0, pre_scrump=False
             )
             right = next(right_gen)
 
-            utils.replace_inf(left)
-            utils.replace_inf(right)
+            naive.replace_inf(left)
+            naive.replace_inf(right)
             npt.assert_almost_equal(left[:, :2], right)
 
 
@@ -492,8 +488,8 @@ def test_scrump_plus_plus_self_join(T_A, T_B, percentages):
             )
             right = next(right_gen)
 
-            utils.replace_inf(left)
-            utils.replace_inf(right)
+            naive.replace_inf(left)
+            naive.replace_inf(right)
             npt.assert_almost_equal(left, right)
 
 
@@ -527,8 +523,8 @@ def test_scrump_plus_plus_A_B_join(T_A, T_B, percentages):
             )
             right = next(right_gen)
 
-            utils.replace_inf(left)
-            utils.replace_inf(right)
+            naive.replace_inf(left)
+            naive.replace_inf(right)
             npt.assert_almost_equal(left, right)
 
 
@@ -537,15 +533,15 @@ def test_scrump_plus_plus_self_join_full(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
 
-    left = utils.naive_stamp(T_B, m, exclusion_zone=zone)
+    left = naive.stamp(T_B, m, exclusion_zone=zone)
 
     right_gen = scrump(
         T_B, m, ignore_trivial=True, percentage=1.0, pre_scrump=True, s=zone
     )
     right = next(right_gen)
 
-    utils.replace_inf(left)
-    utils.replace_inf(right)
+    naive.replace_inf(left)
+    naive.replace_inf(right)
     npt.assert_almost_equal(left[:, :2], right)
 
 
@@ -554,15 +550,15 @@ def test_scrump_plus_plus_A_B_join_full(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
 
-    left = utils.naive_stamp(T_A, m, T_B=T_B)
+    left = naive.stamp(T_A, m, T_B=T_B)
 
     right_gen = scrump(
         T_A, m, T_B=T_B, ignore_trivial=False, percentage=1.0, pre_scrump=True, s=zone
     )
     right = next(right_gen)
 
-    utils.replace_inf(left)
-    utils.replace_inf(right)
+    naive.replace_inf(left)
+    naive.replace_inf(right)
     npt.assert_almost_equal(left[:, :2], right)
 
 
@@ -571,15 +567,15 @@ def test_scrump_plus_plus_A_B_join_full_swap(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
 
-    left = utils.naive_stamp(T_B, m, T_B=T_A)
+    left = naive.stamp(T_B, m, T_B=T_A)
 
     right_gen = scrump(
         T_B, m, T_B=T_A, ignore_trivial=False, percentage=1.0, pre_scrump=True, s=zone
     )
     right = next(right_gen)
 
-    utils.replace_inf(left)
-    utils.replace_inf(right)
+    naive.replace_inf(left)
+    naive.replace_inf(right)
     npt.assert_almost_equal(left[:, :2], right)
 
 
@@ -602,8 +598,8 @@ def test_scrump_constant_subsequence_self_join(percentages):
         )
         right = next(right_gen)
 
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
         npt.assert_almost_equal(left, right)
 
 
@@ -634,8 +630,8 @@ def test_scrump_nan_inf_self_join(
             right_gen = scrump(T_B_sub, m, percentage=percentage, pre_scrump=False)
             right = next(right_gen)
 
-            utils.replace_inf(left)
-            utils.replace_inf(right)
+            naive.replace_inf(left)
+            naive.replace_inf(right)
             npt.assert_almost_equal(left, right)
 
 
@@ -656,6 +652,6 @@ def test_scrump_nan_zero_mean_self_join(percentages):
         right_gen = scrump(T, m, percentage=percentage, pre_scrump=False)
         right = next(right_gen)
 
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
         npt.assert_almost_equal(left, right)

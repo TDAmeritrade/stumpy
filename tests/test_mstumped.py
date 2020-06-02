@@ -5,7 +5,7 @@ from stumpy import core, mstumped
 import pytest
 from dask.distributed import Client, LocalCluster
 import warnings
-import utils
+import naive
 
 
 @pytest.fixture(scope="module")
@@ -27,7 +27,7 @@ def test_mstumped(T, m, dask_cluster):
     with Client(dask_cluster) as dask_client:
         excl_zone = int(np.ceil(m / 4))
 
-        left_P, left_I = utils.naive_mstump(T, m, excl_zone)
+        left_P, left_I = naive.mstump(T, m, excl_zone)
         right_P, right_I = mstumped(dask_client, T, m)
 
         npt.assert_almost_equal(left_P, right_P)
@@ -42,7 +42,7 @@ def test_mstumped_include(T, m, dask_cluster):
             include = np.asarray([i])
             excl_zone = int(np.ceil(m / 4))
 
-            left_P, left_I = utils.naive_mstump(T, m, excl_zone, include)
+            left_P, left_I = naive.mstump(T, m, excl_zone, include)
             right_P, right_I = mstumped(dask_client, T, m, include)
 
             npt.assert_almost_equal(left_P, right_P)
@@ -55,7 +55,7 @@ def test_mstumped_discords(T, m, dask_cluster):
     with Client(dask_cluster) as dask_client:
         excl_zone = int(np.ceil(m / 4))
 
-        left_P, left_I = utils.naive_mstump(T, m, excl_zone, discords=True)
+        left_P, left_I = naive.mstump(T, m, excl_zone, discords=True)
         right_P, right_I = mstumped(dask_client, T, m, discords=True)
 
         npt.assert_almost_equal(left_P, right_P)
@@ -70,7 +70,7 @@ def test_mstumped_include_discords(T, m, dask_cluster):
             include = np.asarray([i])
             excl_zone = int(np.ceil(m / 4))
 
-            left_P, left_I = utils.naive_mstump(T, m, excl_zone, include, discords=True)
+            left_P, left_I = naive.mstump(T, m, excl_zone, include, discords=True)
             right_P, right_I = mstumped(dask_client, T, m, include, discords=True)
 
             npt.assert_almost_equal(left_P, right_P)
@@ -83,7 +83,7 @@ def test_mstumped_df(T, m, dask_cluster):
     with Client(dask_cluster) as dask_client:
         excl_zone = int(np.ceil(m / 4))
 
-        left_P, left_I = utils.naive_mstump(T, m, excl_zone)
+        left_P, left_I = naive.mstump(T, m, excl_zone)
         df = pd.DataFrame(T.T)
         right_P, right_I = mstumped(dask_client, df, m)
 
@@ -102,7 +102,7 @@ def test_constant_subsequence_self_join(dask_cluster):
 
         excl_zone = int(np.ceil(m / 4))
 
-        left_P, left_I = utils.naive_mstump(T, m, excl_zone)
+        left_P, left_I = naive.mstump(T, m, excl_zone)
         right_P, right_I = mstumped(dask_client, T, m)
 
         npt.assert_almost_equal(left_P, right_P)  # ignore indices

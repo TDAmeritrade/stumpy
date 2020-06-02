@@ -5,7 +5,7 @@ from stumpy import stumped, core
 from dask.distributed import Client, LocalCluster
 import pytest
 import warnings
-import utils
+import naive
 
 
 @pytest.fixture(scope="module")
@@ -36,10 +36,10 @@ def test_stumped_self_join(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 3
         zone = int(np.ceil(m / 4))
-        left = utils.naive_stamp(T_B, m, exclusion_zone=zone)
+        left = naive.stamp(T_B, m, exclusion_zone=zone)
         right = stumped(dask_client, T_B, m, ignore_trivial=True)
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
         npt.assert_almost_equal(left, right)
 
 
@@ -52,10 +52,10 @@ def test_stumped_self_join_df(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 3
         zone = int(np.ceil(m / 4))
-        left = utils.naive_stamp(T_B, m, exclusion_zone=zone)
+        left = naive.stamp(T_B, m, exclusion_zone=zone)
         right = stumped(dask_client, pd.Series(T_B), m, ignore_trivial=True)
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
         npt.assert_almost_equal(left, right)
 
 
@@ -69,10 +69,10 @@ def test_stump_self_join_larger_window(T_A, T_B, dask_cluster):
         for m in [8, 16, 32]:
             if len(T_B) > m:
                 zone = int(np.ceil(m / 4))
-                left = utils.naive_stamp(T_B, m, exclusion_zone=zone)
+                left = naive.stamp(T_B, m, exclusion_zone=zone)
                 right = stumped(dask_client, T_B, m, ignore_trivial=True)
-                utils.replace_inf(left)
-                utils.replace_inf(right)
+                naive.replace_inf(left)
+                naive.replace_inf(right)
 
                 npt.assert_almost_equal(left, right)
 
@@ -87,10 +87,10 @@ def test_stump_self_join_larger_window_df(T_A, T_B, dask_cluster):
         for m in [8, 16, 32]:
             if len(T_B) > m:
                 zone = int(np.ceil(m / 4))
-                left = utils.naive_stamp(T_B, m, exclusion_zone=zone)
+                left = naive.stamp(T_B, m, exclusion_zone=zone)
                 right = stumped(dask_client, pd.Series(T_B), m, ignore_trivial=True)
-                utils.replace_inf(left)
-                utils.replace_inf(right)
+                naive.replace_inf(left)
+                naive.replace_inf(right)
 
                 npt.assert_almost_equal(left, right)
 
@@ -103,10 +103,10 @@ def test_stump_self_join_larger_window_df(T_A, T_B, dask_cluster):
 def test_stumped_A_B_join(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 3
-        left = utils.naive_stamp(T_A, m, T_B=T_B)
+        left = naive.stamp(T_A, m, T_B=T_B)
         right = stumped(dask_client, T_A, m, T_B, ignore_trivial=False)
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
         npt.assert_almost_equal(left, right)
 
 
@@ -118,10 +118,10 @@ def test_stumped_A_B_join(T_A, T_B, dask_cluster):
 def test_stumped_A_B_join_df(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 3
-        left = utils.naive_stamp(T_A, m, T_B=T_B)
+        left = naive.stamp(T_A, m, T_B=T_B)
         right = stumped(
             dask_client, pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
         )
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
         npt.assert_almost_equal(left, right)

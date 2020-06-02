@@ -2,7 +2,7 @@ import numpy as np
 import numpy.testing as npt
 from stumpy import stamp, core
 import pytest
-import utils
+import naive
 
 test_data = [
     (
@@ -23,20 +23,20 @@ substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 def test_stamp_self_join(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 2))
-    left = utils.naive_stamp(T_B, m, exclusion_zone=zone)
+    left = naive.stamp(T_B, m, exclusion_zone=zone)
     right = stamp.stamp(T_B, T_B, m, ignore_trivial=True)
-    utils.replace_inf(left)
-    utils.replace_inf(right)
+    naive.replace_inf(left)
+    naive.replace_inf(right)
     npt.assert_almost_equal(left[:, :2], right)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stamp_A_B_join(T_A, T_B):
     m = 3
-    left = utils.naive_stamp(T_A, m, T_B=T_B)
+    left = naive.stamp(T_A, m, T_B=T_B)
     right = stamp.stamp(T_A, T_B, m)
-    utils.replace_inf(left)
-    utils.replace_inf(right)
+    naive.replace_inf(left)
+    naive.replace_inf(right)
     npt.assert_almost_equal(left[:, :2], right)
 
 
@@ -53,10 +53,10 @@ def test_stamp_nan_inf_self_join(T_A, T_B, substitute_B, substitution_locations)
         T_B_sub[substitution_location_B] = substitute_B
 
         zone = int(np.ceil(m / 2))
-        left = utils.naive_stamp(T_B_sub, m, exclusion_zone=zone)
+        left = naive.stamp(T_B_sub, m, exclusion_zone=zone)
         right = stamp.stamp(T_B_sub, T_B_sub, m, ignore_trivial=True)
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
         npt.assert_almost_equal(left[:, :2], right)
 
 
@@ -79,10 +79,10 @@ def test_stamp_nan_inf_A_B_join(
             T_A_sub[substitution_location_A] = substitute_A
             T_B_sub[substitution_location_B] = substitute_B
 
-            left = utils.naive_stamp(T_A_sub, m, T_B=T_B_sub)
+            left = naive.stamp(T_A_sub, m, T_B=T_B_sub)
             right = stamp.stamp(T_A_sub, T_B_sub, m)
-            utils.replace_inf(left)
-            utils.replace_inf(right)
+            naive.replace_inf(left)
+            naive.replace_inf(right)
             npt.assert_almost_equal(left[:, :2], right)
 
 
@@ -91,9 +91,9 @@ def test_stamp_nan_zero_mean_self_join():
     m = 3
 
     zone = int(np.ceil(m / 2))
-    left = utils.naive_stamp(T, m, exclusion_zone=zone)
+    left = naive.stamp(T, m, exclusion_zone=zone)
     right = stamp.stamp(T, T, m, ignore_trivial=True)
 
-    utils.replace_inf(left)
-    utils.replace_inf(right)
+    naive.replace_inf(left)
+    naive.replace_inf(right)
     npt.assert_almost_equal(left[:, :2], right)

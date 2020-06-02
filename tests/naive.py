@@ -16,26 +16,32 @@ def apply_exclusion_zone(D, trivial_idx, excl_zone):
         D[..., i] = np.inf
 
 
-def naive_distance_profile(Q, T, m):
-    T = T.copy()
-    Q = Q.copy()
+def distance_profile(Q, T, m):
+    T_inf = np.isinf(T)
+    if np.any(T_inf):
+        T = T.copy()
+        T[T_inf] = np.nan
 
-    T[np.isinf(T)] = np.nan
-    Q[np.isinf(Q)] = np.nan
+    Q_inf = np.isinf(Q)
+    if np.any(Q_inf):
+        Q = Q.copy()
+        Q[Q_inf] = np.nan
 
     D = np.linalg.norm(z_norm(core.rolling_window(T, m), 1) - z_norm(Q), axis=1)
 
     return D
 
 
-def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
-    T = T.copy()
-    Q = Q.copy()
+def distance_matrix(T_A, T_B, m):
+    distance_matrix = np.array(
+        [distance_profile(Q, T_A, m) for Q in core.rolling_window(T_B, m)]
+    )
 
-    T[np.isinf(T)] = np.nan
-    Q[np.isinf(Q)] = np.nan
+    return distance_matrix
 
-    D = np.linalg.norm(z_norm(core.rolling_window(T, m), 1) - z_norm(Q), axis=1)
+
+def mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
+    D = distance_profile(Q, T, m)
     if ignore_trivial:
         apply_exclusion_zone(D, trivial_idx, excl_zone)
         start = max(0, trivial_idx - excl_zone)
@@ -76,18 +82,18 @@ def naive_mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     return P, I, IL, IR
 
 
-def naive_stamp(T_A, m, exclusion_zone=None, T_B=None):
+def stamp(T_A, m, exclusion_zone=None, T_B=None):
     if T_B is None:  # self-join
         result = np.array(
             [
-                naive_mass(Q, T_A, m, i, exclusion_zone, True)
+                mass(Q, T_A, m, i, exclusion_zone, True)
                 for i, Q in enumerate(core.rolling_window(T_A, m))
             ],
             dtype=object,
         )
     else:
         result = np.array(
-            [naive_mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object,
+            [mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object,
         )
     return result
 
@@ -98,7 +104,7 @@ def replace_inf(x, value=0):
     return
 
 
-def naive_multi_mass(Q, T, m, include=None, discords=False):
+def multi_mass(Q, T, m, include=None, discords=False):
     T = T.copy()
     Q = Q.copy()
 
@@ -109,43 +115,18 @@ def naive_multi_mass(Q, T, m, include=None, discords=False):
 
     D = np.empty((d, n - m + 1))
     for i in range(d):
-        D[i] = np.linalg.norm(
-            z_norm(core.rolling_window(T[i], m), 1) - z_norm(Q[i]), axis=1
-        )
+        D[i] = distance_profile(Q[i], T[i], m)
+
     D[np.isnan(D)] = np.inf
 
-    start_row_idx = 0
-    if include is not None:
-        restricted_indices = include[include < include.shape[0]]
-        unrestricted_indices = include[include >= include.shape[0]]
-        mask = np.ones(include.shape[0], bool)
-        mask[restricted_indices] = False
-        tmp_swap = D[: include.shape[0]].copy()
-        D[: include.shape[0]] = D[include]
-        D[unrestricted_indices] = tmp_swap[mask]
-        start_row_idx = include.shape[0]
-
-    if discords:
-        D[start_row_idx:][::-1].sort(axis=0)
-    else:
-        D[start_row_idx:].sort(axis=0)
-
-    D_prime = np.zeros(n - m + 1)
-    D_prime_prime = np.zeros((d, n - m + 1))
-    for i in range(d):
-        D_prime[:] = D_prime + D[i]
-        D_prime_prime[i, :] = D_prime / (i + 1)
-
-    return D_prime_prime
+    return D
 
 
-def naive_PI(D, trivial_idx, excl_zone):
+def PI(D, trivial_idx, excl_zone):
     d, k = D.shape
 
     P = np.full((d, k), np.inf)
     I = np.ones((d, k), dtype="int64") * -1
-
-    apply_exclusion_zone(D, trivial_idx, excl_zone)
 
     for i in range(d):
         col_mask = P[i] > D[i]
@@ -155,7 +136,7 @@ def naive_PI(D, trivial_idx, excl_zone):
     return P, I
 
 
-def naive_mstump(T, m, excl_zone, include=None, discords=False):
+def mstump(T, m, excl_zone, include=None, discords=False):
     T = T.copy()
 
     d, n = T.shape
@@ -166,9 +147,33 @@ def naive_mstump(T, m, excl_zone, include=None, discords=False):
 
     for i in range(k):
         Q = T[:, i : i + m]
-        D = naive_multi_mass(Q, T, m, include, discords)
+        D = multi_mass(Q, T, m, include, discords)
 
-        P_i, I_i = naive_PI(D, i, excl_zone)
+        start_row_idx = 0
+        if include is not None:
+            restricted_indices = include[include < include.shape[0]]
+            unrestricted_indices = include[include >= include.shape[0]]
+            mask = np.ones(include.shape[0], bool)
+            mask[restricted_indices] = False
+            tmp_swap = D[: include.shape[0]].copy()
+            D[: include.shape[0]] = D[include]
+            D[unrestricted_indices] = tmp_swap[mask]
+            start_row_idx = include.shape[0]
+
+        if discords:
+            D[start_row_idx:][::-1].sort(axis=0)
+        else:
+            D[start_row_idx:].sort(axis=0)
+
+        D_prime = np.zeros(n - m + 1)
+        D_prime_prime = np.zeros((d, n - m + 1))
+        for j in range(d):
+            D_prime[:] = D_prime + D[j]
+            D_prime_prime[j, :] = D_prime / (j + 1)
+
+        apply_exclusion_zone(D_prime_prime, i, excl_zone)
+
+        P_i, I_i = PI(D_prime_prime, i, excl_zone)
 
         for dim in range(T.shape[0]):
             col_mask = P[dim] > P_i[dim]
@@ -178,7 +183,7 @@ def naive_mstump(T, m, excl_zone, include=None, discords=False):
     return P.T, I.T
 
 
-def get_naive_array_ranges(a, n_chunks, truncate=False):
+def get_array_ranges(a, n_chunks, truncate=False):
     out = np.zeros((n_chunks, 2), np.int64)
     ranges_idx = 0
     range_start_idx = 0

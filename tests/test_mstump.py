@@ -10,7 +10,7 @@ from stumpy import (
     _get_multi_QT,
 )
 import pytest
-import utils
+import naive
 
 
 def naive_rolling_window_dot_product(Q, T):
@@ -37,7 +37,7 @@ def test_multi_mass(T, m):
     trivial_idx = 2
     Q = T[:, trivial_idx : trivial_idx + m]
 
-    left = utils.naive_multi_mass(Q, T, m)
+    left = naive.multi_mass(Q, T, m)
 
     M_T, Σ_T = core.compute_mean_std(T, m)
     right = _multi_mass(Q, T, m, M_T, Σ_T, M_T[:, trivial_idx], Σ_T[:, trivial_idx])
@@ -50,7 +50,7 @@ def test_get_first_mstump_profile(T, m):
     excl_zone = int(np.ceil(m / 4))
     start = 0
 
-    left_P, left_I = utils.naive_mstump(T, m, excl_zone)
+    left_P, left_I = naive.mstump(T, m, excl_zone)
     left_P = left_P[start, :]
     left_I = left_I[start, :]
 
@@ -88,11 +88,11 @@ def test_naive_mstump():
 
     zone = int(np.ceil(m / 4))
 
-    left = utils.naive_stamp(T[0], m, exclusion_zone=zone)
+    left = naive.stamp(T[0], m, exclusion_zone=zone)
     left_P = left[np.newaxis, :, 0].T
     left_I = left[np.newaxis, :, 1].T
 
-    right_P, right_I = utils.naive_mstump(T, m, zone)
+    right_P, right_I = naive.mstump(T, m, zone)
 
     npt.assert_almost_equal(left_P, right_P)
     npt.assert_almost_equal(left_I, right_I)
@@ -102,7 +102,7 @@ def test_naive_mstump():
 def test_mstump(T, m):
     excl_zone = int(np.ceil(m / 4))
 
-    left_P, left_I = utils.naive_mstump(T, m, excl_zone)
+    left_P, left_I = naive.mstump(T, m, excl_zone)
     right_P, right_I = mstump(T, m)
 
     npt.assert_almost_equal(left_P, right_P)
@@ -115,7 +115,7 @@ def test_mstump_include(T, m):
         include = np.asarray([i])
         excl_zone = int(np.ceil(m / 4))
 
-        left_P, left_I = utils.naive_mstump(T, m, excl_zone, include)
+        left_P, left_I = naive.mstump(T, m, excl_zone, include)
         right_P, right_I = mstump(T, m, include)
 
         npt.assert_almost_equal(left_P, right_P)
@@ -126,7 +126,7 @@ def test_mstump_include(T, m):
 def test_mstump_discords(T, m):
     excl_zone = int(np.ceil(m / 4))
 
-    left_P, left_I = utils.naive_mstump(T, m, excl_zone, discords=True)
+    left_P, left_I = naive.mstump(T, m, excl_zone, discords=True)
     right_P, right_I = mstump(T, m, discords=True)
 
     npt.assert_almost_equal(left_P, right_P)
@@ -139,7 +139,7 @@ def test_mstump_include_discords(T, m):
         include = np.asarray([i])
         excl_zone = int(np.ceil(m / 4))
 
-        left_P, left_I = utils.naive_mstump(T, m, excl_zone, include, discords=True)
+        left_P, left_I = naive.mstump(T, m, excl_zone, include, discords=True)
         right_P, right_I = mstump(T, m, include, discords=True)
 
         npt.assert_almost_equal(left_P, right_P)
@@ -150,7 +150,7 @@ def test_mstump_include_discords(T, m):
 def test_mstump_wrapper(T, m):
     excl_zone = int(np.ceil(m / 4))
 
-    left_P, left_I = utils.naive_mstump(T, m, excl_zone)
+    left_P, left_I = naive.mstump(T, m, excl_zone)
     right_P, right_I = mstump(T, m)
 
     npt.assert_almost_equal(left_P, right_P)
@@ -170,7 +170,7 @@ def test_mstump_wrapper_include(T, m):
 
         excl_zone = int(np.ceil(m / 4))
 
-        left_P, left_I = utils.naive_mstump(T, m, excl_zone, include)
+        left_P, left_I = naive.mstump(T, m, excl_zone, include)
         right_P, right_I = mstump(T, m, include)
 
         npt.assert_almost_equal(left_P, right_P)
@@ -190,7 +190,7 @@ def test_constant_subsequence_self_join():
 
     excl_zone = int(np.ceil(m / 4))
 
-    left_P, left_I = utils.naive_mstump(T, m, excl_zone)
+    left_P, left_I = naive.mstump(T, m, excl_zone)
     right_P, right_I = mstump(T, m)
 
     npt.assert_almost_equal(left_P, right_P)  # ignore indices
@@ -210,7 +210,7 @@ def test_mstump_nan_inf_self_join_first_dimension(
         T_sub[:] = T[:]
         T_sub[0, substitution_location] = substitute
 
-        left_P, left_I = utils.naive_mstump(T_sub, m, excl_zone)
+        left_P, left_I = naive.mstump(T_sub, m, excl_zone)
         right_P, right_I = mstump(T_sub, m)
 
         npt.assert_almost_equal(left_P, right_P)
@@ -229,7 +229,7 @@ def test_mstump_nan_self_join_all_dimensions(T, m, substitute, substitution_loca
         T_sub[:] = T[:]
         T_sub[:, substitution_location] = substitute
 
-        left_P, left_I = utils.naive_mstump(T_sub, m, excl_zone)
+        left_P, left_I = naive.mstump(T_sub, m, excl_zone)
         right_P, right_I = mstump(T_sub, m)
 
         npt.assert_almost_equal(left_P, right_P)

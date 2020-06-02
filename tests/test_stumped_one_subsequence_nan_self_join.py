@@ -5,7 +5,7 @@ from stumpy import stumped, core
 from dask.distributed import Client, LocalCluster
 import pytest
 import warnings
-import utils
+import naive
 
 
 @pytest.fixture(scope="module")
@@ -45,8 +45,8 @@ def test_stumped_one_subsequence_nan_self_join(
         T_B_sub[substitution_location_B] = np.nan
 
         zone = int(np.ceil(m / 4))
-        left = utils.naive_stamp(T_B_sub, m, exclusion_zone=zone)
+        left = naive.stamp(T_B_sub, m, exclusion_zone=zone)
         right = stumped(dask_client, T_B_sub, m, ignore_trivial=True)
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
         npt.assert_almost_equal(left, right)
