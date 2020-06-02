@@ -8,6 +8,7 @@ from .mstump import (  # noqa: F401
     _get_first_mstump_profile,
     _get_multi_QT,
     _multi_mass,
+    _apply_include,
 )
 from .mstumped import mstumped  # noqa: F401
 from .chains import atsc, allc  # noqa: F401

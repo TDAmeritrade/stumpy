@@ -8,6 +8,7 @@ from stumpy import (
     _multi_mass,
     _get_first_mstump_profile,
     _get_multi_QT,
+    _apply_include,
 )
 import pytest
 import naive
@@ -21,6 +22,19 @@ def naive_rolling_window_dot_product(Q, T):
     return result
 
 
+def naive_apply_include(D, include):
+    tmp = []
+    for i in range(include.shape[0]):
+        tmp.append(D[i])
+
+    for i in range(include.shape[0]):
+        D[i] = D[include[i]]
+
+    for i in range(include.shape[0]):
+        if include[i] >= include.shape[0]:
+            D[include[i]] = tmp[i]
+
+
 test_data = [
     (np.array([[584, -11, 23, 79, 1001, 0, -19]], dtype=np.float64), 3),
     (np.random.uniform(-1000, 1000, [5, 20]).astype(np.float64), 5),
@@ -28,6 +42,22 @@ test_data = [
 
 substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 substitution_values = [np.nan, np.inf]
+
+
+def test_apply_include():
+    D = np.random.uniform(-1000, 1000, [10, 20]).astype(np.float64)
+    left_D = np.empty(D.shape)
+    right_D = np.empty(D.shape)
+    for width in range(D.shape[0]):
+        for i in range(D.shape[0] - width):
+            left_D[:, :] = D[:, :]
+            right_D[:, :] = D[:, :]
+            include = np.asarray(range(i, i + width + 1))
+
+            naive_apply_include(D, include)
+            _apply_include(D, include)
+
+            npt.assert_almost_equal(left_D, right_D)
 
 
 def test_multi_mass_seeded():
