@@ -305,16 +305,20 @@ def compute_mean_std(T, m):
     for iteration in range(max_iter):
         try:
             chunk_size = math.ceil((T.shape[-1] + 1) / num_chunks)
+            if chunk_size < m:
+                chunk_size = m
 
             mean_chunks = []
             std_chunks = []
             for chunk in range(num_chunks):
                 start = chunk * chunk_size
                 stop = min(start + chunk_size + m - 1, T.shape[-1])
+                if stop - start < m:
+                    break
 
-                tmp_mean = np.mean(rolling_window(T[start:stop], m), axis=T.ndim)
+                tmp_mean = np.mean(rolling_window(T[..., start:stop], m), axis=T.ndim)
                 mean_chunks.append(tmp_mean)
-                tmp_std = np.nanstd(rolling_window(T[start:stop], m), axis=T.ndim)
+                tmp_std = np.nanstd(rolling_window(T[..., start:stop], m), axis=T.ndim)
                 std_chunks.append(tmp_std)
 
             M_T = np.hstack(mean_chunks)
