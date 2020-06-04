@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import core
+from stumpy import core, config
 import pytest
 import os
 
@@ -102,6 +102,40 @@ def test_compute_mean_std(Q, T):
 
 
 @pytest.mark.parametrize("Q, T", test_data)
+def test_compute_mean_std_chunked(Q, T):
+    m = Q.shape[0]
+
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 2
+    left_μ_Q, left_σ_Q = naive_compute_mean_std(Q, m)
+    left_M_T, left_Σ_T = naive_compute_mean_std(T, m)
+    right_μ_Q, right_σ_Q = core.compute_mean_std(Q, m)
+    right_M_T, right_Σ_T = core.compute_mean_std(T, m)
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
+
+    npt.assert_almost_equal(left_μ_Q, right_μ_Q)
+    npt.assert_almost_equal(left_σ_Q, right_σ_Q)
+    npt.assert_almost_equal(left_M_T, right_M_T)
+    npt.assert_almost_equal(left_Σ_T, right_Σ_T)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_compute_mean_std_chunked_many(Q, T):
+    m = Q.shape[0]
+
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 128
+    left_μ_Q, left_σ_Q = naive_compute_mean_std(Q, m)
+    left_M_T, left_Σ_T = naive_compute_mean_std(T, m)
+    right_μ_Q, right_σ_Q = core.compute_mean_std(Q, m)
+    right_M_T, right_Σ_T = core.compute_mean_std(T, m)
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
+
+    npt.assert_almost_equal(left_μ_Q, right_μ_Q)
+    npt.assert_almost_equal(left_σ_Q, right_σ_Q)
+    npt.assert_almost_equal(left_M_T, right_M_T)
+    npt.assert_almost_equal(left_Σ_T, right_Σ_T)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
 def test_compute_mean_std_multidimensional(Q, T):
     m = Q.shape[0]
 
@@ -112,6 +146,46 @@ def test_compute_mean_std_multidimensional(Q, T):
     left_M_T, left_Σ_T = naive_compute_mean_std_multidimensional(T, m)
     right_μ_Q, right_σ_Q = core.compute_mean_std(Q, m)
     right_M_T, right_Σ_T = core.compute_mean_std(T, m)
+
+    npt.assert_almost_equal(left_μ_Q, right_μ_Q)
+    npt.assert_almost_equal(left_σ_Q, right_σ_Q)
+    npt.assert_almost_equal(left_M_T, right_M_T)
+    npt.assert_almost_equal(left_Σ_T, right_Σ_T)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_compute_mean_std_multidimensional_chunked(Q, T):
+    m = Q.shape[0]
+
+    Q = np.array([Q, np.random.uniform(-1000, 1000, [Q.shape[0]])])
+    T = np.array([T, T, np.random.uniform(-1000, 1000, [T.shape[0]])])
+
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 2
+    left_μ_Q, left_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
+    left_M_T, left_Σ_T = naive_compute_mean_std_multidimensional(T, m)
+    right_μ_Q, right_σ_Q = core.compute_mean_std(Q, m)
+    right_M_T, right_Σ_T = core.compute_mean_std(T, m)
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
+
+    npt.assert_almost_equal(left_μ_Q, right_μ_Q)
+    npt.assert_almost_equal(left_σ_Q, right_σ_Q)
+    npt.assert_almost_equal(left_M_T, right_M_T)
+    npt.assert_almost_equal(left_Σ_T, right_Σ_T)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_compute_mean_std_multidimensional_chunked_many(Q, T):
+    m = Q.shape[0]
+
+    Q = np.array([Q, np.random.uniform(-1000, 1000, [Q.shape[0]])])
+    T = np.array([T, T, np.random.uniform(-1000, 1000, [T.shape[0]])])
+
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 128
+    left_μ_Q, left_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
+    left_M_T, left_Σ_T = naive_compute_mean_std_multidimensional(T, m)
+    right_μ_Q, right_σ_Q = core.compute_mean_std(Q, m)
+    right_M_T, right_Σ_T = core.compute_mean_std(T, m)
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
 
     npt.assert_almost_equal(left_μ_Q, right_μ_Q)
     npt.assert_almost_equal(left_σ_Q, right_σ_Q)
