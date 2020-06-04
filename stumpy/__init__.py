@@ -13,7 +13,7 @@ from .mstumped import mstumped  # noqa: F401
 from .chains import atsc, allc  # noqa: F401
 from .floss import floss, fluss, _nnmark, _iac, _cac, _rea  # noqa: F401
 from .scrump import scrump  # noqa: F401
-from .search import search_k_motifs, search_occurrences  # noqa: F401
+from .search import motifs, search_occurrences  # noqa: F401
 from numba import cuda
 
 if cuda.is_available():

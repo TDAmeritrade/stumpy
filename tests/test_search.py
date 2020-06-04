@@ -2,7 +2,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from stumpy import search, stump
+from stumpy import search, stump, mstump
 import utils
 
 test_data = [
@@ -38,7 +38,7 @@ def naive_search_occurrences(Q, T, excl_zone, profile_value, atol, rtol):
     return result
 
 
-def test_search_k_motifs_static():
+def test_motifs_one_motif():
     T = np.array([0.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, 0.0, -0.5])
     m = 3
     k = 1
@@ -47,7 +47,7 @@ def test_search_k_motifs_static():
     left_profile_values = [0]
 
     P = stump(T, m, ignore_trivial=True)
-    right_indices, right_profile_values = search.search_k_motifs(
+    right_indices, right_profile_values = search.motifs(
         T, P[:, 0], k=k, atol=0.001
     )
 
@@ -55,7 +55,7 @@ def test_search_k_motifs_static():
     npt.assert_almost_equal(left_profile_values, right_profile_values, decimal=4)
 
 
-def test_search_k_motifs_synthetic():
+def test_motifs_two_motifs():
     T = np.random.normal(size=200)
     m = 20
 
@@ -75,14 +75,14 @@ def test_search_k_motifs_synthetic():
     left_indices = [[70, 170], [10, 110]]
     left_profile_values = [P[70, 0], P[10, 0]]
 
-    right_indices, right_profile_values = search.search_k_motifs(T, P[:, 0], k=k)
+    right_indices, right_profile_values = search.motifs(T, P[:, 0], k=k)
     right_indices = np.sort(right_indices, axis=1)
 
     npt.assert_array_equal(left_indices, right_indices)
     npt.assert_almost_equal(left_profile_values, right_profile_values, decimal=4)
 
 
-def test_search_k_discords_synthetic():
+def test_discords_two_discords():
     T = np.sin(2 * np.pi * np.linspace(0, 10, 200))
     m = 20
 
@@ -95,7 +95,7 @@ def test_search_k_discords_synthetic():
     left_profile_values = [0, 0]
 
     P = stump(T, m, ignore_trivial=True)
-    right_indices, right_profile_values = search.search_k_discords(T, P[:, 0], k=k)
+    right_indices, right_profile_values = search.discords(T, P[:, 0], k=k)
 
     npt.assert_array_equal(left_indices, right_indices)
     npt.assert_almost_equal(left_profile_values, right_profile_values, decimal=4)
@@ -131,3 +131,58 @@ def test_search_occurrences(Q, T):
     )
 
     npt.assert_array_equal(left, right)
+
+
+def test_motifs_multidimensional_one_motif_all_dimensions():
+    T = np.array(
+        [
+            [0.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, 0.0, -0.5],
+            [0.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, 0.0, -0.5],
+        ]
+    )
+    m = 3
+    k = 1
+
+    left_indices = [[0, 5]]
+    left_profile_values = [0]
+
+    P, I = mstump(T, m)
+    S = np.array([[0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1]], dtype=float)
+    right_indices, right_profile_values = search.motifs_multidimensional(
+        T, P, S, num_dimensions=2, k=k, atol=0.001
+    )
+
+    npt.assert_array_equal(left_indices, right_indices)
+    npt.assert_almost_equal(left_profile_values, right_profile_values, decimal=4)
+
+
+def test_motifs_multidimensional_two_motifs_all_dimensions():
+    n = 200
+    T = np.random.normal(size=(2, n))
+    m = 20
+
+    T[:, 10:30] = 1
+    T[:, 12:28] = 2
+    T[:, 110:130] = 1
+    T[:, 112:128] = 2
+    T[:, 129] = 1.1
+
+    T[:, 70:90] = np.arange(m) * 0.1
+    T[:, 170:190] = np.arange(m) * 0.1
+
+    k = 2
+
+    P, I = mstump(T, m)
+    S = np.zeros((2, n - m + 1), dtype=float)
+    S[1, :] = 1
+
+    left_indices = [[70, 170], [10, 110]]
+    left_profile_values = [P[70, 0], P[10, 0]]
+
+    right_indices, right_profile_values = search.motifs_multidimensional(
+        T, P, S, num_dimensions=2, k=k
+    )
+    right_indices = np.sort(right_indices, axis=1)
+
+    npt.assert_array_equal(left_indices, right_indices)
+    npt.assert_almost_equal(left_profile_values, right_profile_values, decimal=4)

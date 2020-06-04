@@ -3,7 +3,7 @@ import numpy as np
 from . import core
 
 
-def search_k_motifs(
+def motifs(
     T, P, k=1, excl_zone=None, min_neighbors=1, max_occurrences=10, atol=None, rtol=1.0,
 ):
     """Find the top k motifs of the time series `T`.
@@ -60,18 +60,20 @@ def search_k_motifs(
         The matrix profile values of the "original occurrences"
     """
     if k < 1:  # pragma: no cover
-        raise ValueError("k (the number of motifs) has to be at least 1")
+        logging.warn("The number of motifs, `k`, must be greater than or equal to 1")
+        logging.warn("`k` has been set to `1`")
+        k = 1
 
     if T.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T is {T.ndim}-dimensional and must be 1-dimensional. "
-            "Multidimensional motif discovery is not yet supported."
+            "For a multi-dimensional time series use search_k_motifs_multidimensional."
         )
 
     if P.ndim != 1:  # pragma: no cover
         raise ValueError(
             f"T is {P.ndim}-dimensional and must be 1-dimensional. "
-            "Multidimensional motif discovery is not yet supported."
+            "For a multi-dimensional time series use search_k_motifs_multidimensional."
         )
 
     T = T.copy()
@@ -82,7 +84,7 @@ def search_k_motifs(
 
     S = np.zeros((1, P.shape[1]), dtype=float)
 
-    dimensions = [0]
+    num_dimensions = 1
     m = T.shape[1] - P.shape[1] + 1
 
     if excl_zone is None:  # pragma: no cover
@@ -98,7 +100,7 @@ def search_k_motifs(
         T=T,
         P=P,
         S=S,
-        dimensions=dimensions,
+        num_dimensions=num_dimensions,
         k=k,
         M_T=M_T,
         Σ_T=Σ_T,
@@ -111,7 +113,130 @@ def search_k_motifs(
     return result
 
 
-def search_k_discords(T, P, k=1, excl_zone=None):
+def motifs_multidimensional(
+    T,
+    P,
+    S,
+    num_dimensions=None,
+    k=1,
+    excl_zone=None,
+    min_neighbors=1,
+    max_occurrences=10,
+    atol=None,
+    rtol=1.0,
+):
+    """Find the top k motifs of the multi dimensional time series `T`.
+
+    A subsequence `Q` is considered a motif if there is at least one other
+    occurrence in `T` (outside the exclusion zone) with distance smaller than
+    `atol + rtol * profile_value`, where `profile_value` is the matrix profile
+    value of `Q`.
+
+    Parameters
+    ----------
+    T : ndarray
+        The time series of interest
+
+    P : ndarray
+        Matrix Profile of `T` (result of a self-join)
+
+    S : ndarray
+        Matrix profile subspace of the Matrix Profile
+
+    num_dimensions : int or None
+        The number of dimensions the motif has to have. If `None`, then
+        all dimensions are used
+
+    k : int
+        Number of motifs to search. Defaults to `1`.
+
+    excl_zone : int or None
+        Size of the exclusion zone.
+        If `None`, defaults to `m/4`, where `m` is the length of `Q`.
+
+    min_neighbors : int
+        The minimum amount of similar occurrences a subsequence needs to have
+        to be considered a motif.
+        Defaults to `1`. This means, that a subsequence has to have
+        at least one similar occurence to be considered a motif.
+
+    max_occurrences : int
+        The maximum amount of similar occurrences to be returned. The resulting
+        occurrences are sorted by distance, so a value of `10` means that the
+        indices of the most similar `10` subsequences is returned. If `None`,
+        all occurrences are returned.
+        Defaults to `10`
+
+    atol : float or None
+        Absolute tolerance (see equation in description).
+        If `None`, defaults to `0.25 * np.std(P)`
+
+    rtol : float
+        Relative tolerance (see equation in description).
+        Defaults to `1.0`
+
+    Return
+    ------
+    top_motif_indices : list
+        Each item is another list, with each item representing an occurrence of the
+        motif in `T`, sorted by distance from the "original occurrence", i.e. the
+        subsequence of `T` starting at the index in the first place of the list
+
+    top_motif_values : list
+        The matrix profile values of the "original occurrences"
+    """
+    if k < 1:  # pragma: no cover
+        logging.warn("The number of motifs, `k`, must be greater than or equal to 1")
+        logging.warn("`k` has been set to `1`")
+        k = 1
+
+    if T.ndim != 2:  # pragma: no cover
+        raise ValueError(
+            f"T is {T.ndim}-dimensional and must be multi-dimensional. "
+            "If your time series is one dimensional, use `search_k_motifs` instead."
+        )
+
+    if P.ndim != 2:  # pragma: no cover
+        raise ValueError(
+            f"T is {P.ndim}-dimensional and must be 1-dimensional. "
+            "If your time series is one dimensional, use `search_k_motifs` instead."
+        )
+
+    T = T.copy()
+    P = P.copy().T.astype(float)
+    S = S.copy().T
+
+    if num_dimensions is None:
+        num_dimensions = P.shape[0]
+    m = T.shape[1] - P.shape[1] + 1
+
+    if excl_zone is None:  # pragma: no cover
+        excl_zone = int(np.ceil(m / 4))
+    if atol is None:  # pragma: no cover
+        atol = 0.25 * np.std(P)
+    if max_occurrences is None:  # pragma: no cover
+        max_occurrences = np.inf
+
+    T, M_T, Σ_T = core.preprocess(T, m)
+
+    result = _search(
+        T=T,
+        P=P,
+        S=S,
+        num_dimensions=num_dimensions,
+        k=k,
+        M_T=M_T,
+        Σ_T=Σ_T,
+        excl_zone=excl_zone,
+        min_neighbors=min_neighbors,
+        max_occurrences=max_occurrences,
+        atol=atol,
+        rtol=rtol,
+    )
+    return result
+
+
+def discords(T, P, k=1, excl_zone=None):
     """Find the top k discords of the time series `T`.
 
     Parameters
@@ -131,16 +256,17 @@ def search_k_discords(T, P, k=1, excl_zone=None):
 
     Return
     ------
-    top_motif_indices : list
+    top_discord_indices : list
         Each item is another list, with each item representing an occurrence of the
-        motif in `T`, sorted by distance from the "original occurrence", i.e. the
-        subsequence of `T` starting at the index in the first place of the list
+        discord in `T`.
 
-    top_motif_values : list
-        The matrix profile values of the "original occurrences"
+    top_discord_values : list
+        The matrix profile values of the discords
     """
     if k < 1:  # pragma: no cover
-        raise ValueError("k (the number of motifs) has to be at least 1")
+        logging.warn("The number of motifs, `k`, must be greater than or equal to 1")
+        logging.warn("`k` has been set to `1`")
+        k = 1
 
     if T.ndim != 1:  # pragma: no cover
         raise ValueError(
@@ -163,7 +289,7 @@ def search_k_discords(T, P, k=1, excl_zone=None):
 
     S = np.zeros((1, P.shape[1]), dtype=float)
 
-    dimensions = [0]
+    num_dimensions = 1
     m = T.shape[1] - P.shape[1] + 1
 
     if excl_zone is None:  # pragma: no cover
@@ -175,7 +301,7 @@ def search_k_discords(T, P, k=1, excl_zone=None):
         T=T,
         P=P,
         S=S,
-        dimensions=dimensions,
+        num_dimensions=num_dimensions,
         k=k,
         M_T=M_T,
         Σ_T=Σ_T,
@@ -192,7 +318,7 @@ def _search(
     T,
     P,
     S,
-    dimensions,
+    num_dimensions,
     k,
     M_T,
     Σ_T,
@@ -206,18 +332,17 @@ def _search(
     l = P.shape[1]
     m = n - l + 1
 
-    top_motif_indices = []
-    top_motif_values = []
+    top_Q_indices = []
+    top_Q_values = []
 
-    dim = len(dimensions) - 1
-
-    candidate_idx = np.argmin(P[dim])
-    while len(top_motif_indices) < k:
-        profile_value = P[dim, candidate_idx]
+    candidate_idx = np.argmin(P[num_dimensions - 1])
+    while len(top_Q_indices) < k:
+        profile_value = P[num_dimensions - 1, candidate_idx]
         if np.isinf(profile_value):  # pragma: no cover
             break
 
         Q = T[:, candidate_idx : candidate_idx + m]
+        dimensions = S[:num_dimensions]
 
         occurrences = search_occurrences(
             Q,
@@ -236,15 +361,15 @@ def _search(
             occurrences.append(candidate_idx)
 
         if len(occurrences) >= min_neighbors + 1:
-            top_motif_indices.append(occurrences)
-            top_motif_values.append(profile_value)
+            top_Q_indices.append(occurrences)
+            top_Q_values.append(profile_value)
 
         for idx in occurrences:
             core.apply_exclusion_zone(P, idx, excl_zone)
 
-        candidate_idx = np.argmin(P[dim])
+        candidate_idx = np.argmin(P[num_dimensions - 1])
 
-    return top_motif_indices, top_motif_values
+    return top_Q_indices, top_Q_values
 
 
 def search_occurrences(
