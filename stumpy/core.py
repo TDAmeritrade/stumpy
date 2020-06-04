@@ -305,6 +305,8 @@ def compute_mean_std(T, m):
     for iteration in range(max_iter):
         try:
             chunk_size = math.ceil((T.shape[-1] + 1) / num_chunks)
+            if chunk_size < m:
+                chunk_size = m
 
             mean_chunks = []
             std_chunks = []
