@@ -5,7 +5,7 @@ from stumpy import core, config
 import pytest
 import os
 
-import utils
+import naive
 
 
 def naive_rolling_window_dot_product(Q, T):
@@ -247,16 +247,13 @@ def test_apply_exclusion_zone():
 
     for i in range(T.shape[0]):
         left[:] = T[:]
-        for j in range(
-            max(i - exclusion_zone, 0), min(i + exclusion_zone + 1, T.shape[0])
-        ):
-            left[j] = np.inf
+        naive.apply_exclusion_zone(left, i, exclusion_zone)
 
         right[:] = T[:]
         core.apply_exclusion_zone(right, i, exclusion_zone)
 
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
         npt.assert_array_equal(left, right)
 
 
@@ -270,16 +267,13 @@ def test_apply_exclusion_zone_multidimensional():
 
     for i in range(T.shape[1]):
         left[:, :] = T[:, :]
-        for j in range(
-            max(i - exclusion_zone, 0), min(i + exclusion_zone + 1, T.shape[1])
-        ):
-            left[:, j] = np.inf
+        naive.apply_exclusion_zone(left, i, exclusion_zone)
 
         right[:, :] = T[:, :]
         core.apply_exclusion_zone(right, i, exclusion_zone)
 
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
         npt.assert_array_equal(left, right)
 
 
@@ -316,7 +310,7 @@ def test_array_to_temp_file():
 def test_get_array_ranges():
     x = np.array([3, 9, 2, 1, 5, 4, 7, 7, 8, 6])
     for n_chunks in range(2, 5):
-        left = utils.get_naive_array_ranges(x, n_chunks)
+        left = naive.get_array_ranges(x, n_chunks)
 
         right = core._get_array_ranges(x, n_chunks)
         npt.assert_almost_equal(left, right)
@@ -326,7 +320,7 @@ def test_get_array_ranges_exhausted():
     x = np.array([3, 3, 3, 11, 11, 11])
     n_chunks = 6
 
-    left = utils.get_naive_array_ranges(x, n_chunks)
+    left = naive.get_array_ranges(x, n_chunks)
 
     right = core._get_array_ranges(x, n_chunks)
     npt.assert_almost_equal(left, right)
@@ -336,7 +330,7 @@ def test_get_array_ranges_exhausted():
     x = np.array([3, 3, 3, 11, 11, 11])
     n_chunks = 6
 
-    left = utils.get_naive_array_ranges(x, n_chunks, truncate=True)
+    left = naive.get_array_ranges(x, n_chunks, truncate=True)
 
     right = core._get_array_ranges(x, n_chunks, truncate=True)
     npt.assert_almost_equal(left, right)
