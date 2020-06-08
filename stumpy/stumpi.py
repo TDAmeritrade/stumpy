@@ -9,7 +9,7 @@ import stumpy
 
 def stumpi_init(T, m):  # pragma: no cover
     """
-    A helper function that generates the initial inputs needed for `stumpy.stumpi`
+    Generate the initial inputs needed for `stumpy.stumpi`
 
     Parameters
     ----------
@@ -56,8 +56,8 @@ def stumpi_init(T, m):  # pragma: no cover
 
 def stumpi(t, T, m, P, I, QT, M_T, Σ_T):
     """
-    Incremental STUMP for streaming data based on the on-line STOMPI and STAMPI
-    algorithms.
+    Compute the incremental matrix profile for streaming data. This is based on 
+    the on-line STOMPI and STAMPI algorithms.
 
     Parameters
     ----------
@@ -116,12 +116,12 @@ def stumpi(t, T, m, P, I, QT, M_T, Σ_T):
     Note that line 11 is missing an important `sqrt` operation!
     """
     T = np.asarray(T)
-    if np.any(np.isinf(T)) or np.any(np.isnan(T)):
+    if np.any(np.isinf(T)) or np.any(np.isnan(T)):  # pragma: no cover
         raise ValueError(
             "One or more NaN/inf values were found in the input time series, `T`"
         )
 
-    if np.isinf(t) or np.isnan(t):
+    if np.isinf(t) or np.isnan(t):  # pragma: no cover
         raise ValueError("A NaN/inf value was found in the input data point, `t`")
 
     n = T.shape[0]

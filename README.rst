@@ -54,7 +54,8 @@ STUMPY is a powerful and scalable library that efficiently computes something ca
 * anomaly/novelty (discord) discovery
 * shapelet discovery
 * semantic segmentation 
-* density estimation
+* streaming (on-line) data
+* fast approximate matrix profiles
 * time series chains (temporally ordered set of subsequence patterns)
 * `and more ... <https://www.cs.ucr.edu/~eamonn/100_Time_Series_Data_Mining_Questions__with_Answers.pdf>`__
 

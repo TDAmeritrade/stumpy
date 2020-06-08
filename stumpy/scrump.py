@@ -568,8 +568,9 @@ def scrump(
     T_A, m, T_B=None, ignore_trivial=True, percentage=0.01, pre_scrump=False, s=None
 ):
     """
-    Compute the matrix profile with parallelized SCRIMP. This returns a generator that
-    can be incrementally iterated on. For SCRIMP++, set `pre_scrump=True`.
+    Compute the approximate matrix profile with parallelized SCRIMP. This returns a
+    generator that can be incrementally iterated on. For SCRIMP++, set 
+    `pre_scrump=True`.
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_scrump` function which computes the matrix profile according to SCRIMP.
