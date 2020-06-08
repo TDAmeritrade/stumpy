@@ -47,6 +47,7 @@ def rolling_window(a, window):
     output : ndarray
         This will be a new view of the original input array.
     """
+    a = np.asarray(a)
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
     strides = a.strides + (a.strides[-1],)
 

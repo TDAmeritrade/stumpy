@@ -41,6 +41,9 @@ def distance_matrix(T_A, T_B, m):
 
 
 def mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
+    Q = np.asarray(Q)
+    T = np.asarray(T)
+
     D = distance_profile(Q, T, m)
     if ignore_trivial:
         apply_exclusion_zone(D, trivial_idx, excl_zone)

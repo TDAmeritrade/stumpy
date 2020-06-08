@@ -361,6 +361,8 @@ Gharghabi, Shaghayegh, et al. (2017) Matrix Profile VIII: Domain Agnostic Online
 
 Zhu, Yan, et al. (2018) Matrix Profile XI: SCRIMP++: Time Series Motif Discovery at Interactive Speeds. ICDM:837-846. `Link <https://ieeexplore.ieee.org/abstract/document/8594908>`__
 
+Yeh, Chin-Chia Michael, et al. (2018) Time Series Joins, Motifs, Discords and Shapelets: a Unifying View that Exploits the Matrix Profile. Data Min Knowl Disc:83-123. `Link <https://link.springer.com/article/10.1007/s10618-017-0519-9>`__
+
 -------------------
 License & Trademark
 -------------------
