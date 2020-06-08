@@ -56,7 +56,7 @@ def stumpi_init(T, m):  # pragma: no cover
 
 def stumpi(t, T, m, P, I, QT, M_T, Σ_T):
     """
-    Compute the incremental matrix profile for streaming data. This is based on 
+    Compute the incremental matrix profile for streaming data. This is based on
     the on-line STOMPI and STAMPI algorithms.
 
     Parameters

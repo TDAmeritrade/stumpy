@@ -569,7 +569,7 @@ def scrump(
 ):
     """
     Compute the approximate matrix profile with parallelized SCRIMP. This returns a
-    generator that can be incrementally iterated on. For SCRIMP++, set 
+    generator that can be incrementally iterated on. For SCRIMP++, set
     `pre_scrump=True`.
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
