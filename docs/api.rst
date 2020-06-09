@@ -31,9 +31,24 @@ stumped
 .. autofunction:: stumpy.stumped
 
 gpu-stump
-=======
+=========
 
 .. autofunction:: stumpy.gpu_stump
+
+scrump
+======
+
+.. autofunction:: stumpy.scrump
+
+stumpi
+======
+
+.. autofunction:: stumpy.stumpi
+
+stumpi_init
+===========
+
+.. autofunction:: stumpy.stumpi_init
 
 mstump
 ======
@@ -56,11 +71,11 @@ allc
 .. autofunction:: stumpy.allc
 
 fluss
-====
+=====
 
 .. autofunction:: stumpy.fluss
 
 floss
-====
+=====
 
 .. autofunction:: stumpy.floss
