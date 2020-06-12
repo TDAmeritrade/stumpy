@@ -12,7 +12,6 @@ STUMPY API
     stumpy.gpu_stump
     stumpy.scrump
     stumpy.stumpi
-    stumpy.stumpi_init
     stumpy.mstump
     stumpy.mstumped
     stumpy.atsc
@@ -44,11 +43,6 @@ stumpi
 ======
 
 .. autofunction:: stumpy.stumpi
-
-stumpi_init
-===========
-
-.. autofunction:: stumpy.stumpi_init
 
 mstump
 ======

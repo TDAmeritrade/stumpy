@@ -7,159 +7,139 @@ from stumpy import core
 import stumpy
 
 
-def stumpi_init(T, m):  # pragma: no cover
+class stumpi(object):
     """
-    Generate the initial inputs needed for `stumpy.stumpi`
+    Compute an incremental matrix profile for streaming data. This is based on the
+    on-line STOMPI and STAMPI algorithms.
 
-    Parameters
+    Attributes
     ----------
-    T : ndarray
-        The time series or sequence for which the matrix profile and matrix profile
-        indices will be returned
-
-    m : int
-        Window size
-
-    Returns
-    -------
-    T : ndarray
-        The time series or sequence for which the matrix profile and matrix profile
-        indices will be returned
-
-    m : int
-        Window size
-
     P : ndarray
         The matrix profile for `T`
 
     I : ndarray
         The matrix profile indices for `T`
 
-    QT : ndarray
-        Dot product between some query sequence,`Q`, and time series, `T`
-
-    M_T : ndarray
-        Sliding mean for `T`
-
-    Σ_T : ndarray
-        Sliding standard deviation for `T`
-    """
-    T, M_T, Σ_T = core.preprocess(T, m)
-    mp = stumpy.stump(T, m)
-    P = mp[:, 0]
-    I = mp[:, 1]
-    Q = T[-m:]
-    QT = core.sliding_dot_product(Q, T)
-
-    return T, P, I, QT, M_T, Σ_T
-
-
-def stumpi(t, T, m, P, I, QT, M_T, Σ_T):
-    """
-    Compute the incremental matrix profile for streaming data. This is based on
-    the on-line STOMPI and STAMPI algorithms.
-
-    Parameters
-    ----------
-    t : float
-        A new single data point following `T`
-
     T : ndarray
         The time series or sequence for which the matrix profile and matrix profile
-        indices will be returned
+        indices will be computed
 
-    m : int
-        Window size
-
-    P : ndarray
-        The matrix profile for `T`
-
-    I : ndarray
-        The matrix profile indices for `T`
-
-    QT : ndarray
-        Dot product between some query sequence,`Q`, and time series, `T`
-
-    M_T : ndarray
-        Sliding mean for `T`
-
-    Σ_T : ndarray
-        Sliding standard deviation for `T`
-
-    Returns
+    Methods
     -------
-    T_new : ndarray
-        The updated time series
-
-    P_new : ndarray
-        The updated matrix profile
-
-    I_new : ndarray
-        The updated matrix profile indices
-
-    QT_new : ndarray
-        The updated dot product vector
-
-    M_T_new : ndarray
-        The updated sliding mean for `T`
-
-    Σ_T_new : ndarray
-        The updated sliding standard deviation for `T`
-
-    Notes
-    -----
-    `DOI: 10.1007/s10618-017-0519-9 \
-    <https://www.cs.ucr.edu/~eamonn/MP_journal.pdf>`__
-
-    See Table V
-
-    Note that line 11 is missing an important `sqrt` operation!
+    add(t)
+        Append a single new data point to the time series and update the matrix profile
     """
-    T = np.asarray(T)
-    if np.any(np.isinf(T)) or np.any(np.isnan(T)):  # pragma: no cover
-        raise ValueError(
-            "One or more NaN/inf values were found in the input time series, `T`"
+
+    def __init__(self, T, m, excl_zone=None):
+        """
+        Initialize the `stumpi` object
+
+        Parameters
+        ----------
+        T : ndarray
+            The time series or sequence for which the matrix profile and matrix profile
+            indices will be returned
+
+        m : int
+            Window size
+        """
+        self._T = T
+        self._m = m
+        if excl_zone is not None:  # pragma: no cover
+            self._excl_zone = excl_zone
+        else:
+            self._excl_zone = int(np.ceil(self._m / 4))
+
+        mp = stumpy.stump(self._T, self._m)
+        self._P = mp[:, 0]
+        self._I = mp[:, 1]
+
+        self._T, self._M_T, self._Σ_T = core.preprocess(self._T, self._m)
+
+        Q = self._T[-m:]
+        self._QT = core.sliding_dot_product(Q, self._T)
+
+    def add(self, t):
+        """
+        Append a single new data point to `T` and update the matrix profile.
+
+        Parameters
+        ----------
+        t : float
+            A single new data point to be appended to `T`
+
+        Notes
+        -----
+        `DOI: 10.1007/s10618-017-0519-9 \
+        <https://www.cs.ucr.edu/~eamonn/MP_journal.pdf>`__
+
+        See Table V
+
+        Note that line 11 is missing an important `sqrt` operation!
+        """
+        n = self._T.shape[0]
+        l = n - self._m + 1
+        T_new = np.append(self._T, t)
+        QT_new = np.empty(self._QT.shape[0] + 1)
+        S = T_new[l:]
+        t_drop = T_new[l - 1]
+
+        for j in range(l, 0, -1):
+            QT_new[j] = (
+                self._QT[j - 1] - T_new[j - 1] * t_drop + T_new[j + self._m - 1] * t
+            )
+        QT_new[0] = 0
+
+        for j in range(self._m):
+            QT_new[0] = QT_new[0] + T_new[j] * S[j]
+
+        μ_Q = self._M_T[l - 1] + (t - t_drop) / self._m
+        σ_Q = np.sqrt(
+            self._Σ_T[l - 1] * self._Σ_T[l - 1]
+            + self._M_T[l - 1] * self._M_T[l - 1]
+            + (t * t - t_drop * t_drop) / self._m
+            - μ_Q * μ_Q
         )
 
-    if np.isinf(t) or np.isnan(t):  # pragma: no cover
-        raise ValueError("A NaN/inf value was found in the input data point, `t`")
+        M_T_new = np.append(self._M_T, μ_Q)
+        Σ_T_new = np.append(self._Σ_T, σ_Q)
+        D = core.calculate_distance_profile(self._m, QT_new, μ_Q, σ_Q, M_T_new, Σ_T_new)
 
-    n = T.shape[0]
-    l = n - m + 1
-    T_new = np.append(T, t)
-    QT_new = np.empty(QT.shape[0] + 1)
-    S = T_new[l:]
-    t_drop = T_new[l - 1]
+        core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
 
-    for j in range(l, 0, -1):
-        QT_new[j] = QT[j - 1] - T_new[j - 1] * t_drop + T_new[j + m - 1] * t
-    QT_new[0] = 0
+        for j in range(l):
+            if D[j] < self._P[j]:
+                self._I[j] = l
+                self._P[j] = D[j]
 
-    for j in range(m):
-        QT_new[0] = QT_new[0] + T_new[j] * S[j]
+        I_last = np.argmin(D)
+        I_new = np.append(self._I, I_last)
+        P_new = np.append(self._P, D[I_last])
 
-    μ_Q = M_T[l - 1] + (t - t_drop) / m
-    σ_Q = np.sqrt(
-        Σ_T[l - 1] * Σ_T[l - 1]
-        + M_T[l - 1] * M_T[l - 1]
-        + (t * t - t_drop * t_drop) / m
-        - μ_Q * μ_Q
-    )
+        self._T = T_new
+        self._P = P_new
+        self._I = I_new
+        self._QT = QT_new
+        self._M_T = M_T_new
+        self._Σ_T = Σ_T_new
 
-    M_T_new = np.append(M_T, μ_Q)
-    Σ_T_new = np.append(Σ_T, σ_Q)
-    D = core.calculate_distance_profile(m, QT_new, μ_Q, σ_Q, M_T_new, Σ_T_new)
+    @property
+    def P(self):
+        """
+        Get the matrix profile
+        """
+        return self._P
 
-    excl_zone = int(np.ceil(m / 4))
-    core.apply_exclusion_zone(D, D.shape[0] - 1, excl_zone)
+    @property
+    def I(self):
+        """
+        Get the matrix profile indices
+        """
+        return self._I
 
-    for j in range(l):
-        if D[j] < P[j]:
-            I[j] = l
-            P[j] = D[j]
-
-    I_last = np.argmin(D)
-    I_new = np.append(I, I_last)
-    P_new = np.append(P, D[I_last])
-
-    return T_new, P_new, I_new, QT_new, M_T_new, Σ_T_new
+    @property
+    def T(self):
+        """
+        Get the time series
+        """
+        return self._T
