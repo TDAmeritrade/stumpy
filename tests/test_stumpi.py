@@ -19,18 +19,31 @@ def test_stumpi_self_join():
         t = np.random.rand()
         stream.add(t)
 
-    right_P = stream.P
-    right_I = stream.I
+    right_P = stream.P_
+    right_I = stream.I_
+    right_left_P = stream.left_P_
+    right_left_I = stream.left_I_
 
-    left = naive.stamp(stream.T, m, exclusion_zone=zone)
+    left = naive.stamp(stream.T_, m, exclusion_zone=zone)
     left_P = left[:, 0]
     left_I = left[:, 1]
+    left_left_P = np.empty(left_P.shape)
+    left_left_P[:] = np.inf
+    left_left_I = left[:, 2]
+    for i, j in enumerate(left_left_I):
+        if j >= 0:
+            D = core.mass(stream.T_[i : i + m], stream.T_[j : j + m])
+            left_left_P[i] = D[0]
 
     naive.replace_inf(left_P)
+    naive.replace_inf(left_left_P)
     naive.replace_inf(right_P)
+    naive.replace_inf(right_left_P)
 
     npt.assert_almost_equal(left_P, right_P)
     npt.assert_almost_equal(left_I, right_I)
+    npt.assert_almost_equal(left_left_P, right_left_P)
+    npt.assert_almost_equal(left_left_I, right_left_I)
 
     np.random.seed(seed)
     T = np.random.rand(30)
@@ -40,13 +53,18 @@ def test_stumpi_self_join():
         t = np.random.rand()
         stream.add(t)
 
-    right_P = stream.P
-    right_I = stream.I
+    right_P = stream.P_
+    right_I = stream.I_
+    right_left_P = stream.left_P_
+    right_left_I = stream.left_I_
 
     naive.replace_inf(right_P)
+    naive.replace_inf(right_left_P)
 
     npt.assert_almost_equal(left_P, right_P)
     npt.assert_almost_equal(left_I, right_I)
+    npt.assert_almost_equal(left_left_P, right_left_P)
+    npt.assert_almost_equal(left_left_I, right_left_I)
 
 
 def test_stumpi_constant_subsequence_self_join():
@@ -62,10 +80,10 @@ def test_stumpi_constant_subsequence_self_join():
         t = np.random.rand()
         stream.add(t)
 
-    right_P = stream.P
-    right_I = stream.I
+    right_P = stream.P_
+    right_I = stream.I_
 
-    left = naive.stamp(stream.T, m, exclusion_zone=zone)
+    left = naive.stamp(stream.T_, m, exclusion_zone=zone)
     left_P = left[:, 0]
     left_I = left[:, 1]
 
@@ -83,8 +101,8 @@ def test_stumpi_constant_subsequence_self_join():
         t = np.random.rand()
         stream.add(t)
 
-    right_P = stream.P
-    right_I = stream.I
+    right_P = stream.P_
+    right_I = stream.I_
 
     naive.replace_inf(right_P)
 

@@ -12,15 +12,34 @@ class stumpi(object):
     Compute an incremental matrix profile for streaming data. This is based on the
     on-line STOMPI and STAMPI algorithms.
 
+    Parameters
+    ----------
+    T : ndarray
+        The time series or sequence for which the matrix profile and matrix profile
+        indices will be returned
+
+    m : int
+        Window size
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the current
+        sliding window
+
     Attributes
     ----------
-    P : ndarray
+    P_ : ndarray
         The matrix profile for `T`
 
-    I : ndarray
+    I_ : ndarray
         The matrix profile indices for `T`
 
-    T : ndarray
+    left_P_ : ndarray
+        The left matrix profile for `T`
+
+    left_I_ : ndarray
+        The left matrix profile indices for `T`
+
+    T_ : ndarray
         The time series or sequence for which the matrix profile and matrix profile
         indices will be computed
 
@@ -42,6 +61,10 @@ class stumpi(object):
 
         m : int
             Window size
+
+        excl_zone : int
+            The half width for the exclusion zone relative to the current
+            sliding window
         """
         self._T = T
         self._m = m
@@ -53,15 +76,24 @@ class stumpi(object):
         mp = stumpy.stump(self._T, self._m)
         self._P = mp[:, 0]
         self._I = mp[:, 1]
+        self._left_I = mp[:, 2]
+        self._left_P = np.empty(self._P.shape)
+        self._left_P[:] = np.inf
 
         self._T, self._M_T, self._Σ_T = core.preprocess(self._T, self._m)
+        # Retrieve the left matrix profile values
+        for i, j in enumerate(self._left_I):
+            if j >= 0:
+                D = core.mass(self._T[i : i + self._m], self._T[j : j + self._m])
+                self._left_P[i] = D[0]
 
         Q = self._T[-m:]
         self._QT = core.sliding_dot_product(Q, self._T)
 
     def add(self, t):
         """
-        Append a single new data point to `T` and update the matrix profile.
+        Append a single new data point, `t`, to the existing time series `T` and update
+        the matrix profile and matrix profile indices.
 
         Parameters
         ----------
@@ -115,30 +147,48 @@ class stumpi(object):
         I_last = np.argmin(D)
         I_new = np.append(self._I, I_last)
         P_new = np.append(self._P, D[I_last])
+        left_I_new = np.append(self._left_I, I_last)
+        left_P_new = np.append(self._left_P, D[I_last])
 
         self._T = T_new
         self._P = P_new
         self._I = I_new
+        self._left_I = left_I_new
+        self._left_P = left_P_new
         self._QT = QT_new
         self._M_T = M_T_new
         self._Σ_T = Σ_T_new
 
     @property
-    def P(self):
+    def P_(self):
         """
         Get the matrix profile
         """
-        return self._P
+        return self._P.astype(np.float64)
 
     @property
-    def I(self):
+    def I_(self):
         """
         Get the matrix profile indices
         """
-        return self._I
+        return self._I.astype(np.int64)
 
     @property
-    def T(self):
+    def left_P_(self):
+        """
+        Get the left matrix profile
+        """
+        return self._left_P.astype(np.float64)
+
+    @property
+    def left_I_(self):
+        """
+        Get the left matrix profile indices
+        """
+        return self._left_I.astype(np.int64)
+
+    @property
+    def T_(self):
         """
         Get the time series
         """
