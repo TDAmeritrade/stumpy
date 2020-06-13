@@ -20,7 +20,7 @@ def test_stumpi_self_join():
     stream = stumpi(T, m)
     for i in range(34):
         t = np.random.rand()
-        stream.add(t)
+        stream.update(t)
 
     right_P = stream.P_
     right_I = stream.I_
@@ -54,7 +54,7 @@ def test_stumpi_self_join():
     stream = stumpi(T, m)
     for i in range(34):
         t = np.random.rand()
-        stream.add(t)
+        stream.update(t)
 
     right_P = stream.P_
     right_I = stream.I_
@@ -88,7 +88,7 @@ def test_stumpi_init_nan_inf_self_join(substitute, substitution_locations):
         stream = stumpi(T, m)
         for i in range(34):
             t = np.random.rand()
-            stream.add(t)
+            stream.update(t)
 
         right_P = stream.P_
         right_I = stream.I_
@@ -114,7 +114,7 @@ def test_stumpi_init_nan_inf_self_join(substitute, substitution_locations):
         stream = stumpi(T, m)
         for i in range(34):
             t = np.random.rand()
-            stream.add(t)
+            stream.update(t)
 
         right_P = stream.P_
         right_I = stream.I_
@@ -142,7 +142,7 @@ def test_stumpi_stream_nan_inf_self_join(substitute, substitution_locations):
             substitution_location = T[30:].shape[0] - 1
         T[30:][substitution_location] = substitute
         for t in T[30:]:
-            stream.add(t)
+            stream.update(t)
 
         right_P = stream.P_
         right_I = stream.I_
@@ -166,7 +166,7 @@ def test_stumpi_stream_nan_inf_self_join(substitute, substitution_locations):
             substitution_location = T[30:].shape[0] - 1
         T[30:][substitution_location] = substitute
         for t in T[30:]:
-            stream.add(t)
+            stream.update(t)
 
         right_P = stream.P_
         right_I = stream.I_
@@ -188,7 +188,7 @@ def test_stumpi_constant_subsequence_self_join():
     stream = stumpi(T, m)
     for i in range(34):
         t = np.random.rand()
-        stream.add(t)
+        stream.update(t)
 
     right_P = stream.P_
     right_I = stream.I_
@@ -209,7 +209,7 @@ def test_stumpi_constant_subsequence_self_join():
     stream = stumpi(T, m)
     for i in range(34):
         t = np.random.rand()
-        stream.add(t)
+        stream.update(t)
 
     right_P = stream.P_
     right_I = stream.I_

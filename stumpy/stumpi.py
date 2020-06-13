@@ -28,25 +28,35 @@ class stumpi(object):
     Attributes
     ----------
     P_ : ndarray
-        The matrix profile for `T`
+        The updated matrix profile for `T`
 
     I_ : ndarray
-        The matrix profile indices for `T`
+        The updated matrix profile indices for `T`
 
     left_P_ : ndarray
-        The left matrix profile for `T`
+        The updated left matrix profile for `T`
 
     left_I_ : ndarray
-        The left matrix profile indices for `T`
+        The updated left matrix profile indices for `T`
 
     T_ : ndarray
-        The time series or sequence for which the matrix profile and matrix profile
-        indices will be computed
+        The updated time series or sequence for which the matrix profile and matrix
+        profile indices are computed
 
     Methods
     -------
-    add(t)
-        Append a single new data point to the time series and update the matrix profile
+    update(t)
+        Append a single new data point, `t`, to the time series, `T`, and update the
+        matrix profile
+
+    Notes
+    -----
+    `DOI: 10.1007/s10618-017-0519-9 \
+    <https://www.cs.ucr.edu/~eamonn/MP_journal.pdf>`__
+
+    See Table V
+
+    Note that line 11 is missing an important `sqrt` operation!
     """
 
     def __init__(self, T, m, excl_zone=None):
@@ -91,7 +101,7 @@ class stumpi(object):
         Q = self._T[-m:]
         self._QT = core.sliding_dot_product(Q, self._T)
 
-    def add(self, t):
+    def update(self, t):
         """
         Append a single new data point, `t`, to the existing time series `T` and update
         the matrix profile and matrix profile indices.
