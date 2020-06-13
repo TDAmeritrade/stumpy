@@ -72,6 +72,7 @@ class stumpi(object):
             self._excl_zone = excl_zone
         else:
             self._excl_zone = int(np.ceil(self._m / 4))
+        self._illegal = np.logical_or(np.isinf(self._T), np.isnan(self._T))
 
         mp = stumpy.stump(self._T, self._m)
         self._P = mp[:, 0]
@@ -116,6 +117,25 @@ class stumpi(object):
         S = T_new[l:]
         t_drop = T_new[l - 1]
 
+        if np.isinf(t) or np.isnan(t):
+            self._illegal = np.append(self._illegal, True)
+            t = 0
+            T_new[-1] = 0
+            S[-1] = 0
+        else:
+            self._illegal = np.append(self._illegal, False)
+
+        if np.any(self._illegal[-self._m :]):
+            μ_Q = np.inf
+            σ_Q = np.nan
+        else:
+            μ_Q, σ_Q = core.compute_mean_std(S, self._m)
+            μ_Q = μ_Q[0]
+            σ_Q = σ_Q[0]
+
+        M_T_new = np.append(self._M_T, μ_Q)
+        Σ_T_new = np.append(self._Σ_T, σ_Q)
+
         for j in range(l, 0, -1):
             QT_new[j] = (
                 self._QT[j - 1] - T_new[j - 1] * t_drop + T_new[j + self._m - 1] * t
@@ -125,17 +145,9 @@ class stumpi(object):
         for j in range(self._m):
             QT_new[0] = QT_new[0] + T_new[j] * S[j]
 
-        μ_Q = self._M_T[l - 1] + (t - t_drop) / self._m
-        σ_Q = np.sqrt(
-            self._Σ_T[l - 1] * self._Σ_T[l - 1]
-            + self._M_T[l - 1] * self._M_T[l - 1]
-            + (t * t - t_drop * t_drop) / self._m
-            - μ_Q * μ_Q
-        )
-
-        M_T_new = np.append(self._M_T, μ_Q)
-        Σ_T_new = np.append(self._Σ_T, σ_Q)
         D = core.calculate_distance_profile(self._m, QT_new, μ_Q, σ_Q, M_T_new, Σ_T_new)
+        if np.any(self._illegal[-self._m :]):
+            D[:] = np.inf
 
         core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
 
@@ -145,8 +157,12 @@ class stumpi(object):
                 self._P[j] = D[j]
 
         I_last = np.argmin(D)
-        I_new = np.append(self._I, I_last)
-        P_new = np.append(self._P, D[I_last])
+        if np.isinf(D[I_last]):
+            I_new = np.append(self._I, -1)
+            P_new = np.append(self._P, np.inf)
+        else:
+            I_new = np.append(self._I, I_last)
+            P_new = np.append(self._P, D[I_last])
         left_I_new = np.append(self._left_I, I_last)
         left_P_new = np.append(self._left_P, D[I_last])
 

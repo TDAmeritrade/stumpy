@@ -5,6 +5,9 @@ from stumpy import stumpi, core
 import pytest
 import naive
 
+substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
+substitution_values = [np.nan, np.inf]
+
 
 def test_stumpi_self_join():
     m = 3
@@ -65,6 +68,113 @@ def test_stumpi_self_join():
     npt.assert_almost_equal(left_I, right_I)
     npt.assert_almost_equal(left_left_P, right_left_P)
     npt.assert_almost_equal(left_left_I, right_left_I)
+
+
+@pytest.mark.parametrize("substitute", substitution_values)
+@pytest.mark.parametrize("substitution_locations", substitution_locations)
+def test_stumpi_init_nan_inf_self_join(substitute, substitution_locations):
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    seed = np.random.randint(100000)
+
+    for substitution_location in substitution_locations:
+        np.random.seed(seed)
+        T = np.random.rand(30)
+
+        if substitution_location == -1:
+            substitution_location = T.shape[0] - 1
+        T[substitution_location] = substitute
+        stream = stumpi(T, m)
+        for i in range(34):
+            t = np.random.rand()
+            stream.add(t)
+
+        right_P = stream.P_
+        right_I = stream.I_
+
+        stream.T_[substitution_location] = substitute
+        left = naive.stamp(stream.T_, m, exclusion_zone=zone)
+        left_P = left[:, 0]
+        left_I = left[:, 1]
+
+        naive.replace_inf(left_P)
+        naive.replace_inf(right_P)
+
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
+
+        np.random.seed(seed)
+        T = np.random.rand(30)
+
+        if substitution_location == -1:
+            substitution_location = T.shape[0] - 1
+        T[substitution_location] = substitute
+        T = pd.Series(T)
+        stream = stumpi(T, m)
+        for i in range(34):
+            t = np.random.rand()
+            stream.add(t)
+
+        right_P = stream.P_
+        right_I = stream.I_
+
+        naive.replace_inf(right_P)
+
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
+
+
+@pytest.mark.parametrize("substitute", substitution_values)
+@pytest.mark.parametrize("substitution_locations", substitution_locations)
+def test_stumpi_stream_nan_inf_self_join(substitute, substitution_locations):
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    seed = np.random.randint(100000)
+
+    for substitution_location in substitution_locations:
+        np.random.seed(seed)
+        T = np.random.rand(64)
+
+        stream = stumpi(T[:30], m)
+        if substitution_location == -1:
+            substitution_location = T[30:].shape[0] - 1
+        T[30:][substitution_location] = substitute
+        for t in T[30:]:
+            stream.add(t)
+
+        right_P = stream.P_
+        right_I = stream.I_
+
+        stream.T_[30:][substitution_location] = substitute
+        left = naive.stamp(stream.T_, m, exclusion_zone=zone)
+        left_P = left[:, 0]
+        left_I = left[:, 1]
+
+        naive.replace_inf(left_P)
+        naive.replace_inf(right_P)
+
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
+
+        np.random.seed(seed)
+        T = np.random.rand(64)
+
+        stream = stumpi(pd.Series(T[:30]), m)
+        if substitution_location == -1:
+            substitution_location = T[30:].shape[0] - 1
+        T[30:][substitution_location] = substitute
+        for t in T[30:]:
+            stream.add(t)
+
+        right_P = stream.P_
+        right_I = stream.I_
+
+        naive.replace_inf(right_P)
+
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
 
 
 def test_stumpi_constant_subsequence_self_join():
