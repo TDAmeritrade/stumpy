@@ -168,7 +168,7 @@ def test_floss():
         mp[update_idx, 0] = D[update_idx]
         mp[update_idx, 3] = last_idx + i
 
-        left_cac = _cac(
+        left_cac_1d = _cac(
             mp[:, 3] - i - 1,
             L,
             bidirectional=False,
@@ -181,7 +181,7 @@ def test_floss():
         left_I = left_mp[:, 3]
 
         stream.update(left_T[-1])
-        right_cac = stream.cac_
+        right_cac_1d = stream.cac_1d_
         right_P = stream.P_
         right_I = stream.I_
         right_T = stream.T_
@@ -189,7 +189,7 @@ def test_floss():
         naive.replace_inf(left_P)
         naive.replace_inf(right_P)
 
-        npt.assert_almost_equal(left_cac, right_cac)
+        npt.assert_almost_equal(left_cac_1d, right_cac_1d)
         npt.assert_almost_equal(left_P, right_P)
         npt.assert_almost_equal(left_I, right_I)
         npt.assert_almost_equal(left_T, right_T)

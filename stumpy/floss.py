@@ -337,9 +337,9 @@ class floss(object):
 
     Attributes
     ----------
-    cac_ : ndarray
-        A corrected arc curve (CAC) updated as a result of ingressing a single
-        new data point and egressing a single old data point.
+    cac_1d_ : ndarray
+        A 1-dimensional corrected arc curve (CAC) updated as a result of ingressing a
+        single new data point and egressing a single old data point.
 
     P_ : ndarray
         The matrix profile updated as a result of ingressing a single new data
@@ -463,8 +463,8 @@ class floss(object):
     def update(self, t):
         """
         Ingress a new data point, `t`, onto the time series, `T`, followed by egressing
-        a oldest single data point from `T`. Then, update the corrected arc curve (CAC)
-        and the matrix profile.
+        a oldest single data point from `T`. Then, update the 1-dimensional corrected
+        arc curve (CAC_1D) and the matrix profile.
 
         Parameters
         ----------
@@ -520,9 +520,9 @@ class floss(object):
         self._n_appended += 1
 
     @property
-    def cac_(self):
+    def cac_1d_(self):
         """
-        Get the updated corrected arc curve (CAC)
+        Get the updated 1-dimensional corrected arc curve (CAC_1D)
         """
         return self._cac.astype(np.float)
 
