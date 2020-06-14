@@ -288,21 +288,10 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
     return cac, regime_locs
 
 
-def floss(
-    mp,
-    old_data,
-    add_data,
-    m,
-    L,
-    excl_factor=5,
-    n_iter=1000,
-    n_samples=1000,
-    skip=0,
-    custom_iac=None,
-):
+class floss(object):
     """
     Compute the Fast Low-cost Online Semantic Segmentation (FLOSS) for
-    streaming data. This returns a generator that can be incrementally iterated on.
+    streaming data.
 
     Parameters
     ----------
@@ -312,16 +301,11 @@ def floss(
         the left matrix profile indices, and the fourth column consists of
         the right matrix profile indices.
 
-    old_data : ndarray
-        A 1-D array of old time series data used to generate the matrix
-        profile and matrix profile indices found in `mp`. Note that the
-        the right matrix profile index is used and the right matrix profile
-        is intelligently recomputed on the fly from `old_data` instead of
-        using the bidirectional matrix profile.
-
-    add_data : ndarray
-        A 1-D array of additional time series data that is likely arriving
-        from a stream.
+    T : ndarray
+        A 1-D time series data used to generate the matrix profile and matrix profile
+        indices found in `mp`. Note that the the right matrix profile index is used and
+        the right matrix profile is intelligently recomputed on the fly from `T` instead
+        of using the bidirectional matrix profile.
 
     m : int
         The window size for computing sliding window mass. This is identical
@@ -347,36 +331,32 @@ def floss(
         Number of distribution samples to draw during each iteration when
         computing the IAC
 
-    skip : int
-        Number of windows to skip before yielding the first CAC. For example, setting
-        `skip=49` will skip the first 49 windows, yield the 50th window, skip the
-        next 49 windows, yield the 100th window, etc. This is useful for displaying
-        FLOSS in an animation.
-
     custom_iac : np.array
         A custom idealized arc curve (IAC) that will used for correcting the
         arc curve
 
-    Returns
-    -------
-    cac_out : ndarray
+    Attributes
+    ----------
+    cac_ : ndarray
         A corrected arc curve (CAC) updated as a result of ingressing a single
         new data point and egressing a single old data point.
 
-    mp_out : ndarray
+    mp_ : ndarray
         The first column consists of the matrix profile and the second column
         consists of the matrix profile indices. This updated matrix profile and
         matrix profile indices are a result of ingressing a single new data
         point and egressing a single old data point. Note that this array does
         not contain the left and right matrix profile indices.
 
-    idx_out : int
-        The total length of all of the aggregated old data and the additional data.
+    T_ : ndarray
+        The updated time series, `T`
 
-    T : ndarray
-        The last `n` data points from the sliding window after concatenating
-        `old_data` and `new_data` as a result of ingressing a single new
-        data point and egressing a single old data point
+    Methods
+    -------
+    update(t)
+        Ingress a new data point, `t`, onto the time series, `T`, followed by egressing
+        a oldest single data point from `T`. Then, update the corrected arc curve (CAC)
+        and the matrix profile.
 
     Notes
     -----
@@ -387,75 +367,174 @@ def floss(
     This is the implementation for Fast Low-cost Online Semantic
     Segmentation (FLOSS).
     """
-    n = old_data.shape[0]
-    k = mp.shape[0]
-    last_idx = n - m + 1  # This is dependent on the changing length of `old_data`
 
-    if custom_iac is None:  # pragma: no cover
-        custom_iac = _iac(k, bidirectional=False, n_iter=n_iter, n_samples=n_samples)
-    cac_out = np.ones(k)
-    mp_out = copy.deepcopy(mp)
-    right_nn = np.zeros((k, m))
+    def __init__(
+        self, mp, T, m, L, excl_factor=5, n_iter=1000, n_samples=1000, custom_iac=None
+    ):
+        """
+        Initialize the FLOSS object
 
-    old_data = np.asarray(old_data)
-    add_data = np.asarray(add_data)
+        Parameters
+        ----------
+        mp : ndarray
+            The first column consists of the matrix profile, the second column
+            consists of the matrix profile indices, the third column consists of
+            the left matrix profile indices, and the fourth column consists of
+            the right matrix profile indices.
 
-    concat_data = np.concatenate((old_data, add_data))
+        T : ndarray
+            A 1-D time series data used to generate the matrix profile and matrix
+            profile indices found in `mp`. Note that the the right matrix profile index
+            is used and the right matrix profile is intelligently recomputed on-the-fly
+            from `T` instead of using the bidirectional matrix profile.
 
-    # Disable the bidirectional matrix profile indices and left indices
-    mp_out[:, 1] = -1
-    mp_out[:, 2] = -1
+        m : int
+            The window size for computing sliding window mass. This is identical
+            to the window size used in the matrix profile calculation. For managing
+            edge effects, see the `L` parameter.
 
-    # Update matrix profile distance to be right mp distance and not bidirectional.
-    # Use right indices to perform direct distance calculations
-    # Note that any -1 indices must have a np.inf matrix profile value
-    right_indices = [np.arange(IR, IR + m) for IR in mp_out[:, 3].tolist()]
-    right_nn[:] = old_data[np.array(right_indices)]
-    mp_out[:, 0] = np.linalg.norm(
-        core.z_norm(core.rolling_window(old_data, m), 1) - core.z_norm(right_nn, 1),
-        axis=1,
-    )
-    inf_indices = np.argwhere(mp_out[:, 3] < 0).flatten()
-    mp_out[inf_indices, 0] = np.inf
-    mp_out[inf_indices, 3] = inf_indices
+        L : int
+            The subsequence length that is set roughly to be one period length.
+            This is likely to be the same value as the window size, `m`, used
+            to compute the matrix profile and matrix profile index but it can
+            be different since this is only used to manage edge effects
+            and has no bearing on any of the IAC or CAC core calculations.
 
-    rolling_Qs = core.rolling_window(concat_data[k:], m)
-    rolling_Ts = core.rolling_window(concat_data[1:], n)
-    M_T = np.zeros(n - m + 1)
-    Σ_T = np.zeros(n - m + 1)
-    D = np.zeros(n - m + 1)
-    excl_zone = int(np.ceil(m / 4))
-    # Note that the start of the exclusion zone is relative to
-    # the unchanging length of the matrix profile index
-    zone_start = max(0, k - excl_zone)
+        excl_factor : int
+            The multiplying factor for the regime exclusion zone. Note that this
+            is unrelated to the `excl_zone` used in to compute the matrix profile.
 
-    for i, (Q, T) in enumerate(zip(rolling_Qs, rolling_Ts)):
+        n_iter : int
+            Number of iterations to average over when determining the parameters for
+            the IAC beta distribution
+
+        n_samples : int
+            Number of distribution samples to draw during each iteration when
+            computing the IAC
+
+        custom_iac : np.array
+            A custom idealized arc curve (IAC) that will used for correcting the
+            arc curve
+        """
+        self._mp = copy.deepcopy(np.asarray(mp))
+        self._T = copy.deepcopy(np.asarray(T))
+        self._m = m
+        self._L = L
+        self._excl_factor = excl_factor
+        self._n_iter = n_iter
+        self._n_samples = n_samples
+        self._custom_iac = custom_iac
+        self._k = self._mp.shape[0]
+        self._n = self._T.shape[0]
+        self._last_idx = self._n - self._m + 1  # Depends on the changing length of `T`
+        self._n_appended = 0
+
+        if self._custom_iac is None:  # pragma: no cover
+            self._custom_iac = _iac(
+                self._k,
+                bidirectional=False,
+                n_iter=self._n_iter,
+                n_samples=self._n_samples,
+            )
+
+        right_nn = np.zeros((self._k, self._m))
+
+        # Disable the bidirectional matrix profile indices and left indices
+        self._mp[:, 1] = -1
+        self._mp[:, 2] = -1
+
+        # Update matrix profile distance to be right mp distance and not bidirectional.
+        # Use right indices to perform direct distance calculations
+        # Note that any -1 indices must have a np.inf matrix profile value
+        right_indices = [np.arange(IR, IR + self._m) for IR in self._mp[:, 3].tolist()]
+        right_nn[:] = self._T[np.array(right_indices)]
+        self._mp[:, 0] = np.linalg.norm(
+            core.z_norm(core.rolling_window(self._T, self._m), 1)
+            - core.z_norm(right_nn, 1),
+            axis=1,
+        )
+        inf_indices = np.argwhere(self._mp[:, 3] < 0).flatten()
+        self._mp[inf_indices, 0] = np.inf
+        self._mp[inf_indices, 3] = inf_indices
+
+        self._cac = np.ones(self._k) * -1
+
+    def update(self, t):
+        """
+        Ingress a new data point, `t`, onto the time series, `T`, followed by egressing
+        a oldest single data point from `T`. Then, update the corrected arc curve (CAC)
+        and the matrix profile.
+
+        Parameters
+        ----------
+        t : float
+            A single new data point to be appended to `T`
+
+        Notes
+        -----
+        DOI: 10.1109/ICDM.2017.21 \
+        <https://www.cs.ucr.edu/~eamonn/Segmentation_ICDM.pdf>`__
+
+        See Section C
+
+        This is the implementation for Fast Low-cost Online Semantic
+        Segmentation (FLOSS).
+        """
+        self._T[:] = np.roll(self._T, -1)
+        self._T[-1] = t
+        Q = self._T[-self._m :]
+        excl_zone = int(np.ceil(self._m / 4))
+        # Note that the start of the exclusion zone is relative to
+        # the unchanging length of the matrix profile index
+        zone_start = max(0, self._k - excl_zone)
+
         # Egress
         # Remove the first element in the matrix profile index
         # Shift mp up by one and replace the last row with new values
-        mp_out[:] = np.roll(mp_out, -1, axis=0)
-        mp_out[-1, 0] = np.inf
-        mp_out[-1, 3] = last_idx + i
+        self._mp[:] = np.roll(self._mp, -1, axis=0)
+        self._mp[-1, 0] = np.inf
+        self._mp[-1, 3] = self._last_idx
 
         # Ingress
-        M_T[:], Σ_T[:] = core.compute_mean_std(T, m)
+        M_T, Σ_T = core.compute_mean_std(self._T, self._m)
 
-        D[:] = core.mass(Q, T, M_T, Σ_T)
+        D = core.mass(Q, self._T, M_T, Σ_T)
         D[zone_start:] = np.inf
 
         # Update nearest neighbor for old data if any old subsequences
         # are closer to the newly arrived subsequence
-        update_idx = np.argwhere(D < mp_out[:, 0]).flatten()
-        mp_out[update_idx, 0] = D[update_idx]
-        mp_out[update_idx, 3] = last_idx + i
+        update_idx = np.argwhere(D < self._mp[:, 0]).flatten()
+        self._mp[update_idx, 0] = D[update_idx]
+        self._mp[update_idx, 3] = self._last_idx
 
-        if i % (skip + 1) == 0:
-            cac_out[:] = _cac(
-                mp_out[:, 3] - i - 1,
-                L,
-                bidirectional=False,
-                excl_factor=excl_factor,
-                custom_iac=custom_iac,
-            )
+        self._cac[:] = _cac(
+            self._mp[:, 3] - self._n_appended - 1,
+            self._L,
+            bidirectional=False,
+            excl_factor=self._excl_factor,
+            custom_iac=self._custom_iac,
+        )
 
-            yield cac_out, mp_out, T
+        self._last_idx += 1
+        self._n_appended += 1
+
+    @property
+    def mp_(self):
+        """
+        Get the updated matrix profile
+        """
+        return self._mp.astype(np.float)
+
+    @property
+    def cac_(self):
+        """
+        Get the updated corrected arc curve (CAC)
+        """
+        return self._cac.astype(np.float)
+
+    @property
+    def T_(self):
+        """
+        Get the updated time series, `T`
+        """
+        return self._T.astype(np.float)

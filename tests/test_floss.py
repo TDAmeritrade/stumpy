@@ -149,9 +149,7 @@ def test_floss():
     L = 5
     excl_factor = 1
     custom_iac = _iac(k, bidirectional=False)
-    right_gen = floss(
-        right_mp, old_data, add_data, m, L, excl_factor, custom_iac=custom_iac
-    )
+    stream = floss(right_mp, old_data, m, L, excl_factor, custom_iac=custom_iac)
     last_idx = n - m + 1
     excl_zone = int(np.ceil(m / 4))
     zone_start = max(0, k - excl_zone)
@@ -174,5 +172,6 @@ def test_floss():
             excl_factor=excl_factor,
             custom_iac=custom_iac,
         )
-        right_cac, right_mp, tmp_T = next(right_gen)
+        stream.update(T[-1])
+        right_cac = stream.cac_
         npt.assert_almost_equal(left_cac, right_cac)
