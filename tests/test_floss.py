@@ -3,6 +3,7 @@ import numpy.testing as npt
 from stumpy import _nnmark, _iac, _cac, _rea, fluss, stump, core, floss
 import copy
 import pytest
+import naive
 
 
 def naive_nnmark(I):
@@ -141,9 +142,9 @@ def test_floss():
     n = old_data.shape[0]
     add_data = data[30:]
 
-    left_mp = naive_right_mp(old_data, m)
+    mp = naive_right_mp(old_data, m)
     right_mp = stump(old_data, m)
-    k = left_mp.shape[0]
+    k = mp.shape[0]
 
     rolling_Ts = core.rolling_window(data[1:], n)
     L = 5
@@ -153,25 +154,42 @@ def test_floss():
     last_idx = n - m + 1
     excl_zone = int(np.ceil(m / 4))
     zone_start = max(0, k - excl_zone)
-    for i, T in enumerate(rolling_Ts):
-        left_mp[:] = np.roll(left_mp, -1, axis=0)
-        left_mp[-1, 0] = np.inf
-        left_mp[-1, 3] = last_idx + i
+    for i, left_T in enumerate(rolling_Ts):
+        mp[:, 1] = -1
+        mp[:, 2] = -1
+        mp[:] = np.roll(mp, -1, axis=0)
+        mp[-1, 0] = np.inf
+        mp[-1, 3] = last_idx + i
 
-        D = naive_distance_profile(T[-m:], T, m)
+        D = naive_distance_profile(left_T[-m:], left_T, m)
         D[zone_start:] = np.inf
 
-        update_idx = np.argwhere(D < left_mp[:, 0]).flatten()
-        left_mp[update_idx, 0] = D[update_idx]
-        left_mp[update_idx, 3] = last_idx + i
+        update_idx = np.argwhere(D < mp[:, 0]).flatten()
+        mp[update_idx, 0] = D[update_idx]
+        mp[update_idx, 3] = last_idx + i
 
         left_cac = _cac(
-            left_mp[:, 3] - i - 1,
+            mp[:, 3] - i - 1,
             L,
             bidirectional=False,
             excl_factor=excl_factor,
             custom_iac=custom_iac,
         )
-        stream.update(T[-1])
+
+        left_mp = mp.copy()
+        left_P = left_mp[:, 0]
+        left_I = left_mp[:, 3]
+
+        stream.update(left_T[-1])
         right_cac = stream.cac_
+        right_P = stream.P_
+        right_I = stream.I_
+        right_T = stream.T_
+
+        naive.replace_inf(left_P)
+        naive.replace_inf(right_P)
+
         npt.assert_almost_equal(left_cac, right_cac)
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
+        npt.assert_almost_equal(left_T, right_T)

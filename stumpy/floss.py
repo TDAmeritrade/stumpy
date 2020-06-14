@@ -341,12 +341,13 @@ class floss(object):
         A corrected arc curve (CAC) updated as a result of ingressing a single
         new data point and egressing a single old data point.
 
-    mp_ : ndarray
-        The first column consists of the matrix profile and the second column
-        consists of the matrix profile indices. This updated matrix profile and
-        matrix profile indices are a result of ingressing a single new data
-        point and egressing a single old data point. Note that this array does
-        not contain the left and right matrix profile indices.
+    P_ : ndarray
+        The matrix profile updated as a result of ingressing a single new data
+        point and egressing a single old data point.
+
+    I_ : ndarray
+        The (right) matrix profile indices updated as a result of ingressing a single
+        new data point and egressing a single old data point.
 
     T_ : ndarray
         The updated time series, `T`
@@ -519,18 +520,25 @@ class floss(object):
         self._n_appended += 1
 
     @property
-    def mp_(self):
-        """
-        Get the updated matrix profile
-        """
-        return self._mp.astype(np.float)
-
-    @property
     def cac_(self):
         """
         Get the updated corrected arc curve (CAC)
         """
         return self._cac.astype(np.float)
+
+    @property
+    def P_(self):
+        """
+        Get the updated matrix profile
+        """
+        return self._mp[:, 0].astype(np.float)
+
+    @property
+    def I_(self):
+        """
+        Get the updated (right) matrix profile indices
+        """
+        return self._mp[:, 3].astype(np.float)
 
     @property
     def T_(self):
