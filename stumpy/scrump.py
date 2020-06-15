@@ -612,8 +612,9 @@ class scrump(object):
     Methods
     -------
     update()
-        Update the matrix profile and matrix profile indices by computing additional
-        (as defined by `percentage`) new distances that make up the full distance matrix
+        Update the matrix profile and the matrix profile indices by computing
+        additional new distances (limited by `percentage`) that make up the full
+        distance matrix.
 
     Notes
     -----
@@ -747,8 +748,9 @@ class scrump(object):
 
     def update(self):
         """
-        Update the matrix profile and matrix profile indices by computing additional
-        (as defined by `percentage`) new distances that make up the full distance matrix
+        Update the matrix profile and the matrix profile indices by computing
+        additional new distances (limited by `percentage`) that make up the full 
+        distance matrix.
         """
         if self._chunk <= self._n_chunks:
             orders_ranges = _get_orders_ranges(

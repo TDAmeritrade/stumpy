@@ -356,8 +356,8 @@ class floss(object):
     -------
     update(t)
         Ingress a new data point, `t`, onto the time series, `T`, followed by egressing
-        a oldest single data point from `T`. Then, update the corrected arc curve (CAC)
-        and the matrix profile.
+        the oldest single data point from `T`. Then, update the 1-dimensional corrected
+        arc curve (CAC_1D) and the matrix profile.
 
     Notes
     -----
@@ -463,7 +463,7 @@ class floss(object):
     def update(self, t):
         """
         Ingress a new data point, `t`, onto the time series, `T`, followed by egressing
-        a oldest single data point from `T`. Then, update the 1-dimensional corrected
+        the oldest single data point from `T`. Then, update the 1-dimensional corrected
         arc curve (CAC_1D) and the matrix profile.
 
         Parameters
