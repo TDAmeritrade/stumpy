@@ -564,13 +564,10 @@ def prescrump(T_A, m, T_B=None, s=None):
     return P, I
 
 
-def scrump(
-    T_A, m, T_B=None, ignore_trivial=True, percentage=0.01, pre_scrump=False, s=None
-):
+class scrump(object):
     """
-    Compute the approximate matrix profile with parallelized SCRIMP. This returns a
-    generator that can be incrementally iterated on. For SCRIMP++, set
-    `pre_scrump=True`.
+    Compute the approximate matrix profile with the parallelized SCRIMP algorthm. For
+    SCRIMP++, set `pre_scrump=True`.
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_scrump` function which computes the matrix profile according to SCRIMP.
@@ -604,10 +601,19 @@ def scrump(
         then `s` will automatically be set to `s=int(np.ceil(m/4))`, the size of
         the exclusion zone.
 
-    Returns
+    Attributes
+    ----------
+    P_ : ndarray
+        The updated matrix profile
+
+    I_ : ndarray
+        The updated matrix profile indices
+
+    Methods
     -------
-    out : ndarray
-        Matrix profile and matrix profile indices
+    update()
+        Update the matrix profile and matrix profile indices by computing additional
+        (as defined by `percentage`) new distances that make up the full distance matrix
 
     Notes
     -----
@@ -616,85 +622,177 @@ def scrump(
 
     See Algorithm 1 and Algorithm 2
     """
-    if T_B is None:
-        T_B = T_A
-        ignore_trivial = True
 
-    T_A, M_T, Σ_T = core.preprocess(T_A, m)
-    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
+    def __init__(
+        self,
+        T_A,
+        m,
+        T_B=None,
+        ignore_trivial=True,
+        percentage=0.01,
+        pre_scrump=False,
+        s=None,
+    ):
+        """
+        Initialize the `scrump` object
 
-    if T_A.ndim != 1:  # pragma: no cover
-        raise ValueError(
-            f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. "
-            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
-        )
+        Parameters
+        ----------
+        T_A : ndarray
+            The time series or sequence for which to compute the matrix profile
 
-    if T_B.ndim != 1:  # pragma: no cover
-        raise ValueError(
-            f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
-            "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
-        )
+        T_B : ndarray
+            The time series or sequence that contain your query subsequences
+            of interest
 
-    core.check_dtype(T_A)
-    core.check_dtype(T_B)
+        m : int
+            Window size
 
-    core.check_window_size(m)
+        ignore_trivial : bool
+            Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
+            `False`. Default is `True`.
 
-    if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
-        logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
-        logger.warning("Try setting `ignore_trivial = True`.")
+        percentage : float
+            Approximate percentage completed. The value is between 0.0 and 1.0.
 
-    if ignore_trivial and core.are_arrays_equal(T_A, T_B) is False:  # pragma: no cover
-        logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
-        logger.warning("Try setting `ignore_trivial = False`.")
+        pre_scrump : bool
+            A flag for whether or not to perform the PreSCRIMP calculation prior to
+            computing SCRIMP. If set to `True`, this is equivalent to computing
+            SCRIMP++
 
-    n_A = T_A.shape[0]
-    n_B = T_B.shape[0]
-    l = n_B - m + 1
+        s : int
+            The size of the PreSCRIMP fixed interval. If `pre-scrump=True` and `s=None`,
+            then `s` will automatically be set to `s=int(np.ceil(m/4))`, the size of
+            the exclusion zone.
+        """
+        self._ignore_trivial = ignore_trivial
 
-    out = np.empty((l, 2), dtype=object)
-    out[:, 0] = np.inf
-    out[:, 1] = -1
+        if T_B is None:
+            T_B = T_A
+            self._ignore_trivial = True
 
-    excl_zone = int(np.ceil(m / 4))
+        self._m = m
+        self._T_A, self._M_T, self._Σ_T = core.preprocess(T_A, self._m)
+        self._T_B, self._μ_Q, self._σ_Q = core.preprocess(T_B, self._m)
 
-    if s is None:
-        s = excl_zone
+        if self._T_A.ndim != 1:  # pragma: no cover
+            raise ValueError(
+                f"T_A is {self._T_A.ndim}-dimensional and must be 1-dimensional. "
+                "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
+            )
 
-    if pre_scrump:
-        if ignore_trivial:
-            P, I = prescrump(T_A, m, s=s)
+        if self._T_B.ndim != 1:  # pragma: no cover
+            raise ValueError(
+                f"T_B is {self._T_B.ndim}-dimensional and must be 1-dimensional. "
+                "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
+            )
+
+        core.check_dtype(self._T_A)
+        core.check_dtype(self._T_B)
+
+        core.check_window_size(self._m)
+
+        if self._ignore_trivial is False and core.are_arrays_equal(
+            self._T_A, self._T_B
+        ):  # pragma: no cover
+            logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
+            logger.warning("Try setting `ignore_trivial = True`.")
+
+        if (
+            self._ignore_trivial
+            and core.are_arrays_equal(self._T_A, self._T_B) is False
+        ):  # pragma: no cover
+            logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
+            logger.warning("Try setting `ignore_trivial = False`.")
+
+        self._n_A = self._T_A.shape[0]
+        self._n_B = self._T_B.shape[0]
+        self._l = self._n_B - self._m + 1
+
+        self._P = np.empty(self._l, dtype=np.float64)
+        self._I = np.empty(self._l, dtype=np.int64)
+        self._P[:] = np.inf
+        self._I[:] = -1
+
+        self._excl_zone = int(np.ceil(self._m / 4))
+
+        if s is None:
+            s = self._excl_zone
+
+        if pre_scrump:
+            if self._ignore_trivial:
+                P, I = prescrump(self._T_A, self._m, s=s)
+            else:
+                P, I = prescrump(T_A, m, T_B=T_B, s=s)
+            for i in range(P.shape[0]):
+                if self._P[i] > P[i]:
+                    self._P[i] = P[i]
+                    self._I[i] = I[i]
+
+        if self._ignore_trivial:
+            self._orders = np.random.permutation(
+                range(self._excl_zone + 1, self._n_B - self._m + 1)
+            )
         else:
-            P, I = prescrump(T_A, m, T_B=T_B, s=s)
-        for i in range(P.shape[0]):
-            if out[i, 0] > P[i]:
-                out[i, 0] = P[i]
-                out[i, 1] = I[i]
+            self._orders = np.random.permutation(
+                range(-(self._n_B - self._m + 1) + 1, self._n_A - self._m + 1)
+            )
 
-    if ignore_trivial:
-        orders = np.random.permutation(range(excl_zone + 1, n_B - m + 1))
-    else:
-        orders = np.random.permutation(range(-(n_B - m + 1) + 1, n_A - m + 1))
+        self._n_threads = config.NUMBA_NUM_THREADS
+        self._percentage = min(percentage, 1.0)
+        self._percentage = max(percentage, 0.0)
+        self._n_chunks = int(np.ceil(1.0 / percentage))
+        self._chunk = 1
+        self._start = 0
 
-    n_threads = config.NUMBA_NUM_THREADS
-    percentage = min(percentage, 1.0)
-    percentage = max(percentage, 0.0)
-    generator_rounds = int(np.ceil(1.0 / percentage))
-    start = 0
-    for round in range(generator_rounds):
-        orders_ranges = _get_orders_ranges(
-            n_threads, m, n_A, n_B, orders, start, percentage
-        )
+    def update(self):
+        """
+        Update the matrix profile and matrix profile indices by computing additional
+        (as defined by `percentage`) new distances that make up the full distance matrix
+        """
+        if self._chunk <= self._n_chunks:
+            orders_ranges = _get_orders_ranges(
+                self._n_threads,
+                self._m,
+                self._n_A,
+                self._n_B,
+                self._orders,
+                self._start,
+                self._percentage,
+            )
 
-        P, I = _scrump(
-            T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, orders, orders_ranges, ignore_trivial
-        )
-        start = orders_ranges[:, 1].max()
+            P, I = _scrump(
+                self._T_A,
+                self._T_B,
+                self._m,
+                self._M_T,
+                self._Σ_T,
+                self._μ_Q,
+                self._σ_Q,
+                self._orders,
+                orders_ranges,
+                self._ignore_trivial,
+            )
+            self._start = orders_ranges[:, 1].max()
 
-        # Update matrix profile and indices
-        for i in range(out.shape[0]):
-            if out[i, 0] > P[i]:
-                out[i, 0] = P[i]
-                out[i, 1] = I[i]
+            # Update matrix profile and indices
+            for i in range(self._P.shape[0]):
+                if self._P[i] > P[i]:
+                    self._P[i] = P[i]
+                    self._I[i] = I[i]
 
-        yield out
+            self._chunk += 1
+
+    @property
+    def P_(self):
+        """
+        Get the updated matrix profile
+        """
+        return self._P.astype(np.float)
+
+    @property
+    def I_(self):
+        """
+        Get the updated matrix profile indices
+        """
+        return self._I.astype(np.int)
