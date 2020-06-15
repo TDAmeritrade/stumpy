@@ -749,7 +749,7 @@ class scrump(object):
     def update(self):
         """
         Update the matrix profile and the matrix profile indices by computing
-        additional new distances (limited by `percentage`) that make up the full 
+        additional new distances (limited by `percentage`) that make up the full
         distance matrix.
         """
         if self._chunk <= self._n_chunks:
