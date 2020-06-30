@@ -20,7 +20,7 @@ def get_extras_require():
         "codecov",
     ]
 
-    if "linux" in sys.platform():
+    if "linux" in sys.platform:
         extras.append("tbb >= 2019.5")
 
     return extras
