@@ -1,5 +1,6 @@
 from setuptools import setup
-import platform
+import sys
+
 
 def readme():
     with open("README.rst") as readme_file:
@@ -19,7 +20,7 @@ def get_extras_require():
         "codecov",
     ]
 
-    if platform.platform() == 'Linux':
+    if "linux" in sys.platform():
         extras.append("tbb >= 2019.5")
 
     return extras
@@ -62,9 +63,7 @@ configuration = {
     "cmdclass": {},
     "tests_require": ["pytest"],
     "data_files": (),
-    "extras_require": {
-        "ci": get_extras_require()
-    },
+    "extras_require": {"ci": get_extras_require()},
 }
 
 setup(**configuration)
