@@ -48,6 +48,7 @@ configuration = {
             "pandas >= 0.20.0",
             "dask >= 1.2.2",
             "distributed >= 1.28.1",
+            "tbb >= 2019.5",
             "coverage >= 4.5.3",
             "flake8 >= 3.7.7",
             "flake8-docstrings >= 1.5.0",
