@@ -1,9 +1,28 @@
 from setuptools import setup
-
+import platform
 
 def readme():
     with open("README.rst") as readme_file:
         return readme_file.read()
+
+
+def get_extras_require():
+    extras = [
+        "pandas >= 0.20.0",
+        "dask >= 1.2.2",
+        "distributed >= 1.28.1",
+        "coverage >= 4.5.3",
+        "flake8 >= 3.7.7",
+        "flake8-docstrings >= 1.5.0",
+        "black >= 19.3b0",
+        "pytest >= 4.4.1",
+        "codecov",
+    ]
+
+    if platform.platform() == 'Linux':
+        extras.append("tbb >= 2019.5")
+
+    return extras
 
 
 configuration = {
@@ -44,17 +63,7 @@ configuration = {
     "tests_require": ["pytest"],
     "data_files": (),
     "extras_require": {
-        "ci": [
-            "pandas >= 0.20.0",
-            "dask >= 1.2.2",
-            "distributed >= 1.28.1",
-            "coverage >= 4.5.3",
-            "flake8 >= 3.7.7",
-            "flake8-docstrings >= 1.5.0",
-            "black >= 19.3b0",
-            "pytest >= 4.4.1",
-            "codecov",
-        ]
+        "ci": get_extras_require()
     },
 }
 
