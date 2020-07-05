@@ -59,7 +59,7 @@ check_errs $?
 py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mstumped_one_subsequence_nan_self_join.py
 check_errs $?
 
-echo "Disabling Numba JIT  and CUDA Compiled Functions"
+echo "Disabling Numba JIT and CUDA Compiled Functions"
 export NUMBA_DISABLE_JIT=1
 export NUMBA_ENABLE_CUDASIM=1
 
