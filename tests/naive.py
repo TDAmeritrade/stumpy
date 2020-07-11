@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial.distance import cdist
 from stumpy import core
 
 
@@ -213,5 +214,48 @@ def get_array_ranges(a, n_chunks, truncate=False):
 
     if truncate:
         out = out[:ranges_idx]
+
+    return out
+
+
+def aamp(T_A, m, T_B=None):
+    T_A = np.asarray(T_A)
+    T_A = T_A.copy()
+
+    if T_B is None:
+        T_B = T_A.copy()
+        ignore_trivial = True
+    else:
+        T_B = np.asarray(T_B)
+        T_B = T_B.copy()
+        ignore_trivial = False
+
+    T_A[np.isinf(T_A)] = np.nan
+    T_B[np.isinf(T_B)] = np.nan
+
+    rolling_T_A = core.rolling_window(T_A, m)
+    rolling_T_B = core.rolling_window(T_B, m)
+
+    l = T_B.shape[0] - m + 1
+    out = np.empty((l, 2), dtype=object)
+
+    D = cdist(rolling_T_B, rolling_T_A)
+
+    if ignore_trivial:
+        excl_zone = int(np.ceil(m / 4))
+        excl_zone_mask = np.tri(
+            D.shape[0], D.shape[0], excl_zone, dtype=np.bool
+        ) & ~np.tri(D.shape[0], D.shape[0], -(excl_zone + 1), dtype=np.bool)
+        D[excl_zone_mask] = np.inf
+
+    D[np.isnan(D)] = np.inf
+
+    I = D.argmin(axis=1)
+    P = D[np.arange(D.shape[0]), I]
+
+    I[np.isinf(P)] = -1
+
+    out[:, 0] = P
+    out[:, 1] = I
 
     return out
