@@ -22,6 +22,13 @@ echo "Checking Flake8 Style Guide Enforcement"
 flake8 ./
 check_errs $?
 
+if false; then
+# if true; then
+  py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_.py 
+  check_errs $?
+  exit 0
+fi
+
 echo "Testing Numba JIT Compiled Functions"
 py.test -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_stump.py
 py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_core.py

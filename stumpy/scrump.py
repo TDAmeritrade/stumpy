@@ -241,13 +241,23 @@ def _compute_diagonal(
                 m, QT, M_T[i + k], Σ_T[i + k], μ_Q[i], σ_Q[i],
             )
 
-            if D_squared < P[thread_idx, i]:
-                P[thread_idx, i] = D_squared
-                I[thread_idx, i] = i + k
+            if D_squared < P[thread_idx, i, 0]:
+                P[thread_idx, i, 0] = D_squared
+                I[thread_idx, i, 0] = i + k
 
-            if ignore_trivial and D_squared < P[thread_idx, i + k]:
-                P[thread_idx, i + k] = D_squared
-                I[thread_idx, i + k] = i
+            if ignore_trivial and D_squared < P[thread_idx, i + k, 0]:
+                P[thread_idx, i + k, 0] = D_squared
+                I[thread_idx, i + k, 0] = i
+
+            # left matrix profile and left matrix profile index for self-joins
+            if ignore_trivial and i < i + k and D_squared < P[thread_idx, i + k, 1]:
+                P[thread_idx, i + k, 1] = D_squared
+                I[thread_idx, i + k, 1] = i
+
+            # right matrix profile and right matrix profile index for self-joins
+            if ignore_trivial and i + k > i and D_squared < P[thread_idx, i, 2]:
+                P[thread_idx, i, 2] = D_squared
+                I[thread_idx, i, 2] = i + k
 
 
 @njit(parallel=True, fastmath=True)
@@ -310,11 +320,11 @@ def _scrump(T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, orders, orders_ranges, ignore_tr
     n = T_B.shape[0]
     l = n - m + 1
     n_threads = config.NUMBA_NUM_THREADS
-    P = np.empty((n_threads, l))
-    I = np.empty((n_threads, l), np.int64)
+    P = np.empty((n_threads, l, 3))
+    I = np.empty((n_threads, l, 3), np.int64)
 
-    P[:, :] = np.inf
-    I[:, :] = -1
+    P[:, :, :] = np.inf
+    I[:, :, :] = -1
 
     for thread_idx in prange(n_threads):
         # Compute and pdate P, I within a single thread while avoiding race conditions
@@ -338,9 +348,17 @@ def _scrump(T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, orders, orders_ranges, ignore_tr
     # Reduction of results from all threads
     for thread_idx in range(1, n_threads):
         for i in prange(l):
-            if P[0, i] > P[thread_idx, i]:
-                P[0, i] = P[thread_idx, i]
-                I[0, i] = I[thread_idx, i]
+            if P[0, i, 0] > P[thread_idx, i, 0]:
+                P[0, i, 0] = P[thread_idx, i, 0]
+                I[0, i, 0] = I[thread_idx, i, 0]
+            # left matrix profile and left matrix profile indices
+            if P[0, i, 1] > P[thread_idx, i, 1]:
+                P[0, i, 1] = P[thread_idx, i, 1]
+                I[0, i, 1] = I[thread_idx, i, 1]
+            # right matrix profile and right matrix profile indices
+            if P[0, i, 2] > P[thread_idx, i, 2]:
+                P[0, i, 2] = P[thread_idx, i, 2]
+                I[0, i, 2] = I[thread_idx, i, 2]
 
     return np.sqrt(P[0]), I[0]
 
@@ -710,10 +728,10 @@ class scrump(object):
         self._n_B = self._T_B.shape[0]
         self._l = self._n_B - self._m + 1
 
-        self._P = np.empty(self._l, dtype=np.float64)
-        self._I = np.empty(self._l, dtype=np.int64)
-        self._P[:] = np.inf
-        self._I[:] = -1
+        self._P = np.empty((self._l, 3), dtype=np.float64)
+        self._I = np.empty((self._l, 3), dtype=np.int64)
+        self._P[:, :] = np.inf
+        self._I[:, :] = -1
 
         self._excl_zone = int(np.ceil(self._m / 4))
 
@@ -726,9 +744,9 @@ class scrump(object):
             else:
                 P, I = prescrump(T_A, m, T_B=T_B, s=s)
             for i in range(P.shape[0]):
-                if self._P[i] > P[i]:
-                    self._P[i] = P[i]
-                    self._I[i] = I[i]
+                if self._P[i, 0] > P[i]:
+                    self._P[i, 0] = P[i]
+                    self._I[i, 0] = I[i]
 
         if self._ignore_trivial:
             self._orders = np.random.permutation(
@@ -779,9 +797,17 @@ class scrump(object):
 
             # Update matrix profile and indices
             for i in range(self._P.shape[0]):
-                if self._P[i] > P[i]:
-                    self._P[i] = P[i]
-                    self._I[i] = I[i]
+                if self._P[i, 0] > P[i, 0]:
+                    self._P[i, 0] = P[i, 0]
+                    self._I[i, 0] = I[i, 0]
+                # left matrix profile and left matrix profile indices
+                if self._P[i, 1] > P[i, 1]:
+                    self._P[i, 1] = P[i, 1]
+                    self._I[i, 1] = I[i, 1]
+                # right matrix profile and right matrix profile indices
+                if self._P[i, 2] > P[i, 2]:
+                    self._P[i, 2] = P[i, 2]
+                    self._I[i, 2] = I[i, 2]
 
             self._chunk += 1
 
@@ -790,11 +816,25 @@ class scrump(object):
         """
         Get the updated matrix profile
         """
-        return self._P.astype(np.float)
+        return self._P[:, 0].astype(np.float)
 
     @property
     def I_(self):
         """
         Get the updated matrix profile indices
         """
-        return self._I.astype(np.int)
+        return self._I[:, 0].astype(np.int)
+
+    @property
+    def left_I_(self):
+        """
+        Get the updated left matrix profile indices
+        """
+        return self._I[:, 1].astype(np.int)
+
+    @property
+    def right_I_(self):
+        """
+        Get the updated right matrix profile indices
+        """
+        return self._I[:, 2].astype(np.int)
