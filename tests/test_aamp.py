@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import aamp
+from stumpy.aamp import aamp
 import pytest
 import naive
 
