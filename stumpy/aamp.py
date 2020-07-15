@@ -21,6 +21,8 @@ def _compute_diagonal(
     orders,
     orders_start_idx,
     orders_stop_idx,
+    subseq_A_isnan,
+    subseq_B_isnan,
     thread_idx,
     P,
     I,
@@ -57,6 +59,14 @@ def _compute_diagonal(
     I : ndarray
         Matrix profile indices
 
+    subseq_A_isnan : ndarray
+        A boolean array that indicates whether a subsequence in `T_A` contains a
+        `np.nan` value
+
+    subseq_B_isnan : ndarray
+        A boolean array that indicates whether a subsequence in `T_B` contains a
+        `np.nan` value
+
     thread_idx : int
         The thread index
 
@@ -82,13 +92,7 @@ def _compute_diagonal(
         D_squared = np.nan
 
         for i in iter_range:
-            if (
-                i == 0
-                or i == k
-                or (k < 0 and i == -k)
-                or np.isnan(D_squared)
-                or np.isinf(D_squared)
-            ):
+            if i == 0 or i == k or (k < 0 and i == -k):
                 D_squared = np.linalg.norm(T_A[i + k : i + k + m] - T_B[i : i + m]) ** 2
             else:
                 D_squared = (
@@ -97,21 +101,25 @@ def _compute_diagonal(
                     + (T_A[i + k + m - 1] - T_B[i + m - 1]) ** 2
                 )
 
-            if np.isnan(D_squared):
-                D_squared = np.inf
+            if subseq_A_isnan[i + k] or subseq_B_isnan[i]:
+                tmp_D_squared = np.inf
+            else:
+                tmp_D_squared = D_squared
 
-            if D_squared < P[thread_idx, i]:
-                P[thread_idx, i] = D_squared
+            if tmp_D_squared < P[thread_idx, i]:
+                P[thread_idx, i] = tmp_D_squared
                 I[thread_idx, i] = i + k
 
-            if ignore_trivial and D_squared < P[thread_idx, i + k]:
-                P[thread_idx, i + k] = D_squared
+            if ignore_trivial and tmp_D_squared < P[thread_idx, i + k]:
+                P[thread_idx, i + k] = tmp_D_squared
                 I[thread_idx, i + k] = i
     return
 
 
 @njit(parallel=True, fastmath=True)
-def _aamp(T_A, T_B, m, orders, orders_ranges, ignore_trivial):
+def _aamp(
+    T_A, T_B, m, orders, orders_ranges, subseq_A_isnan, subseq_B_isnan, ignore_trivial
+):
     """
     A Numba JIT-compiled version of AAMP for parallel computation of the matrix
     profile and matrix profile indices.
@@ -134,6 +142,14 @@ def _aamp(T_A, T_B, m, orders, orders_ranges, ignore_trivial):
     orders_ranges : ndarray
         The start (column 1) and (exclusive) stop (column 2) order indices for
         each thread
+
+    subseq_A_isnan : ndarray
+        A boolean array that indicates whether a subsequence in `T_A` contains a
+        `np.nan` value
+
+    subseq_B_isnan : ndarray
+        A boolean array that indicates whether a subsequence in `T_B` contains a
+        `np.nan` value
 
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
@@ -172,6 +188,8 @@ def _aamp(T_A, T_B, m, orders, orders_ranges, ignore_trivial):
             orders,
             orders_ranges[thread_idx, 0],
             orders_ranges[thread_idx, 1],
+            subseq_A_isnan,
+            subseq_B_isnan,
             thread_idx,
             P,
             I,
@@ -260,6 +278,12 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
     T_A[np.isinf(T_A)] = np.nan
     T_B[np.isinf(T_B)] = np.nan
 
+    subseq_A_isnan = np.any(np.isnan(core.rolling_window(T_A, m)), axis=1)
+    subseq_B_isnan = np.any(np.isnan(core.rolling_window(T_B, m)), axis=1)
+
+    T_A[np.isnan(T_A)] = 0
+    T_B[np.isnan(T_B)] = 0
+
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_B - m + 1
@@ -275,7 +299,16 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
 
     orders_ranges = _get_orders_ranges(n_threads, m, n_A, n_B, orders, 0, 1.0)
 
-    P, I = _aamp(T_A, T_B, m, orders, orders_ranges, ignore_trivial)
+    P, I = _aamp(
+        T_A,
+        T_B,
+        m,
+        orders,
+        orders_ranges,
+        subseq_A_isnan,
+        subseq_B_isnan,
+        ignore_trivial,
+    )
 
     out[:, 0] = P
     out[:, 1] = I
