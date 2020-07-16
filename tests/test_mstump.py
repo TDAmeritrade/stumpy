@@ -246,6 +246,22 @@ def test_constant_subsequence_self_join():
     npt.assert_almost_equal(left_P, right_P)  # ignore indices
 
 
+def test_identical_subsequence_self_join():
+    identical = np.random.rand(8)
+    T_A = np.random.rand(20)
+    T_A[1 : 1 + identical.shape[0]] = identical
+    T_A[11 : 11 + identical.shape[0]] = identical
+    T = np.array([T_A, T_A, np.random.rand(T_A.shape[0])])
+    m = 3
+
+    excl_zone = int(np.ceil(m / 4))
+
+    left_P, left_I = naive.mstump(T, m, excl_zone)
+    right_P, right_I = mstump(T, m)
+
+    npt.assert_almost_equal(left_P, right_P, decimal=6)  # ignore indices
+
+
 @pytest.mark.parametrize("T, m", test_data)
 @pytest.mark.parametrize("substitute", substitution_values)
 @pytest.mark.parametrize("substitution_locations", substitution_locations)

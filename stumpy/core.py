@@ -379,19 +379,23 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
     See Equation on Page 4
     """
-    threshold = 1e-10
+    denom_threshold = 1e-14
+    stddev_threshold = 1e-7
+    D_squared_threshold = 1e-14
     if np.isinf(M_T) or np.isinf(μ_Q):
         D_squared = np.inf
     else:
-        if σ_Q < threshold or Σ_T < threshold:
+        if σ_Q < stddev_threshold or Σ_T < stddev_threshold:
             D_squared = m
         else:
             denom = m * σ_Q * Σ_T
-            if np.abs(denom) < threshold:  # pragma nocover
-                denom = threshold
+            if np.abs(denom) < denom_threshold:  # pragma nocover
+                denom = denom_threshold
             D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
 
-        if σ_Q < threshold and Σ_T < threshold:
+        if (
+            σ_Q < stddev_threshold and Σ_T < stddev_threshold
+        ) or D_squared < D_squared_threshold:
             D_squared = 0
 
     return D_squared

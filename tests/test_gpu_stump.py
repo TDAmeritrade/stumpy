@@ -181,6 +181,53 @@ def test_gpu_stump_two_constant_subsequences_A_B_join():
     npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
 
 
+def test_gpu_stump_identical_subsequence_self_join():
+    identical = np.random.rand(8)
+    T_A = np.random.rand(20)
+    T_A[1 : 1 + identical.shape[0]] = identical
+    T_A[11 : 11 + identical.shape[0]] = identical
+    m = 3
+    zone = int(np.ceil(m / 4))
+    left = naive.stamp(T_A, m, exclusion_zone=zone)
+    right = gpu_stump(T_A, m, ignore_trivial=True)
+    naive.replace_inf(left)
+    naive.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0], decimal=6)  # ignore indices
+
+    right = gpu_stump(pd.Series(T_A), m, ignore_trivial=True)
+    naive.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0], decimal=6)  # ignore indices
+
+
+def test_gpu_stump_identical_subsequence_A_B_join():
+    identical = np.random.rand(8)
+    T_A = np.random.rand(20)
+    T_B = np.random.rand(20)
+    T_A[1 : 1 + identical.shape[0]] = identical
+    T_B[11 : 11 + identical.shape[0]] = identical
+    m = 3
+    left = naive.stamp(T_A, m, T_B=T_B)
+    right = gpu_stump(T_A, m, T_B, ignore_trivial=False)
+    naive.replace_inf(left)
+    naive.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0], decimal=6)  # ignore indices
+
+    right = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+    naive.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0], decimal=6)  # ignore indices
+
+    # Swap inputs
+    left = naive.stamp(T_B, m, T_B=T_A)
+    right = gpu_stump(T_B, m, T_A, ignore_trivial=False)
+    naive.replace_inf(left)
+    naive.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0], decimal=6)  # ignore indices
+
+    right = gpu_stump(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
+    naive.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0], decimal=6)  # ignore indices
+
+
 @pytest.mark.parametrize("T_A, T_B", test_data)
 @pytest.mark.parametrize("substitute_B", substitution_values)
 @pytest.mark.parametrize("substitution_locations", substitution_locations)

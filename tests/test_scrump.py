@@ -804,6 +804,44 @@ def test_scrump_constant_subsequence_self_join(percentages):
         npt.assert_almost_equal(left_right_I, right_right_I)
 
 
+@pytest.mark.parametrize("percentages", percentages)
+def test_scrump_identical_subsequence_self_join(percentages):
+    identical = np.random.rand(8)
+    T = np.random.rand(20)
+    T[1 : 1 + identical.shape[0]] = identical
+    T[11 : 11 + identical.shape[0]] = identical
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    for percentage in percentages:
+        seed = np.random.randint(100000)
+
+        np.random.seed(seed)
+        left = naive_scrump(T, m, T, percentage, zone, False, None)
+        left_P = left[:, 0]
+        left_I = left[:, 1]
+        left_left_I = left[:, 2]
+        left_right_I = left[:, 3]
+
+        np.random.seed(seed)
+        approx = scrump(
+            T, m, ignore_trivial=True, percentage=percentage, pre_scrump=False
+        )
+        approx.update()
+        right_P = approx.P_
+        right_I = approx.I_
+        right_left_I = approx.left_I_
+        right_right_I = approx.right_I_
+
+        naive.replace_inf(left_P)
+        naive.replace_inf(right_P)
+
+        npt.assert_almost_equal(left_P, right_P, decimal=6)
+        # npt.assert_almost_equal(left_I, right_I)
+        # npt.assert_almost_equal(left_left_I, right_left_I)
+        # npt.assert_almost_equal(left_right_I, right_right_I)
+
+
 @pytest.mark.parametrize("T_A, T_B", test_data)
 @pytest.mark.parametrize("substitute", substitution_values)
 @pytest.mark.parametrize("substitution_locations", substitution_locations)

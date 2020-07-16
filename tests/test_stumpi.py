@@ -77,6 +77,7 @@ def test_stumpi_init_nan_inf_self_join(substitute, substitution_locations):
     zone = int(np.ceil(m / 4))
 
     seed = np.random.randint(100000)
+    # seed = 58638
 
     for substitution_location in substitution_locations:
         np.random.seed(seed)
@@ -100,7 +101,6 @@ def test_stumpi_init_nan_inf_self_join(substitute, substitution_locations):
 
         naive.replace_inf(left_P)
         naive.replace_inf(right_P)
-
         npt.assert_almost_equal(left_P, right_P)
         npt.assert_almost_equal(left_I, right_I)
 
@@ -218,3 +218,52 @@ def test_stumpi_constant_subsequence_self_join():
 
     npt.assert_almost_equal(left_P, right_P)
     npt.assert_almost_equal(left_I, right_I)
+
+
+def test_stumpi_identical_subsequence_self_join():
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    seed = np.random.randint(100000)
+    np.random.seed(seed)
+
+    identical = np.random.rand(8)
+    T = np.random.rand(20)
+    T[1 : 1 + identical.shape[0]] = identical
+    T[11 : 11 + identical.shape[0]] = identical
+    stream = stumpi(T, m)
+    for i in range(34):
+        t = np.random.rand()
+        stream.update(t)
+
+    right_P = stream.P_
+    right_I = stream.I_
+
+    left = naive.stamp(stream.T_, m, exclusion_zone=zone)
+    left_P = left[:, 0]
+    left_I = left[:, 1]
+
+    naive.replace_inf(left_P)
+    naive.replace_inf(right_P)
+
+    npt.assert_almost_equal(left_P, right_P, decimal=6)
+    # npt.assert_almost_equal(left_I, right_I)
+
+    np.random.seed(seed)
+    identical = np.random.rand(8)
+    T = np.random.rand(20)
+    T[1 : 1 + identical.shape[0]] = identical
+    T[11 : 11 + identical.shape[0]] = identical
+    T = pd.Series(T)
+    stream = stumpi(T, m)
+    for i in range(34):
+        t = np.random.rand()
+        stream.update(t)
+
+    right_P = stream.P_
+    right_I = stream.I_
+
+    naive.replace_inf(right_P)
+
+    npt.assert_almost_equal(left_P, right_P, decimal=6)
+    # npt.assert_almost_equal(left_I, right_I)

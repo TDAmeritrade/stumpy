@@ -96,7 +96,7 @@ def test_mstumped_df(T, m, dask_cluster):
 
 
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_constant_subsequence_self_join(dask_cluster):
+def test_mstumped_constant_subsequence_self_join(dask_cluster):
     with Client(dask_cluster) as dask_client:
         T_A = np.concatenate(
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
@@ -110,3 +110,21 @@ def test_constant_subsequence_self_join(dask_cluster):
         right_P, right_I = mstumped(dask_client, T, m)
 
         npt.assert_almost_equal(left_P, right_P)  # ignore indices
+
+
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+def test_mstumped_identical_subsequence_self_join(dask_cluster):
+    with Client(dask_cluster) as dask_client:
+        identical = np.random.rand(8)
+        T_A = np.random.rand(20)
+        T_A[1 : 1 + identical.shape[0]] = identical
+        T_A[11 : 11 + identical.shape[0]] = identical
+        T = np.array([T_A, T_A, np.random.rand(T_A.shape[0])])
+        m = 3
+
+        excl_zone = int(np.ceil(m / 4))
+
+        left_P, left_I = naive.mstump(T, m, excl_zone)
+        right_P, right_I = mstumped(dask_client, T, m)
+
+        npt.assert_almost_equal(left_P, right_P, decimal=6)  # ignore indices
