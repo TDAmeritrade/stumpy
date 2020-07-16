@@ -3,6 +3,9 @@ from scipy.spatial.distance import cdist
 from stumpy import core
 
 
+PRECISION = 1e-5
+
+
 def z_norm(a, axis=0, threshold=1e-7):
     std = np.std(a, axis, keepdims=True)
     std[np.less(std, threshold, where=~np.isnan(std))] = 1.0

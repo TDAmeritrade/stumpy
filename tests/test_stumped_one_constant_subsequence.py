@@ -157,7 +157,9 @@ def test_stumped_identical_subsequence_self_join(dask_cluster):
         right = stumped(dask_client, T_A, m, ignore_trivial=True)
         naive.replace_inf(left)
         naive.replace_inf(right)
-        npt.assert_almost_equal(left[:, 0], right[:, 0], decimal=6)  # ignore indices
+        npt.assert_almost_equal(
+            left[:, 0], right[:, 0], decimal=naive.PRECISION
+        )  # ignore indices
 
 
 @pytest.mark.filterwarnings("ignore:\\s+A large number of values are smaller")
@@ -178,4 +180,6 @@ def test_stumped_one_constant_subsequence_A_B_join(dask_cluster):
         right = stumped(dask_client, T_A, m, T_B, ignore_trivial=False)
         naive.replace_inf(left)
         naive.replace_inf(right)
-        npt.assert_almost_equal(left[:, 0], right[:, 0], decimal=6)  # ignore indices
+        npt.assert_almost_equal(
+            left[:, 0], right[:, 0], decimal=naive.PRECISION
+        )  # ignore indices

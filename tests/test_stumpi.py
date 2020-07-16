@@ -246,7 +246,7 @@ def test_stumpi_identical_subsequence_self_join():
     naive.replace_inf(left_P)
     naive.replace_inf(right_P)
 
-    npt.assert_almost_equal(left_P, right_P, decimal=6)
+    npt.assert_almost_equal(left_P, right_P, decimal=naive.PRECISION)
     # npt.assert_almost_equal(left_I, right_I)
 
     np.random.seed(seed)
@@ -265,5 +265,5 @@ def test_stumpi_identical_subsequence_self_join():
 
     naive.replace_inf(right_P)
 
-    npt.assert_almost_equal(left_P, right_P, decimal=6)
+    npt.assert_almost_equal(left_P, right_P, decimal=naive.PRECISION)
     # npt.assert_almost_equal(left_I, right_I)

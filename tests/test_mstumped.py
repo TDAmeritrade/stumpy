@@ -127,4 +127,6 @@ def test_mstumped_identical_subsequence_self_join(dask_cluster):
         left_P, left_I = naive.mstump(T, m, excl_zone)
         right_P, right_I = mstumped(dask_client, T, m)
 
-        npt.assert_almost_equal(left_P, right_P, decimal=6)  # ignore indices
+        npt.assert_almost_equal(
+            left_P, right_P, decimal=naive.PRECISION
+        )  # ignore indices
