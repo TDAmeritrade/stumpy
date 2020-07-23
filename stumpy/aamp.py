@@ -89,8 +89,6 @@ def _compute_diagonal(
         else:
             iter_range = range(-k, min(n_B - m + 1, n_A - m + 1 - k))
 
-        D_squared = np.nan
-
         for i in iter_range:
             if i == 0 or i == k or (k < 0 and i == -k):
                 D_squared = np.linalg.norm(T_A[i + k : i + k + m] - T_B[i : i + m]) ** 2
@@ -101,18 +99,15 @@ def _compute_diagonal(
                     + (T_A[i + k + m - 1] - T_B[i + m - 1]) ** 2
                 )
 
-            if subseq_A_isnan[i + k] or subseq_B_isnan[i]:
-                tmp_D_squared = np.inf
-            else:
-                tmp_D_squared = D_squared
+            if not (subseq_A_isnan[i + k] or subseq_B_isnan[i]):
+                # Neither subsequence contains NaNs
+                if D_squared < P[thread_idx, i]:
+                    P[thread_idx, i] = D_squared
+                    I[thread_idx, i] = i + k
 
-            if tmp_D_squared < P[thread_idx, i]:
-                P[thread_idx, i] = tmp_D_squared
-                I[thread_idx, i] = i + k
-
-            if ignore_trivial and tmp_D_squared < P[thread_idx, i + k]:
-                P[thread_idx, i + k] = tmp_D_squared
-                I[thread_idx, i + k] = i
+                if ignore_trivial and D_squared < P[thread_idx, i + k]:
+                    P[thread_idx, i + k] = D_squared
+                    I[thread_idx, i + k] = i
     return
 
 
