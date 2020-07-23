@@ -13,7 +13,7 @@ from .scrump import _get_orders_ranges
 logger = logging.getLogger(__name__)
 
 
-@njit()
+@njit(fastmath=True)
 def _compute_diagonal(
     T_A,
     T_B,
