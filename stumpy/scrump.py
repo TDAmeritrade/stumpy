@@ -245,19 +245,21 @@ def _compute_diagonal(
                 P[thread_idx, i, 0] = D_squared
                 I[thread_idx, i, 0] = i + k
 
-            if ignore_trivial and D_squared < P[thread_idx, i + k, 0]:
-                P[thread_idx, i + k, 0] = D_squared
-                I[thread_idx, i + k, 0] = i
+            if ignore_trivial:  # self-joins only
+                if D_squared < P[thread_idx, i + k, 0]:
+                    P[thread_idx, i + k, 0] = D_squared
+                    I[thread_idx, i + k, 0] = i
 
-            # left matrix profile and left matrix profile index for self-joins
-            if ignore_trivial and i < i + k and D_squared < P[thread_idx, i + k, 1]:
-                P[thread_idx, i + k, 1] = D_squared
-                I[thread_idx, i + k, 1] = i
+                if i < i + k:
+                    # left matrix profile and left matrix profile index
+                    if D_squared < P[thread_idx, i + k, 1]:
+                        P[thread_idx, i + k, 1] = D_squared
+                        I[thread_idx, i + k, 1] = i
 
-            # right matrix profile and right matrix profile index for self-joins
-            if ignore_trivial and i + k > i and D_squared < P[thread_idx, i, 2]:
-                P[thread_idx, i, 2] = D_squared
-                I[thread_idx, i, 2] = i + k
+                    if D_squared < P[thread_idx, i, 2]:
+                        # right matrix profile and right matrix profile index
+                        P[thread_idx, i, 2] = D_squared
+                        I[thread_idx, i, 2] = i + k
 
 
 @njit(parallel=True, fastmath=True)
