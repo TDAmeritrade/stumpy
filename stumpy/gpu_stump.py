@@ -115,9 +115,6 @@ def _compute_and_update_PI_kernel(
     """
     start = cuda.grid(1)
     stride = cuda.gridsize(1)
-    denom_threshold = 1e-14
-    stddev_threshold = 1e-7
-    D_threshold = 1e-14
 
     if i % 2 == 0:
         QT_out = QT_even
@@ -139,17 +136,17 @@ def _compute_and_update_PI_kernel(
         if math.isinf(M_T[j]) or math.isinf(μ_Q[i]):
             D = np.inf
         else:
-            if σ_Q[i] < stddev_threshold or Σ_T[j] < stddev_threshold:
+            if σ_Q[i] < core.STDDEV_THRESHOLD or Σ_T[j] < core.STDDEV_THRESHOLD:
                 D = m
             else:
                 denom = m * σ_Q[i] * Σ_T[j]
-                if math.fabs(denom) < denom_threshold:  # pragma nocover
-                    denom = denom_threshold
+                if math.fabs(denom) < core.DENOM_THRESHOLD:  # pragma nocover
+                    denom = core.DENOM_THRESHOLD
                 D = abs(2 * m * (1.0 - (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom))
 
             if (
-                σ_Q[i] < stddev_threshold and Σ_T[j] < stddev_threshold
-            ) or D < D_threshold:
+                σ_Q[i] < core.STDDEV_THRESHOLD and Σ_T[j] < core.STDDEV_THRESHOLD
+            ) or D < core.D_SQUARED_THRESHOLD:
                 D = 0
 
         if ignore_trivial:

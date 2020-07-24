@@ -13,7 +13,7 @@ from .scrump import _get_orders_ranges
 logger = logging.getLogger(__name__)
 
 
-@njit()
+@njit(fastmath=True)
 def _compute_diagonal(
     T_A,
     T_B,
@@ -93,11 +93,14 @@ def _compute_diagonal(
             if i == 0 or i == k or (k < 0 and i == -k):
                 D_squared = np.linalg.norm(T_A[i + k : i + k + m] - T_B[i : i + m]) ** 2
             else:
-                D_squared = (
+                D_squared = np.abs(
                     D_squared
                     - (T_A[i + k - 1] - T_B[i - 1]) ** 2
                     + (T_A[i + k + m - 1] - T_B[i + m - 1]) ** 2
                 )
+
+            if D_squared < core.D_SQUARED_THRESHOLD:
+                D_squared = 0.0
 
             if not (subseq_A_isnan[i + k] or subseq_B_isnan[i]):
                 # Neither subsequence contains NaNs
@@ -191,12 +194,17 @@ def _aamp(
             ignore_trivial,
         )
 
+    for thread_idx in range(n_threads):
+        print(P[thread_idx])
+
     # Reduction of results from all threads
     for thread_idx in range(1, n_threads):
         for i in prange(l):
             if P[0, i] > P[thread_idx, i]:
                 P[0, i] = P[thread_idx, i]
                 I[0, i] = I[thread_idx, i]
+
+    print(np.sqrt(P[0]))
 
     return np.sqrt(P[0]), I[0]
 

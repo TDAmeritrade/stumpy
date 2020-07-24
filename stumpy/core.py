@@ -15,6 +15,10 @@ try:
 except ImportError:
     pass
 
+DENOM_THRESHOLD = 1e-14
+STDDEV_THRESHOLD = 1e-7
+D_SQUARED_THRESHOLD = 1e-14
+
 
 def driver_not_found(*args, **kwargs):  # pragma: no cover
     """
@@ -379,23 +383,20 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
     See Equation on Page 4
     """
-    denom_threshold = 1e-14
-    stddev_threshold = 1e-7
-    D_squared_threshold = 1e-14
     if np.isinf(M_T) or np.isinf(μ_Q):
         D_squared = np.inf
     else:
-        if σ_Q < stddev_threshold or Σ_T < stddev_threshold:
+        if σ_Q < STDDEV_THRESHOLD or Σ_T < STDDEV_THRESHOLD:
             D_squared = m
         else:
             denom = m * σ_Q * Σ_T
-            if np.abs(denom) < denom_threshold:  # pragma nocover
-                denom = denom_threshold
+            if np.abs(denom) < DENOM_THRESHOLD:  # pragma nocover
+                denom = DENOM_THRESHOLD
             D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
 
         if (
-            σ_Q < stddev_threshold and Σ_T < stddev_threshold
-        ) or D_squared < D_squared_threshold:
+            σ_Q < STDDEV_THRESHOLD and Σ_T < STDDEV_THRESHOLD
+        ) or D_squared < D_SQUARED_THRESHOLD:
             D_squared = 0
 
     return D_squared
