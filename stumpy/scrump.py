@@ -322,11 +322,8 @@ def _scrump(T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, orders, orders_ranges, ignore_tr
     n = T_B.shape[0]
     l = n - m + 1
     n_threads = config.NUMBA_NUM_THREADS
-    P = np.empty((n_threads, l, 3))
-    I = np.empty((n_threads, l, 3), np.int64)
-
-    P[:, :, :] = np.inf
-    I[:, :, :] = -1
+    P = np.full((n_threads, l, 3), np.inf)
+    I = np.full((n_threads, l, 3), -1, np.int64)
 
     for thread_idx in prange(n_threads):
         # Compute and pdate P, I within a single thread while avoiding race conditions
@@ -550,15 +547,12 @@ def prescrump(T_A, m, T_B=None, s=None):
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_B - m + 1
-    P_squared = np.empty(l)
-    I = np.empty(l, dtype=np.int64)
+    P_squared = np.full(l, np.inf)
+    I = np.full(l, -1, dtype=np.int64)
     squared_distance_profile = np.empty(n_A - m + 1)
 
     if s is None:  # pragma: no cover
         s = excl_zone
-
-    P_squared[:] = np.inf
-    I[:] = -1
 
     for i in np.random.permutation(range(0, l, s)):
         QT = core.sliding_dot_product(T_B[i : i + m], T_A)

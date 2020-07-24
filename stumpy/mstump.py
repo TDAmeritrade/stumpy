@@ -216,7 +216,7 @@ def _get_first_mstump_profile(
     core.apply_exclusion_zone(D, start, excl_zone)
 
     P = np.full(d, np.inf, dtype="float64")
-    I = np.ones(d, dtype="int64") * -1
+    I = np.full(d, -1, dtype="int64")
 
     for i in range(d):
         min_index = np.argmin(D[i])

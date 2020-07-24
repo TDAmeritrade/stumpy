@@ -21,8 +21,8 @@ def _compute_diagonal(
     orders,
     orders_start_idx,
     orders_stop_idx,
-    subseq_A_isnan,
-    subseq_B_isnan,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
     thread_idx,
     P,
     I,
@@ -59,13 +59,13 @@ def _compute_diagonal(
     I : ndarray
         Matrix profile indices
 
-    subseq_A_isnan : ndarray
+    T_B_subseq_isfinite : ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
-        `np.nan` value
+        `np.nan`/`np.inf` value (False)
 
-    subseq_B_isnan : ndarray
+    T_B_subseq_isfinite : ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
-        `np.nan` value
+        `np.nan`/`np.inf` value (False)
 
     thread_idx : int
         The thread index
@@ -102,7 +102,7 @@ def _compute_diagonal(
             if D_squared < core.D_SQUARED_THRESHOLD:
                 D_squared = 0.0
 
-            if not (subseq_A_isnan[i + k] or subseq_B_isnan[i]):
+            if T_A_subseq_isfinite[i + k] and T_B_subseq_isfinite[i]:
                 # Neither subsequence contains NaNs
                 if D_squared < P[thread_idx, i]:
                     P[thread_idx, i] = D_squared
@@ -116,7 +116,14 @@ def _compute_diagonal(
 
 @njit(parallel=True, fastmath=True)
 def _aamp(
-    T_A, T_B, m, orders, orders_ranges, subseq_A_isnan, subseq_B_isnan, ignore_trivial
+    T_A,
+    T_B,
+    m,
+    orders,
+    orders_ranges,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
+    ignore_trivial,
 ):
     """
     A Numba JIT-compiled version of AAMP for parallel computation of the matrix
@@ -141,13 +148,13 @@ def _aamp(
         The start (column 1) and (exclusive) stop (column 2) order indices for
         each thread
 
-    subseq_A_isnan : ndarray
+    T_A_subseq_isfinite : ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
-        `np.nan` value
+        `np.nan`/`np.inf` value (False)
 
-    subseq_B_isnan : ndarray
+    T_B_subseq_isfinite : ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
-        `np.nan` value
+        `np.nan`/`np.inf` value (False)
 
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
@@ -171,11 +178,8 @@ def _aamp(
     n_B = T_B.shape[0]
     l = n_B - m + 1
     n_threads = config.NUMBA_NUM_THREADS
-    P = np.empty((n_threads, l))
-    I = np.empty((n_threads, l), np.int64)
-
-    P[:, :] = np.inf
-    I[:, :] = -1
+    P = np.full((n_threads, l), np.inf)
+    I = np.full((n_threads, l), -1, np.int64)
 
     for thread_idx in prange(n_threads):
         # Compute and pdate P, I within a single thread while avoiding race conditions
@@ -186,16 +190,13 @@ def _aamp(
             orders,
             orders_ranges[thread_idx, 0],
             orders_ranges[thread_idx, 1],
-            subseq_A_isnan,
-            subseq_B_isnan,
+            T_A_subseq_isfinite,
+            T_B_subseq_isfinite,
             thread_idx,
             P,
             I,
             ignore_trivial,
         )
-
-    for thread_idx in range(n_threads):
-        print(P[thread_idx])
 
     # Reduction of results from all threads
     for thread_idx in range(1, n_threads):
@@ -203,8 +204,6 @@ def _aamp(
             if P[0, i] > P[thread_idx, i]:
                 P[0, i] = P[thread_idx, i]
                 I[0, i] = I[thread_idx, i]
-
-    print(np.sqrt(P[0]))
 
     return np.sqrt(P[0]), I[0]
 
@@ -281,8 +280,8 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
     T_A[np.isinf(T_A)] = np.nan
     T_B[np.isinf(T_B)] = np.nan
 
-    subseq_A_isnan = np.any(np.isnan(core.rolling_window(T_A, m)), axis=1)
-    subseq_B_isnan = np.any(np.isnan(core.rolling_window(T_B, m)), axis=1)
+    T_A_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_A, m)), axis=1)
+    T_B_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_B, m)), axis=1)
 
     T_A[np.isnan(T_A)] = 0
     T_B[np.isnan(T_B)] = 0
@@ -308,8 +307,8 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
         m,
         orders,
         orders_ranges,
-        subseq_A_isnan,
-        subseq_B_isnan,
+        T_A_subseq_isfinite,
+        T_B_subseq_isfinite,
         ignore_trivial,
     )
 
