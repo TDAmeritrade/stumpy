@@ -2,15 +2,14 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - numpy
-  - scipy
-  - numba
-  - pandas
-  - dask
-  - distributed
-  - coverage
-  - flake8
-  - flake8-docstrings
-  - black
-  - pytest
-  - codecov
+  - python>=3.6
+  - numpy>=1.13
+  - scipy>=1.2.1
+  - numba>=0.42.0
+  - pandas>=0.20.0
+  - flake8>=3.7.7
+  - flake8-docstrings>=1.5.0
+  - black>=19.5b0
+  - pytest-cov>=2.10.0
+  - dask>=1.2.2
+  - distributed>=1.28.1
