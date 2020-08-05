@@ -13,3 +13,4 @@ dependencies:
   - pytest-cov>=2.10.0
   - dask>=1.2.2
   - distributed>=1.28.1
+  - jupyterlab>=2.2.2
