@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 @njit(fastmath=True)
-def _get_max_order_idx(m, n_A, n_B, orders, start, percentage):
+def _get_max_diag_idx(m, n_A, n_B, diags, start, percentage):
     """
-    Determine the order index for when the desired percentage of distances is computed
+    Determine the diag index for when the desired percentage of distances is computed
 
     Parameters
     ----------
@@ -30,34 +30,34 @@ def _get_max_order_idx(m, n_A, n_B, orders, start, percentage):
         The length of the time series or sequence that contain your query subsequences
         of interest `T_B`
 
-    orders : ndarray
-        The order of diagonals to process and compute
+    diags : ndarray
+        The diag of diagonals to process and compute
 
     start : int
-        The (inclusive) order index from which to start
+        The (inclusive) diag index from which to start
 
     percentage : float
         Approximate percentage completed. The value is between 0.0 and 1.0.
 
     Returns
     -------
-    max_order_id : int
-        The order index that corresponds to desired percentage of distances to compute
+    max_diag_id : int
+        The diag index that corresponds to desired percentage of distances to compute
 
     n_dist_computed : int
         The number of distances computed
     """
     max_n_dist = 0
-    for order_idx in range(orders.shape[0]):
-        k = orders[order_idx]
+    for diag_idx in range(diags.shape[0]):
+        k = diags[diag_idx]
         if k >= 0:
             max_n_dist += min(n_A - m + 1 - k, n_B - m + 1)
         else:
             max_n_dist += min(n_A - m + 1, n_B - m + 1 + k)
 
     n_dist_computed = 0
-    for order_idx in range(start, orders.shape[0]):
-        k = orders[order_idx]
+    for diag_idx in range(start, diags.shape[0]):
+        k = diags[diag_idx]
         if k >= 0:
             n_dist_computed += min(n_A - m + 1 - k, n_B - m + 1)
         else:
@@ -66,22 +66,22 @@ def _get_max_order_idx(m, n_A, n_B, orders, start, percentage):
         if n_dist_computed / max_n_dist > percentage:  # pragma: no cover
             break
 
-    max_order_idx = order_idx + 1
+    max_diag_idx = diag_idx + 1
 
-    return max_order_idx, n_dist_computed
+    return max_diag_idx, n_dist_computed
 
 
 @njit(fastmath=True)
-def _get_orders_ranges(n_split, m, n_A, n_B, orders, start, percentage):
+def _get_diags_ranges(n_split, m, n_A, n_B, diags, start, percentage):
     """
-    For the desired percentage of distances to be computed from orders, split the
-    orders into `n_split` chunks, and determine the appropriate start and stop
-    (exclusive) order index ranges for each chunk
+    For the desired percentage of distances to be computed from diags, split the
+    diags into `n_split` chunks, and determine the appropriate start and stop
+    (exclusive) diag index ranges for each chunk
 
     Parameters
     ----------
     n_split : int
-        The number of chunks to split the percentage of desired orders into
+        The number of chunks to split the percentage of desired diags into
 
     m : int
         Window size
@@ -94,11 +94,11 @@ def _get_orders_ranges(n_split, m, n_A, n_B, orders, start, percentage):
         The length of the time series or sequence that contain your query subsequences
         of interest `T_B`
 
-    orders : ndarray
-        The order of diagonals to process and compute
+    diags : ndarray
+        The diag of diagonals to process and compute
 
     start : int
-        The (inclusive) order index from which to start
+        The (inclusive) diag index from which to start
 
     percentage : float
         Approximate percentage completed. The value is between 0.0 and 1.0.
@@ -106,42 +106,42 @@ def _get_orders_ranges(n_split, m, n_A, n_B, orders, start, percentage):
     Returns
     -------
     ranges : int
-        The start (column 1) and (exclusive) stop (column 2) orders index ranges
+        The start (column 1) and (exclusive) stop (column 2) diags index ranges
         that corresponds to a desired percentage of distances to compute
     """
-    max_order_idx, n_dist_computed = _get_max_order_idx(
-        m, n_A, n_B, orders, start, percentage
+    max_diag_idx, n_dist_computed = _get_max_diag_idx(
+        m, n_A, n_B, diags, start, percentage
     )
 
-    orders_ranges = np.zeros((n_split, 2), np.int64)
+    diags_ranges = np.zeros((n_split, 2), np.int64)
     ranges_idx = 0
     range_start_idx = start
     max_n_dist_per_range = n_dist_computed / n_split
 
     n_dist_computed = 0
-    for order_idx in range(start, max_order_idx):
-        k = orders[order_idx]
+    for diag_idx in range(start, max_diag_idx):
+        k = diags[diag_idx]
         if k >= 0:
             n_dist_computed += min(n_A - m + 1 - k, n_B - m + 1)
         else:
             n_dist_computed += min(n_A - m + 1, n_B - m + 1 + k)
 
         if n_dist_computed > max_n_dist_per_range:  # pragma: no cover
-            orders_ranges[ranges_idx, 0] = range_start_idx
-            orders_ranges[ranges_idx, 1] = min(
-                order_idx + 1, max_order_idx
+            diags_ranges[ranges_idx, 0] = range_start_idx
+            diags_ranges[ranges_idx, 1] = min(
+                diag_idx + 1, max_diag_idx
             )  # Exclusive stop index
             # Reset and Update
-            range_start_idx = order_idx + 1
+            range_start_idx = diag_idx + 1
             ranges_idx += 1
             n_dist_computed = 0
 
     # Handle final range outside of for loop if it was not saturated
-    if ranges_idx < orders_ranges.shape[0]:
-        orders_ranges[ranges_idx, 0] = range_start_idx
-        orders_ranges[ranges_idx, 1] = max_order_idx
+    if ranges_idx < diags_ranges.shape[0]:
+        diags_ranges[ranges_idx, 0] = range_start_idx
+        diags_ranges[ranges_idx, 1] = max_diag_idx
 
-    return orders_ranges
+    return diags_ranges
 
 
 @njit(fastmath=True)
@@ -153,9 +153,9 @@ def _compute_diagonal(
     Σ_T,
     μ_Q,
     σ_Q,
-    orders,
-    orders_start_idx,
-    orders_stop_idx,
+    diags,
+    diags_start_idx,
+    diags_stop_idx,
     thread_idx,
     P,
     I,
@@ -190,14 +190,14 @@ def _compute_diagonal(
         Standard deviation of the query sequence, `Q`, relative to the current
         sliding window in `T_B`
 
-    orders : ndarray
-        The order of diagonals to process and compute
+    diags : ndarray
+        The diag of diagonals to process and compute
 
-    orders_start_idx : int
-        The start index for a range of diagonal order to process and compute
+    diags_start_idx : int
+        The start index for a range of diagonal diag to process and compute
 
-    orders_stop_idx : int
-        The (exclusive) stop index for a range of diagonal order to process and compute
+    diags_stop_idx : int
+        The (exclusive) stop index for a range of diagonal diag to process and compute
 
     P : ndarray
         Matrix profile
@@ -219,8 +219,8 @@ def _compute_diagonal(
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
 
-    for order_idx in range(orders_start_idx, orders_stop_idx):
-        k = orders[order_idx]
+    for diag_idx in range(diags_start_idx, diags_stop_idx):
+        k = diags[diag_idx]
 
         if k >= 0:
             iter_range = range(0, min(n_B - m + 1, n_A - m + 1 - k))
@@ -263,7 +263,7 @@ def _compute_diagonal(
 
 
 @njit(parallel=True, fastmath=True)
-def _scrump(T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, orders, orders_ranges, ignore_trivial):
+def _scrump(T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, diags, diags_ranges, ignore_trivial):
     """
     A Numba JIT-compiled version of SCRIMP for parallel computation of the matrix
     profile and matrix profile indices.
@@ -293,11 +293,11 @@ def _scrump(T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, orders, orders_ranges, ignore_tr
         Standard deviation of the query sequence, `Q`, relative to the current
         sliding window in `T_B`
 
-    orders : ndarray
-        The order of diagonals to process and compute
+    diags : ndarray
+        The diag of diagonals to process and compute
 
-    orders_ranges : ndarray
-        The start (column 1) and (exclusive) stop (column 2) order indices for
+    diags_ranges : ndarray
+        The start (column 1) and (exclusive) stop (column 2) diag indices for
         each thread
 
     ignore_trivial : bool
@@ -335,9 +335,9 @@ def _scrump(T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, orders, orders_ranges, ignore_tr
             Σ_T,
             μ_Q,
             σ_Q,
-            orders,
-            orders_ranges[thread_idx, 0],
-            orders_ranges[thread_idx, 1],
+            diags,
+            diags_ranges[thread_idx, 0],
+            diags_ranges[thread_idx, 1],
             thread_idx,
             P,
             I,
@@ -745,11 +745,11 @@ class scrump(object):
                     self._I[i, 0] = I[i]
 
         if self._ignore_trivial:
-            self._orders = np.random.permutation(
+            self._diags = np.random.permutation(
                 range(self._excl_zone + 1, self._n_B - self._m + 1)
             )
         else:
-            self._orders = np.random.permutation(
+            self._diags = np.random.permutation(
                 range(-(self._n_B - self._m + 1) + 1, self._n_A - self._m + 1)
             )
 
@@ -767,12 +767,12 @@ class scrump(object):
         distance matrix.
         """
         if self._chunk <= self._n_chunks:
-            orders_ranges = _get_orders_ranges(
+            diags_ranges = _get_diags_ranges(
                 self._n_threads,
                 self._m,
                 self._n_A,
                 self._n_B,
-                self._orders,
+                self._diags,
                 self._start,
                 self._percentage,
             )
@@ -785,11 +785,11 @@ class scrump(object):
                 self._Σ_T,
                 self._μ_Q,
                 self._σ_Q,
-                self._orders,
-                orders_ranges,
+                self._diags,
+                diags_ranges,
                 self._ignore_trivial,
             )
-            self._start = orders_ranges[:, 1].max()
+            self._start = diags_ranges[:, 1].max()
 
             # Update matrix profile and indices
             for i in range(self._P.shape[0]):

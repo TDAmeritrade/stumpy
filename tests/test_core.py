@@ -359,7 +359,7 @@ def test_get_array_ranges_exhausted():
     npt.assert_almost_equal(left, right)
 
 
-def test_get_array_ranges_exhausted():
+def test_get_array_ranges_exhausted_truncated():
     x = np.array([3, 3, 3, 11, 11, 11])
     n_chunks = 6
 

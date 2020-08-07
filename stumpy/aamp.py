@@ -8,7 +8,7 @@ import numpy as np
 from numba import njit, prange, config
 
 from . import core
-from .scrump import _get_orders_ranges
+from .scrump import _get_diags_ranges
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +18,9 @@ def _compute_diagonal(
     T_A,
     T_B,
     m,
-    orders,
-    orders_start_idx,
-    orders_stop_idx,
+    diags,
+    diags_start_idx,
+    diags_stop_idx,
     T_A_subseq_isfinite,
     T_B_subseq_isfinite,
     thread_idx,
@@ -44,14 +44,14 @@ def _compute_diagonal(
     m : int
         Window size
 
-    orders : ndarray
-        The order of diagonals to process and compute
+    diags : ndarray
+        The diag of diagonals to process and compute
 
-    orders_start_idx : int
-        The start index for a range of diagonal order to process and compute
+    diags_start_idx : int
+        The start index for a range of diagonal diag to process and compute
 
-    orders_stop_idx : int
-        The (exclusive) stop index for a range of diagonal order to process and compute
+    diags_stop_idx : int
+        The (exclusive) stop index for a range of diagonal diag to process and compute
 
     P : ndarray
         Matrix profile
@@ -81,8 +81,8 @@ def _compute_diagonal(
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
 
-    for order_idx in range(orders_start_idx, orders_stop_idx):
-        k = orders[order_idx]
+    for diag_idx in range(diags_start_idx, diags_stop_idx):
+        k = diags[diag_idx]
 
         if k >= 0:
             iter_range = range(0, min(n_B - m + 1, n_A - m + 1 - k))
@@ -119,8 +119,8 @@ def _aamp(
     T_A,
     T_B,
     m,
-    orders,
-    orders_ranges,
+    diags,
+    diags_ranges,
     T_A_subseq_isfinite,
     T_B_subseq_isfinite,
     ignore_trivial,
@@ -141,11 +141,11 @@ def _aamp(
     m : int
         Window size
 
-    orders : ndarray
-        The order of diagonals to process and compute
+    diags : ndarray
+        The diag of diagonals to process and compute
 
-    orders_ranges : ndarray
-        The start (column 1) and (exclusive) stop (column 2) order indices for
+    diags_ranges : ndarray
+        The start (column 1) and (exclusive) stop (column 2) diag indices for
         each thread
 
     T_A_subseq_isfinite : ndarray
@@ -187,9 +187,9 @@ def _aamp(
             T_A,
             T_B,
             m,
-            orders,
-            orders_ranges[thread_idx, 0],
-            orders_ranges[thread_idx, 1],
+            diags,
+            diags_ranges[thread_idx, 0],
+            diags_ranges[thread_idx, 1],
             T_A_subseq_isfinite,
             T_B_subseq_isfinite,
             thread_idx,
@@ -295,18 +295,18 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
     out = np.empty((l, 2), dtype=object)
 
     if ignore_trivial:
-        orders = np.arange(excl_zone + 1, n_B - m + 1)
+        diags = np.arange(excl_zone + 1, n_B - m + 1)
     else:
-        orders = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
+        diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
 
-    orders_ranges = _get_orders_ranges(n_threads, m, n_A, n_B, orders, 0, 1.0)
+    diags_ranges = _get_diags_ranges(n_threads, m, n_A, n_B, diags, 0, 1.0)
 
     P, I = _aamp(
         T_A,
         T_B,
         m,
-        orders,
-        orders_ranges,
+        diags,
+        diags_ranges,
         T_A_subseq_isfinite,
         T_B_subseq_isfinite,
         ignore_trivial,

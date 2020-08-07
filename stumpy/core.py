@@ -752,9 +752,8 @@ def array_to_temp_file(a):
     return fname
 
 
-def _get_array_ranges(
-    a, n_chunks, custom_cumsum=None, custom_insert=None, truncate=False
-):
+@njit()
+def _get_array_ranges(a, n_chunks, truncate=False):
     """
     Given an input array, split it into `n_chunks`.
 
@@ -765,12 +764,6 @@ def _get_array_ranges(
 
     n_chunks : int
         Number of chunks to split the array into
-
-    custom_cumsum : ndarray
-        Custom cumsum array
-
-    custom_insert : ndarray
-        Custom insertion array to be inserted into the cumsum array
 
     truncate : bool
         If `truncate=True`, truncate the rows of `array_ranges` if there are not enough
@@ -786,11 +779,9 @@ def _get_array_ranges(
         contains the stop indices.
     """
     array_ranges = np.zeros((n_chunks, 2), np.int64)
-    if custom_cumsum is None:
-        custom_cumsum = a.cumsum() / a.sum()
-    if custom_insert is None:
-        custom_insert = np.linspace(0, 1, n_chunks, endpoint=False)[1:]
-    idx = 1 + np.searchsorted(custom_cumsum, custom_insert)
+    cumsum = a.cumsum() / a.sum()
+    insert = np.linspace(0, 1, n_chunks + 1)[1:-1]
+    idx = 1 + np.searchsorted(cumsum, insert)
     array_ranges[1:, 0] = idx  # Fill the first column with start indices
     array_ranges[:-1, 1] = idx  # Fill the second column with exclusive stop indices
     array_ranges[-1, 1] = a.shape[0]  # Handle the stop index for the final chunk
