@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
+from stumpy import config
 from stumpy.aamp import aamp
 import pytest
 import naive
@@ -125,13 +126,13 @@ def test_aamp_identical_subsequence_self_join():
     naive.replace_inf(left)
     naive.replace_inf(right)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=naive.PRECISION
+        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
     right = aamp(pd.Series(T_A), m, ignore_trivial=True)
     naive.replace_inf(right)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=naive.PRECISION
+        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
 
@@ -146,18 +147,24 @@ def test_aamp_identical_subsequence_A_B_join():
     right = aamp(T_A, m, T_B, ignore_trivial=False)
     naive.replace_inf(left)
     naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0], naive.PRECISION)  # ignore indices
+    npt.assert_almost_equal(
+        left[:, 0], right[:, 0], config.STUMPY_TEST_PRECISION
+    )  # ignore indices
 
     right = aamp(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
     naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0], naive.PRECISION)  # ignore indices
+    npt.assert_almost_equal(
+        left[:, 0], right[:, 0], config.STUMPY_TEST_PRECISION
+    )  # ignore indices
 
     # Swap inputs
     left = naive.aamp(T_B, m, T_B=T_A)
     right = aamp(T_B, m, T_A, ignore_trivial=False)
     naive.replace_inf(left)
     naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0], naive.PRECISION)  # ignore indices
+    npt.assert_almost_equal(
+        left[:, 0], right[:, 0], config.STUMPY_TEST_PRECISION
+    )  # ignore indices
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)

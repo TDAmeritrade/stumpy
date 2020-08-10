@@ -20,6 +20,36 @@ substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stamp_mass_PI(T_A, T_B):
+    m = 3
+    trivial_idx = 2
+    zone = int(np.ceil(m / 2))
+    Q = T_B[trivial_idx : trivial_idx + m]
+    M_T, Σ_T = core.compute_mean_std(T_B, m)
+    left_P, left_I, left_left_I, left_right_I = naive.mass(
+        Q, T_B, m, trivial_idx=trivial_idx, excl_zone=zone, ignore_trivial=True
+    )
+    right_P, right_I = stamp._mass_PI(
+        Q, T_B, M_T, Σ_T, trivial_idx=trivial_idx, excl_zone=zone
+    )
+
+    npt.assert_almost_equal(left_P, right_P)
+    npt.assert_almost_equal(left_I, right_I)
+
+    right_left_P, right_left_I = stamp._mass_PI(
+        Q, T_B, M_T, Σ_T, trivial_idx=trivial_idx, excl_zone=zone, left=True
+    )
+
+    npt.assert_almost_equal(left_left_I, right_left_I)
+
+    right_right_P, right_right_I = stamp._mass_PI(
+        Q, T_B, M_T, Σ_T, trivial_idx=trivial_idx, excl_zone=zone, right=True
+    )
+
+    npt.assert_almost_equal(left_right_I, right_right_I)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stamp_self_join(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 2))

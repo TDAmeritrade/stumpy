@@ -215,6 +215,16 @@ def _compute_diagonal(
     Returns
     -------
     None
+
+    Notes
+    -----
+    `DOI: 10.1007/s10115-017-1138-x \
+    <https://www.cs.ucr.edu/~eamonn/ten_quadrillion.pdf>`__
+
+    See Section 4.5
+
+    The above publication outlines a general approach for traversing the distance
+    matrix in a diagonal fashion rather than in a row-wise fashion.
     """
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]

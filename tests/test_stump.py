@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import stump
+from stumpy import stump, config
 import pytest
 import naive
 
@@ -25,7 +25,7 @@ substitution_values = [np.nan, np.inf]
 def test_stump_self_join(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
-    left = naive.stamp(T_B, m, exclusion_zone=zone)
+    left = naive.stump(T_B, m, exclusion_zone=zone)
     right = stump(T_B, m, ignore_trivial=True)
     naive.replace_inf(left)
     naive.replace_inf(right)
@@ -39,7 +39,7 @@ def test_stump_self_join(T_A, T_B):
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_A_B_join(T_A, T_B):
     m = 3
-    left = naive.stamp(T_A, m, T_B=T_B)
+    left = naive.stump(T_A, m, T_B=T_B)
     right = stump(T_A, m, T_B, ignore_trivial=False)
     naive.replace_inf(left)
     naive.replace_inf(right)
@@ -54,7 +54,7 @@ def test_stump_constant_subsequence_self_join():
     T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
     zone = int(np.ceil(m / 4))
-    left = naive.stamp(T_A, m, exclusion_zone=zone)
+    left = naive.stump(T_A, m, exclusion_zone=zone)
     right = stump(T_A, m, ignore_trivial=True)
     naive.replace_inf(left)
     naive.replace_inf(right)
@@ -127,13 +127,13 @@ def test_stump_identical_subsequence_self_join():
     naive.replace_inf(left)
     naive.replace_inf(right)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=naive.PRECISION
+        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
     right = stump(pd.Series(T_A), m, ignore_trivial=True)
     naive.replace_inf(right)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=naive.PRECISION
+        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
 
@@ -149,13 +149,13 @@ def test_stump_identical_subsequence_A_B_join():
     naive.replace_inf(left)
     naive.replace_inf(right)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=naive.PRECISION
+        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
     right = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
     naive.replace_inf(right)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=naive.PRECISION
+        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
     # Swap inputs
@@ -164,7 +164,7 @@ def test_stump_identical_subsequence_A_B_join():
     naive.replace_inf(left)
     naive.replace_inf(right)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=naive.PRECISION
+        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
 

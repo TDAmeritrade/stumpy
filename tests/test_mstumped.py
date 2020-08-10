@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import core, mstumped
+from stumpy import core, mstumped, config
 import pytest
 from dask.distributed import Client, LocalCluster
 import warnings
@@ -128,5 +128,5 @@ def test_mstumped_identical_subsequence_self_join(dask_cluster):
         right_P, right_I = mstumped(dask_client, T, m)
 
         npt.assert_almost_equal(
-            left_P, right_P, decimal=naive.PRECISION
+            left_P, right_P, decimal=config.STUMPY_TEST_PRECISION
         )  # ignore indices

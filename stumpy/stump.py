@@ -5,158 +5,77 @@
 import logging
 
 import numpy as np
-from numba import njit, prange
+from numba import njit, prange, config
 
-from . import core, stamp
+from . import core
+from stumpy.config import STUMPY_STDDEV_THRESHOLD, STUMPY_D_SQUARED_THRESHOLD
 
 logger = logging.getLogger(__name__)
 
 
-def _get_first_stump_profile(
-    start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, ignore_trivial
-):
-    """
-    Compute the matrix profile, matrix profile index, left matrix profile
-    index, and right matrix profile index for given window within the times
-    series or sequence that is denote by the `start` index. Essentially, this
-    is a convenience wrapper around `stamp._mass_PI`
-
-    Parameters
-    ----------
-    start : int
-        The window index to calculate the first matrix profile, matrix profile
-        index, left matrix profile index, and right matrix profile index for.
-
-    T_A : ndarray
-        The time series or sequence for which the matrix profile index will
-        be returned
-
-    T_B : ndarray
-        The time series or sequence that contains your query subsequences
-
-    m : int
-        Window size
-
-    excl_zone : int
-        The half width for the exclusion zone relative to the `start`.
-
-    M_T : ndarray
-        Sliding mean for `T_A`
-
-    Σ_T : ndarray
-        Sliding standard deviation for `T_A`
-
-    μ_Q : ndarray
-        Sliding mean for `T_B`
-
-    σ_Q : ndarray
-        Sliding standard deviation for `T_B`
-
-    ignore_trivial : bool
-        `True` if this is a self join and `False` otherwise (i.e., AB-join).
-
-    Returns
-    -------
-    P : Tuple[float64, float64, float64]
-        Matrix profile, left matrix profile index, and right matrix profile for the
-        window with index equal to `start`. The left and right matrix profile are
-        automatically set to `np.inf` for self-joins (i.e., when `ignore_trivial` is
-        set to `True`.
-
-    I : Tuple[int64, int64, int64]
-        Matrix profile index, left matrix profile index, and right matrix profile
-        index for the window with index equal to `start`. The left and right matrix
-        profile indices are automatically set to `-1` for self-joins (i.e., when
-        `ignore_trivial` is set to `True`.
-    """
-    # Handle first subsequence, add exclusionary zone
-
-    if np.isinf(μ_Q[start]):
-        P = np.inf
-        PL = np.inf
-        PR = np.inf
-
-        I = -1
-        IL = -1
-        IR = -1
-    else:
-        if ignore_trivial:
-            P, I = stamp._mass_PI(
-                T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone
-            )
-            PL, IL = stamp._mass_PI(
-                T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone, left=True
-            )
-            PR, IR = stamp._mass_PI(
-                T_B[start : start + m], T_A, M_T, Σ_T, start, excl_zone, right=True
-            )
-        else:
-            P, I = stamp._mass_PI(T_B[start : start + m], T_A, M_T, Σ_T)
-            # No left and right matrix profile available
-            PL = np.inf
-            PR = np.inf
-            IL = -1
-            IR = -1
-
-    return (P, PL, PR), (I, IL, IR)
-
-
-def _get_QT(start, T_A, T_B, m):
-    """
-    Compute the sliding dot product between the query, `T_B`, (from
-    [start:start+m]) and the time series, `T_A`. Additionally, compute
-    QT for the first window.
-
-    Parameters
-    ----------
-    start : int
-        The window index for T_B from which to calculate the QT dot product
-
-    T_A : ndarray
-        The time series or sequence for which to compute the dot product
-
-    T_B : ndarray
-        The time series or sequence that contain your query subsequence
-        of interest
-
-    m : int
-        Window size
-
-    Returns
-    -------
-    QT : ndarray
-        Given `start`, return the corresponding QT
-
-    QT_first : ndarray
-         QT for the first window
-    """
-    QT = core.sliding_dot_product(T_B[start : start + m], T_A)
-    QT_first = core.sliding_dot_product(T_A[:m], T_B)
-
-    return QT, QT_first
-
-
 @njit(parallel=True, fastmath=True)
-def _stump(
+def _count_diagonal_ndist(diags, m, n_A, n_B):
+    """
+    Count the number of distances that would be computed for each diagonal index
+    referenced in `diags`
+
+    Parameters
+    ----------
+    m : int
+        Window size
+
+    n_A : ndarray
+        The length of time series `T_A`
+
+    n_B : ndarray
+        The length of time series `T_B`
+
+    diags : ndarray
+        The diagonal indices of interest
+
+    Returns
+    -------
+    diag_ndist_counts : ndarray
+        Counts of distances computed along each diagonal of interest
+    """
+    diag_ndist_counts = np.zeros(diags.shape[0], dtype=np.int64)
+    for diag_idx in prange(diags.shape[0]):
+        k = diags[diag_idx]
+        if k >= 0:
+            diag_ndist_counts[diag_idx] = min(n_A - m + 1 - k, n_B - m + 1)
+        else:
+            diag_ndist_counts[diag_idx] = min(n_A - m + 1, n_B - m + 1 + k)
+
+    return diag_ndist_counts
+
+
+@njit(fastmath=True)
+def _compute_diagonal(
     T_A,
     T_B,
     m,
-    range_stop,
-    excl_zone,
     M_T,
-    Σ_T,
-    QT,
-    QT_first,
     μ_Q,
-    σ_Q,
-    k,
-    ignore_trivial=True,
-    range_start=1,
+    Σ_T_inverse,
+    σ_Q_inverse,
+    M_T_m_1,
+    μ_Q_m_1,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
+    T_A_subseq_isconstant,
+    T_B_subseq_isconstant,
+    diags,
+    diags_start_idx,
+    diags_stop_idx,
+    thread_idx,
+    ρ,
+    I,
+    ignore_trivial,
 ):
     """
-    A Numba JIT-compiled version of STOMP for parallel computation of the
-    matrix profile, matrix profile indices, left matrix profile indices,
-    and right matrix profile indices.
+    Compute (Numba JIT-compiled) and update the Pearson correlation, ρ, and I
+    sequentially along individual diagonals using a single thread and avoiding race
+    conditions
 
     Parameters
     ----------
@@ -170,44 +89,221 @@ def _stump(
     m : int
         Window size
 
-    range_stop : int
-        The index value along T_B for which to stop the matrix profile
-        calculation. This parameter is here for consistency with the
-        distributed `stumped` algorithm.
-
-    excl_zone : int
-        The half width for the exclusion zone relative to the current
-        sliding window
-
     M_T : ndarray
         Sliding mean of time series, `T`
-
-    Σ_T : ndarray
-        Sliding standard deviation of time series, `T`
-
-    QT : ndarray
-        Dot product between some query sequence,`Q`, and time series, `T`
-
-    QT_first : ndarray
-        QT for the first window relative to the current sliding window
 
     μ_Q : ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window
 
-    σ_Q : ndarray
-        Standard deviation of the query sequence, `Q`, relative to the current
+    Σ_T_inverse : ndarray
+        Inverse sliding standard deviation of time series, `T`
+
+    σ_Q_inverse : ndarray
+        Inverse standard deviation of the query sequence, `Q`, relative to the current
         sliding window
 
-    k : int
-        The total number of sliding windows to iterate over
+    M_T_m_1 : ndarray
+        Sliding mean of time series, `T`, using a window size of `m-1`
+
+    μ_Q_m_1 : ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window and
+        using a window size of `m-1`
+
+    T_A_subseq_isfinite : ndarray
+        A boolean array that indicates whether a subsequence in `T_A` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_B_subseq_isfinite : ndarray
+        A boolean array that indicates whether a subsequence in `T_B` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_A_subseq_isconstant : ndarray
+        A boolean array that indicates whether a subsequence in `T_A` is constant (True)
+
+    T_B_subseq_isconstant : ndarray
+        A boolean array that indicates whether a subsequence in `T_B` is constant (True)
+
+    diags : ndarray
+        The diagonal indices
+
+    diags_start_idx : int
+        The starting (inclusive) diagonal index
+
+    diags_stop_idx : int
+        The stopping (exclusive) diagonal index
+
+    thread_idx : int
+        The thread index
+
+    ρ : ndarray
+        The Pearson correlations
+
+    I : ndarray
+        The matrix profile indices
 
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
 
-    range_start : int
-        The starting index value along T_B for which to start the matrix
-        profile calculation. Default is 1.
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    `DOI: 10.1007/s10115-017-1138-x \
+    <https://www.cs.ucr.edu/~eamonn/ten_quadrillion.pdf>`__
+
+    See Section 4.5
+
+    The above reference outlines a general approach for traversing the distance
+    matrix in a diagonal fashion rather than in a row-wise fashion.
+
+    `DOI: 10.1145/3357223.3362721 \
+    <https://www.cs.ucr.edu/~eamonn/public/GPU_Matrix_profile_VLDB_30DraftOnly.pdf>`__
+
+    See Section 3.1 and Section 3.3
+
+    The above reference outlines the use of the Pearson correlation via Welford's
+    centered sum-of-products along each diagonal of the distance matrix in place of the
+    sliding window dot product found in the original STOMP method.
+    """
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    m_inverse = 1.0 / m
+    constant = (m - 1) * m_inverse * m_inverse  # (m - 1)/(m * m)
+
+    for diag_idx in range(diags_start_idx, diags_stop_idx):
+        k = diags[diag_idx]
+
+        if k >= 0:
+            iter_range = range(0, min(n_B - m + 1, n_A - m + 1 - k))
+        else:
+            iter_range = range(-k, min(n_B - m + 1, n_A - m + 1 - k))
+
+        for i in iter_range:
+            if i == 0 or i == k or (k < 0 and i == -k):
+                cov = (
+                    np.dot(
+                        (T_A[i + k : i + k + m] - M_T[i + k]), (T_B[i : i + m] - μ_Q[i])
+                    )
+                    * m_inverse
+                )
+            else:
+                cov = cov + constant * (
+                    (T_A[i + k + m - 1] - M_T_m_1[i + k])
+                    * (T_B[i + m - 1] - μ_Q_m_1[i])
+                    - (T_A[i + k - 1] - M_T_m_1[i + k]) * (T_B[i - 1] - μ_Q_m_1[i])
+                )
+
+            if T_A_subseq_isfinite[i + k] and T_B_subseq_isfinite[i]:
+                # Neither subsequence contains NaNs
+                if T_A_subseq_isconstant[i + k] or T_B_subseq_isconstant[i]:
+                    pearson = 0.5
+                else:
+                    pearson = cov * Σ_T_inverse[i + k] * σ_Q_inverse[i]
+
+                if T_A_subseq_isconstant[i + k] and T_B_subseq_isconstant[i]:
+                    pearson = 1.0
+
+                if pearson > ρ[thread_idx, i, 0]:
+                    ρ[thread_idx, i, 0] = pearson
+                    I[thread_idx, i, 0] = i + k
+
+                if ignore_trivial:  # self-joins only
+                    if pearson > ρ[thread_idx, i + k, 0]:
+                        ρ[thread_idx, i + k, 0] = pearson
+                        I[thread_idx, i + k, 0] = i
+
+                    if i < i + k:
+                        # left pearson correlation and left matrix profile index
+                        if pearson > ρ[thread_idx, i + k, 1]:
+                            ρ[thread_idx, i + k, 1] = pearson
+                            I[thread_idx, i + k, 1] = i
+
+                        # right pearson correlation and right matrix profile index
+                        if pearson > ρ[thread_idx, i, 2]:
+                            ρ[thread_idx, i, 2] = pearson
+                            I[thread_idx, i, 2] = i + k
+
+    return
+
+
+@njit(parallel=True, fastmath=True)
+def _stump(
+    T_A,
+    T_B,
+    m,
+    M_T,
+    μ_Q,
+    Σ_T_inverse,
+    σ_Q_inverse,
+    M_T_m_1,
+    μ_Q_m_1,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
+    T_A_subseq_isconstant,
+    T_B_subseq_isconstant,
+    diags,
+    ignore_trivial,
+):
+    """
+    A Numba JIT-compiled version of STOMPopt with Pearson correlations for parallel
+    computation of the matrix profile, matrix profile indices, left matrix profile
+    indices, and right matrix profile indices.
+
+    Parameters
+    ----------
+    T_A : ndarray
+        The time series or sequence for which to compute the matrix profile
+
+    T_B : ndarray
+        The time series or sequence that contain your query subsequences
+        of interest
+
+    m : int
+        Window size
+
+    M_T : ndarray
+        Sliding mean of time series, `T`
+
+    μ_Q : ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window
+
+    Σ_T_inverse : ndarray
+        Inverse sliding standard deviation of time series, `T`
+
+    σ_Q_inverse : ndarray
+        Inverse standard deviation of the query sequence, `Q`, relative to the current
+        sliding window
+
+    M_T_m_1 : ndarray
+        Sliding mean of time series, `T`, using a window size of `m-1`
+
+    μ_Q_m_1 : ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window and
+        using a window size of `m-1`
+
+    T_A_subseq_isfinite : ndarray
+        A boolean array that indicates whether a subsequence in `T_A` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_B_subseq_isfinite : ndarray
+        A boolean array that indicates whether a subsequence in `T_B` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_A_subseq_isconstant : ndarray
+        A boolean array that indicates whether a subsequence in `T_A` is constant (True)
+
+    T_B_subseq_isconstant : ndarray
+        A boolean array that indicates whether a subsequence in `T_B` is constant (True)
+
+    diags : ndarray
+        The diagonal indices
+
+    ignore_trivial : bool
+        Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
+        `False`. Default is `True`.
 
     Returns
     -------
@@ -221,6 +317,23 @@ def _stump(
 
     Notes
     -----
+    `DOI: 10.1007/s10115-017-1138-x \
+    <https://www.cs.ucr.edu/~eamonn/ten_quadrillion.pdf>`__
+
+    See Section 4.5
+
+    The above reference outlines a general approach for traversing the distance
+    matrix in a diagonal fashion rather than in a row-wise fashion.
+
+    `DOI: 10.1145/3357223.3362721 \
+    <https://www.cs.ucr.edu/~eamonn/public/GPU_Matrix_profile_VLDB_30DraftOnly.pdf>`__
+
+    See Section 3.1 and Section 3.3
+
+    The above reference outlines the use of the Pearson correlation via Welford's
+    centered sum-of-products along each diagonal of the distance matrix in place of the
+    sliding window dot product found in the original STOMP method.
+
     `DOI: 10.1109/ICDM.2016.0085 \
     <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
@@ -247,75 +360,68 @@ def _stump(
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-    QT_odd = QT.copy()
-    QT_even = QT.copy()
-    profile = np.empty((range_stop - range_start,))  # float64
-    indices = np.empty((range_stop - range_start, 3))  # int64
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_B - m + 1
+    n_threads = config.NUMBA_NUM_THREADS
+    ρ = np.full((n_threads, l, 3), -np.inf)
+    I = np.full((n_threads, l, 3), -1, np.int64)
 
-    for i in range(range_start, range_stop):
-        # Numba's prange requires incrementing a range by 1 so replace
-        # `for j in range(k-1,0,-1)` with its incrementing compliment
-        for rev_j in prange(1, k):
-            j = k - rev_j
-            # GPU Stomp Parallel Implementation with Numba
-            # DOI: 10.1109/ICDM.2016.0085
-            # See Figure 5
-            if i % 2 == 0:
-                # Even
-                QT_even[j] = (
-                    QT_odd[j - 1]
-                    - T_B[i - 1] * T_A[j - 1]
-                    + T_B[i + m - 1] * T_A[j + m - 1]
-                )
-            else:
-                # Odd
-                QT_odd[j] = (
-                    QT_even[j - 1]
-                    - T_B[i - 1] * T_A[j - 1]
-                    + T_B[i + m - 1] * T_A[j + m - 1]
-                )
+    ndist_counts = _count_diagonal_ndist(diags, m, n_A, n_B)
+    diags_ranges = core._get_array_ranges(ndist_counts, n_threads)
 
-        if i % 2 == 0:
-            QT_even[0] = QT_first[i]
-            D = core._calculate_squared_distance_profile(
-                m, QT_even, μ_Q[i], σ_Q[i], M_T, Σ_T
-            )
-        else:
-            QT_odd[0] = QT_first[i]
-            D = core._calculate_squared_distance_profile(
-                m, QT_odd, μ_Q[i], σ_Q[i], M_T, Σ_T
-            )
+    for thread_idx in prange(n_threads):
+        # Compute and update cov, I within a single thread to avoiding race conditions
+        _compute_diagonal(
+            T_A,
+            T_B,
+            m,
+            M_T,
+            μ_Q,
+            Σ_T_inverse,
+            σ_Q_inverse,
+            M_T_m_1,
+            μ_Q_m_1,
+            T_A_subseq_isfinite,
+            T_B_subseq_isfinite,
+            T_A_subseq_isconstant,
+            T_B_subseq_isconstant,
+            diags,
+            diags_ranges[thread_idx, 0],
+            diags_ranges[thread_idx, 1],
+            thread_idx,
+            ρ,
+            I,
+            ignore_trivial,
+        )
 
-        if ignore_trivial:
-            core.apply_exclusion_zone(D, i, excl_zone)
+    # Reduction of results from all threads
+    for thread_idx in range(1, n_threads):
+        for i in prange(l):
+            if ρ[0, i, 0] < ρ[thread_idx, i, 0]:
+                ρ[0, i, 0] = ρ[thread_idx, i, 0]
+                I[0, i, 0] = I[thread_idx, i, 0]
+            # left pearson correlation and left matrix profile indices
+            if ρ[0, i, 1] < ρ[thread_idx, i, 1]:
+                ρ[0, i, 1] = ρ[thread_idx, i, 1]
+                I[0, i, 1] = I[thread_idx, i, 1]
+            # right pearson correlation and right matrix profile indices
+            if ρ[0, i, 2] < ρ[thread_idx, i, 2]:
+                ρ[0, i, 2] = ρ[thread_idx, i, 2]
+                I[0, i, 2] = I[thread_idx, i, 2]
 
-        I = np.argmin(D)
-        P = np.sqrt(D[I])
-        if P == np.inf:
-            I = -1
+    # Convert pearson correlations to distances
+    D = np.abs(2 * m * (1 - ρ[0, :, :]))
+    for i in prange(D.shape[1]):
+        if D[i, 0] < STUMPY_D_SQUARED_THRESHOLD:
+            D[i, 0] = 0.0
+        if D[i, 1] < STUMPY_D_SQUARED_THRESHOLD:
+            D[i, 1] = 0.0
+        if D[i, 1] < STUMPY_D_SQUARED_THRESHOLD:
+            D[i, 1] = 0.0
+    P = np.sqrt(D)
 
-        # Get left and right matrix profiles
-        IL = -1
-        PL = np.inf
-        if ignore_trivial and i > 0:
-            IL = np.argmin(D[:i])
-            PL = D[IL]
-        if PL == np.inf:
-            IL = -1
-
-        IR = -1
-        PR = np.inf
-        if ignore_trivial and i + 1 < D.shape[0]:
-            IR = i + 1 + np.argmin(D[i + 1 :])
-            PR = D[IR]
-        if PR == np.inf:
-            IR = -1
-
-        # Only a part of the profile/indices array are passed
-        profile[i - range_start] = P
-        indices[i - range_start] = I, IL, IR
-
-    return profile, indices
+    return P[:, :], I[0, :, :]
 
 
 def stump(T_A, m, T_B=None, ignore_trivial=True):
@@ -323,7 +429,8 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     Compute the matrix profile with parallelized STOMP
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
-    `_stump` function which computes the matrix profile according to STOMP.
+    `_stump` function which computes the matrix profile according to STOMPopt with
+    Pearson correlations.
 
     Parameters
     ----------
@@ -351,6 +458,23 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
 
     Notes
     -----
+    `DOI: 10.1007/s10115-017-1138-x \
+    <https://www.cs.ucr.edu/~eamonn/ten_quadrillion.pdf>`__
+
+    See Section 4.5
+
+    The above reference outlines a general approach for traversing the distance
+    matrix in a diagonal fashion rather than in a row-wise fashion.
+
+    `DOI: 10.1145/3357223.3362721 \
+    <https://www.cs.ucr.edu/~eamonn/public/GPU_Matrix_profile_VLDB_30DraftOnly.pdf>`__
+
+    See Section 3.1 and Section 3.3
+
+    The above reference outlines the use of the Pearson correlation via Welford's
+    centered sum-of-products along each diagonal of the distance matrix in place of the
+    sliding window dot product found in the original STOMP method.
+
     `DOI: 10.1109/ICDM.2016.0085 \
     <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
@@ -377,12 +501,16 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-    if T_B is None:
-        T_B = T_A
-        ignore_trivial = True
+    T_A = np.asarray(T_A)
+    T_A = T_A.copy()
 
-    T_A, M_T, Σ_T = core.preprocess(T_A, m)
-    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
+    if T_B is None:
+        T_B = T_A.copy()
+        ignore_trivial = True
+    else:
+        T_B = np.asarray(T_B)
+        T_B = T_B.copy()
+        ignore_trivial = False
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
@@ -409,44 +537,59 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
         logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
         logger.warning("Try setting `ignore_trivial = False`.")
 
-    n = T_B.shape[0]
-    k = T_A.shape[0] - m + 1
-    l = n - m + 1
-    excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
+    T_A[np.isinf(T_A)] = np.nan
+    T_B[np.isinf(T_B)] = np.nan
 
+    T_A_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_A, m)), axis=1)
+    T_B_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_B, m)), axis=1)
+
+    T_A[np.isnan(T_A)] = 0
+    T_B[np.isnan(T_B)] = 0
+
+    M_T, Σ_T = core.compute_mean_std(T_A, m)
+    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
+    T_A_subseq_isconstant = Σ_T < STUMPY_STDDEV_THRESHOLD
+    T_B_subseq_isconstant = σ_Q < STUMPY_STDDEV_THRESHOLD
+    # Avoid divide by zero
+    Σ_T[T_A_subseq_isconstant] = 1.0
+    σ_Q[T_B_subseq_isconstant] = 1.0
+    Σ_T_inverse = 1.0 / Σ_T
+    σ_Q_inverse = 1.0 / σ_Q
+    M_T_m_1, _ = core.compute_mean_std(T_A, m - 1)
+    μ_Q_m_1, _ = core.compute_mean_std(T_B, m - 1)
+
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_B - m + 1
+
+    excl_zone = int(np.ceil(m / 4))
     out = np.empty((l, 4), dtype=object)
-    profile = np.empty((l,), dtype="float64")
-    indices = np.empty((l, 3), dtype="int64")
 
-    start = 0
-    stop = l
+    if ignore_trivial:
+        diags = np.arange(excl_zone + 1, n_B - m + 1)
+    else:
+        diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
 
-    all_start_profiles, indices[start, :] = _get_first_stump_profile(
-        start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, ignore_trivial
-    )
-    profile[start] = all_start_profiles[0]
-
-    QT, QT_first = _get_QT(start, T_A, T_B, m)
-
-    profile[start + 1 : stop], indices[start + 1 : stop, :] = _stump(
+    P, I = _stump(
         T_A,
         T_B,
         m,
-        stop,
-        excl_zone,
         M_T,
-        Σ_T,
-        QT,
-        QT_first,
         μ_Q,
-        σ_Q,
-        k,
+        Σ_T_inverse,
+        σ_Q_inverse,
+        M_T_m_1,
+        μ_Q_m_1,
+        T_A_subseq_isfinite,
+        T_B_subseq_isfinite,
+        T_A_subseq_isconstant,
+        T_B_subseq_isconstant,
+        diags,
         ignore_trivial,
-        start + 1,
     )
 
-    out[:, 0] = profile
-    out[:, 1:4] = indices
+    out[:, 0] = P[:, 0]
+    out[:, 1:] = I
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover

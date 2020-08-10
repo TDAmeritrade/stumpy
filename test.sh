@@ -24,8 +24,11 @@ check_errs $?
 
 if false; then
 # if true; then
-  py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_.py 
-  check_errs $?
+  for VARIABLE in {1..10}
+  do
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_.py
+    check_errs $?
+  done
   exit 0
 fi
 

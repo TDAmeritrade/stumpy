@@ -3,9 +3,6 @@ from scipy.spatial.distance import cdist
 from stumpy import core
 
 
-PRECISION = 1e-5
-
-
 def z_norm(a, axis=0, threshold=1e-7):
     std = np.std(a, axis, keepdims=True)
     std[np.less(std, threshold, where=~np.isnan(std))] = 1.0
@@ -102,6 +99,72 @@ def stamp(T_A, m, exclusion_zone=None, T_B=None):
         result = np.array(
             [mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object,
         )
+    return result
+
+
+def stump(T_A, m, exclusion_zone=None, T_B=None):
+    """
+    Traverse distance matrix along the diagonals and update the matrix profile and
+    matrix profile indices
+    """
+    if T_B is None:  # self-join:
+        ignore_trivial = True
+        T_B = T_A.copy()
+        distance_matrix = np.array(
+            [distance_profile(Q, T_A, m) for Q in core.rolling_window(T_B, m)]
+        )
+    else:
+        ignore_trivial = False
+        distance_matrix = np.array(
+            [distance_profile(Q, T_A, m) for Q in core.rolling_window(T_B, m)]
+        )
+
+    distance_matrix[np.isnan(distance_matrix)] = np.inf
+
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_B - m + 1
+
+    if ignore_trivial:
+        diags = np.arange(exclusion_zone + 1, n_B - m + 1)
+    else:
+        diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
+
+    P = np.full((l, 3), np.inf)
+    I = np.full((l, 3), -1, dtype=np.int64)
+
+    for k in diags:
+        if k >= 0:
+            iter_range = range(0, min(n_B - m + 1, n_A - m + 1 - k))
+        else:
+            iter_range = range(-k, min(n_B - m + 1, n_A - m + 1 - k))
+
+        for i in iter_range:
+            D = distance_matrix[i, i + k]
+            if D < P[i, 0]:
+                P[i, 0] = D
+                I[i, 0] = i + k
+
+            if ignore_trivial:  # Self-joins only
+                if D < P[i + k, 0]:
+                    P[i + k, 0] = D
+                    I[i + k, 0] = i
+
+                if i < i + k:
+                    # Left matrix profile and left matrix profile index
+                    if D < P[i + k, 1]:
+                        P[i + k, 1] = D
+                        I[i + k, 1] = i
+
+                    if D < P[i, 2]:
+                        # right matrix profile and right matrix profile index
+                        P[i, 2] = D
+                        I[i, 2] = i + k
+
+    result = np.empty((l, 4), dtype=object)
+    result[:, 0] = P[:, 0]
+    result[:, 1:4] = I[:, :]
+
     return result
 
 

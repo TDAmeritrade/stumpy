@@ -15,10 +15,6 @@ try:
 except ImportError:
     pass
 
-DENOM_THRESHOLD = 1e-14
-STDDEV_THRESHOLD = 1e-7
-D_SQUARED_THRESHOLD = 1e-14
-
 
 def driver_not_found(*args, **kwargs):  # pragma: no cover
     """
@@ -386,17 +382,18 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     if np.isinf(M_T) or np.isinf(μ_Q):
         D_squared = np.inf
     else:
-        if σ_Q < STDDEV_THRESHOLD or Σ_T < STDDEV_THRESHOLD:
+        if σ_Q < config.STUMPY_STDDEV_THRESHOLD or Σ_T < config.STUMPY_STDDEV_THRESHOLD:
             D_squared = m
         else:
             denom = m * σ_Q * Σ_T
-            if np.abs(denom) < DENOM_THRESHOLD:  # pragma nocover
-                denom = DENOM_THRESHOLD
+            if np.abs(denom) < config.STUMPY_DENOM_THRESHOLD:  # pragma nocover
+                denom = config.STUMPY_DENOM_THRESHOLD
             D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
 
         if (
-            σ_Q < STDDEV_THRESHOLD and Σ_T < STDDEV_THRESHOLD
-        ) or D_squared < D_SQUARED_THRESHOLD:
+            σ_Q < config.STUMPY_STDDEV_THRESHOLD
+            and Σ_T < config.STUMPY_STDDEV_THRESHOLD
+        ) or D_squared < config.STUMPY_D_SQUARED_THRESHOLD:
             D_squared = 0
 
     return D_squared
@@ -668,6 +665,41 @@ def mass(Q, T, M_T=None, Σ_T=None):
         distance_profile[:] = _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T)
 
     return distance_profile
+
+
+def _get_QT(start, T_A, T_B, m):
+    """
+    Compute the sliding dot product between the query, `T_B`, (from
+    [start:start+m]) and the time series, `T_A`. Additionally, compute
+    QT for the first window.
+
+    Parameters
+    ----------
+    start : int
+        The window index for T_B from which to calculate the QT dot product
+
+    T_A : ndarray
+        The time series or sequence for which to compute the dot product
+
+    T_B : ndarray
+        The time series or sequence that contain your query subsequence
+        of interest
+
+    m : int
+        Window size
+
+    Returns
+    -------
+    QT : ndarray
+        Given `start`, return the corresponding QT
+
+    QT_first : ndarray
+         QT for the first window
+    """
+    QT = sliding_dot_product(T_B[start : start + m], T_A)
+    QT_first = sliding_dot_product(T_A[:m], T_B)
+
+    return QT, QT_first
 
 
 @njit(fastmath=True)

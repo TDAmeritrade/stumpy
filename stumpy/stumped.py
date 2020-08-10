@@ -6,18 +6,19 @@ import logging
 
 import numpy as np
 
-from . import core, _stump, _get_first_stump_profile, _get_QT
+from . import core, _stump, _count_diagonal_ndist, config
 
 logger = logging.getLogger(__name__)
 
 
 def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     """
-    Compute the matrix profile with parallelized and distributed STOMP
+    Compute the matrix profile with parallelized and distributed STOMPopt with
+    Pearson correlations.
 
     This is highly distributed implementation around the Numba JIT-compiled
     parallelized `_stump` function which computes the matrix profile according
-    to STOMP.
+    to STOMPopt with Pearson correlations.
 
     Parameters
     ----------
@@ -51,6 +52,23 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
 
     Notes
     -----
+    `DOI: 10.1007/s10115-017-1138-x \
+    <https://www.cs.ucr.edu/~eamonn/ten_quadrillion.pdf>`__
+
+    See Section 4.5
+
+    The above reference outlines a general approach for traversing the distance
+    matrix in a diagonal fashion rather than in a row-wise fashion.
+
+    `DOI: 10.1145/3357223.3362721 \
+    <https://www.cs.ucr.edu/~eamonn/public/GPU_Matrix_profile_VLDB_30DraftOnly.pdf>`__
+
+    See Section 3.1 and Section 3.3
+
+    The above reference outlines the use of the Pearson correlation via Welford's
+    centered sum-of-products along each diagonal of the distance matrix in place of the
+    sliding window dot product found in the original STOMP method.
+
     `DOI: 10.1109/ICDM.2016.0085 \
     <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
@@ -81,12 +99,16 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-    if T_B is None:
-        T_B = T_A
-        ignore_trivial = True
+    T_A = np.asarray(T_A)
+    T_A = T_A.copy()
 
-    T_A, M_T, Σ_T = core.preprocess(T_A, m)
-    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
+    if T_B is None:
+        T_B = T_A.copy()
+        ignore_trivial = True
+    else:
+        T_B = np.asarray(T_B)
+        T_B = T_B.copy()
+        ignore_trivial = False
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
@@ -113,74 +135,108 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
         logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
         logger.warning("Try setting `ignore_trivial = False`.")
 
-    n = T_B.shape[0]
-    k = T_A.shape[0] - m + 1
-    l = n - m + 1
-    excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
+    T_A[np.isinf(T_A)] = np.nan
+    T_B[np.isinf(T_B)] = np.nan
 
+    T_A_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_A, m)), axis=1)
+    T_B_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_B, m)), axis=1)
+
+    T_A[np.isnan(T_A)] = 0
+    T_B[np.isnan(T_B)] = 0
+
+    M_T, Σ_T = core.compute_mean_std(T_A, m)
+    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
+    T_A_subseq_isconstant = Σ_T < config.STUMPY_STDDEV_THRESHOLD
+    T_B_subseq_isconstant = σ_Q < config.STUMPY_STDDEV_THRESHOLD
+    # Avoid divide by zero
+    Σ_T[T_A_subseq_isconstant] = 1.0
+    σ_Q[T_B_subseq_isconstant] = 1.0
+    Σ_T_inverse = 1.0 / Σ_T
+    σ_Q_inverse = 1.0 / σ_Q
+    M_T_m_1, _ = core.compute_mean_std(T_A, m - 1)
+    μ_Q_m_1, _ = core.compute_mean_std(T_B, m - 1)
+
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_B - m + 1
+
+    excl_zone = int(np.ceil(m / 4))
     out = np.empty((l, 4), dtype=object)
-    profile = np.empty((l,), dtype="float64")
-    indices = np.empty((l, 3), dtype="int64")
 
     hosts = list(dask_client.ncores().keys())
     nworkers = len(hosts)
 
-    step = 1 + l // nworkers
-    QT_futures = []
-    QT_first_futures = []
-    for i, start in enumerate(range(0, l, step)):
-        all_start_profiles, indices[start, :] = _get_first_stump_profile(
-            start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, ignore_trivial
-        )
-        profile[start] = all_start_profiles[0]
+    if ignore_trivial:
+        diags = np.arange(excl_zone + 1, n_B - m + 1)
+    else:
+        diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
+
+    ndist_counts = _count_diagonal_ndist(diags, m, n_A, n_B)
+    diags_ranges = core._get_array_ranges(ndist_counts, nworkers)
+    diags_ranges += diags[0]
 
     # Scatter data to Dask cluster
     T_A_future = dask_client.scatter(T_A, broadcast=True)
     T_B_future = dask_client.scatter(T_B, broadcast=True)
     M_T_future = dask_client.scatter(M_T, broadcast=True)
-    Σ_T_future = dask_client.scatter(Σ_T, broadcast=True)
     μ_Q_future = dask_client.scatter(μ_Q, broadcast=True)
-    σ_Q_future = dask_client.scatter(σ_Q, broadcast=True)
+    Σ_T_inverse_future = dask_client.scatter(Σ_T_inverse, broadcast=True)
+    σ_Q_inverse_future = dask_client.scatter(σ_Q_inverse, broadcast=True)
+    M_T_m_1_future = dask_client.scatter(M_T_m_1, broadcast=True)
+    μ_Q_m_1_future = dask_client.scatter(μ_Q_m_1, broadcast=True)
+    T_A_subseq_isfinite_future = dask_client.scatter(
+        T_A_subseq_isfinite, broadcast=True
+    )
+    T_B_subseq_isfinite_future = dask_client.scatter(
+        T_B_subseq_isfinite, broadcast=True
+    )
+    T_A_subseq_isconstant_future = dask_client.scatter(
+        T_A_subseq_isconstant, broadcast=True
+    )
+    T_B_subseq_isconstant_future = dask_client.scatter(
+        T_B_subseq_isconstant, broadcast=True
+    )
 
-    for i, start in enumerate(range(0, l, step)):
-        QT, QT_first = _get_QT(start, T_A, T_B, m)
-
-        QT_future = dask_client.scatter(QT, workers=[hosts[i]])
-        QT_first_future = dask_client.scatter(QT_first, workers=[hosts[i]])
-
-        QT_futures.append(QT_future)
-        QT_first_futures.append(QT_first_future)
+    diags_futures = []
+    for i, host in enumerate(hosts):
+        diags_future = dask_client.scatter(
+            np.arange(diags_ranges[i, 0], diags_ranges[i, 1]), workers=[host]
+        )
+        diags_futures.append(diags_future)
 
     futures = []
-    for i, start in enumerate(range(0, l, step)):
-        stop = min(l, start + step)
-
+    for i in range(len(hosts)):
         futures.append(
             dask_client.submit(
                 _stump,
                 T_A_future,
                 T_B_future,
                 m,
-                stop,
-                excl_zone,
                 M_T_future,
-                Σ_T_future,
-                QT_futures[i],
-                QT_first_futures[i],
                 μ_Q_future,
-                σ_Q_future,
-                k,
+                Σ_T_inverse_future,
+                σ_Q_inverse_future,
+                M_T_m_1_future,
+                μ_Q_m_1_future,
+                T_A_subseq_isfinite_future,
+                T_B_subseq_isfinite_future,
+                T_A_subseq_isconstant_future,
+                T_B_subseq_isconstant_future,
+                diags_futures[i],
                 ignore_trivial,
-                start + 1,
             )
         )
 
     results = dask_client.gather(futures)
-    for i, start in enumerate(range(0, l, step)):
-        stop = min(l, start + step)
-        profile[start + 1 : stop], indices[start + 1 : stop, :] = results[i]
+    profile, indices = results[0]
+    for i in range(1, len(hosts)):
+        P, I = results[i]
+        for col in range(P.shape[1]):  # pragma: no cover
+            cond = P[:, col] < profile[:, col]
+            profile[:, col] = np.where(cond, P[:, col], profile[:, col])
+            indices[:, col] = np.where(cond, I[:, col], indices[:, col])
 
-    out[:, 0] = profile
+    out[:, 0] = profile[:, 0]
     out[:, 1:4] = indices
 
     threshold = 10e-6

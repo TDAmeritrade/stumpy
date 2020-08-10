@@ -9,6 +9,7 @@ from numba import njit, prange, config
 
 from . import core
 from .scrump import _get_diags_ranges
+from stumpy.config import STUMPY_D_SQUARED_THRESHOLD
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ def _compute_diagonal(
     I : ndarray
         Matrix profile indices
 
-    T_B_subseq_isfinite : ndarray
+    T_A_subseq_isfinite : ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
         `np.nan`/`np.inf` value (False)
 
@@ -99,7 +100,7 @@ def _compute_diagonal(
                     + (T_A[i + k + m - 1] - T_B[i + m - 1]) ** 2
                 )
 
-            if D_squared < core.D_SQUARED_THRESHOLD:
+            if D_squared < STUMPY_D_SQUARED_THRESHOLD:
                 D_squared = 0.0
 
             if T_A_subseq_isfinite[i + k] and T_B_subseq_isfinite[i]:

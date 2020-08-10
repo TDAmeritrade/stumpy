@@ -2,7 +2,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 from stumpy import gpu_stump
-from stumpy import core, _get_QT, config
+from stumpy import core, config
 from numba import cuda
 import math
 import pytest
@@ -193,13 +193,13 @@ def test_gpu_stump_identical_subsequence_self_join():
     naive.replace_inf(left)
     naive.replace_inf(right)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=naive.PRECISION
+        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
     right = gpu_stump(pd.Series(T_A), m, ignore_trivial=True)
     naive.replace_inf(right)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=naive.PRECISION
+        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
 
@@ -215,13 +215,13 @@ def test_gpu_stump_identical_subsequence_A_B_join():
     naive.replace_inf(left)
     naive.replace_inf(right)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=naive.PRECISION
+        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
     right = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
     naive.replace_inf(right)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=naive.PRECISION
+        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
     # Swap inputs
@@ -230,13 +230,13 @@ def test_gpu_stump_identical_subsequence_A_B_join():
     naive.replace_inf(left)
     naive.replace_inf(right)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=naive.PRECISION
+        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
     right = gpu_stump(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
     naive.replace_inf(right)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=naive.PRECISION
+        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
 

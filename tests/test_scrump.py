@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import scrump, core, stump
+from stumpy import scrump, core, stump, config
 from stumpy.scrump import _get_max_diag_idx, _get_diags_ranges, prescrump
 import pytest
 import naive
@@ -836,7 +836,7 @@ def test_scrump_identical_subsequence_self_join(percentages):
         naive.replace_inf(left_P)
         naive.replace_inf(right_P)
 
-        npt.assert_almost_equal(left_P, right_P, decimal=naive.PRECISION)
+        npt.assert_almost_equal(left_P, right_P, decimal=config.STUMPY_TEST_PRECISION)
         # npt.assert_almost_equal(left_I, right_I)
         # npt.assert_almost_equal(left_left_I, right_left_I)
         # npt.assert_almost_equal(left_right_I, right_right_I)

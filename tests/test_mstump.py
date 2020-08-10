@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import core
+from stumpy import core, config
 from stumpy import (
     mstump,
     _mstump,
@@ -74,7 +74,7 @@ def test_multi_mass_seeded():
     M_T, Σ_T = core.compute_mean_std(T, m)
     right = _multi_mass(Q, T, m, M_T, Σ_T, M_T[:, trivial_idx], Σ_T[:, trivial_idx])
 
-    npt.assert_almost_equal(left, right, decimal=naive.PRECISION)
+    npt.assert_almost_equal(left, right, decimal=config.STUMPY_TEST_PRECISION)
 
 
 @pytest.mark.parametrize("T, m", test_data)
@@ -88,7 +88,7 @@ def test_multi_mass(T, m):
     M_T, Σ_T = core.compute_mean_std(T, m)
     right = _multi_mass(Q, T, m, M_T, Σ_T, M_T[:, trivial_idx], Σ_T[:, trivial_idx])
 
-    npt.assert_almost_equal(left, right, decimal=naive.PRECISION)
+    npt.assert_almost_equal(left, right, decimal=config.STUMPY_TEST_PRECISION)
 
 
 @pytest.mark.parametrize("T, m", test_data)
@@ -259,7 +259,9 @@ def test_identical_subsequence_self_join():
     left_P, left_I = naive.mstump(T, m, excl_zone)
     right_P, right_I = mstump(T, m)
 
-    npt.assert_almost_equal(left_P, right_P, decimal=naive.PRECISION)  # ignore indices
+    npt.assert_almost_equal(
+        left_P, right_P, decimal=config.STUMPY_TEST_PRECISION
+    )  # ignore indices
 
 
 @pytest.mark.parametrize("T, m", test_data)
