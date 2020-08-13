@@ -183,7 +183,7 @@ def _aamp(
     I = np.full((n_threads, l), -1, np.int64)
 
     for thread_idx in prange(n_threads):
-        # Compute and pdate P, I within a single thread while avoiding race conditions
+        # Compute and update P, I within a single thread while avoiding race conditions
         _compute_diagonal(
             T_A,
             T_B,
