@@ -763,6 +763,68 @@ def preprocess(T, m):
     return T, M_T, Σ_T
 
 
+def preprocess_diagonal(T, m):
+    """
+    Preprocess a time series that is to be used when traversing the diagonals of a
+    distance matrix.
+
+    Creates a copy of the time series where all NaN and inf values
+    are replaced with zero. Also computes means, `M_T` and `M_T_m_1`, for every
+    subsequence using awindow size of `m` and `m-1`, respectively, and the inverse
+    standard deviation, `Σ_T_inverse`. Every subsequence that contains at least
+    one NaN or inf value will have a `False` value in its `T_subseq_isfinite` `bool`
+    arra and it will also have a mean of np.inf. For the standard
+    deviation these values are ignored. If all values are illegal, the
+    standard deviation will be 0 (see `core.compute_mean_std`). Additionally,
+    the inverse standard deviation, σ_inverse, will also be computed and returned.
+    Finally, constant subsequences (i.e., subsequences with a standard deviation of
+    zero), will have a corresponding `True` value in its `T_subseq_isconstant` array.
+
+    Parameters
+    ----------
+    T : ndarray
+        Time series or sequence
+
+    m : int
+        Window size
+
+    Returns
+    -------
+    T : ndarray
+        Modified time series
+
+    M_T : ndarray
+        Rolling mean with a subsequence length of `m`
+
+    Σ_T_inverse : ndarray
+        Inverted rolling standard deviation
+
+    M_T_m_1 : ndarray
+        Rolling mean with a subsequence length of `m-1`
+
+    T_subseq_isfinite : ndarray
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_subseq_isconstant : ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
+
+    """
+    T = T.copy()
+    T = np.asarray(T)
+
+    T[np.isinf(T)] = np.nan
+    T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
+    T[np.isnan(T)] = 0
+    M_T, Σ_T = compute_mean_std(T, m)
+    T_subseq_isconstant = Σ_T < config.STUMPY_STDDEV_THRESHOLD
+    Σ_T[T_subseq_isconstant] = 1.0  # Avoid divide by zero in next inversion step
+    Σ_T_inverse = 1.0 / Σ_T
+    M_T_m_1, _ = compute_mean_std(T, m - 1)
+
+    return T, M_T, Σ_T_inverse, M_T_m_1, T_subseq_isfinite, T_subseq_isconstant
+
+
 def array_to_temp_file(a):
     """
     Write an ndarray to a file

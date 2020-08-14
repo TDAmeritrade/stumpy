@@ -8,7 +8,7 @@ import numpy as np
 from numba import njit, prange, config
 
 from . import core
-from stumpy.config import STUMPY_STDDEV_THRESHOLD, STUMPY_D_SQUARED_THRESHOLD
+from stumpy.config import STUMPY_D_SQUARED_THRESHOLD
 
 logger = logging.getLogger(__name__)
 
@@ -501,16 +501,27 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-    T_A = np.asarray(T_A)
-    T_A = T_A.copy()
-
     if T_B is None:
-        T_B = T_A.copy()
+        T_B = T_A
         ignore_trivial = True
-    else:
-        T_B = np.asarray(T_B)
-        T_B = T_B.copy()
-        ignore_trivial = False
+
+    (
+        T_A,
+        M_T,
+        Σ_T_inverse,
+        M_T_m_1,
+        T_A_subseq_isfinite,
+        T_A_subseq_isconstant,
+    ) = core.preprocess_diagonal(T_A, m)
+
+    (
+        T_B,
+        μ_Q,
+        σ_Q_inverse,
+        μ_Q_m_1,
+        T_B_subseq_isfinite,
+        T_B_subseq_isconstant,
+    ) = core.preprocess_diagonal(T_B, m)
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
@@ -537,26 +548,26 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
         logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
         logger.warning("Try setting `ignore_trivial = False`.")
 
-    T_A[np.isinf(T_A)] = np.nan
-    T_B[np.isinf(T_B)] = np.nan
+    # T_A[np.isinf(T_A)] = np.nan
+    # T_B[np.isinf(T_B)] = np.nan
 
-    T_A_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_A, m)), axis=1)
-    T_B_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_B, m)), axis=1)
+    # T_A_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_A, m)), axis=1)
+    # T_B_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_B, m)), axis=1)
 
-    T_A[np.isnan(T_A)] = 0
-    T_B[np.isnan(T_B)] = 0
+    # T_A[np.isnan(T_A)] = 0
+    # T_B[np.isnan(T_B)] = 0
 
-    M_T, Σ_T = core.compute_mean_std(T_A, m)
-    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
-    T_A_subseq_isconstant = Σ_T < STUMPY_STDDEV_THRESHOLD
-    T_B_subseq_isconstant = σ_Q < STUMPY_STDDEV_THRESHOLD
-    # Avoid divide by zero
-    Σ_T[T_A_subseq_isconstant] = 1.0
-    σ_Q[T_B_subseq_isconstant] = 1.0
-    Σ_T_inverse = 1.0 / Σ_T
-    σ_Q_inverse = 1.0 / σ_Q
-    M_T_m_1, _ = core.compute_mean_std(T_A, m - 1)
-    μ_Q_m_1, _ = core.compute_mean_std(T_B, m - 1)
+    # M_T, Σ_T = core.compute_mean_std(T_A, m)
+    # μ_Q, σ_Q = core.compute_mean_std(T_B, m)
+    # T_A_subseq_isconstant = Σ_T < STUMPY_STDDEV_THRESHOLD
+    # T_B_subseq_isconstant = σ_Q < STUMPY_STDDEV_THRESHOLD
+    # # Avoid divide by zero
+    # Σ_T[T_A_subseq_isconstant] = 1.0
+    # σ_Q[T_B_subseq_isconstant] = 1.0
+    # Σ_T_inverse = 1.0 / Σ_T
+    # σ_Q_inverse = 1.0 / σ_Q
+    # M_T_m_1, _ = core.compute_mean_std(T_A, m - 1)
+    # μ_Q_m_1, _ = core.compute_mean_std(T_B, m - 1)
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]

@@ -331,6 +331,45 @@ def test_preprocess():
     npt.assert_almost_equal(left_Σ, right_Σ)
 
 
+def test_preprocess_diagonal():
+    T = np.array([0, np.nan, 2, 3, 4, 5, 6, 7, np.inf, 9])
+    m = 3
+
+    left_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
+    left_M, left_Σ = naive_compute_mean_std(left_T, m)
+    left_Σ_inverse = 1.0 / left_Σ
+    left_M_m_1, _ = naive_compute_mean_std(left_T, m - 1)
+
+    (
+        right_T,
+        right_M,
+        right_Σ_inverse,
+        right_M_m_1,
+        right_T_subseq_isfinite,
+        right_T_subseq_isconstant,
+    ) = core.preprocess_diagonal(T, m)
+
+    npt.assert_almost_equal(left_T, right_T)
+    npt.assert_almost_equal(left_M, right_M)
+    npt.assert_almost_equal(left_Σ_inverse, right_Σ_inverse)
+    npt.assert_almost_equal(left_M_m_1, right_M_m_1)
+
+    T = pd.Series(T)
+    (
+        right_T,
+        right_M,
+        right_Σ_inverse,
+        right_M_m_1,
+        right_T_subseq_isfinite,
+        right_T_subseq_isconstant,
+    ) = core.preprocess_diagonal(T, m)
+
+    npt.assert_almost_equal(left_T, right_T)
+    npt.assert_almost_equal(left_M, right_M)
+    npt.assert_almost_equal(left_Σ_inverse, right_Σ_inverse)
+    npt.assert_almost_equal(left_M_m_1, right_M_m_1)
+
+
 def test_array_to_temp_file():
     left = np.random.rand()
     fname = core.array_to_temp_file(left)
