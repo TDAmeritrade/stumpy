@@ -8,7 +8,6 @@ import numpy as np
 from numba import njit, prange, config
 
 from . import core
-from .scrump import _get_diags_ranges
 from stumpy.config import STUMPY_D_SQUARED_THRESHOLD
 
 logger = logging.getLogger(__name__)
@@ -19,11 +18,11 @@ def _compute_diagonal(
     T_A,
     T_B,
     m,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
     diags,
     diags_start_idx,
     diags_stop_idx,
-    T_A_subseq_isfinite,
-    T_B_subseq_isfinite,
     thread_idx,
     P,
     I,
@@ -45,15 +44,6 @@ def _compute_diagonal(
     m : int
         Window size
 
-    diags : ndarray
-        The diag of diagonals to process and compute
-
-    diags_start_idx : int
-        The start index for a range of diagonal diag to process and compute
-
-    diags_stop_idx : int
-        The (exclusive) stop index for a range of diagonal diag to process and compute
-
     P : ndarray
         Matrix profile
 
@@ -67,6 +57,15 @@ def _compute_diagonal(
     T_B_subseq_isfinite : ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
+
+    diags : ndarray
+        The diag of diagonals to process and compute
+
+    diags_start_idx : int
+        The start index for a range of diagonal diag to process and compute
+
+    diags_stop_idx : int
+        The (exclusive) stop index for a range of diagonal diag to process and compute
 
     thread_idx : int
         The thread index
@@ -117,14 +116,7 @@ def _compute_diagonal(
 
 @njit(parallel=True, fastmath=True)
 def _aamp(
-    T_A,
-    T_B,
-    m,
-    diags,
-    diags_ranges,
-    T_A_subseq_isfinite,
-    T_B_subseq_isfinite,
-    ignore_trivial,
+    T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_trivial,
 ):
     """
     A Numba JIT-compiled version of AAMP for parallel computation of the matrix
@@ -142,13 +134,6 @@ def _aamp(
     m : int
         Window size
 
-    diags : ndarray
-        The diag of diagonals to process and compute
-
-    diags_ranges : ndarray
-        The start (column 1) and (exclusive) stop (column 2) diag indices for
-        each thread
-
     T_A_subseq_isfinite : ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
         `np.nan`/`np.inf` value (False)
@@ -156,6 +141,9 @@ def _aamp(
     T_B_subseq_isfinite : ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
+
+    diags : ndarray
+        The diag of diagonals to process and compute
 
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
@@ -176,11 +164,15 @@ def _aamp(
 
     See Algorithm 1
     """
+    n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_B - m + 1
     n_threads = config.NUMBA_NUM_THREADS
     P = np.full((n_threads, l), np.inf)
     I = np.full((n_threads, l), -1, np.int64)
+
+    ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
+    diags_ranges = core._get_array_ranges(ndist_counts, n_threads)
 
     for thread_idx in prange(n_threads):
         # Compute and update P, I within a single thread while avoiding race conditions
@@ -188,11 +180,11 @@ def _aamp(
             T_A,
             T_B,
             m,
+            T_A_subseq_isfinite,
+            T_B_subseq_isfinite,
             diags,
             diags_ranges[thread_idx, 0],
             diags_ranges[thread_idx, 1],
-            T_A_subseq_isfinite,
-            T_B_subseq_isfinite,
             thread_idx,
             P,
             I,
@@ -290,7 +282,6 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_B - m + 1
-    n_threads = config.NUMBA_NUM_THREADS
 
     excl_zone = int(np.ceil(m / 4))
     out = np.empty((l, 2), dtype=object)
@@ -300,17 +291,8 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
     else:
         diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
 
-    diags_ranges = _get_diags_ranges(n_threads, m, n_A, n_B, diags, 0, 1.0)
-
     P, I = _aamp(
-        T_A,
-        T_B,
-        m,
-        diags,
-        diags_ranges,
-        T_A_subseq_isfinite,
-        T_B_subseq_isfinite,
-        ignore_trivial,
+        T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_trivial,
     )
 
     out[:, 0] = P

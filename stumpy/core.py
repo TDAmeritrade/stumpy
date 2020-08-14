@@ -846,6 +846,42 @@ def array_to_temp_file(a):
     return fname
 
 
+@njit(parallel=True, fastmath=True)
+def _count_diagonal_ndist(diags, m, n_A, n_B):
+    """
+    Count the number of distances that would be computed for each diagonal index
+    referenced in `diags`
+
+    Parameters
+    ----------
+    m : int
+        Window size
+
+    n_A : ndarray
+        The length of time series `T_A`
+
+    n_B : ndarray
+        The length of time series `T_B`
+
+    diags : ndarray
+        The diagonal indices of interest
+
+    Returns
+    -------
+    diag_ndist_counts : ndarray
+        Counts of distances computed along each diagonal of interest
+    """
+    diag_ndist_counts = np.zeros(diags.shape[0], dtype=np.int64)
+    for diag_idx in prange(diags.shape[0]):
+        k = diags[diag_idx]
+        if k >= 0:
+            diag_ndist_counts[diag_idx] = min(n_A - m + 1 - k, n_B - m + 1)
+        else:
+            diag_ndist_counts[diag_idx] = min(n_A - m + 1, n_B - m + 1 + k)
+
+    return diag_ndist_counts
+
+
 @njit()
 def _get_array_ranges(a, n_chunks, truncate=False):
     """

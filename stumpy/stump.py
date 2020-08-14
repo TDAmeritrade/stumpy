@@ -13,42 +13,6 @@ from stumpy.config import STUMPY_D_SQUARED_THRESHOLD
 logger = logging.getLogger(__name__)
 
 
-@njit(parallel=True, fastmath=True)
-def _count_diagonal_ndist(diags, m, n_A, n_B):
-    """
-    Count the number of distances that would be computed for each diagonal index
-    referenced in `diags`
-
-    Parameters
-    ----------
-    m : int
-        Window size
-
-    n_A : ndarray
-        The length of time series `T_A`
-
-    n_B : ndarray
-        The length of time series `T_B`
-
-    diags : ndarray
-        The diagonal indices of interest
-
-    Returns
-    -------
-    diag_ndist_counts : ndarray
-        Counts of distances computed along each diagonal of interest
-    """
-    diag_ndist_counts = np.zeros(diags.shape[0], dtype=np.int64)
-    for diag_idx in prange(diags.shape[0]):
-        k = diags[diag_idx]
-        if k >= 0:
-            diag_ndist_counts[diag_idx] = min(n_A - m + 1 - k, n_B - m + 1)
-        else:
-            diag_ndist_counts[diag_idx] = min(n_A - m + 1, n_B - m + 1 + k)
-
-    return diag_ndist_counts
-
-
 @njit(fastmath=True)
 def _compute_diagonal(
     T_A,
@@ -367,7 +331,7 @@ def _stump(
     ρ = np.full((n_threads, l, 3), -np.inf)
     I = np.full((n_threads, l, 3), -1, np.int64)
 
-    ndist_counts = _count_diagonal_ndist(diags, m, n_A, n_B)
+    ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, n_threads)
 
     for thread_idx in prange(n_threads):
@@ -412,13 +376,13 @@ def _stump(
 
     # Convert pearson correlations to distances
     D = np.abs(2 * m * (1 - ρ[0, :, :]))
-    for i in prange(D.shape[1]):
+    for i in prange(D.shape[0]):
         if D[i, 0] < STUMPY_D_SQUARED_THRESHOLD:
             D[i, 0] = 0.0
         if D[i, 1] < STUMPY_D_SQUARED_THRESHOLD:
             D[i, 1] = 0.0
-        if D[i, 1] < STUMPY_D_SQUARED_THRESHOLD:
-            D[i, 1] = 0.0
+        if D[i, 2] < STUMPY_D_SQUARED_THRESHOLD:
+            D[i, 2] = 0.0
     P = np.sqrt(D)
 
     return P[:, :], I[0, :, :]
@@ -547,27 +511,6 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     if ignore_trivial and core.are_arrays_equal(T_A, T_B) is False:  # pragma: no cover
         logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
         logger.warning("Try setting `ignore_trivial = False`.")
-
-    # T_A[np.isinf(T_A)] = np.nan
-    # T_B[np.isinf(T_B)] = np.nan
-
-    # T_A_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_A, m)), axis=1)
-    # T_B_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_B, m)), axis=1)
-
-    # T_A[np.isnan(T_A)] = 0
-    # T_B[np.isnan(T_B)] = 0
-
-    # M_T, Σ_T = core.compute_mean_std(T_A, m)
-    # μ_Q, σ_Q = core.compute_mean_std(T_B, m)
-    # T_A_subseq_isconstant = Σ_T < STUMPY_STDDEV_THRESHOLD
-    # T_B_subseq_isconstant = σ_Q < STUMPY_STDDEV_THRESHOLD
-    # # Avoid divide by zero
-    # Σ_T[T_A_subseq_isconstant] = 1.0
-    # σ_Q[T_B_subseq_isconstant] = 1.0
-    # Σ_T_inverse = 1.0 / Σ_T
-    # σ_Q_inverse = 1.0 / σ_Q
-    # M_T_m_1, _ = core.compute_mean_std(T_A, m - 1)
-    # μ_Q_m_1, _ = core.compute_mean_std(T_B, m - 1)
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]

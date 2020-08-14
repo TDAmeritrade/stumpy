@@ -2,7 +2,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 from stumpy import scrump, core, stump, config
-from stumpy.scrump import _get_max_diag_idx, _get_diags_ranges, prescrump
+from stumpy.scrump import prescrump
 import pytest
 import naive
 
@@ -21,63 +21,6 @@ test_data = [
 substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 substitution_values = [np.nan, np.inf]
 percentages = [(0.01, 0.1, 1.0)]
-
-
-def naive_get_max_diag_idx(m, n_A, n_B, diags, start, percentage):
-    matrix = np.empty((n_B - m + 1, n_A - m + 1))
-    for i in range(matrix.shape[0]):
-        for j in range(matrix.shape[1]):
-            matrix[i, j] = j - i
-
-    max_number_of_distances = 0
-    for k in diags:
-        max_number_of_distances += matrix[matrix == k].size
-
-    distances_to_compute = max_number_of_distances * percentage
-    number_of_distances = 0
-    for k in diags[start:]:
-        number_of_distances += matrix[matrix == k].size
-        if number_of_distances > distances_to_compute:
-            break
-
-    max_diag_index = list(diags).index(k) + 1
-    return max_diag_index, number_of_distances
-
-
-def naive_get_diags_ranges(n_split, m, n_A, n_B, diags, start, percentage):
-    diags_ranges = np.zeros((n_split, 2), np.int64)
-
-    max_diag_index, number_of_distances = naive_get_max_diag_idx(
-        m, n_A, n_B, diags, start, percentage
-    )
-    number_of_distances_per_thread = number_of_distances / n_split
-
-    matrix = np.empty((n_B - m + 1, n_A - m + 1))
-    for i in range(matrix.shape[0]):
-        for j in range(matrix.shape[1]):
-            matrix[i, j] = j - i
-
-    current_thread = 0
-    current_start = start
-    current_number_of_distances = 0
-    for index in range(start, max_diag_index):
-        k = diags[index]
-        current_number_of_distances += matrix[matrix == k].size
-
-        if current_number_of_distances > number_of_distances_per_thread:
-            diags_ranges[current_thread, 0] = current_start
-            diags_ranges[current_thread, 1] = index + 1
-
-            current_thread += 1
-            current_start = index + 1
-            current_number_of_distances = 0
-
-    # Handle final range outside of for loop if the last thread was not saturated
-    if current_thread < diags_ranges.shape[0]:
-        diags_ranges[current_thread, 0] = current_start
-        diags_ranges[current_thread, 1] = index + 1
-
-    return diags_ranges
 
 
 def naive_prescrump(T_A, m, T_B, s, exclusion_zone=None):
@@ -135,9 +78,11 @@ def naive_scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
     else:
         diags = np.random.permutation(range(-(n_B - m + 1) + 1, n_A - m + 1))
 
-    diags_ranges = naive_get_diags_ranges(1, m, n_A, n_B, diags, 0, percentage)
-    diags_ranges_start = diags_ranges[0][0]
-    diags_ranges_stop = diags_ranges[0][1]
+    n_chunks = int(np.ceil(1.0 / percentage))
+    ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
+    diags_ranges = core._get_array_ranges(ndist_counts, n_chunks)
+    diags_ranges_start = diags_ranges[0, 0]
+    diags_ranges_stop = diags_ranges[0, 1]
 
     out = np.full((l, 4), np.inf, dtype=object)
     out[:, 1:] = -1
@@ -182,74 +127,74 @@ def naive_scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
     return out
 
 
-@pytest.mark.parametrize("T_A, T_B", test_data)
-@pytest.mark.parametrize("percentages", percentages)
-def test_get_max_diag_idx(T_A, T_B, percentages):
-    n_A = T_A.shape[0]
-    n_B = T_B.shape[0]
-    m = 3
+# @pytest.mark.parametrize("T_A, T_B", test_data)
+# @pytest.mark.parametrize("percentages", percentages)
+# def test_get_max_diag_idx(T_A, T_B, percentages):
+#     n_A = T_A.shape[0]
+#     n_B = T_B.shape[0]
+#     m = 3
 
-    for percentage in percentages:
-        # self-join
-        zone = int(np.ceil(m / 4))
-        diags = np.arange(zone + 1, n_B - m + 1)
-        start = 0
+#     for percentage in percentages:
+#         # self-join
+#         zone = int(np.ceil(m / 4))
+#         diags = np.arange(zone + 1, n_B - m + 1)
+#         start = 0
 
-        left_max_diag_idx, left_n_dist_computed = naive_get_max_diag_idx(
-            m, n_B, n_B, diags, start, percentage
-        )
+#         left_max_diag_idx, left_n_dist_computed = naive_get_max_diag_idx(
+#             m, n_B, n_B, diags, start, percentage
+#         )
 
-        right_max_diag_idx, right_n_dist_computed = _get_max_diag_idx(
-            m, n_B, n_B, diags, start, percentage
-        )
+#         right_max_diag_idx, right_n_dist_computed = _get_max_diag_idx(
+#             m, n_B, n_B, diags, start, percentage
+#         )
 
-        npt.assert_almost_equal(left_max_diag_idx, right_max_diag_idx)
-        npt.assert_almost_equal(left_n_dist_computed, right_n_dist_computed)
+#         npt.assert_almost_equal(left_max_diag_idx, right_max_diag_idx)
+#         npt.assert_almost_equal(left_n_dist_computed, right_n_dist_computed)
 
-        # AB-join
-        diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
-        start = 0
-        left_max_diag_idx, left_n_dist_computed = naive_get_max_diag_idx(
-            m, n_A, n_B, diags, start, percentage
-        )
+#         # AB-join
+#         diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
+#         start = 0
+#         left_max_diag_idx, left_n_dist_computed = naive_get_max_diag_idx(
+#             m, n_A, n_B, diags, start, percentage
+#         )
 
-        right_max_diag_idx, right_n_dist_computed = _get_max_diag_idx(
-            m, n_A, n_B, diags, start, percentage
-        )
+#         right_max_diag_idx, right_n_dist_computed = _get_max_diag_idx(
+#             m, n_A, n_B, diags, start, percentage
+#         )
 
-        npt.assert_almost_equal(left_max_diag_idx, right_max_diag_idx)
-        npt.assert_almost_equal(left_n_dist_computed, right_n_dist_computed)
+#         npt.assert_almost_equal(left_max_diag_idx, right_max_diag_idx)
+#         npt.assert_almost_equal(left_n_dist_computed, right_n_dist_computed)
 
 
-@pytest.mark.parametrize("T_A, T_B", test_data)
-@pytest.mark.parametrize("percentages", percentages)
-def test_get_diags_ranges(T_A, T_B, percentages):
-    n_A = T_A.shape[0]
-    n_B = T_B.shape[0]
-    m = 3
+# @pytest.mark.parametrize("T_A, T_B", test_data)
+# @pytest.mark.parametrize("percentages", percentages)
+# def test_get_diags_ranges(T_A, T_B, percentages):
+#     n_A = T_A.shape[0]
+#     n_B = T_B.shape[0]
+#     m = 3
 
-    for percentage in percentages:
-        # self-join
-        zone = int(np.ceil(m / 4))
-        diags = np.arange(zone + 1, n_B - m + 1)
-        n_split = 2
-        start = 0
+#     for percentage in percentages:
+#         # self-join
+#         zone = int(np.ceil(m / 4))
+#         diags = np.arange(zone + 1, n_B - m + 1)
+#         n_split = 2
+#         start = 0
 
-        left = naive_get_diags_ranges(n_split, m, n_B, n_B, diags, start, percentage)
-        right = _get_diags_ranges(n_split, m, n_B, n_B, diags, start, percentage)
+#         left = naive_get_diags_ranges(n_split, m, n_B, n_B, diags, start, percentage)
+#         right = _get_diags_ranges(n_split, m, n_B, n_B, diags, start, percentage)
 
-        npt.assert_almost_equal(left, right)
+#         npt.assert_almost_equal(left, right)
 
-        # AB-join
-        diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
+#         # AB-join
+#         diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
 
-        n_split = 2
-        start = 0
+#         n_split = 2
+#         start = 0
 
-        left = naive_get_diags_ranges(n_split, m, n_A, n_B, diags, start, percentage)
-        right = _get_diags_ranges(n_split, m, n_A, n_B, diags, start, percentage)
+#         left = naive_get_diags_ranges(n_split, m, n_A, n_B, diags, start, percentage)
+#         right = _get_diags_ranges(n_split, m, n_A, n_B, diags, start, percentage)
 
-        npt.assert_almost_equal(left, right)
+#         npt.assert_almost_equal(left, right)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)

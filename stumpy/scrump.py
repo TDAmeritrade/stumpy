@@ -5,371 +5,11 @@
 import logging
 
 import numpy as np
-from numba import njit, prange, config
+from numba import njit, config
 
-from . import core
+from . import core, _stump
 
 logger = logging.getLogger(__name__)
-
-
-@njit(fastmath=True)
-def _get_max_diag_idx(m, n_A, n_B, diags, start, percentage):
-    """
-    Determine the diag index for when the desired percentage of distances is computed
-
-    Parameters
-    ----------
-    m : int
-        Window size
-
-    n_A : int
-        The length of the time series or sequence for which to compute the matrix
-        profile `T_A`
-
-    n_B : int
-        The length of the time series or sequence that contain your query subsequences
-        of interest `T_B`
-
-    diags : ndarray
-        The diag of diagonals to process and compute
-
-    start : int
-        The (inclusive) diag index from which to start
-
-    percentage : float
-        Approximate percentage completed. The value is between 0.0 and 1.0.
-
-    Returns
-    -------
-    max_diag_id : int
-        The diag index that corresponds to desired percentage of distances to compute
-
-    n_dist_computed : int
-        The number of distances computed
-    """
-    max_n_dist = 0
-    for diag_idx in range(diags.shape[0]):
-        k = diags[diag_idx]
-        if k >= 0:
-            max_n_dist += min(n_A - m + 1 - k, n_B - m + 1)
-        else:
-            max_n_dist += min(n_A - m + 1, n_B - m + 1 + k)
-
-    n_dist_computed = 0
-    for diag_idx in range(start, diags.shape[0]):
-        k = diags[diag_idx]
-        if k >= 0:
-            n_dist_computed += min(n_A - m + 1 - k, n_B - m + 1)
-        else:
-            n_dist_computed += min(n_A - m + 1, n_B - m + 1 + k)
-
-        if n_dist_computed / max_n_dist > percentage:  # pragma: no cover
-            break
-
-    max_diag_idx = diag_idx + 1
-
-    return max_diag_idx, n_dist_computed
-
-
-@njit(fastmath=True)
-def _get_diags_ranges(n_split, m, n_A, n_B, diags, start, percentage):
-    """
-    For the desired percentage of distances to be computed from diags, split the
-    diags into `n_split` chunks, and determine the appropriate start and stop
-    (exclusive) diag index ranges for each chunk
-
-    Parameters
-    ----------
-    n_split : int
-        The number of chunks to split the percentage of desired diags into
-
-    m : int
-        Window size
-
-    n_A : int
-        The length of the time series or sequence for which to compute the matrix
-        profile `T_A`
-
-    n_B : int
-        The length of the time series or sequence that contain your query subsequences
-        of interest `T_B`
-
-    diags : ndarray
-        The diag of diagonals to process and compute
-
-    start : int
-        The (inclusive) diag index from which to start
-
-    percentage : float
-        Approximate percentage completed. The value is between 0.0 and 1.0.
-
-    Returns
-    -------
-    ranges : int
-        The start (column 1) and (exclusive) stop (column 2) diags index ranges
-        that corresponds to a desired percentage of distances to compute
-    """
-    max_diag_idx, n_dist_computed = _get_max_diag_idx(
-        m, n_A, n_B, diags, start, percentage
-    )
-
-    diags_ranges = np.zeros((n_split, 2), np.int64)
-    ranges_idx = 0
-    range_start_idx = start
-    max_n_dist_per_range = n_dist_computed / n_split
-
-    n_dist_computed = 0
-    for diag_idx in range(start, max_diag_idx):
-        k = diags[diag_idx]
-        if k >= 0:
-            n_dist_computed += min(n_A - m + 1 - k, n_B - m + 1)
-        else:
-            n_dist_computed += min(n_A - m + 1, n_B - m + 1 + k)
-
-        if n_dist_computed > max_n_dist_per_range:  # pragma: no cover
-            diags_ranges[ranges_idx, 0] = range_start_idx
-            diags_ranges[ranges_idx, 1] = min(
-                diag_idx + 1, max_diag_idx
-            )  # Exclusive stop index
-            # Reset and Update
-            range_start_idx = diag_idx + 1
-            ranges_idx += 1
-            n_dist_computed = 0
-
-    # Handle final range outside of for loop if it was not saturated
-    if ranges_idx < diags_ranges.shape[0]:
-        diags_ranges[ranges_idx, 0] = range_start_idx
-        diags_ranges[ranges_idx, 1] = max_diag_idx
-
-    return diags_ranges
-
-
-@njit(fastmath=True)
-def _compute_diagonal(
-    T_A,
-    T_B,
-    m,
-    M_T,
-    Σ_T,
-    μ_Q,
-    σ_Q,
-    diags,
-    diags_start_idx,
-    diags_stop_idx,
-    thread_idx,
-    P,
-    I,
-    ignore_trivial,
-):
-    """
-    Compute (Numba JIT-compiled) and update P, I along a single diagonal using a single
-    thread and avoiding race conditions
-
-    Parameters
-    ----------
-    T_A : ndarray
-        The time series or sequence for which to compute the matrix profile
-
-    T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest
-
-    m : int
-        Window size
-
-    M_T : ndarray
-        Sliding mean of time series, `T_A`
-
-    Σ_T : ndarray
-        Sliding standard deviation of time series, `T_A`
-
-    μ_Q : ndarray
-        Mean of the query sequence, `Q`, relative to the current sliding window in `T_B`
-
-    σ_Q : ndarray
-        Standard deviation of the query sequence, `Q`, relative to the current
-        sliding window in `T_B`
-
-    diags : ndarray
-        The diag of diagonals to process and compute
-
-    diags_start_idx : int
-        The start index for a range of diagonal diag to process and compute
-
-    diags_stop_idx : int
-        The (exclusive) stop index for a range of diagonal diag to process and compute
-
-    P : ndarray
-        Matrix profile
-
-    I : ndarray
-        Matrix profile indices
-
-    thread_idx : int
-        The thread index
-
-    ignore_trivial : bool
-        Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
-        `False`. Default is `True`.
-
-    Returns
-    -------
-    None
-
-    Notes
-    -----
-    `DOI: 10.1007/s10115-017-1138-x \
-    <https://www.cs.ucr.edu/~eamonn/ten_quadrillion.pdf>`__
-
-    See Section 4.5
-
-    The above publication outlines a general approach for traversing the distance
-    matrix in a diagonal fashion rather than in a row-wise fashion.
-    """
-    n_A = T_A.shape[0]
-    n_B = T_B.shape[0]
-
-    for diag_idx in range(diags_start_idx, diags_stop_idx):
-        k = diags[diag_idx]
-
-        if k >= 0:
-            iter_range = range(0, min(n_B - m + 1, n_A - m + 1 - k))
-        else:
-            iter_range = range(-k, min(n_B - m + 1, n_A - m + 1 - k))
-
-        for i in iter_range:
-            if i == 0 or i == k or (k < 0 and i == -k):
-                QT = np.dot(T_A[i + k : i + k + m], T_B[i : i + m])
-            else:
-                QT = (
-                    QT
-                    - T_A[i + k - 1] * T_B[i - 1]
-                    + T_A[i + k + m - 1] * T_B[i + m - 1]
-                )
-
-            D_squared = core._calculate_squared_distance(
-                m, QT, M_T[i + k], Σ_T[i + k], μ_Q[i], σ_Q[i],
-            )
-
-            if D_squared < P[thread_idx, i, 0]:
-                P[thread_idx, i, 0] = D_squared
-                I[thread_idx, i, 0] = i + k
-
-            if ignore_trivial:  # self-joins only
-                if D_squared < P[thread_idx, i + k, 0]:
-                    P[thread_idx, i + k, 0] = D_squared
-                    I[thread_idx, i + k, 0] = i
-
-                if i < i + k:
-                    # left matrix profile and left matrix profile index
-                    if D_squared < P[thread_idx, i + k, 1]:
-                        P[thread_idx, i + k, 1] = D_squared
-                        I[thread_idx, i + k, 1] = i
-
-                    if D_squared < P[thread_idx, i, 2]:
-                        # right matrix profile and right matrix profile index
-                        P[thread_idx, i, 2] = D_squared
-                        I[thread_idx, i, 2] = i + k
-
-
-@njit(parallel=True, fastmath=True)
-def _scrump(T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, diags, diags_ranges, ignore_trivial):
-    """
-    A Numba JIT-compiled version of SCRIMP for parallel computation of the matrix
-    profile and matrix profile indices.
-
-    Parameters
-    ----------
-    T_A : ndarray
-        The time series or sequence for which to compute the matrix profile
-
-    T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest
-
-    m : int
-        Window size
-
-    M_T : ndarray
-        Sliding mean of time series, `T_A`
-
-    Σ_T : ndarray
-        Sliding standard deviation of time series, `T_A`
-
-    μ_Q : ndarray
-        Mean of the query sequence, `Q`, relative to the current sliding window in `T_B`
-
-    σ_Q : ndarray
-        Standard deviation of the query sequence, `Q`, relative to the current
-        sliding window in `T_B`
-
-    diags : ndarray
-        The diag of diagonals to process and compute
-
-    diags_ranges : ndarray
-        The start (column 1) and (exclusive) stop (column 2) diag indices for
-        each thread
-
-    ignore_trivial : bool
-        Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
-        `False`. Default is `True`.
-
-    Returns
-    -------
-    P : ndarray
-        Matrix profile
-
-    I : ndarray
-        Matrix profile indices
-
-    Notes
-    -----
-    `DOI: 10.1109/ICDM.2018.00099 \
-    <https://www.cs.ucr.edu/~eamonn/SCRIMP_ICDM_camera_ready_updated.pdf>`__
-
-    See Algorithm 1
-    """
-    n = T_B.shape[0]
-    l = n - m + 1
-    n_threads = config.NUMBA_NUM_THREADS
-    P = np.full((n_threads, l, 3), np.inf)
-    I = np.full((n_threads, l, 3), -1, np.int64)
-
-    for thread_idx in prange(n_threads):
-        # Compute and pdate P, I within a single thread while avoiding race conditions
-        _compute_diagonal(
-            T_A,
-            T_B,
-            m,
-            M_T,
-            Σ_T,
-            μ_Q,
-            σ_Q,
-            diags,
-            diags_ranges[thread_idx, 0],
-            diags_ranges[thread_idx, 1],
-            thread_idx,
-            P,
-            I,
-            ignore_trivial,
-        )
-
-    # Reduction of results from all threads
-    for thread_idx in range(1, n_threads):
-        for i in prange(l):
-            if P[0, i, 0] > P[thread_idx, i, 0]:
-                P[0, i, 0] = P[thread_idx, i, 0]
-                I[0, i, 0] = I[thread_idx, i, 0]
-            # left matrix profile and left matrix profile indices
-            if P[0, i, 1] > P[thread_idx, i, 1]:
-                P[0, i, 1] = P[thread_idx, i, 1]
-                I[0, i, 1] = I[thread_idx, i, 1]
-            # right matrix profile and right matrix profile indices
-            if P[0, i, 2] > P[thread_idx, i, 2]:
-                P[0, i, 2] = P[thread_idx, i, 2]
-                I[0, i, 2] = I[thread_idx, i, 2]
-
-    return np.sqrt(P[0]), I[0]
 
 
 @njit(parallel=True, fastmath=True)
@@ -594,7 +234,7 @@ class scrump(object):
     SCRIMP++, set `pre_scrump=True`.
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
-    `_scrump` function which computes the matrix profile according to SCRIMP.
+    `_stump` function which computes the matrix profile according to SCRIMP.
 
     Parameters
     ----------
@@ -697,8 +337,23 @@ class scrump(object):
             self._ignore_trivial = True
 
         self._m = m
-        self._T_A, self._M_T, self._Σ_T = core.preprocess(T_A, self._m)
-        self._T_B, self._μ_Q, self._σ_Q = core.preprocess(T_B, self._m)
+        (
+            self._T_A,
+            self._M_T,
+            self._Σ_T_inverse,
+            self._M_T_m_1,
+            self._T_A_subseq_isfinite,
+            self._T_A_subseq_isconstant,
+        ) = core.preprocess_diagonal(T_A, self._m)
+
+        (
+            self._T_B,
+            self._μ_Q,
+            self._σ_Q_inverse,
+            self._μ_Q_m_1,
+            self._T_B_subseq_isfinite,
+            self._T_B_subseq_isconstant,
+        ) = core.preprocess_diagonal(T_B, self._m)
 
         if self._T_A.ndim != 1:  # pragma: no cover
             raise ValueError(
@@ -767,8 +422,13 @@ class scrump(object):
         self._percentage = min(percentage, 1.0)
         self._percentage = max(percentage, 0.0)
         self._n_chunks = int(np.ceil(1.0 / percentage))
-        self._chunk = 1
-        self._start = 0
+        self._ndist_counts = core._count_diagonal_ndist(
+            self._diags, self._m, self._n_A, self._n_B
+        )
+        self._chunk_diags_ranges = core._get_array_ranges(
+            self._ndist_counts, self._n_chunks
+        )
+        self._chunk_idx = 0
 
     def update(self):
         """
@@ -776,30 +436,26 @@ class scrump(object):
         additional new distances (limited by `percentage`) that make up the full
         distance matrix.
         """
-        if self._chunk <= self._n_chunks:
-            diags_ranges = _get_diags_ranges(
-                self._n_threads,
-                self._m,
-                self._n_A,
-                self._n_B,
-                self._diags,
-                self._start,
-                self._percentage,
-            )
+        if self._chunk_idx < self._n_chunks:
+            start_idx, stop_idx = self._chunk_diags_ranges[self._chunk_idx]
 
-            P, I = _scrump(
+            P, I = _stump(
                 self._T_A,
                 self._T_B,
                 self._m,
                 self._M_T,
-                self._Σ_T,
                 self._μ_Q,
-                self._σ_Q,
-                self._diags,
-                diags_ranges,
+                self._Σ_T_inverse,
+                self._σ_Q_inverse,
+                self._M_T_m_1,
+                self._μ_Q_m_1,
+                self._T_A_subseq_isfinite,
+                self._T_B_subseq_isfinite,
+                self._T_A_subseq_isconstant,
+                self._T_B_subseq_isconstant,
+                self._diags[start_idx:stop_idx],
                 self._ignore_trivial,
             )
-            self._start = diags_ranges[:, 1].max()
 
             # Update matrix profile and indices
             for i in range(self._P.shape[0]):
@@ -815,7 +471,7 @@ class scrump(object):
                     self._P[i, 2] = P[i, 2]
                     self._I[i, 2] = I[i, 2]
 
-            self._chunk += 1
+            self._chunk_idx += 1
 
     @property
     def P_(self):

@@ -379,6 +379,21 @@ def test_array_to_temp_file():
     npt.assert_almost_equal(left, right)
 
 
+def test_count_diagonal_ndist():
+    for n_A in range(10, 15):
+        for n_B in range(10, 15):
+            for m in range(3, 6):
+                diags = np.random.permutation(range(-(n_B - m + 1) + 1, n_A - m + 1))
+                ones_matrix = np.ones((n_B - m + 1, n_A - m + 1), dtype=np.int64)
+                left_ndist_counts = np.empty(len(diags))
+                for i, diag in enumerate(diags):
+                    left_ndist_counts[i] = ones_matrix.diagonal(offset=diag).sum()
+
+            right_ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
+
+            npt.assert_almost_equal(left_ndist_counts, right_ndist_counts)
+
+
 def test_get_array_ranges():
     x = np.array([3, 9, 2, 1, 5, 4, 7, 7, 8, 6])
     for n_chunks in range(2, 5):

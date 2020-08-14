@@ -6,7 +6,7 @@ import logging
 
 import numpy as np
 
-from . import core, _stump, _count_diagonal_ndist
+from . import core, _stump
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +161,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     else:
         diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
 
-    ndist_counts = _count_diagonal_ndist(diags, m, n_A, n_B)
+    ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, nworkers)
     diags_ranges += diags[0]
 

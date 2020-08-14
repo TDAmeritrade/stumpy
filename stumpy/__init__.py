@@ -2,7 +2,6 @@ from pkg_resources import get_distribution, DistributionNotFound
 import os.path
 from .stump import (  # noqa: F401
     stump,
-    _count_diagonal_ndist,
     _stump,
 )
 from .stumped import stumped  # noqa: F401

@@ -22,8 +22,12 @@ echo "Checking Flake8 Style Guide Enforcement"
 flake8 ./
 check_errs $?
 
+# Test a single function repeatedly
 if false; then
 # if true; then
+  # echo "Disabling Numba JIT and CUDA Compiled Functions"
+  # export NUMBA_DISABLE_JIT=1
+  # export NUMBA_ENABLE_CUDASIM=1
   for VARIABLE in {1..10}
   do
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_.py
