@@ -429,6 +429,7 @@ class floss(object):
         self._n = self._T.shape[0]
         self._last_idx = self._n - self._m + 1  # Depends on the changing length of `T`
         self._n_appended = 0
+        self._finite_mask = np.full(self._n, True)
 
         if self._custom_iac is None:  # pragma: no cover
             self._custom_iac = _iac(
@@ -482,7 +483,13 @@ class floss(object):
         Segmentation (FLOSS).
         """
         self._T[:] = np.roll(self._T, -1)
-        self._T[-1] = t
+        self._finite_mask[:] = np.roll(self._finite_mask, -1)
+        if np.isfinite(t):
+            self._T[-1] = t
+            self._finite_mask[-1] = True
+        else:
+            self._T[-1] = 0
+            self._finite_mask[-1] = False
         Q = self._T[-self._m :]
         excl_zone = int(np.ceil(self._m / 4))
         # Note that the start of the exclusion zone is relative to
