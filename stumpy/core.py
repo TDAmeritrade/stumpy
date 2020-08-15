@@ -825,6 +825,31 @@ def preprocess_diagonal(T, m):
     return T, M_T, Σ_T_inverse, M_T_m_1, T_subseq_isfinite, T_subseq_isconstant
 
 
+def replace_distance(D, search_val, replace_val, epsilon=0.0):
+    """
+    Replace values in distance array inplace
+
+    Parameters
+    ----------
+    D : ndarray
+        Distance array
+
+    search_val : float
+        Value to search for
+
+    replace_val : float
+        Value to replace with
+
+    epsilon : float
+        Threshold below `search_val` in which to still allow for a replacement
+
+    Return
+    ------
+    None
+    """
+    D[D == search_val - epsilon] = replace_val
+
+
 def array_to_temp_file(a):
     """
     Write an ndarray to a file

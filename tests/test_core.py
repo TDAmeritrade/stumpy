@@ -370,6 +370,14 @@ def test_preprocess_diagonal():
     npt.assert_almost_equal(left_M_m_1, right_M_m_1)
 
 
+def test_replace_distance():
+    right = np.random.rand(30).reshape(5, 6)
+    left = right.copy()
+    np.fill_diagonal(right, config.STUMPY_MAX_DISTANCE - 1e-9)
+    np.fill_diagonal(left, np.inf)
+    core.replace_distance(right, config.STUMPY_MAX_DISTANCE, np.inf, 1e-6)
+
+
 def test_array_to_temp_file():
     left = np.random.rand()
     fname = core.array_to_temp_file(left)
