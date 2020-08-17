@@ -652,7 +652,7 @@ def mass(Q, T, M_T=None, Σ_T=None):
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
 
     distance_profile = np.empty(n - m + 1)
-    if np.any(np.isnan(Q)):
+    if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
         if M_T is None or Σ_T is None:
@@ -663,6 +663,58 @@ def mass(Q, T, M_T=None, Σ_T=None):
         μ_Q = μ_Q[0]
         σ_Q = σ_Q[0]
         distance_profile[:] = _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T)
+
+    return distance_profile
+
+
+def mass_absolute(Q, T):
+    """
+    Compute the unnormalized distance profile (i.e., without z-normalization) using the
+    "MASS absolute" algorithm.
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array or subsequence
+
+    T : ndarray
+        Time series or sequence
+
+    Returns
+    -------
+    output : ndarray
+        Distance profile
+
+    Notes
+    -----
+    `See Mueen's Absolute Algorithm for Similarity Search \
+    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
+    """
+    Q = np.asarray(Q)
+    check_dtype(Q)
+    m = Q.shape[0]
+
+    if Q.ndim != 1:  # pragma: no cover
+        raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
+
+    T = np.asarray(T)
+    check_dtype(T)
+    n = T.shape[0]
+
+    if T.ndim != 1:  # pragma: no cover
+        raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
+
+    distance_profile = np.empty(n - m + 1)
+    if np.any(~np.isfinite(Q)):
+        distance_profile[:] = np.inf
+    else:
+        T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
+        T[~np.isfinite(T)] = 0.0
+        QT = sliding_dot_product(Q, T)
+        distance_profile[:] = np.sqrt(
+            np.sum(Q * Q) + np.sum(rolling_window(T * T, m), axis=1) - 2 * QT
+        )
+        distance_profile[~T_subseq_isfinite] = np.inf
 
     return distance_profile
 

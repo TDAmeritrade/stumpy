@@ -236,6 +236,8 @@ def test_mueen_calculate_distance_profile(Q, T):
 
 @pytest.mark.parametrize("Q, T", test_data)
 def test_mass(Q, T):
+    Q = Q.copy()
+    T = T.copy()
     m = Q.shape[0]
     left = np.linalg.norm(
         core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
@@ -245,7 +247,42 @@ def test_mass(Q, T):
 
 
 @pytest.mark.parametrize("Q, T", test_data)
-def test_mass_nan(Q, T):
+def test_mass_Q_nan(Q, T):
+    Q = Q.copy()
+    Q[1] = np.nan
+    T = T.copy()
+    m = Q.shape[0]
+
+    left = np.linalg.norm(
+        core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
+    )
+    left[np.isnan(left)] = np.inf
+
+    right = core.mass(Q, T)
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_Q_inf(Q, T):
+    Q = Q.copy()
+    Q[1] = np.inf
+    T = T.copy()
+    m = Q.shape[0]
+
+    left = np.linalg.norm(
+        core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
+    )
+    left[np.isnan(left)] = np.inf
+
+    right = core.mass(Q, T)
+    npt.assert_almost_equal(left, right)
+    T[1] = 1e10
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_T_nan(Q, T):
+    Q = Q.copy()
+    T = T.copy()
     T[1] = np.nan
     m = Q.shape[0]
 
@@ -259,7 +296,9 @@ def test_mass_nan(Q, T):
 
 
 @pytest.mark.parametrize("Q, T", test_data)
-def test_mass_inf(Q, T):
+def test_mass_T_inf(Q, T):
+    Q = Q.copy()
+    T = T.copy()
     T[1] = np.inf
     m = Q.shape[0]
 
@@ -269,6 +308,73 @@ def test_mass_inf(Q, T):
     left[np.isnan(left)] = np.inf
 
     right = core.mass(Q, T)
+    npt.assert_almost_equal(left, right)
+    T[1] = 1e10
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_asbolute(Q, T):
+    Q = Q.copy()
+    T = T.copy()
+    m = Q.shape[0]
+    left = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1)
+    right = core.mass_absolute(Q, T)
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_absolute_Q_nan(Q, T):
+    Q = Q.copy()
+    Q[1] = np.nan
+    T = T.copy()
+    m = Q.shape[0]
+
+    left = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1)
+    left[np.isnan(left)] = np.inf
+
+    right = core.mass_absolute(Q, T)
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_absolute_Q_inf(Q, T):
+    Q = Q.copy()
+    Q[1] = np.inf
+    T = T.copy()
+    m = Q.shape[0]
+
+    left = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1)
+    left[np.isnan(left)] = np.inf
+
+    right = core.mass_absolute(Q, T)
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_absolute_T_nan(Q, T):
+    Q = Q.copy()
+    T = T.copy()
+    T[1] = np.nan
+    m = Q.shape[0]
+
+    left = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1)
+    left[np.isnan(left)] = np.inf
+
+    right = core.mass_absolute(Q, T)
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_absolute_T_inf(Q, T):
+    Q = Q.copy()
+    T = T.copy()
+    T[1] = np.inf
+    m = Q.shape[0]
+
+    left = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1)
+    left[np.isnan(left)] = np.inf
+
+    right = core.mass_absolute(Q, T)
     npt.assert_almost_equal(left, right)
 
 
