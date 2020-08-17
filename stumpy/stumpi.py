@@ -82,7 +82,7 @@ class stumpi(object):
             self._excl_zone = excl_zone
         else:
             self._excl_zone = int(np.ceil(self._m / 4))
-        self._illegal = np.logical_or(np.isinf(self._T), np.isnan(self._T))
+        self._T_isfinite = np.isfinite(self._T)
 
         mp = stumpy.stump(self._T, self._m)
         self._P = mp[:, 0]
@@ -127,15 +127,15 @@ class stumpi(object):
         S = T_new[l:]
         t_drop = T_new[l - 1]
 
-        if np.isinf(t) or np.isnan(t):
-            self._illegal = np.append(self._illegal, True)
+        if np.isfinite(t):
+            self._T_isfinite = np.append(self._T_isfinite, True)
+        else:
+            self._T_isfinite = np.append(self._T_isfinite, False)
             t = 0
             T_new[-1] = 0
             S[-1] = 0
-        else:
-            self._illegal = np.append(self._illegal, False)
 
-        if np.any(self._illegal[-self._m :]):
+        if np.any(~self._T_isfinite[-self._m :]):
             μ_Q = np.inf
             σ_Q = np.nan
         else:
@@ -156,7 +156,7 @@ class stumpi(object):
             QT_new[0] = QT_new[0] + T_new[j] * S[j]
 
         D = core.calculate_distance_profile(self._m, QT_new, μ_Q, σ_Q, M_T_new, Σ_T_new)
-        if np.any(self._illegal[-self._m :]):
+        if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
 
         core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
