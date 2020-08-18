@@ -667,10 +667,41 @@ def mass(Q, T, M_T=None, Σ_T=None):
     return distance_profile
 
 
+@njit(fastmath=True)
+def _mass_absolute(Q_squared, T_squared, QT):
+    """
+    A Numba JIT compiled algorithm for computing the unnormalized distance profile using
+    the MASS absolute algorithm.
+
+    Parameters
+    ----------
+    Q_squared : ndarray
+        Squared query array or subsequence
+
+    T_squared : ndarray
+        Squared time series or sequence
+
+    QT : ndarray
+        Sliding window dot product of `Q` and `T`
+
+    Returns
+    -------
+    output : ndarray
+        Unnormalized distance profile
+
+    Notes
+    -----
+    `See Mueen's Absolute Algorithm for Similarity Search \
+    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
+    """
+    return np.sqrt(Q_squared + T_squared - 2 * QT)
+
+
 def mass_absolute(Q, T):
     """
     Compute the unnormalized distance profile (i.e., without z-normalization) using the
-    "MASS absolute" algorithm.
+    "MASS absolute" algorithm. This is a convenience wrapper around the Numba JIT
+    compiled `_mass_absolute` function.
 
     Parameters
     ----------
@@ -683,7 +714,7 @@ def mass_absolute(Q, T):
     Returns
     -------
     output : ndarray
-        Distance profile
+        Unnormalized Distance profile
 
     Notes
     -----
@@ -711,9 +742,9 @@ def mass_absolute(Q, T):
         T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
         T[~np.isfinite(T)] = 0.0
         QT = sliding_dot_product(Q, T)
-        distance_profile[:] = np.sqrt(
-            np.sum(Q * Q) + np.sum(rolling_window(T * T, m), axis=1) - 2 * QT
-        )
+        Q_squared = np.sum(Q * Q)
+        T_squared = np.sum(rolling_window(T * T, m), axis=1)
+        distance_profile[:] = _mass_absolute(Q_squared, T_squared, QT)
         distance_profile[~T_subseq_isfinite] = np.inf
 
     return distance_profile
