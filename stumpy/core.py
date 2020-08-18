@@ -670,8 +670,8 @@ def mass(Q, T, M_T=None, Σ_T=None):
 @njit(fastmath=True)
 def _mass_absolute(Q_squared, T_squared, QT):
     """
-    A Numba JIT compiled algorithm for computing the unnormalized distance profile using
-    the MASS absolute algorithm.
+    A Numba JIT compiled algorithm for computing the non-normalized distance profile
+    using the MASS absolute algorithm.
 
     Parameters
     ----------
@@ -699,8 +699,8 @@ def _mass_absolute(Q_squared, T_squared, QT):
 
 def mass_absolute(Q, T):
     """
-    Compute the unnormalized distance profile (i.e., without z-normalization) using the
-    "MASS absolute" algorithm. This is a convenience wrapper around the Numba JIT
+    Compute the non-normalized distance profile (i.e., without z-normalization) using
+    the "MASS absolute" algorithm. This is a convenience wrapper around the Numba JIT
     compiled `_mass_absolute` function.
 
     Parameters

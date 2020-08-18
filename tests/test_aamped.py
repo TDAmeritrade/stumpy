@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import stumped, core
+from stumpy import aamped
 from dask.distributed import Client, LocalCluster
 import pytest
 import warnings
@@ -37,9 +37,8 @@ window_size = [8, 16, 32]
 def test_stumped_self_join(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 3
-        zone = int(np.ceil(m / 4))
-        left = naive.stump(T_B, m, exclusion_zone=zone)
-        right = stumped(dask_client, T_B, m, ignore_trivial=True)
+        left = naive.aamp(T_B, m)
+        right = aamped(dask_client, T_B, m)
         naive.replace_inf(left)
         naive.replace_inf(right)
         npt.assert_almost_equal(left, right)
@@ -53,9 +52,8 @@ def test_stumped_self_join(T_A, T_B, dask_cluster):
 def test_stumped_self_join_df(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 3
-        zone = int(np.ceil(m / 4))
-        left = naive.stump(T_B, m, exclusion_zone=zone)
-        right = stumped(dask_client, pd.Series(T_B), m, ignore_trivial=True)
+        left = naive.aamp(T_B, m)
+        right = aamped(dask_client, pd.Series(T_B), m)
         naive.replace_inf(left)
         naive.replace_inf(right)
         npt.assert_almost_equal(left, right)
@@ -69,15 +67,13 @@ def test_stumped_self_join_df(T_A, T_B, dask_cluster):
 @pytest.mark.parametrize("m", window_size)
 def test_stump_self_join_larger_window(T_A, T_B, m, dask_cluster):
     with Client(dask_cluster) as dask_client:
-        for m in [8, 16, 32]:
-            if len(T_B) > m:
-                zone = int(np.ceil(m / 4))
-                left = naive.stump(T_B, m, exclusion_zone=zone)
-                right = stumped(dask_client, T_B, m, ignore_trivial=True)
-                naive.replace_inf(left)
-                naive.replace_inf(right)
+        if len(T_B) > m:
+            left = naive.aamp(T_B, m)
+            right = aamped(dask_client, T_B, m)
+            naive.replace_inf(left)
+            naive.replace_inf(right)
 
-                npt.assert_almost_equal(left, right)
+            npt.assert_almost_equal(left, right)
 
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
@@ -88,15 +84,13 @@ def test_stump_self_join_larger_window(T_A, T_B, m, dask_cluster):
 @pytest.mark.parametrize("m", window_size)
 def test_stump_self_join_larger_window_df(T_A, T_B, m, dask_cluster):
     with Client(dask_cluster) as dask_client:
-        for m in [8, 16, 32]:
-            if len(T_B) > m:
-                zone = int(np.ceil(m / 4))
-                left = naive.stump(T_B, m, exclusion_zone=zone)
-                right = stumped(dask_client, pd.Series(T_B), m, ignore_trivial=True)
-                naive.replace_inf(left)
-                naive.replace_inf(right)
+        if len(T_B) > m:
+            left = naive.aamp(T_B, m)
+            right = aamped(dask_client, pd.Series(T_B), m)
+            naive.replace_inf(left)
+            naive.replace_inf(right)
 
-                npt.assert_almost_equal(left, right)
+            npt.assert_almost_equal(left, right)
 
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
@@ -107,8 +101,8 @@ def test_stump_self_join_larger_window_df(T_A, T_B, m, dask_cluster):
 def test_stumped_A_B_join(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 3
-        left = naive.stump(T_A, m, T_B=T_B)
-        right = stumped(dask_client, T_A, m, T_B, ignore_trivial=False)
+        left = naive.aamp(T_A, m, T_B=T_B)
+        right = aamped(dask_client, T_A, m, T_B, ignore_trivial=False)
         naive.replace_inf(left)
         naive.replace_inf(right)
         npt.assert_almost_equal(left, right)
@@ -122,8 +116,8 @@ def test_stumped_A_B_join(T_A, T_B, dask_cluster):
 def test_stumped_A_B_join_df(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 3
-        left = naive.stump(T_A, m, T_B=T_B)
-        right = stumped(
+        left = naive.aamp(T_A, m, T_B=T_B)
+        right = aamped(
             dask_client, pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
         )
         naive.replace_inf(left)

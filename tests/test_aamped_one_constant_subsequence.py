@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import stumped, core, config
+from stumpy import core, config, aamped
 from dask.distributed import Client, LocalCluster
 import pytest
 import warnings
@@ -21,15 +21,15 @@ def dask_cluster():
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_stumped_one_constant_subsequence_self_join(dask_cluster):
+def test_aamped_one_constant_subsequence_self_join(dask_cluster):
     with Client(dask_cluster) as dask_client:
         T_A = np.concatenate(
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
         zone = int(np.ceil(m / 4))
-        left = naive.stump(T_A, m, exclusion_zone=zone)
-        right = stumped(dask_client, T_A, m, ignore_trivial=True)
+        left = naive.aamp(T_A, m)
+        right = aamped(dask_client, T_A, m, ignore_trivial=True)
         naive.replace_inf(left)
         naive.replace_inf(right)
         npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
@@ -41,15 +41,15 @@ def test_stumped_one_constant_subsequence_self_join(dask_cluster):
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_stumped_one_constant_subsequence_self_join_df(dask_cluster):
+def test_aamped_one_constant_subsequence_self_join_df(dask_cluster):
     with Client(dask_cluster) as dask_client:
         T_A = np.concatenate(
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
         zone = int(np.ceil(m / 4))
-        left = naive.stump(T_A, m, exclusion_zone=zone)
-        right = stumped(dask_client, pd.Series(T_A), m, ignore_trivial=True)
+        left = naive.aamp(T_A, m)
+        right = aamped(dask_client, pd.Series(T_A), m, ignore_trivial=True)
         naive.replace_inf(left)
         naive.replace_inf(right)
         npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
@@ -61,15 +61,15 @@ def test_stumped_one_constant_subsequence_self_join_df(dask_cluster):
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_stumped_one_constant_subsequence_A_B_join(dask_cluster):
+def test_aamped_one_constant_subsequence_A_B_join(dask_cluster):
     with Client(dask_cluster) as dask_client:
         T_A = np.random.rand(20)
         T_B = np.concatenate(
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = naive.stump(T_A, m, T_B=T_B)
-        right = stumped(dask_client, T_A, m, T_B, ignore_trivial=False)
+        left = naive.aamp(T_A, m, T_B=T_B)
+        right = aamped(dask_client, T_A, m, T_B, ignore_trivial=False)
         naive.replace_inf(left)
         naive.replace_inf(right)
         npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
@@ -81,15 +81,15 @@ def test_stumped_one_constant_subsequence_A_B_join(dask_cluster):
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_stumped_one_constant_subsequence_A_B_join_df(dask_cluster):
+def test_aamped_one_constant_subsequence_A_B_join_df(dask_cluster):
     with Client(dask_cluster) as dask_client:
         T_A = np.random.rand(20)
         T_B = np.concatenate(
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = naive.stump(T_A, m, T_B=T_B)
-        right = stumped(
+        left = naive.aamp(T_A, m, T_B=T_B)
+        right = aamped(
             dask_client, pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
         )
         naive.replace_inf(left)
@@ -103,15 +103,15 @@ def test_stumped_one_constant_subsequence_A_B_join_df(dask_cluster):
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_stumped_one_constant_subsequence_A_B_join_swap(dask_cluster):
+def test_aamped_one_constant_subsequence_A_B_join_swap(dask_cluster):
     with Client(dask_cluster) as dask_client:
         T_A = np.random.rand(20)
         T_B = np.concatenate(
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = naive.stump(T_A, m, T_B=T_B)
-        right = stumped(dask_client, T_A, m, T_B, ignore_trivial=False)
+        left = naive.aamp(T_A, m, T_B=T_B)
+        right = aamped(dask_client, T_A, m, T_B, ignore_trivial=False)
         naive.replace_inf(left)
         naive.replace_inf(right)
         npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
@@ -123,15 +123,15 @@ def test_stumped_one_constant_subsequence_A_B_join_swap(dask_cluster):
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_stumped_one_constant_subsequence_A_B_join_df_swap(dask_cluster):
+def test_aamped_one_constant_subsequence_A_B_join_df_swap(dask_cluster):
     with Client(dask_cluster) as dask_client:
         T_A = np.random.rand(20)
         T_B = np.concatenate(
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = naive.stump(T_A, m, T_B=T_B)
-        right = stumped(
+        left = naive.aamp(T_A, m, T_B=T_B)
+        right = aamped(
             dask_client, pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
         )
         naive.replace_inf(left)
@@ -145,7 +145,7 @@ def test_stumped_one_constant_subsequence_A_B_join_df_swap(dask_cluster):
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_stumped_identical_subsequence_self_join(dask_cluster):
+def test_aamped_identical_subsequence_self_join(dask_cluster):
     with Client(dask_cluster) as dask_client:
         identical = np.random.rand(8)
         T_A = np.random.rand(20)
@@ -153,8 +153,8 @@ def test_stumped_identical_subsequence_self_join(dask_cluster):
         T_A[11 : 11 + identical.shape[0]] = identical
         m = 3
         zone = int(np.ceil(m / 4))
-        left = naive.stump(T_A, m, exclusion_zone=zone)
-        right = stumped(dask_client, T_A, m, ignore_trivial=True)
+        left = naive.aamp(T_A, m)
+        right = aamped(dask_client, T_A, m, ignore_trivial=True)
         naive.replace_inf(left)
         naive.replace_inf(right)
         npt.assert_almost_equal(
@@ -168,7 +168,7 @@ def test_stumped_identical_subsequence_self_join(dask_cluster):
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_stumped_one_constant_subsequence_A_B_join(dask_cluster):
+def test_aamped_one_constant_subsequence_A_B_join(dask_cluster):
     with Client(dask_cluster) as dask_client:
         identical = np.random.rand(8)
         T_A = np.random.rand(20)
@@ -176,8 +176,8 @@ def test_stumped_one_constant_subsequence_A_B_join(dask_cluster):
         T_A[1 : 1 + identical.shape[0]] = identical
         T_B[11 : 11 + identical.shape[0]] = identical
         m = 3
-        left = naive.stump(T_A, m, T_B=T_B)
-        right = stumped(dask_client, T_A, m, T_B, ignore_trivial=False)
+        left = naive.aamp(T_A, m, T_B=T_B)
+        right = aamped(dask_client, T_A, m, T_B, ignore_trivial=False)
         naive.replace_inf(left)
         naive.replace_inf(right)
         npt.assert_almost_equal(
