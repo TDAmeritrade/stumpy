@@ -5,7 +5,6 @@ from stumpy import config, aamp
 import pytest
 import naive
 
-
 test_data = [
     (
         np.array([9, 8100, -60, 7], dtype=np.float64),

@@ -302,26 +302,51 @@ def aamp(T_A, m, T_B=None):
     rolling_T_A = core.rolling_window(T_A, m)
     rolling_T_B = core.rolling_window(T_B, m)
 
-    l = T_B.shape[0] - m + 1
-    out = np.empty((l, 2), dtype=object)
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_B - m + 1
+    excl_zone = int(np.ceil(m / 4))
 
-    D = cdist(rolling_T_B, rolling_T_A)
+    distance_matrix = cdist(rolling_T_B, rolling_T_A)
 
     if ignore_trivial:
-        excl_zone = int(np.ceil(m / 4))
-        excl_zone_mask = np.tri(
-            D.shape[0], D.shape[0], excl_zone, dtype=np.bool
-        ) & ~np.tri(D.shape[0], D.shape[0], -(excl_zone + 1), dtype=np.bool)
-        D[excl_zone_mask] = np.inf
+        diags = np.arange(excl_zone + 1, n_B - m + 1)
+    else:
+        diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
 
-    D[np.isnan(D)] = np.inf
+    P = np.full((l, 3), np.inf)
+    I = np.full((l, 3), -1, dtype=np.int64)
 
-    I = D.argmin(axis=1)
-    P = D[np.arange(D.shape[0]), I]
+    for k in diags:
+        if k >= 0:
+            iter_range = range(0, min(n_B - m + 1, n_A - m + 1 - k))
+        else:
+            iter_range = range(-k, min(n_B - m + 1, n_A - m + 1 - k))
 
-    I[np.isinf(P)] = -1
+        for i in iter_range:
+            D = distance_matrix[i, i + k]
+            if D < P[i, 0]:
+                P[i, 0] = D
+                I[i, 0] = i + k
 
-    out[:, 0] = P
-    out[:, 1] = I
+            if ignore_trivial:  # Self-joins only
+                if D < P[i + k, 0]:
+                    P[i + k, 0] = D
+                    I[i + k, 0] = i
 
-    return out
+                if i < i + k:
+                    # Left matrix profile and left matrix profile index
+                    if D < P[i + k, 1]:
+                        P[i + k, 1] = D
+                        I[i + k, 1] = i
+
+                    if D < P[i, 2]:
+                        # right matrix profile and right matrix profile index
+                        P[i, 2] = D
+                        I[i, 2] = i + k
+
+    result = np.empty((l, 4), dtype=object)
+    result[:, 0] = P[:, 0]
+    result[:, 1:4] = I[:, :]
+
+    return result

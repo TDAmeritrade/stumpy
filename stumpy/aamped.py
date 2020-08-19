@@ -101,7 +101,7 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     l = n_B - m + 1
 
     excl_zone = int(np.ceil(m / 4))
-    out = np.empty((l, 2), dtype=object)
+    out = np.empty((l, 4), dtype=object)
 
     hosts = list(dask_client.ncores().keys())
     nworkers = len(hosts)
@@ -151,13 +151,13 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     profile, indices = results[0]
     for i in range(1, len(hosts)):
         P, I = results[i]
-        for col in range(P.shape[0]):  # pragma: no cover
-            if P[col] < profile[col]:
-                profile[col] = P[col]
-                indices[col] = I[col]
+        for col in range(P.shape[1]):  # pragma: no cover
+            cond = P[:, col] < profile[:, col]
+            profile[:, col] = np.where(cond, P[:, col], profile[:, col])
+            indices[:, col] = np.where(cond, I[:, col], indices[:, col])
 
-    out[:, 0] = profile
-    out[:, 1] = indices
+    out[:, 0] = profile[:, 0]
+    out[:, 1:4] = indices
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover

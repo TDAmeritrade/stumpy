@@ -16,6 +16,7 @@ from .mstump import (  # noqa: F401
 from .mstumped import mstumped  # noqa: F401
 from .aamp import aamp, _aamp  # noqa: F401
 from .aamped import aamped  # noqa: F401
+from .aampi import aampi  # noqa: F401
 from .chains import atsc, allc  # noqa: F401
 from .floss import floss, fluss, _nnmark, _iac, _cac, _rea  # noqa: F401
 from .scrump import scrump  # noqa: F401

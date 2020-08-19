@@ -73,7 +73,7 @@ check_errs $?
 py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mstumped_one_subsequence_nan_self_join.py
 check_errs $?
 # aamp 
-py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp.py
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp.py tests/test_aampi.py
 check_errs $?
 py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped.py
 check_errs $?
