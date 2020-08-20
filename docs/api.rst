@@ -14,6 +14,9 @@ STUMPY API
     stumpy.stumpi
     stumpy.mstump
     stumpy.mstumped
+    stumpy.aamp
+    stumpy.aamped
+    stumpy.aampi
     stumpy.atsc
     stumpy.allc
     stumpy.fluss
@@ -53,6 +56,21 @@ mstumped
 ========
 
 .. autofunction:: stumpy.mstumped
+
+aamp
+====
+
+.. autofunction:: stumpy.aamp
+
+aamped
+======
+
+.. autofunction:: stumpy.aamped
+
+aampi
+=====
+
+.. autofunction:: stumpy.aampi
 
 atsc
 ====

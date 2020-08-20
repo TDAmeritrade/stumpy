@@ -224,8 +224,8 @@ def _aamp(
 
 def aamp(T_A, m, T_B=None, ignore_trivial=True):
     """
-    Compute the matrix profile with parallelized AAMP, which uses non-normalized
-    Euclidean distances for computing a matrix profile.
+    Compute the non-normalized (i.e., without z-normalization) matrix profile
+    with parallelized AAMP
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_aamp` function which computes the matrix profile according to AAMP.

@@ -373,7 +373,7 @@ def _gpu_stump(
 
 def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     """
-    Compute the matrix profile with GPU-STOMP
+    Compute the z-normalized matrix profile with GPU-STOMP
 
     This is a convenience wrapper around the Numba `cuda.jit` `_gpu_stump` function
     which computes the matrix profile according to GPU-STOMP.

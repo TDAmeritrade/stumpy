@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 
 def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     """
-    Compute the matrix profile with parallelized AAMP, which uses non-normalized
-    Euclidean distances for computing a matrix profile.
+    Compute the non-normalized (i.e., without z-normalization) matrix profile
+    with parallelized and distributed AAMP
 
-    This is highly distributed implementation around the Numba JIT-compiled
+    This is a highly distributed implementation around the Numba JIT-compiled
     parallelized `_aamp` function which computes the non-normalized matrix profile
     according to AAMP.
 

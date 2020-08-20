@@ -9,7 +9,7 @@ import stumpy
 
 class aampi(object):
     """
-    Compute an incremental non-normalized matrix profile (i.e., without z-normalization)
+    Compute an incremental non-normalized (i.e., without z-normalization) matrix profile
     for streaming data. This is based on the aamp, on-line STOMPI, and STAMPI
     algorithms.
 

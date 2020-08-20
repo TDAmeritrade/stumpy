@@ -9,8 +9,8 @@ import stumpy
 
 class stumpi(object):
     """
-    Compute an incremental matrix profile for streaming data. This is based on the
-    on-line STOMPI and STAMPI algorithms.
+    Compute an incremental z-normalized matrix profile for streaming data. This
+    is based on the on-line STOMPI and STAMPI algorithms.
 
     Parameters
     ----------
