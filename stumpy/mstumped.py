@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 def mstumped(dask_client, T, m, include=None, discords=False):
     """
-    Compute the multi-dimensional z-normalized matrix profile with parallelized
-    and distributed mSTOMP
+    Compute the multi-dimensional z-normalized matrix profile with a distributed
+    dask cluster
 
     This is a highly distributed implementation around the Numba JIT-compiled
     parallelized `_mstump` function which computes the multi-dimensional matrix

@@ -554,8 +554,7 @@ def _mstump(
 
 def mstump(T, m, include=None, discords=False):
     """
-    Compute the multi-dimensional z-normalized matrix profile with parallelized
-    mSTOMP
+    Compute the multi-dimensional z-normalized matrix profile
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_mstump` function which computes the multi-dimensional matrix profile and

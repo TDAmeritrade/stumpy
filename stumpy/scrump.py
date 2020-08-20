@@ -230,8 +230,7 @@ def prescrump(T_A, m, T_B=None, s=None):
 
 class scrump(object):
     """
-    Compute the approximate z-normalized matrix profile with the parallelized
-    SCRIMP algorthm. For SCRIMP++, set `pre_scrump=True`.
+    Compute an approximate z-normalized matrix profile
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_stump` function which computes the matrix profile according to SCRIMP.
@@ -258,7 +257,7 @@ class scrump(object):
     pre_scrump : bool
         A flag for whether or not to perform the PreSCRIMP calculation prior to
         computing SCRIMP. If set to `True`, this is equivalent to computing
-        SCRIMP++
+        SCRIMP++ and may lead to faster convergence
 
     s : int
         The size of the PreSCRIMP fixed interval. If `pre-scrump=True` and `s=None`,

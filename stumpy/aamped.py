@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile
-    with parallelized and distributed AAMP
 
     This is a highly distributed implementation around the Numba JIT-compiled
     parallelized `_aamp` function which computes the non-normalized matrix profile
