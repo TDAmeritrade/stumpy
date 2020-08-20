@@ -3,8 +3,7 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from stumpy import core
-import stumpy
+from . import core, stump
 
 
 class stumpi(object):
@@ -84,7 +83,7 @@ class stumpi(object):
             self._excl_zone = int(np.ceil(self._m / 4))
         self._T_isfinite = np.isfinite(self._T)
 
-        mp = stumpy.stump(self._T, self._m)
+        mp = stump(self._T, self._m)
         self._P = mp[:, 0]
         self._I = mp[:, 1]
         self._left_I = mp[:, 2]
