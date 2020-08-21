@@ -51,12 +51,12 @@ class aampi(object):
 
     Notes
     -----
-    `DOI: 10.1007/s10618-017-0519-9 \
-    <https://www.cs.ucr.edu/~eamonn/MP_journal.pdf>`__
+    `arXiv:1901.05708 \
+    <https://arxiv.org/pdf/1901.05708.pdf>`__
 
-    See Table V
+    See Algorithm 1
 
-    Note that line 11 is missing an important `sqrt` operation!
+    Note that we have extended this algorithm for AB-joins as well.
     """
 
     def __init__(self, T, m, excl_zone=None):
@@ -122,12 +122,12 @@ class aampi(object):
 
         Notes
         -----
-        `DOI: 10.1007/s10618-017-0519-9 \
-        <https://www.cs.ucr.edu/~eamonn/MP_journal.pdf>`__
+        `arXiv:1901.05708 \
+        <https://arxiv.org/pdf/1901.05708.pdf>`__
 
-        See Table V
+        See Algorithm 1
 
-        Note that line 11 is missing an important `sqrt` operation!
+        Note that we have extended this algorithm for AB-joins as well.
         """
         n = self._T.shape[0]
         l = n - self._m + 1
