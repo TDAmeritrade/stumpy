@@ -483,13 +483,13 @@ class floss(object):
         Segmentation (FLOSS).
         """
         self._T[:] = np.roll(self._T, -1)
-        self._finite_mask[:] = np.roll(self._finite_mask, -1)
+        self._T_isfinite[:] = np.roll(self._T_isfinite, -1)
         if np.isfinite(t):
             self._T[-1] = t
             self._finite_mask[-1] = True
         else:
             self._T[-1] = 0
-            self._finite_mask[-1] = False
+            self._T_isfinite[-1] = False
         Q = self._T[-self._m :]
         excl_zone = int(np.ceil(self._m / 4))
         # Note that the start of the exclusion zone is relative to
