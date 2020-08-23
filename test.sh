@@ -104,11 +104,11 @@ echo "Disabling Numba JIT and CUDA Compiled Functions"
 export NUMBA_DISABLE_JIT=1
 export NUMBA_ENABLE_CUDASIM=1
 
-echo "Testing Python Functions"
-py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests
-check_errs $?
+# echo "Testing Python Functions"
+# py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests
+# check_errs $?
 
-echo "Test Code Coverage"
+echo "Test Python Functions and Code Coverage"
 coverage run --source stumpy -m py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning
 check_errs $?
 coverage report -m
