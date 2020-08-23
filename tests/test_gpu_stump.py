@@ -8,7 +8,7 @@ import math
 import pytest
 import naive
 
-config.THREADS_PER_BLOCK = 1
+config.THREADS_PER_BLOCK = 10
 
 if not cuda.is_available():
     pytest.skip("Skipping Tests No GPUs Available", allow_module_level=True)
