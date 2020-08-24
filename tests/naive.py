@@ -284,7 +284,7 @@ def get_array_ranges(a, n_chunks, truncate=False):
     return out
 
 
-def aamp(T_A, m, T_B=None):
+def aamp(T_A, m, T_B=None, exclusion_zone=None):
     T_A = np.asarray(T_A)
     T_A = T_A.copy()
 
@@ -305,12 +305,13 @@ def aamp(T_A, m, T_B=None):
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_B - m + 1
-    excl_zone = int(np.ceil(m / 4))
+    if exclusion_zone is None:
+        exclusion_zone = int(np.ceil(m / 4))
 
     distance_matrix = cdist(rolling_T_B, rolling_T_A)
 
     if ignore_trivial:
-        diags = np.arange(excl_zone + 1, n_B - m + 1)
+        diags = np.arange(exclusion_zone + 1, n_B - m + 1)
     else:
         diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
 

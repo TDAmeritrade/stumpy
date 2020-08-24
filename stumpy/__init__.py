@@ -25,11 +25,14 @@ from numba import cuda
 
 if cuda.is_available():
     from .gpu_stump import gpu_stump  # noqa: F401
+    from .gpu_aamp import gpu_aamp  # noqa: F401
 else:  # pragma: no cover
     from .core import driver_not_found as gpu_stump  # noqa: F401
+    from .core import driver_not_found as gpu_aamp  # noqa: F401
     import ast
     import pathlib
 
+    # Fix GPU-STUMP Docs
     gpu_stump.__doc__ = ""
     filepath = pathlib.Path(__file__).parent / "gpu_stump.py"
 
@@ -43,6 +46,21 @@ else:  # pragma: no cover
     for fd in function_definitions:
         if fd.name == "gpu_stump":
             gpu_stump.__doc__ = ast.get_docstring(fd)
+
+    # Fix GPU-AAMP Docs
+    gpu_aamp.__doc__ = ""
+    filepath = pathlib.Path(__file__).parent / "gpu_aamp.py"
+
+    file_contents = ""
+    with open(filepath, encoding="utf8") as f:
+        file_contents = f.read()
+    module = ast.parse(file_contents)
+    function_definitions = [
+        node for node in module.body if isinstance(node, ast.FunctionDef)
+    ]
+    for fd in function_definitions:
+        if fd.name == "gpu_aamp":
+            gpu_aamp.__doc__ = ast.get_docstring(fd)
 
 try:
     _dist = get_distribution("stumpy")

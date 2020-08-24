@@ -437,6 +437,29 @@ def test_preprocess():
     npt.assert_almost_equal(left_Σ, right_Σ)
 
 
+def test_preprocess_non_normalized():
+    T = np.array([0, np.nan, 2, 3, 4, 5, 6, 7, np.inf, 9])
+    m = 3
+
+    left_T_subseq_isfinite = np.full(T.shape[0] - m + 1, False, dtype=bool)
+    for i in range(T.shape[0] - m + 1):
+        if np.all(np.isfinite(T[i : i + m])):
+            left_T_subseq_isfinite[i] = True
+
+    left_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
+
+    right_T, right_T_subseq_isfinite = core.preprocess_non_normalized(T, m)
+
+    npt.assert_almost_equal(left_T, right_T)
+    npt.assert_almost_equal(left_T_subseq_isfinite, right_T_subseq_isfinite)
+
+    T = pd.Series(T)
+    right_T, right_T_subseq_isfinite = core.preprocess_non_normalized(T, m)
+
+    npt.assert_almost_equal(left_T, right_T)
+    npt.assert_almost_equal(left_T_subseq_isfinite, right_T_subseq_isfinite)
+
+
 def test_preprocess_diagonal():
     T = np.array([0, np.nan, 2, 3, 4, 5, 6, 7, np.inf, 9])
     m = 3
