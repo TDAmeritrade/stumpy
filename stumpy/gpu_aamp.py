@@ -38,7 +38,8 @@ def _compute_and_update_PI_kernel(
     compute_QT,
 ):
     """
-    A Numba CUDA kernel to update the matrix profile and matrix profile indices
+    A Numba CUDA kernel to update the non-normalized (i.e., without z-normalization)
+    matrix profile and matrix profile indices
 
     Parameters
     ----------
@@ -110,6 +111,13 @@ def _compute_and_update_PI_kernel(
 
     Notes
     -----
+    `arXiv:1901.05708 \
+    <https://arxiv.org/pdf/1901.05708.pdf>`__
+
+    See Algorithm 1
+
+    Note that we have extended this algorithm for AB-joins as well.
+
     `DOI: 10.1109/ICDM.2016.0085 \
     <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
@@ -177,9 +185,9 @@ def _gpu_aamp(
     device_id=0,
 ):
     """
-    A Numba CUDA version of STOMP for parallel computation of the
-    matrix profile, matrix profile indices, left matrix profile indices,
-    and right matrix profile indices.
+    A Numba CUDA version of AAMP for parallel computation of the non-normalized (i.e.,
+    without z-normalization) matrix profile, matrix profile indices, left matrix profile
+    indices, and right matrix profile indices.
 
     Parameters
     ----------
@@ -252,31 +260,17 @@ def _gpu_aamp(
 
     Notes
     -----
+    `arXiv:1901.05708 \
+    <https://arxiv.org/pdf/1901.05708.pdf>`__
+
+    See Algorithm 1
+
+    Note that we have extended this algorithm for AB-joins as well.
+
     `DOI: 10.1109/ICDM.2016.0085 \
     <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
     See Table II, Figure 5, and Figure 6
-
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
-
-    Return: For every subsequence, Q, in T_B, you will get a distance
-    and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the
-    left and right matrix profiles are also returned.
-
-    Note: Unlike in the Table II where T_A.shape is expected to be equal
-    to T_B.shape, this implementation is generalized so that the shapes of
-    T_A and T_B can be different. In the case where T_A.shape == T_B.shape,
-    then our algorithm reduces down to the same algorithm found in Table II.
-
-    Additionally, unlike STAMP where the exclusion zone is m/2, the default
-    exclusion zone for STOMP is m/4 (See Definition 3 and Figure 3).
-
-    For self-joins, set `ignore_trivial = True` in order to avoid the
-    trivial match.
-
-    Note that left and right matrix profiles are only available for self-joins.
     """
     threads_per_block = config.STUMPY_THREADS_PER_BLOCK
     blocks_per_grid = math.ceil(k / threads_per_block)
@@ -364,10 +358,12 @@ def _gpu_aamp(
 
 def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     """
-    Compute the z-normalized matrix profile with one or more GPU devices
+    Compute the non-normalized (i.e., without z-normalization) matrix profile with one
+    or more GPU devices
 
-    This is a convenience wrapper around the Numba `cuda.jit` `_gpu_stump` function
-    which computes the matrix profile according to GPU-STOMP.
+    This is a convenience wrapper around the Numba `cuda.jit` `_gpu_aamp` function
+    which computes the non-normalized matrix profile according to modified version
+    GPU-STOMP.
 
     Parameters
     ----------
@@ -401,31 +397,17 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
 
     Notes
     -----
+    `arXiv:1901.05708 \
+    <https://arxiv.org/pdf/1901.05708.pdf>`__
+
+    See Algorithm 1
+
+    Note that we have extended this algorithm for AB-joins as well.
+
     `DOI: 10.1109/ICDM.2016.0085 \
     <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
     See Table II, Figure 5, and Figure 6
-
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
-
-    Return: For every subsequence, Q, in T_B, you will get a distance
-    and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the
-    left and right matrix profiles are also returned.
-
-    Note: Unlike in the Table II where T_A.shape is expected to be equal
-    to T_B.shape, this implementation is generalized so that the shapes of
-    T_A and T_B can be different. In the case where T_A.shape == T_B.shape,
-    then our algorithm reduces down to the same algorithm found in Table II.
-
-    Additionally, unlike STAMP where the exclusion zone is m/2, the default
-    exclusion zone for STOMP is m/4 (See Definition 3 and Figure 3).
-
-    For self-joins, set `ignore_trivial = True` in order to avoid the
-    trivial match.
-
-    Note that left and right matrix profiles are only available for self-joins.
     """
     if T_B is None:  # Self join!
         T_B = T_A

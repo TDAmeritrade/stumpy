@@ -16,6 +16,7 @@ STUMPY API
     stumpy.mstumped
     stumpy.aamp
     stumpy.aamped
+    stumpy.gpu_ammp
     stumpy.aampi
     stumpy.atsc
     stumpy.allc
@@ -66,6 +67,11 @@ aamped
 ======
 
 .. autofunction:: stumpy.aamped
+
+gpu_aamp
+========
+
+.. autofunction:: stumpy.gpu_aamp
 
 aampi
 =====
