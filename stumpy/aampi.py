@@ -90,14 +90,10 @@ class aampi(object):
         self._left_P = np.empty(self._P.shape)
         self._left_P[:] = np.inf
 
-        self._T = np.asarray(self._T)
-        self._T = self._T.copy()
         self._T_isfinite = np.isfinite(self._T)
-        self._T[np.isinf(self._T)] = np.nan
-        self._T_subseq_isfinite = np.all(
-            np.isfinite(core.rolling_window(self._T, m)), axis=1
+        self._T, self._T_subseq_isfinite = core.preprocess_non_normalized(
+            self._T, self._m
         )
-        self._T[np.isnan(self._T)] = 0
 
         # Retrieve the left matrix profile values
         for i, j in enumerate(self._left_I):

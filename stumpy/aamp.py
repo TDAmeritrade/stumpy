@@ -260,16 +260,12 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
 
     Note that we have extended this algorithm for AB-joins as well.
     """
-    T_A = np.asarray(T_A)
-    T_A = T_A.copy()
-
     if T_B is None:
         T_B = T_A.copy()
         ignore_trivial = True
-    else:
-        T_B = np.asarray(T_B)
-        T_B = T_B.copy()
-        ignore_trivial = False
+
+    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
+    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
@@ -289,15 +285,6 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
     if ignore_trivial and core.are_arrays_equal(T_A, T_B) is False:  # pragma: no cover
         logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
         logger.warning("Try setting `ignore_trivial = False`.")
-
-    T_A[np.isinf(T_A)] = np.nan
-    T_B[np.isinf(T_B)] = np.nan
-
-    T_A_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_A, m)), axis=1)
-    T_B_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_B, m)), axis=1)
-
-    T_A[np.isnan(T_A)] = 0
-    T_B[np.isnan(T_B)] = 0
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]

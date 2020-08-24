@@ -846,6 +846,43 @@ def preprocess(T, m):
     return T, M_T, Σ_T
 
 
+def preprocess_non_normalized(T, m):
+    """
+    Preprocess a time series that is to be used when computing a non-normalized (i.e.,
+    without z-normalization) distance matrix.
+
+    Creates a copy of the time series where all NaN and inf values
+    are replaced with zero. Every subsequence that contains at least
+    one NaN or inf value will have a `False` value in its `T_subseq_isfinite` `bool`
+    array.
+
+    Parameters
+    ----------
+    T : ndarray
+        Time series or sequence
+
+    m : int
+        Window size
+
+    Returns
+    -------
+    T : ndarray
+        Modified time series
+
+    T_subseq_isfinite : ndarray
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False)
+    """
+    T = T.copy()
+    T = np.asarray(T)
+
+    T[np.isinf(T)] = np.nan
+    T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
+    T[np.isnan(T)] = 0
+
+    return T, T_subseq_isfinite
+
+
 def preprocess_diagonal(T, m):
     """
     Preprocess a time series that is to be used when traversing the diagonals of a
@@ -891,14 +928,8 @@ def preprocess_diagonal(T, m):
 
     T_subseq_isconstant : ndarray
         A boolean array that indicates whether a subsequence in `T` is constant (True)
-
     """
-    T = T.copy()
-    T = np.asarray(T)
-
-    T[np.isinf(T)] = np.nan
-    T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
-    T[np.isnan(T)] = 0
+    T, T_subseq_isfinite = preprocess_non_normalized(T, m)
     M_T, Σ_T = compute_mean_std(T, m)
     T_subseq_isconstant = Σ_T < config.STUMPY_STDDEV_THRESHOLD
     Σ_T[T_subseq_isconstant] = 1.0  # Avoid divide by zero in next inversion step
