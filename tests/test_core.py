@@ -1,11 +1,11 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import core
+from stumpy import core, config
 import pytest
 import os
 
-import utils
+import naive
 
 
 def naive_rolling_window_dot_product(Q, T):
@@ -102,6 +102,40 @@ def test_compute_mean_std(Q, T):
 
 
 @pytest.mark.parametrize("Q, T", test_data)
+def test_compute_mean_std_chunked(Q, T):
+    m = Q.shape[0]
+
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 2
+    left_μ_Q, left_σ_Q = naive_compute_mean_std(Q, m)
+    left_M_T, left_Σ_T = naive_compute_mean_std(T, m)
+    right_μ_Q, right_σ_Q = core.compute_mean_std(Q, m)
+    right_M_T, right_Σ_T = core.compute_mean_std(T, m)
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
+
+    npt.assert_almost_equal(left_μ_Q, right_μ_Q)
+    npt.assert_almost_equal(left_σ_Q, right_σ_Q)
+    npt.assert_almost_equal(left_M_T, right_M_T)
+    npt.assert_almost_equal(left_Σ_T, right_Σ_T)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_compute_mean_std_chunked_many(Q, T):
+    m = Q.shape[0]
+
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 128
+    left_μ_Q, left_σ_Q = naive_compute_mean_std(Q, m)
+    left_M_T, left_Σ_T = naive_compute_mean_std(T, m)
+    right_μ_Q, right_σ_Q = core.compute_mean_std(Q, m)
+    right_M_T, right_Σ_T = core.compute_mean_std(T, m)
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
+
+    npt.assert_almost_equal(left_μ_Q, right_μ_Q)
+    npt.assert_almost_equal(left_σ_Q, right_σ_Q)
+    npt.assert_almost_equal(left_M_T, right_M_T)
+    npt.assert_almost_equal(left_Σ_T, right_Σ_T)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
 def test_compute_mean_std_multidimensional(Q, T):
     m = Q.shape[0]
 
@@ -112,6 +146,46 @@ def test_compute_mean_std_multidimensional(Q, T):
     left_M_T, left_Σ_T = naive_compute_mean_std_multidimensional(T, m)
     right_μ_Q, right_σ_Q = core.compute_mean_std(Q, m)
     right_M_T, right_Σ_T = core.compute_mean_std(T, m)
+
+    npt.assert_almost_equal(left_μ_Q, right_μ_Q)
+    npt.assert_almost_equal(left_σ_Q, right_σ_Q)
+    npt.assert_almost_equal(left_M_T, right_M_T)
+    npt.assert_almost_equal(left_Σ_T, right_Σ_T)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_compute_mean_std_multidimensional_chunked(Q, T):
+    m = Q.shape[0]
+
+    Q = np.array([Q, np.random.uniform(-1000, 1000, [Q.shape[0]])])
+    T = np.array([T, T, np.random.uniform(-1000, 1000, [T.shape[0]])])
+
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 2
+    left_μ_Q, left_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
+    left_M_T, left_Σ_T = naive_compute_mean_std_multidimensional(T, m)
+    right_μ_Q, right_σ_Q = core.compute_mean_std(Q, m)
+    right_M_T, right_Σ_T = core.compute_mean_std(T, m)
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
+
+    npt.assert_almost_equal(left_μ_Q, right_μ_Q)
+    npt.assert_almost_equal(left_σ_Q, right_σ_Q)
+    npt.assert_almost_equal(left_M_T, right_M_T)
+    npt.assert_almost_equal(left_Σ_T, right_Σ_T)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_compute_mean_std_multidimensional_chunked_many(Q, T):
+    m = Q.shape[0]
+
+    Q = np.array([Q, np.random.uniform(-1000, 1000, [Q.shape[0]])])
+    T = np.array([T, T, np.random.uniform(-1000, 1000, [T.shape[0]])])
+
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 128
+    left_μ_Q, left_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
+    left_M_T, left_Σ_T = naive_compute_mean_std_multidimensional(T, m)
+    right_μ_Q, right_σ_Q = core.compute_mean_std(Q, m)
+    right_M_T, right_Σ_T = core.compute_mean_std(T, m)
+    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
 
     npt.assert_almost_equal(left_μ_Q, right_μ_Q)
     npt.assert_almost_equal(left_σ_Q, right_σ_Q)
@@ -162,6 +236,8 @@ def test_mueen_calculate_distance_profile(Q, T):
 
 @pytest.mark.parametrize("Q, T", test_data)
 def test_mass(Q, T):
+    Q = Q.copy()
+    T = T.copy()
     m = Q.shape[0]
     left = np.linalg.norm(
         core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
@@ -171,7 +247,42 @@ def test_mass(Q, T):
 
 
 @pytest.mark.parametrize("Q, T", test_data)
-def test_mass_nan(Q, T):
+def test_mass_Q_nan(Q, T):
+    Q = Q.copy()
+    Q[1] = np.nan
+    T = T.copy()
+    m = Q.shape[0]
+
+    left = np.linalg.norm(
+        core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
+    )
+    left[np.isnan(left)] = np.inf
+
+    right = core.mass(Q, T)
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_Q_inf(Q, T):
+    Q = Q.copy()
+    Q[1] = np.inf
+    T = T.copy()
+    m = Q.shape[0]
+
+    left = np.linalg.norm(
+        core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
+    )
+    left[np.isnan(left)] = np.inf
+
+    right = core.mass(Q, T)
+    npt.assert_almost_equal(left, right)
+    T[1] = 1e10
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_T_nan(Q, T):
+    Q = Q.copy()
+    T = T.copy()
     T[1] = np.nan
     m = Q.shape[0]
 
@@ -185,7 +296,9 @@ def test_mass_nan(Q, T):
 
 
 @pytest.mark.parametrize("Q, T", test_data)
-def test_mass_inf(Q, T):
+def test_mass_T_inf(Q, T):
+    Q = Q.copy()
+    T = T.copy()
     T[1] = np.inf
     m = Q.shape[0]
 
@@ -195,6 +308,73 @@ def test_mass_inf(Q, T):
     left[np.isnan(left)] = np.inf
 
     right = core.mass(Q, T)
+    npt.assert_almost_equal(left, right)
+    T[1] = 1e10
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_asbolute(Q, T):
+    Q = Q.copy()
+    T = T.copy()
+    m = Q.shape[0]
+    left = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1)
+    right = core.mass_absolute(Q, T)
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_absolute_Q_nan(Q, T):
+    Q = Q.copy()
+    Q[1] = np.nan
+    T = T.copy()
+    m = Q.shape[0]
+
+    left = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1)
+    left[np.isnan(left)] = np.inf
+
+    right = core.mass_absolute(Q, T)
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_absolute_Q_inf(Q, T):
+    Q = Q.copy()
+    Q[1] = np.inf
+    T = T.copy()
+    m = Q.shape[0]
+
+    left = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1)
+    left[np.isnan(left)] = np.inf
+
+    right = core.mass_absolute(Q, T)
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_absolute_T_nan(Q, T):
+    Q = Q.copy()
+    T = T.copy()
+    T[1] = np.nan
+    m = Q.shape[0]
+
+    left = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1)
+    left[np.isnan(left)] = np.inf
+
+    right = core.mass_absolute(Q, T)
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_mass_absolute_T_inf(Q, T):
+    Q = Q.copy()
+    T = T.copy()
+    T[1] = np.inf
+    m = Q.shape[0]
+
+    left = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1)
+    left[np.isnan(left)] = np.inf
+
+    right = core.mass_absolute(Q, T)
     npt.assert_almost_equal(left, right)
 
 
@@ -206,16 +386,13 @@ def test_apply_exclusion_zone():
 
     for i in range(T.shape[0]):
         left[:] = T[:]
-        for j in range(
-            max(i - exclusion_zone, 0), min(i + exclusion_zone + 1, T.shape[0])
-        ):
-            left[j] = np.inf
+        naive.apply_exclusion_zone(left, i, exclusion_zone)
 
         right[:] = T[:]
         core.apply_exclusion_zone(right, i, exclusion_zone)
 
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
         npt.assert_array_equal(left, right)
 
 
@@ -229,16 +406,13 @@ def test_apply_exclusion_zone_multidimensional():
 
     for i in range(T.shape[1]):
         left[:, :] = T[:, :]
-        for j in range(
-            max(i - exclusion_zone, 0), min(i + exclusion_zone + 1, T.shape[1])
-        ):
-            left[:, j] = np.inf
+        naive.apply_exclusion_zone(left, i, exclusion_zone)
 
         right[:, :] = T[:, :]
         core.apply_exclusion_zone(right, i, exclusion_zone)
 
-        utils.replace_inf(left)
-        utils.replace_inf(right)
+        naive.replace_inf(left)
+        naive.replace_inf(right)
         npt.assert_array_equal(left, right)
 
 
@@ -263,6 +437,76 @@ def test_preprocess():
     npt.assert_almost_equal(left_Σ, right_Σ)
 
 
+def test_preprocess_non_normalized():
+    T = np.array([0, np.nan, 2, 3, 4, 5, 6, 7, np.inf, 9])
+    m = 3
+
+    left_T_subseq_isfinite = np.full(T.shape[0] - m + 1, False, dtype=bool)
+    for i in range(T.shape[0] - m + 1):
+        if np.all(np.isfinite(T[i : i + m])):
+            left_T_subseq_isfinite[i] = True
+
+    left_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
+
+    right_T, right_T_subseq_isfinite = core.preprocess_non_normalized(T, m)
+
+    npt.assert_almost_equal(left_T, right_T)
+    npt.assert_almost_equal(left_T_subseq_isfinite, right_T_subseq_isfinite)
+
+    T = pd.Series(T)
+    right_T, right_T_subseq_isfinite = core.preprocess_non_normalized(T, m)
+
+    npt.assert_almost_equal(left_T, right_T)
+    npt.assert_almost_equal(left_T_subseq_isfinite, right_T_subseq_isfinite)
+
+
+def test_preprocess_diagonal():
+    T = np.array([0, np.nan, 2, 3, 4, 5, 6, 7, np.inf, 9])
+    m = 3
+
+    left_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
+    left_M, left_Σ = naive_compute_mean_std(left_T, m)
+    left_Σ_inverse = 1.0 / left_Σ
+    left_M_m_1, _ = naive_compute_mean_std(left_T, m - 1)
+
+    (
+        right_T,
+        right_M,
+        right_Σ_inverse,
+        right_M_m_1,
+        right_T_subseq_isfinite,
+        right_T_subseq_isconstant,
+    ) = core.preprocess_diagonal(T, m)
+
+    npt.assert_almost_equal(left_T, right_T)
+    npt.assert_almost_equal(left_M, right_M)
+    npt.assert_almost_equal(left_Σ_inverse, right_Σ_inverse)
+    npt.assert_almost_equal(left_M_m_1, right_M_m_1)
+
+    T = pd.Series(T)
+    (
+        right_T,
+        right_M,
+        right_Σ_inverse,
+        right_M_m_1,
+        right_T_subseq_isfinite,
+        right_T_subseq_isconstant,
+    ) = core.preprocess_diagonal(T, m)
+
+    npt.assert_almost_equal(left_T, right_T)
+    npt.assert_almost_equal(left_M, right_M)
+    npt.assert_almost_equal(left_Σ_inverse, right_Σ_inverse)
+    npt.assert_almost_equal(left_M_m_1, right_M_m_1)
+
+
+def test_replace_distance():
+    right = np.random.rand(30).reshape(5, 6)
+    left = right.copy()
+    np.fill_diagonal(right, config.STUMPY_MAX_DISTANCE - 1e-9)
+    np.fill_diagonal(left, np.inf)
+    core.replace_distance(right, config.STUMPY_MAX_DISTANCE, np.inf, 1e-6)
+
+
 def test_array_to_temp_file():
     left = np.random.rand()
     fname = core.array_to_temp_file(left)
@@ -272,10 +516,25 @@ def test_array_to_temp_file():
     npt.assert_almost_equal(left, right)
 
 
+def test_count_diagonal_ndist():
+    for n_A in range(10, 15):
+        for n_B in range(10, 15):
+            for m in range(3, 6):
+                diags = np.random.permutation(range(-(n_B - m + 1) + 1, n_A - m + 1))
+                ones_matrix = np.ones((n_B - m + 1, n_A - m + 1), dtype=np.int64)
+                left_ndist_counts = np.empty(len(diags))
+                for i, diag in enumerate(diags):
+                    left_ndist_counts[i] = ones_matrix.diagonal(offset=diag).sum()
+
+            right_ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
+
+            npt.assert_almost_equal(left_ndist_counts, right_ndist_counts)
+
+
 def test_get_array_ranges():
     x = np.array([3, 9, 2, 1, 5, 4, 7, 7, 8, 6])
     for n_chunks in range(2, 5):
-        left = utils.get_naive_array_ranges(x, n_chunks)
+        left = naive.get_array_ranges(x, n_chunks)
 
         right = core._get_array_ranges(x, n_chunks)
         npt.assert_almost_equal(left, right)
@@ -285,17 +544,17 @@ def test_get_array_ranges_exhausted():
     x = np.array([3, 3, 3, 11, 11, 11])
     n_chunks = 6
 
-    left = utils.get_naive_array_ranges(x, n_chunks)
+    left = naive.get_array_ranges(x, n_chunks)
 
     right = core._get_array_ranges(x, n_chunks)
     npt.assert_almost_equal(left, right)
 
 
-def test_get_array_ranges_exhausted():
+def test_get_array_ranges_exhausted_truncated():
     x = np.array([3, 3, 3, 11, 11, 11])
     n_chunks = 6
 
-    left = utils.get_naive_array_ranges(x, n_chunks, truncate=True)
+    left = naive.get_array_ranges(x, n_chunks, truncate=True)
 
     right = core._get_array_ranges(x, n_chunks, truncate=True)
     npt.assert_almost_equal(left, right)

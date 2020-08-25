@@ -47,6 +47,7 @@ def rolling_window(a, window):
     output : ndarray
         This will be a new view of the original input array.
     """
+    a = np.asarray(a)
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
     strides = a.strides + (a.strides[-1],)
 
@@ -305,16 +306,20 @@ def compute_mean_std(T, m):
     for iteration in range(max_iter):
         try:
             chunk_size = math.ceil((T.shape[-1] + 1) / num_chunks)
+            if chunk_size < m:
+                chunk_size = m
 
             mean_chunks = []
             std_chunks = []
             for chunk in range(num_chunks):
                 start = chunk * chunk_size
                 stop = min(start + chunk_size + m - 1, T.shape[-1])
+                if stop - start < m:
+                    break
 
-                tmp_mean = np.mean(rolling_window(T[start:stop], m), axis=T.ndim)
+                tmp_mean = np.mean(rolling_window(T[..., start:stop], m), axis=T.ndim)
                 mean_chunks.append(tmp_mean)
-                tmp_std = np.nanstd(rolling_window(T[start:stop], m), axis=T.ndim)
+                tmp_std = np.nanstd(rolling_window(T[..., start:stop], m), axis=T.ndim)
                 std_chunks.append(tmp_std)
 
             M_T = np.hstack(mean_chunks)
@@ -374,19 +379,21 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
     See Equation on Page 4
     """
-    threshold = 1e-10
     if np.isinf(M_T) or np.isinf(μ_Q):
         D_squared = np.inf
     else:
-        if σ_Q < threshold or Σ_T < threshold:
+        if σ_Q < config.STUMPY_STDDEV_THRESHOLD or Σ_T < config.STUMPY_STDDEV_THRESHOLD:
             D_squared = m
         else:
             denom = m * σ_Q * Σ_T
-            if np.abs(denom) < threshold:  # pragma nocover
-                denom = threshold
+            if np.abs(denom) < config.STUMPY_DENOM_THRESHOLD:  # pragma nocover
+                denom = config.STUMPY_DENOM_THRESHOLD
             D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
 
-        if σ_Q < threshold and Σ_T < threshold:
+        if (
+            σ_Q < config.STUMPY_STDDEV_THRESHOLD
+            and Σ_T < config.STUMPY_STDDEV_THRESHOLD
+        ) or D_squared < config.STUMPY_D_SQUARED_THRESHOLD:
             D_squared = 0
 
     return D_squared
@@ -645,7 +652,7 @@ def mass(Q, T, M_T=None, Σ_T=None):
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
 
     distance_profile = np.empty(n - m + 1)
-    if np.any(np.isnan(Q)):
+    if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
         if M_T is None or Σ_T is None:
@@ -658,6 +665,124 @@ def mass(Q, T, M_T=None, Σ_T=None):
         distance_profile[:] = _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T)
 
     return distance_profile
+
+
+@njit(fastmath=True)
+def _mass_absolute(Q_squared, T_squared, QT):
+    """
+    A Numba JIT compiled algorithm for computing the non-normalized distance profile
+    using the MASS absolute algorithm.
+
+    Parameters
+    ----------
+    Q_squared : ndarray
+        Squared query array or subsequence
+
+    T_squared : ndarray
+        Squared time series or sequence
+
+    QT : ndarray
+        Sliding window dot product of `Q` and `T`
+
+    Returns
+    -------
+    output : ndarray
+        Unnormalized distance profile
+
+    Notes
+    -----
+    `See Mueen's Absolute Algorithm for Similarity Search \
+    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
+    """
+    return np.sqrt(Q_squared + T_squared - 2 * QT)
+
+
+def mass_absolute(Q, T):
+    """
+    Compute the non-normalized distance profile (i.e., without z-normalization) using
+    the "MASS absolute" algorithm. This is a convenience wrapper around the Numba JIT
+    compiled `_mass_absolute` function.
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array or subsequence
+
+    T : ndarray
+        Time series or sequence
+
+    Returns
+    -------
+    output : ndarray
+        Unnormalized Distance profile
+
+    Notes
+    -----
+    `See Mueen's Absolute Algorithm for Similarity Search \
+    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
+    """
+    Q = np.asarray(Q)
+    check_dtype(Q)
+    m = Q.shape[0]
+
+    if Q.ndim != 1:  # pragma: no cover
+        raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
+
+    T = np.asarray(T)
+    check_dtype(T)
+    n = T.shape[0]
+
+    if T.ndim != 1:  # pragma: no cover
+        raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
+
+    distance_profile = np.empty(n - m + 1)
+    if np.any(~np.isfinite(Q)):
+        distance_profile[:] = np.inf
+    else:
+        T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
+        T[~np.isfinite(T)] = 0.0
+        QT = sliding_dot_product(Q, T)
+        Q_squared = np.sum(Q * Q)
+        T_squared = np.sum(rolling_window(T * T, m), axis=1)
+        distance_profile[:] = _mass_absolute(Q_squared, T_squared, QT)
+        distance_profile[~T_subseq_isfinite] = np.inf
+
+    return distance_profile
+
+
+def _get_QT(start, T_A, T_B, m):
+    """
+    Compute the sliding dot product between the query, `T_B`, (from
+    [start:start+m]) and the time series, `T_A`. Additionally, compute
+    QT for the first window.
+
+    Parameters
+    ----------
+    start : int
+        The window index for T_B from which to calculate the QT dot product
+
+    T_A : ndarray
+        The time series or sequence for which to compute the dot product
+
+    T_B : ndarray
+        The time series or sequence that contain your query subsequence
+        of interest
+
+    m : int
+        Window size
+
+    Returns
+    -------
+    QT : ndarray
+        Given `start`, return the corresponding QT
+
+    QT_first : ndarray
+         QT for the first window
+    """
+    QT = sliding_dot_product(T_B[start : start + m], T_A)
+    QT_first = sliding_dot_product(T_A[:m], T_B)
+
+    return QT, QT_first
 
 
 @njit(fastmath=True)
@@ -721,6 +846,124 @@ def preprocess(T, m):
     return T, M_T, Σ_T
 
 
+def preprocess_non_normalized(T, m):
+    """
+    Preprocess a time series that is to be used when computing a non-normalized (i.e.,
+    without z-normalization) distance matrix.
+
+    Creates a copy of the time series where all NaN and inf values
+    are replaced with zero. Every subsequence that contains at least
+    one NaN or inf value will have a `False` value in its `T_subseq_isfinite` `bool`
+    array.
+
+    Parameters
+    ----------
+    T : ndarray
+        Time series or sequence
+
+    m : int
+        Window size
+
+    Returns
+    -------
+    T : ndarray
+        Modified time series
+
+    T_subseq_isfinite : ndarray
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False)
+    """
+    T = T.copy()
+    T = np.asarray(T)
+
+    T[np.isinf(T)] = np.nan
+    T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
+    T[np.isnan(T)] = 0
+
+    return T, T_subseq_isfinite
+
+
+def preprocess_diagonal(T, m):
+    """
+    Preprocess a time series that is to be used when traversing the diagonals of a
+    distance matrix.
+
+    Creates a copy of the time series where all NaN and inf values
+    are replaced with zero. Also computes means, `M_T` and `M_T_m_1`, for every
+    subsequence using awindow size of `m` and `m-1`, respectively, and the inverse
+    standard deviation, `Σ_T_inverse`. Every subsequence that contains at least
+    one NaN or inf value will have a `False` value in its `T_subseq_isfinite` `bool`
+    arra and it will also have a mean of np.inf. For the standard
+    deviation these values are ignored. If all values are illegal, the
+    standard deviation will be 0 (see `core.compute_mean_std`). Additionally,
+    the inverse standard deviation, σ_inverse, will also be computed and returned.
+    Finally, constant subsequences (i.e., subsequences with a standard deviation of
+    zero), will have a corresponding `True` value in its `T_subseq_isconstant` array.
+
+    Parameters
+    ----------
+    T : ndarray
+        Time series or sequence
+
+    m : int
+        Window size
+
+    Returns
+    -------
+    T : ndarray
+        Modified time series
+
+    M_T : ndarray
+        Rolling mean with a subsequence length of `m`
+
+    Σ_T_inverse : ndarray
+        Inverted rolling standard deviation
+
+    M_T_m_1 : ndarray
+        Rolling mean with a subsequence length of `m-1`
+
+    T_subseq_isfinite : ndarray
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_subseq_isconstant : ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
+    """
+    T, T_subseq_isfinite = preprocess_non_normalized(T, m)
+    M_T, Σ_T = compute_mean_std(T, m)
+    T_subseq_isconstant = Σ_T < config.STUMPY_STDDEV_THRESHOLD
+    Σ_T[T_subseq_isconstant] = 1.0  # Avoid divide by zero in next inversion step
+    Σ_T_inverse = 1.0 / Σ_T
+    M_T_m_1, _ = compute_mean_std(T, m - 1)
+
+    return T, M_T, Σ_T_inverse, M_T_m_1, T_subseq_isfinite, T_subseq_isconstant
+
+
+def replace_distance(D, search_val, replace_val, epsilon=0.0):
+    """
+    Replace values in distance array inplace
+
+    Parameters
+    ----------
+    D : ndarray
+        Distance array
+
+    search_val : float
+        Value to search for
+
+    replace_val : float
+        Value to replace with
+
+    epsilon : float
+        Threshold below `search_val` in which to still allow for a replacement
+
+    Return
+    ------
+    None
+    """
+    D[D == search_val - epsilon] = replace_val
+
+
 def array_to_temp_file(a):
     """
     Write an ndarray to a file
@@ -742,9 +985,44 @@ def array_to_temp_file(a):
     return fname
 
 
-def _get_array_ranges(
-    a, n_chunks, custom_cumsum=None, custom_insert=None, truncate=False
-):
+@njit(parallel=True, fastmath=True)
+def _count_diagonal_ndist(diags, m, n_A, n_B):
+    """
+    Count the number of distances that would be computed for each diagonal index
+    referenced in `diags`
+
+    Parameters
+    ----------
+    m : int
+        Window size
+
+    n_A : ndarray
+        The length of time series `T_A`
+
+    n_B : ndarray
+        The length of time series `T_B`
+
+    diags : ndarray
+        The diagonal indices of interest
+
+    Returns
+    -------
+    diag_ndist_counts : ndarray
+        Counts of distances computed along each diagonal of interest
+    """
+    diag_ndist_counts = np.zeros(diags.shape[0], dtype=np.int64)
+    for diag_idx in prange(diags.shape[0]):
+        k = diags[diag_idx]
+        if k >= 0:
+            diag_ndist_counts[diag_idx] = min(n_A - m + 1 - k, n_B - m + 1)
+        else:
+            diag_ndist_counts[diag_idx] = min(n_A - m + 1, n_B - m + 1 + k)
+
+    return diag_ndist_counts
+
+
+@njit()
+def _get_array_ranges(a, n_chunks, truncate=False):
     """
     Given an input array, split it into `n_chunks`.
 
@@ -755,12 +1033,6 @@ def _get_array_ranges(
 
     n_chunks : int
         Number of chunks to split the array into
-
-    custom_cumsum : ndarray
-        Custom cumsum array
-
-    custom_insert : ndarray
-        Custom insertion array to be inserted into the cumsum array
 
     truncate : bool
         If `truncate=True`, truncate the rows of `array_ranges` if there are not enough
@@ -776,11 +1048,9 @@ def _get_array_ranges(
         contains the stop indices.
     """
     array_ranges = np.zeros((n_chunks, 2), np.int64)
-    if custom_cumsum is None:
-        custom_cumsum = a.cumsum() / a.sum()
-    if custom_insert is None:
-        custom_insert = np.linspace(0, 1, n_chunks, endpoint=False)[1:]
-    idx = 1 + np.searchsorted(custom_cumsum, custom_insert)
+    cumsum = a.cumsum() / a.sum()
+    insert = np.linspace(0, 1, n_chunks + 1)[1:-1]
+    idx = 1 + np.searchsorted(cumsum, insert)
     array_ranges[1:, 0] = idx  # Fill the first column with start indices
     array_ranges[:-1, 1] = idx  # Fill the second column with exclusive stop indices
     array_ranges[-1, 1] = a.shape[0]  # Handle the stop index for the final chunk

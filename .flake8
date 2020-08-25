@@ -7,7 +7,8 @@ ignore =
     D401,
     D200,
     D205,
-    D400
+    D400,
+    D301
 max-line-length = 88
 docstring-convention=numpy
 exclude = 
@@ -16,3 +17,4 @@ exclude =
     setup.py
 per-file-ignores =
     stumpy/__init__.py:D104
+    stumpy/stumpi.py:E743

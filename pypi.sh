@@ -22,6 +22,12 @@
 # For readthedocs
 # 1. Update the docs/api.rst to include new features/functions
 #
+# For socializing
+# 1. Post on Twitter
+# 2. Post on LinkedIn
+# 3. Post on Reddit
+# 4. Post new tutorials on Medium
+#
 # To check that the distribution is valid, execute:
 # twine check dist/* 
 #

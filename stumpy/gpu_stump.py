@@ -9,7 +9,7 @@ import os
 import numpy as np
 from numba import cuda
 
-from . import core, _get_QT, config
+from . import core, config
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +115,6 @@ def _compute_and_update_PI_kernel(
     """
     start = cuda.grid(1)
     stride = cuda.gridsize(1)
-    threshold = 1e-10
 
     if i % 2 == 0:
         QT_out = QT_even
@@ -137,15 +136,21 @@ def _compute_and_update_PI_kernel(
         if math.isinf(M_T[j]) or math.isinf(μ_Q[i]):
             D = np.inf
         else:
-            if σ_Q[i] < threshold or Σ_T[j] < threshold:
+            if (
+                σ_Q[i] < config.STUMPY_STDDEV_THRESHOLD
+                or Σ_T[j] < config.STUMPY_STDDEV_THRESHOLD
+            ):
                 D = m
             else:
                 denom = m * σ_Q[i] * Σ_T[j]
-                if math.fabs(denom) < threshold:  # pragma nocover
-                    denom = threshold
+                if math.fabs(denom) < config.STUMPY_DENOM_THRESHOLD:  # pragma nocover
+                    denom = config.STUMPY_DENOM_THRESHOLD
                 D = abs(2 * m * (1.0 - (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom))
 
-            if σ_Q[i] < threshold and Σ_T[j] < threshold:
+            if (
+                σ_Q[i] < config.STUMPY_STDDEV_THRESHOLD
+                and Σ_T[j] < config.STUMPY_STDDEV_THRESHOLD
+            ) or D < config.STUMPY_D_SQUARED_THRESHOLD:
                 D = 0
 
         if ignore_trivial:
@@ -310,11 +315,9 @@ def _gpu_stump(
             device_M_T = cuda.to_device(M_T)
             device_Σ_T = cuda.to_device(Σ_T)
 
-        profile = np.empty((k, 3))  # float64
-        indices = np.empty((k, 3), dtype=np.int64)  # int64
+        profile = np.full((k, 3), np.inf)  # float64
+        indices = np.full((k, 3), -1, dtype=np.int64)  # int64
 
-        profile[:] = np.inf
-        indices[:, :] = -1
         device_profile = cuda.to_device(profile)
         device_indices = cuda.to_device(indices)
         _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
@@ -370,7 +373,7 @@ def _gpu_stump(
 
 def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     """
-    Compute the matrix profile with GPU-STOMP
+    Compute the z-normalized matrix profile with one or more GPU devices
 
     This is a convenience wrapper around the Numba `cuda.jit` `_gpu_stump` function
     which computes the matrix profile according to GPU-STOMP.
@@ -514,7 +517,7 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     for idx, start in enumerate(range(0, l, step)):
         stop = min(l, start + step)
 
-        QT, QT_first = _get_QT(start, T_A, T_B, m)
+        QT, QT_first = core._get_QT(start, T_A, T_B, m)
         QT_fname = core.array_to_temp_file(QT)
         QT_first_fname = core.array_to_temp_file(QT_first)
         QT_fnames.append(QT_fname)

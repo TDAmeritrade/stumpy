@@ -54,7 +54,8 @@ STUMPY is a powerful and scalable library that efficiently computes something ca
 * anomaly/novelty (discord) discovery
 * shapelet discovery
 * semantic segmentation 
-* density estimation
+* streaming (on-line) data
+* fast approximate matrix profiles
 * time series chains (temporally ordered set of subsequence patterns)
 * `and more ... <https://www.cs.ucr.edu/~eamonn/100_Time_Series_Data_Mining_Questions__with_Answers.pdf>`__
 
@@ -359,7 +360,15 @@ Zhu, Yan, et al. (2017) Matrix Profile VII: Time Series Chains: A New Primitive 
 
 Gharghabi, Shaghayegh, et al. (2017) Matrix Profile VIII: Domain Agnostic Online Semantic Segmentation at Superhuman Performance Levels. ICDM:117-126. `Link <https://ieeexplore.ieee.org/abstract/document/8215484>`__
 
+Zhu, Yan, et al. (2017) Exploiting a Novel Algorithm and GPUs to Break the Ten Quadrillion Pairwise Comparisons Barrier for Time Series Motifs and Joins. KAIS:203-236. `Link <https://link.springer.com/article/10.1007%2Fs10115-017-1138-x>`__
+
 Zhu, Yan, et al. (2018) Matrix Profile XI: SCRIMP++: Time Series Motif Discovery at Interactive Speeds. ICDM:837-846. `Link <https://ieeexplore.ieee.org/abstract/document/8594908>`__
+
+Yeh, Chin-Chia Michael, et al. (2018) Time Series Joins, Motifs, Discords and Shapelets: a Unifying View that Exploits the Matrix Profile. Data Min Knowl Disc:83-123. `Link <https://link.springer.com/article/10.1007/s10618-017-0519-9>`__
+
+Zimmerman, Zachary, et al. (2019) Matrix Profile XIV: Scaling Time Series Motif Discovery with GPUs to Break a Quintillion Pairwise Comparisons a Day and Beyond. SoCC '19:74-86. `Link <https://dl.acm.org/doi/10.1145/3357223.3362721>`__
+
+Akbarinia, Reza, and Betrand Cloez. (2019) Efficient Matrix Profile Computation Using Different Distance Functions. arXiv:1901.05708. `Line <https://arxiv.org/abs/1901.05708>`__
 
 -------------------
 License & Trademark
