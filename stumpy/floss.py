@@ -504,10 +504,8 @@ class floss(object):
 
         D = core.mass(Q, self._T, M_T, Σ_T)
         D[zone_start:] = np.inf
-        #T_subseq_isfinite = np.all(
-        #    core.rolling_window(self._T_isfinite, self._m), axis=1
-        #)
-        T_subseq_isfinite = np.all(self._T_isfinite[-self._m:])
+
+        T_subseq_isfinite = np.all(self._T_isfinite[-self._m :])
         D[~T_subseq_isfinite] = np.inf
         # Update nearest neighbor for old data if any old subsequences
         # are closer to the newly arrived subsequence
