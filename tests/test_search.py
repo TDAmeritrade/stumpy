@@ -2,125 +2,232 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from stumpy import search, stump
-import utils
+from stumpy import search, stump, mstump, core
 
-test_data = [
+import naive
+
+
+test_data_motifs = [
     (
-        np.array([-1, 1, 2], dtype=np.float64),
-        np.array([0, 1, 1, 2, 3, 4, 4], dtype=np.float64),
+        np.array([0, 1, 3, 2, 9, 1, 14, 15, 1, 2, 2, 10, 7], dtype=float),
+        4,
+        1,
+        [[1, 8]],
+        [0.28570485146990254],
     ),
     (
-        np.array([9, 8100, -60], dtype=np.float64),
-        np.array([584, -11, 23, 79, 1001], dtype=np.float64),
+        np.array(
+            [0, -10, 0, 0, 1, 3, 2, 9, 1, 14, 15, 1, 2, 2, 10, 7, 0, -10, 0, 0],
+            dtype=float,
+        ),
+        4,
+        2,
+        [[0, 16], [4, 11]],
+        [0, 0.28570485146990254],
     ),
-    (np.random.uniform(-1000, 1000, [8]), np.random.uniform(-1000, 1000, [64])),
+]
+
+test_data_motifs_multidimensional = [
+    (
+        np.array(
+            [
+                [0, 1, 3, 2, 9, 1, 14, 15, 1, 2, 2, 10, 7],
+                [0, 1, 3, 2, 9, 1, 14, 15, 1, 2, 2, 10, 7],
+            ],
+            dtype=float,
+        ),
+        4,
+        1,
+        [[1, 8]],
+        [0.28570485146990254],
+    ),
+    (
+        np.array(
+            [
+                [0, 1, 3, 2, 9, 1, 14, 15, 1, 2, 2, 10, 7],
+                [-2, 1, 3, 2, 9, 1, 15, 14, 1, 2, 2, 8, 7],
+            ],
+            dtype=float,
+        ),
+        4,
+        1,
+        [[1, 8]],
+        [0.2676986029003686],
+    ),
+    (
+        np.array(
+            [
+                [0, -10, 0, 0, 1, 3, 2, 9, 1, 14, 15, 1, 2, 2, 10, 7, 0, -10, 0, 0],
+                [0, -10, 0, 0, 1, 3, 2, 9, 1, 14, 15, 1, 2, 2, 10, 7, 0, -10, 0, 0],
+            ],
+            dtype=float,
+        ),
+        4,
+        2,
+        [[0, 16], [4, 11]],
+        [0, 0.28570485146990254],
+    ),
+]
+
+test_data_pattern = [
+    (
+        np.array([0, -10, 0, 0], dtype=float),
+        np.array(
+            [
+                0,
+                -10,
+                0,
+                0,
+                1,
+                3,
+                2,
+                9,
+                1,
+                14,
+                15,
+                1,
+                2,
+                2,
+                10,
+                7,
+                0,
+                -10,
+                0,
+                0,
+                0,
+                -11,
+                0,
+                0,
+            ],
+            dtype=float,
+        ),
+    ),
+    (
+        np.array([0, -10, 0, 0], dtype=float),
+        np.array(
+            [
+                0,
+                -10,
+                0,
+                0,
+                1,
+                3,
+                2,
+                9,
+                1,
+                14,
+                15,
+                np.nan,
+                2,
+                2,
+                10,
+                7,
+                0,
+                -10,
+                0,
+                0,
+                0,
+                -11,
+                0,
+                0,
+            ],
+            dtype=float,
+        ),
+    ),
+    (
+        np.array([[0, -10, 0, 0], [0, -10, 0, 0]], dtype=float),
+        np.array(
+            [
+                [
+                    0,
+                    -10,
+                    0,
+                    0,
+                    1,
+                    3,
+                    2,
+                    9,
+                    1,
+                    14,
+                    15,
+                    1,
+                    2,
+                    2,
+                    10,
+                    7,
+                    0,
+                    -10,
+                    0,
+                    0,
+                    0,
+                    -11,
+                    0,
+                    0,
+                ],
+                [
+                    0,
+                    -10,
+                    0,
+                    0,
+                    1,
+                    3,
+                    2,
+                    9,
+                    1,
+                    14,
+                    15,
+                    1,
+                    2,
+                    2,
+                    10,
+                    7,
+                    0,
+                    -10,
+                    0,
+                    0,
+                    0,
+                    -9,
+                    0,
+                    0,
+                ],
+            ],
+            dtype=float,
+        ),
+    ),
 ]
 
 
-def naive_search_occurrences(Q, T, excl_zone, profile_value, atol, rtol):
-    m = Q.shape[0]
-    distance_profile = utils.naive_distance_profile(Q, T, m)
-
-    occurrences = []
-    for i in range(distance_profile.size):
-        dist = distance_profile[i]
-        if dist < atol + rtol * profile_value:
-            occurrences.append(i)
-
-    occurrences.sort(key=lambda x: distance_profile[x])
-    result = []
-    while len(occurrences) > 0:
-        o = occurrences[0]
-        result.append(o)
-        occurrences = [x for x in occurrences if x < o - excl_zone or x > o + excl_zone]
-
-    return result
-
-
-def test_search_k_motifs_static():
-    T = np.array([0.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, 0.0, -0.5])
-    m = 3
-    k = 1
-
-    left_indices = [[0, 5]]
-    left_profile_values = [0]
-
+@pytest.mark.parametrize("T, m, k, left_indices, left_profile_values", test_data_motifs)
+def test_motifs(T, m, k, left_indices, left_profile_values):
     P = stump(T, m, ignore_trivial=True)
-    right_indices, right_profile_values = search.search_k_motifs(
-        T, P[:, 0], k=k, atol=0.001
-    )
+    right_indices, right_profile_values = search.motifs(T, P[:, 0], k=k, atol=0.001)
 
     npt.assert_array_equal(left_indices, right_indices)
-    npt.assert_almost_equal(left_profile_values, right_profile_values, decimal=4)
+    npt.assert_almost_equal(left_profile_values, right_profile_values)
 
 
-def test_search_k_motifs_synthetic():
-    T = np.random.normal(size=200)
-    m = 20
-
-    T[10:30] = 1
-    T[12:28] = 2
-    T[110:130] = 1
-    T[112:128] = 2
-    T[129] = 1.1
-
-    T[70:90] = np.arange(m) * 0.1
-    T[170:190] = np.arange(m) * 0.1
-
-    k = 2
-
-    P = stump(T, m, ignore_trivial=True)
-
-    left_indices = [[70, 170], [10, 110]]
-    left_profile_values = [P[70, 0], P[10, 0]]
-
-    right_indices, right_profile_values = search.search_k_motifs(T, P[:, 0], k=k)
-    right_indices = np.sort(right_indices, axis=1)
+@pytest.mark.parametrize(
+    "T, m, k, left_indices, left_profile_values", test_data_motifs_multidimensional
+)
+def test_motifs_multidimensional(T, m, k, left_indices, left_profile_values):
+    P, _ = mstump(T, m)
+    right_indices, right_profile_values = search.motifs(T, P, k=k, atol=0.001)
 
     npt.assert_array_equal(left_indices, right_indices)
-    npt.assert_almost_equal(left_profile_values, right_profile_values, decimal=4)
+    npt.assert_almost_equal(left_profile_values, right_profile_values)
 
 
-def test_search_k_discords_synthetic():
-    T = np.sin(2 * np.pi * np.linspace(0, 10, 200))
-    m = 20
-
-    T[30] = 20
-    T[100] = -10
-
-    k = 2
-
-    left_indices = [[30], [100]]
-    left_profile_values = [0, 0]
-
-    P = stump(T, m, ignore_trivial=True)
-    right_indices, right_profile_values = search.search_k_discords(T, P[:, 0], k=k)
-
-    npt.assert_array_equal(left_indices, right_indices)
-    npt.assert_almost_equal(left_profile_values, right_profile_values, decimal=4)
-
-
-def test_search_occurrences_static():
-    T = np.array([0.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, 0.0, -0.5])
-    Q = np.array([0.0, 1.0, 0.0])
-
-    left = [0, 5]
-    right = search.search_occurrences(Q, T, atol=0.001)
-
-    npt.assert_array_equal(left, right)
-
-
-@pytest.mark.parametrize("Q, T", test_data)
-def test_search_occurrences(Q, T):
+@pytest.mark.parametrize("Q, T", test_data_pattern)
+def test_pattern(Q, T):
     m = Q.shape[0]
     excl_zone = int(np.ceil(m / 4))
     rtol = 1
-    atol = 1
-    profile_value = 1
+    atol = 0.01
+    profile_value = 0.1
+    aamp = False
 
-    left = naive_search_occurrences(Q, T, excl_zone, profile_value, atol, rtol)
-    right = search.search_occurrences(
+    left = naive.pattern(Q, T, excl_zone, profile_value, atol, rtol, aamp)
+    right = search.pattern(
         Q,
         T,
         excl_zone=excl_zone,
@@ -128,6 +235,31 @@ def test_search_occurrences(Q, T):
         profile_value=profile_value,
         atol=atol,
         rtol=rtol,
+        aamp=aamp,
+    )
+
+    npt.assert_array_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data_pattern)
+def test_pattern_aamp(Q, T):
+    m = Q.shape[0]
+    excl_zone = int(np.ceil(m / 4))
+    rtol = 1
+    atol = 0.01
+    profile_value = 0.1
+    aamp = True
+
+    left = naive.pattern(Q, T, excl_zone, profile_value, atol, rtol, aamp)
+    right = search.pattern(
+        Q,
+        T,
+        excl_zone=excl_zone,
+        max_occurrences=None,
+        profile_value=profile_value,
+        atol=atol,
+        rtol=rtol,
+        aamp=aamp,
     )
 
     npt.assert_array_equal(left, right)

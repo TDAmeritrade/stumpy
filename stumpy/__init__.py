@@ -1,9 +1,6 @@
 from pkg_resources import get_distribution, DistributionNotFound
 import os.path
-from .stump import (  # noqa: F401
-    stump,
-    _stump,
-)
+from .stump import stump, _stump  # noqa: F401
 from .stumped import stumped  # noqa: F401
 from .mstump import (  # noqa: F401
     mstump,

@@ -97,7 +97,7 @@ def stamp(T_A, m, exclusion_zone=None, T_B=None):
         )
     else:
         result = np.array(
-            [mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object,
+            [mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object
         )
     return result
 
@@ -349,5 +349,43 @@ def aamp(T_A, m, T_B=None, exclusion_zone=None):
     result = np.empty((l, 4), dtype=object)
     result[:, 0] = P[:, 0]
     result[:, 1:4] = I[:, :]
+
+    return result
+
+
+def pattern(Q, T, excl_zone, profile_value, atol, rtol, aamp):
+    if Q.ndim == 1:
+        Q = Q[np.newaxis, :]
+    m = Q.shape[1]
+
+    if T.ndim == 1:
+        T = T[np.newaxis, :]
+    d, n = T.shape
+
+    distance_profile = np.zeros(n - m + 1, dtype=float)
+    for i in range(d):
+        if aamp:
+            distance_profile += np.linalg.norm(
+                core.rolling_window(T[i], m) - Q[i], axis=1
+            )
+        else:
+            distance_profile += np.linalg.norm(
+                z_norm(core.rolling_window(T[i], m), 1) - z_norm(Q[i]), axis=1
+            )
+    distance_profile /= d
+
+    occurrences = []
+    for i in range(distance_profile.size):
+        dist = distance_profile[i]
+
+        if dist < atol + rtol * profile_value:
+            occurrences.append(i)
+
+    occurrences.sort(key=lambda x: distance_profile[x])
+    result = []
+    while len(occurrences) > 0:
+        o = occurrences[0]
+        result.append(o)
+        occurrences = [x for x in occurrences if x < o - excl_zone or x > o + excl_zone]
 
     return result

@@ -520,25 +520,12 @@ def _mstump(
 
     for idx in range(range_start, range_stop):
         _compute_multi_D(
-            d,
-            k,
-            idx,
-            D,
-            T,
-            m,
-            excl_zone,
-            M_T,
-            Σ_T,
-            QT_even,
-            QT_odd,
-            QT_first,
-            μ_Q,
-            σ_Q,
+            d, k, idx, D, T, m, excl_zone, M_T, Σ_T, QT_even, QT_odd, QT_first, μ_Q, σ_Q
         )
 
         if include is not None:
             _apply_include(
-                D, include, restricted_indices, unrestricted_indices, mask, tmp_swap,
+                D, include, restricted_indices, unrestricted_indices, mask, tmp_swap
             )
             start_row_idx = include.shape[0]
 
