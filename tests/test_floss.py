@@ -137,9 +137,9 @@ def test_fluss(I):
 
 test_data = np.random.uniform(-1000, 1000, [64])
 test_data_nan = test_data.copy()
-np.insert(test_data_nan, [i for i in range(0, 60, 5)], np.nan)
+test_data_nan = np.insert(test_data_nan, 45, np.nan)
 test_data_inf = test_data.copy()
-np.insert(test_data_inf, [i for i in range(0, 60, 5)], np.inf)
+test_data_inf = np.insert(test_data_inf, 45, np.inf)
 
 
 @pytest.mark.parametrize("data", [(test_data), (test_data_nan), (test_data_inf)])
@@ -147,7 +147,6 @@ def test_floss(data):
     m = 5
     old_data = data[:30]
     n = old_data.shape[0]
-    add_data = data[30:]
 
     mp = naive_right_mp(old_data, m)
     right_mp = stump(old_data, m)
@@ -195,6 +194,7 @@ def test_floss(data):
 
         naive.replace_inf(left_P)
         naive.replace_inf(right_P)
+
 
         npt.assert_almost_equal(left_cac_1d, right_cac_1d)
         npt.assert_almost_equal(left_P, right_P)

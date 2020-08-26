@@ -485,7 +485,7 @@ class floss(object):
         self._T[:] = np.roll(self._T, -1)
         self._T_isfinite[:] = np.roll(self._T_isfinite, -1)
         self._T[-1] = t
-        self._T_isfinite[-1] = True if np.isfinite(t) else False
+        self._T_isfinite[-1] = np.isfinite(t)
         Q = self._T[-self._m :]
         excl_zone = int(np.ceil(self._m / 4))
         # Note that the start of the exclusion zone is relative to
@@ -504,9 +504,10 @@ class floss(object):
 
         D = core.mass(Q, self._T, M_T, Σ_T)
         D[zone_start:] = np.inf
-        T_subseq_isfinite = np.all(
-            core.rolling_window(self._T_isfinite, self._m), axis=1
-        )
+        #T_subseq_isfinite = np.all(
+        #    core.rolling_window(self._T_isfinite, self._m), axis=1
+        #)
+        T_subseq_isfinite = np.all(self._T_isfinite[-self._m:])
         D[~T_subseq_isfinite] = np.inf
         # Update nearest neighbor for old data if any old subsequences
         # are closer to the newly arrived subsequence
