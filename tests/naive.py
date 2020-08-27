@@ -124,6 +124,8 @@ def stump(T_A, m, exclusion_zone=None, T_B=None):
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_B - m + 1
+    if exclusion_zone is None:
+        exclusion_zone = int(np.ceil(m / 4))
 
     if ignore_trivial:
         diags = np.arange(exclusion_zone + 1, n_B - m + 1)
@@ -351,3 +353,136 @@ def aamp(T_A, m, T_B=None, exclusion_zone=None):
     result[:, 1:4] = I[:, :]
 
     return result
+
+
+class aampi_egress(object):
+    def __init__(self, T, m, excl_zone=None):
+        self._T = np.asarray(T)
+        self._T = self._T.copy()
+        self._T_isfinite = np.isfinite(self._T)
+        self._m = m
+        if excl_zone is None:
+            self._excl_zone = int(np.ceil(self._m / 4))
+
+        self._l = self._T.shape[0] - m + 1
+        mp = aamp(T, m)
+        self.P_ = mp[:, 0]
+        self.I_ = mp[:, 1].astype(np.int64)
+        self.left_P_ = np.full(self.P_.shape, np.inf)
+        self.left_I_ = mp[:, 2].astype(np.int64)
+        for i, j in enumerate(self.left_I_):
+            if j >= 0:
+                D = core.mass_absolute(
+                    self._T[i : i + self._m], self._T[j : j + self._m]
+                )
+                self.left_P_[i] = D[0]
+
+        self._n_appended = 0
+
+    def update(self, t):
+        self._T[:] = np.roll(self._T, -1)
+        self._T_isfinite[:] = np.roll(self._T_isfinite, -1)
+        if np.isfinite(t):
+            self._T_isfinite[-1] = True
+            self._T[-1] = t
+        else:
+            self._T_isfinite[-1] = False
+            self._T[-1] = 0
+
+        D = core.mass_absolute(self._T[-self._m :], self._T)
+        T_subseq_isfinite = np.all(
+            core.rolling_window(self._T_isfinite, self._m), axis=1
+        )
+        D[~T_subseq_isfinite] = np.inf
+        if np.any(~self._T_isfinite[-self._m :]):
+            D[:] = np.inf
+
+        apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
+        for j in range(D.shape[0]):
+            if D[j] < self.P_[j]:
+                self.I_[j] = D.shape[0] + self._n_appended
+                self.P_[j] = D[j]
+
+        I_last = np.argmin(D)
+
+        self.P_[:] = np.roll(self.P_, -1)
+        self.I_[:] = np.roll(self.I_, -1)
+        self.left_P_[:] = np.roll(self.left_P_, -1)
+        self.left_I_[:] = np.roll(self.left_I_, -1)
+
+        if np.isinf(D[I_last]):
+            self.I_[-1] = -1
+            self.P_[-1] = np.inf
+        else:
+            self.I_[-1] = I_last + self._n_appended
+            self.P_[-1] = D[I_last]
+
+        self.left_I_[-1] = I_last + self._n_appended
+        self.left_P_[-1] = D[I_last]
+
+        self._n_appended += 1
+
+
+class stumpi_egress(object):
+    def __init__(self, T, m, excl_zone=None):
+        self._T = np.asarray(T)
+        self._T = self._T.copy()
+        self._T_isfinite = np.isfinite(self._T)
+        self._m = m
+        if excl_zone is None:
+            self._excl_zone = int(np.ceil(self._m / 4))
+
+        self._l = self._T.shape[0] - m + 1
+        mp = stump(T, m)
+        self.P_ = mp[:, 0]
+        self.I_ = mp[:, 1].astype(np.int64)
+        self.left_P_ = np.full(self.P_.shape, np.inf)
+        self.left_I_ = mp[:, 2].astype(np.int64)
+        for i, j in enumerate(self.left_I_):
+            if j >= 0:
+                D = core.mass(self._T[i : i + self._m], self._T[j : j + self._m])
+                self.left_P_[i] = D[0]
+
+        self._n_appended = 0
+
+    def update(self, t):
+        self._T[:] = np.roll(self._T, -1)
+        self._T_isfinite[:] = np.roll(self._T_isfinite, -1)
+        if np.isfinite(t):
+            self._T_isfinite[-1] = True
+            self._T[-1] = t
+        else:
+            self._T_isfinite[-1] = False
+            self._T[-1] = 0
+
+        D = core.mass(self._T[-self._m :], self._T)
+        T_subseq_isfinite = np.all(
+            core.rolling_window(self._T_isfinite, self._m), axis=1
+        )
+        D[~T_subseq_isfinite] = np.inf
+        if np.any(~self._T_isfinite[-self._m :]):
+            D[:] = np.inf
+
+        apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
+        for j in range(D.shape[0]):
+            if D[j] < self.P_[j]:
+                self.I_[j] = D.shape[0] + self._n_appended
+                self.P_[j] = D[j]
+
+        I_last = np.argmin(D)
+        self.P_[:] = np.roll(self.P_, -1)
+        self.I_[:] = np.roll(self.I_, -1)
+        self.left_P_[:] = np.roll(self.left_P_, -1)
+        self.left_I_[:] = np.roll(self.left_I_, -1)
+
+        if np.isinf(D[I_last]):
+            self.I_[-1] = -1
+            self.P_[-1] = np.inf
+        else:
+            self.I_[-1] = I_last + self._n_appended
+            self.P_[-1] = D[I_last]
+
+        self.left_I_[-1] = I_last + self._n_appended
+        self.left_P_[-1] = D[I_last]
+
+        self._n_appended += 1

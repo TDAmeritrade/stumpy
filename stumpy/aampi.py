@@ -59,7 +59,7 @@ class aampi(object):
     Note that we have extended this algorithm for AB-joins as well.
     """
 
-    def __init__(self, T, m, excl_zone=None):
+    def __init__(self, T, m, excl_zone=None, egress=True):
         """
         Initialize the `stumpi` object
 
@@ -75,13 +75,19 @@ class aampi(object):
         excl_zone : int
             The half width for the exclusion zone relative to the current
             sliding window
+
+        egress : bool
+            If set to `True`, the oldest data point in the time series is removed and
+            the time series length remains constant rather than forever increasing
         """
-        self._T = T
+        self._T = np.asarray(T)
         self._m = m
+        self._n = self._T.shape[0]
         if excl_zone is not None:  # pragma: no cover
             self._excl_zone = excl_zone
         else:
             self._excl_zone = int(np.ceil(self._m / 4))
+        self._egress = egress
 
         mp = stumpy.aamp(self._T, self._m)
         self._P = mp[:, 0]
@@ -105,11 +111,15 @@ class aampi(object):
 
         Q = self._T[-m:]
         self._QT = core.sliding_dot_product(Q, self._T)
+        if self._egress:
+            self._QT_new = np.empty(self._QT.shape[0])
+            self._n_appended = 0
 
     def update(self, t):
         """
         Append a single new data point, `t`, to the existing time series `T` and update
-        the unnormalized matrix profile and matrix profile indices.
+        the non-normalized (i.e., without z-normalization) matrix profile and matrix
+        profile indices.
 
         Parameters
         ----------
@@ -125,8 +135,79 @@ class aampi(object):
 
         Note that we have extended this algorithm for AB-joins as well.
         """
-        n = self._T.shape[0]
-        l = n - self._m + 1
+        if self._egress:
+            self._update_egress(t)
+        else:
+            self._update(t)
+
+    def _update_egress(self, t):
+        self._n = self._T.shape[0]
+        l = self._n - self._m + 1 - 1  # Subtract 1 due to egress
+        self._T[:] = np.roll(self._T, -1)
+        self._T[-1] = t
+        self._QT[:] = np.roll(self._QT, -1)
+        S = self._T[l:]
+        t_drop = self._T[l - 1]
+        self._T_isfinite[:] = np.roll(self._T_isfinite, -1)
+
+        if np.isfinite(t):
+            self._T_isfinite[-1] = True
+        else:
+            self._T_isfinite[-1] = False
+            t = 0
+            self._T[-1] = 0
+            S[-1] = 0
+
+        T_subseq_isfinite = np.all(
+            core.rolling_window(self._T_isfinite, self._m), axis=1
+        )
+
+        for j in range(l, 0, -1):
+            self._QT_new[j] = (
+                self._QT[j - 1] - self._T[j - 1] * t_drop + self._T[j + self._m - 1] * t
+            )
+        self._QT_new[0] = 0
+
+        for j in range(self._m):
+            self._QT_new[0] = self._QT_new[0] + self._T[j] * S[j]
+
+        Q_squared = np.sum(S * S)
+        T_squared = np.sum(core.rolling_window(self._T * self._T, self._m), axis=1)
+        D = core._mass_absolute(Q_squared, T_squared, self._QT_new)
+        D[~T_subseq_isfinite] = np.inf
+        if np.any(~self._T_isfinite[-self._m :]):
+            D[:] = np.inf
+
+        core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
+
+        for j in range(D.shape[0]):
+            if D[j] < self._P[j]:
+                self._I[j] = D.shape[0] + self._n_appended
+                self._P[j] = D[j]
+
+        I_last = np.argmin(D)
+        self._I[:] = np.roll(self._I, -1)
+        self._P[:] = np.roll(self._P, -1)
+        self._left_I[:] = np.roll(self._left_I, -1)
+        self._left_P[:] = np.roll(self._left_P, -1)
+
+        if np.isinf(D[I_last]):
+            self._I[-1] = -1
+            self._P[-1] = np.inf
+        else:
+            self._I[-1] = I_last + self._n_appended
+            self._P[-1] = D[I_last]
+
+        self._left_I[-1] = I_last + self._n_appended
+        self._left_P[-1] = D[I_last]
+
+        self._QT[:] = self._QT_new
+
+        self._n_appended += 1
+
+    def _update(self, t):
+        self._n = self._T.shape[0]
+        l = self._n - self._m + 1
         T_new = np.append(self._T, t)
         QT_new = np.empty(self._QT.shape[0] + 1)
         S = T_new[l:]
