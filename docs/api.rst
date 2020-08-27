@@ -16,7 +16,7 @@ STUMPY API
     stumpy.mstumped
     stumpy.aamp
     stumpy.aamped
-    stumpy.gpu_ammp
+    stumpy.gpu_aamp
     stumpy.aampi
     stumpy.atsc
     stumpy.allc
