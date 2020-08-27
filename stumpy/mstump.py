@@ -538,7 +538,12 @@ def _mstump(
 
         if include is not None:
             _apply_include(
-                D, include, restricted_indices, unrestricted_indices, mask, tmp_swap,
+                D,
+                include,
+                restricted_indices,
+                unrestricted_indices,
+                mask,
+                tmp_swap,
             )
             start_row_idx = include.shape[0]
 
