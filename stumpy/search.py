@@ -147,9 +147,6 @@ def _search(
             aamp=aamp,
         )
 
-        if candidate_idx not in occurrences:
-            occurrences.append(candidate_idx)
-
         if len(occurrences) >= min_neighbors + 1:
             top_motif_indices.append(occurrences)
             top_motif_values.append(profile_value)
