@@ -27,8 +27,8 @@ if cuda.is_available():
     from .gpu_stump import gpu_stump  # noqa: F401
     from .gpu_aamp import gpu_aamp  # noqa: F401
 else:  # pragma: no cover
-    from .core import driver_not_found as gpu_stump  # noqa: F401
-    from .core import driver_not_found as gpu_aamp  # noqa: F401
+    from .core import _gpu_stump_driver_not_found as gpu_stump  # noqa: F401
+    from .core import _gpu_aamp_driver_not_found as gpu_aamp  # noqa: F401
     import ast
     import pathlib
 
