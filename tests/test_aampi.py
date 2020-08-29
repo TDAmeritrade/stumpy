@@ -843,3 +843,42 @@ def test_aampi_identical_subsequence_self_join_egress():
             left_left_P, right_left_P, decimal=config.STUMPY_TEST_PRECISION
         )
         # npt.assert_almost_equal(left_left_I, right_left_I)
+
+
+def test_aampi_profile_index_match():
+    T_full = np.random.rand(64)
+    m = 3
+    warm_start = 8
+
+    T_stream = T_full[:warm_start].copy()
+    stream = aampi(T_stream, m, egress=True)
+    P = np.full(stream.P_.shape, np.inf)
+    left_P = np.full(stream.left_P_.shape, np.inf)
+
+    n = 0
+    for i in range(len(T_stream), len(T_full)):
+        t = T_full[i]
+        stream.update(t)
+
+        for j in range(stream.I_.shape[0]):
+            I = stream.I_[j]
+            left_I = stream.left_I_[j]
+
+            if I < 0:
+                P[j] = np.inf
+            else:
+                P[j] = naive.distance(
+                    T_full[j + n + 1 : j + n + 1 + m], T_full[I : I + m]
+                )
+
+            if left_I < 0:
+                left_P[j] = np.inf
+            else:
+                left_P[j] = naive.distance(
+                    T_full[j + n + 1 : j + n + 1 + m], T_full[left_I : left_I + m]
+                )
+
+        npt.assert_almost_equal(stream.P_, P)
+        npt.assert_almost_equal(stream.left_P_, left_P)
+
+        n += 1

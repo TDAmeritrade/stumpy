@@ -10,6 +10,10 @@ def z_norm(a, axis=0, threshold=1e-7):
     return (a - np.mean(a, axis, keepdims=True)) / std
 
 
+def distance(a, b):
+    return np.linalg.norm(a - b)
+
+
 def apply_exclusion_zone(D, trivial_idx, excl_zone):
     start = max(0, trivial_idx - excl_zone)
     stop = min(D.shape[-1], trivial_idx + excl_zone + 1)
