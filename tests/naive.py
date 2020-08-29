@@ -97,7 +97,8 @@ def stamp(T_A, m, exclusion_zone=None, T_B=None):
         )
     else:
         result = np.array(
-            [mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)], dtype=object,
+            [mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)],
+            dtype=object,
         )
     return result
 

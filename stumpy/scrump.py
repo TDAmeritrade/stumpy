@@ -110,7 +110,12 @@ def _prescrump(
             + T_A[i + k + m - 1] * T_B[j + k + m - 1]
         )
         D_squared = core._calculate_squared_distance(
-            m, QT_j, M_T[i + k], Σ_T[i + k], μ_Q[j + k], σ_Q[j + k],
+            m,
+            QT_j,
+            M_T[i + k],
+            Σ_T[i + k],
+            μ_Q[j + k],
+            σ_Q[j + k],
         )
         if D_squared < P_squared[i + k]:
             P_squared[i + k] = D_squared
@@ -122,7 +127,12 @@ def _prescrump(
     for k in range(1, min(s, i + 1, j + 1)):
         QT_j = QT_j - T_A[i - k + m] * T_B[j - k + m] + T_A[i - k] * T_B[j - k]
         D_squared = core._calculate_squared_distance(
-            m, QT_j, M_T[i - k], Σ_T[i - k], μ_Q[j - k], σ_Q[j - k],
+            m,
+            QT_j,
+            M_T[i - k],
+            Σ_T[i - k],
+            μ_Q[j - k],
+            σ_Q[j - k],
         )
         if D_squared < P_squared[i - k]:
             P_squared[i - k] = D_squared
