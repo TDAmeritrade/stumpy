@@ -145,10 +145,16 @@ class aampi(object):
         l = self._n - self._m + 1 - 1  # Subtract 1 due to egress
         self._T[:] = np.roll(self._T, -1)
         self._T[-1] = t
+        self._n_appended += 1
         self._QT[:] = np.roll(self._QT, -1)
         S = self._T[l:]
         t_drop = self._T[l - 1]
         self._T_isfinite[:] = np.roll(self._T_isfinite, -1)
+
+        self._I[:] = np.roll(self._I, -1)
+        self._P[:] = np.roll(self._P, -1)
+        self._left_I[:] = np.roll(self._left_I, -1)
+        self._left_P[:] = np.roll(self._left_P, -1)
 
         if np.isfinite(t):
             self._T_isfinite[-1] = True
@@ -182,14 +188,10 @@ class aampi(object):
 
         for j in range(D.shape[0]):
             if D[j] < self._P[j]:
-                self._I[j] = D.shape[0] + self._n_appended
+                self._I[j] = D.shape[0] + self._n_appended - 1
                 self._P[j] = D[j]
 
         I_last = np.argmin(D)
-        self._I[:] = np.roll(self._I, -1)
-        self._P[:] = np.roll(self._P, -1)
-        self._left_I[:] = np.roll(self._left_I, -1)
-        self._left_P[:] = np.roll(self._left_P, -1)
 
         if np.isinf(D[I_last]):
             self._I[-1] = -1
@@ -202,8 +204,6 @@ class aampi(object):
         self._left_P[-1] = D[I_last]
 
         self._QT[:] = self._QT_new
-
-        self._n_appended += 1
 
     def _update(self, t):
         self._n = self._T.shape[0]

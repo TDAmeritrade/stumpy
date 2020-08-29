@@ -389,6 +389,12 @@ class aampi_egress(object):
         else:
             self._T_isfinite[-1] = False
             self._T[-1] = 0
+        self._n_appended += 1
+
+        self.P_[:] = np.roll(self.P_, -1)
+        self.I_[:] = np.roll(self.I_, -1)
+        self.left_P_[:] = np.roll(self.left_P_, -1)
+        self.left_I_[:] = np.roll(self.left_I_, -1)
 
         D = core.mass_absolute(self._T[-self._m :], self._T)
         T_subseq_isfinite = np.all(
@@ -401,15 +407,10 @@ class aampi_egress(object):
         apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
         for j in range(D.shape[0]):
             if D[j] < self.P_[j]:
-                self.I_[j] = D.shape[0] + self._n_appended
+                self.I_[j] = D.shape[0] - 1 + self._n_appended
                 self.P_[j] = D[j]
 
         I_last = np.argmin(D)
-
-        self.P_[:] = np.roll(self.P_, -1)
-        self.I_[:] = np.roll(self.I_, -1)
-        self.left_P_[:] = np.roll(self.left_P_, -1)
-        self.left_I_[:] = np.roll(self.left_I_, -1)
 
         if np.isinf(D[I_last]):
             self.I_[-1] = -1
@@ -420,8 +421,6 @@ class aampi_egress(object):
 
         self.left_I_[-1] = I_last + self._n_appended
         self.left_P_[-1] = D[I_last]
-
-        self._n_appended += 1
 
 
 class stumpi_egress(object):
@@ -455,6 +454,12 @@ class stumpi_egress(object):
         else:
             self._T_isfinite[-1] = False
             self._T[-1] = 0
+        self._n_appended += 1
+
+        self.P_[:] = np.roll(self.P_, -1)
+        self.I_[:] = np.roll(self.I_, -1)
+        self.left_P_[:] = np.roll(self.left_P_, -1)
+        self.left_I_[:] = np.roll(self.left_I_, -1)
 
         D = core.mass(self._T[-self._m :], self._T)
         T_subseq_isfinite = np.all(
@@ -467,14 +472,10 @@ class stumpi_egress(object):
         apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
         for j in range(D.shape[0]):
             if D[j] < self.P_[j]:
-                self.I_[j] = D.shape[0] + self._n_appended
+                self.I_[j] = D.shape[0] - 1 + self._n_appended
                 self.P_[j] = D[j]
 
         I_last = np.argmin(D)
-        self.P_[:] = np.roll(self.P_, -1)
-        self.I_[:] = np.roll(self.I_, -1)
-        self.left_P_[:] = np.roll(self.left_P_, -1)
-        self.left_I_[:] = np.roll(self.left_I_, -1)
 
         if np.isinf(D[I_last]):
             self.I_[-1] = -1
@@ -485,5 +486,3 @@ class stumpi_egress(object):
 
         self.left_I_[-1] = I_last + self._n_appended
         self.left_P_[-1] = D[I_last]
-
-        self._n_appended += 1
