@@ -14,6 +14,10 @@ STUMPY API
     stumpy.stumpi
     stumpy.mstump
     stumpy.mstumped
+    stumpy.aamp
+    stumpy.aamped
+    stumpy.gpu_aamp
+    stumpy.aampi
     stumpy.atsc
     stumpy.allc
     stumpy.fluss
@@ -53,6 +57,26 @@ mstumped
 ========
 
 .. autofunction:: stumpy.mstumped
+
+aamp
+====
+
+.. autofunction:: stumpy.aamp
+
+aamped
+======
+
+.. autofunction:: stumpy.aamped
+
+gpu_aamp
+========
+
+.. autofunction:: stumpy.gpu_aamp
+
+aampi
+=====
+
+.. autofunction:: stumpy.aampi
 
 atsc
 ====

@@ -18,6 +18,7 @@ test_data = [
     ),
 ]
 
+window_size = [8, 16, 32]
 substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 substitution_values = [np.nan, np.inf]
 percentages = [(0.01, 0.1, 1.0)]
@@ -127,76 +128,6 @@ def naive_scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
     return out
 
 
-# @pytest.mark.parametrize("T_A, T_B", test_data)
-# @pytest.mark.parametrize("percentages", percentages)
-# def test_get_max_diag_idx(T_A, T_B, percentages):
-#     n_A = T_A.shape[0]
-#     n_B = T_B.shape[0]
-#     m = 3
-
-#     for percentage in percentages:
-#         # self-join
-#         zone = int(np.ceil(m / 4))
-#         diags = np.arange(zone + 1, n_B - m + 1)
-#         start = 0
-
-#         left_max_diag_idx, left_n_dist_computed = naive_get_max_diag_idx(
-#             m, n_B, n_B, diags, start, percentage
-#         )
-
-#         right_max_diag_idx, right_n_dist_computed = _get_max_diag_idx(
-#             m, n_B, n_B, diags, start, percentage
-#         )
-
-#         npt.assert_almost_equal(left_max_diag_idx, right_max_diag_idx)
-#         npt.assert_almost_equal(left_n_dist_computed, right_n_dist_computed)
-
-#         # AB-join
-#         diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
-#         start = 0
-#         left_max_diag_idx, left_n_dist_computed = naive_get_max_diag_idx(
-#             m, n_A, n_B, diags, start, percentage
-#         )
-
-#         right_max_diag_idx, right_n_dist_computed = _get_max_diag_idx(
-#             m, n_A, n_B, diags, start, percentage
-#         )
-
-#         npt.assert_almost_equal(left_max_diag_idx, right_max_diag_idx)
-#         npt.assert_almost_equal(left_n_dist_computed, right_n_dist_computed)
-
-
-# @pytest.mark.parametrize("T_A, T_B", test_data)
-# @pytest.mark.parametrize("percentages", percentages)
-# def test_get_diags_ranges(T_A, T_B, percentages):
-#     n_A = T_A.shape[0]
-#     n_B = T_B.shape[0]
-#     m = 3
-
-#     for percentage in percentages:
-#         # self-join
-#         zone = int(np.ceil(m / 4))
-#         diags = np.arange(zone + 1, n_B - m + 1)
-#         n_split = 2
-#         start = 0
-
-#         left = naive_get_diags_ranges(n_split, m, n_B, n_B, diags, start, percentage)
-#         right = _get_diags_ranges(n_split, m, n_B, n_B, diags, start, percentage)
-
-#         npt.assert_almost_equal(left, right)
-
-#         # AB-join
-#         diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
-
-#         n_split = 2
-#         start = 0
-
-#         left = naive_get_diags_ranges(n_split, m, n_A, n_B, diags, start, percentage)
-#         right = _get_diags_ranges(n_split, m, n_A, n_B, diags, start, percentage)
-
-#         npt.assert_almost_equal(left, right)
-
-
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_prescrump_self_join(T_A, T_B):
     m = 3
@@ -249,21 +180,21 @@ def test_prescrump_A_B_join_swap(T_A, T_B):
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
-def test_prescrump_self_join_larger_window(T_A, T_B):
-    for m in [8, 16, 32]:
-        if len(T_B) > m:
-            zone = int(np.ceil(m / 4))
-            for s in range(1, zone + 1):
-                seed = np.random.randint(100000)
+@pytest.mark.parametrize("m", window_size)
+def test_prescrump_self_join_larger_window(T_A, T_B, m):
+    if len(T_B) > m:
+        zone = int(np.ceil(m / 4))
+        for s in range(1, zone + 1):
+            seed = np.random.randint(100000)
 
-                np.random.seed(seed)
-                left_P, left_I = naive_prescrump(T_B, m, T_B, s=s, exclusion_zone=zone)
+            np.random.seed(seed)
+            left_P, left_I = naive_prescrump(T_B, m, T_B, s=s, exclusion_zone=zone)
 
-                np.random.seed(seed)
-                right_P, right_I = prescrump(T_B, m, s=s)
+            np.random.seed(seed)
+            right_P, right_I = prescrump(T_B, m, s=s)
 
-                npt.assert_almost_equal(left_P, right_P)
-                npt.assert_almost_equal(left_I, right_I)
+            npt.assert_almost_equal(left_P, right_P)
+            npt.assert_almost_equal(left_I, right_I)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -369,39 +300,39 @@ def test_scrump_A_B_join_swap(T_A, T_B, percentages):
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
+@pytest.mark.parametrize("m", window_size)
 @pytest.mark.parametrize("percentages", percentages)
-def test_scrump_self_join_larger_window(T_A, T_B, percentages):
-    for m in [8, 16, 32]:
-        if len(T_B) > m:
-            zone = int(np.ceil(m / 4))
+def test_scrump_self_join_larger_window(T_A, T_B, m, percentages):
+    if len(T_B) > m:
+        zone = int(np.ceil(m / 4))
 
-            for percentage in percentages:
-                seed = np.random.randint(100000)
+        for percentage in percentages:
+            seed = np.random.randint(100000)
 
-                np.random.seed(seed)
-                left = naive_scrump(T_B, m, T_B, percentage, zone, False, None)
-                left_P = left[:, 0]
-                left_I = left[:, 1]
-                left_left_I = left[:, 2]
-                left_right_I = left[:, 3]
+            np.random.seed(seed)
+            left = naive_scrump(T_B, m, T_B, percentage, zone, False, None)
+            left_P = left[:, 0]
+            left_I = left[:, 1]
+            left_left_I = left[:, 2]
+            left_right_I = left[:, 3]
 
-                np.random.seed(seed)
-                approx = scrump(
-                    T_B, m, ignore_trivial=True, percentage=percentage, pre_scrump=False
-                )
-                approx.update()
-                right_P = approx.P_
-                right_I = approx.I_
-                right_left_I = approx.left_I_
-                right_right_I = approx.right_I_
+            np.random.seed(seed)
+            approx = scrump(
+                T_B, m, ignore_trivial=True, percentage=percentage, pre_scrump=False
+            )
+            approx.update()
+            right_P = approx.P_
+            right_I = approx.I_
+            right_left_I = approx.left_I_
+            right_right_I = approx.right_I_
 
-                naive.replace_inf(left_P)
-                naive.replace_inf(right_P)
+            naive.replace_inf(left_P)
+            naive.replace_inf(right_P)
 
-                npt.assert_almost_equal(left_P, right_P)
-                npt.assert_almost_equal(left_I, right_I)
-                npt.assert_almost_equal(left_left_I, right_left_I)
-                npt.assert_almost_equal(left_right_I, right_right_I)
+            npt.assert_almost_equal(left_P, right_P)
+            npt.assert_almost_equal(left_I, right_I)
+            npt.assert_almost_equal(left_left_I, right_left_I)
+            npt.assert_almost_equal(left_right_I, right_right_I)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -510,33 +441,31 @@ def test_scrump_A_B_join_full_swap(T_A, T_B):
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
-def test_scrump_self_join_full_larger_window(T_A, T_B):
-    for m in [8, 16, 32]:
-        if len(T_B) > m:
-            zone = int(np.ceil(m / 4))
+@pytest.mark.parametrize("m", window_size)
+def test_scrump_self_join_full_larger_window(T_A, T_B, m):
+    if len(T_B) > m:
+        zone = int(np.ceil(m / 4))
 
-            left = naive.stamp(T_B, m, exclusion_zone=zone)
-            left_P = left[:, 0]
-            left_I = left[:, 1]
-            left_left_I = left[:, 2]
-            left_right_I = left[:, 3]
+        left = naive.stamp(T_B, m, exclusion_zone=zone)
+        left_P = left[:, 0]
+        left_I = left[:, 1]
+        left_left_I = left[:, 2]
+        left_right_I = left[:, 3]
 
-            approx = scrump(
-                T_B, m, ignore_trivial=True, percentage=1.0, pre_scrump=False
-            )
-            approx.update()
-            right_P = approx.P_
-            right_I = approx.I_
-            right_left_I = approx.left_I_
-            right_right_I = approx.right_I_
+        approx = scrump(T_B, m, ignore_trivial=True, percentage=1.0, pre_scrump=False)
+        approx.update()
+        right_P = approx.P_
+        right_I = approx.I_
+        right_left_I = approx.left_I_
+        right_right_I = approx.right_I_
 
-            naive.replace_inf(left_P)
-            naive.replace_inf(right_P)
+        naive.replace_inf(left_P)
+        naive.replace_inf(right_P)
 
-            npt.assert_almost_equal(left_P, right_P)
-            npt.assert_almost_equal(left_I, right_I)
-            npt.assert_almost_equal(left_left_I, right_left_I)
-            npt.assert_almost_equal(left_right_I, right_right_I)
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
+        npt.assert_almost_equal(left_left_I, right_left_I)
+        npt.assert_almost_equal(left_right_I, right_right_I)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)

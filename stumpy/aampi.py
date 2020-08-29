@@ -3,19 +3,20 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from . import core, stump
+from stumpy import core
+import stumpy
 
 
-class stumpi(object):
+class aampi(object):
     """
-    Compute an incremental z-normalized matrix profile for streaming data. This
-    is based on the on-line STOMPI and STAMPI algorithms.
+    Compute an incremental non-normalized (i.e., without z-normalization) matrix profile
+    for streaming data
 
     Parameters
     ----------
     T : ndarray
-        The time series or sequence for which the matrix profile and matrix profile
-        indices will be returned
+        The time series or sequence for which the non-normalized matrix profile and
+        matrix profile indices will be returned
 
     m : int
         Window size
@@ -50,12 +51,12 @@ class stumpi(object):
 
     Notes
     -----
-    `DOI: 10.1007/s10618-017-0519-9 \
-    <https://www.cs.ucr.edu/~eamonn/MP_journal.pdf>`__
+    `arXiv:1901.05708 \
+    <https://arxiv.org/pdf/1901.05708.pdf>`__
 
-    See Table V
+    See Algorithm 1
 
-    Note that line 11 is missing an important `sqrt` operation!
+    Note that we have extended this algorithm for AB-joins as well.
     """
 
     def __init__(self, T, m, excl_zone=None, egress=True):
@@ -65,8 +66,8 @@ class stumpi(object):
         Parameters
         ----------
         T : ndarray
-            The time series or sequence for which the matrix profile and matrix profile
-            indices will be returned
+            The time series or sequence for which the unnormalized matrix profile and
+            matrix profile indices will be returned
 
         m : int
             Window size
@@ -86,21 +87,26 @@ class stumpi(object):
             self._excl_zone = excl_zone
         else:
             self._excl_zone = int(np.ceil(self._m / 4))
-        self._T_isfinite = np.isfinite(self._T)
         self._egress = egress
 
-        mp = stump(self._T, self._m)
+        mp = stumpy.aamp(self._T, self._m)
         self._P = mp[:, 0]
         self._I = mp[:, 1]
         self._left_I = mp[:, 2]
         self._left_P = np.empty(self._P.shape)
         self._left_P[:] = np.inf
 
-        self._T, self._M_T, self._Σ_T = core.preprocess(self._T, self._m)
+        self._T_isfinite = np.isfinite(self._T)
+        self._T, self._T_subseq_isfinite = core.preprocess_non_normalized(
+            self._T, self._m
+        )
+
         # Retrieve the left matrix profile values
         for i, j in enumerate(self._left_I):
             if j >= 0:
-                D = core.mass(self._T[i : i + self._m], self._T[j : j + self._m])
+                D = core.mass_absolute(
+                    self._T[i : i + self._m], self._T[j : j + self._m]
+                )
                 self._left_P[i] = D[0]
 
         Q = self._T[-m:]
@@ -112,7 +118,8 @@ class stumpi(object):
     def update(self, t):
         """
         Append a single new data point, `t`, to the existing time series `T` and update
-        the matrix profile and matrix profile indices.
+        the non-normalized (i.e., without z-normalization) matrix profile and matrix
+        profile indices.
 
         Parameters
         ----------
@@ -121,12 +128,12 @@ class stumpi(object):
 
         Notes
         -----
-        `DOI: 10.1007/s10618-017-0519-9 \
-        <https://www.cs.ucr.edu/~eamonn/MP_journal.pdf>`__
+        `arXiv:1901.05708 \
+        <https://arxiv.org/pdf/1901.05708.pdf>`__
 
-        See Table V
+        See Algorithm 1
 
-        Note that line 11 is missing an important `sqrt` operation!
+        Note that we have extended this algorithm for AB-joins as well.
         """
         if self._egress:
             self._update_egress(t)
@@ -161,18 +168,9 @@ class stumpi(object):
             self._T[-1] = 0
             S[-1] = 0
 
-        if np.any(~self._T_isfinite[-self._m :]):
-            μ_Q = np.inf
-            σ_Q = np.nan
-        else:
-            μ_Q, σ_Q = core.compute_mean_std(S, self._m)
-            μ_Q = μ_Q[0]
-            σ_Q = σ_Q[0]
-
-        self._M_T[:] = np.roll(self._M_T, -1)
-        self._Σ_T[:] = np.roll(self._Σ_T, -1)
-        self._M_T[-1] = μ_Q
-        self._Σ_T[-1] = σ_Q
+        T_subseq_isfinite = np.all(
+            core.rolling_window(self._T_isfinite, self._m), axis=1
+        )
 
         for j in range(l, 0, -1):
             self._QT_new[j] = (
@@ -183,9 +181,10 @@ class stumpi(object):
         for j in range(self._m):
             self._QT_new[0] = self._QT_new[0] + self._T[j] * S[j]
 
-        D = core.calculate_distance_profile(
-            self._m, self._QT_new, μ_Q, σ_Q, self._M_T, self._Σ_T
-        )
+        Q_squared = np.sum(S * S)
+        T_squared = np.sum(core.rolling_window(self._T * self._T, self._m), axis=1)
+        D = core._mass_absolute(Q_squared, T_squared, self._QT_new)
+        D[~T_subseq_isfinite] = np.inf
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
 
@@ -193,7 +192,7 @@ class stumpi(object):
 
         for j in range(D.shape[0]):
             if D[j] < self._P[j]:
-                self._I[j] = D.shape[0] - 1 + self._n_appended  # D.shape[0] is base one
+                self._I[j] = D.shape[0] + self._n_appended - 1
                 self._P[j] = D[j]
 
         I_last = np.argmin(D)
@@ -215,8 +214,8 @@ class stumpi(object):
         Ingress a new data point and update the matrix profile and matrix profile
         indices without egressing the oldest data point
         """
-        n = self._T.shape[0]
-        l = n - self._m + 1
+        self._n = self._T.shape[0]
+        l = self._n - self._m + 1
         T_new = np.append(self._T, t)
         QT_new = np.empty(self._QT.shape[0] + 1)
         S = T_new[l:]
@@ -230,16 +229,9 @@ class stumpi(object):
             T_new[-1] = 0
             S[-1] = 0
 
-        if np.any(~self._T_isfinite[-self._m :]):
-            μ_Q = np.inf
-            σ_Q = np.nan
-        else:
-            μ_Q, σ_Q = core.compute_mean_std(S, self._m)
-            μ_Q = μ_Q[0]
-            σ_Q = σ_Q[0]
-
-        M_T_new = np.append(self._M_T, μ_Q)
-        Σ_T_new = np.append(self._Σ_T, σ_Q)
+        T_subseq_isfinite = np.all(
+            core.rolling_window(self._T_isfinite, self._m), axis=1
+        )
 
         for j in range(l, 0, -1):
             QT_new[j] = (
@@ -250,7 +242,10 @@ class stumpi(object):
         for j in range(self._m):
             QT_new[0] = QT_new[0] + T_new[j] * S[j]
 
-        D = core.calculate_distance_profile(self._m, QT_new, μ_Q, σ_Q, M_T_new, Σ_T_new)
+        Q_squared = np.sum(S * S)
+        T_squared = np.sum(core.rolling_window(T_new * T_new, self._m), axis=1)
+        D = core._mass_absolute(Q_squared, T_squared, QT_new)
+        D[~T_subseq_isfinite] = np.inf
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
 
@@ -277,8 +272,6 @@ class stumpi(object):
         self._left_I = left_I_new
         self._left_P = left_P_new
         self._QT = QT_new
-        self._M_T = M_T_new
-        self._Σ_T = Σ_T_new
 
     @property
     def P_(self):

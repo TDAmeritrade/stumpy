@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 @cuda.jit(
-    "(i8, f8[:], f8[:], i8,  f8[:], f8[:], f8[:], f8[:], f8[:],"
+    "(i8, f8[:], f8[:], i8, f8[:], f8[:], f8[:], b1[:], b1[:],"
     "f8[:], f8[:], i8, b1, i8, f8[:, :], i8[:, :], b1)"
 )
 def _compute_and_update_PI_kernel(
@@ -26,10 +26,10 @@ def _compute_and_update_PI_kernel(
     QT_even,
     QT_odd,
     QT_first,
-    M_T,
-    Σ_T,
-    μ_Q,
-    σ_Q,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
+    T_A_subseq_squared,
+    T_B_subseq_squared,
     k,
     ignore_trivial,
     excl_zone,
@@ -38,7 +38,8 @@ def _compute_and_update_PI_kernel(
     compute_QT,
 ):
     """
-    A Numba CUDA kernel to update the matrix profile and matrix profile indices
+    A Numba CUDA kernel to update the non-normalized (i.e., without z-normalization)
+    matrix profile and matrix profile indices
 
     Parameters
     ----------
@@ -66,17 +67,19 @@ def _compute_and_update_PI_kernel(
     QT_first : ndarray
         Dot product between the first query sequence,`Q`, and time series, `T`
 
-    M_T : ndarray
-        Sliding mean of time series, `T`
+    T_A_subseq_isfinite : ndarray
+        A boolean array that indicates whether a subsequence in `T_A` contains a
+        `np.nan`/`np.inf` value (False)
 
-    Σ_T : ndarray
-        Sliding standard deviation of time series, `T`
+    T_B_subseq_isfinite : ndarray
+        A boolean array that indicates whether a subsequence in `T_B` contains a
+        `np.nan`/`np.inf` value (False)
 
-    μ_Q : ndarray
-        Mean of the query sequence, `Q`
+    T_A_subseq_squared : ndarray
+        The squared subsequences of `T_A`
 
-    σ_Q : ndarray
-        Standard deviation of the query sequence, `Q`
+    T_B_subseq_squared : ndarray
+        The squared subsequences of `T_B`
 
     k : int
         The total number of sliding windows to iterate over
@@ -108,6 +111,13 @@ def _compute_and_update_PI_kernel(
 
     Notes
     -----
+    `arXiv:1901.05708 \
+    <https://arxiv.org/pdf/1901.05708.pdf>`__
+
+    See Algorithm 1
+
+    Note that we have extended this algorithm for AB-joins as well.
+
     `DOI: 10.1109/ICDM.2016.0085 \
     <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
@@ -133,25 +143,14 @@ def _compute_and_update_PI_kernel(
             )
 
             QT_out[0] = QT_first[i]
-        if math.isinf(M_T[j]) or math.isinf(μ_Q[i]):
+
+        if not T_B_subseq_isfinite[i] or not T_A_subseq_isfinite[j]:
             D = np.inf
         else:
-            if (
-                σ_Q[i] < config.STUMPY_STDDEV_THRESHOLD
-                or Σ_T[j] < config.STUMPY_STDDEV_THRESHOLD
-            ):
-                D = m
-            else:
-                denom = m * σ_Q[i] * Σ_T[j]
-                if math.fabs(denom) < config.STUMPY_DENOM_THRESHOLD:  # pragma nocover
-                    denom = config.STUMPY_DENOM_THRESHOLD
-                D = abs(2 * m * (1.0 - (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom))
+            D = T_B_subseq_squared[i] + T_A_subseq_squared[j] - 2.0 * QT_out[j]
 
-            if (
-                σ_Q[i] < config.STUMPY_STDDEV_THRESHOLD
-                and Σ_T[j] < config.STUMPY_STDDEV_THRESHOLD
-            ) or D < config.STUMPY_D_SQUARED_THRESHOLD:
-                D = 0
+        if D < config.STUMPY_D_SQUARED_THRESHOLD:
+            D = 0
 
         if ignore_trivial:
             if i <= zone_stop and i >= zone_start:
@@ -168,27 +167,27 @@ def _compute_and_update_PI_kernel(
             indices[j, 0] = i
 
 
-def _gpu_stump(
+def _gpu_aamp(
     T_A_fname,
     T_B_fname,
     m,
     range_stop,
     excl_zone,
-    M_T_fname,
-    Σ_T_fname,
+    T_A_subseq_isfinite_fname,
+    T_B_subseq_isfinite_fname,
+    T_A_subseq_squared_fname,
+    T_B_subseq_squared_fname,
     QT_fname,
     QT_first_fname,
-    μ_Q_fname,
-    σ_Q_fname,
     k,
     ignore_trivial=True,
     range_start=1,
     device_id=0,
 ):
     """
-    A Numba CUDA version of STOMP for parallel computation of the
-    matrix profile, matrix profile indices, left matrix profile indices,
-    and right matrix profile indices.
+    A Numba CUDA version of AAMP for parallel computation of the non-normalized (i.e.,
+    without z-normalization) matrix profile, matrix profile indices, left matrix profile
+    indices, and right matrix profile indices.
 
     Parameters
     ----------
@@ -212,11 +211,19 @@ def _gpu_stump(
         The half width for the exclusion zone relative to the current
         sliding window
 
-    M_T_fname : str
-        The file name for the sliding mean of time series, `T`
+    T_A_subseq_isfinite_fname : str
+        The file name for the boolean array that indicates whether a subsequence in
+        `T_A` contains a `np.nan`/`np.inf` value (False)
 
-    Σ_T_fname : str
-        The file name for the sliding standard deviation of time series, `T`
+    T_B_subseq_isfinite_fname : str
+        The file name for the boolean array that indicates whether a subsequence in
+        `T_B` contains a `np.nan`/`np.inf` value (False)
+
+    T_A_subseq_squared_fname : str
+        The file name for the squared subsequences of `T_A`
+
+    T_B_subseq_squared_fname : str
+        The file name for the squared subsequences of `T_B`
 
     QT_fname : str
         The file name for the dot product between some query sequence,`Q`,
@@ -225,14 +232,6 @@ def _gpu_stump(
     QT_first_fname : str
         The file name for the QT for the first window relative to the current
         sliding window
-
-    μ_Q_fname : str
-        The file name for the mean of the query sequence, `Q`, relative to
-        the current sliding window
-
-    σ_Q_fname : str
-        The file name for the standard deviation of the query sequence, `Q`,
-        relative to the current sliding window
 
     k : int
         The total number of sliding windows to iterate over
@@ -261,31 +260,17 @@ def _gpu_stump(
 
     Notes
     -----
+    `arXiv:1901.05708 \
+    <https://arxiv.org/pdf/1901.05708.pdf>`__
+
+    See Algorithm 1
+
+    Note that we have extended this algorithm for AB-joins as well.
+
     `DOI: 10.1109/ICDM.2016.0085 \
     <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
     See Table II, Figure 5, and Figure 6
-
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
-
-    Return: For every subsequence, Q, in T_B, you will get a distance
-    and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the
-    left and right matrix profiles are also returned.
-
-    Note: Unlike in the Table II where T_A.shape is expected to be equal
-    to T_B.shape, this implementation is generalized so that the shapes of
-    T_A and T_B can be different. In the case where T_A.shape == T_B.shape,
-    then our algorithm reduces down to the same algorithm found in Table II.
-
-    Additionally, unlike STAMP where the exclusion zone is m/2, the default
-    exclusion zone for STOMP is m/4 (See Definition 3 and Figure 3).
-
-    For self-joins, set `ignore_trivial = True` in order to avoid the
-    trivial match.
-
-    Note that left and right matrix profiles are only available for self-joins.
     """
     threads_per_block = config.STUMPY_THREADS_PER_BLOCK
     blocks_per_grid = math.ceil(k / threads_per_block)
@@ -294,26 +279,26 @@ def _gpu_stump(
     T_B = np.load(T_B_fname, allow_pickle=False)
     QT = np.load(QT_fname, allow_pickle=False)
     QT_first = np.load(QT_first_fname, allow_pickle=False)
-    M_T = np.load(M_T_fname, allow_pickle=False)
-    Σ_T = np.load(Σ_T_fname, allow_pickle=False)
-    μ_Q = np.load(μ_Q_fname, allow_pickle=False)
-    σ_Q = np.load(σ_Q_fname, allow_pickle=False)
+    T_A_subseq_isfinite = np.load(T_A_subseq_isfinite_fname, allow_pickle=False)
+    T_B_subseq_isfinite = np.load(T_B_subseq_isfinite_fname, allow_pickle=False)
+    T_A_subseq_squared = np.load(T_A_subseq_squared_fname, allow_pickle=False)
+    T_B_subseq_squared = np.load(T_B_subseq_squared_fname, allow_pickle=False)
 
     with cuda.gpus[device_id]:
         device_T_A = cuda.to_device(T_A)
+        device_T_A_subseq_isfinite = cuda.to_device(T_A_subseq_isfinite)
+        device_T_A_subseq_squared = cuda.to_device(T_A_subseq_squared)
         device_QT_odd = cuda.to_device(QT)
         device_QT_even = cuda.to_device(QT)
         device_QT_first = cuda.to_device(QT_first)
-        device_μ_Q = cuda.to_device(μ_Q)
-        device_σ_Q = cuda.to_device(σ_Q)
         if ignore_trivial:
             device_T_B = device_T_A
-            device_M_T = device_μ_Q
-            device_Σ_T = device_σ_Q
+            device_T_B_subseq_isfinite = device_T_A_subseq_isfinite
+            device_T_B_subseq_squared = device_T_A_subseq_squared
         else:
             device_T_B = cuda.to_device(T_B)
-            device_M_T = cuda.to_device(M_T)
-            device_Σ_T = cuda.to_device(Σ_T)
+            device_T_B_subseq_isfinite = cuda.to_device(T_B_subseq_isfinite)
+            device_T_B_subseq_squared = cuda.to_device(T_B_subseq_squared)
 
         profile = np.full((k, 3), np.inf)  # float64
         indices = np.full((k, 3), -1, dtype=np.int64)  # int64
@@ -328,10 +313,10 @@ def _gpu_stump(
             device_QT_even,
             device_QT_odd,
             device_QT_first,
-            device_M_T,
-            device_Σ_T,
-            device_μ_Q,
-            device_σ_Q,
+            device_T_A_subseq_isfinite,
+            device_T_B_subseq_isfinite,
+            device_T_A_subseq_squared,
+            device_T_B_subseq_squared,
             k,
             ignore_trivial,
             excl_zone,
@@ -349,10 +334,10 @@ def _gpu_stump(
                 device_QT_even,
                 device_QT_odd,
                 device_QT_first,
-                device_M_T,
-                device_Σ_T,
-                device_μ_Q,
-                device_σ_Q,
+                device_T_A_subseq_isfinite,
+                device_T_B_subseq_isfinite,
+                device_T_A_subseq_squared,
+                device_T_B_subseq_squared,
                 k,
                 ignore_trivial,
                 excl_zone,
@@ -371,12 +356,14 @@ def _gpu_stump(
     return profile_fname, indices_fname
 
 
-def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
+def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     """
-    Compute the z-normalized matrix profile with one or more GPU devices
+    Compute the non-normalized (i.e., without z-normalization) matrix profile with one
+    or more GPU devices
 
-    This is a convenience wrapper around the Numba `cuda.jit` `_gpu_stump` function
-    which computes the matrix profile according to GPU-STOMP.
+    This is a convenience wrapper around the Numba `cuda.jit` `_gpu_aamp` function
+    which computes the non-normalized matrix profile according to modified version
+    GPU-STOMP.
 
     Parameters
     ----------
@@ -410,31 +397,17 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
 
     Notes
     -----
+    `arXiv:1901.05708 \
+    <https://arxiv.org/pdf/1901.05708.pdf>`__
+
+    See Algorithm 1
+
+    Note that we have extended this algorithm for AB-joins as well.
+
     `DOI: 10.1109/ICDM.2016.0085 \
     <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
 
     See Table II, Figure 5, and Figure 6
-
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
-
-    Return: For every subsequence, Q, in T_B, you will get a distance
-    and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the
-    left and right matrix profiles are also returned.
-
-    Note: Unlike in the Table II where T_A.shape is expected to be equal
-    to T_B.shape, this implementation is generalized so that the shapes of
-    T_A and T_B can be different. In the case where T_A.shape == T_B.shape,
-    then our algorithm reduces down to the same algorithm found in Table II.
-
-    Additionally, unlike STAMP where the exclusion zone is m/2, the default
-    exclusion zone for STOMP is m/4 (See Definition 3 and Figure 3).
-
-    For self-joins, set `ignore_trivial = True` in order to avoid the
-    trivial match.
-
-    Note that left and right matrix profiles are only available for self-joins.
     """
     if T_B is None:  # Self join!
         T_B = T_A
@@ -446,8 +419,11 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     T_A = T_B
     T_B = tmp_T
 
-    T_A, M_T, Σ_T = core.preprocess(T_A, m)
-    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
+    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
+    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
+
+    T_A_subseq_squared = np.sum(core.rolling_window(T_A * T_A, m), axis=1)
+    T_B_subseq_squared = np.sum(core.rolling_window(T_B * T_B, m), axis=1)
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
@@ -481,10 +457,10 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
 
     T_A_fname = core.array_to_temp_file(T_A)
     T_B_fname = core.array_to_temp_file(T_B)
-    M_T_fname = core.array_to_temp_file(M_T)
-    Σ_T_fname = core.array_to_temp_file(Σ_T)
-    μ_Q_fname = core.array_to_temp_file(μ_Q)
-    σ_Q_fname = core.array_to_temp_file(σ_Q)
+    T_A_subseq_isfinite_fname = core.array_to_temp_file(T_A_subseq_isfinite)
+    T_B_subseq_isfinite_fname = core.array_to_temp_file(T_B_subseq_isfinite)
+    T_A_subseq_squared_fname = core.array_to_temp_file(T_A_subseq_squared)
+    T_B_subseq_squared_fname = core.array_to_temp_file(T_B_subseq_squared)
 
     out = np.empty((k, 4), dtype=object)
 
@@ -526,19 +502,19 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
         if len(device_ids) > 1 and idx < len(device_ids) - 1:  # pragma: no cover
             # Spawn and execute in child process for multi-GPU request
             results[idx] = p.apply_async(
-                _gpu_stump,
+                _gpu_aamp,
                 (
                     T_A_fname,
                     T_B_fname,
                     m,
                     stop,
                     excl_zone,
-                    M_T_fname,
-                    Σ_T_fname,
+                    T_A_subseq_isfinite_fname,
+                    T_B_subseq_isfinite_fname,
+                    T_A_subseq_squared_fname,
+                    T_B_subseq_squared_fname,
                     QT_fname,
                     QT_first_fname,
-                    μ_Q_fname,
-                    σ_Q_fname,
                     k,
                     ignore_trivial,
                     start + 1,
@@ -548,18 +524,18 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
         else:
             # Execute last chunk in parent process
             # Only parent process is executed when a single GPU is requested
-            profile[idx], indices[idx] = _gpu_stump(
+            profile[idx], indices[idx] = _gpu_aamp(
                 T_A_fname,
                 T_B_fname,
                 m,
                 stop,
                 excl_zone,
-                M_T_fname,
-                Σ_T_fname,
+                T_A_subseq_isfinite_fname,
+                T_B_subseq_isfinite_fname,
+                T_A_subseq_squared_fname,
+                T_B_subseq_squared_fname,
                 QT_fname,
                 QT_first_fname,
-                μ_Q_fname,
-                σ_Q_fname,
                 k,
                 ignore_trivial,
                 start + 1,
@@ -578,10 +554,10 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
 
     os.remove(T_A_fname)
     os.remove(T_B_fname)
-    os.remove(M_T_fname)
-    os.remove(Σ_T_fname)
-    os.remove(μ_Q_fname)
-    os.remove(σ_Q_fname)
+    os.remove(T_A_subseq_isfinite_fname)
+    os.remove(T_B_subseq_isfinite_fname)
+    os.remove(T_A_subseq_squared_fname)
+    os.remove(T_B_subseq_squared_fname)
     for QT_fname in QT_fnames:
         os.remove(QT_fname)
     for QT_first_fname in QT_first_fnames:

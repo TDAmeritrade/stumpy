@@ -9,7 +9,7 @@ import numpy as np
 
 def atsc(IL, IR, j):
     """
-    Compute the anchored time series chain (ATSC).
+    Compute the anchored time series chain (ATSC)
 
     Parameters
     ----------
@@ -51,7 +51,7 @@ def atsc(IL, IR, j):
 
 def allc(IL, IR):
     """
-    Compute the all-chain set (ALLC).
+    Compute the all-chain set (ALLC)
 
     Parameters
     ----------

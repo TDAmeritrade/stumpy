@@ -232,7 +232,7 @@ def _rea(cac, n_regimes, L, excl_factor=5):
 def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
     """
     Compute the Fast Low-cost Unipotent Semantic Segmentation (FLUSS)
-    for static data.
+    for static data (i.e., batch processing)
 
     Essentially, this is a wrapper to compute the corrected arc curve and
     regime locations.
@@ -291,7 +291,7 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
 class floss(object):
     """
     Compute the Fast Low-cost Online Semantic Segmentation (FLOSS) for
-    streaming data.
+    streaming data
 
     Parameters
     ----------

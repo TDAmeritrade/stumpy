@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import stumped, core
+from stumpy import core, aamped
 from dask.distributed import Client, LocalCluster
 import pytest
 import warnings
@@ -21,7 +21,8 @@ def dask_cluster():
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_two_constant_subsequences_A_B_join(dask_cluster):
+# def test_two_constant_subsequences_A_B_join_swap(dask_cluster):
+def test_two_constant_subsequences_A_B_join_swap(dask_cluster):
     with Client(dask_cluster) as dask_client:
         T_A = np.concatenate(
             (np.zeros(10, dtype=np.float64), np.ones(10, dtype=np.float64))
@@ -30,8 +31,8 @@ def test_two_constant_subsequences_A_B_join(dask_cluster):
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = naive.stump(T_A, m, T_B=T_B)
-        right = stumped(dask_client, T_A, m, T_B, ignore_trivial=False)
+        left = naive.aamp(T_B, m, T_B=T_A)
+        right = aamped(dask_client, T_B, m, T_A, ignore_trivial=False)
         naive.replace_inf(left)
         naive.replace_inf(right)
         npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
@@ -43,7 +44,8 @@ def test_two_constant_subsequences_A_B_join(dask_cluster):
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_two_constant_subsequences_A_B_join_df(dask_cluster):
+# def test_constant_subsequence_A_B_join_df_swap(dask_cluster):
+def test_constant_subsequence_A_B_join_df_swap(dask_cluster):
     with Client(dask_cluster) as dask_client:
         T_A = np.concatenate(
             (np.zeros(10, dtype=np.float64), np.ones(10, dtype=np.float64))
@@ -52,9 +54,9 @@ def test_two_constant_subsequences_A_B_join_df(dask_cluster):
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = naive.stump(T_A, m, T_B=T_B)
-        right = stumped(
-            dask_client, pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
+        left = naive.aamp(T_B, m, T_B=T_A)
+        right = aamped(
+            dask_client, pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False
         )
         naive.replace_inf(left)
         naive.replace_inf(right)
