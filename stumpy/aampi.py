@@ -141,6 +141,10 @@ class aampi(object):
             self._update(t)
 
     def _update_egress(self, t):
+        """
+        Ingress a new data point, egress the oldest data point, and update the matrix
+        profile and matrix profile indices
+        """
         self._n = self._T.shape[0]
         l = self._n - self._m + 1 - 1  # Subtract 1 due to egress
         self._T[:] = np.roll(self._T, -1)
@@ -206,6 +210,10 @@ class aampi(object):
         self._QT[:] = self._QT_new
 
     def _update(self, t):
+        """
+        Ingress a new data point and update the matrix profile and matrix profile
+        indices without egressing the oldest data point
+        """
         self._n = self._T.shape[0]
         l = self._n - self._m + 1
         T_new = np.append(self._T, t)
