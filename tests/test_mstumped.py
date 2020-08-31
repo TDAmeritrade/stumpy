@@ -21,6 +21,12 @@ test_data = [
 ]
 
 
+def test_mstumped_int_input(dask_cluster):
+    with pytest.raises(TypeError):
+        with Client(dask_cluster) as dask_client:
+            mstumped(dask_client, np.arange(20).reshape(2, 10), 5)
+
+
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T, m", test_data)
 def test_mstumped(T, m, dask_cluster):

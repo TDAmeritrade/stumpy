@@ -118,7 +118,8 @@ def check_dtype(a, dtype=np.floating):  # pragma: no cover
         If the array type does not match `dtype`
     """
     if not np.issubdtype(a.dtype, dtype):
-        msg = f"{dtype} type expected but found {a.dtype}"
+        msg = f"{dtype} type expected but found {a.dtype}\n"
+        msg += "Please change your input `dtype` with `.astype(float)`"
         raise TypeError(msg)
 
     return True
@@ -852,6 +853,7 @@ def preprocess(T, m):
     """
     T = T.copy()
     T = np.asarray(T)
+    check_dtype(T)
 
     T[np.isinf(T)] = np.nan
     M_T, Σ_T = compute_mean_std(T, m)
@@ -889,6 +891,7 @@ def preprocess_non_normalized(T, m):
     """
     T = T.copy()
     T = np.asarray(T)
+    check_dtype(T)
 
     T[np.isinf(T)] = np.nan
     T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)

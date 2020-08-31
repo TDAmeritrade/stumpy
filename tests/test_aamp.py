@@ -20,6 +20,11 @@ substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 substitution_values = [np.nan, np.inf]
 
 
+def test_aamp_int_input():
+    with pytest.raises(TypeError):
+        aamp(np.arange(10), 5)
+
+
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_aamp_self_join(T_A, T_B):
     m = 3

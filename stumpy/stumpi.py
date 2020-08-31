@@ -79,7 +79,9 @@ class stumpi(object):
             If set to `True`, the oldest data point in the time series is removed and
             the time series length remains constant rather than forever increasing
         """
-        self._T = np.asarray(T)
+        self._T = T.copy()
+        self._T = np.asarray(self._T)
+        core.check_dtype(self._T)
         self._m = m
         self._n = self._T.shape[0]
         if excl_zone is not None:  # pragma: no cover

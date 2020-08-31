@@ -180,10 +180,10 @@ def prescrump(T_A, m, T_B=None, s=None):
 
     See Algorithm 2
     """
-    T_A = np.asarray(T_A)
     T_A = T_A.copy()
-    T_A[np.isinf(T_A)] = np.nan
+    T_A = np.asarray(T_A)
     core.check_dtype(T_A)
+    T_A[np.isinf(T_A)] = np.nan
 
     if T_B is None:
         T_B = T_A
@@ -191,10 +191,10 @@ def prescrump(T_A, m, T_B=None, s=None):
     else:
         excl_zone = None
 
-    T_B = np.asarray(T_B)
     T_B = T_B.copy()
-    T_B[np.isinf(T_B)] = np.nan
+    T_B = np.asarray(T_B)
     core.check_dtype(T_B)
+    T_B[np.isinf(T_B)] = np.nan
 
     core.check_window_size(m)
 
@@ -375,9 +375,6 @@ class scrump(object):
                 f"T_B is {self._T_B.ndim}-dimensional and must be 1-dimensional. "
                 "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
             )
-
-        core.check_dtype(self._T_A)
-        core.check_dtype(self._T_B)
 
         core.check_window_size(self._m)
 

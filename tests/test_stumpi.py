@@ -9,6 +9,11 @@ substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 substitution_values = [np.nan, np.inf]
 
 
+def test_stumpi_int_input():
+    with pytest.raises(TypeError):
+        stumpi(np.arange(10), 5)
+
+
 def test_stumpi_self_join():
     m = 3
     zone = int(np.ceil(m / 4))
