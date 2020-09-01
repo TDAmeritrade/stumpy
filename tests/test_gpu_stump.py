@@ -57,7 +57,6 @@ def test_gpu_stump_self_join_larger_window(T_A, T_B, m):
 
         npt.assert_almost_equal(left, right)
 
-
         # right = gpu_stump(
         #     pd.Series(T_B),
         #     m,
@@ -98,7 +97,6 @@ def test_parallel_gpu_stump_self_join(T_A, T_B):
         naive.replace_inf(right)
         npt.assert_almost_equal(left, right)
 
-
         # right = gpu_stump(
         #     pd.Series(T_B),
         #     m,
@@ -107,7 +105,6 @@ def test_parallel_gpu_stump_self_join(T_A, T_B):
         # )
         # naive.replace_inf(right)
         # npt.assert_almost_equal(left, right)
-
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
