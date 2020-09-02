@@ -429,7 +429,7 @@ class floss(object):
         self._n = self._T.shape[0]
         self._last_idx = self._n - self._m + 1  # Depends on the changing length of `T`
         self._n_appended = 0
-        self._T_isfinite = np.isfinite(core.rolling_window(self._T, m))
+        self._T_isfinite = np.isfinite(self._T)
 
         if self._custom_iac is None:  # pragma: no cover
             self._custom_iac = _iac(
@@ -505,7 +505,9 @@ class floss(object):
         D = core.mass(Q, self._T, M_T, Σ_T)
         D[zone_start:] = np.inf
 
-        T_subseq_isfinite = np.all(self._T_isfinite[-self._m :])
+        T_subseq_isfinite = np.all(
+            core.rolling_window(self._T_isfinite, self._m), axis=1
+        )
         D[~T_subseq_isfinite] = np.inf
         # Update nearest neighbor for old data if any old subsequences
         # are closer to the newly arrived subsequence

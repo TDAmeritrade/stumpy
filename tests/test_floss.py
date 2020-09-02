@@ -135,15 +135,8 @@ def test_fluss(I):
     npt.assert_almost_equal(left_rea, right_rea)
 
 
-test_data = np.random.uniform(-1000, 1000, [64])
-test_data_nan = test_data.copy()
-test_data_nan = np.insert(test_data_nan, [i for i in range(0, 60, 5)], np.nan)
-test_data_inf = test_data.copy()
-test_data_inf = np.insert(test_data_inf, [i for i in range(0, 60, 5)], np.inf)
-
-
-@pytest.mark.parametrize("data", [(test_data), (test_data_nan), (test_data_inf)])
-def test_floss(data):
+def test_floss():
+    data = np.random.uniform(-1000, 1000, [64])
     m = 5
     old_data = data[:30]
     n = old_data.shape[0]
@@ -170,8 +163,76 @@ def test_floss(data):
         D = naive_distance_profile(left_T[-m:], left_T, m)
         D[zone_start:] = np.inf
 
-        left_T_isfinite = np.all(np.isfinite(left_T))
-        D[~left_T_isfinite] = np.inf
+        update_idx = np.argwhere(D < mp[:, 0]).flatten()
+        mp[update_idx, 0] = D[update_idx]
+        mp[update_idx, 3] = last_idx + i
+
+        left_cac_1d = _cac(
+            mp[:, 3] - i - 1,
+            L,
+            bidirectional=False,
+            excl_factor=excl_factor,
+            custom_iac=custom_iac,
+        )
+
+        left_mp = mp.copy()
+        left_P = left_mp[:, 0]
+        left_I = left_mp[:, 3]
+
+        stream.update(left_T[-1])
+        right_cac_1d = stream.cac_1d_
+        right_P = stream.P_
+        right_I = stream.I_
+        right_T = stream.T_
+
+        naive.replace_inf(left_P)
+        naive.replace_inf(right_P)
+
+        npt.assert_almost_equal(left_cac_1d, right_cac_1d)
+        npt.assert_almost_equal(left_P, right_P)
+        npt.assert_almost_equal(left_I, right_I)
+        npt.assert_almost_equal(left_T, right_T)
+
+
+test_data_nan = np.insert(
+    np.random.uniform(-1000, 1000, [64]), [i for i in range(30, 60, 5)], np.nan
+)
+test_data_inf = np.insert(
+    np.random.uniform(-1000, 1000, [64]), [i for i in range(30, 60, 5)], np.inf
+)
+
+
+@pytest.mark.parametrize("data", [(test_data_nan), (test_data_inf)])
+def test_floss_inf_nan(data):
+    m = 5
+    old_data = data[:30]
+    n = old_data.shape[0]
+
+    mp = naive_right_mp(old_data, m)
+    right_mp = stump(old_data, m)
+    k = mp.shape[0]
+
+    rolling_Ts = core.rolling_window(data[1:], n)
+    L = 5
+    excl_factor = 1
+    custom_iac = _iac(k, bidirectional=False)
+    stream = floss(right_mp, old_data, m, L, excl_factor, custom_iac=custom_iac)
+    last_idx = n - m + 1
+    excl_zone = int(np.ceil(m / 4))
+    zone_start = max(0, k - excl_zone)
+    for i, left_T in enumerate(rolling_Ts):
+        mp[:, 1] = -1
+        mp[:, 2] = -1
+        mp[:] = np.roll(mp, -1, axis=0)
+        mp[-1, 0] = np.inf
+        mp[-1, 3] = last_idx + i
+
+        D = naive_distance_profile(left_T[-m:], left_T, m)
+        D[zone_start:] = np.inf
+
+        left_T_isfinite = np.isfinite(left_T)
+        left_T_subseq_isfinite = np.all(core.rolling_window(left_T_isfinite, m), axis=1)
+        D[~left_T_subseq_isfinite] = np.inf
         update_idx = np.argwhere(D < mp[:, 0]).flatten()
         mp[update_idx, 0] = D[update_idx]
         mp[update_idx, 3] = last_idx + i
