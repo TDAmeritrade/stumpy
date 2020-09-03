@@ -149,18 +149,18 @@ class aampi(object):
         """
         self._n = self._T.shape[0]
         l = self._n - self._m + 1 - 1  # Subtract 1 due to egress
-        self._T[:] = np.roll(self._T, -1)
+        self._T[:-1] = self._T[1:]
         self._T[-1] = t
         self._n_appended += 1
-        self._QT[:] = np.roll(self._QT, -1)
+        self._QT[:-1] = self._QT[1:]
         S = self._T[l:]
         t_drop = self._T[l - 1]
-        self._T_isfinite[:] = np.roll(self._T_isfinite, -1)
+        self._T_isfinite[:-1] = self._T_isfinite[1:]
 
-        self._I[:] = np.roll(self._I, -1)
-        self._P[:] = np.roll(self._P, -1)
-        self._left_I[:] = np.roll(self._left_I, -1)
-        self._left_P[:] = np.roll(self._left_P, -1)
+        self._I[:-1] = self._I[1:]
+        self._P[:-1] = self._P[1:]
+        self._left_I[:-1] = self._left_I[1:]
+        self._left_P[:-1] = self._left_P[1:]
 
         if np.isfinite(t):
             self._T_isfinite[-1] = True
