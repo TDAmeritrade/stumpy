@@ -102,6 +102,9 @@ class aampi(object):
         self._T, self._T_subseq_isfinite = core.preprocess_non_normalized(
             self._T, self._m
         )
+        self._T_squared = np.sum(
+            core.rolling_window(self._T * self._T, self._m), axis=1
+        )
 
         # Retrieve the left matrix profile values
         for i, j in enumerate(self._left_I):
@@ -156,6 +159,8 @@ class aampi(object):
         S = self._T[l:]
         t_drop = self._T[l - 1]
         self._T_isfinite[:-1] = self._T_isfinite[1:]
+        self._T_subseq_isfinite[:-1] = self._T_subseq_isfinite[1:]
+        self._T_squared[:-1] = self._T_squared[1:]
 
         self._I[:-1] = self._I[1:]
         self._P[:-1] = self._P[1:]
@@ -170,32 +175,23 @@ class aampi(object):
             self._T[-1] = 0
             S[-1] = 0
 
-        T_subseq_isfinite = np.all(
-            core.rolling_window(self._T_isfinite, self._m), axis=1
-        )
+        self._T_subseq_isfinite[-1] = np.all(self._T_isfinite[-self._m :])
 
-        for j in range(l, 0, -1):
-            self._QT_new[j] = (
-                self._QT[j - 1] - self._T[j - 1] * t_drop + self._T[j + self._m - 1] * t
-            )
-        self._QT_new[0] = 0
-
-        for j in range(self._m):
-            self._QT_new[0] = self._QT_new[0] + self._T[j] * S[j]
+        self._QT_new[1:] = self._QT[:l] - self._T[:l] * t_drop + self._T[self._m :] * t
+        self._QT_new[0] = np.sum(self._T[: self._m] * S[: self._m])
 
         Q_squared = np.sum(S * S)
-        T_squared = np.sum(core.rolling_window(self._T * self._T, self._m), axis=1)
-        D = core._mass_absolute(Q_squared, T_squared, self._QT_new)
-        D[~T_subseq_isfinite] = np.inf
+        self._T_squared[-1] = np.sum(self._T[-self._m :] * self._T[-self._m :])
+        D = core._mass_absolute(Q_squared, self._T_squared, self._QT_new)
+        D[~self._T_subseq_isfinite] = np.inf
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
 
         core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
 
-        for j in range(D.shape[0]):
-            if D[j] < self._P[j]:
-                self._I[j] = D.shape[0] + self._n_appended - 1
-                self._P[j] = D[j]
+        update_idx = np.argwhere(D < self._P).flatten()
+        self._I[update_idx] = D.shape[0] + self._n_appended - 1  # D.shape[0] is base-1
+        self._P[update_idx] = D[update_idx]
 
         I_last = np.argmin(D)
 
@@ -231,32 +227,27 @@ class aampi(object):
             T_new[-1] = 0
             S[-1] = 0
 
-        T_subseq_isfinite = np.all(
-            core.rolling_window(self._T_isfinite, self._m), axis=1
+        self._T_subseq_isfinite = np.append(
+            self._T_subseq_isfinite, np.all(self._T_isfinite[-self._m :])
         )
 
-        for j in range(l, 0, -1):
-            QT_new[j] = (
-                self._QT[j - 1] - T_new[j - 1] * t_drop + T_new[j + self._m - 1] * t
-            )
-        QT_new[0] = 0
-
-        for j in range(self._m):
-            QT_new[0] = QT_new[0] + T_new[j] * S[j]
+        QT_new[1:] = self._QT[:l] - T_new[:l] * t_drop + T_new[self._m :] * t
+        QT_new[0] = np.sum(T_new[: self._m] * S[: self._m])
 
         Q_squared = np.sum(S * S)
-        T_squared = np.sum(core.rolling_window(T_new * T_new, self._m), axis=1)
-        D = core._mass_absolute(Q_squared, T_squared, QT_new)
-        D[~T_subseq_isfinite] = np.inf
+        self._T_squared = np.append(
+            self._T_squared, np.sum(T_new[-self._m :] * T_new[-self._m :])
+        )
+        D = core._mass_absolute(Q_squared, self._T_squared, QT_new)
+        D[~self._T_subseq_isfinite] = np.inf
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
 
         core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
 
-        for j in range(l):
-            if D[j] < self._P[j]:
-                self._I[j] = l
-                self._P[j] = D[j]
+        update_idx = np.argwhere(D[:l] < self._P[:l]).flatten()
+        self._I[update_idx] = l
+        self._P[update_idx] = D[update_idx]
 
         I_last = np.argmin(D)
         if np.isinf(D[I_last]):
