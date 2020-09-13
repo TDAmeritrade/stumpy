@@ -1,3 +1,45 @@
+# 2020-08-31    [ 1.5.0 ]:
+--------------------------
+* bugfixes
+  - Fixed warning and check when time series has inappropriate dtype
+  - Fixed scenarios where identical subsequences produce non-zero distances
+* features
+  - For interactive data science work, matrix profile calcs are 10-15x faster
+  - Added `aamp` with non-normalized Euclidean distance (i.e., no z-normalization)
+  - Added `aamped`
+  - Added `aampi`
+  - Added `gpu_aamp`
+  - Added egress for `stumpi` and egress is now the default behavior
+  - Added a `mass_absolute` function for non-normalized distance calculation with FFT convolution
+  - Added diagonal pre-processing function to `core.py`
+  - Added centered-sum-of-products and Pearson correlation in place of sliding dot products
+  - Added left and right matrix profile indices to `scrump` and converted to Pearson correlation
+* tasks
+  - Removed Pandas series in GPU tests to improve unit test speed in CI
+  - Updated to latest version of black for better formatting
+  - Refactored redundant test section
+  - Added unit test for inappropriate dtype inputs
+  - Corrected absolute stumpy import to be relative import
+  - Replaced `._illegal` attribute with a more obvious `._T_isfinite` attribute
+  - Moved common diagonal functions to `core.py`
+  - Replaced `order` variable with the more obvious `diag` name
+  - Added environment.yml for easier installation of dependencies
+  - Removed random print statement in code
+  - Moved STUMPY thresholds to global parameters in `config.py`
+  - Refactored left/right matrix profile indices
+  - Refactored NaN checking
+  - Check for Linux OS and add TBB dynamically especially for CI
+* documentation
+  - Added `aamp` reference to README
+  - Update docstrings to be less verbose for API documentation
+  - Fixed some typos
+  - Replaced `sep="\s+"` with `sep="\\s+"` in tutorials
+  - Added notes and derivations for Pearson correlation and centered-sum-of-products
+  - Renamed tutorials with underscores for consistency
+  - Added all `aamp`-like functions to API reference
+  - Replaced MS Word docs with LaTeX notebooks
+
+
 # 2020-06-15    [ 1.4.0 ]:
 --------------------------
 * bugfixes

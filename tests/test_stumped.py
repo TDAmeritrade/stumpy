@@ -29,6 +29,12 @@ test_data = [
 window_size = [8, 16, 32]
 
 
+def test_stumped_int_input(dask_cluster):
+    with pytest.raises(TypeError):
+        with Client(dask_cluster) as dask_client:
+            stumped(dask_client, np.arange(10), 5)
+
+
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")

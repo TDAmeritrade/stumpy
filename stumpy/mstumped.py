@@ -80,9 +80,6 @@ def mstumped(dask_client, T, m, include=None, discords=False):
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
         raise ValueError(f"{err}")
 
-    core.check_dtype(T_A)
-    core.check_dtype(T_B)
-
     core.check_window_size(m)
 
     if include is not None:

@@ -482,8 +482,8 @@ class floss(object):
         This is the implementation for Fast Low-cost Online Semantic
         Segmentation (FLOSS).
         """
-        self._T[:] = np.roll(self._T, -1)
-        self._T_isfinite[:] = np.roll(self._T_isfinite, -1)
+        self._T[:-1] = self._T[1:]
+        self._T_isfinite[:-1] = self._T[1:]
         self._T[-1] = t
         self._T_isfinite[-1] = np.isfinite(t)
         Q = self._T[-self._m :]
@@ -495,7 +495,7 @@ class floss(object):
         # Egress
         # Remove the first element in the matrix profile index
         # Shift mp up by one and replace the last row with new values
-        self._mp[:] = np.roll(self._mp, -1, axis=0)
+        self._mp[:-1, :] = self._mp[1:, :]
         self._mp[-1, 0] = np.inf
         self._mp[-1, 3] = self._last_idx
 

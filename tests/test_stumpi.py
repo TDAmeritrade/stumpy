@@ -9,6 +9,11 @@ substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 substitution_values = [np.nan, np.inf]
 
 
+def test_stumpi_int_input():
+    with pytest.raises(TypeError):
+        stumpi(np.arange(10), 5)
+
+
 def test_stumpi_self_join():
     m = 3
     zone = int(np.ceil(m / 4))
@@ -856,6 +861,7 @@ def test_stumpi_identical_subsequence_self_join_egress():
 def test_stumpi_profile_index_match():
     T_full = np.random.rand(64)
     m = 3
+    T_full_subseq = core.rolling_window(T_full, m)
     warm_start = 8
 
     T_stream = T_full[:warm_start].copy()
@@ -868,25 +874,21 @@ def test_stumpi_profile_index_match():
         t = T_full[i]
         stream.update(t)
 
-        for j in range(stream.I_.shape[0]):
-            I = stream.I_[j]
-            left_I = stream.left_I_[j]
+        P[:] = np.inf
+        idx = np.argwhere(stream.I_ >= 0).flatten()
+        P[idx] = naive.distance(
+            naive.z_norm(T_full_subseq[idx + n + 1], axis=1),
+            naive.z_norm(T_full_subseq[stream.I_[idx]], axis=1),
+            axis=1,
+        )
 
-            if I < 0:
-                P[j] = np.inf
-            else:
-                P[j] = naive.distance(
-                    naive.z_norm(T_full[j + n + 1 : j + n + 1 + m]),
-                    naive.z_norm(T_full[I : I + m]),
-                )
-
-            if left_I < 0:
-                left_P[j] = np.inf
-            else:
-                left_P[j] = naive.distance(
-                    naive.z_norm(T_full[j + n + 1 : j + n + 1 + m]),
-                    naive.z_norm(T_full[left_I : left_I + m]),
-                )
+        left_P[:] = np.inf
+        idx = np.argwhere(stream.left_I_ >= 0).flatten()
+        left_P[idx] = naive.distance(
+            naive.z_norm(T_full_subseq[idx + n + 1], axis=1),
+            naive.z_norm(T_full_subseq[stream.left_I_[idx]], axis=1),
+            axis=1,
+        )
 
         npt.assert_almost_equal(stream.P_, P)
         npt.assert_almost_equal(stream.left_P_, left_P)

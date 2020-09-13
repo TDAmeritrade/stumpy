@@ -69,9 +69,6 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
 
-    core.check_dtype(T_A)
-    core.check_dtype(T_B)
-
     core.check_window_size(m)
 
     if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover

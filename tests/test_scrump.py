@@ -197,6 +197,11 @@ def test_prescrump_self_join_larger_window(T_A, T_B, m):
             npt.assert_almost_equal(left_I, right_I)
 
 
+def test_scrump_int_input():
+    with pytest.raises(TypeError):
+        scrump(np.arange(10), 5, ignore_trivial=True, percentage=1.0, pre_scrump=False)
+
+
 @pytest.mark.parametrize("T_A, T_B", test_data)
 @pytest.mark.parametrize("percentages", percentages)
 def test_scrump_self_join(T_A, T_B, percentages):
