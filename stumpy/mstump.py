@@ -538,7 +538,12 @@ def _mstump(
 
         if include is not None:
             _apply_include(
-                D, include, restricted_indices, unrestricted_indices, mask, tmp_swap,
+                D,
+                include,
+                restricted_indices,
+                unrestricted_indices,
+                mask,
+                tmp_swap,
             )
             start_row_idx = include.shape[0]
 
@@ -554,7 +559,7 @@ def _mstump(
 
 def mstump(T, m, include=None, discords=False):
     """
-    Compute the multi-dimensional matrix profile with parallelized mSTOMP
+    Compute the multi-dimensional z-normalized matrix profile
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_mstump` function which computes the multi-dimensional matrix profile and
@@ -613,9 +618,6 @@ def mstump(T, m, include=None, discords=False):
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
         raise ValueError(f"{err}")
-
-    core.check_dtype(T_A)
-    core.check_dtype(T_B)
 
     core.check_window_size(m)
 

@@ -390,7 +390,7 @@ def _stump(
 
 def stump(T_A, m, T_B=None, ignore_trivial=True):
     """
-    Compute the matrix profile with parallelized STOMP
+    Compute the z-normalized matrix profile
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_stump` function which computes the matrix profile according to STOMPopt with
@@ -498,9 +498,6 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
             f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
-
-    core.check_dtype(T_A)
-    core.check_dtype(T_B)
 
     core.check_window_size(m)
 

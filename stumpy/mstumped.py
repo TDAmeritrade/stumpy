@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 def mstumped(dask_client, T, m, include=None, discords=False):
     """
-    Compute the multi-dimensional matrix profile with parallelized and
-    distributed mSTOMP
+    Compute the multi-dimensional z-normalized matrix profile with a distributed
+    dask cluster
 
     This is a highly distributed implementation around the Numba JIT-compiled
     parallelized `_mstump` function which computes the multi-dimensional matrix
@@ -79,9 +79,6 @@ def mstumped(dask_client, T, m, include=None, discords=False):
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
         raise ValueError(f"{err}")
-
-    core.check_dtype(T_A)
-    core.check_dtype(T_B)
 
     core.check_window_size(m)
 

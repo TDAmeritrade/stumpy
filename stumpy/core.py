@@ -23,6 +23,20 @@ def driver_not_found(*args, **kwargs):  # pragma: no cover
     _raise_driver_not_found()
 
 
+def _gpu_stump_driver_not_found(*args, **kwargs):  # pragma: no cover
+    """
+    Dummy function to raise CudaSupportError driver not found error.
+    """
+    driver_not_found()
+
+
+def _gpu_aamp_driver_not_found(*args, **kwargs):  # pragma: no cover
+    """
+    Dummy function to raise CudaSupportError driver not found error.
+    """
+    driver_not_found()
+
+
 def get_pkg_name():  # pragma: no cover
     """
     Return package name.
@@ -104,7 +118,8 @@ def check_dtype(a, dtype=np.floating):  # pragma: no cover
         If the array type does not match `dtype`
     """
     if not np.issubdtype(a.dtype, dtype):
-        msg = f"{dtype} type expected but found {a.dtype}"
+        msg = f"{dtype} type expected but found {a.dtype}\n"
+        msg += "Please change your input `dtype` with `.astype(float)`"
         raise TypeError(msg)
 
     return True
@@ -652,7 +667,7 @@ def mass(Q, T, M_T=None, Σ_T=None):
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
 
     distance_profile = np.empty(n - m + 1)
-    if np.any(np.isnan(Q)):
+    if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
         if M_T is None or Σ_T is None:
@@ -663,6 +678,89 @@ def mass(Q, T, M_T=None, Σ_T=None):
         μ_Q = μ_Q[0]
         σ_Q = σ_Q[0]
         distance_profile[:] = _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T)
+
+    return distance_profile
+
+
+@njit(fastmath=True)
+def _mass_absolute(Q_squared, T_squared, QT):
+    """
+    A Numba JIT compiled algorithm for computing the non-normalized distance profile
+    using the MASS absolute algorithm.
+
+    Parameters
+    ----------
+    Q_squared : ndarray
+        Squared query array or subsequence
+
+    T_squared : ndarray
+        Squared time series or sequence
+
+    QT : ndarray
+        Sliding window dot product of `Q` and `T`
+
+    Returns
+    -------
+    output : ndarray
+        Unnormalized distance profile
+
+    Notes
+    -----
+    `See Mueen's Absolute Algorithm for Similarity Search \
+    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
+    """
+    return np.sqrt(Q_squared + T_squared - 2 * QT)
+
+
+def mass_absolute(Q, T):
+    """
+    Compute the non-normalized distance profile (i.e., without z-normalization) using
+    the "MASS absolute" algorithm. This is a convenience wrapper around the Numba JIT
+    compiled `_mass_absolute` function.
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array or subsequence
+
+    T : ndarray
+        Time series or sequence
+
+    Returns
+    -------
+    output : ndarray
+        Unnormalized Distance profile
+
+    Notes
+    -----
+    `See Mueen's Absolute Algorithm for Similarity Search \
+    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
+    """
+    Q = np.asarray(Q)
+    check_dtype(Q)
+    m = Q.shape[0]
+
+    if Q.ndim != 1:  # pragma: no cover
+        raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
+
+    T = np.asarray(T)
+    check_dtype(T)
+    n = T.shape[0]
+
+    if T.ndim != 1:  # pragma: no cover
+        raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
+
+    distance_profile = np.empty(n - m + 1)
+    if np.any(~np.isfinite(Q)):
+        distance_profile[:] = np.inf
+    else:
+        T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
+        T[~np.isfinite(T)] = 0.0
+        QT = sliding_dot_product(Q, T)
+        Q_squared = np.sum(Q * Q)
+        T_squared = np.sum(rolling_window(T * T, m), axis=1)
+        distance_profile[:] = _mass_absolute(Q_squared, T_squared, QT)
+        distance_profile[~T_subseq_isfinite] = np.inf
 
     return distance_profile
 
@@ -755,12 +853,51 @@ def preprocess(T, m):
     """
     T = T.copy()
     T = np.asarray(T)
+    check_dtype(T)
 
     T[np.isinf(T)] = np.nan
     M_T, Σ_T = compute_mean_std(T, m)
     T[np.isnan(T)] = 0
 
     return T, M_T, Σ_T
+
+
+def preprocess_non_normalized(T, m):
+    """
+    Preprocess a time series that is to be used when computing a non-normalized (i.e.,
+    without z-normalization) distance matrix.
+
+    Creates a copy of the time series where all NaN and inf values
+    are replaced with zero. Every subsequence that contains at least
+    one NaN or inf value will have a `False` value in its `T_subseq_isfinite` `bool`
+    array.
+
+    Parameters
+    ----------
+    T : ndarray
+        Time series or sequence
+
+    m : int
+        Window size
+
+    Returns
+    -------
+    T : ndarray
+        Modified time series
+
+    T_subseq_isfinite : ndarray
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False)
+    """
+    T = T.copy()
+    T = np.asarray(T)
+    check_dtype(T)
+
+    T[np.isinf(T)] = np.nan
+    T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
+    T[np.isnan(T)] = 0
+
+    return T, T_subseq_isfinite
 
 
 def preprocess_diagonal(T, m):
@@ -808,14 +945,8 @@ def preprocess_diagonal(T, m):
 
     T_subseq_isconstant : ndarray
         A boolean array that indicates whether a subsequence in `T` is constant (True)
-
     """
-    T = T.copy()
-    T = np.asarray(T)
-
-    T[np.isinf(T)] = np.nan
-    T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
-    T[np.isnan(T)] = 0
+    T, T_subseq_isfinite = preprocess_non_normalized(T, m)
     M_T, Σ_T = compute_mean_std(T, m)
     T_subseq_isconstant = Σ_T < config.STUMPY_STDDEV_THRESHOLD
     Σ_T[T_subseq_isconstant] = 1.0  # Avoid divide by zero in next inversion step

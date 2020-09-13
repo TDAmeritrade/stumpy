@@ -232,7 +232,7 @@ def _rea(cac, n_regimes, L, excl_factor=5):
 def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
     """
     Compute the Fast Low-cost Unipotent Semantic Segmentation (FLUSS)
-    for static data.
+    for static data (i.e., batch processing)
 
     Essentially, this is a wrapper to compute the corrected arc curve and
     regime locations.
@@ -291,7 +291,7 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
 class floss(object):
     """
     Compute the Fast Low-cost Online Semantic Segmentation (FLOSS) for
-    streaming data.
+    streaming data
 
     Parameters
     ----------
@@ -481,7 +481,7 @@ class floss(object):
         This is the implementation for Fast Low-cost Online Semantic
         Segmentation (FLOSS).
         """
-        self._T[:] = np.roll(self._T, -1)
+        self._T[:-1] = self._T[1:]
         self._T[-1] = t
         Q = self._T[-self._m :]
         excl_zone = int(np.ceil(self._m / 4))
@@ -492,7 +492,7 @@ class floss(object):
         # Egress
         # Remove the first element in the matrix profile index
         # Shift mp up by one and replace the last row with new values
-        self._mp[:] = np.roll(self._mp, -1, axis=0)
+        self._mp[:-1, :] = self._mp[1:, :]
         self._mp[-1, 0] = np.inf
         self._mp[-1, 3] = self._last_idx
 

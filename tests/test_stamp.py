@@ -49,6 +49,12 @@ def test_stamp_mass_PI(T_A, T_B):
     npt.assert_almost_equal(left_right_I, right_right_I)
 
 
+def test_stamp_int_input():
+    with pytest.raises(TypeError):
+        T = np.arange(10)
+        stamp(T, T, 5, ignore_trivial=True)
+
+
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stamp_self_join(T_A, T_B):
     m = 3

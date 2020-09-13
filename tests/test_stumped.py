@@ -26,6 +26,14 @@ test_data = [
     ),
 ]
 
+window_size = [8, 16, 32]
+
+
+def test_stumped_int_input(dask_cluster):
+    with pytest.raises(TypeError):
+        with Client(dask_cluster) as dask_client:
+            stumped(dask_client, np.arange(10), 5)
+
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
@@ -64,7 +72,8 @@ def test_stumped_self_join_df(T_A, T_B, dask_cluster):
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stump_self_join_larger_window(T_A, T_B, dask_cluster):
+@pytest.mark.parametrize("m", window_size)
+def test_stump_self_join_larger_window(T_A, T_B, m, dask_cluster):
     with Client(dask_cluster) as dask_client:
         for m in [8, 16, 32]:
             if len(T_B) > m:
@@ -82,7 +91,8 @@ def test_stump_self_join_larger_window(T_A, T_B, dask_cluster):
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stump_self_join_larger_window_df(T_A, T_B, dask_cluster):
+@pytest.mark.parametrize("m", window_size)
+def test_stump_self_join_larger_window_df(T_A, T_B, m, dask_cluster):
     with Client(dask_cluster) as dask_client:
         for m in [8, 16, 32]:
             if len(T_B) > m:

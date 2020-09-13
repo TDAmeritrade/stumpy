@@ -373,7 +373,7 @@ def _gpu_stump(
 
 def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     """
-    Compute the matrix profile with GPU-STOMP
+    Compute the z-normalized matrix profile with one or more GPU devices
 
     This is a convenience wrapper around the Numba `cuda.jit` `_gpu_stump` function
     which computes the matrix profile according to GPU-STOMP.
@@ -460,9 +460,6 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
             f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
-
-    core.check_dtype(T_A)
-    core.check_dtype(T_B)
 
     core.check_window_size(m)
 

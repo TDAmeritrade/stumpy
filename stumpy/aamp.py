@@ -104,19 +104,38 @@ def _compute_diagonal(
 
             if T_A_subseq_isfinite[i + k] and T_B_subseq_isfinite[i]:
                 # Neither subsequence contains NaNs
-                if D_squared < P[thread_idx, i]:
-                    P[thread_idx, i] = D_squared
-                    I[thread_idx, i] = i + k
+                if D_squared < P[thread_idx, i, 0]:
+                    P[thread_idx, i, 0] = D_squared
+                    I[thread_idx, i, 0] = i + k
 
-                if ignore_trivial and D_squared < P[thread_idx, i + k]:
-                    P[thread_idx, i + k] = D_squared
-                    I[thread_idx, i + k] = i
+                if ignore_trivial:
+                    if D_squared < P[thread_idx, i + k, 0]:
+                        P[thread_idx, i + k, 0] = D_squared
+                        I[thread_idx, i + k, 0] = i
+
+                    if i < i + k:
+                        # left matrix profile and left matrix profile index
+                        if D_squared < P[thread_idx, i + k, 1]:
+                            P[thread_idx, i + k, 1] = D_squared
+                            I[thread_idx, i + k, 1] = i
+
+                        # right matrix profile and right matrix profile index
+                        if D_squared < P[thread_idx, i, 2]:
+                            P[thread_idx, i, 2] = D_squared
+                            I[thread_idx, i, 2] = i + k
+
     return
 
 
 @njit(parallel=True, fastmath=True)
 def _aamp(
-    T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_trivial,
+    T_A,
+    T_B,
+    m,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
+    diags,
+    ignore_trivial,
 ):
     """
     A Numba JIT-compiled version of AAMP for parallel computation of the matrix
@@ -168,8 +187,8 @@ def _aamp(
     n_B = T_B.shape[0]
     l = n_B - m + 1
     n_threads = config.NUMBA_NUM_THREADS
-    P = np.full((n_threads, l), np.inf)
-    I = np.full((n_threads, l), -1, np.int64)
+    P = np.full((n_threads, l, 3), np.inf)
+    I = np.full((n_threads, l, 3), -1, np.int64)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, n_threads)
@@ -194,17 +213,24 @@ def _aamp(
     # Reduction of results from all threads
     for thread_idx in range(1, n_threads):
         for i in prange(l):
-            if P[0, i] > P[thread_idx, i]:
-                P[0, i] = P[thread_idx, i]
-                I[0, i] = I[thread_idx, i]
+            if P[0, i, 0] > P[thread_idx, i, 0]:
+                P[0, i, 0] = P[thread_idx, i, 0]
+                I[0, i, 0] = I[thread_idx, i, 0]
+            # left matrix profile and left matrix profile indices
+            if P[0, i, 1] > P[thread_idx, i, 1]:
+                P[0, i, 1] = P[thread_idx, i, 1]
+                I[0, i, 1] = I[thread_idx, i, 1]
+            # right matrix profile and right matrix profile indices
+            if P[0, i, 2] > P[thread_idx, i, 2]:
+                P[0, i, 2] = P[thread_idx, i, 2]
+                I[0, i, 2] = I[thread_idx, i, 2]
 
-    return np.sqrt(P[0]), I[0]
+    return np.sqrt(P[0, :, :]), I[0, :, :]
 
 
 def aamp(T_A, m, T_B=None, ignore_trivial=True):
     """
-    Compute the matrix profile with parallelized AAMP, which uses non-normalized
-    Euclidean distances for computing a matrix profile.
+    Compute the non-normalized (i.e., without z-normalization) matrix profile
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_aamp` function which computes the matrix profile according to AAMP.
@@ -240,25 +266,18 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
 
     Note that we have extended this algorithm for AB-joins as well.
     """
-    T_A = np.asarray(T_A)
-    T_A = T_A.copy()
-
     if T_B is None:
         T_B = T_A.copy()
         ignore_trivial = True
-    else:
-        T_B = np.asarray(T_B)
-        T_B = T_B.copy()
-        ignore_trivial = False
+
+    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
+    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
 
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
-
-    core.check_dtype(T_A)
-    core.check_dtype(T_B)
 
     core.check_window_size(m)
 
@@ -270,21 +289,12 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
         logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
         logger.warning("Try setting `ignore_trivial = False`.")
 
-    T_A[np.isinf(T_A)] = np.nan
-    T_B[np.isinf(T_B)] = np.nan
-
-    T_A_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_A, m)), axis=1)
-    T_B_subseq_isfinite = np.all(np.isfinite(core.rolling_window(T_B, m)), axis=1)
-
-    T_A[np.isnan(T_A)] = 0
-    T_B[np.isnan(T_B)] = 0
-
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_B - m + 1
 
     excl_zone = int(np.ceil(m / 4))
-    out = np.empty((l, 2), dtype=object)
+    out = np.empty((l, 4), dtype=object)
 
     if ignore_trivial:
         diags = np.arange(excl_zone + 1, n_B - m + 1)
@@ -292,10 +302,16 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
         diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
 
     P, I = _aamp(
-        T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_trivial,
+        T_A,
+        T_B,
+        m,
+        T_A_subseq_isfinite,
+        T_B_subseq_isfinite,
+        diags,
+        ignore_trivial,
     )
 
-    out[:, 0] = P
-    out[:, 1] = I
+    out[:, 0] = P[:, 0]
+    out[:, 1:] = I[:, :]
 
     return out

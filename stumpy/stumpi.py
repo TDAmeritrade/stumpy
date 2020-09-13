@@ -3,14 +3,13 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from stumpy import core
-import stumpy
+from . import core, stump
 
 
 class stumpi(object):
     """
-    Compute an incremental matrix profile for streaming data. This is based on the
-    on-line STOMPI and STAMPI algorithms.
+    Compute an incremental z-normalized matrix profile for streaming data. This
+    is based on the on-line STOMPI and STAMPI algorithms.
 
     Parameters
     ----------
@@ -59,7 +58,7 @@ class stumpi(object):
     Note that line 11 is missing an important `sqrt` operation!
     """
 
-    def __init__(self, T, m, excl_zone=None):
+    def __init__(self, T, m, excl_zone=None, egress=True):
         """
         Initialize the `stumpi` object
 
@@ -75,16 +74,24 @@ class stumpi(object):
         excl_zone : int
             The half width for the exclusion zone relative to the current
             sliding window
+
+        egress : bool
+            If set to `True`, the oldest data point in the time series is removed and
+            the time series length remains constant rather than forever increasing
         """
-        self._T = T
+        self._T = T.copy()
+        self._T = np.asarray(self._T)
+        core.check_dtype(self._T)
         self._m = m
+        self._n = self._T.shape[0]
         if excl_zone is not None:  # pragma: no cover
             self._excl_zone = excl_zone
         else:
             self._excl_zone = int(np.ceil(self._m / 4))
-        self._illegal = np.logical_or(np.isinf(self._T), np.isnan(self._T))
+        self._T_isfinite = np.isfinite(self._T)
+        self._egress = egress
 
-        mp = stumpy.stump(self._T, self._m)
+        mp = stump(self._T, self._m)
         self._P = mp[:, 0]
         self._I = mp[:, 1]
         self._left_I = mp[:, 2]
@@ -100,6 +107,9 @@ class stumpi(object):
 
         Q = self._T[-m:]
         self._QT = core.sliding_dot_product(Q, self._T)
+        if self._egress:
+            self._QT_new = np.empty(self._QT.shape[0])
+            self._n_appended = 0
 
     def update(self, t):
         """
@@ -120,6 +130,86 @@ class stumpi(object):
 
         Note that line 11 is missing an important `sqrt` operation!
         """
+        if self._egress:
+            self._update_egress(t)
+        else:
+            self._update(t)
+
+    def _update_egress(self, t):
+        """
+        Ingress a new data point, egress the oldest data point, and update the matrix
+        profile and matrix profile indices
+        """
+        self._n = self._T.shape[0]
+        l = self._n - self._m + 1 - 1  # Subtract 1 due to egress
+        self._T[:-1] = self._T[1:]
+        self._T[-1] = t
+        self._n_appended += 1
+        self._QT[:-1] = self._QT[1:]
+        S = self._T[l:]
+        t_drop = self._T[l - 1]
+        self._T_isfinite[:-1] = self._T_isfinite[1:]
+
+        self._I[:-1] = self._I[1:]
+        self._P[:-1] = self._P[1:]
+        self._left_I[:-1] = self._left_I[1:]
+        self._left_P[:-1] = self._left_P[1:]
+
+        if np.isfinite(t):
+            self._T_isfinite[-1] = True
+        else:
+            self._T_isfinite[-1] = False
+            t = 0
+            self._T[-1] = 0
+            S[-1] = 0
+
+        if np.any(~self._T_isfinite[-self._m :]):
+            μ_Q = np.inf
+            σ_Q = np.nan
+        else:
+            μ_Q, σ_Q = core.compute_mean_std(S, self._m)
+            μ_Q = μ_Q[0]
+            σ_Q = σ_Q[0]
+
+        self._M_T[:-1] = self._M_T[1:]
+        self._Σ_T[:-1] = self._Σ_T[1:]
+        self._M_T[-1] = μ_Q
+        self._Σ_T[-1] = σ_Q
+
+        self._QT_new[1:] = self._QT[:l] - self._T[:l] * t_drop + self._T[self._m :] * t
+        self._QT_new[0] = np.sum(self._T[: self._m] * S[: self._m])
+
+        D = core.calculate_distance_profile(
+            self._m, self._QT_new, μ_Q, σ_Q, self._M_T, self._Σ_T
+        )
+        if np.any(~self._T_isfinite[-self._m :]):
+            D[:] = np.inf
+
+        core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
+
+        update_idx = np.argwhere(D < self._P).flatten()
+        self._I[update_idx] = D.shape[0] + self._n_appended - 1  # D.shape[0] is base-1
+        self._P[update_idx] = D[update_idx]
+
+        I_last = np.argmin(D)
+
+        if np.isinf(D[I_last]):
+            self._I[-1] = -1
+            self._P[-1] = np.inf
+        else:
+            self._I[-1] = I_last + self._n_appended
+            self._P[-1] = D[I_last]
+
+        self._left_I[-1] = I_last + self._n_appended
+        self._left_P[-1] = D[I_last]
+
+        self._QT[:] = self._QT_new
+
+    def _update(self, t):
+        """
+        Ingress a new data point and update the matrix profile and matrix profile
+        indices without egressing the oldest data point
+        """
         n = self._T.shape[0]
         l = n - self._m + 1
         T_new = np.append(self._T, t)
@@ -127,15 +217,15 @@ class stumpi(object):
         S = T_new[l:]
         t_drop = T_new[l - 1]
 
-        if np.isinf(t) or np.isnan(t):
-            self._illegal = np.append(self._illegal, True)
+        if np.isfinite(t):
+            self._T_isfinite = np.append(self._T_isfinite, True)
+        else:
+            self._T_isfinite = np.append(self._T_isfinite, False)
             t = 0
             T_new[-1] = 0
             S[-1] = 0
-        else:
-            self._illegal = np.append(self._illegal, False)
 
-        if np.any(self._illegal[-self._m :]):
+        if np.any(~self._T_isfinite[-self._m :]):
             μ_Q = np.inf
             σ_Q = np.nan
         else:
@@ -146,25 +236,18 @@ class stumpi(object):
         M_T_new = np.append(self._M_T, μ_Q)
         Σ_T_new = np.append(self._Σ_T, σ_Q)
 
-        for j in range(l, 0, -1):
-            QT_new[j] = (
-                self._QT[j - 1] - T_new[j - 1] * t_drop + T_new[j + self._m - 1] * t
-            )
-        QT_new[0] = 0
-
-        for j in range(self._m):
-            QT_new[0] = QT_new[0] + T_new[j] * S[j]
+        QT_new[1:] = self._QT[:l] - T_new[:l] * t_drop + T_new[self._m :] * t
+        QT_new[0] = np.sum(T_new[: self._m] * S[: self._m])
 
         D = core.calculate_distance_profile(self._m, QT_new, μ_Q, σ_Q, M_T_new, Σ_T_new)
-        if np.any(self._illegal[-self._m :]):
+        if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
 
         core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
 
-        for j in range(l):
-            if D[j] < self._P[j]:
-                self._I[j] = l
-                self._P[j] = D[j]
+        update_idx = np.argwhere(D[:l] < self._P[:l]).flatten()
+        self._I[update_idx] = l
+        self._P[update_idx] = D[update_idx]
 
         I_last = np.argmin(D)
         if np.isinf(D[I_last]):

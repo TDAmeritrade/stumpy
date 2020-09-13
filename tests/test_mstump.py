@@ -144,6 +144,11 @@ def test_naive_mstump():
     npt.assert_almost_equal(left_I, right_I)
 
 
+def test_mstump_int_input():
+    with pytest.raises(TypeError):
+        mstump(np.arange(20).reshape(2, 10), 5)
+
+
 @pytest.mark.parametrize("T, m", test_data)
 def test_mstump(T, m):
     excl_zone = int(np.ceil(m / 4))

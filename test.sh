@@ -40,7 +40,7 @@ echo "Testing Numba JIT Compiled Functions"
 py.test -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_stump.py
 py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_core.py
 check_errs $?
-py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump.py tests/test_mstump.py tests/test_scrump.py tests/test_stumpi.py tests/test_aamp.py
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump.py tests/test_mstump.py tests/test_scrump.py tests/test_stumpi.py
 check_errs $?
 py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped.py 
 check_errs $?
@@ -72,16 +72,44 @@ py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_ms
 check_errs $?
 py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mstumped_one_subsequence_nan_self_join.py
 check_errs $?
+# aamp
+py.test -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp.py
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp.py tests/test_aampi.py
+check_errs $?
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped.py
+check_errs $?
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_constant_subsequence.py 
+check_errs $?
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_constant_subsequences.py 
+check_errs $?
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_constant_subsequences_swap.py
+check_errs $?
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_subsequence_nan_self_join.py
+check_errs $?
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_subsequence_inf_self_join.py
+check_errs $?
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_subsequence_nan_A_B_join.py
+check_errs $?
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_subsequence_inf_A_B_join.py
+check_errs $?
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_nan_A_B_join.py
+check_errs $?
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_inf_A_B_join.py
+check_errs $?
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_nan_inf_A_B_join.py
+check_errs $?
+py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_nan_inf_A_B_join_swap.py
+check_errs $?
 
 echo "Disabling Numba JIT and CUDA Compiled Functions"
 export NUMBA_DISABLE_JIT=1
 export NUMBA_ENABLE_CUDASIM=1
 
-echo "Testing Python Functions"
-py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests
-check_errs $?
+# echo "Testing Python Functions"
+# py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests
+# check_errs $?
 
-echo "Test Code Coverage"
+echo "Test Python Functions and Code Coverage"
 coverage run --source stumpy -m py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning
 check_errs $?
 coverage report -m

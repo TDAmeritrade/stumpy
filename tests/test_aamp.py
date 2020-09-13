@@ -1,11 +1,9 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import config
-from stumpy.aamp import aamp
+from stumpy import config, aamp
 import pytest
 import naive
-
 
 test_data = [
     (
@@ -22,10 +20,14 @@ substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 substitution_values = [np.nan, np.inf]
 
 
+def test_aamp_int_input():
+    with pytest.raises(TypeError):
+        aamp(np.arange(10), 5)
+
+
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_aamp_self_join(T_A, T_B):
     m = 3
-    zone = int(np.ceil(m / 4))
     left = naive.aamp(T_B, m)
     right = aamp(T_B, m)
     naive.replace_inf(left)

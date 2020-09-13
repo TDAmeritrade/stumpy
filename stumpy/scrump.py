@@ -110,7 +110,12 @@ def _prescrump(
             + T_A[i + k + m - 1] * T_B[j + k + m - 1]
         )
         D_squared = core._calculate_squared_distance(
-            m, QT_j, M_T[i + k], Σ_T[i + k], μ_Q[j + k], σ_Q[j + k],
+            m,
+            QT_j,
+            M_T[i + k],
+            Σ_T[i + k],
+            μ_Q[j + k],
+            σ_Q[j + k],
         )
         if D_squared < P_squared[i + k]:
             P_squared[i + k] = D_squared
@@ -122,7 +127,12 @@ def _prescrump(
     for k in range(1, min(s, i + 1, j + 1)):
         QT_j = QT_j - T_A[i - k + m] * T_B[j - k + m] + T_A[i - k] * T_B[j - k]
         D_squared = core._calculate_squared_distance(
-            m, QT_j, M_T[i - k], Σ_T[i - k], μ_Q[j - k], σ_Q[j - k],
+            m,
+            QT_j,
+            M_T[i - k],
+            Σ_T[i - k],
+            μ_Q[j - k],
+            σ_Q[j - k],
         )
         if D_squared < P_squared[i - k]:
             P_squared[i - k] = D_squared
@@ -170,10 +180,10 @@ def prescrump(T_A, m, T_B=None, s=None):
 
     See Algorithm 2
     """
-    T_A = np.asarray(T_A)
     T_A = T_A.copy()
-    T_A[np.isinf(T_A)] = np.nan
+    T_A = np.asarray(T_A)
     core.check_dtype(T_A)
+    T_A[np.isinf(T_A)] = np.nan
 
     if T_B is None:
         T_B = T_A
@@ -181,10 +191,10 @@ def prescrump(T_A, m, T_B=None, s=None):
     else:
         excl_zone = None
 
-    T_B = np.asarray(T_B)
     T_B = T_B.copy()
-    T_B[np.isinf(T_B)] = np.nan
+    T_B = np.asarray(T_B)
     core.check_dtype(T_B)
+    T_B[np.isinf(T_B)] = np.nan
 
     core.check_window_size(m)
 
@@ -230,8 +240,7 @@ def prescrump(T_A, m, T_B=None, s=None):
 
 class scrump(object):
     """
-    Compute the approximate matrix profile with the parallelized SCRIMP algorthm. For
-    SCRIMP++, set `pre_scrump=True`.
+    Compute an approximate z-normalized matrix profile
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_stump` function which computes the matrix profile according to SCRIMP.
@@ -258,7 +267,7 @@ class scrump(object):
     pre_scrump : bool
         A flag for whether or not to perform the PreSCRIMP calculation prior to
         computing SCRIMP. If set to `True`, this is equivalent to computing
-        SCRIMP++
+        SCRIMP++ and may lead to faster convergence
 
     s : int
         The size of the PreSCRIMP fixed interval. If `pre-scrump=True` and `s=None`,
@@ -366,9 +375,6 @@ class scrump(object):
                 f"T_B is {self._T_B.ndim}-dimensional and must be 1-dimensional. "
                 "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
             )
-
-        core.check_dtype(self._T_A)
-        core.check_dtype(self._T_B)
 
         core.check_window_size(self._m)
 
