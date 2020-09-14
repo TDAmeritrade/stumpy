@@ -483,7 +483,7 @@ class floss(object):
         Segmentation (FLOSS).
         """
         self._T[:-1] = self._T[1:]
-        self._T_isfinite[:-1] = self._T[1:]
+        self._T_isfinite[:-1] = self._T_isfinite[1:]
         self._T[-1] = t
         self._T_isfinite[-1] = np.isfinite(t)
         Q = self._T[-self._m :]
