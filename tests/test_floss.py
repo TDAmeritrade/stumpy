@@ -59,13 +59,6 @@ def naive_right_mp(data, m):
     return mp
 
 
-def naive_distance_profile(Q, T, m):
-    D = np.linalg.norm(
-        core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
-    )
-    return D
-
-
 def naive_rea(cac, n_regimes, L, excl_factor):
     cac_list = cac.tolist()
     loc_regimes = [None] * (n_regimes - 1)
@@ -160,7 +153,7 @@ def test_floss():
         mp[-1, 0] = np.inf
         mp[-1, 3] = last_idx + i
 
-        D = naive_distance_profile(left_T[-m:], left_T, m)
+        D = naive.distance_profile(left_T[-m:], left_T, m)
         D[zone_start:] = np.inf
 
         update_idx = np.argwhere(D < mp[:, 0]).flatten()
@@ -229,7 +222,7 @@ def test_floss_inf_nan(substitute, substitution_locations):
             mp[-1, 0] = np.inf
             mp[-1, 3] = last_idx + i
 
-            D = naive_distance_profile(left_T[-m:], left_T, m)
+            D = naive.distance_profile(left_T[-m:], left_T, m)
             D[zone_start:] = np.inf
 
             left_T_isfinite = np.isfinite(left_T)
