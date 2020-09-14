@@ -194,19 +194,21 @@ def test_floss():
         npt.assert_almost_equal(left_T, right_T)
 
 
-test_data_nan = np.insert(
-    np.random.uniform(-1000, 1000, [64]), [i for i in range(30, 60, 5)], np.nan
-)
-test_data_inf = np.insert(
-    np.random.uniform(-1000, 1000, [64]), [i for i in range(30, 60, 5)], np.inf
-)
+substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
+substitution_values = [np.nan, np.inf]
 
 
-@pytest.mark.parametrize("data", [(test_data_nan), (test_data_inf)])
-def test_floss_inf_nan(data):
+@pytest.mark.parametrize("substitute", substitution_values)
+@pytest.mark.parametrize("substitution_locations", substitution_locations)
+def test_floss_inf_nan(substitute, substitution_locations):
+    T = np.random.uniform(-1000, 1000, [64])
     m = 5
-    old_data = data[:30]
-    n = old_data.shape[0]
+    data = T.copy()
+    for substitution_location in substitution_locations:
+        data[:] = T[:]
+        data[substitution_location] = substitute
+        old_data = data[:30]
+        n = old_data.shape[0]
 
     mp = naive_right_mp(old_data, m)
     right_mp = stump(old_data, m)
