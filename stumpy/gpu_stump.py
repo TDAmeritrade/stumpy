@@ -1,5 +1,6 @@
 # STUMPY
-# Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
+# Copyright 2019 TD Ameritrade, 2020 NVIDIA CORPORATION.
+# Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 import logging
 import math
@@ -168,6 +169,181 @@ def _compute_and_update_PI_kernel(
             indices[j, 0] = i
 
 
+@cuda.jit(
+    "(i8, i8, f8[:], f8[:], i8,  f8[:], f8[:], f8[:], f8[:], f8[:],"
+    "f8[:], f8[:], i8, b1, i8, f8[:, :], i8[:, :])"
+)
+def _compute_and_update_PI_kernel_cg(
+    range_start,
+    range_stop,
+    T_A,
+    T_B,
+    m,
+    QT_even,
+    QT_odd,
+    QT_first,
+    M_T,
+    Σ_T,
+    μ_Q,
+    σ_Q,
+    k,
+    ignore_trivial,
+    excl_zone,
+    profile,
+    indices,
+):
+    """
+    A Numba CUDA kernel to update the matrix profile and matrix profile indices
+
+    Parameters
+    ----------
+    range_start : int
+        The starting index value along T_B for which to start the matrix
+        profile calculation.
+
+    range_stop : int
+        The index value along T_B for which to stop the matrix profile
+        calculation. This parameter is here for consistency with the
+        distributed `stumped` algorithm.
+
+    T_A : ndarray
+        The time series or sequence for which to compute the dot product
+
+    T_B : ndarray
+        The time series or sequence that contain your query subsequence
+        of interest
+
+    m : int
+        Window size
+
+    QT_even : ndarray
+        The input QT array (dot product between the query sequence,`Q`, and
+        time series, `T`) to use when `i` is even
+
+    QT_odd : ndarray
+        The input QT array (dot product between the query sequence,`Q`, and
+        time series, `T`) to use when `i` is odd
+
+    QT_first : ndarray
+        Dot product between the first query sequence,`Q`, and time series, `T`
+
+    M_T : ndarray
+        Sliding mean of time series, `T`
+
+    Σ_T : ndarray
+        Sliding standard deviation of time series, `T`
+
+    μ_Q : ndarray
+        Mean of the query sequence, `Q`
+
+    σ_Q : ndarray
+        Standard deviation of the query sequence, `Q`
+
+    k : int
+        The total number of sliding windows to iterate over
+
+    ignore_trivial : bool
+        Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
+        `False`.
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the current
+        sliding window
+
+    profile : ndarray
+        Matrix profile. The first column consists of the global matrix profile,
+        the second column consists of the left matrix profile, and the third
+        column consists of the right matrix profile.
+
+    indices : ndarray
+        The first column consists of the matrix profile indices, the second
+        column consists of the left matrix profile indices, and the third
+        column consists of the right matrix profile indices.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    `DOI: 10.1109/ICDM.2016.0085 \
+    <https://www.cs.ucr.edu/~eamonn/STOMP_GPU_final_submission_camera_ready.pdf>`__
+
+    See Table II, Figure 5, and Figure 6
+    """
+    start = cuda.grid(1)
+    stride = cuda.gridsize(1)
+
+    g = cuda.cg.this_grid()
+
+    first_row = True
+
+    for i in range(range_start - 1, range_stop):
+
+        if i % 2 == 0:
+            QT_out = QT_even
+            QT_in = QT_odd
+        else:
+            QT_out = QT_odd
+            QT_in = QT_even
+
+        # Only compute QT for rows after the first row
+        if first_row:
+            compute_QT = False
+            first_row = False
+        else:
+            compute_QT = True
+
+        for j in range(start, QT_out.shape[0], stride):
+            zone_start = max(0, j - excl_zone)
+            zone_stop = min(k, j + excl_zone)
+
+            if compute_QT:
+                QT_out[j] = (
+                    QT_in[j - 1]
+                    - T_B[i - 1] * T_A[j - 1]
+                    + T_B[i + m - 1] * T_A[j + m - 1]
+                )
+
+                QT_out[0] = QT_first[i]
+
+            if math.isinf(M_T[j]) or math.isinf(μ_Q[i]):
+                D = np.inf
+            else:
+                if (
+                    σ_Q[i] < config.STUMPY_STDDEV_THRESHOLD
+                    or Σ_T[j] < config.STUMPY_STDDEV_THRESHOLD
+                ):
+                    D = m
+                else:
+                    denom = m * σ_Q[i] * Σ_T[j]
+                    if math.fabs(denom) < config.STUMPY_DENOM_THRESHOLD:
+                        denom = config.STUMPY_DENOM_THRESHOLD
+                    D = abs(2 * m * (1.0 - (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom))
+
+                if (
+                    σ_Q[i] < config.STUMPY_STDDEV_THRESHOLD
+                    and Σ_T[j] < config.STUMPY_STDDEV_THRESHOLD
+                ) or D < config.STUMPY_D_SQUARED_THRESHOLD:
+                    D = 0
+
+            if ignore_trivial:
+                if i <= zone_stop and i >= zone_start:
+                    D = np.inf
+                if D < profile[j, 1] and i < j:
+                    profile[j, 1] = D
+                    indices[j, 1] = i
+                if D < profile[j, 2] and i > j:
+                    profile[j, 2] = D
+                    indices[j, 2] = i
+
+            if D < profile[j, 0]:
+                profile[j, 0] = D
+                indices[j, 0] = i
+
+        g.sync()
+
+
 def _gpu_stump(
     T_A_fname,
     T_B_fname,
@@ -184,6 +360,7 @@ def _gpu_stump(
     ignore_trivial=True,
     range_start=1,
     device_id=0,
+    cooperative=False,
 ):
     """
     A Numba CUDA version of STOMP for parallel computation of the
@@ -248,6 +425,11 @@ def _gpu_stump(
     device_id : int
         The (GPU) device number to use. The default value is `0`.
 
+    cooperative : bool
+        Whether to launch a kernel that uses a cooperative launch to compute
+        the profile in a single kernel. This is usually faster, but requires
+        compute capability 6.0 or above.
+
     Returns
     -------
     profile_fname : str
@@ -287,9 +469,6 @@ def _gpu_stump(
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-    threads_per_block = config.STUMPY_THREADS_PER_BLOCK
-    blocks_per_grid = math.ceil(k / threads_per_block)
-
     T_A = np.load(T_A_fname, allow_pickle=False)
     T_B = np.load(T_B_fname, allow_pickle=False)
     QT = np.load(QT_fname, allow_pickle=False)
@@ -300,6 +479,14 @@ def _gpu_stump(
     σ_Q = np.load(σ_Q_fname, allow_pickle=False)
 
     with cuda.gpus[device_id]:
+
+        threads_per_block = config.STUMPY_THREADS_PER_BLOCK
+        if cooperative:
+            defn = _compute_and_update_PI_kernel_cg.definition
+            blocks_per_grid = defn.max_cooperative_grid_blocks(threads_per_block)
+        else:
+            blocks_per_grid = math.ceil(k / threads_per_block)
+
         device_T_A = cuda.to_device(T_A)
         device_QT_odd = cuda.to_device(QT)
         device_QT_even = cuda.to_device(QT)
@@ -320,29 +507,11 @@ def _gpu_stump(
 
         device_profile = cuda.to_device(profile)
         device_indices = cuda.to_device(indices)
-        _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
-            range_start - 1,
-            device_T_A,
-            device_T_B,
-            m,
-            device_QT_even,
-            device_QT_odd,
-            device_QT_first,
-            device_M_T,
-            device_Σ_T,
-            device_μ_Q,
-            device_σ_Q,
-            k,
-            ignore_trivial,
-            excl_zone,
-            device_profile,
-            device_indices,
-            False,
-        )
 
-        for i in range(range_start, range_stop):
-            _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
-                i,
+        if cooperative:
+            _compute_and_update_PI_kernel_cg[blocks_per_grid, threads_per_block](
+                range_start,
+                range_stop,
                 device_T_A,
                 device_T_B,
                 m,
@@ -358,8 +527,48 @@ def _gpu_stump(
                 excl_zone,
                 device_profile,
                 device_indices,
-                True,
             )
+        else:
+            _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
+                range_start - 1,
+                device_T_A,
+                device_T_B,
+                m,
+                device_QT_even,
+                device_QT_odd,
+                device_QT_first,
+                device_M_T,
+                device_Σ_T,
+                device_μ_Q,
+                device_σ_Q,
+                k,
+                ignore_trivial,
+                excl_zone,
+                device_profile,
+                device_indices,
+                False,
+            )
+
+            for i in range(range_start, range_stop):
+                _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
+                    i,
+                    device_T_A,
+                    device_T_B,
+                    m,
+                    device_QT_even,
+                    device_QT_odd,
+                    device_QT_first,
+                    device_M_T,
+                    device_Σ_T,
+                    device_μ_Q,
+                    device_σ_Q,
+                    k,
+                    ignore_trivial,
+                    excl_zone,
+                    device_profile,
+                    device_indices,
+                    True,
+                )
 
         profile = device_profile.copy_to_host()
         indices = device_indices.copy_to_host()
@@ -371,7 +580,7 @@ def _gpu_stump(
     return profile_fname, indices_fname
 
 
-def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
+def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, cooperative=False):
     """
     Compute the z-normalized matrix profile with one or more GPU devices
 
@@ -535,6 +744,7 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
                     ignore_trivial,
                     start + 1,
                     device_ids[idx],
+                    cooperative,
                 ),
             )
         else:
@@ -556,6 +766,7 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
                 ignore_trivial,
                 start + 1,
                 device_ids[idx],
+                cooperative,
             )
 
     # Clean up process pool for multi-GPU request
