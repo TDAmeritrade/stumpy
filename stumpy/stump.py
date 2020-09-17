@@ -22,8 +22,10 @@ def _compute_diagonal(
     μ_Q,
     Σ_T_inverse,
     σ_Q_inverse,
-    M_T_m_1,
-    μ_Q_m_1,
+    cov_a,
+    cov_b,
+    cov_c,
+    cov_d,
     T_A_subseq_isfinite,
     T_B_subseq_isfinite,
     T_A_subseq_isconstant,
@@ -66,8 +68,17 @@ def _compute_diagonal(
         Inverse standard deviation of the query sequence, `Q`, relative to the current
         sliding window
 
-    M_T_m_1 : ndarray
-        Sliding mean of time series, `T`, using a window size of `m-1`
+    cov_a : ndarray
+        The first covariance term relating T_A[i + k + m - 1] and M_T_m_1[i + k]
+
+    cov_b : ndarray
+        The second covariance term relating T_B[i + m - 1] and μ_Q_m_1[i]
+
+    cov_c : ndarray
+        The third covariance term relating T_A[i + k - 1] and M_T_m_1[i + k]
+
+    cov_d : ndarray
+        The fourth covariance term relating T_B[i - 1] and μ_Q_m_1[i]
 
     μ_Q_m_1 : ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window and
@@ -154,10 +165,14 @@ def _compute_diagonal(
                     * m_inverse
                 )
             else:
+                # The next lines are equivalent and left for reference
+                # cov = cov + constant * (
+                #     (T_A[i + k + m - 1] - M_T_m_1[i + k])
+                #     * (T_B[i + m - 1] - μ_Q_m_1[i])
+                #     - (T_A[i + k - 1] - M_T_m_1[i + k]) * (T_B[i - 1] - μ_Q_m_1[i])
+                # )
                 cov = cov + constant * (
-                    (T_A[i + k + m - 1] - M_T_m_1[i + k])
-                    * (T_B[i + m - 1] - μ_Q_m_1[i])
-                    - (T_A[i + k - 1] - M_T_m_1[i + k]) * (T_B[i - 1] - μ_Q_m_1[i])
+                    cov_a[i + k] * cov_b[i] - cov_c[i + k] * cov_d[i]
                 )
 
             if T_A_subseq_isfinite[i + k] and T_B_subseq_isfinite[i]:
@@ -334,6 +349,23 @@ def _stump(
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, n_threads)
 
+    cov_a = T_A[m - 1 :] - M_T_m_1[:-1]
+    cov_b = T_B[m - 1 :] - μ_Q_m_1[:-1]
+    # The next lines are equivalent and left for reference
+    # cov_c = np.roll(T_A, 1)
+    # cov_ = cov_c[:M_T_m_1.shape[0]] - M_T_m_1[:]
+    cov_c = np.empty(M_T_m_1.shape[0])
+    cov_c[1:] = T_A[: M_T_m_1.shape[0] - 1]
+    cov_c[0] = T_A[-1]
+    cov_c[:] = cov_c - M_T_m_1
+    # The next lines are equivalent and left for reference
+    # cov_d = np.roll(T_B, 1)
+    # cov_d = cov_d[:μ_Q_m_1.shape[0]] - μ_Q_m_1[:]
+    cov_d = np.empty(μ_Q_m_1.shape[0])
+    cov_d[1:] = T_B[: μ_Q_m_1.shape[0] - 1]
+    cov_d[0] = T_B[-1]
+    cov_d[:] = cov_d - μ_Q_m_1
+
     for thread_idx in prange(n_threads):
         # Compute and update cov, I within a single thread to avoiding race conditions
         _compute_diagonal(
@@ -344,8 +376,10 @@ def _stump(
             μ_Q,
             Σ_T_inverse,
             σ_Q_inverse,
-            M_T_m_1,
-            μ_Q_m_1,
+            cov_a,
+            cov_b,
+            cov_c,
+            cov_d,
             T_A_subseq_isfinite,
             T_B_subseq_isfinite,
             T_A_subseq_isconstant,
