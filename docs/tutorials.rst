@@ -12,3 +12,4 @@ Tutorials
     Tutorial_Semantic_Segmentation.ipynb
     Tutorial_Fast_Approximate_Matrix_Profiles.ipynb
     Tutorial_Matrix_Profiles_For_Streaming_Data.ipynb
+    Tutorial_First_Time_Contributions.ipynb
