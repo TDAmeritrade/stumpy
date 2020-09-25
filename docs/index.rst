@@ -10,6 +10,7 @@ STUMPY documentation
    install
    api
    tutorials
+   Contribute.ipynb
    help
    Code Repository <https://github.com/TDAmeritrade/stumpy>
 
