@@ -652,16 +652,24 @@ def mass(Q, T, M_T=None, Σ_T=None):
     Note: Unlike the Matrix Profile I paper, here, M_T, Σ_T can be calculated
     once for all subsequences of T and passed in so the redundancy is removed
     """
+    Q = Q.copy()
     Q = np.asarray(Q)
     check_dtype(Q)
     m = Q.shape[0]
 
+    if Q.ndim == 2 and Q.shape[1] == 1:  # pragma: no cover
+        Q = Q.flatten()
+
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
 
+    T = T.copy()
     T = np.asarray(T)
     check_dtype(T)
     n = T.shape[0]
+
+    if T.ndim == 2 and T.shape[1] == 1:  # pragma: no cover
+        T = T.flatten()
 
     if T.ndim != 1:  # pragma: no cover
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
@@ -736,16 +744,24 @@ def mass_absolute(Q, T):
     `See Mueen's Absolute Algorithm for Similarity Search \
     <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
     """
+    Q = Q.copy()
     Q = np.asarray(Q)
     check_dtype(Q)
     m = Q.shape[0]
 
+    if Q.ndim == 2 and Q.shape[1] == 1:  # pragma: no cover
+        Q = Q.flatten()
+
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
 
+    T = T.copy()
     T = np.asarray(T)
     check_dtype(T)
     n = T.shape[0]
+
+    if T.ndim == 2 and T.shape[1] == 1:  # pragma: no cover
+        T = T.flatten()
 
     if T.ndim != 1:  # pragma: no cover
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
