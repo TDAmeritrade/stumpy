@@ -49,8 +49,8 @@ def _compute_diagonal(
         The time series or sequence for which to compute the matrix profile
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -152,37 +152,37 @@ def _compute_diagonal(
         k = diags[diag_idx]
 
         if k >= 0:
-            iter_range = range(0, min(n_B - m + 1, n_A - m + 1 - k))
+            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - k))
         else:
-            iter_range = range(-k, min(n_B - m + 1, n_A - m + 1 - k))
+            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
 
         for i in iter_range:
             if i == 0 or i == k or (k < 0 and i == -k):
                 cov = (
                     np.dot(
-                        (T_A[i + k : i + k + m] - M_T[i + k]), (T_B[i : i + m] - μ_Q[i])
+                        (T_B[i + k : i + k + m] - M_T[i + k]), (T_A[i : i + m] - μ_Q[i])
                     )
                     * m_inverse
                 )
             else:
                 # The next lines are equivalent and left for reference
                 # cov = cov + constant * (
-                #     (T_A[i + k + m - 1] - M_T_m_1[i + k])
-                #     * (T_B[i + m - 1] - μ_Q_m_1[i])
-                #     - (T_A[i + k - 1] - M_T_m_1[i + k]) * (T_B[i - 1] - μ_Q_m_1[i])
+                #     (T_B[i + k + m - 1] - M_T_m_1[i + k])
+                #     * (T_A[i + m - 1] - μ_Q_m_1[i])
+                #     - (T_B[i + k - 1] - M_T_m_1[i + k]) * (T_A[i - 1] - μ_Q_m_1[i])
                 # )
                 cov = cov + constant * (
                     cov_a[i + k] * cov_b[i] - cov_c[i + k] * cov_d[i]
                 )
 
-            if T_A_subseq_isfinite[i + k] and T_B_subseq_isfinite[i]:
+            if T_B_subseq_isfinite[i + k] and T_A_subseq_isfinite[i]:
                 # Neither subsequence contains NaNs
-                if T_A_subseq_isconstant[i + k] or T_B_subseq_isconstant[i]:
+                if T_B_subseq_isconstant[i + k] or T_A_subseq_isconstant[i]:
                     pearson = 0.5
                 else:
                     pearson = cov * Σ_T_inverse[i + k] * σ_Q_inverse[i]
 
-                if T_A_subseq_isconstant[i + k] and T_B_subseq_isconstant[i]:
+                if T_B_subseq_isconstant[i + k] and T_A_subseq_isconstant[i]:
                     pearson = 1.0
 
                 if pearson > ρ[thread_idx, i, 0]:
@@ -237,8 +237,8 @@ def _stump(
         The time series or sequence for which to compute the matrix profile
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -318,12 +318,12 @@ def _stump(
 
     See Table II
 
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
+    Timeseries, T_A, will be annotated with the distance location
+    (or index) of all its subsequences in another times series, T_B.
 
-    Return: For every subsequence, Q, in T_B, you will get a distance
-    and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the
+    Return: For every subsequence, Q, in T_A, you will get a distance
+    and index for the closest subsequence in T_B. Thus, the array
+    returned will have length T_A.shape[0]-m+1. Additionally, the
     left and right matrix profiles are also returned.
 
     Note: Unlike in the Table II where T_A.shape is expected to be equal
@@ -341,7 +341,7 @@ def _stump(
     """
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
-    l = n_B - m + 1
+    l = n_A - m + 1
     n_threads = config.NUMBA_NUM_THREADS
     ρ = np.full((n_threads, l, 3), -np.inf)
     I = np.full((n_threads, l, 3), -1, np.int64)
@@ -349,21 +349,21 @@ def _stump(
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, n_threads)
 
-    cov_a = T_A[m - 1 :] - M_T_m_1[:-1]
-    cov_b = T_B[m - 1 :] - μ_Q_m_1[:-1]
+    cov_a = T_B[m - 1 :] - M_T_m_1[:-1]
+    cov_b = T_A[m - 1 :] - μ_Q_m_1[:-1]
     # The next lines are equivalent and left for reference
     # cov_c = np.roll(T_A, 1)
     # cov_ = cov_c[:M_T_m_1.shape[0]] - M_T_m_1[:]
     cov_c = np.empty(M_T_m_1.shape[0])
-    cov_c[1:] = T_A[: M_T_m_1.shape[0] - 1]
-    cov_c[0] = T_A[-1]
+    cov_c[1:] = T_B[: M_T_m_1.shape[0] - 1]
+    cov_c[0] = T_B[-1]
     cov_c[:] = cov_c - M_T_m_1
     # The next lines are equivalent and left for reference
     # cov_d = np.roll(T_B, 1)
     # cov_d = cov_d[:μ_Q_m_1.shape[0]] - μ_Q_m_1[:]
     cov_d = np.empty(μ_Q_m_1.shape[0])
-    cov_d[1:] = T_B[: μ_Q_m_1.shape[0] - 1]
-    cov_d[0] = T_B[-1]
+    cov_d[1:] = T_A[: μ_Q_m_1.shape[0] - 1]
+    cov_d[0] = T_A[-1]
     cov_d[:] = cov_d - μ_Q_m_1
 
     for thread_idx in prange(n_threads):
@@ -439,8 +439,9 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
         Window size
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest. Default is `None` which corresponds to a self-join.
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
+        `None` which corresponds to a self-join.
 
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
@@ -478,12 +479,12 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
 
     See Table II
 
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
+    Timeseries, T_A, will be annotated with the distance location
+    (or index) of all its subsequences in another times series, T_B.
 
-    Return: For every subsequence, Q, in T_B, you will get a distance
-    and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the
+    Return: For every subsequence, Q, in T_A, you will get a distance
+    and index for the closest subsequence in T_B. Thus, the array
+    returned will have length T_A.shape[0]-m+1. Additionally, the
     left and right matrix profiles are also returned.
 
     Note: Unlike in the Table II where T_A.shape is expected to be equal
@@ -505,18 +506,18 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
 
     (
         T_A,
-        M_T,
-        Σ_T_inverse,
-        M_T_m_1,
+        μ_Q,
+        σ_Q_inverse,
+        μ_Q_m_1,
         T_A_subseq_isfinite,
         T_A_subseq_isconstant,
     ) = core.preprocess_diagonal(T_A, m)
 
     (
         T_B,
-        μ_Q,
-        σ_Q_inverse,
-        μ_Q_m_1,
+        M_T,
+        Σ_T_inverse,
+        M_T_m_1,
         T_B_subseq_isfinite,
         T_B_subseq_isconstant,
     ) = core.preprocess_diagonal(T_B, m)
@@ -545,15 +546,15 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
-    l = n_B - m + 1
+    l = n_A - m + 1
 
     excl_zone = int(np.ceil(m / 4))
     out = np.empty((l, 4), dtype=object)
 
     if ignore_trivial:
-        diags = np.arange(excl_zone + 1, n_B - m + 1)
+        diags = np.arange(excl_zone + 1, n_A - m + 1)
     else:
-        diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
+        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
 
     P, I = _stump(
         T_A,

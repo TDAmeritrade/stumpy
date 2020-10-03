@@ -25,7 +25,8 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         Window size
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequences
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     ignore_trivial : bool
         `True` if this is a self join and `False` otherwise (i.e., AB-join).
@@ -44,12 +45,12 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
 
     See Table II
 
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
+    Timeseries, T_A, will be annotated with the distance location
+    (or index) of all its subsequences in another times series, T_B.
 
-    For every subsequence, Q, in T_B, you will get a distance
+    For every subsequence, Q, in T_A, you will get a distance
     and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the
+    returned will have length T_A.shape[0]-m+1. Additionally, the
     left and right matrix profiles are also returned.
 
     Note: Unlike in the Table II where T_A.shape is expected to be equal
@@ -76,8 +77,8 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         T_B = T_A
         ignore_trivial = True
 
-    T_A, M_T, Σ_T = core.preprocess(T_A, m)
-    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
+    T_A, μ_Q, σ_Q = core.preprocess(T_A, m)
+    T_B, M_T, Σ_T = core.preprocess(T_B, m)
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
@@ -95,7 +96,7 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
         logger.warning("Try setting `ignore_trivial = False`.")
 
-    n = T_B.shape[0]
+    n = T_A.shape[0]
     l = n - m + 1
     excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
 
@@ -108,21 +109,21 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         IR = -1
     else:
         if ignore_trivial:
-            P, I = stamp._mass_PI(T_B[:m], T_A, M_T, Σ_T, 0, excl_zone)
-            PR, IR = stamp._mass_PI(T_B[:m], T_A, M_T, Σ_T, 0, excl_zone, right=True)
+            P, I = stamp._mass_PI(T_A[:m], T_B, M_T, Σ_T, 0, excl_zone)
+            PR, IR = stamp._mass_PI(T_A[:m], T_B, M_T, Σ_T, 0, excl_zone, right=True)
         else:
-            P, I = stamp._mass_PI(T_B[:m], T_A, M_T, Σ_T)
+            P, I = stamp._mass_PI(T_A[:m], T_B, M_T, Σ_T)
             IR = -1  # No left and right matrix profile available
 
     out[0] = P, I, -1, IR
 
-    QT = core.sliding_dot_product(T_B[:m], T_A)
-    QT_first = core.sliding_dot_product(T_A[:m], T_B)
+    QT = core.sliding_dot_product(T_A[:m], T_B)
+    QT_first = core.sliding_dot_product(T_B[:m], T_A)
 
-    k = T_A.shape[0] - m + 1
+    k = T_B.shape[0] - m + 1
     for i in range(1, l):
         QT[1:] = (
-            QT[: k - 1] - T_B[i - 1] * T_A[: k - 1] + T_B[i - 1 + m] * T_A[-(k - 1) :]
+            QT[: k - 1] - T_A[i - 1] * T_B[: k - 1] + T_A[i - 1 + m] * T_B[-(k - 1) :]
         )
         QT[0] = QT_first[i]
 

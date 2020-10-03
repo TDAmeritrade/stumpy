@@ -29,7 +29,7 @@ def naive_prescrump(T_A, m, T_B, s, exclusion_zone=None):
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
-    l = n_B - m + 1
+    l = n_A - m + 1
 
     P = np.empty(l)
     I = np.empty(l, dtype=np.int64)
@@ -72,12 +72,12 @@ def naive_scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
-    l = n_B - m + 1
+    l = n_A - m + 1
 
     if exclusion_zone is not None:
-        diags = np.random.permutation(range(exclusion_zone + 1, n_B - m + 1))
+        diags = np.random.permutation(range(exclusion_zone + 1, n_A - m + 1))
     else:
-        diags = np.random.permutation(range(-(n_B - m + 1) + 1, n_A - m + 1))
+        diags = np.random.permutation(range(-(n_A - m + 1) + 1, n_B - m + 1))
 
     n_chunks = int(np.ceil(1.0 / percentage))
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
@@ -93,8 +93,8 @@ def naive_scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
     for diag_idx in range(diags_ranges_start, diags_ranges_stop):
         k = diags[diag_idx]
 
-        for i in range(n_B - m + 1):
-            for j in range(n_A - m + 1):
+        for i in range(n_A - m + 1):
+            for j in range(n_B - m + 1):
                 if j - i == k:
                     if distance_matrix[i, j] < out[i, 0]:
                         out[i, 0] = distance_matrix[i, j]

@@ -34,8 +34,9 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
         Window size
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest. Default is `None` which corresponds to a self-join.
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
+        `None` which corresponds to a self-join.
 
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
@@ -81,7 +82,7 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
-    l = n_B - m + 1
+    l = n_A - m + 1
 
     excl_zone = int(np.ceil(m / 4))
     out = np.empty((l, 4), dtype=object)
@@ -90,9 +91,9 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     nworkers = len(hosts)
 
     if ignore_trivial:
-        diags = np.arange(excl_zone + 1, n_B - m + 1)
+        diags = np.arange(excl_zone + 1, n_A - m + 1)
     else:
-        diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
+        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, nworkers)

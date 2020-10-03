@@ -49,8 +49,8 @@ def _compute_and_update_PI_kernel(
         The time series or sequence for which to compute the dot product
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequence
-        of interest
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -197,8 +197,8 @@ def _gpu_stump(
         the matrix profile
 
     T_B_fname : str
-        The file name for the time series or sequence that contain your
-        query subsequences of interest
+        The file name for the time series or sequence that will be used to annotate T_A.
+        For every subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -266,12 +266,12 @@ def _gpu_stump(
 
     See Table II, Figure 5, and Figure 6
 
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
+    Timeseries, T_A, will be annotated with the distance location
+    (or index) of all its subsequences in another times series, T_B.
 
-    Return: For every subsequence, Q, in T_B, you will get a distance
+    Return: For every subsequence, Q, in T_A, you will get a distance
     and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the
+    returned will have length T_A.shape[0]-m+1. Additionally, the
     left and right matrix profiles are also returned.
 
     Note: Unlike in the Table II where T_A.shape is expected to be equal
@@ -387,8 +387,9 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
         Window size
 
     T_B : (optional) ndarray
-        The time series or sequence that contain your query subsequences
-        of interest. Default is `None` which corresponds to a self-join.
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
+        `None` which corresponds to a self-join.
 
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
@@ -415,12 +416,12 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
 
     See Table II, Figure 5, and Figure 6
 
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
+    Timeseries, T_A, will be annotated with the distance location
+    (or index) of all its subsequences in another times series, T_B.
 
-    Return: For every subsequence, Q, in T_B, you will get a distance
-    and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the
+    Return: For every subsequence, Q, in T_A, you will get a distance
+    and index for the closest subsequence in T_B. Thus, the array
+    returned will have length T_A.shape[0]-m+1. Additionally, the
     left and right matrix profiles are also returned.
 
     Note: Unlike in the Table II where T_A.shape is expected to be equal
@@ -439,12 +440,6 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     if T_B is None:  # Self join!
         T_B = T_A
         ignore_trivial = True
-
-    # Swap T_A and T_B for GPU implementation
-    # This keeps the API identical to and compatible with `stumpy.stump`
-    tmp_T = T_A
-    T_A = T_B
-    T_B = tmp_T
 
     T_A, M_T, Σ_T = core.preprocess(T_A, m)
     T_B, μ_Q, σ_Q = core.preprocess(T_B, m)

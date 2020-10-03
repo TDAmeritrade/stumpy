@@ -520,8 +520,8 @@ def test_count_diagonal_ndist():
     for n_A in range(10, 15):
         for n_B in range(10, 15):
             for m in range(3, 6):
-                diags = np.random.permutation(range(-(n_B - m + 1) + 1, n_A - m + 1))
-                ones_matrix = np.ones((n_B - m + 1, n_A - m + 1), dtype=np.int64)
+                diags = np.random.permutation(range(-(n_A - m + 1) + 1, n_B - m + 1))
+                ones_matrix = np.ones((n_A - m + 1, n_B - m + 1), dtype=np.int64)
                 left_ndist_counts = np.empty(len(diags))
                 for i, diag in enumerate(diags):
                     left_ndist_counts[i] = ones_matrix.diagonal(offset=diag).sum()

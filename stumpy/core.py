@@ -783,8 +783,8 @@ def mass_absolute(Q, T):
 
 def _get_QT(start, T_A, T_B, m):
     """
-    Compute the sliding dot product between the query, `T_B`, (from
-    [start:start+m]) and the time series, `T_A`. Additionally, compute
+    Compute the sliding dot product between the query, `T_A`, (from
+    [start:start+m]) and the time series, `T_B`. Additionally, compute
     QT for the first window.
 
     Parameters
@@ -796,8 +796,8 @@ def _get_QT(start, T_A, T_B, m):
         The time series or sequence for which to compute the dot product
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequence
-        of interest
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -1047,9 +1047,9 @@ def _count_diagonal_ndist(diags, m, n_A, n_B):
     for diag_idx in prange(diags.shape[0]):
         k = diags[diag_idx]
         if k >= 0:
-            diag_ndist_counts[diag_idx] = min(n_A - m + 1 - k, n_B - m + 1)
+            diag_ndist_counts[diag_idx] = min(n_B - m + 1 - k, n_A - m + 1)
         else:
-            diag_ndist_counts[diag_idx] = min(n_A - m + 1, n_B - m + 1 + k)
+            diag_ndist_counts[diag_idx] = min(n_B - m + 1, n_A - m + 1 + k)
 
     return diag_ndist_counts
 
