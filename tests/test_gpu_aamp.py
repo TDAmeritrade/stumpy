@@ -74,15 +74,15 @@ def test_gpu_aamp_self_join_larger_window(T_A, T_B, m):
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_gpu_aamp_A_B_join(T_A, T_B):
     m = 3
-    left = naive.aamp(T_A, m, T_B=T_B)
-    right = gpu_aamp(T_A, m, T_B, ignore_trivial=False)
+    left = naive.aamp(T_B, m, T_B=T_A)
+    right = gpu_aamp(T_B, m, T_A, ignore_trivial=False)
     naive.replace_inf(left)
     naive.replace_inf(right)
     npt.assert_almost_equal(left, right)
 
-    right = gpu_aamp(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+    # right = gpu_aamp(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
+    # naive.replace_inf(right)
+    # npt.assert_almost_equal(left, right)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -117,11 +117,11 @@ def test_parallel_gpu_aamp_A_B_join(T_A, T_B):
     device_ids = [device.id for device in cuda.list_devices()]
     if len(T_B) > 10:
         m = 3
-        left = naive.aamp(T_A, m, T_B=T_B)
+        left = naive.aamp(T_B, m, T_B=T_A)
         right = gpu_aamp(
-            T_A,
-            m,
             T_B,
+            m,
+            T_A,
             ignore_trivial=False,
             device_id=device_ids,
         )
@@ -130,9 +130,9 @@ def test_parallel_gpu_aamp_A_B_join(T_A, T_B):
         npt.assert_almost_equal(left, right)
 
         # right = gpu_aamp(
-        #     pd.Series(T_A),
-        #     m,
         #     pd.Series(T_B),
+        #     m,
+        #     pd.Series(T_A),
         #     ignore_trivial=False,
         #     device_id=device_ids,
         # )
@@ -159,17 +159,6 @@ def test_gpu_aamp_one_constant_subsequence_A_B_join():
     T_A = np.random.rand(20)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
-    left = naive.aamp(T_A, m, T_B=T_B)
-    right = gpu_aamp(T_A, m, T_B, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
-
-    # right = gpu_aamp(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    # naive.replace_inf(right)
-    # npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
-
-    # Swap inputs
     left = naive.aamp(T_B, m, T_B=T_A)
     right = gpu_aamp(T_B, m, T_A, ignore_trivial=False)
     naive.replace_inf(left)
@@ -177,6 +166,17 @@ def test_gpu_aamp_one_constant_subsequence_A_B_join():
     npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
 
     # right = gpu_aamp(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
+    # naive.replace_inf(right)
+    # npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+
+    # Swap inputs
+    left = naive.aamp(T_A, m, T_B=T_B)
+    right = gpu_aamp(T_A, m, T_B, ignore_trivial=False)
+    naive.replace_inf(left)
+    naive.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+
+    # right = gpu_aamp(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
     # naive.replace_inf(right)
     # npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
 
@@ -185,17 +185,6 @@ def test_gpu_aamp_two_constant_subsequences_A_B_join():
     T_A = np.array([0, 0, 0, 0, 0, 1], dtype=np.float64)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
-    left = naive.aamp(T_A, m, T_B=T_B)
-    right = gpu_aamp(T_A, m, T_B, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
-
-    # right = gpu_aamp(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    # naive.replace_inf(right)
-    # npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
-
-    # Swap inputs
     left = naive.aamp(T_B, m, T_B=T_A)
     right = gpu_aamp(T_B, m, T_A, ignore_trivial=False)
     naive.replace_inf(left)
@@ -203,6 +192,17 @@ def test_gpu_aamp_two_constant_subsequences_A_B_join():
     npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
 
     # right = gpu_aamp(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
+    # naive.replace_inf(right)
+    # npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+
+    # Swap inputs
+    left = naive.aamp(T_A, m, T_B=T_B)
+    right = gpu_aamp(T_A, m, T_B, ignore_trivial=False)
+    naive.replace_inf(left)
+    naive.replace_inf(right)
+    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+
+    # right = gpu_aamp(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
     # naive.replace_inf(right)
     # npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
 
@@ -309,14 +309,14 @@ def test_gpu_aamp_nan_inf_A_B_join(
             T_A_sub[substitution_location_A] = substitute_A
             T_B_sub[substitution_location_B] = substitute_B
 
-            left = naive.aamp(T_A_sub, m, T_B=T_B_sub)
-            right = gpu_aamp(T_A_sub, m, T_B_sub, ignore_trivial=False)
+            left = naive.aamp(T_B_sub, m, T_B=T_A_sub)
+            right = gpu_aamp(T_B_sub, m, T_A_sub, ignore_trivial=False)
             naive.replace_inf(left)
             naive.replace_inf(right)
             npt.assert_almost_equal(left, right)
 
             # right = gpu_aamp(
-            #     pd.Series(T_A_sub), m, pd.Series(T_B_sub), ignore_trivial=False
+            #     pd.Series(T_B_sub), m, pd.Series(T_A_sub), ignore_trivial=False
             # )
             # naive.replace_inf(right)
             # npt.assert_almost_equal(left, right)
