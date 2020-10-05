@@ -81,9 +81,9 @@ test_data = [
 
 @pytest.mark.parametrize("Q, T", test_data)
 def test_sliding_dot_product(Q, T):
-    left = naive_rolling_window_dot_product(Q, T)
-    right = core.sliding_dot_product(Q, T)
-    npt.assert_almost_equal(left, right)
+    ref_mp = naive_rolling_window_dot_product(Q, T)
+    comp_mp = core.sliding_dot_product(Q, T)
+    npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("Q, T", test_data)

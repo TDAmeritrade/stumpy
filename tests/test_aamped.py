@@ -43,11 +43,11 @@ def test_aamp_int_input(dask_cluster):
 def test_aamped_self_join(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 3
-        left = naive.aamp(T_B, m)
-        right = aamped(dask_client, T_B, m)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left, right)
+        ref_mp = naive.aamp(T_B, m)
+        comp_mp = aamped(dask_client, T_B, m)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
@@ -58,11 +58,11 @@ def test_aamped_self_join(T_A, T_B, dask_cluster):
 def test_aamped_self_join_df(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 3
-        left = naive.aamp(T_B, m)
-        right = aamped(dask_client, pd.Series(T_B), m)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left, right)
+        ref_mp = naive.aamp(T_B, m)
+        comp_mp = aamped(dask_client, pd.Series(T_B), m)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
@@ -74,12 +74,12 @@ def test_aamped_self_join_df(T_A, T_B, dask_cluster):
 def test_aamped_self_join_larger_window(T_A, T_B, m, dask_cluster):
     with Client(dask_cluster) as dask_client:
         if len(T_B) > m:
-            left = naive.aamp(T_B, m)
-            right = aamped(dask_client, T_B, m)
-            naive.replace_inf(left)
-            naive.replace_inf(right)
+            ref_mp = naive.aamp(T_B, m)
+            comp_mp = aamped(dask_client, T_B, m)
+            naive.replace_inf(ref_mp)
+            naive.replace_inf(comp_mp)
 
-            npt.assert_almost_equal(left, right)
+            npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
@@ -91,12 +91,12 @@ def test_aamped_self_join_larger_window(T_A, T_B, m, dask_cluster):
 def test_aamped_self_join_larger_window_df(T_A, T_B, m, dask_cluster):
     with Client(dask_cluster) as dask_client:
         if len(T_B) > m:
-            left = naive.aamp(T_B, m)
-            right = aamped(dask_client, pd.Series(T_B), m)
-            naive.replace_inf(left)
-            naive.replace_inf(right)
+            ref_mp = naive.aamp(T_B, m)
+            comp_mp = aamped(dask_client, pd.Series(T_B), m)
+            naive.replace_inf(ref_mp)
+            naive.replace_inf(comp_mp)
 
-            npt.assert_almost_equal(left, right)
+            npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
@@ -107,11 +107,11 @@ def test_aamped_self_join_larger_window_df(T_A, T_B, m, dask_cluster):
 def test_aamped_A_B_join(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 3
-        left = naive.aamp(T_A, m, T_B=T_B)
-        right = aamped(dask_client, T_A, m, T_B, ignore_trivial=False)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left, right)
+        ref_mp = naive.aamp(T_A, m, T_B=T_B)
+        comp_mp = aamped(dask_client, T_A, m, T_B, ignore_trivial=False)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
@@ -122,10 +122,10 @@ def test_aamped_A_B_join(T_A, T_B, dask_cluster):
 def test_aamped_A_B_join_df(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 3
-        left = naive.aamp(T_A, m, T_B=T_B)
-        right = aamped(
+        ref_mp = naive.aamp(T_A, m, T_B=T_B)
+        comp_mp = aamped(
             dask_client, pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
         )
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left, right)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)

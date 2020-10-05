@@ -28,11 +28,11 @@ def test_aamped_one_constant_subsequence_self_join(dask_cluster):
         )
         m = 3
         zone = int(np.ceil(m / 4))
-        left = naive.aamp(T_A, m)
-        right = aamped(dask_client, T_A, m, ignore_trivial=True)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+        ref_mp = naive.aamp(T_A, m)
+        comp_mp = aamped(dask_client, T_A, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 @pytest.mark.filterwarnings("ignore:A large number of values are smaller")
@@ -48,11 +48,11 @@ def test_aamped_one_constant_subsequence_self_join_df(dask_cluster):
         )
         m = 3
         zone = int(np.ceil(m / 4))
-        left = naive.aamp(T_A, m)
-        right = aamped(dask_client, pd.Series(T_A), m, ignore_trivial=True)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+        ref_mp = naive.aamp(T_A, m)
+        comp_mp = aamped(dask_client, pd.Series(T_A), m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 @pytest.mark.filterwarnings("ignore:\\s+A large number of values are smaller")
@@ -68,11 +68,11 @@ def test_aamped_one_constant_subsequence_A_B_join(dask_cluster):
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = naive.aamp(T_A, m, T_B=T_B)
-        right = aamped(dask_client, T_A, m, T_B, ignore_trivial=False)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+        ref_mp = naive.aamp(T_A, m, T_B=T_B)
+        comp_mp = aamped(dask_client, T_A, m, T_B, ignore_trivial=False)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 @pytest.mark.filterwarnings("ignore:\\s+A large number of values are smaller")
@@ -88,13 +88,13 @@ def test_aamped_one_constant_subsequence_A_B_join_df(dask_cluster):
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = naive.aamp(T_A, m, T_B=T_B)
-        right = aamped(
+        ref_mp = naive.aamp(T_A, m, T_B=T_B)
+        comp_mp = aamped(
             dask_client, pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
         )
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 @pytest.mark.filterwarnings("ignore:\\s+A large number of values are smaller")
@@ -110,11 +110,11 @@ def test_aamped_one_constant_subsequence_A_B_join_swap(dask_cluster):
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = naive.aamp(T_A, m, T_B=T_B)
-        right = aamped(dask_client, T_A, m, T_B, ignore_trivial=False)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+        ref_mp = naive.aamp(T_A, m, T_B=T_B)
+        comp_mp = aamped(dask_client, T_A, m, T_B, ignore_trivial=False)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 @pytest.mark.filterwarnings("ignore:\\s+A large number of values are smaller")
@@ -130,13 +130,13 @@ def test_aamped_one_constant_subsequence_A_B_join_df_swap(dask_cluster):
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        left = naive.aamp(T_A, m, T_B=T_B)
-        right = aamped(
+        ref_mp = naive.aamp(T_A, m, T_B=T_B)
+        comp_mp = aamped(
             dask_client, pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
         )
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 @pytest.mark.filterwarnings("ignore:A large number of values are smaller")
@@ -153,12 +153,12 @@ def test_aamped_identical_subsequence_self_join(dask_cluster):
         T_A[11 : 11 + identical.shape[0]] = identical
         m = 3
         zone = int(np.ceil(m / 4))
-        left = naive.aamp(T_A, m)
-        right = aamped(dask_client, T_A, m, ignore_trivial=True)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
+        ref_mp = naive.aamp(T_A, m)
+        comp_mp = aamped(dask_client, T_A, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
         npt.assert_almost_equal(
-            left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
+            ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
         )  # ignore indices
 
 
@@ -176,10 +176,10 @@ def test_aamped_one_constant_subsequence_A_B_join(dask_cluster):
         T_A[1 : 1 + identical.shape[0]] = identical
         T_B[11 : 11 + identical.shape[0]] = identical
         m = 3
-        left = naive.aamp(T_A, m, T_B=T_B)
-        right = aamped(dask_client, T_A, m, T_B, ignore_trivial=False)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
+        ref_mp = naive.aamp(T_A, m, T_B=T_B)
+        comp_mp = aamped(dask_client, T_A, m, T_B, ignore_trivial=False)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
         npt.assert_almost_equal(
-            left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
+            ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
         )  # ignore indices
