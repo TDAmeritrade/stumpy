@@ -69,7 +69,7 @@ stages:
       displayName: "Running flake8"
 
     - bash: ./test.sh unit
-      displayName: "Running Unit Tests"
+      displayName: "Running unit tests"
 
 - stage: Coverage
 
@@ -130,11 +130,11 @@ stages:
       displayName: "Running flake8"
 
     - bash: ./test.sh coverage
-      displayName: "Running test"
+      displayName: "Running test coverage"
 
     - script: |
         codecov --token=$(CODECOV_TOKEN)
-      displayName: "Upload test coverage results"
+      displayName: "Uploading test coverage results"
 
 - stage: Scan
   displayName: "FOSSA"
