@@ -26,27 +26,27 @@ def test_stamp_mass_PI(T_A, T_B):
     zone = int(np.ceil(m / 2))
     Q = T_B[trivial_idx : trivial_idx + m]
     M_T, Σ_T = core.compute_mean_std(T_B, m)
-    left_P, left_I, left_left_I, left_right_I = naive.mass(
+    ref_P, ref_I, ref_left_I, ref_right_I = naive.mass(
         Q, T_B, m, trivial_idx=trivial_idx, excl_zone=zone, ignore_trivial=True
     )
-    right_P, right_I = stamp._mass_PI(
+    comp_P, comp_I = stamp._mass_PI(
         Q, T_B, M_T, Σ_T, trivial_idx=trivial_idx, excl_zone=zone
     )
 
-    npt.assert_almost_equal(left_P, right_P)
-    npt.assert_almost_equal(left_I, right_I)
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
 
-    right_left_P, right_left_I = stamp._mass_PI(
+    comp_left_P, comp_left_I = stamp._mass_PI(
         Q, T_B, M_T, Σ_T, trivial_idx=trivial_idx, excl_zone=zone, left=True
     )
 
-    npt.assert_almost_equal(left_left_I, right_left_I)
+    npt.assert_almost_equal(ref_left_I, comp_left_I)
 
-    right_right_P, right_right_I = stamp._mass_PI(
+    comp_right_P, comp_right_I = stamp._mass_PI(
         Q, T_B, M_T, Σ_T, trivial_idx=trivial_idx, excl_zone=zone, right=True
     )
 
-    npt.assert_almost_equal(left_right_I, right_right_I)
+    npt.assert_almost_equal(ref_right_I, comp_right_I)
 
 
 def test_stamp_int_input():

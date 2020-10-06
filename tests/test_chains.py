@@ -15,15 +15,15 @@ test_data = [
 @pytest.mark.parametrize("Value, IR, IL", test_data)
 def test_atsc(Value, IR, IL):
     j = 2
-    left = np.array([2, 4, 6, 8, 10], np.int64)
-    right = atsc(IL, IR, j)
-    npt.assert_equal(left, right)
+    ref = np.array([2, 4, 6, 8, 10], np.int64)
+    comp = atsc(IL, IR, j)
+    npt.assert_equal(ref, comp)
 
 
 @pytest.mark.parametrize("Value, IR, IL", test_data)
 def test_allc(Value, IR, IL):
     j = 2
-    S_left = [
+    S_ref = [
         np.array([1, 7, 11], dtype=np.int64),
         np.array([0], dtype=np.int64),
         np.array([3], dtype=np.int64),
@@ -31,11 +31,11 @@ def test_allc(Value, IR, IL):
         np.array([2, 4, 6, 8, 10], dtype=np.int64),
         np.array([5], dtype=np.int64),
     ]
-    C_left = np.array([2, 4, 6, 8, 10], dtype=np.int64)
-    S_right, C_right = allc(IL, IR)
+    C_ref = np.array([2, 4, 6, 8, 10], dtype=np.int64)
+    S_comp, C_comp = allc(IL, IR)
 
-    S_left = sorted(S_left, key=lambda x: (len(x), list(x)))
-    S_right = sorted(S_right, key=lambda x: (len(x), list(x)))
+    S_ref = sorted(S_ref, key=lambda x: (len(x), list(x)))
+    S_comp = sorted(S_comp, key=lambda x: (len(x), list(x)))
 
-    npt.assert_equal(S_left, S_right)
-    npt.assert_equal(C_left, C_right)
+    npt.assert_equal(S_ref, S_comp)
+    npt.assert_equal(C_ref, C_comp)

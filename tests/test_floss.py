@@ -84,9 +84,9 @@ test_data = [(np.random.randint(0, 50, size=50, dtype=np.int))]
 
 @pytest.mark.parametrize("I", test_data)
 def test_nnmark(I):
-    left = naive_nnmark(I)
-    right = _nnmark(I)
-    npt.assert_almost_equal(left, right)
+    ref = naive_nnmark(I)
+    comp = _nnmark(I)
+    npt.assert_almost_equal(ref, comp)
 
 
 @pytest.mark.parametrize("I", test_data)
@@ -94,21 +94,21 @@ def test_cac(I):
     L = 5
     excl_factor = 1
     custom_iac = _iac(I.shape[0])
-    left = naive_cac(I, L, excl_factor, custom_iac)
+    ref = naive_cac(I, L, excl_factor, custom_iac)
     bidirectional = True
-    right = _cac(I, L, bidirectional, excl_factor)
-    npt.assert_almost_equal(left, right)
+    comp = _cac(I, L, bidirectional, excl_factor)
+    npt.assert_almost_equal(ref, comp)
 
 
 @pytest.mark.parametrize("I", test_data)
 def test_cac_custom_iac(I):
     L = 5
     excl_factor = 1
-    left = naive_cac(I, L, excl_factor)
+    ref = naive_cac(I, L, excl_factor)
     custom_iac = naive_iac(I.shape[0])
     bidirectional = True
-    right = _cac(I, L, bidirectional, excl_factor, custom_iac)
-    npt.assert_almost_equal(left, right)
+    comp = _cac(I, L, bidirectional, excl_factor, custom_iac)
+    npt.assert_almost_equal(ref, comp)
 
 
 @pytest.mark.parametrize("I", test_data)
@@ -117,9 +117,9 @@ def test_rea(I):
     excl_factor = 1
     cac = naive_cac(I, L, excl_factor)
     n_regimes = 3
-    left = naive_rea(cac, n_regimes, L, excl_factor)
-    right = _rea(cac, n_regimes, L, excl_factor)
-    npt.assert_almost_equal(left, right)
+    ref = naive_rea(cac, n_regimes, L, excl_factor)
+    comp = _rea(cac, n_regimes, L, excl_factor)
+    npt.assert_almost_equal(ref, comp)
 
 
 @pytest.mark.parametrize("I", test_data)
@@ -127,12 +127,12 @@ def test_fluss(I):
     L = 5
     excl_factor = 1
     custom_iac = naive_iac(I.shape[0])
-    left_cac = naive_cac(I, L, excl_factor)
+    ref_cac = naive_cac(I, L, excl_factor)
     n_regimes = 3
-    left_rea = naive_rea(left_cac, n_regimes, L, excl_factor)
-    right_cac, right_rea = fluss(I, L, n_regimes, excl_factor, custom_iac)
-    npt.assert_almost_equal(left_cac, right_cac)
-    npt.assert_almost_equal(left_rea, right_rea)
+    ref_rea = naive_rea(ref_cac, n_regimes, L, excl_factor)
+    comp_cac, comp_rea = fluss(I, L, n_regimes, excl_factor, custom_iac)
+    npt.assert_almost_equal(ref_cac, comp_cac)
+    npt.assert_almost_equal(ref_rea, comp_rea)
 
 
 def test_floss():
@@ -143,32 +143,32 @@ def test_floss():
     add_data = data[30:]
 
     mp = naive_right_mp(old_data, m)
-    right_mp = stump(old_data, m)
+    comp_mp = stump(old_data, m)
     k = mp.shape[0]
 
     rolling_Ts = core.rolling_window(data[1:], n)
     L = 5
     excl_factor = 1
     custom_iac = _iac(k, bidirectional=False)
-    stream = floss(right_mp, old_data, m, L, excl_factor, custom_iac=custom_iac)
+    stream = floss(comp_mp, old_data, m, L, excl_factor, custom_iac=custom_iac)
     last_idx = n - m + 1
     excl_zone = int(np.ceil(m / 4))
     zone_start = max(0, k - excl_zone)
-    for i, left_T in enumerate(rolling_Ts):
+    for i, ref_T in enumerate(rolling_Ts):
         mp[:, 1] = -1
         mp[:, 2] = -1
         mp[:] = np.roll(mp, -1, axis=0)
         mp[-1, 0] = np.inf
         mp[-1, 3] = last_idx + i
 
-        D = naive_distance_profile(left_T[-m:], left_T, m)
+        D = naive_distance_profile(ref_T[-m:], ref_T, m)
         D[zone_start:] = np.inf
 
         update_idx = np.argwhere(D < mp[:, 0]).flatten()
         mp[update_idx, 0] = D[update_idx]
         mp[update_idx, 3] = last_idx + i
 
-        left_cac_1d = _cac(
+        ref_cac_1d = _cac(
             mp[:, 3] - i - 1,
             L,
             bidirectional=False,
@@ -176,20 +176,20 @@ def test_floss():
             custom_iac=custom_iac,
         )
 
-        left_mp = mp.copy()
-        left_P = left_mp[:, 0]
-        left_I = left_mp[:, 3]
+        ref_mp = mp.copy()
+        ref_P = ref_mp[:, 0]
+        ref_I = ref_mp[:, 3]
 
-        stream.update(left_T[-1])
-        right_cac_1d = stream.cac_1d_
-        right_P = stream.P_
-        right_I = stream.I_
-        right_T = stream.T_
+        stream.update(ref_T[-1])
+        comp_cac_1d = stream.cac_1d_
+        comp_P = stream.P_
+        comp_I = stream.I_
+        comp_T = stream.T_
 
-        naive.replace_inf(left_P)
-        naive.replace_inf(right_P)
+        naive.replace_inf(ref_P)
+        naive.replace_inf(comp_P)
 
-        npt.assert_almost_equal(left_cac_1d, right_cac_1d)
-        npt.assert_almost_equal(left_P, right_P)
-        npt.assert_almost_equal(left_I, right_I)
-        npt.assert_almost_equal(left_T, right_T)
+        npt.assert_almost_equal(ref_cac_1d, comp_cac_1d)
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_T, comp_T)
