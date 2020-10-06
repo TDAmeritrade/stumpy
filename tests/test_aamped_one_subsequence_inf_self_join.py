@@ -45,11 +45,11 @@ def test_aamped_one_subsequence_inf_self_join(
         T_B_sub[substitution_location_B] = np.inf
 
         zone = int(np.ceil(m / 4))
-        left = naive.aamp(T_B_sub, m)
-        right = aamped(dask_client, T_B_sub, m, ignore_trivial=True)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left, right)
+        ref_mp = naive.aamp(T_B_sub, m)
+        comp_mp = aamped(dask_client, T_B_sub, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
@@ -62,9 +62,9 @@ def test_aamped_nan_zero_mean_self_join(dask_cluster):
         m = 3
 
         zone = int(np.ceil(m / 4))
-        left = naive.aamp(T, m)
-        right = aamped(dask_client, T, m, ignore_trivial=True)
+        ref_mp = naive.aamp(T, m)
+        comp_mp = aamped(dask_client, T, m, ignore_trivial=True)
 
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left, right)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)

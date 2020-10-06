@@ -30,11 +30,11 @@ def test_stomp_int_input():
 def test_stomp_self_join(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
-    left = naive.stamp(T_B, m, exclusion_zone=zone)
-    right = stomp._stomp(T_B, m, ignore_trivial=True)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+    ref_mp = naive.stamp(T_B, m, exclusion_zone=zone)
+    comp_mp = stomp._stomp(T_B, m, ignore_trivial=True)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -42,22 +42,22 @@ def test_stomp_self_join(T_A, T_B):
 def test_stump_self_join_larger_window(T_A, T_B, m):
     if len(T_B) > m:
         zone = int(np.ceil(m / 4))
-        left = naive.stamp(T_B, m, exclusion_zone=zone)
-        right = stomp._stomp(T_B, m, ignore_trivial=True)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
+        ref_mp = naive.stamp(T_B, m, exclusion_zone=zone)
+        comp_mp = stomp._stomp(T_B, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
 
-        npt.assert_almost_equal(left, right)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stomp_A_B_join(T_A, T_B):
     m = 3
-    left = naive.stamp(T_A, m, T_B=T_B)
-    right = stomp._stomp(T_A, m, T_B, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+    ref_mp = naive.stamp(T_A, m, T_B=T_B)
+    comp_mp = stomp._stomp(T_A, m, T_B, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -73,11 +73,11 @@ def test_stomp_nan_inf_self_join(T_A, T_B, substitute_B, substitution_locations)
         T_B_sub[substitution_location_B] = substitute_B
 
         zone = int(np.ceil(m / 4))
-        left = naive.stamp(T_B_sub, m, exclusion_zone=zone)
-        right = stomp._stomp(T_B_sub, m, ignore_trivial=True)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left, right)
+        ref_mp = naive.stamp(T_B_sub, m, exclusion_zone=zone)
+        comp_mp = stomp._stomp(T_B_sub, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -99,11 +99,11 @@ def test_stomp_nan_inf_A_B_join(
             T_A_sub[substitution_location_A] = substitute_A
             T_B_sub[substitution_location_B] = substitute_B
 
-            left = naive.stamp(T_A_sub, m, T_B=T_B_sub)
-            right = stomp._stomp(T_A_sub, m, T_B_sub, ignore_trivial=False)
-            naive.replace_inf(left)
-            naive.replace_inf(right)
-            npt.assert_almost_equal(left, right)
+            ref_mp = naive.stamp(T_A_sub, m, T_B=T_B_sub)
+            comp_mp = stomp._stomp(T_A_sub, m, T_B_sub, ignore_trivial=False)
+            naive.replace_inf(ref_mp)
+            naive.replace_inf(comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 def test_stomp_nan_zero_mean_self_join():
@@ -111,9 +111,9 @@ def test_stomp_nan_zero_mean_self_join():
     m = 3
 
     zone = int(np.ceil(m / 4))
-    left = naive.stamp(T, m, exclusion_zone=zone)
-    right = stomp._stomp(T, m, ignore_trivial=True)
+    ref_mp = naive.stamp(T, m, exclusion_zone=zone)
+    comp_mp = stomp._stomp(T, m, ignore_trivial=True)
 
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)

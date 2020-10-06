@@ -39,15 +39,15 @@ def test_gpu_aamp_int_input():
 def test_gpu_stump_self_join(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
-    left = naive.stamp(T_B, m, exclusion_zone=zone)
-    right = gpu_stump(T_B, m, ignore_trivial=True)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+    ref_mp = naive.stamp(T_B, m, exclusion_zone=zone)
+    comp_mp = gpu_stump(T_B, m, ignore_trivial=True)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
 
-    right = gpu_stump(pd.Series(T_B), m, ignore_trivial=True)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+    comp_mp = gpu_stump(pd.Series(T_B), m, ignore_trivial=True)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -55,34 +55,34 @@ def test_gpu_stump_self_join(T_A, T_B):
 def test_gpu_stump_self_join_larger_window(T_A, T_B, m):
     if len(T_B) > m:
         zone = int(np.ceil(m / 4))
-        left = naive.stamp(T_B, m, exclusion_zone=zone)
-        right = gpu_stump(T_B, m, ignore_trivial=True)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
+        ref_mp = naive.stamp(T_B, m, exclusion_zone=zone)
+        comp_mp = gpu_stump(T_B, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
 
-        npt.assert_almost_equal(left, right)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
-        # right = gpu_stump(
+        # comp_mp = gpu_stump(
         #     pd.Series(T_B),
         #     m,
         #     ignore_trivial=True,
         # )
-        # naive.replace_inf(right)
-        # npt.assert_almost_equal(left, right)
+        # naive.replace_inf(comp_mp)
+        # npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_gpu_stump_A_B_join(T_A, T_B):
     m = 3
-    left = naive.stamp(T_B, m, T_B=T_A)
-    right = gpu_stump(T_B, m, T_A, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+    ref_mp = naive.stamp(T_B, m, T_B=T_A)
+    comp_mp = gpu_stump(T_B, m, T_A, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
 
-    # right = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    # naive.replace_inf(right)
-    # npt.assert_almost_equal(left, right)
+    # comp_mp = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+    # naive.replace_inf(comp_mp)
+    # npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -91,25 +91,25 @@ def test_parallel_gpu_stump_self_join(T_A, T_B):
     if len(T_B) > 10:
         m = 3
         zone = int(np.ceil(m / 4))
-        left = naive.stamp(T_B, m, exclusion_zone=zone)
-        right = gpu_stump(
+        ref_mp = naive.stamp(T_B, m, exclusion_zone=zone)
+        comp_mp = gpu_stump(
             T_B,
             m,
             ignore_trivial=True,
             device_id=device_ids,
         )
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left, right)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
-        # right = gpu_stump(
+        # comp_mp = gpu_stump(
         #     pd.Series(T_B),
         #     m,
         #     ignore_trivial=True,
         #     device_id=device_ids,
         # )
-        # naive.replace_inf(right)
-        # npt.assert_almost_equal(left, right)
+        # naive.replace_inf(comp_mp)
+        # npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -117,94 +117,94 @@ def test_parallel_gpu_stump_A_B_join(T_A, T_B):
     device_ids = [device.id for device in cuda.list_devices()]
     if len(T_B) > 10:
         m = 3
-        left = naive.stamp(T_B, m, T_B=T_A)
-        right = gpu_stump(
+        ref_mp = naive.stamp(T_B, m, T_B=T_A)
+        comp_mp = gpu_stump(
             T_B,
             m,
             T_A,
             ignore_trivial=False,
             device_id=device_ids,
         )
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left, right)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
-        # right = gpu_stump(
+        # comp_mp = gpu_stump(
         #     pd.Series(T_B),
         #     m,
         #     pd.Series(T_A),
         #     ignore_trivial=False,
         #     device_id=device_ids,
         # )
-        # naive.replace_inf(right)
-        # npt.assert_almost_equal(left, right)
+        # naive.replace_inf(comp_mp)
+        # npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 def test_gpu_stump_constant_subsequence_self_join():
     T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
     zone = int(np.ceil(m / 4))
-    left = naive.stamp(T_A, m, exclusion_zone=zone)
-    right = gpu_stump(T_A, m, ignore_trivial=True)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    ref_mp = naive.stamp(T_A, m, exclusion_zone=zone)
+    comp_mp = gpu_stump(T_A, m, ignore_trivial=True)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    # right = gpu_stump(pd.Series(T_A), m, ignore_trivial=True)
-    # naive.replace_inf(right)
-    # npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    # comp_mp = gpu_stump(pd.Series(T_A), m, ignore_trivial=True)
+    # naive.replace_inf(comp_mp)
+    # npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 def test_gpu_stump_one_constant_subsequence_A_B_join():
     T_A = np.random.rand(20)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
-    left = naive.stamp(T_B, m, T_B=T_A)
-    right = gpu_stump(T_B, m, T_A, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    ref_mp = naive.stamp(T_B, m, T_B=T_A)
+    comp_mp = gpu_stump(T_B, m, T_A, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    # right = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    # naive.replace_inf(right)
-    # npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    # comp_mp = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+    # naive.replace_inf(comp_mp)
+    # npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
     # Swap inputs
-    left = naive.stamp(T_A, m, T_B=T_B)
-    right = gpu_stump(T_A, m, T_B, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    ref_mp = naive.stamp(T_A, m, T_B=T_B)
+    comp_mp = gpu_stump(T_A, m, T_B, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    # right = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    # naive.replace_inf(right)
-    # npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    # comp_mp = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+    # naive.replace_inf(comp_mp)
+    # npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 def test_gpu_stump_two_constant_subsequences_A_B_join():
     T_A = np.array([0, 0, 0, 0, 0, 1], dtype=np.float64)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
-    left = naive.stamp(T_B, m, T_B=T_A)
-    right = gpu_stump(T_B, m, T_A, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    ref_mp = naive.stamp(T_B, m, T_B=T_A)
+    comp_mp = gpu_stump(T_B, m, T_A, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    # right = gpu_stump(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
-    # naive.replace_inf(right)
-    # npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    # comp_mp = gpu_stump(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
+    # naive.replace_inf(comp_mp)
+    # npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
     # Swap inputs
-    left = naive.stamp(T_A, m, T_B=T_B)
-    right = gpu_stump(T_A, m, T_B, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    ref_mp = naive.stamp(T_A, m, T_B=T_B)
+    comp_mp = gpu_stump(T_A, m, T_B, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    # right = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    # naive.replace_inf(right)
-    # npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    # comp_mp = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+    # naive.replace_inf(comp_mp)
+    # npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 def test_gpu_stump_identical_subsequence_self_join():
@@ -214,18 +214,18 @@ def test_gpu_stump_identical_subsequence_self_join():
     T_A[11 : 11 + identical.shape[0]] = identical
     m = 3
     zone = int(np.ceil(m / 4))
-    left = naive.stamp(T_A, m, exclusion_zone=zone)
-    right = gpu_stump(T_A, m, ignore_trivial=True)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
+    ref_mp = naive.stamp(T_A, m, exclusion_zone=zone)
+    comp_mp = gpu_stump(T_A, m, ignore_trivial=True)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
-    # right = gpu_stump(pd.Series(T_A), m, ignore_trivial=True)
-    # naive.replace_inf(right)
+    # comp_mp = gpu_stump(pd.Series(T_A), m, ignore_trivial=True)
+    # naive.replace_inf(comp_mp)
     # npt.assert_almost_equal(
-    #     left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
+    #     ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
     # )  # ignore indices
 
 
@@ -236,33 +236,33 @@ def test_gpu_stump_identical_subsequence_A_B_join():
     T_A[1 : 1 + identical.shape[0]] = identical
     T_B[11 : 11 + identical.shape[0]] = identical
     m = 3
-    left = naive.stamp(T_B, m, T_B=T_A)
-    right = gpu_stump(T_B, m, T_A, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
+    ref_mp = naive.stamp(T_B, m, T_B=T_A)
+    comp_mp = gpu_stump(T_B, m, T_A, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
-    # right = gpu_stump(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
-    # naive.replace_inf(right)
+    # comp_mp = gpu_stump(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
+    # naive.replace_inf(comp_mp)
     # npt.assert_almost_equal(
-    #     left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
+    #     ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
     # )  # ignore indices
 
     # Swap inputs
-    left = naive.stamp(T_A, m, T_B=T_B)
-    right = gpu_stump(T_A, m, T_B, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
+    ref_mp = naive.stamp(T_A, m, T_B=T_B)
+    comp_mp = gpu_stump(T_A, m, T_B, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
-    # right = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    # naive.replace_inf(right)
+    # comp_mp = gpu_stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+    # naive.replace_inf(comp_mp)
     # npt.assert_almost_equal(
-    #     left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
+    #     ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
     # )  # ignore indices
 
 
@@ -279,15 +279,15 @@ def test_gpu_stump_nan_inf_self_join(T_A, T_B, substitute_B, substitution_locati
         T_B_sub[substitution_location_B] = substitute_B
 
         zone = int(np.ceil(m / 4))
-        left = naive.stamp(T_B_sub, m, exclusion_zone=zone)
-        right = gpu_stump(T_B_sub, m, ignore_trivial=True)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left, right)
+        ref_mp = naive.stamp(T_B_sub, m, exclusion_zone=zone)
+        comp_mp = gpu_stump(T_B_sub, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
-        # right = gpu_stump(pd.Series(T_B_sub), m, ignore_trivial=True)
-        # naive.replace_inf(right)
-        # npt.assert_almost_equal(left, right)
+        # comp_mp = gpu_stump(pd.Series(T_B_sub), m, ignore_trivial=True)
+        # naive.replace_inf(comp_mp)
+        # npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -309,17 +309,17 @@ def test_gpu_stump_nan_inf_A_B_join(
             T_A_sub[substitution_location_A] = substitute_A
             T_B_sub[substitution_location_B] = substitute_B
 
-            left = naive.stamp(T_B_sub, m, T_B=T_A_sub)
-            right = gpu_stump(T_B_sub, m, T_A_sub, ignore_trivial=False)
-            naive.replace_inf(left)
-            naive.replace_inf(right)
-            npt.assert_almost_equal(left, right)
+            ref_mp = naive.stamp(T_B_sub, m, T_B=T_A_sub)
+            comp_mp = gpu_stump(T_B_sub, m, T_A_sub, ignore_trivial=False)
+            naive.replace_inf(ref_mp)
+            naive.replace_inf(comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)
 
-            # right = gpu_stump(
+            # comp_mp = gpu_stump(
             #     pd.Series(T_B_sub), m, pd.Series(T_A_sub), ignore_trivial=False
             # )
-            # naive.replace_inf(right)
-            # npt.assert_almost_equal(left, right)
+            # naive.replace_inf(comp_mp)
+            # npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 def test_gpu_stump_nan_zero_mean_self_join():
@@ -327,9 +327,9 @@ def test_gpu_stump_nan_zero_mean_self_join():
     m = 3
 
     zone = int(np.ceil(m / 4))
-    left = naive.stamp(T, m, exclusion_zone=zone)
-    right = gpu_stump(T, m, ignore_trivial=True)
+    ref_mp = naive.stamp(T, m, exclusion_zone=zone)
+    comp_mp = gpu_stump(T, m, ignore_trivial=True)
 
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)

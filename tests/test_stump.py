@@ -30,66 +30,66 @@ def test_stump_int_input():
 def test_stump_self_join(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
-    left = naive.stump(T_B, m, exclusion_zone=zone)
-    right = stump(T_B, m, ignore_trivial=True)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+    ref_mp = naive.stump(T_B, m, exclusion_zone=zone)
+    comp_mp = stump(T_B, m, ignore_trivial=True)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
 
-    right = stump(pd.Series(T_B), m, ignore_trivial=True)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+    comp_mp = stump(pd.Series(T_B), m, ignore_trivial=True)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_A_B_join(T_A, T_B):
     m = 3
-    left = naive.stump(T_A, m, T_B=T_B)
-    right = stump(T_A, m, T_B, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+    ref_mp = naive.stump(T_A, m, T_B=T_B)
+    comp_mp = stump(T_A, m, T_B, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
 
-    right = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+    comp_mp = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 def test_stump_constant_subsequence_self_join():
     T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
     zone = int(np.ceil(m / 4))
-    left = naive.stump(T_A, m, exclusion_zone=zone)
-    right = stump(T_A, m, ignore_trivial=True)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    ref_mp = naive.stump(T_A, m, exclusion_zone=zone)
+    comp_mp = stump(T_A, m, ignore_trivial=True)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    right = stump(pd.Series(T_A), m, ignore_trivial=True)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    comp_mp = stump(pd.Series(T_A), m, ignore_trivial=True)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 def test_stump_one_constant_subsequence_A_B_join():
     T_A = np.random.rand(20)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
-    left = naive.stamp(T_A, m, T_B=T_B)
-    right = stump(T_A, m, T_B, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    ref_mp = naive.stamp(T_A, m, T_B=T_B)
+    comp_mp = stump(T_A, m, T_B, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    right = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    comp_mp = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
     # Swap inputs
-    left = naive.stamp(T_B, m, T_B=T_A)
-    right = stump(T_B, m, T_A, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    ref_mp = naive.stamp(T_B, m, T_B=T_A)
+    comp_mp = stump(T_B, m, T_A, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 def test_stump_two_constant_subsequences_A_B_join():
@@ -98,26 +98,26 @@ def test_stump_two_constant_subsequences_A_B_join():
     )
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
-    left = naive.stamp(T_A, m, T_B=T_B)
-    right = stump(T_A, m, T_B, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    ref_mp = naive.stamp(T_A, m, T_B=T_B)
+    comp_mp = stump(T_A, m, T_B, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    right = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    comp_mp = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
     # Swap inputs
-    left = naive.stamp(T_B, m, T_B=T_A)
-    right = stump(T_B, m, T_A, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    ref_mp = naive.stamp(T_B, m, T_B=T_A)
+    comp_mp = stump(T_B, m, T_A, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    right = stump(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left[:, 0], right[:, 0])  # ignore indices
+    comp_mp = stump(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 def test_stump_identical_subsequence_self_join():
@@ -127,18 +127,18 @@ def test_stump_identical_subsequence_self_join():
     T_A[11 : 11 + identical.shape[0]] = identical
     m = 3
     zone = int(np.ceil(m / 4))
-    left = naive.stamp(T_A, m, exclusion_zone=zone)
-    right = stump(T_A, m, ignore_trivial=True)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
+    ref_mp = naive.stamp(T_A, m, exclusion_zone=zone)
+    comp_mp = stump(T_A, m, ignore_trivial=True)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
-    right = stump(pd.Series(T_A), m, ignore_trivial=True)
-    naive.replace_inf(right)
+    comp_mp = stump(pd.Series(T_A), m, ignore_trivial=True)
+    naive.replace_inf(comp_mp)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
 
@@ -149,27 +149,27 @@ def test_stump_identical_subsequence_A_B_join():
     T_A[1 : 1 + identical.shape[0]] = identical
     T_B[11 : 11 + identical.shape[0]] = identical
     m = 3
-    left = naive.stamp(T_A, m, T_B=T_B)
-    right = stump(T_A, m, T_B, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
+    ref_mp = naive.stamp(T_A, m, T_B=T_B)
+    comp_mp = stump(T_A, m, T_B, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
-    right = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    naive.replace_inf(right)
+    comp_mp = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+    naive.replace_inf(comp_mp)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
     # Swap inputs
-    left = naive.stamp(T_B, m, T_B=T_A)
-    right = stump(T_B, m, T_A, ignore_trivial=False)
-    naive.replace_inf(left)
-    naive.replace_inf(right)
+    ref_mp = naive.stamp(T_B, m, T_B=T_A)
+    comp_mp = stump(T_B, m, T_A, ignore_trivial=False)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
     npt.assert_almost_equal(
-        left[:, 0], right[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
     )  # ignore indices
 
 
@@ -186,15 +186,15 @@ def test_stump_nan_inf_self_join(T_A, T_B, substitute_B, substitution_locations)
         T_B_sub[substitution_location_B] = substitute_B
 
         zone = int(np.ceil(m / 4))
-        left = naive.stamp(T_B_sub, m, exclusion_zone=zone)
-        right = stump(T_B_sub, m, ignore_trivial=True)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left, right)
+        ref_mp = naive.stamp(T_B_sub, m, exclusion_zone=zone)
+        comp_mp = stump(T_B_sub, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
-        right = stump(pd.Series(T_B_sub), m, ignore_trivial=True)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left, right)
+        comp_mp = stump(pd.Series(T_B_sub), m, ignore_trivial=True)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -216,17 +216,17 @@ def test_stump_nan_inf_A_B_join(
             T_A_sub[substitution_location_A] = substitute_A
             T_B_sub[substitution_location_B] = substitute_B
 
-            left = naive.stamp(T_A_sub, m, T_B=T_B_sub)
-            right = stump(T_A_sub, m, T_B_sub, ignore_trivial=False)
-            naive.replace_inf(left)
-            naive.replace_inf(right)
-            npt.assert_almost_equal(left, right)
+            ref_mp = naive.stamp(T_A_sub, m, T_B=T_B_sub)
+            comp_mp = stump(T_A_sub, m, T_B_sub, ignore_trivial=False)
+            naive.replace_inf(ref_mp)
+            naive.replace_inf(comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)
 
-            right = stump(
+            comp_mp = stump(
                 pd.Series(T_A_sub), m, pd.Series(T_B_sub), ignore_trivial=False
             )
-            naive.replace_inf(right)
-            npt.assert_almost_equal(left, right)
+            naive.replace_inf(comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 def test_stump_nan_zero_mean_self_join():
@@ -234,9 +234,9 @@ def test_stump_nan_zero_mean_self_join():
     m = 3
 
     zone = int(np.ceil(m / 4))
-    left = naive.stamp(T, m, exclusion_zone=zone)
-    right = stump(T, m, ignore_trivial=True)
+    ref_mp = naive.stamp(T, m, exclusion_zone=zone)
+    comp_mp = stump(T, m, ignore_trivial=True)
 
-    naive.replace_inf(left)
-    naive.replace_inf(right)
-    npt.assert_almost_equal(left, right)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
