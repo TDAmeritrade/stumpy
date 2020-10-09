@@ -99,7 +99,7 @@ def test_parallel_gpu_stump_self_join(T_A, T_B, cooperative):
         zone = int(np.ceil(m / 4))
         ref_mp = naive.stamp(T_B, m, exclusion_zone=zone)
         comp_mp = gpu_stump(
-            T_B, m, ignore_trivial=True, device_id=device_ids, cooperative=cooperative,
+            T_B, m, ignore_trivial=True, device_id=device_ids, cooperative=cooperative
         )
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
@@ -309,7 +309,7 @@ def test_gpu_stump_nan_inf_self_join(
 @pytest.mark.parametrize("substitution_locations", substitution_locations)
 @pytest.mark.parametrize("cooperative", (True, False))
 def test_gpu_stump_nan_inf_A_B_join(
-    T_A, T_B, substitute_A, substitute_B, substitution_locations, cooperative,
+    T_A, T_B, substitute_A, substitute_B, substitution_locations, cooperative
 ):
     m = 3
     stop = 16
