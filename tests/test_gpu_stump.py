@@ -1,4 +1,3 @@
-# Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
