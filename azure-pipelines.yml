@@ -10,10 +10,10 @@ pr:
 - master
 
 stages:
-- stage: Build
+- stage: Unit
 
   jobs:
-  - job: Job
+  - job: Test
 
     strategy:
       matrix:
@@ -68,12 +68,73 @@ stages:
         flake8 ./
       displayName: "Running flake8"
 
-    - bash: ./test.sh
-      displayName: "Running test"
+    - bash: ./test.sh unit
+      displayName: "Running unit tests"
+
+- stage: Coverage
+
+  jobs:
+  - job: Test
+
+    strategy:
+      matrix:
+        python36_linux:
+          imageName: "ubuntu-16.04"
+          python.version: "3.6"
+        python36_windows:
+          imageName: "vs2017-win2016"
+          python.version: "3.6"
+        python36_macos:
+          imageName: "macos-10.14"
+          python.version: "3.6"
+        python37_linux:
+          imageName: "ubuntu-16.04"
+          python.version: "3.7"
+        python37_windows:
+          imageName: "vs2017-win2016"
+          python.version: "3.7"
+        python37_macos:
+          imageName: "macos-10.14"
+          python.version: "3.7"
+        python38_linux:
+          imageName: "ubuntu-16.04"
+          python.version: "3.8"
+        python38_windows:
+          imageName: "vs2017-win2016"
+          python.version: "3.8"
+        python38_macos:
+          imageName: "macos-10.14"
+          python.version: "3.8"
+      maxParallel: 10
+
+    pool:
+      vmImage: $(imageName)
+
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+      displayName: 'Use Python $(python.version)'
+
+    - script: |
+        pip install --editable .[ci]
+        pip install pytest-azurepipelines
+      displayName: 'Install stumpy and other dependencies'
+
+    - script: |
+        black --check --diff ./
+      displayName: "Running black"
+
+    - script: |
+        flake8 ./
+      displayName: "Running flake8"
+
+    - bash: ./test.sh coverage
+      displayName: "Running test coverage"
 
     - script: |
         codecov --token=$(CODECOV_TOKEN)
-      displayName: "Upload test coverage results"
+      displayName: "Uploading test coverage results"
 
 - stage: Scan
   displayName: "FOSSA"

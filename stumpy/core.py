@@ -652,16 +652,24 @@ def mass(Q, T, M_T=None, Σ_T=None):
     Note: Unlike the Matrix Profile I paper, here, M_T, Σ_T can be calculated
     once for all subsequences of T and passed in so the redundancy is removed
     """
+    Q = Q.copy()
     Q = np.asarray(Q)
     check_dtype(Q)
     m = Q.shape[0]
 
+    if Q.ndim == 2 and Q.shape[1] == 1:  # pragma: no cover
+        Q = Q.flatten()
+
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
 
+    T = T.copy()
     T = np.asarray(T)
     check_dtype(T)
     n = T.shape[0]
+
+    if T.ndim == 2 and T.shape[1] == 1:  # pragma: no cover
+        T = T.flatten()
 
     if T.ndim != 1:  # pragma: no cover
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
@@ -736,16 +744,24 @@ def mass_absolute(Q, T):
     `See Mueen's Absolute Algorithm for Similarity Search \
     <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
     """
+    Q = Q.copy()
     Q = np.asarray(Q)
     check_dtype(Q)
     m = Q.shape[0]
 
+    if Q.ndim == 2 and Q.shape[1] == 1:  # pragma: no cover
+        Q = Q.flatten()
+
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
 
+    T = T.copy()
     T = np.asarray(T)
     check_dtype(T)
     n = T.shape[0]
+
+    if T.ndim == 2 and T.shape[1] == 1:  # pragma: no cover
+        T = T.flatten()
 
     if T.ndim != 1:  # pragma: no cover
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
@@ -767,8 +783,8 @@ def mass_absolute(Q, T):
 
 def _get_QT(start, T_A, T_B, m):
     """
-    Compute the sliding dot product between the query, `T_B`, (from
-    [start:start+m]) and the time series, `T_A`. Additionally, compute
+    Compute the sliding dot product between the query, `T_A`, (from
+    [start:start+m]) and the time series, `T_B`. Additionally, compute
     QT for the first window.
 
     Parameters
@@ -780,8 +796,8 @@ def _get_QT(start, T_A, T_B, m):
         The time series or sequence for which to compute the dot product
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequence
-        of interest
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -1031,9 +1047,9 @@ def _count_diagonal_ndist(diags, m, n_A, n_B):
     for diag_idx in prange(diags.shape[0]):
         k = diags[diag_idx]
         if k >= 0:
-            diag_ndist_counts[diag_idx] = min(n_A - m + 1 - k, n_B - m + 1)
+            diag_ndist_counts[diag_idx] = min(n_B - m + 1 - k, n_A - m + 1)
         else:
-            diag_ndist_counts[diag_idx] = min(n_A - m + 1, n_B - m + 1 + k)
+            diag_ndist_counts[diag_idx] = min(n_B - m + 1, n_A - m + 1 + k)
 
     return diag_ndist_counts
 

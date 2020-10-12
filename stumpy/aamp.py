@@ -38,8 +38,8 @@ def _compute_diagonal(
         The time series or sequence for which to compute the matrix profile
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -85,24 +85,24 @@ def _compute_diagonal(
         k = diags[diag_idx]
 
         if k >= 0:
-            iter_range = range(0, min(n_B - m + 1, n_A - m + 1 - k))
+            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - k))
         else:
-            iter_range = range(-k, min(n_B - m + 1, n_A - m + 1 - k))
+            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
 
         for i in iter_range:
             if i == 0 or i == k or (k < 0 and i == -k):
-                D_squared = np.linalg.norm(T_A[i + k : i + k + m] - T_B[i : i + m]) ** 2
+                D_squared = np.linalg.norm(T_B[i + k : i + k + m] - T_A[i : i + m]) ** 2
             else:
                 D_squared = np.abs(
                     D_squared
-                    - (T_A[i + k - 1] - T_B[i - 1]) ** 2
-                    + (T_A[i + k + m - 1] - T_B[i + m - 1]) ** 2
+                    - (T_B[i + k - 1] - T_A[i - 1]) ** 2
+                    + (T_B[i + k + m - 1] - T_A[i + m - 1]) ** 2
                 )
 
             if D_squared < STUMPY_D_SQUARED_THRESHOLD:
                 D_squared = 0.0
 
-            if T_A_subseq_isfinite[i + k] and T_B_subseq_isfinite[i]:
+            if T_A_subseq_isfinite[i] and T_B_subseq_isfinite[i + k]:
                 # Neither subsequence contains NaNs
                 if D_squared < P[thread_idx, i, 0]:
                     P[thread_idx, i, 0] = D_squared
@@ -147,8 +147,8 @@ def _aamp(
         The time series or sequence for which to compute the matrix profile
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -185,7 +185,7 @@ def _aamp(
     """
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
-    l = n_B - m + 1
+    l = n_A - m + 1
     n_threads = config.NUMBA_NUM_THREADS
     P = np.full((n_threads, l, 3), np.inf)
     I = np.full((n_threads, l, 3), -1, np.int64)
@@ -244,8 +244,9 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
         Window size
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest. Default is `None` which corresponds to a self-join.
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
+        `None` which corresponds to a self-join.
 
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
@@ -291,15 +292,15 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
-    l = n_B - m + 1
+    l = n_A - m + 1
 
     excl_zone = int(np.ceil(m / 4))
     out = np.empty((l, 4), dtype=object)
 
     if ignore_trivial:
-        diags = np.arange(excl_zone + 1, n_B - m + 1)
+        diags = np.arange(excl_zone + 1, n_A - m + 1)
     else:
-        diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
+        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
 
     P, I = _aamp(
         T_A,

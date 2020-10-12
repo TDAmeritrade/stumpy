@@ -45,8 +45,8 @@ def test_stumped_one_subsequence_nan_self_join(
         T_B_sub[substitution_location_B] = np.nan
 
         zone = int(np.ceil(m / 4))
-        left = naive.stump(T_B_sub, m, exclusion_zone=zone)
-        right = stumped(dask_client, T_B_sub, m, ignore_trivial=True)
-        naive.replace_inf(left)
-        naive.replace_inf(right)
-        npt.assert_almost_equal(left, right)
+        ref_mp = naive.stump(T_B_sub, m, exclusion_zone=zone)
+        comp_mp = stumped(dask_client, T_B_sub, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)

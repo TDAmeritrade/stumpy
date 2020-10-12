@@ -50,8 +50,8 @@ def _compute_and_update_PI_kernel(
         The time series or sequence for which to compute the dot product
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequence
-        of interest
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -196,8 +196,8 @@ def _gpu_aamp(
         the matrix profile
 
     T_B_fname : str
-        The file name for the time series or sequence that contain your
-        query subsequences of interest
+        The file name for the time series or sequence that will be used to annotate T_A.
+        For every subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -412,12 +412,6 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     if T_B is None:  # Self join!
         T_B = T_A
         ignore_trivial = True
-
-    # Swap T_A and T_B for GPU implementation
-    # This keeps the API identical to and compatible with `stumpy.stump`
-    tmp_T = T_A
-    T_A = T_B
-    T_B = tmp_T
 
     T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
     T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)

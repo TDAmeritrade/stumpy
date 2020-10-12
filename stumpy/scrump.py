@@ -38,8 +38,8 @@ def _prescrump(
         The time series or sequence for which to compute the matrix profile
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -87,8 +87,8 @@ def _prescrump(
     """
     l = QT.shape[0]
     # Update P[i] relative to all T[j : j + m]
-    Q = T_B[i : i + m]
-    squared_distance_profile[:] = core._mass(Q, T_A, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
+    Q = T_A[i : i + m]
+    squared_distance_profile[:] = core._mass(Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
     squared_distance_profile[:] = np.square(squared_distance_profile)
     if excl_zone is not None:
         zone_start = max(0, i - excl_zone)
@@ -106,8 +106,8 @@ def _prescrump(
     for k in range(1, min(s, l - max(i, j))):
         QT_j = (
             QT_j
-            - T_A[i + k - 1] * T_B[j + k - 1]
-            + T_A[i + k + m - 1] * T_B[j + k + m - 1]
+            - T_B[i + k - 1] * T_A[j + k - 1]
+            + T_B[i + k + m - 1] * T_A[j + k + m - 1]
         )
         D_squared = core._calculate_squared_distance(
             m,
@@ -125,7 +125,7 @@ def _prescrump(
             I[j + k] = i + k
     QT_j = QT_j_prime
     for k in range(1, min(s, i + 1, j + 1)):
-        QT_j = QT_j - T_A[i - k + m] * T_B[j - k + m] + T_A[i - k] * T_B[j - k]
+        QT_j = QT_j - T_B[i - k + m] * T_A[j - k + m] + T_B[i - k] * T_A[j - k]
         D_squared = core._calculate_squared_distance(
             m,
             QT_j,
@@ -159,8 +159,8 @@ def prescrump(T_A, m, T_B=None, s=None):
         Window size
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     s : int
         The sampling interval that defaults to `int(np.ceil(m / 4))`
@@ -198,24 +198,24 @@ def prescrump(T_A, m, T_B=None, s=None):
 
     core.check_window_size(m)
 
-    M_T, Σ_T = core.compute_mean_std(T_A, m)
-    μ_Q, σ_Q = core.compute_mean_std(T_B, m)
+    μ_Q, σ_Q = core.compute_mean_std(T_A, m)
+    M_T, Σ_T = core.compute_mean_std(T_B, m)
 
     T_A[np.isnan(T_A)] = 0
     T_B[np.isnan(T_B)] = 0
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
-    l = n_B - m + 1
+    l = n_A - m + 1
     P_squared = np.full(l, np.inf)
     I = np.full(l, -1, dtype=np.int64)
-    squared_distance_profile = np.empty(n_A - m + 1)
+    squared_distance_profile = np.empty(n_B - m + 1)
 
     if s is None:  # pragma: no cover
         s = excl_zone
 
     for i in np.random.permutation(range(0, l, s)):
-        QT = core.sliding_dot_product(T_B[i : i + m], T_A)
+        QT = core.sliding_dot_product(T_A[i : i + m], T_B)
         _prescrump(
             T_A,
             T_B,
@@ -251,8 +251,8 @@ class scrump(object):
         The time series or sequence for which to compute the matrix profile
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequences
-        of interest
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -316,8 +316,8 @@ class scrump(object):
             The time series or sequence for which to compute the matrix profile
 
         T_B : ndarray
-            The time series or sequence that contain your query subsequences
-            of interest
+            The time series or sequence that will be used to annotate T_A. For every
+            subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
         m : int
             Window size
@@ -348,18 +348,18 @@ class scrump(object):
         self._m = m
         (
             self._T_A,
-            self._M_T,
-            self._Σ_T_inverse,
-            self._M_T_m_1,
+            self._μ_Q,
+            self._σ_Q_inverse,
+            self._μ_Q_m_1,
             self._T_A_subseq_isfinite,
             self._T_A_subseq_isconstant,
         ) = core.preprocess_diagonal(T_A, self._m)
 
         (
             self._T_B,
-            self._μ_Q,
-            self._σ_Q_inverse,
-            self._μ_Q_m_1,
+            self._M_T,
+            self._Σ_T_inverse,
+            self._M_T_m_1,
             self._T_B_subseq_isfinite,
             self._T_B_subseq_isconstant,
         ) = core.preprocess_diagonal(T_B, self._m)
@@ -393,7 +393,7 @@ class scrump(object):
 
         self._n_A = self._T_A.shape[0]
         self._n_B = self._T_B.shape[0]
-        self._l = self._n_B - self._m + 1
+        self._l = self._n_A - self._m + 1
 
         self._P = np.empty((self._l, 3), dtype=np.float64)
         self._I = np.empty((self._l, 3), dtype=np.int64)
@@ -417,11 +417,11 @@ class scrump(object):
 
         if self._ignore_trivial:
             self._diags = np.random.permutation(
-                range(self._excl_zone + 1, self._n_B - self._m + 1)
+                range(self._excl_zone + 1, self._n_A - self._m + 1)
             )
         else:
             self._diags = np.random.permutation(
-                range(-(self._n_B - self._m + 1) + 1, self._n_A - self._m + 1)
+                range(-(self._n_A - self._m + 1) + 1, self._n_B - self._m + 1)
             )
 
         self._n_threads = config.NUMBA_NUM_THREADS

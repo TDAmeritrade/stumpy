@@ -39,7 +39,7 @@ def distance_profile(Q, T, m):
 
 def distance_matrix(T_A, T_B, m):
     distance_matrix = np.array(
-        [distance_profile(Q, T_A, m) for Q in core.rolling_window(T_B, m)]
+        [distance_profile(Q, T_B, m) for Q in core.rolling_window(T_A, m)]
     )
 
     return distance_matrix
@@ -90,7 +90,7 @@ def mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     return P, I, IL, IR
 
 
-def stamp(T_A, m, exclusion_zone=None, T_B=None):
+def stamp(T_A, m, T_B=None, exclusion_zone=None):
     if T_B is None:  # self-join
         result = np.array(
             [
@@ -101,50 +101,50 @@ def stamp(T_A, m, exclusion_zone=None, T_B=None):
         )
     else:
         result = np.array(
-            [mass(Q, T_A, m) for Q in core.rolling_window(T_B, m)],
+            [mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)],
             dtype=object,
         )
     return result
 
 
-def stump(T_A, m, exclusion_zone=None, T_B=None):
+def stump(T_A, m, T_B=None, exclusion_zone=None):
     """
     Traverse distance matrix along the diagonals and update the matrix profile and
     matrix profile indices
     """
     if T_B is None:  # self-join:
         ignore_trivial = True
-        T_B = T_A.copy()
         distance_matrix = np.array(
-            [distance_profile(Q, T_A, m) for Q in core.rolling_window(T_B, m)]
+            [distance_profile(Q, T_A, m) for Q in core.rolling_window(T_A, m)]
         )
+        T_B = T_A.copy()
     else:
         ignore_trivial = False
         distance_matrix = np.array(
-            [distance_profile(Q, T_A, m) for Q in core.rolling_window(T_B, m)]
+            [distance_profile(Q, T_B, m) for Q in core.rolling_window(T_A, m)]
         )
 
     distance_matrix[np.isnan(distance_matrix)] = np.inf
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
-    l = n_B - m + 1
+    l = n_A - m + 1
     if exclusion_zone is None:
         exclusion_zone = int(np.ceil(m / 4))
 
     if ignore_trivial:
-        diags = np.arange(exclusion_zone + 1, n_B - m + 1)
+        diags = np.arange(exclusion_zone + 1, n_A - m + 1)
     else:
-        diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
+        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
 
     P = np.full((l, 3), np.inf)
     I = np.full((l, 3), -1, dtype=np.int64)
 
     for k in diags:
         if k >= 0:
-            iter_range = range(0, min(n_B - m + 1, n_A - m + 1 - k))
+            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - k))
         else:
-            iter_range = range(-k, min(n_B - m + 1, n_A - m + 1 - k))
+            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
 
         for i in iter_range:
             D = distance_matrix[i, i + k]
@@ -311,25 +311,25 @@ def aamp(T_A, m, T_B=None, exclusion_zone=None):
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
-    l = n_B - m + 1
+    l = n_A - m + 1
     if exclusion_zone is None:
         exclusion_zone = int(np.ceil(m / 4))
 
-    distance_matrix = cdist(rolling_T_B, rolling_T_A)
+    distance_matrix = cdist(rolling_T_A, rolling_T_B)
 
     if ignore_trivial:
-        diags = np.arange(exclusion_zone + 1, n_B - m + 1)
+        diags = np.arange(exclusion_zone + 1, n_A - m + 1)
     else:
-        diags = np.arange(-(n_B - m + 1) + 1, n_A - m + 1)
+        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
 
     P = np.full((l, 3), np.inf)
     I = np.full((l, 3), -1, dtype=np.int64)
 
     for k in diags:
         if k >= 0:
-            iter_range = range(0, min(n_B - m + 1, n_A - m + 1 - k))
+            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - k))
         else:
-            iter_range = range(-k, min(n_B - m + 1, n_A - m + 1 - k))
+            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
 
         for i in iter_range:
             D = distance_matrix[i, i + k]

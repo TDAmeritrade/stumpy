@@ -94,11 +94,11 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     Parameters
     ----------
     T_A : ndarray
-        The time series or sequence for which the matrix profile index will
-        be returned
+        The time series or sequence for which the matrix profile will be returned
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequences
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -119,16 +119,16 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
 
     See Table III
 
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
+    Timeseries, T_A, will be annotated with the distance location
+    (or index) of all its subsequences in another times series, T_B.
 
-    For every subsequence, Q, in T_B, you will get a distance and index for
-    the closest subsequence in T_A. Thus, the array returned will have length
-    T_B.shape[0]-m+1
+    For every subsequence, Q, in T_A, you will get a distance and index for
+    the closest subsequence in T_B. Thus, the array returned will have length
+    T_A.shape[0]-m+1
     """
-    T_A, M_T, Σ_T = core.preprocess(T_A, m)
-    T_B = T_B.copy()
-    T_B[np.isinf(T_B)] = np.nan
+    T_B, M_T, Σ_T = core.preprocess(T_B, m)
+    T_A = T_A.copy()
+    T_A[np.isinf(T_A)] = np.nan
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
@@ -137,17 +137,17 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
         raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
 
     core.check_window_size(m)
-    subseq_T_B = core.rolling_window(T_B, m)
+    subseq_T_A = core.rolling_window(T_A, m)
     excl_zone = int(np.ceil(m / 2))
 
     # Add exclusionary zone
     if ignore_trivial:
         out = [
-            _mass_PI(subseq, T_A, M_T, Σ_T, i, excl_zone)
-            for i, subseq in enumerate(subseq_T_B)
+            _mass_PI(subseq, T_B, M_T, Σ_T, i, excl_zone)
+            for i, subseq in enumerate(subseq_T_A)
         ]
     else:
-        out = [_mass_PI(subseq, T_A, M_T, Σ_T) for subseq in subseq_T_B]
+        out = [_mass_PI(subseq, T_B, M_T, Σ_T) for subseq in subseq_T_A]
     out = np.array(out, dtype=object)
 
     return out

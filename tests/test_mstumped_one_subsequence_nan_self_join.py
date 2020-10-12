@@ -35,11 +35,11 @@ def test_mstumped_one_subsequence_nan_self_join_first_dimension(
         T_sub = T.copy()
         T_sub[0, substitution_location] = np.nan
 
-        left_P, left_I = naive.mstump(T_sub, m, excl_zone)
-        right_P, right_I = mstumped(dask_client, T_sub, m)
+        ref_P, ref_I = naive.mstump(T_sub, m, excl_zone)
+        comp_P, comp_I = mstumped(dask_client, T_sub, m)
 
-        npt.assert_almost_equal(left_P, right_P)
-        npt.assert_almost_equal(left_I, right_I)
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
 
 
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
@@ -54,8 +54,8 @@ def test_mstumped_one_subsequence_nan_self_join_all_dimensions(
         T_sub = T.copy()
         T_sub[:, substitution_location] = np.nan
 
-        left_P, left_I = naive.mstump(T_sub, m, excl_zone)
-        right_P, right_I = mstumped(dask_client, T_sub, m)
+        ref_P, ref_I = naive.mstump(T_sub, m, excl_zone)
+        comp_P, comp_I = mstumped(dask_client, T_sub, m)
 
-        npt.assert_almost_equal(left_P, right_P)
-        npt.assert_almost_equal(left_I, right_I)
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
