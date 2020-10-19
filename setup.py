@@ -14,7 +14,7 @@ def get_extras_require():
         "distributed >= 1.28.1",
         "coverage >= 4.5.3",
         "flake8 >= 3.7.7",
-        "flake8-docstrings >= 1.5.1",
+        "flake8-docstrings >= 1.5.0",
         "black >= 19.3b0",
         "pytest >= 4.4.1",
         "codecov",
@@ -28,7 +28,7 @@ def get_extras_require():
 
 configuration = {
     "name": "stumpy",
-    "version": "1.5.0",
+    "version": "1.5.1",
     "python_requires=": ">=3.6",
     "author": "Sean M. Law",
     "author_email": "seanmylaw@gmail.com",
