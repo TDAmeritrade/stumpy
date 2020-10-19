@@ -429,6 +429,10 @@ class floss(object):
         self._n = self._T.shape[0]
         self._last_idx = self._n - self._m + 1  # Depends on the changing length of `T`
         self._n_appended = 0
+        self._T_isfinite = np.isfinite(self._T)
+        self._finite_T = self._T.copy()
+        self._finite_T[~np.isfinite(self._finite_T)] = 0.0
+        self._finite_Q = self._finite_T[-self._m :].copy()
 
         if self._custom_iac is None:  # pragma: no cover
             self._custom_iac = _iac(
@@ -482,8 +486,15 @@ class floss(object):
         Segmentation (FLOSS).
         """
         self._T[:-1] = self._T[1:]
+        self._T_isfinite[:-1] = self._T_isfinite[1:]
+        self._finite_T[:-1] = self._finite_T[1:]
+        self._finite_Q[:-1] = self._finite_Q[1:]
         self._T[-1] = t
-        Q = self._T[-self._m :]
+        self._T_isfinite[-1] = np.isfinite(t)
+        self._finite_T[-1] = t
+        if not np.isfinite(t):
+            self._finite_T[-1] = 0.0
+        self._finite_Q[-1] = self._finite_T[-1]
         excl_zone = int(np.ceil(self._m / 4))
         # Note that the start of the exclusion zone is relative to
         # the unchanging length of the matrix profile index
@@ -499,8 +510,15 @@ class floss(object):
         # Ingress
         M_T, Σ_T = core.compute_mean_std(self._T, self._m)
 
-        D = core.mass(Q, self._T, M_T, Σ_T)
+        D = core.mass(self._finite_Q, self._finite_T, M_T, Σ_T)
         D[zone_start:] = np.inf
+
+        T_subseq_isfinite = np.all(
+            core.rolling_window(self._T_isfinite, self._m), axis=1
+        )
+        D[~T_subseq_isfinite] = np.inf
+        if not T_subseq_isfinite[-1]:
+            D[:] = np.inf
 
         # Update nearest neighbor for old data if any old subsequences
         # are closer to the newly arrived subsequence
@@ -538,7 +556,7 @@ class floss(object):
         """
         Get the updated (right) matrix profile indices
         """
-        return self._mp[:, 3].astype(np.float)
+        return self._mp[:, 3].astype(np.int)
 
     @property
     def T_(self):
