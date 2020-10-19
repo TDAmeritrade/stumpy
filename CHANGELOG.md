@@ -1,3 +1,28 @@
+# 2020-10-19    [ 1.5.1 ]:
+--------------------------
+* bugfixes
+  - Fixed AB-join so that it now matches the published definition (previously, BA-join)
+* features
+  - Added nan/inf support to FLOSS/FLUSS
+* tasks
+  - Removed Pandas series in GPU tests to improve unit test speed in CI
+  - Identify operating system prior to installing cuda toolkit
+  - Changed `left`/`right` keywords in all unit tests to `ref`/`comp`
+  - Split up unit tests and coverage testing 
+  - Updated `displayNames` in Azure Pipelines
+  - `test.sh` now accepts `unit`, `custom`, and `coverage` keywords 
+  - Fixed typos
+  - Added pattern searching (MASS) tutorial
+  - Added `Contribute` notebook to RTD table of contents for first time contributors
+  - Refactored `_compute_diagonal` for speed improvements
+  - Replaced `np.roll` with slice indexing in `stumpy.floss`
+  - Refactored and improved `aampi` and `stumpi` update performance
+  - Added `lxml` to environment.yml  
+* documentation
+  - Added `plt.show()` to code figures in tutorials
+  - Updated `stumpi` tutorial with `egress=False`
+
+
 # 2020-08-31    [ 1.5.0 ]:
 --------------------------
 * bugfixes
