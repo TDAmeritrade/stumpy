@@ -4,7 +4,6 @@
 
 import numpy as np
 from numba import njit, prange
-import scipy.signal
 import tempfile
 import math
 
@@ -266,7 +265,7 @@ def sliding_dot_product(Q, T):
     n = T.shape[0]
     m = Q.shape[0]
     Qr = np.flipud(Q)  # Reverse/flip Q
-    QT = convolution(Qr, T)
+    QT = np.convolve(Qr, T)
 
     return QT.real[m - 1 : n]
 
@@ -1097,6 +1096,3 @@ def _get_array_ranges(a, n_chunks, truncate=False):
             array_ranges = array_ranges[:row_truncation_idx]
 
     return array_ranges
-
-
-convolution = scipy.signal.fftconvolve  # Swap for other convolution function
