@@ -270,6 +270,68 @@ def sliding_dot_product(Q, T):
     return QT.real[m - 1 : n]
 
 
+def rolling_nanstd_1d(a, w):
+    """
+    Compute the rolling standard deviation for a 1-D array while ignoring NaNs.
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanstd.
+
+    Notes
+    -----
+    See `this stackoverflow response \
+    <https://stackoverflow.com/a/64517671/2955541>`__
+    """
+    k = np.ones(w, dtype=int)
+    m = ~np.isnan(a)
+    a0 = np.where(m, a, 0)
+
+    n = np.convolve(m, k, "valid")
+    c1 = np.convolve(a0, k, "valid")
+    f2 = c1 ** 2
+    p2 = f2 / n ** 2
+    f1 = np.convolve((a0 ** 2) * m, k, "valid") + n * p2
+
+    return np.sqrt((f1 - (2 / n) * f2) / n)
+
+
+def rolling_nanstd(a, w):
+    """
+    A convenience wrapper around `rolling_nanstd_1d` for 1-D and 2-D arrays.
+
+    This essentially replaces:
+
+        `np.nanstd(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanstd.
+    """
+    axis = a.ndim - 1  # Account for rolling
+    return np.apply_along_axis(
+        lambda a_row, w: rolling_nanstd_1d(a_row, w), axis=axis, arr=a, w=w
+    )
+
+
 def compute_mean_std(T, m):
     """
     Compute the sliding mean and standard deviation for the array `T` with
@@ -333,7 +395,7 @@ def compute_mean_std(T, m):
 
                 tmp_mean = np.mean(rolling_window(T[..., start:stop], m), axis=T.ndim)
                 mean_chunks.append(tmp_mean)
-                tmp_std = np.nanstd(rolling_window(T[..., start:stop], m), axis=T.ndim)
+                tmp_std = rolling_nanstd(T[..., start:stop], m)
                 std_chunks.append(tmp_std)
 
             M_T = np.hstack(mean_chunks)
