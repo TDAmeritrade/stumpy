@@ -2,4 +2,4 @@
 
 conda install pandas
 conda install matplotlib
-python -m pip install .
+conda install -c conda-forge stumpy
