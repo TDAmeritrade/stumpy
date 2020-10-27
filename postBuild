@@ -2,3 +2,4 @@
 
 conda install pandas
 conda install matplotlib
+python -m pip install .
