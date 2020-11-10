@@ -271,7 +271,7 @@ def sliding_dot_product(Q, T):
 
 
 @njit(fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
-def _welford_nanvar(a, w, subseq_a_isfinite):
+def _welford_nanvar(a, w, a_subseq_isfinite):
     """
     Compute the rolling variance for a 1-D array while ignoring NaNs using a modified
     version of Welford's algorithm but is much faster than using `np.nanstd` with stride
@@ -284,6 +284,10 @@ def _welford_nanvar(a, w, subseq_a_isfinite):
 
     w : ndarray
         The rolling window size
+
+    a_subseq_isfinite : ndarray
+        A boolean array that describes whether each subequence of length `w` within `a`
+        is finite.
 
     Returns
     -------
@@ -301,8 +305,8 @@ def _welford_nanvar(a, w, subseq_a_isfinite):
 
         if (
             start_idx == 0
-            or not subseq_a_isfinite[prev_start_idx]
-            or not subseq_a_isfinite[start_idx]
+            or not a_subseq_isfinite[prev_start_idx]
+            or not a_subseq_isfinite[start_idx]
         ):
             curr_mean = np.nanmean(a[start_idx:stop_idx])
             curr_var = np.nanvar(a[start_idx:stop_idx])
@@ -347,9 +351,9 @@ def welford_nanvar(a, w=None):
     if w is None:
         w = a.shape[0]
 
-    subseq_a_isfinite = np.all(np.isfinite(rolling_window(a, w)), axis=1)
+    a_subseq_isfinite = np.all(rolling_window(np.isfinite(a), w), axis=1)
 
-    return _welford_nanvar(a, w, subseq_a_isfinite)
+    return _welford_nanvar(a, w, a_subseq_isfinite)
 
 
 def welford_nanstd(a, w=None):
@@ -909,7 +913,7 @@ def mass_absolute(Q, T):
     if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
-        T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
+        T_subseq_isfinite = np.all(rolling_window(np.isfinite(T), m), axis=1)
         T[~np.isfinite(T)] = 0.0
         QT = sliding_dot_product(Q, T)
         Q_squared = np.sum(Q * Q)
@@ -1049,7 +1053,7 @@ def preprocess_non_normalized(T, m):
     check_dtype(T)
 
     T[np.isinf(T)] = np.nan
-    T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
+    T_subseq_isfinite = np.all(rolling_window(np.isfinite(T), m), axis=1)
     T[np.isnan(T)] = 0
 
     return T, T_subseq_isfinite
