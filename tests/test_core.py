@@ -86,6 +86,58 @@ def test_sliding_dot_product(Q, T):
     npt.assert_almost_equal(ref_mp, comp_mp)
 
 
+def test_welford_nanvar():
+    T = np.random.rand(64)
+    m = 10
+
+    ref_var = np.nanvar(T)
+    comp_var = core.welford_nanvar(T)
+    npt.assert_almost_equal(ref_var, comp_var)
+
+    ref_var = np.nanvar(core.rolling_window(T, m), axis=1)
+    comp_var = core.welford_nanvar(T, m)
+    npt.assert_almost_equal(ref_var, comp_var)
+
+
+def test_welford_nanvar_catastrophic_cancellation():
+    T = np.array([4, 7, 13, 16, 10]) + 10 ** 8
+    m = 4
+
+    ref_var = np.nanvar(core.rolling_window(T, m), axis=1)
+    comp_var = core.welford_nanvar(T, m)
+    npt.assert_almost_equal(ref_var, comp_var)
+
+
+def test_welford_nanvar_nan():
+    T = np.random.rand(64)
+    m = 10
+
+    T[1] = np.nan
+    T[10] = np.nan
+    T[13:18] = np.nan
+
+    ref_var = np.nanvar(T)
+    comp_var = core.welford_nanvar(T)
+    npt.assert_almost_equal(ref_var, comp_var)
+
+    ref_var = np.nanvar(core.rolling_window(T, m), axis=1)
+    comp_var = core.welford_nanvar(T, m)
+    npt.assert_almost_equal(ref_var, comp_var)
+
+
+def test_welford_nanstd():
+    T = np.random.rand(64)
+    m = 10
+
+    ref_var = np.nanstd(T)
+    comp_var = core.welford_nanstd(T)
+    npt.assert_almost_equal(ref_var, comp_var)
+
+    ref_var = np.nanstd(core.rolling_window(T, m), axis=1)
+    comp_var = core.welford_nanstd(T, m)
+    npt.assert_almost_equal(ref_var, comp_var)
+
+
 @pytest.mark.parametrize("Q, T", test_data)
 def test_compute_mean_std(Q, T):
     m = Q.shape[0]
