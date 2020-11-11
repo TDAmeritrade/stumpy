@@ -270,9 +270,99 @@ def sliding_dot_product(Q, T):
     return QT.real[m - 1 : n]
 
 
-def rolling_nanstd_1d(a, w):
+@njit(fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
+def _welford_nanvar(a, w, a_subseq_isfinite):
     """
-    Compute the rolling standard deviation for a 1-D array while ignoring NaNs.
+    Compute the rolling variance for a 1-D array while ignoring NaNs using a modified
+    version of Welford's algorithm but is much faster than using `np.nanstd` with stride
+    tricks.
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray
+        The rolling window size
+
+    a_subseq_isfinite : ndarray
+        A boolean array that describes whether each subequence of length `w` within `a`
+        is finite.
+
+    Returns
+    -------
+    all_variances : ndarray
+        Rolling window nanvar
+    """
+    all_variances = np.empty(a.shape[0] - w + 1, dtype=np.float64)
+    prev_mean = 0.0
+    prev_var = 0.0
+
+    for start_idx in range(a.shape[0] - w + 1):
+        prev_start_idx = start_idx - 1
+        stop_idx = start_idx + w  # Exclusive index value
+        last_idx = start_idx + w - 1  # Last inclusive index value
+
+        if (
+            start_idx == 0
+            or not a_subseq_isfinite[prev_start_idx]
+            or not a_subseq_isfinite[start_idx]
+        ):
+            curr_mean = np.nanmean(a[start_idx:stop_idx])
+            curr_var = np.nanvar(a[start_idx:stop_idx])
+        else:
+            curr_mean = prev_mean + (a[last_idx] - a[prev_start_idx]) / w
+            curr_var = (
+                prev_var
+                + (a[last_idx] - a[prev_start_idx])
+                * (a[last_idx] - curr_mean + a[prev_start_idx] - prev_mean)
+                / w
+            )
+
+        all_variances[start_idx] = curr_var
+
+        prev_mean = curr_mean
+        prev_var = curr_var
+
+    return all_variances
+
+
+def welford_nanvar(a, w=None):
+    """
+    Compute the rolling variance for a 1-D array while ignoring NaNs using a modified
+    version of Welford's algorithm but is much faster than using `np.nanstd` with stride
+    tricks.
+
+    This is a convenience wrapper around the `_welford_nanvar` function.
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanvar.
+    """
+    if w is None:
+        w = a.shape[0]
+
+    a_subseq_isfinite = np.all(rolling_window(np.isfinite(a), w), axis=1)
+
+    return _welford_nanvar(a, w, a_subseq_isfinite)
+
+
+def welford_nanstd(a, w=None):
+    """
+    Compute the rolling standard deviation for a 1-D array while ignoring NaNs using
+    a modified version of Welford's algorithm but is much faster than using `np.nanstd`
+    with stride tricks.
+
+    This a convenience wrapper around `welford_nanvar`.
 
     Parameters
     ----------
@@ -286,28 +376,20 @@ def rolling_nanstd_1d(a, w):
     -------
     output : ndarray
         Rolling window nanstd.
-
-    Notes
-    -----
-    See `this stackoverflow response \
-    <https://stackoverflow.com/a/64517671/2955541>`__
     """
-    k = np.ones(w, dtype=int)
-    m = ~np.isnan(a)
-    a0 = np.where(m, a, 0)
+    if w is None:
+        w = a.shape[0]
 
-    n = np.convolve(m, k, "valid")
-    c1 = np.convolve(a0, k, "valid")
-    f2 = c1 ** 2
-    p2 = f2 / n ** 2
-    f1 = np.convolve((a0 ** 2) * m, k, "valid") + n * p2
-
-    return np.sqrt((f1 - (2 / n) * f2) / n)
+    return np.sqrt(welford_nanvar(a, w))
 
 
 def rolling_nanstd(a, w):
     """
-    A convenience wrapper around `rolling_nanstd_1d` for 1-D and 2-D arrays.
+    Compute the rolling standard deviation for 1-D and 2-D arrays while ignoring NaNs
+    using a modified version of Welford's algorithm but is much faster than using
+    `np.nanstd` with stride tricks.
+
+    This a convenience wrapper around `welford_nanstd`.
 
     This essentially replaces:
 
@@ -328,7 +410,7 @@ def rolling_nanstd(a, w):
     """
     axis = a.ndim - 1  # Account for rolling
     return np.apply_along_axis(
-        lambda a_row, w: rolling_nanstd_1d(a_row, w), axis=axis, arr=a, w=w
+        lambda a_row, w: welford_nanstd(a_row, w), axis=axis, arr=a, w=w
     )
 
 
@@ -831,7 +913,7 @@ def mass_absolute(Q, T):
     if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
-        T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
+        T_subseq_isfinite = np.all(rolling_window(np.isfinite(T), m), axis=1)
         T[~np.isfinite(T)] = 0.0
         QT = sliding_dot_product(Q, T)
         Q_squared = np.sum(Q * Q)
@@ -971,7 +1053,7 @@ def preprocess_non_normalized(T, m):
     check_dtype(T)
 
     T[np.isinf(T)] = np.nan
-    T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
+    T_subseq_isfinite = np.all(rolling_window(np.isfinite(T), m), axis=1)
     T[np.isnan(T)] = 0
 
     return T, T_subseq_isfinite
