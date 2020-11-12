@@ -2,6 +2,29 @@ import numpy as np
 import numpy.testing as npt
 import stumpy
 
+def naive_consensus_search(ts, m):
+    k = len(ts)
+
+    rad = np.inf
+    tsind = 0
+    ssind = 0
+
+    for j in range(k):
+        radii = np.zeros(len(ts[j]) - m + 1)
+        for i in range(k):
+            if i != j:
+                mp = stumpy.stump(ts[j], m, ts[i], ignore_trivial=False)
+                radii = np.max((radii, mp[:, 0]), axis=0)
+        min_rad_index = np.argmin(radii)
+        min_rad = radii[min_rad_index]
+        if min_rad < rad:
+            rad = min_rad
+            tsind = i
+            ssind = min_rad_index
+
+    return rad, tsind, ssind
+
+
 def test_ostinato():
     m = 50
     ts = [np.random.rand(n) for n in [64, 128, 256]]
