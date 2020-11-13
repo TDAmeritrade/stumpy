@@ -3,6 +3,7 @@ import numpy.testing as npt
 import stumpy
 import pytest
 
+
 def naive_consensus_search(ts, m):
     """
     Brute force consensus motif from
@@ -35,7 +36,9 @@ def naive_consensus_search(ts, m):
     return rad, tsind, ssind
 
 
-@pytest.mark.parametrize('seed', np.random.choice(np.arange(10000), size=100, replace=False))
+@pytest.mark.parametrize(
+    "seed", np.random.choice(np.arange(10000), size=100, replace=False)
+)
 def test_ostinato(seed):
     m = 50
     np.random.seed(seed)
@@ -46,8 +49,8 @@ def test_ostinato(seed):
 
     npt.assert_almost_equal(rad_naive, rad_ostinato)
     npt.assert_almost_equal(
-            ts[tsind_naive][ssind_naive:ssind_naive+m],
-            ts[tsind_ostinato][ssind_ostinato:ssind_ostinato+m],
-            )
+        ts[tsind_naive][ssind_naive : ssind_naive + m],
+        ts[tsind_ostinato][ssind_ostinato : ssind_ostinato + m],
+    )
     npt.assert_almost_equal(tsind_naive, tsind_ostinato)
     npt.assert_almost_equal(ssind_naive, ssind_ostinato)

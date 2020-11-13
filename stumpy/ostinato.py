@@ -1,6 +1,7 @@
 import numpy as np
 from . import core, stump
 
+
 def ostinato(tss, m):
     """
     Find the consensus motif of multiple time series
@@ -54,19 +55,23 @@ def ostinato(tss, m):
                 break
             for i in range(k):
                 if ~np.isin(i, [j, h]):
-                    QT = core.sliding_dot_product(Ts[j][q:q+m], Ts[i])
-                    rad = np.max((
+                    QT = core.sliding_dot_product(Ts[j][q : q + m], Ts[i])
+                    rad = np.max(
+                        (
                             rad,
                             np.min(
                                 core._mass(
-                                    Ts[j][q:q+m],
+                                    Ts[j][q : q + m],
                                     Ts[i],
                                     QT,
                                     M_Ts[j][q],
                                     Σ_Ts[j][q],
                                     M_Ts[i],
-                                    Σ_Ts[i],))
-                                    ))
+                                    Σ_Ts[i],
+                                )
+                            ),
+                        )
+                    )
                     if rad >= bsf_rad:
                         break
             if rad < bsf_rad:

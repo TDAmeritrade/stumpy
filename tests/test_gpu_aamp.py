@@ -92,12 +92,7 @@ def test_parallel_gpu_aamp_self_join(T_A, T_B):
         m = 3
         zone = int(np.ceil(m / 4))
         ref_mp = naive.aamp(T_B, m, exclusion_zone=zone)
-        comp_mp = gpu_aamp(
-            T_B,
-            m,
-            ignore_trivial=True,
-            device_id=device_ids,
-        )
+        comp_mp = gpu_aamp(T_B, m, ignore_trivial=True, device_id=device_ids,)
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
         npt.assert_almost_equal(ref_mp, comp_mp)
@@ -118,13 +113,7 @@ def test_parallel_gpu_aamp_A_B_join(T_A, T_B):
     if len(T_B) > 10:
         m = 3
         ref_mp = naive.aamp(T_B, m, T_B=T_A)
-        comp_mp = gpu_aamp(
-            T_B,
-            m,
-            T_A,
-            ignore_trivial=False,
-            device_id=device_ids,
-        )
+        comp_mp = gpu_aamp(T_B, m, T_A, ignore_trivial=False, device_id=device_ids,)
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
         npt.assert_almost_equal(ref_mp, comp_mp)
