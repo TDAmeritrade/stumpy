@@ -35,7 +35,7 @@ def naive_consensus_search(ts, m):
     return rad, tsind, ssind
 
 
-@pytest.mark.parametrize('seed', np.arange(100))
+@pytest.mark.parametrize('seed', np.random.choice(np.arange(10000), size=100, replace=False))
 def test_ostinato(seed):
     m = 50
     np.random.seed(seed)
