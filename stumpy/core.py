@@ -351,7 +351,7 @@ def welford_nanvar(a, w=None):
     if w is None:
         w = a.shape[0]
 
-    a_subseq_isfinite = np.all(rolling_window(np.isfinite(a), w), axis=1)
+    a_subseq_isfinite = rolling_isfinite(a, w)
 
     return _welford_nanvar(a, w, a_subseq_isfinite)
 
@@ -913,7 +913,7 @@ def mass_absolute(Q, T):
     if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
-        T_subseq_isfinite = np.all(rolling_window(np.isfinite(T), m), axis=1)
+        T_subseq_isfinite = rolling_isfinite(T, m)
         T[~np.isfinite(T)] = 0.0
         QT = sliding_dot_product(Q, T)
         Q_squared = np.sum(Q * Q)
@@ -1053,7 +1053,7 @@ def preprocess_non_normalized(T, m):
     check_dtype(T)
 
     T[np.isinf(T)] = np.nan
-    T_subseq_isfinite = np.all(rolling_window(np.isfinite(T), m), axis=1)
+    T_subseq_isfinite = rolling_isfinite(T, m)
     T[np.isnan(T)] = 0
 
     return T, T_subseq_isfinite
@@ -1240,3 +1240,38 @@ def _get_array_ranges(a, n_chunks, truncate=False):
             array_ranges = array_ranges[:row_truncation_idx]
 
     return array_ranges
+
+
+def rolling_isfinite(a, w):
+    """
+    Determine if all elements in each rolling window `isfinite`
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : int
+        The length of the rolling window
+
+    Return
+    ------
+    output : ndarray
+        A boolean array of length `a.shape[0] - w + 1` that records whether each
+        rolling window subsequence contain all finite values
+    """
+    if a.dtype == np.dtype("bool"):
+        a_isfinite = a.copy()
+    else:
+        a_isfinite = np.isfinite(a)
+    a_subseq_isfinite = rolling_window(a_isfinite, w)
+
+    # Process first subsequence
+    a_first_subseq = ~a_isfinite[:w]
+    if a_first_subseq.any():
+        a_isfinite[: np.flatnonzero(a_first_subseq).max()] = False
+
+    # Shift `a_isfinite` and fill forward by `w`
+    a_subseq_isfinite[~a_isfinite[w - 1 :]] = False
+
+    return a_isfinite[: a_isfinite.shape[0] - w + 1]

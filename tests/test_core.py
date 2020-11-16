@@ -610,3 +610,17 @@ def test_get_array_ranges_exhausted_truncated():
 
     comp = core._get_array_ranges(x, n_chunks, truncate=True)
     npt.assert_almost_equal(ref, comp)
+
+
+def test_rolling_isfinite():
+    a = np.arange(12).astype(np.float64)
+    w = 3
+
+    a[1] = np.nan
+    a[5] = np.nan
+    a[9] = np.nan
+
+    ref = np.all(core.rolling_window(np.isfinite(a), w), axis=1)
+    comp = core.rolling_isfinite(a, w)
+
+    npt.assert_almost_equal(ref, comp)
