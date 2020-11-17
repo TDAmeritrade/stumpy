@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import stumpy
+from stumpy.ostinato import _get_central_motif
 import pytest
 
 
@@ -33,7 +34,7 @@ def naive_consensus_search(ts, m):
             tsind = j
             ssind = min_rad_index
 
-    return rad, tsind, ssind
+    return _get_central_motif(ts, rad, tsind, ssind, m)
 
 
 @pytest.mark.parametrize(

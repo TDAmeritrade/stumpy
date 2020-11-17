@@ -78,3 +78,7 @@ def ostinato(tss, m):
                 bsf_rad, ts_ind, ss_ind = rad, j, q
 
     return bsf_rad, ts_ind, ss_ind
+
+
+def _get_central_motif(ts, rad, tsind, ssind, m):
+    return
