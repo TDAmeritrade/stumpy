@@ -48,3 +48,5 @@ def test_ostinato(seed):
     rad_ostinato, tsind_ostinato, ssind_ostinato = stumpy.ostinato(ts, m)
 
     npt.assert_almost_equal(rad_naive, rad_ostinato)
+    npt.assert_almost_equal(tsind_naive, tsind_ostinato)
+    npt.assert_almost_equal(ssind_naive, ssind_ostinato)
