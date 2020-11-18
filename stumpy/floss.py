@@ -513,14 +513,6 @@ class floss(object):
         D = core.mass(self._finite_Q, self._finite_T, M_T, Σ_T)
         D[zone_start:] = np.inf
 
-        T_subseq_isfinite = np.all(
-            core.rolling_window(self._T_isfinite, self._m), axis=1
-        )
-        print(
-            self._T_isfinite,
-            T_subseq_isfinite,
-            core.rolling_isfinite(self._T_isfinite, self._m),
-        )
         T_subseq_isfinite = core.rolling_isfinite(self._T_isfinite, self._m)
 
         D[~T_subseq_isfinite] = np.inf
