@@ -6,6 +6,44 @@ def ostinato(tss, m):
     """
     Find the consensus motif of multiple time series
 
+    This is a wrapper around the vanilla version of the ostinato algorithm
+    which finds the best radius and a helper function that finds the most
+    central conserved motif.
+
+    Parameters
+    ----------
+    tss : list
+        List of time series for which to find the consensus motif
+
+    m : int
+        Window size
+
+    Returns
+    -------
+    rad : float
+        Radius of the most central consensus motif
+
+    ts_ind : int
+        Index of time series which contains the most central consensus motif
+
+    ss_ind : int
+        Start index of the most central consensus motif within the time series
+        `ts_ind` that contains it
+
+    Notes
+    -----
+    <https://www.cs.ucr.edu/~eamonn/consensus_Motif_ICDM_Long_version.pdf>
+
+    See Table 2
+    """
+    rad, ts_ind, ss_ind = _ostinato(tss, m)
+    return _get_central_motif(tss, rad, ts_ind, ss_ind, m)
+
+
+def _ostinato(tss, m):
+    """
+    Find the consensus motif of multiple time series
+
     Parameters
     ----------
     tss : list
@@ -31,6 +69,10 @@ def ostinato(tss, m):
     <https://www.cs.ucr.edu/~eamonn/consensus_Motif_ICDM_Long_version.pdf>
 
     See Table 2
+
+    The proposed ostinato algorithm only finds the best radius but not the
+    most central motif. If you need the most central motif run
+    stumpy.ostinato._get_central_motif with this function's return values.
     """
     # Preprocess means and stddevs and handle np.nan/np.inf
     Ts = [None] * len(tss)
