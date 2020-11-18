@@ -13,3 +13,4 @@ Tutorials
     Tutorial_Fast_Approximate_Matrix_Profiles.ipynb
     Tutorial_Matrix_Profiles_For_Streaming_Data.ipynb
     Tutorial_Pattern_Searching.ipynb
+    Tutorial_AB_Joins.ipynb
