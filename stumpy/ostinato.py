@@ -47,7 +47,7 @@ def ostinato(tss, m):
     subsequences with the best radius is the one with the smallest mean
     distance to nearest neighbors in all other time series. To find this
     central motif it is necessary to search the subsequences with the
-    best radius via stumpy.ostinato._get_central_motif
+    best radius via `stumpy.ostinato._get_central_motif`
     """
     rad, ts_ind, ss_ind = _ostinato(tss, m)
     return _get_central_motif(tss, rad, ts_ind, ss_ind, m)
@@ -94,7 +94,7 @@ def _ostinato(tss, m):
     subsequences with the best radius is the one with the smallest mean
     distance to nearest neighbors in all other time series. To find this
     central motif it is necessary to search the subsequences with the
-    best radius via stumpy.ostinato._get_central_motif
+    best radius via `stumpy.ostinato._get_central_motif`
     """
     # Preprocess means and stddevs and handle np.nan/np.inf
     Ts = [None] * len(tss)
@@ -194,7 +194,7 @@ def _get_central_motif(tss, rad, ts_ind, ss_ind, m):
     subsequences with the best radius is the one with the smallest mean
     distance to nearest neighbors in all other time series. To find this
     central motif it is necessary to search the subsequences with the
-    best radius via stumpy.ostinato._get_central_motif
+    best radius via `stumpy.ostinato._get_central_motif`
     """
     k = len(tss)
 
