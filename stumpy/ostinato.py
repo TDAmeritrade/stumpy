@@ -217,12 +217,26 @@ def _get_central_motif(tss, rad, ts_ind, ss_ind, m):
         np.isclose(rad_alt, rad),
         d_mean_alt < d_ost.mean(),
     )
+    # Alternatives with same radius and same mean distance
+    alt_same = np.logical_and(
+        np.isclose(rad_alt, rad),
+        np.isclose(d_mean_alt, d_ost.mean()),
+    )
     if np.any(alt_better):
         ts_ind_alt = ts_ind_alt[alt_better]
         ss_ind_alt = ss_ind_alt[alt_better]
         d_mean_alt = d_mean_alt[alt_better]
         i_alt_best = np.argmin(d_mean_alt)
         return rad, ts_ind_alt[i_alt_best], ss_ind_alt[i_alt_best]
+    elif np.any(alt_same):
+        # Default to the first match in the list of time series
+        ts_ind_alt = ts_ind_alt[alt_same]
+        ss_ind_alt = ss_ind_alt[alt_same]
+        i_alt_first = np.argmin(ts_ind_alt)
+        if ts_ind_alt[i_alt_first] < ts_ind:
+            return rad, ts_ind_alt[i_alt_first], ss_ind_alt[i_alt_first]
+        else:
+            return rad, ts_ind, ss_ind
     else:
         return rad, ts_ind, ss_ind
 
