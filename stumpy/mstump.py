@@ -40,18 +40,6 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
     σ_Q : ndarray
         Standard deviation of `Q`
 
-    include : ndarray
-        A list of (zero-based) indices corresponding to the dimensions in `T` that
-        must be included in the constrained multidimensional motif search.
-        For more information, see Section IV D in:
-
-        `DOI: 10.1109/ICDM.2017.66 \
-        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
-
-    discords : bool
-        When set to `True`, this reverses the distance profile to favor discords rather
-        than motifs. Note that indices in `include` are still maintained and respected.
-
     Returns
     -------
     D : ndarray
