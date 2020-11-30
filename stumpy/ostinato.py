@@ -224,21 +224,16 @@ def _get_central_motif(tss, rad, ts_ind, ss_ind, m):
     )
     if np.any(alt_better):
         ts_ind_alt = ts_ind_alt[alt_better]
-        ss_ind_alt = ss_ind_alt[alt_better]
         d_mean_alt = d_mean_alt[alt_better]
         i_alt_best = np.argmin(d_mean_alt)
-        return rad, ts_ind_alt[i_alt_best], ss_ind_alt[i_alt_best]
+        ts_ind = ts_ind_alt[i_alt_best]
     elif np.any(alt_same):
         # Default to the first match in the list of time series
         ts_ind_alt = ts_ind_alt[alt_same]
-        ss_ind_alt = ss_ind_alt[alt_same]
         i_alt_first = np.argmin(ts_ind_alt)
-        if ts_ind_alt[i_alt_first] < ts_ind:
-            return rad, ts_ind_alt[i_alt_first], ss_ind_alt[i_alt_first]
-        else:
-            return rad, ts_ind, ss_ind
-    else:
-        return rad, ts_ind, ss_ind
+        ts_ind = np.min((ts_ind, ts_ind_alt[i_alt_first]))
+    ss_ind = ss_ind_nn_ost[ts_ind]
+    return rad, ts_ind, ss_ind
 
 
 def _across_series_nearest_neighbors(q, tss):

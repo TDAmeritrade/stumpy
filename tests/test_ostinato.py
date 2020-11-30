@@ -108,11 +108,11 @@ def naive_get_central_motif(tss, rad, ts_ind, ss_ind, m):
 
     # Alternatives with same radius and lower mean distance
     alt_better = (
-        int(naive_isclose(rad_alt, rad)) + int(d_mean_alt < d_ost.mean())
+        naive_isclose(rad_alt, rad).astype(int) + (d_mean_alt < d_ost.mean()).astype(int)
     ) == 2
     # Alternatives with same radius and same mean distance
     alt_same = (
-        int(naive_isclose(rad_alt, rad)) + int(naive_isclose(d_mean_alt, d_ost.mean()))
+        naive_isclose(rad_alt, rad).astype(int) + naive_isclose(d_mean_alt, d_ost.mean()).astype(int)
     ) == 2
     if np.any(alt_better):
         ts_ind_alt = ts_ind_alt[alt_better]
