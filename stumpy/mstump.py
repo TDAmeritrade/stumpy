@@ -118,24 +118,150 @@ def _apply_include(
     D[unrestricted_indices] = tmp_swap[mask]
 
 
+def _query_mstump_profile(
+    query_idx, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include=None, discords=False
+):
+    """
+    Multi-dimensional wrapper to compute the multi-dimensional matrix profile,
+    the multi-dimensional matrix profile index, the multi-dimensional matrix profile
+    subspace for a given query window within the times series or sequence that is
+    denoted by the `query_idx` index. Essentially, this is a convenience wrapper around
+    `_multi_mass`.
+
+    Parameters
+    ----------
+    query_idx : int
+        The window index to calculate the first multi-dimensional matrix profile,
+        multi-dimensional matrix profile indices, and multi-dimensional matrix profile
+        subspace.
+
+    T_A : ndarray
+        The time series or sequence for which the multi-dimensional matrix profile,
+        multi-dimensional matrix profile indices, and multi-dimensional matrix profile
+        subspace will be returned
+
+    T_B : ndarray
+        The time series or sequence that contains your query subsequences
+
+    m : int
+        Window size
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the `query_idx`.
+
+    M_T : ndarray
+        Sliding mean for `T_A`
+
+    Σ_T : ndarray
+        Sliding standard deviation for `T_A`
+
+    μ_Q : ndarray
+        Sliding mean for `T_B`
+
+    σ_Q : ndarray
+        Sliding standard deviation for `T_B`
+
+    include : ndarray
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    discords : bool
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
+
+    Returns
+    -------
+    P : ndarray
+        Multi-dimensional matrix profile for the window with index equal to
+        `query_idx`
+
+    I : ndarray
+        Multi-dimensional matrix profile indices for the window with index
+        equal to `query_idx`
+
+    S : ndarray
+        A ragged array of ndarrays that contain the multi-dimensional subspace for the
+        window with index equal to `query_idx`. The `len(S)` will be equal to the total
+        number of dimensions, `d`, and where `S[i]` corresponds to the list of subspace
+        indices for the `i+1`th subspace dimension (i.e., `S[1]` corresponds to the
+        subspace with dimension `2` and with `len(S[1]) == 2`).
+    """
+    d, n = T_A.shape
+    k = n - m + 1
+    start_row_idx = 0
+    D = _multi_mass(
+        T_B[:, query_idx : query_idx + m],
+        T_A,
+        m,
+        M_T,
+        Σ_T,
+        μ_Q[:, query_idx],
+        σ_Q[:, query_idx],
+    )
+
+    if include is not None:
+        _apply_include(D, include)
+        start_row_idx = include.shape[0]
+
+    if discords:
+        # D[start_row_idx:][::-1].sort(axis=0)
+        sorted_idx = D[start_row_idx:][::-1].argsort(axis=0, kind="mergesort")
+        broadcast_idx = np.arange(D[start_row_idx:].shape[1])[np.newaxis, :]
+        D[start_row_idx:][::-1] = D[start_row_idx:][::-1][sorted_idx, broadcast_idx]
+    else:
+        # D[start_row_idx:].sort(axis=0)
+        sorted_idx = D[start_row_idx:].argsort(axis=0, kind="mergesort")
+        broadcast_idx = np.arange(D[start_row_idx:].shape[1])[np.newaxis, :]
+        D[start_row_idx:] = D[start_row_idx:][sorted_idx, broadcast_idx]
+
+    D_prime = np.zeros(k)
+    for i in range(d):
+        D_prime[:] = D_prime + D[i]
+        D[i, :] = D_prime / (i + 1)
+
+    core.apply_exclusion_zone(D, query_idx, excl_zone)
+
+    P = np.full(d, np.inf, dtype="float64")
+    I = np.full(d, -1, dtype="int64")
+    S = np.empty(d, dtype=object)
+
+    for i in range(d):
+        min_index = np.argmin(D[i])
+        I[i] = min_index
+        P[i] = D[i, min_index]
+        S[i] = sorted_idx[: i + 1, min_index]
+        if np.isinf(P[i]):  # pragma nocover
+            I[i] = -1
+            S[i][:] = -1
+
+    return P, I, S
+
+
 def _get_first_mstump_profile(
     start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include=None, discords=False
 ):
     """
     Multi-dimensional wrapper to compute the multi-dimensional matrix profile
     and multi-dimensional matrix profile index for a given window within the
-    times series or sequence that is denote by the `start` index.
-    Essentially, this is a convenience wrapper around `_multi_mass`
+    times series or sequence that is denoted by the `start` index.
+    Essentially, this is a convenience wrapper around `_multi_mass`. This is a
+    convenience wrapper for the `_query_mstump_profile` function but does not return
+    the multi-dimensional matrix profile subspace.
 
     Parameters
     ----------
     start : int
-        The window index to calculate the first matrix profile, matrix profile
-        index, left matrix profile index, and right matrix profile index for.
+        The window index to calculate the first multi-dimensional matrix profile,
+        multi-dimensional matrix profile indices, and multi-dimensional subspace.
 
     T_A : ndarray
-        The time series or sequence for which the matrix profile index will
-        be returned
+        The time series or sequence for which the multi-dimensional matrix profile,
+        multi-dimensional matrix profile indices, and multi-dimensional subspace will be
+        returned
 
     T_B : ndarray
         The time series or sequence that contains your query subsequences
@@ -177,42 +303,12 @@ def _get_first_mstump_profile(
         `start`
 
     I : ndarray
-        Multi-dimensional matrix profile index for the window with index
+        Multi-dimensional matrix profile indices for the window with index
         equal to `start`
     """
-    d, n = T_A.shape
-    k = n - m + 1
-    start_row_idx = 0
-    D = _multi_mass(
-        T_B[:, start : start + m], T_A, m, M_T, Σ_T, μ_Q[:, start], σ_Q[:, start]
+    P, I, _ = _query_mstump_profile(
+        start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
     )
-
-    if include is not None:
-        _apply_include(D, include)
-        start_row_idx = include.shape[0]
-
-    if discords:
-        D[start_row_idx:][::-1].sort(axis=0)
-    else:
-        D[start_row_idx:].sort(axis=0)
-
-    D_prime = np.zeros(k)
-    for i in range(d):
-        D_prime[:] = D_prime + D[i]
-        D[i, :] = D_prime / (i + 1)
-
-    core.apply_exclusion_zone(D, start, excl_zone)
-
-    P = np.full(d, np.inf, dtype="float64")
-    I = np.full(d, -1, dtype="int64")
-
-    for i in range(d):
-        min_index = np.argmin(D[i])
-        I[i] = min_index
-        P[i] = D[i, min_index]
-        if np.isinf(P[i]):  # pragma nocover
-            I[i] = -1
-
     return P, I
 
 

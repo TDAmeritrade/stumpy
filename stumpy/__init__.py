@@ -8,6 +8,7 @@ from .stumped import stumped  # noqa: F401
 from .mstump import (  # noqa: F401
     mstump,
     _mstump,
+    _query_mstump_profile,
     _get_first_mstump_profile,
     _get_multi_QT,
     _multi_mass,

@@ -35,7 +35,7 @@ def test_mstumped_one_subsequence_inf_self_join_first_dimension(
         T_sub = T.copy()
         T_sub[0, substitution_location] = np.inf
 
-        ref_P, ref_I = naive.mstump(T_sub, m, excl_zone)
+        ref_P, ref_I, _ = naive.mstump(T_sub, m, excl_zone)
         comp_P, comp_I = mstumped(dask_client, T_sub, m)
 
         npt.assert_almost_equal(ref_P, comp_P)
@@ -54,7 +54,7 @@ def test_mstumped_one_subsequence_inf_self_join_all_dimensions(
         T_sub = T.copy()
         T_sub[:, substitution_location] = np.inf
 
-        ref_P, ref_I = naive.mstump(T_sub, m, excl_zone)
+        ref_P, ref_I, _ = naive.mstump(T_sub, m, excl_zone)
         comp_P, comp_I = mstumped(dask_client, T_sub, m)
 
         npt.assert_almost_equal(ref_P, comp_P)

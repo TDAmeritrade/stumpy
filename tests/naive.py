@@ -225,6 +225,10 @@ def mstump(T, m, excl_zone, include=None, discords=False):
 
     P = np.full((d, k), np.inf)
     I = np.ones((d, k), dtype="int64") * -1
+    S = np.empty((d, k), dtype=object)
+    for i in range(d):
+        for j in range(k):
+            S[i, j] = -np.ones(i + 1, dtype=np.int64)
 
     for i in range(k):
         Q = T[:, i : i + m]
@@ -242,8 +246,10 @@ def mstump(T, m, excl_zone, include=None, discords=False):
             start_row_idx = include.shape[0]
 
         if discords:
+            sorted_idx = D[start_row_idx:][::-1].argsort(axis=0, kind="mergesort")
             D[start_row_idx:][::-1].sort(axis=0)
         else:
+            sorted_idx = D[start_row_idx:].argsort(axis=0, kind="mergesort")
             D[start_row_idx:].sort(axis=0)
 
         D_prime = np.zeros(n - m + 1)
@@ -257,11 +263,14 @@ def mstump(T, m, excl_zone, include=None, discords=False):
         P_i, I_i = PI(D_prime_prime, i, excl_zone)
 
         for dim in range(T.shape[0]):
+            for col_idx in range(P.shape[1]):
+                if P[dim, col_idx] > P_i[dim, col_idx]:
+                    S[dim, col_idx] = sorted_idx[: dim + 1, col_idx]
             col_mask = P[dim] > P_i[dim]
             P[dim, col_mask] = P_i[dim, col_mask]
             I[dim, col_mask] = I_i[dim, col_mask]
 
-    return P.T, I.T
+    return P.T, I.T, S.T
 
 
 def get_array_ranges(a, n_chunks, truncate=False):
