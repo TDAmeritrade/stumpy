@@ -4,6 +4,7 @@
 
 import numpy as np
 from numba import njit, prange
+from scipy.signal import convolve
 import tempfile
 import math
 
@@ -265,7 +266,7 @@ def sliding_dot_product(Q, T):
     n = T.shape[0]
     m = Q.shape[0]
     Qr = np.flipud(Q)  # Reverse/flip Q
-    QT = np.convolve(Qr, T)
+    QT = convolve(Qr, T)
 
     return QT.real[m - 1 : n]
 
