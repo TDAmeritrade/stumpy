@@ -6,7 +6,7 @@ from stumpy.ostinato import _get_central_motif
 import pytest
 
 
-def naive_consensus_search(tss, m):
+def naive_consensus_search(Ts, m):
     """
     Brute force consensus motif from
     <https://www.cs.ucr.edu/~eamonn/consensus_Motif_ICDM_Long_version.pdf>
@@ -16,59 +16,59 @@ def naive_consensus_search(tss, m):
     Note that there is a bug in the pseudocode at line 8 where `i` should be `j`.
     This implementation fixes it.
     """
-    k = len(tss)
+    k = len(Ts)
 
-    rad = np.inf
-    ts_ind = 0
-    ss_ind = 0
+    bsf_radius = np.inf
+    Ts_idx = 0
+    subseq_idx = 0
 
     for j in range(k):
-        radii = np.zeros(len(tss[j]) - m + 1)
+        radii = np.zeros(len(Ts[j]) - m + 1)
         for i in range(k):
             if i != j:
-                mp = naive.stump(tss[j], m, tss[i])
-                radii = np.sort((radii, mp[:, 0]), axis=0)[-1, :]
-        min_rad_index = naive_argmin(radii)
-        min_rad = radii[min_rad_index]
-        if min_rad < rad:
-            rad = min_rad
-            ts_ind = j
-            ss_ind = min_rad_index
+                mp = naive.stump(Ts[j], m, Ts[i])
+                radii = np.maximum(radii, mp[:, 0])
+        min_radius_idx = np.argmin(radii)
+        min_radius = radii[min_radius_idx]
+        if min_radius < bsf_radius:
+            bsf_radius = min_radius
+            Ts_idx = j
+            subseq_idx = min_radius_idx
 
-    return naive_get_central_motif(tss, rad, ts_ind, ss_ind, m)
+    return naive_get_central_motif(Ts, bsf_radius, Ts_idx, subseq_idx, m)
 
 
-def naive_get_central_motif(tss, rad, ts_ind, ss_ind, m):
+def naive_get_central_motif(Ts, radius, Ts_idx, subseq_idx, m):
     """
     Compare subsequences with the same radius and return the most central motif
 
     Parameters
     ----------
-    tss : list
+    Ts : list
         List of time series for which to find the most central motif
 
-    rad : float
+    radius : float
         Best radius found by a consensus search algorithm
 
-    ts_ind : int
-        Index of time series in which `rad` was found first
+    Ts_idx : int
+        Index of time series in which `radius` was first found
 
-    ss_ind : int
-        Start index of subsequence in `ts_ind` that has radius `rad`
+    subseq_idx : int
+        Start index of the subsequence in `Ts[Ts_idx]` that has radius `radius`
 
     m : int
         Window size
 
     Returns
     -------
-    rad : float
+    radius : float
         Radius of the most central consensus motif
 
-    ts_ind : int
+    Ts_idx : int
         Index of time series which contains the most central consensus motif
 
-    ss_ind : int
-        Start index of most central consensus motif within the time series `ts_ind`
+    subseq_idx : int
+        Start index of most central consensus motif within the time series `Ts_idx`
         that contains it
 
     Notes
@@ -78,9 +78,9 @@ def naive_get_central_motif(tss, rad, ts_ind, ss_ind, m):
     See Table 2
 
     The ostinato algorithm proposed in the paper finds the best radius
-    in `tss`. Intuitively, the radius is the minimum distance of a
+    in `Ts`. Intuitively, the radius is the minimum distance of a
     subsequence to encompass at least one nearest neighbor subsequence
-    from all other time series. The best radius in `tss` is the minimum
+    from all other time series. The best radius in `Ts` is the minimum
     radius amongst all radii. Some data sets might contain multiple
     subsequences which have the same optimal radius.
     The greedy Ostinato algorithm only finds one of them, which might
@@ -90,52 +90,52 @@ def naive_get_central_motif(tss, rad, ts_ind, ss_ind, m):
     central motif it is necessary to search the subsequences with the
     best radius via `stumpy.ostinato._get_central_motif`
     """
-    k = len(tss)
+    k = len(Ts)
 
     # Ostinato hit: get nearest neighbors' distances and indices
-    q_ost = tss[ts_ind][ss_ind : ss_ind + m]
-    ss_ind_nn_ost, d_ost = naive_across_series_nearest_neighbors(q_ost, tss)
+    q_ost = Ts[Ts_idx][subseq_idx : subseq_idx + m]
+    subseq_idx_nn_ost, d_ost = naive_across_series_nearest_neighbors(q_ost, Ts)
 
     # Alternative candidates: Distance to ostinato hit equals best radius
-    ts_ind_alt = np.flatnonzero(naive_isclose(d_ost, rad))
-    ss_ind_alt = ss_ind_nn_ost[ts_ind_alt]
-    d_alt = np.zeros((len(ts_ind_alt), k), dtype=float)
-    for i, (tsi, ssi) in enumerate(zip(ts_ind_alt, ss_ind_alt)):
-        q = tss[tsi][ssi : ssi + m]
-        _, d_alt[i] = naive_across_series_nearest_neighbors(q, tss)
+    Ts_idx_alt = np.flatnonzero(np.isclose(d_ost, radius))
+    subseq_idx_alt = subseq_idx_nn_ost[Ts_idx_alt]
+    d_alt = np.zeros((len(Ts_idx_alt), k), dtype=float)
+    for i, (Tsi, subseqi) in enumerate(zip(Ts_idx_alt, subseq_idx_alt)):
+        q = Ts[Tsi][subseqi : subseqi + m]
+        _, d_alt[i] = naive_across_series_nearest_neighbors(q, Ts)
     rad_alt = np.sort(d_alt, axis=1)[:, -1]
     d_mean_alt = np.mean(d_alt, axis=1)
 
     # Alternatives with same radius and lower mean distance
     alt_better = (
-        naive_isclose(rad_alt, rad).astype(int)
+        np.isclose(rad_alt, radius).astype(int)
         + (d_mean_alt < d_ost.mean()).astype(int)
     ) == 2
     # Alternatives with same radius and same mean distance
     alt_same = (
-        naive_isclose(rad_alt, rad).astype(int)
-        + naive_isclose(d_mean_alt, d_ost.mean()).astype(int)
+        np.isclose(rad_alt, radius).astype(int)
+        + np.isclose(d_mean_alt, d_ost.mean()).astype(int)
     ) == 2
     if np.any(alt_better):
-        ts_ind_alt = ts_ind_alt[alt_better]
-        ss_ind_alt = ss_ind_alt[alt_better]
+        Ts_idx_alt = Ts_idx_alt[alt_better]
+        subseq_idx_alt = subseq_idx_alt[alt_better]
         d_mean_alt = d_mean_alt[alt_better]
-        i_alt_best = naive_argmin(d_mean_alt)
-        return rad, ts_ind_alt[i_alt_best], ss_ind_alt[i_alt_best]
+        i_alt_best = np.argmin(d_mean_alt)
+        return radius, Ts_idx_alt[i_alt_best], subseq_idx_alt[i_alt_best]
     elif np.any(alt_same):
         # Default to the first match in the list of time series
-        ts_ind_alt = ts_ind_alt[alt_same]
-        ss_ind_alt = ss_ind_alt[alt_same]
-        i_alt_first = naive_argmin(ts_ind_alt)
-        if ts_ind_alt[i_alt_first] < ts_ind:
-            return rad, ts_ind_alt[i_alt_first], ss_ind_alt[i_alt_first]
+        Ts_idx_alt = Ts_idx_alt[alt_same]
+        subseq_idx_alt = subseq_idx_alt[alt_same]
+        i_alt_first = np.argmin(Ts_idx_alt)
+        if Ts_idx_alt[i_alt_first] < Ts_idx:
+            return radius, Ts_idx_alt[i_alt_first], subseq_idx_alt[i_alt_first]
         else:
-            return rad, ts_ind, ss_ind
+            return radius, Ts_idx, subseq_idx
     else:
-        return rad, ts_ind, ss_ind
+        return radius, Ts_idx, subseq_idx
 
 
-def naive_across_series_nearest_neighbors(q, tss):
+def naive_across_series_nearest_neighbors(q, Ts):
     """
     For multiple time series find, per individual time series, the subsequences closest
     to a query.
@@ -145,33 +145,25 @@ def naive_across_series_nearest_neighbors(q, tss):
     q : ndarray
         Query array or subsequence
 
-    tss : list
+    Ts : list
         List of time series for which to the nearest neighbors to `q`
 
     Returns
     -------
-    ss_ind_nn : ndarray
-        Indices to subsequences in `tss` that are closest to `q`
+    subseq_idx_nn : ndarray
+        Indices to subsequences in `Ts` that are closest to `q`
 
     d : ndarray
-        Distances to subsequences in `tss` that are closest to `q`
+        Distances to subsequences in `Ts` that are closest to `q`
     """
-    k = len(tss)
+    k = len(Ts)
     d = np.zeros(k, dtype=float)
-    ss_ind_nn = np.zeros(k, dtype=int)
+    subseq_idx_nn = np.zeros(k, dtype=int)
     for i in range(k):
-        dp = naive.distance_profile(q, tss[i], len(q))
-        ss_ind_nn[i] = naive_argmin(dp)
-        d[i] = dp[ss_ind_nn[i]]
-    return ss_ind_nn, d
-
-
-def naive_argmin(a):
-    return np.flatnonzero(a == np.sort(a)[0])[0]
-
-
-def naive_isclose(a, b, rtol=1e-05, atol=1e-08):
-    return np.abs(a - b) <= (atol + rtol * np.abs(b))
+        dp = naive.distance_profile(q, Ts[i], len(q))
+        subseq_idx_nn[i] = np.argmin(dp)
+        d[i] = dp[subseq_idx_nn[i]]
+    return subseq_idx_nn, d
 
 
 @pytest.mark.parametrize(
@@ -180,11 +172,11 @@ def naive_isclose(a, b, rtol=1e-05, atol=1e-08):
 def test_ostinato(seed):
     m = 50
     np.random.seed(seed)
-    tss = [np.random.rand(n) for n in [64, 128, 256]]
+    Ts = [np.random.rand(n) for n in [64, 128, 256]]
 
-    rad_naive, ts_ind_naive, ss_ind_naive = naive_consensus_search(tss, m)
-    rad_ostinato, ts_ind_ostinato, ss_ind_ostinato = stumpy.ostinato(tss, m)
+    ref_radius, ref_Ts_idx, ref_subseq_idx = naive_consensus_search(Ts, m)
+    comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.ostinato(Ts, m)
 
-    npt.assert_almost_equal(rad_naive, rad_ostinato)
-    npt.assert_almost_equal(ts_ind_naive, ts_ind_ostinato)
-    npt.assert_almost_equal(ss_ind_naive, ss_ind_ostinato)
+    npt.assert_almost_equal(ref_radius, comp_radius)
+    npt.assert_almost_equal(ref_Ts_idx, comp_Ts_idx)
+    npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)

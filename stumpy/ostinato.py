@@ -1,92 +1,152 @@
+# STUMPY
+# Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
+# STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
+
 import numpy as np
+
 from . import core, stump
 
 
-def ostinato(tss, m):
+def _get_central_motif(Ts, radius, Ts_idx, subseq_idx, m):
     """
-    Find the consensus motif of multiple time series
-
-    This is a wrapper around the vanilla version of the ostinato algorithm
-    which finds the best radius and a helper function that finds the most
-    central conserved motif.
+    Compare subsequences with the same radius and return the most central motif
 
     Parameters
     ----------
-    tss : list
-        List of time series for which to find the consensus motif
+    Ts : list
+        A list of time series for which to find the most central motif
+
+    radius : float
+        Best radius found by a consensus search algorithm
+
+    Ts_idx : int
+        The index of time series in `Ts` where the `radius` was first observed
+
+    subseq_idx : int
+        The subsequence index in `Ts[ts_idx]` that has radius `radius`
 
     m : int
         Window size
 
     Returns
     -------
-    rad : float
+    radius : float
         Radius of the most central consensus motif
 
-    ts_ind : int
-        Index of time series which contains the most central consensus motif
+    Ts_idx : int
+        The index of time series in `Ts` which contains the most central consensus motif
 
-    ss_ind : int
-        Start index of the most central consensus motif within the time series
-        `ts_ind` that contains it
-
-    Notes
-    -----
-    <https://www.cs.ucr.edu/~eamonn/consensus_Motif_ICDM_Long_version.pdf>
-
-    See Table 2
-
-    The ostinato algorithm proposed in the paper finds the best radius
-    in `tss`. Intuitively, the radius is the minimum distance of a
-    subsequence to encompass at least one nearest neighbor subsequence
-    from all other time series. The best radius in `tss` is the minimum
-    radius amongst all radii. Some data sets might contain multiple
-    subsequences which have the same optimal radius.
-    The greedy Ostinato algorithm only finds one of them, which might
-    not be the most central motif. The most central motif amongst the
-    subsequences with the best radius is the one with the smallest mean
-    distance to nearest neighbors in all other time series. To find this
-    central motif it is necessary to search the subsequences with the
-    best radius via `stumpy.ostinato._get_central_motif`
+    subseq_idx : int
+        The subsequence index in the time series `Ts[Ts_idx]` that contains the most
+        central consensus motif
     """
-    rad, ts_ind, ss_ind = _ostinato(tss, m)
-    return _get_central_motif(tss, rad, ts_ind, ss_ind, m)
+    k = len(Ts)
+
+    # Ostinato hit: get nearest neighbors' distances and indices
+    q_ost = Ts[Ts_idx][subseq_idx : subseq_idx + m]
+    subseq_idx_nn_ost, d_ost = _across_series_nearest_neighbors(q_ost, Ts)
+
+    # Alternative candidates: Distance to ostinato hit equals best radius
+    Ts_idx_alt = np.flatnonzero(np.isclose(d_ost, radius))
+    subseq_idx_alt = subseq_idx_nn_ost[Ts_idx_alt]
+    d_alt = np.zeros((len(Ts_idx_alt), k), dtype=float)
+    for i, (Tsi, subseqi) in enumerate(zip(Ts_idx_alt, subseq_idx_alt)):
+        q = Ts[Tsi][subseqi : subseqi + m]
+        _, d_alt[i] = _across_series_nearest_neighbors(q, Ts)
+    rad_alt = np.max(d_alt, axis=1)
+    d_mean_alt = np.mean(d_alt, axis=1)
+
+    # Alternatives with same radius and lower mean distance
+    alt_better = np.logical_and(
+        np.isclose(rad_alt, radius),
+        d_mean_alt < d_ost.mean(),
+    )
+    # Alternatives with same radius and same mean distance
+    alt_same = np.logical_and(
+        np.isclose(rad_alt, radius),
+        np.isclose(d_mean_alt, d_ost.mean()),
+    )
+    if np.any(alt_better):
+        Ts_idx_alt = Ts_idx_alt[alt_better]
+        d_mean_alt = d_mean_alt[alt_better]
+        i_alt_best = np.argmin(d_mean_alt)
+        Ts_idx = Ts_idx_alt[i_alt_best]
+    elif np.any(alt_same):
+        # Default to the first match in the list of time series
+        Ts_idx_alt = Ts_idx_alt[alt_same]
+        i_alt_first = np.argmin(Ts_idx_alt)
+        Ts_idx = np.min((Ts_idx, Ts_idx_alt[i_alt_first]))
+    subseq_idx = subseq_idx_nn_ost[Ts_idx]
+    return radius, Ts_idx, subseq_idx
 
 
-def _ostinato(tss, m):
+def _across_series_nearest_neighbors(q, Ts):
     """
-    Find the consensus motif of multiple time series
+    For multiple time series find, per individual time series, the subsequences closest
+    to a query.
 
     Parameters
     ----------
-    tss : list
-        List of time series for which to find the consensus motif
+    q : ndarray
+        Query array or subsequence
+
+    Ts : list
+        A list of time series for which to find the nearest neighbor subsequences that
+        are closest to the query `q`
+
+    Returns
+    -------
+    ss_ind_nn : ndarray
+        Indices to subsequences in `tss` that are closest to `q`
+
+    d : ndarray
+        Distances to subsequences in `tss` that are closest to `q`
+    """
+    k = len(Ts)
+    d = np.zeros(k, dtype=float)
+    subseq_idx_nn = np.zeros(k, dtype=int)
+    for i in range(k):
+        dp = core.mass(q, Ts[i])
+        subseq_idx_nn[i] = np.argmin(dp)
+        d[i] = dp[subseq_idx_nn[i]]
+    return subseq_idx_nn, d
+
+
+def _ostinato(Ts, m):
+    """
+    Find the consensus motif amongst a list of time series
+
+    Parameters
+    ----------
+    Ts : list
+        A list of time series for which to find the consensus motif
 
     m : int
         Window size
 
     Returns
     -------
-    bsf_rad : float
-        Radius of the consensus motif
+    bsf_radius : float
+        The (best-so-far) Radius of the consensus motif
 
-    ts_ind : int
-        Index of time series which contains the consensus motif
+    Ts_idx : int
+        The time series index in `Ts` which contains the most central consensus motif
 
-    ss_ind : int
-        Start index of consensus motif within the time series ts_ind
-        that contains it
+    subseq_idx : int
+        The subsequence index within time series `Ts[Ts_idx]` the contains most
+        central consensus motif
 
     Notes
     -----
-    <https://www.cs.ucr.edu/~eamonn/consensus_Motif_ICDM_Long_version.pdf>
+    `DOI: 10.1109/ICDM.2019.00140 \
+    <https://www.cs.ucr.edu/~eamonn/consensus_Motif_ICDM_Long_version.pdf>`__
 
     See Table 2
 
     The ostinato algorithm proposed in the paper finds the best radius
-    in `tss`. Intuitively, the radius is the minimum distance of a
+    in `Ts`. Intuitively, the radius is the minimum distance of a
     subsequence to encompass at least one nearest neighbor subsequence
-    from all other time series. The best radius in `tss` is the minimum
+    from all other time series. The best radius in `Ts` is the minimum
     radius amongst all radii. Some data sets might contain multiple
     subsequences which have the same optimal radius.
     The greedy Ostinato algorithm only finds one of them, which might
@@ -96,14 +156,15 @@ def _ostinato(tss, m):
     central motif it is necessary to search the subsequences with the
     best radius via `stumpy.ostinato._get_central_motif`
     """
-    # Preprocess means and stddevs and handle np.nan/np.inf
-    Ts = [None] * len(tss)
-    M_Ts = [None] * len(tss)
-    Σ_Ts = [None] * len(tss)
-    for i, T in enumerate(tss):
+    M_Ts = [None] * len(Ts)
+    Σ_Ts = [None] * len(Ts)
+    for i, T in enumerate(Ts):
         Ts[i], M_Ts[i], Σ_Ts[i] = core.preprocess(T, m)
 
-    bsf_rad, ts_ind, ss_ind = np.inf, 0, 0
+    bsf_radius = np.inf
+    Ts_idx = 0
+    subseq_idx = 0
+
     k = len(Ts)
     for j in range(k):
         if j < (k - 1):
@@ -114,15 +175,15 @@ def _ostinato(tss, m):
         mp = stump(Ts[j], m, Ts[h], ignore_trivial=False)
         si = np.argsort(mp[:, 0])
         for q in si:
-            rad = mp[q, 0]
-            if rad >= bsf_rad:
+            radius = mp[q, 0]
+            if radius >= bsf_radius:
                 break
             for i in range(k):
-                if ~np.isin(i, [j, h]):
+                if i != j and i != h:
                     QT = core.sliding_dot_product(Ts[j][q : q + m], Ts[i])
-                    rad = np.max(
+                    radius = np.max(
                         (
-                            rad,
+                            radius,
                             np.min(
                                 core._mass(
                                     Ts[j][q : q + m],
@@ -136,57 +197,53 @@ def _ostinato(tss, m):
                             ),
                         )
                     )
-                    if rad >= bsf_rad:
+                    if radius >= bsf_radius:
                         break
-            if rad < bsf_rad:
-                bsf_rad, ts_ind, ss_ind = rad, j, q
+            if radius < bsf_radius:
+                bsf_radius, Ts_idx, subseq_idx = radius, j, q
 
-    return bsf_rad, ts_ind, ss_ind
+    return bsf_radius, Ts_idx, subseq_idx
 
 
-def _get_central_motif(tss, rad, ts_ind, ss_ind, m):
+def ostinato(Ts, m):
     """
-    Compare subsequences with the same radius and return the most central motif
+    Find the consensus motif of multiple time series
+
+    This is a wrapper around the vanilla version of the ostinato algorithm
+    which finds the best radius and a helper function that finds the most
+    central conserved motif.
 
     Parameters
     ----------
-    tss : list
-        List of time series for which to find the most central motif
-
-    rad : float
-        Best radius found by a consensus search algorithm
-
-    ts_ind : int
-        Index of time series in which `rad` was found first
-
-    ss_ind : int
-        Start index of subsequence in `ts_ind` that has radius `rad`
+    Ts : list
+        A list of time series for which to find the consensus motif
 
     m : int
         Window size
 
     Returns
     -------
-    rad : float
+    radius : float
         Radius of the most central consensus motif
 
-    ts_ind : int
-        Index of time series which contains the most central consensus motif
+    Ts_idx : int
+        The time series index in `Ts` which contains the most central consensus motif
 
-    ss_ind : int
-        Start index of most central consensus motif within the time series `ts_ind`
-        that contains it
+    subseq_idx : int
+        The subsequence index within time series `Ts[Ts_idx]` the contains most central
+        consensus motif
 
     Notes
     -----
-    <https://www.cs.ucr.edu/~eamonn/consensus_Motif_ICDM_Long_version.pdf>
+    `DOI: 10.1109/ICDM.2019.00140 \
+    <https://www.cs.ucr.edu/~eamonn/consensus_Motif_ICDM_Long_version.pdf>`__
 
     See Table 2
 
     The ostinato algorithm proposed in the paper finds the best radius
-    in `tss`. Intuitively, the radius is the minimum distance of a
+    in `Ts`. Intuitively, the radius is the minimum distance of a
     subsequence to encompass at least one nearest neighbor subsequence
-    from all other time series. The best radius in `tss` is the minimum
+    from all other time series. The best radius in `Ts` is the minimum
     radius amongst all radii. Some data sets might contain multiple
     subsequences which have the same optimal radius.
     The greedy Ostinato algorithm only finds one of them, which might
@@ -196,72 +253,5 @@ def _get_central_motif(tss, rad, ts_ind, ss_ind, m):
     central motif it is necessary to search the subsequences with the
     best radius via `stumpy.ostinato._get_central_motif`
     """
-    k = len(tss)
-
-    # Ostinato hit: get nearest neighbors' distances and indices
-    q_ost = tss[ts_ind][ss_ind : ss_ind + m]
-    ss_ind_nn_ost, d_ost = _across_series_nearest_neighbors(q_ost, tss)
-
-    # Alternative candidates: Distance to ostinato hit equals best radius
-    ts_ind_alt = np.flatnonzero(np.isclose(d_ost, rad))
-    ss_ind_alt = ss_ind_nn_ost[ts_ind_alt]
-    d_alt = np.zeros((len(ts_ind_alt), k), dtype=float)
-    for i, (tsi, ssi) in enumerate(zip(ts_ind_alt, ss_ind_alt)):
-        q = tss[tsi][ssi : ssi + m]
-        _, d_alt[i] = _across_series_nearest_neighbors(q, tss)
-    rad_alt = np.max(d_alt, axis=1)
-    d_mean_alt = np.mean(d_alt, axis=1)
-
-    # Alternatives with same radius and lower mean distance
-    alt_better = np.logical_and(
-        np.isclose(rad_alt, rad),
-        d_mean_alt < d_ost.mean(),
-    )
-    # Alternatives with same radius and same mean distance
-    alt_same = np.logical_and(
-        np.isclose(rad_alt, rad),
-        np.isclose(d_mean_alt, d_ost.mean()),
-    )
-    if np.any(alt_better):
-        ts_ind_alt = ts_ind_alt[alt_better]
-        d_mean_alt = d_mean_alt[alt_better]
-        i_alt_best = np.argmin(d_mean_alt)
-        ts_ind = ts_ind_alt[i_alt_best]
-    elif np.any(alt_same):
-        # Default to the first match in the list of time series
-        ts_ind_alt = ts_ind_alt[alt_same]
-        i_alt_first = np.argmin(ts_ind_alt)
-        ts_ind = np.min((ts_ind, ts_ind_alt[i_alt_first]))
-    ss_ind = ss_ind_nn_ost[ts_ind]
-    return rad, ts_ind, ss_ind
-
-
-def _across_series_nearest_neighbors(q, tss):
-    """
-    For multiple time series find, per individual time series, the subsequences closest
-    to a query.
-
-    Parameters
-    ----------
-    q : ndarray
-        Query array or subsequence
-
-    tss : list
-        List of time series for which to the nearest neighbors to `q`
-
-    Returns
-    -------
-    ss_ind_nn : ndarray
-        Indices to subsequences in `tss` that are closest to `q`
-
-    d : ndarray
-        Distances to subsequences in `tss` that are closest to `q`
-    """
-    k = len(tss)
-    d = np.zeros(k, dtype=float)
-    ss_ind_nn = np.zeros(k, dtype=int)
-    for i in range(k):
-        dp = core.mass(q, tss[i])
-        ss_ind_nn[i] = np.argmin(dp)
-        d[i] = dp[ss_ind_nn[i]]
-    return ss_ind_nn, d
+    radius, Ts_idx, subseq_idx = _ostinato(Ts, m)
+    return _get_central_motif(Ts, radius, Ts_idx, subseq_idx, m)
