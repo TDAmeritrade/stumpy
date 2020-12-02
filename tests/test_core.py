@@ -430,6 +430,66 @@ def test_mass_absolute_T_inf(Q, T):
     npt.assert_almost_equal(ref, comp)
 
 
+def test_mass_absolute_sqrt_input_negative():
+    Q = np.array(
+        [
+            -13.09,
+            -14.1,
+            -15.08,
+            -16.31,
+            -17.13,
+            -17.5,
+            -18.07,
+            -18.07,
+            -17.48,
+            -16.24,
+            -14.88,
+            -13.56,
+            -12.65,
+            -11.93,
+            -11.48,
+            -11.06,
+            -10.83,
+            -10.67,
+            -10.59,
+            -10.81,
+            -10.92,
+            -11.15,
+            -11.37,
+            -11.53,
+            -11.19,
+            -11.08,
+            -10.48,
+            -10.14,
+            -9.92,
+            -9.99,
+            -10.11,
+            -9.92,
+            -9.7,
+            -9.47,
+            -9.06,
+            -9.01,
+            -8.79,
+            -8.67,
+            -8.33,
+            -8.0,
+            -8.26,
+            -8.0,
+            -7.54,
+            -7.32,
+            -7.13,
+            -7.24,
+            -7.43,
+            -7.93,
+            -8.8,
+            -9.71,
+        ]
+    )
+    ref = 0
+    comp = core.mass_absolute(Q, Q)
+    npt.assert_almost_equal(ref, comp)
+
+
 def test_apply_exclusion_zone():
     T = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=float)
     ref = np.empty(T.shape)
