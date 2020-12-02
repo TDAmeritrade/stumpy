@@ -861,7 +861,9 @@ def _mass_absolute(Q_squared, T_squared, QT):
     `See Mueen's Absolute Algorithm for Similarity Search \
     <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
     """
-    return np.sqrt(Q_squared + T_squared - 2 * QT)
+    D = Q_squared + T_squared - 2 * QT
+    D[D < 0] = 0.0
+    return np.sqrt(D)
 
 
 def mass_absolute(Q, T):
