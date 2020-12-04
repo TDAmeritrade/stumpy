@@ -14,3 +14,4 @@ Tutorials
     Tutorial_Matrix_Profiles_For_Streaming_Data.ipynb
     Tutorial_Pattern_Searching.ipynb
     Tutorial_AB_Joins.ipynb
+    Tutorial_Consensus_Motif.ipynb

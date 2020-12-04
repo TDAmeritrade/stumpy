@@ -22,6 +22,7 @@ STUMPY API
     stumpy.allc
     stumpy.fluss
     stumpy.floss
+    stumpy.ostinato
 
 stump
 =====
@@ -97,3 +98,8 @@ floss
 =====
 
 .. autofunction:: stumpy.floss
+
+ostinato
+========
+
+.. autofunction:: stumpy.ostinato
