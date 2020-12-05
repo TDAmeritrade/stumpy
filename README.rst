@@ -368,7 +368,7 @@ Yeh, Chin-Chia Michael, et al. (2018) Time Series Joins, Motifs, Discords and Sh
 
 Zimmerman, Zachary, et al. (2019) Matrix Profile XIV: Scaling Time Series Motif Discovery with GPUs to Break a Quintillion Pairwise Comparisons a Day and Beyond. SoCC '19:74-86. `Link <https://dl.acm.org/doi/10.1145/3357223.3362721>`__
 
-Akbarinia, Reza, and Betrand Cloez. (2019) Efficient Matrix Profile Computation Using Different Distance Functions. arXiv:1901.05708. `Line <https://arxiv.org/abs/1901.05708>`__
+Akbarinia, Reza, and Betrand Cloez. (2019) Efficient Matrix Profile Computation Using Different Distance Functions. arXiv:1901.05708. `Link <https://arxiv.org/abs/1901.05708>`__
 
 Kamgar, Kaveh, et al. (2019) Matrix Profile XV: Exploiting Time Series Consensus Motifs to Find Structure in Time Series Sets. ICDM:1156-1161. `Link <https://ieeexplore.ieee.org/abstract/document/8970797>`__
 
