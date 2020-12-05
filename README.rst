@@ -370,6 +370,8 @@ Zimmerman, Zachary, et al. (2019) Matrix Profile XIV: Scaling Time Series Motif 
 
 Akbarinia, Reza, and Betrand Cloez. (2019) Efficient Matrix Profile Computation Using Different Distance Functions. arXiv:1901.05708. `Line <https://arxiv.org/abs/1901.05708>`__
 
+Kamgar, Kaveh, et al. (2019) Matrix Profile XV: Exploiting Time Series Consensus Motifs to Find Structure in Time Series Sets. ICDM:1156-1161. `Link <https://ieeexplore.ieee.org/abstract/document/8970797>`__
+
 -------------------
 License & Trademark
 -------------------
