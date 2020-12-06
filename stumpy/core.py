@@ -98,7 +98,6 @@ def check_nan(a):  # pragma: no cover
 
     Parameters
     ----------
-
     a : ndarray
         NumPy array
 
@@ -120,7 +119,6 @@ def check_dtype(a, dtype=np.floating):  # pragma: no cover
 
     Parameters
     ----------
-
     a : ndarray
         NumPy array
 
@@ -203,7 +201,7 @@ def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
     ----------
     a : ndarray
         NumPy array
-    
+
     threshold : float, default 10e-6
         Minimum value in which to compare the matrix profile to
 

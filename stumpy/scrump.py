@@ -317,7 +317,7 @@ class scrump(object):
 
         m : int
             Window size
-        
+
         T_B : ndarray, default None
             The time series or sequence that will be used to annotate T_A. For every
             subsequence in T_A, its nearest neighbor in T_B will be recorded.
