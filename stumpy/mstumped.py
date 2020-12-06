@@ -38,7 +38,7 @@ def mstumped(dask_client, T, m, include=None, discords=False):
     m : int
         Window size
 
-    include : list, ndarray
+    include : list, ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -46,7 +46,7 @@ def mstumped(dask_client, T, m, include=None, discords=False):
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
-    discords : bool
+    discords : bool, default False
         When set to `True`, this reverses the distance matrix which results in a
         multi-dimensional matrix profile that favors larger matrix profile values
         (i.e., discords) rather than smaller values (i.e., motifs). Note that indices

@@ -24,11 +24,11 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
     m : int
         Window size
 
-    T_B : ndarray
+    T_B : ndarray, default None
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
-    ignore_trivial : bool
+    ignore_trivial : bool, default True
         `True` if this is a self join and `False` otherwise (i.e., AB-join).
 
     Returns

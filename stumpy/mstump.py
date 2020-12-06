@@ -85,18 +85,18 @@ def _apply_include(
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
-    restricted_indices : ndarray
+    restricted_indices : ndarray, default None
         A list of indices specified in `include` that reside in the first
         `include.shape[0]` rows
 
-    unrestricted_indices : ndarray
+    unrestricted_indices : ndarray, default None
         A list of indices specified in `include` that do not reside in the first
         `include.shape[0]` rows
 
-    mask : ndarray
+    mask : ndarray, default None
         A boolean mask to select for unrestricted indices
 
-    tmp_swap : ndarray
+    tmp_swap : ndarray, default None
         A reusable array to aid in array element swapping
     """
     if restricted_indices is None:
@@ -161,7 +161,7 @@ def _query_mstump_profile(
     σ_Q : ndarray
         Sliding standard deviation for `T_B`
 
-    include : ndarray
+    include : ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -169,7 +169,7 @@ def _query_mstump_profile(
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
-    discords : bool
+    discords : bool, default False
         When set to `True`, this reverses the distance profile to favor discords rather
         than motifs. Note that indices in `include` are still maintained and respected.
 
@@ -284,7 +284,7 @@ def _get_first_mstump_profile(
     σ_Q : ndarray
         Sliding standard deviation for `T_B`
 
-    include : ndarray
+    include : ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -292,7 +292,7 @@ def _get_first_mstump_profile(
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
-    discords : bool
+    discords : bool, default False
         When set to `True`, this reverses the distance profile to favor discords rather
         than motifs. Note that indices in `include` are still maintained and respected.
 
@@ -551,11 +551,11 @@ def _mstump(
     k : int
         The total number of sliding windows to iterate over
 
-    range_start : int
+    range_start : int, default 1
         The starting index value along T_B for which to start the matrix
         profile calculation. Default is 1.
 
-    include : ndarray
+    include : ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -563,7 +563,7 @@ def _mstump(
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
-    discords : bool
+    discords : bool, default False
         When set to `True`, this reverses the distance profile to favor discords rather
         than motifs. Note that indices in `include` are still maintained and respected.
 
@@ -661,7 +661,7 @@ def mstump(T, m, include=None, discords=False):
     m : int
         Window size
 
-    include : list, ndarray
+    include : list, ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -669,7 +669,7 @@ def mstump(T, m, include=None, discords=False):
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
-    discords : bool
+    discords : bool, default False
         When set to `True`, this reverses the distance matrix which results in a
         multi-dimensional matrix profile that favors larger matrix profile values
         (i.e., discords) rather than smaller values (i.e., motifs). Note that indices

@@ -26,7 +26,7 @@ def _across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, M_Ts, Σ_Ts):
         subsequence
 
     m : int
-        Subsequence window size
+        Window size
 
     M_Ts : list
         A list of rolling window means for each time series in `Ts`

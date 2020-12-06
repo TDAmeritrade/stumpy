@@ -236,15 +236,15 @@ def _gpu_aamp(
     k : int
         The total number of sliding windows to iterate over
 
-    ignore_trivial : bool
+    ignore_trivial : bool, default True
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
 
-    range_start : int
+    range_start : int, default 1
         The starting index value along T_B for which to start the matrix
         profile calculation. Default is 1.
 
-    device_id : int
+    device_id : int, default 0
         The (GPU) device number to use. The default value is `0`.
 
     Returns
@@ -373,19 +373,19 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     m : int
         Window size
 
-    T_B : (optional) ndarray
+    T_B : ndarray, default None
         The time series or sequence that contain your query subsequences
         of interest. Default is `None` which corresponds to a self-join.
 
-    ignore_trivial : bool
+    ignore_trivial : bool, default True
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
         to `False`. Default is `True`.
 
-    device_id : int or list
+    device_id : int or list, default 0
         The (GPU) device number to use. The default value is `0`. A list of
         valid device ids (int) may also be provided for parallel GPU-STUMP
         computation. A list of all valid device ids can be obtained by
-        executing `[device.id for device in cuda.list_devices()]`.
+        executing `[device.id for device in numba.cuda.list_devices()]`.
 
     Returns
     -------

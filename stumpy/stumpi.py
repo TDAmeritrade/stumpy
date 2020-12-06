@@ -20,9 +20,13 @@ class stumpi(object):
     m : int
         Window size
 
-    excl_zone : int
+    excl_zone : int, default None
         The half width for the exclusion zone relative to the current
         sliding window
+
+    egress : bool, default True
+        If set to `True`, the oldest data point in the time series is removed and
+        the time series length remains constant rather than forever increasing
 
     Attributes
     ----------
@@ -71,11 +75,11 @@ class stumpi(object):
         m : int
             Window size
 
-        excl_zone : int
+        excl_zone : int, default None
             The half width for the exclusion zone relative to the current
             sliding window
 
-        egress : bool
+        egress : bool, default True
             If set to `True`, the oldest data point in the time series is removed and
             the time series length remains constant rather than forever increasing
         """

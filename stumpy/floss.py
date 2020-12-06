@@ -64,18 +64,18 @@ def _iac(
         The width of the bidirectional idealized arc curve. This is equal
         to the length of the matrix profile index.
 
-    bidirectional : bool
+    bidirectional : bool, default True
         Flag for computing a bidirectional (`True`) or 1-dimensional (`False`)
         idealized arc curve
 
-    n_iter : int
+    n_iter : int, default 1000
         Number of iterations to average over when determining the parameters for
         beta distribution
 
-    n_samples : int
+    n_samples : int, default 1000
         Number of distribution samples to draw during each iteration
 
-    seed : int
+    seed : int, default 0
         NumPy random seed used in sampling the beta distribution. Set this to your
         desired value for reproducibility purposes. The default value is set to `0`.
 
@@ -132,19 +132,19 @@ def _cac(I, L, bidirectional=True, excl_factor=5, custom_iac=None, seed=0):
         be different since this is only used to manage edge effects
         and has no bearing on any of the IAC or CAC core calculations.
 
-    bidirectional : bool
+    bidirectional : bool, default True
         Flag for normalizing the arc curve with a bidirectional (`True`) or
         1-dimensional (`False`) idealized arc curve. If a `custom_iac` is
         specified then this flag is ignored.
 
-    excl_factor : int
+    excl_factor : int, default 5
         The multiplying factor for the first and last regime exclusion zones
 
-    custom_iac : np.array
+    custom_iac : ndarray, default None
         A custom idealized arc curve (IAC) that will used for correcting the
         arc curve
 
-    seed : int
+    seed : int, default 0
         NumPy random seed used in sampling the `iac` beta distribution. Set this
         to your desired value for reproducibility purposes. The default value is
         set to `0`.
@@ -202,7 +202,7 @@ def _rea(cac, n_regimes, L, excl_factor=5):
         be different since this is only used to manage edge effects
         and has no bearing on any of the IAC or CAC core calculations.
 
-    excl_factor : int
+    excl_factor : int, default 5
         The multiplying factor for the regime exclusion zone
 
     Returns
@@ -258,10 +258,10 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
         window size used to compute the matrix profile and matrix
         profile index.
 
-    excl_factor : int
+    excl_factor : int, default 5
         The multiplying factor for the regime exclusion zone
 
-    custom_iac : np.array
+    custom_iac : ndarray, default None
         A custom idealized arc curve (IAC) that will used for correcting the
         arc curve
 
@@ -319,19 +319,19 @@ class floss(object):
         be different since this is only used to manage edge effects
         and has no bearing on any of the IAC or CAC core calculations.
 
-    excl_factor : int
+    excl_factor : int, default 5
         The multiplying factor for the regime exclusion zone. Note that this
         is unrelated to the `excl_zone` used in to compute the matrix profile.
 
-    n_iter : int
+    n_iter : int, default 1000
         Number of iterations to average over when determining the parameters for
         the IAC beta distribution
 
-    n_samples : int
+    n_samples : int, default 1000
         Number of distribution samples to draw during each iteration when
         computing the IAC
 
-    custom_iac : np.array
+    custom_iac : ndarray, default None
         A custom idealized arc curve (IAC) that will used for correcting the
         arc curve
 
@@ -401,19 +401,19 @@ class floss(object):
             be different since this is only used to manage edge effects
             and has no bearing on any of the IAC or CAC core calculations.
 
-        excl_factor : int
+        excl_factor : int, default 5
             The multiplying factor for the regime exclusion zone. Note that this
             is unrelated to the `excl_zone` used in to compute the matrix profile.
 
-        n_iter : int
+        n_iter : int, default 1000
             Number of iterations to average over when determining the parameters for
             the IAC beta distribution
 
-        n_samples : int
+        n_samples : int, default 1000
             Number of distribution samples to draw during each iteration when
             computing the IAC
 
-        custom_iac : np.array
+        custom_iac : ndarray, default None
             A custom idealized arc curve (IAC) that will used for correcting the
             arc curve
         """

@@ -76,10 +76,10 @@ def z_norm(a, axis=0):
     Parameters
     ----------
     a : ndarray
-        numpy array
+        NumPy array
 
-    axis : int
-        numpy axis
+    axis : int, default 0
+        NumPy array axis
 
     Returns
     -------
@@ -95,6 +95,12 @@ def z_norm(a, axis=0):
 def check_nan(a):  # pragma: no cover
     """
     Check if the array contains NaNs.
+
+    Parameters
+    ----------
+
+    a : ndarray
+        NumPy array
 
     Raises
     ------
@@ -112,6 +118,15 @@ def check_dtype(a, dtype=np.floating):  # pragma: no cover
     """
     Check if the array type of `a` is of type specified by `dtype` parameter.
 
+    Parameters
+    ----------
+
+    a : ndarray
+        NumPy array
+
+    dtype : dtype, , default np.floating
+        NumPy `dtype`
+
     Raises
     ------
     TypeError
@@ -125,7 +140,7 @@ def check_dtype(a, dtype=np.floating):  # pragma: no cover
     return True
 
 
-def transpose_dataframe(a):  # pragma: no cover
+def transpose_dataframe(df):  # pragma: no cover
     """
     Check if the input is a column-wise Pandas `DataFrame`. If `True`, return a
     transpose dataframe since stumpy assumes that each row represents data from a
@@ -136,18 +151,18 @@ def transpose_dataframe(a):  # pragma: no cover
 
     Parameters
     ----------
-    a : ndarray
-        First argument.
+    df : ndarray
+        Pandas dataframe
 
     Returns
     -------
-    output : a
+    output : df
         If a is a Pandas `DataFrame` then return `a.T`. Otherwise, return `a`
     """
-    if type(a).__name__ == "DataFrame":
-        return a.T
+    if type(df).__name__ == "DataFrame":
+        return df.T
 
-    return a
+    return df
 
 
 def are_arrays_equal(a, b):  # pragma: no cover
@@ -158,10 +173,10 @@ def are_arrays_equal(a, b):  # pragma: no cover
     Parameters
     ----------
     a : ndarray
-        First argument.
+        NumPy array
 
     b : ndarray
-        Second argument.
+        NumPy array
 
     Returns
     -------
@@ -187,9 +202,9 @@ def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
     Parameters
     ----------
     a : ndarray
-        First argument.
-
-    threshold : float
+        NumPy array
+    
+    threshold : float, default 10e-6
         Minimum value in which to compare the matrix profile to
 
     Returns
@@ -341,7 +356,7 @@ def welford_nanvar(a, w=None):
     a : ndarray
         The input array
 
-    w : ndarray
+    w : ndarray, default None
         The rolling window size
 
     Returns
@@ -370,7 +385,7 @@ def welford_nanstd(a, w=None):
     a : ndarray
         The input array
 
-    w : ndarray
+    w : ndarray, default None
         The rolling window size
 
     Returns
@@ -773,10 +788,10 @@ def mass(Q, T, M_T=None, Σ_T=None):
     T : ndarray
         Time series or sequence
 
-    M_T : ndarray (optional)
+    M_T : ndarray, default None
         Sliding mean of `T`
 
-    Σ_T : ndarray (optional)
+    Σ_T : ndarray, default None
         Sliding standard deviation of `T`
 
     Returns
@@ -1133,7 +1148,7 @@ def replace_distance(D, search_val, replace_val, epsilon=0.0):
     replace_val : float
         Value to replace with
 
-    epsilon : float
+    epsilon : float, default 0.0
         Threshold below `search_val` in which to still allow for a replacement
 
     Return
@@ -1150,7 +1165,7 @@ def array_to_temp_file(a):
     Parameters
     ----------
     a : ndarray
-        An array to be written to a file
+        A NumPy array to be written to a file
 
     Returns
     -------
@@ -1213,7 +1228,7 @@ def _get_array_ranges(a, n_chunks, truncate=False):
     n_chunks : int
         Number of chunks to split the array into
 
-    truncate : bool
+    truncate : bool, default False
         If `truncate=True`, truncate the rows of `array_ranges` if there are not enough
         elements in `a` to be chunked up into `n_chunks`.  Otherwise, if
         `truncate=False`, all extra chunks will have their start and stop indices set

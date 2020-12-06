@@ -158,11 +158,11 @@ def prescrump(T_A, m, T_B=None, s=None):
     m : int
         Window size
 
-    T_B : ndarray
+    T_B : ndarray, default None
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
-    s : int
+    s : int, default None
         The sampling interval that defaults to `int(np.ceil(m / 4))`
 
     Returns
@@ -315,26 +315,26 @@ class scrump(object):
         T_A : ndarray
             The time series or sequence for which to compute the matrix profile
 
-        T_B : ndarray
+        m : int
+            Window size
+        
+        T_B : ndarray, default None
             The time series or sequence that will be used to annotate T_A. For every
             subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
-        m : int
-            Window size
-
-        ignore_trivial : bool
+        ignore_trivial : bool, default True
             Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
             `False`. Default is `True`.
 
-        percentage : float
+        percentage : float, default 0.01
             Approximate percentage completed. The value is between 0.0 and 1.0.
 
-        pre_scrump : bool
+        pre_scrump : bool, default False
             A flag for whether or not to perform the PreSCRIMP calculation prior to
             computing SCRIMP. If set to `True`, this is equivalent to computing
             SCRIMP++
 
-        s : int
+        s : int, default None
             The size of the PreSCRIMP fixed interval. If `pre-scrump=True` and `s=None`,
             then `s` will automatically be set to `s=int(np.ceil(m/4))`, the size of
             the exclusion zone.
