@@ -108,7 +108,7 @@ def mpdist(T_A, T_B, m, percentage=0.05):
         Window size
 
     percentage : float, default 0.05
-       The percentage of distances that will be used to report `mpdist`. The value
+        The percentage of distances that will be used to report `mpdist`. The value
         is between 0.0 and 1.0.
 
     Returns
@@ -149,7 +149,7 @@ def mpdisted(dask_client, T_A, T_B, m, percentage=0.05):
         Window size
 
     percentage : float, default 0.05
-       The percentage of distances that will be used to report `mpdist`. The value
+        The percentage of distances that will be used to report `mpdist`. The value
         is between 0.0 and 1.0.
 
     Returns

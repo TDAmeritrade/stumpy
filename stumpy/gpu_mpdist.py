@@ -26,7 +26,7 @@ def gpu_mpdist(T_A, T_B, m, percentage=0.05, device_id=0):
         Window size
 
     percentage : float, default 0.05
-       The percentage of distances that will be used to report `mpdist`. The value
+        The percentage of distances that will be used to report `mpdist`. The value
         is between 0.0 and 1.0.
 
     device_id : int or list, default 0
