@@ -37,6 +37,13 @@ def _gpu_aamp_driver_not_found(*args, **kwargs):  # pragma: no cover
     driver_not_found()
 
 
+def _gpu_mpdist_driver_not_found(*args, **kwargs):  # pragma: no cover
+    """
+    Dummy function to raise CudaSupportError driver not found error.
+    """
+    driver_not_found()
+
+
 def get_pkg_name():  # pragma: no cover
     """
     Return package name.

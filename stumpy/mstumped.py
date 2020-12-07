@@ -107,11 +107,11 @@ def mstumped(dask_client, T, m, include=None, discords=False):
         )
 
     # Scatter data to Dask cluster
-    T_A_future = dask_client.scatter(T_A, broadcast=True)
-    M_T_future = dask_client.scatter(M_T, broadcast=True)
-    Σ_T_future = dask_client.scatter(Σ_T, broadcast=True)
-    μ_Q_future = dask_client.scatter(μ_Q, broadcast=True)
-    σ_Q_future = dask_client.scatter(σ_Q, broadcast=True)
+    T_A_future = dask_client.scatter(T_A, broadcast=True, hash=False)
+    M_T_future = dask_client.scatter(M_T, broadcast=True, hash=False)
+    Σ_T_future = dask_client.scatter(Σ_T, broadcast=True, hash=False)
+    μ_Q_future = dask_client.scatter(μ_Q, broadcast=True, hash=False)
+    σ_Q_future = dask_client.scatter(σ_Q, broadcast=True, hash=False)
 
     QT_futures = []
     QT_first_futures = []
@@ -119,8 +119,8 @@ def mstumped(dask_client, T, m, include=None, discords=False):
     for i, start in enumerate(range(0, k, step)):
         QT, QT_first = _get_multi_QT(start, T_A, m)
 
-        QT_future = dask_client.scatter(QT, workers=[hosts[i]])
-        QT_first_future = dask_client.scatter(QT_first, workers=[hosts[i]])
+        QT_future = dask_client.scatter(QT, workers=[hosts[i]], hash=False)
+        QT_first_future = dask_client.scatter(QT_first, workers=[hosts[i]], hash=False)
 
         QT_futures.append(QT_future)
         QT_first_futures.append(QT_first_future)
@@ -153,5 +153,18 @@ def mstumped(dask_client, T, m, include=None, discords=False):
     for i, start in enumerate(range(0, k, step)):
         stop = min(k, start + step)
         P[:, start + 1 : stop], I[:, start + 1 : stop] = results[i]
+
+    # Delete data from Dask cluster
+    dask_client.scatter(T_A_future)
+    dask_client.scatter(M_T_future)
+    dask_client.scatter(Σ_T_future)
+    dask_client.scatter(μ_Q_future)
+    dask_client.scatter(σ_Q_future)
+    for QT_future in QT_futures:
+        dask_client.cancel(QT_future)
+    for QT_first_future in QT_first_futures:
+        dask_client.cancel(QT_first_future)
+    for future in futures:
+        dask_client.cancel(future)
 
     return P.T, I.T

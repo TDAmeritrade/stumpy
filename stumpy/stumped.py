@@ -163,31 +163,33 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     diags_ranges += diags[0]
 
     # Scatter data to Dask cluster
-    T_A_future = dask_client.scatter(T_A, broadcast=True)
-    T_B_future = dask_client.scatter(T_B, broadcast=True)
-    M_T_future = dask_client.scatter(M_T, broadcast=True)
-    μ_Q_future = dask_client.scatter(μ_Q, broadcast=True)
-    Σ_T_inverse_future = dask_client.scatter(Σ_T_inverse, broadcast=True)
-    σ_Q_inverse_future = dask_client.scatter(σ_Q_inverse, broadcast=True)
-    M_T_m_1_future = dask_client.scatter(M_T_m_1, broadcast=True)
-    μ_Q_m_1_future = dask_client.scatter(μ_Q_m_1, broadcast=True)
+    T_A_future = dask_client.scatter(T_A, broadcast=True, hash=False)
+    T_B_future = dask_client.scatter(T_B, broadcast=True, hash=False)
+    M_T_future = dask_client.scatter(M_T, broadcast=True, hash=False)
+    μ_Q_future = dask_client.scatter(μ_Q, broadcast=True, hash=False)
+    Σ_T_inverse_future = dask_client.scatter(Σ_T_inverse, broadcast=True, hash=False)
+    σ_Q_inverse_future = dask_client.scatter(σ_Q_inverse, broadcast=True, hash=False)
+    M_T_m_1_future = dask_client.scatter(M_T_m_1, broadcast=True, hash=False)
+    μ_Q_m_1_future = dask_client.scatter(μ_Q_m_1, broadcast=True, hash=False)
     T_A_subseq_isfinite_future = dask_client.scatter(
-        T_A_subseq_isfinite, broadcast=True
+        T_A_subseq_isfinite, broadcast=True, hash=False
     )
     T_B_subseq_isfinite_future = dask_client.scatter(
-        T_B_subseq_isfinite, broadcast=True
+        T_B_subseq_isfinite, broadcast=True, hash=False
     )
     T_A_subseq_isconstant_future = dask_client.scatter(
-        T_A_subseq_isconstant, broadcast=True
+        T_A_subseq_isconstant, broadcast=True, hash=False
     )
     T_B_subseq_isconstant_future = dask_client.scatter(
-        T_B_subseq_isconstant, broadcast=True
+        T_B_subseq_isconstant, broadcast=True, hash=False
     )
 
     diags_futures = []
     for i, host in enumerate(hosts):
         diags_future = dask_client.scatter(
-            np.arange(diags_ranges[i, 0], diags_ranges[i, 1]), workers=[host]
+            np.arange(diags_ranges[i, 0], diags_ranges[i, 1]),
+            workers=[host],
+            hash=False,
         )
         diags_futures.append(diags_future)
 
@@ -225,6 +227,24 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
 
     out[:, 0] = profile[:, 0]
     out[:, 1:4] = indices
+
+    # Delete data from Dask cluster
+    dask_client.cancel(T_A_future)
+    dask_client.cancel(T_B_future)
+    dask_client.cancel(M_T_future)
+    dask_client.cancel(μ_Q_future)
+    dask_client.cancel(Σ_T_inverse_future)
+    dask_client.cancel(σ_Q_inverse_future)
+    dask_client.cancel(M_T_m_1_future)
+    dask_client.cancel(μ_Q_m_1_future)
+    dask_client.cancel(T_A_subseq_isfinite_future)
+    dask_client.cancel(T_B_subseq_isfinite_future)
+    dask_client.cancel(T_A_subseq_isconstant_future)
+    dask_client.cancel(T_B_subseq_isconstant_future)
+    for diags_future in diags_futures:
+        dask_client.cancel(diags_future)
+    for future in futures:
+        dask_client.cancel(future)
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover

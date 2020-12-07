@@ -23,6 +23,9 @@ STUMPY API
     stumpy.fluss
     stumpy.floss
     stumpy.ostinato
+    stumpy.mpdist
+    stumpy.mpdisted
+    stumpy.gpu_mpdist
 
 stump
 =====
@@ -103,3 +106,18 @@ ostinato
 ========
 
 .. autofunction:: stumpy.ostinato
+
+mpdist
+======
+
+.. autofunction:: stumpy.mpdist
+
+mpdisted
+========
+
+.. autofunction:: stumpy.mpdisted
+
+gpu_mpdist
+==========
+
+.. autofunction:: stumpy.gpu_mpdist

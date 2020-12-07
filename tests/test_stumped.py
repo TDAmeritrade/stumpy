@@ -75,15 +75,14 @@ def test_stumped_self_join_df(T_A, T_B, dask_cluster):
 @pytest.mark.parametrize("m", window_size)
 def test_stump_self_join_larger_window(T_A, T_B, m, dask_cluster):
     with Client(dask_cluster) as dask_client:
-        for m in [8, 16, 32]:
-            if len(T_B) > m:
-                zone = int(np.ceil(m / 4))
-                ref_mp = naive.stump(T_B, m, exclusion_zone=zone)
-                comp_mp = stumped(dask_client, T_B, m, ignore_trivial=True)
-                naive.replace_inf(ref_mp)
-                naive.replace_inf(comp_mp)
+        if len(T_B) > m:
+            zone = int(np.ceil(m / 4))
+            ref_mp = naive.stump(T_B, m, exclusion_zone=zone)
+            comp_mp = stumped(dask_client, T_B, m, ignore_trivial=True)
+            naive.replace_inf(ref_mp)
+            naive.replace_inf(comp_mp)
 
-                npt.assert_almost_equal(ref_mp, comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
@@ -94,15 +93,14 @@ def test_stump_self_join_larger_window(T_A, T_B, m, dask_cluster):
 @pytest.mark.parametrize("m", window_size)
 def test_stump_self_join_larger_window_df(T_A, T_B, m, dask_cluster):
     with Client(dask_cluster) as dask_client:
-        for m in [8, 16, 32]:
-            if len(T_B) > m:
-                zone = int(np.ceil(m / 4))
-                ref_mp = naive.stump(T_B, m, exclusion_zone=zone)
-                comp_mp = stumped(dask_client, pd.Series(T_B), m, ignore_trivial=True)
-                naive.replace_inf(ref_mp)
-                naive.replace_inf(comp_mp)
+        if len(T_B) > m:
+            zone = int(np.ceil(m / 4))
+            ref_mp = naive.stump(T_B, m, exclusion_zone=zone)
+            comp_mp = stumped(dask_client, pd.Series(T_B), m, ignore_trivial=True)
+            naive.replace_inf(ref_mp)
+            naive.replace_inf(comp_mp)
 
-                npt.assert_almost_equal(ref_mp, comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.filterwarnings("ignore:numpy.dtype size changed")

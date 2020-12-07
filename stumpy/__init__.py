@@ -23,14 +23,17 @@ from .floss import floss, fluss, _nnmark, _iac, _cac, _rea  # noqa: F401
 from .ostinato import ostinato  # noqa: F401
 from .scrump import scrump  # noqa: F401
 from .stumpi import stumpi  # noqa: F401
+from .mpdist import mpdist, mpdisted  # noqa: F401
 from numba import cuda
 
 if cuda.is_available():
     from .gpu_stump import gpu_stump  # noqa: F401
     from .gpu_aamp import gpu_aamp  # noqa: F401
+    from .gpu_mpdist import gpu_mpdist  # noqa: F401
 else:  # pragma: no cover
     from .core import _gpu_stump_driver_not_found as gpu_stump  # noqa: F401
     from .core import _gpu_aamp_driver_not_found as gpu_aamp  # noqa: F401
+    from .core import _gpu_mpdist_driver_not_found as gpu_mpdist  # noqa: F401
     import ast
     import pathlib
 

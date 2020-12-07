@@ -30,7 +30,7 @@ substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 substitution_values = [np.nan, np.inf]
 
 
-def test_gpu_aamp_int_input():
+def test_gpu_stump_int_input():
     with pytest.raises(TypeError):
         gpu_stump(np.arange(10), 5, ignore_trivial=True)
 

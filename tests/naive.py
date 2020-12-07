@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from scipy.spatial.distance import cdist
 from stumpy import core
@@ -499,3 +500,23 @@ class stumpi_egress(object):
 
         self.left_I_[-1] = I_last + self._n_appended
         self.left_P_[-1] = D[I_last]
+
+
+def mpdist(T_A, T_B, m, percentage=0.05):
+    percentage = min(percentage, 1.0)
+    percentage = max(percentage, 0.0)
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
+    k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
+
+    P_ABBA[: n_A - m + 1] = stump(T_A, m, T_B)[:, 0]
+    P_ABBA[n_A - m + 1 :] = stump(T_B, m, T_A)[:, 0]
+
+    P_ABBA.sort()
+    MPdist = P_ABBA[k]
+    if ~np.isfinite(MPdist):
+        k = np.isfinite(P_ABBA[:k]).sum() - 1
+        MPdist = P_ABBA[k]
+
+    return MPdist

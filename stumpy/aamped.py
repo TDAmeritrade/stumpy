@@ -100,19 +100,21 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     diags_ranges += diags[0]
 
     # Scatter data to Dask cluster
-    T_A_future = dask_client.scatter(T_A, broadcast=True)
-    T_B_future = dask_client.scatter(T_B, broadcast=True)
+    T_A_future = dask_client.scatter(T_A, broadcast=True, hash=False)
+    T_B_future = dask_client.scatter(T_B, broadcast=True, hash=False)
     T_A_subseq_isfinite_future = dask_client.scatter(
-        T_A_subseq_isfinite, broadcast=True
+        T_A_subseq_isfinite, broadcast=True, hash=False
     )
     T_B_subseq_isfinite_future = dask_client.scatter(
-        T_B_subseq_isfinite, broadcast=True
+        T_B_subseq_isfinite, broadcast=True, hash=False
     )
 
     diags_futures = []
     for i, host in enumerate(hosts):
         diags_future = dask_client.scatter(
-            np.arange(diags_ranges[i, 0], diags_ranges[i, 1]), workers=[host]
+            np.arange(diags_ranges[i, 0], diags_ranges[i, 1]),
+            workers=[host],
+            hash=False,
         )
         diags_futures.append(diags_future)
 
@@ -142,6 +144,16 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
 
     out[:, 0] = profile[:, 0]
     out[:, 1:4] = indices
+
+    # Delete data from Dask cluster
+    dask_client.cancel(T_A_future)
+    dask_client.cancel(T_B_future)
+    dask_client.cancel(T_A_subseq_isfinite_future)
+    dask_client.cancel(T_B_subseq_isfinite_future)
+    for diags_future in diags_futures:
+        dask_client.cancel(diags_future)
+    for future in futures:
+        dask_client.cancel(future)
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
