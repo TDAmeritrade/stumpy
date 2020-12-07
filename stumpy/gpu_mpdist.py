@@ -11,8 +11,8 @@ from .mpdist import _mpdist
 
 def gpu_mpdist(T_A, T_B, m, percentage=0.05, device_id=0):
     """
-    A convenience function for computing the matrix profile distance
-    (MPdist) measure between any two time series
+    A convenience function for computing the matrix profile distance (MPdist) measure
+    between any two time series with one or more GPU devices and `stumpy.gpu_stump`
 
     Parameters
     ----------

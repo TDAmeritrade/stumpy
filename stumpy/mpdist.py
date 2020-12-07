@@ -94,6 +94,7 @@ def _mpdist(
 def mpdist(T_A, T_B, m, percentage=0.05):
     """
     Compute the matrix profile distance (MPdist) measure between any two time series
+    with `stumpy.stump`
 
     Parameters
     ----------
@@ -128,7 +129,7 @@ def mpdist(T_A, T_B, m, percentage=0.05):
 def mpdisted(dask_client, T_A, T_B, m, percentage=0.05):
     """
     Compute the matrix profile distance (MPdist) measure between any two time series
-    with a distributed dask cluster
+    with a distributed dask cluster and `stumpy.mstumped`
 
     Parameters
     ----------
