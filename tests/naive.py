@@ -502,13 +502,16 @@ class stumpi_egress(object):
         self.left_P_[-1] = D[I_last]
 
 
-def mpdist(T_A, T_B, m, percentage=0.05):
+def mpdist(T_A, T_B, m, percentage=0.05, k=None):
     percentage = min(percentage, 1.0)
     percentage = max(percentage, 0.0)
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
-    k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
+    if k is not None:
+        k = int(k)
+    else:
+        k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
 
     P_ABBA[: n_A - m + 1] = stump(T_A, m, T_B)[:, 0]
     P_ABBA[n_A - m + 1 :] = stump(T_B, m, T_A)[:, 0]

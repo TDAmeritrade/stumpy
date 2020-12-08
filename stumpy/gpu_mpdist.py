@@ -9,10 +9,17 @@ from . import gpu_stump
 from .mpdist import _mpdist
 
 
-def gpu_mpdist(T_A, T_B, m, percentage=0.05, device_id=0):
+def gpu_mpdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0):
     """
     A convenience function for computing the matrix profile distance (MPdist) measure
-    between any two time series with one or more GPU devices and `stumpy.gpu_stump`
+    between any two time series with one or more GPU devices and `stumpy.gpu_stump`.
+
+    The MPdist distance measure considers two time series to be similar if they share
+    many subsequences, regardless of the order of matching subsequences. MPdist
+    concatenates and sorts the output of an AB-join and a BA-join and returns the value
+    of the `k`th smallest number as the reported distance. Note that MPdist is a
+    measure and not a metric. Therefore, it does not obey the triangular inequality but
+    the method is highly scalable.
 
     Parameters
     ----------
@@ -27,7 +34,11 @@ def gpu_mpdist(T_A, T_B, m, percentage=0.05, device_id=0):
 
     percentage : float, default 0.05
         The percentage of distances that will be used to report `mpdist`. The value
-        is between 0.0 and 1.0.
+        is between 0.0 and 1.0. This parameter is ignored when `k` is not `None`.
+
+    k : int, default None
+        Specify the `k`th value in the concatenated matrix profiles to return. When `k`
+        is not `None`, then the `percentage` parameter is ignored.
 
     device_id : int or list, default 0
         The (GPU) device number to use. The default value is `0`. A list of
@@ -47,25 +58,4 @@ def gpu_mpdist(T_A, T_B, m, percentage=0.05, device_id=0):
 
     See Section III
     """
-    # percentage = min(percentage, 1.0)
-    # percentage = max(percentage, 0.0)
-    # n_A = T_A.shape[0]
-    # n_B = T_B.shape[0]
-    # P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
-    # k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
-
-    # P_ABBA[: n_A - m + 1] = gpu_stump(
-    #     T_A, m, T_B, ignore_trivial=False, device_id=device_id
-    # )[:, 0]
-    # P_ABBA[n_A - m + 1 :] = gpu_stump(
-    #     T_B, m, T_A, ignore_trivial=False, device_id=device_id
-    # )[:, 0]
-
-    # P_ABBA.sort()
-    # MPdist = P_ABBA[k]
-    # if ~np.isfinite(MPdist):  # pragma: no cover
-    #     k = np.count_nonzero(np.isfinite(P_ABBA[:k])) - 1
-    #     MPdist = P_ABBA[k]
-
-    # return MPdist
-    return _mpdist(T_A, T_B, m, percentage, device_id=device_id, custom_func=gpu_stump)
+    return _mpdist(T_A, T_B, m, percentage, k, device_id=device_id, mp_func=gpu_stump)

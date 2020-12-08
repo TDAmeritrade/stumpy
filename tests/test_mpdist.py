@@ -24,12 +24,35 @@ test_data = [
     ),
 ]
 
+percentage = [0.25, 0.5, 0.75]
+k = [0, 1, 2, 3, 4]
+
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_mpdist(T_A, T_B):
     m = 3
     ref_mpdist = naive.mpdist(T_A, T_B, m)
     comp_mpdist = mpdist(T_A, T_B, m)
+
+    npt.assert_almost_equal(ref_mpdist, comp_mpdist)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+@pytest.mark.parametrize("percentage", percentage)
+def test_mpdist_percentage(T_A, T_B, percentage):
+    m = 3
+    ref_mpdist = naive.mpdist(T_A, T_B, m, percentage=percentage)
+    comp_mpdist = mpdist(T_A, T_B, m, percentage=percentage)
+
+    npt.assert_almost_equal(ref_mpdist, comp_mpdist)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+@pytest.mark.parametrize("k", k)
+def test_mpdist_k(T_A, T_B, k):
+    m = 3
+    ref_mpdist = naive.mpdist(T_A, T_B, m, k=k)
+    comp_mpdist = mpdist(T_A, T_B, m, k=k)
 
     npt.assert_almost_equal(ref_mpdist, comp_mpdist)
 

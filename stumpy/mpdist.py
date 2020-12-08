@@ -9,11 +9,18 @@ from . import stump, stumped
 
 
 def _mpdist(
-    T_A, T_B, m, percentage, dask_client=None, device_id=None, custom_func=stump
+    T_A, T_B, m, percentage, k=None, dask_client=None, device_id=None, mp_func=stump
 ):
     """
     A convenience function for computing the matrix profile distance
-    (MPdist) measure between any two time series
+    (MPdist) measure between any two time series.
+
+    The MPdist distance measure considers two time series to be similar if they share
+    many subsequences, regardless of the order of matching subsequences. MPdist
+    concatenates and sorts the output of an AB-join and a BA-join and returns the value
+    of the `k`th smallest number as the reported distance. Note that MPdist is a
+    measure and not a metric. Therefore, it does not obey the triangular inequality but
+    the method is highly scalable.
 
     Parameters
     ----------
@@ -28,7 +35,11 @@ def _mpdist(
 
     percentage : float
        The percentage of distances that will be used to report `mpdist`. The value
-        is between 0.0 and 1.0.
+        is between 0.0 and 1.0. This parameter is ignored when `k` is not `None`.
+
+    k : int, default None
+        Specify the `k`th value in the concatenated matrix profiles to return. When `k`
+        is not `None`, then the `percentage` parameter is ignored.
 
     dask_client : client, default None
         A Dask Distributed client that is connected to a Dask scheduler and
@@ -42,8 +53,8 @@ def _mpdist(
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
-    custom_func : object, default stump
-        Specify a custom `stump` function to use for computing matrix profiles
+    mp_func : object, default stump
+        Specify a custom matrix profile function to use for computing matrix profiles
 
     Returns
     -------
@@ -62,25 +73,28 @@ def _mpdist(
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
-    k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
+    if k is not None:
+        k = int(k)
+    else:
+        k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
 
     if dask_client is not None:
-        P_ABBA[: n_A - m + 1] = custom_func(
-            dask_client, T_A, m, T_B, ignore_trivial=False
-        )[:, 0]
-        P_ABBA[n_A - m + 1 :] = custom_func(
-            dask_client, T_B, m, T_A, ignore_trivial=False
-        )[:, 0]
+        P_ABBA[: n_A - m + 1] = mp_func(dask_client, T_A, m, T_B, ignore_trivial=False)[
+            :, 0
+        ]
+        P_ABBA[n_A - m + 1 :] = mp_func(dask_client, T_B, m, T_A, ignore_trivial=False)[
+            :, 0
+        ]
     elif device_id is not None:
-        P_ABBA[: n_A - m + 1] = custom_func(
+        P_ABBA[: n_A - m + 1] = mp_func(
             T_A, m, T_B, ignore_trivial=False, device_id=device_id
         )[:, 0]
-        P_ABBA[n_A - m + 1 :] = custom_func(
+        P_ABBA[n_A - m + 1 :] = mp_func(
             T_B, m, T_A, ignore_trivial=False, device_id=device_id
         )[:, 0]
     else:
-        P_ABBA[: n_A - m + 1] = custom_func(T_A, m, T_B, ignore_trivial=False)[:, 0]
-        P_ABBA[n_A - m + 1 :] = custom_func(T_B, m, T_A, ignore_trivial=False)[:, 0]
+        P_ABBA[: n_A - m + 1] = mp_func(T_A, m, T_B, ignore_trivial=False)[:, 0]
+        P_ABBA[n_A - m + 1 :] = mp_func(T_B, m, T_A, ignore_trivial=False)[:, 0]
 
     P_ABBA.sort()
     MPdist = P_ABBA[k]
@@ -91,10 +105,17 @@ def _mpdist(
     return MPdist
 
 
-def mpdist(T_A, T_B, m, percentage=0.05):
+def mpdist(T_A, T_B, m, percentage=0.05, k=None):
     """
     Compute the matrix profile distance (MPdist) measure between any two time series
-    with `stumpy.stump`
+    with `stumpy.stump`.
+
+    The MPdist distance measure considers two time series to be similar if they share
+    many subsequences, regardless of the order of matching subsequences. MPdist
+    concatenates and sorts the output of an AB-join and a BA-join and returns the value
+    of the `k`th smallest number as the reported distance. Note that MPdist is a
+    measure and not a metric. Therefore, it does not obey the triangular inequality but
+    the method is highly scalable.
 
     Parameters
     ----------
@@ -123,13 +144,20 @@ def mpdist(T_A, T_B, m, percentage=0.05):
 
     See Section III
     """
-    return _mpdist(T_A, T_B, m, percentage, custom_func=stump)
+    return _mpdist(T_A, T_B, m, percentage, k, mp_func=stump)
 
 
-def mpdisted(dask_client, T_A, T_B, m, percentage=0.05):
+def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None):
     """
     Compute the matrix profile distance (MPdist) measure between any two time series
-    with a distributed dask cluster and `stumpy.mstumped`
+    with a distributed dask cluster and `stumpy.mstumped`.
+
+    The MPdist distance measure considers two time series to be similar if they share
+    many subsequences, regardless of the order of matching subsequences. MPdist
+    concatenates and sorts the output of an AB-join and a BA-join and returns the value
+    of the `k`th smallest number as the reported distance. Note that MPdist is a
+    measure and not a metric. Therefore, it does not obey the triangular inequality but
+    the method is highly scalable.
 
     Parameters
     ----------
@@ -150,7 +178,11 @@ def mpdisted(dask_client, T_A, T_B, m, percentage=0.05):
 
     percentage : float, default 0.05
         The percentage of distances that will be used to report `mpdist`. The value
-        is between 0.0 and 1.0.
+        is between 0.0 and 1.0. This parameter is ignored when `k` is not `None`.
+
+    k : int
+        Specify the `k`th value in the concatenated matrix profiles to return. When `k`
+        is not `None`, then the `percentage` parameter is ignored.
 
     Returns
     -------
@@ -164,6 +196,4 @@ def mpdisted(dask_client, T_A, T_B, m, percentage=0.05):
 
     See Section III
     """
-    return _mpdist(
-        T_A, T_B, m, percentage, dask_client=dask_client, custom_func=stumped
-    )
+    return _mpdist(T_A, T_B, m, percentage, k, dask_client=dask_client, mp_func=stumped)
