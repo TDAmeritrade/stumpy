@@ -26,6 +26,9 @@ STUMPY API
     stumpy.mpdist
     stumpy.mpdisted
     stumpy.gpu_mpdist
+    stumpy.aampdist
+    stumpy.aampdisted
+    stumpy.gpu_aampdist
 
 stump
 =====
@@ -121,3 +124,18 @@ gpu_mpdist
 ==========
 
 .. autofunction:: stumpy.gpu_mpdist
+
+mpdist
+======
+
+.. autofunction:: stumpy.aampdist
+
+mpdisted
+========
+
+.. autofunction:: stumpy.aampdisted
+
+gpu_mpdist
+==========
+
+.. autofunction:: stumpy.gpu_aampdist
