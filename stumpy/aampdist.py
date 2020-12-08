@@ -8,8 +8,8 @@ from .mpdist import _mpdist
 
 def aampdist(T_A, T_B, m, percentage=0.05, k=None):
     """
-    Compute the matrix profile distance (MPdist) measure between any two time series
-    with `stumpy.aamp`.
+    Compute the non-normalized (i.e., without z-normalization) matrix profile distance
+    (MPdist) measure between any two time series with `stumpy.aamp`.
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
@@ -50,8 +50,9 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None):
 
 def aampdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None):
     """
-    Compute the matrix profile distance (MPdist) measure between any two time series
-    with a distributed dask cluster and `stumpy.aamped`.
+    Compute the non-normalized (i.e., without z-normalization) matrix profile distance
+    (MPdist) measure between any two time series with a distributed dask cluster and
+    `stumpy.aamped`.
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
