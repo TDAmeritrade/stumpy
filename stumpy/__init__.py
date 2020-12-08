@@ -24,16 +24,19 @@ from .ostinato import ostinato  # noqa: F401
 from .scrump import scrump  # noqa: F401
 from .stumpi import stumpi  # noqa: F401
 from .mpdist import mpdist, mpdisted  # noqa: F401
+from .aampdist import aampdist, aampdisted  # noqa: F401
 from numba import cuda
 
 if cuda.is_available():
     from .gpu_stump import gpu_stump  # noqa: F401
     from .gpu_aamp import gpu_aamp  # noqa: F401
     from .gpu_mpdist import gpu_mpdist  # noqa: F401
+    from .gpu_aampdist import gpu_aampdist  # noqa: F401
 else:  # pragma: no cover
     from .core import _gpu_stump_driver_not_found as gpu_stump  # noqa: F401
     from .core import _gpu_aamp_driver_not_found as gpu_aamp  # noqa: F401
     from .core import _gpu_mpdist_driver_not_found as gpu_mpdist  # noqa: F401
+    from .core import _gpu_aampdist_driver_not_found as gpu_aampdist  # noqa: F401
     import ast
     import pathlib
 
@@ -81,6 +84,21 @@ else:  # pragma: no cover
     for fd in function_definitions:
         if fd.name == "gpu_mpdist":
             gpu_mpdist.__doc__ = ast.get_docstring(fd)
+
+    # Fix GPU-AAMPDIST Docs
+    gpu_aampdist.__doc__ = ""
+    filepath = pathlib.Path(__file__).parent / "gpu_aampdist.py"
+
+    file_contents = ""
+    with open(filepath, encoding="utf8") as f:
+        file_contents = f.read()
+    module = ast.parse(file_contents)
+    function_definitions = [
+        node for node in module.body if isinstance(node, ast.FunctionDef)
+    ]
+    for fd in function_definitions:
+        if fd.name == "gpu_aampdist":
+            gpu_aampdist.__doc__ = ast.get_docstring(fd)
 
 try:
     _dist = get_distribution("stumpy")

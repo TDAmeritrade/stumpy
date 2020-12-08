@@ -125,7 +125,10 @@ test_unit()
     check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mpdist.py
     check_errs $?
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aampdist.py
+    check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_mpdist.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aampdist.py
 }
 
 test_coverage()
