@@ -485,7 +485,7 @@ def test_mass_absolute_sqrt_input_negative():
             -9.71,
         ]
     )
-    ref = 0
+    ref = 0.0
     comp = core.mass_absolute(Q, Q)
     npt.assert_almost_equal(ref, comp)
 

@@ -889,7 +889,8 @@ def _mass_absolute(Q_squared, T_squared, QT):
     <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
     """
     D = Q_squared + T_squared - 2 * QT
-    D[D < 0] = 0.0
+    D[D < config.STUMPY_D_SQUARED_THRESHOLD] = 0.0
+
     return np.sqrt(D)
 
 
