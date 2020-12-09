@@ -1,9 +1,24 @@
+from functools import partial
+import math
 import numpy as np
 import numpy.testing as npt
 from stumpy import mpdist, mpdisted
+from stumpy.mpdist import _mpdist, _select_P_ABBA_value
 from dask.distributed import Client, LocalCluster
 import pytest
 import naive
+
+
+def some_func(P_ABBA, m, percentage, n_A, n_B):
+    percentage = min(percentage, 1.0)
+    percentage = max(percentage, 0.0)
+    k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
+    MPdist = P_ABBA[k]
+    if ~np.isfinite(MPdist):
+        k = np.count_nonzero(np.isfinite(P_ABBA[:k])) - 1
+        MPdist = P_ABBA[k]
+
+    return MPdist
 
 
 @pytest.fixture(scope="module")
@@ -31,6 +46,21 @@ k = [0, 1, 2, 3, 4]
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_mpdist(T_A, T_B):
     m = 3
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    ref_P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
+    comp_P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
+
+    ref_P_ABBA[: n_A - m + 1] = naive.stump(T_A, m, T_B, ignore_trivial=False)[:, 0]
+    ref_P_ABBA[n_A - m + 1 :] = naive.stump(T_B, m, T_A, ignore_trivial=False)[:, 0]
+    _compute_P_ABBA(T_A, T_B, m, comp_P_ABBA)
+
+    npt.assert_almost_equal(ref_P_ABBA, comp_P_ABBA)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_mpdist(T_A, T_B):
+    m = 3
     ref_mpdist = naive.mpdist(T_A, T_B, m)
     comp_mpdist = mpdist(T_A, T_B, m)
 
@@ -53,6 +83,32 @@ def test_mpdist_k(T_A, T_B, k):
     m = 3
     ref_mpdist = naive.mpdist(T_A, T_B, m, k=k)
     comp_mpdist = mpdist(T_A, T_B, m, k=k)
+
+    npt.assert_almost_equal(ref_mpdist, comp_mpdist)
+
+
+def test_select_P_ABBA_val_inf():
+    P_ABBA = np.random.rand(10)
+    k = 2
+    P_ABBA[k] = np.inf
+
+    ref = P_ABBA[k-1]
+    comp = _select_P_ABBA_value(P_ABBA, k=k)
+    npt.assert_almost_equal(ref, comp)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+@pytest.mark.parametrize("k", k)
+def test_mpdist_custom_func(T_A, T_B, k):
+    m = 3
+
+    percentage = 0.05
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+
+    partial_k_func = partial(some_func, m=m, percentage=percentage, n_A=n_A, n_B=n_B)
+    ref_mpdist = naive.mpdist(T_A, T_B, m)
+    comp_mpdist = _mpdist(T_A, T_B, m, custom_func=partial_k_func)
 
     npt.assert_almost_equal(ref_mpdist, comp_mpdist)
 
