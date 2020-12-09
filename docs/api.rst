@@ -43,7 +43,7 @@ stumped
 gpu-stump
 =========
 
-.. autofunction:: stumpy.gpu_stump
+.. autofunction:: stumpy.gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0)
 
 scrump
 ======
