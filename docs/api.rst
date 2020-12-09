@@ -78,7 +78,7 @@ aamped
 gpu_aamp
 ========
 
-.. autofunction:: stumpy.gpu_aamp
+.. autofunction:: stumpy.gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0)
 
 aampi
 =====
@@ -123,19 +123,19 @@ mpdisted
 gpu_mpdist
 ==========
 
-.. autofunction:: stumpy.gpu_mpdist
+.. autofunction:: stumpy.gpu_mpdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0)
 
-mpdist
+aampdist
 ======
 
 .. autofunction:: stumpy.aampdist
 
-mpdisted
+aampdisted
 ========
 
 .. autofunction:: stumpy.aampdisted
 
-gpu_mpdist
+gpu_aampdist
 ==========
 
-.. autofunction:: stumpy.gpu_aampdist
+.. autofunction:: stumpy.gpu_aampdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0)
