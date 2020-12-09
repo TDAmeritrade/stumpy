@@ -92,7 +92,7 @@ def test_select_P_ABBA_val_inf():
     k = 2
     P_ABBA[k] = np.inf
 
-    ref = P_ABBA[k-1]
+    ref = P_ABBA[k - 1]
     comp = _select_P_ABBA_value(P_ABBA, k=k)
     npt.assert_almost_equal(ref, comp)
 
