@@ -1,3 +1,41 @@
+# 2020-10-19    [ 1.6.0 ]:
+--------------------------
+* bugfixes
+  - Fixed incorrect cancelling of Dask data that was being scattered with `hash=False`
+  - Fixed floating point imprecision in computing distances with `mass_absolute`
+* features
+  - Added `ostinato` function for computing consensus motifs
+  - Added new approach for retrieving the most central consensus motif from `ostinato`
+  - Added `mpdist` function for computing the MPdist distance measure
+  - Added `mpdisted` function for computing the MPdist distance measure
+  - Added `gpu_mpdist` function for computing the MPdist distance measure
+  - Added `aampdist` function for computing the MPdist distance measure
+  - Added `aampdisted` function for computing the MPdist distance measure
+  - Added `gpu_aampdist` function for computing the MPdist distance measure
+  - Changed `np.convolve` to the faster `scipy.signal.convolve` for FFT
+  - Added matrix profile subspace for multi-dimensional motif discovery
+  - Replaced existing rolling functions with fast Welford nanstd and nanvar functions
+* tasks
+  - Updated Azure Pipelines CI to use latest images
+  - Fixed tutorial typos
+  - Added ostinato paper to README References
+  - Added `mamba` to speed up Python environment installation
+  - Added `ostinato` tutorial
+  - Added a series of new unit tests (maintained at 100% test coverage)
+  - Updated all tutorials to use Zenodo links for data retrieval
+  - Removed tutorial plotting function that set default plotting conditions
+  - Added AB-join tutorial
+  - Replaced rolling window isfinite with a much faster function
+  - Updated Github PR template to use conda-forge channel
+  - Updated Welford corrected-sum-of-squares derivation
+  - Updated Binder environment to use STUMPY release in Binder postBuild
+* documentation
+  - Fixed GPU function signatures that were being displayed on RTD
+  - Fixed incorrect docstring indentation
+  - Added STUMPY docs and Github code repo to Resources section of tutorials
+  - Added default values to docstrings
+
+
 # 2020-10-19    [ 1.5.1 ]:
 --------------------------
 * bugfixes
