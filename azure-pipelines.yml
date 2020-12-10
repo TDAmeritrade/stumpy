@@ -18,31 +18,31 @@ stages:
     strategy:
       matrix:
         python36_linux:
-          imageName: "ubuntu-16.04"
+          imageName: "ubuntu-latest"
           python.version: "3.6"
         python36_windows:
-          imageName: "vs2017-win2016"
+          imageName: "windows-latest"
           python.version: "3.6"
         python36_macos:
-          imageName: "macos-10.14"
+          imageName: "macos-latest"
           python.version: "3.6"
         python37_linux:
-          imageName: "ubuntu-16.04"
+          imageName: "ubuntu-latest"
           python.version: "3.7"
         python37_windows:
-          imageName: "vs2017-win2016"
+          imageName: "windows-latest"
           python.version: "3.7"
         python37_macos:
-          imageName: "macos-10.14"
+          imageName: "macos-latest"
           python.version: "3.7"
         python38_linux:
-          imageName: "ubuntu-16.04"
+          imageName: "ubuntu-latest"
           python.version: "3.8"
         python38_windows:
-          imageName: "vs2017-win2016"
+          imageName: "windows-latest"
           python.version: "3.8"
         python38_macos:
-          imageName: "macos-10.14"
+          imageName: "macos-latest"
           python.version: "3.8"
       maxParallel: 10
 
