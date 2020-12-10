@@ -16,3 +16,4 @@ dependencies:
   - jupyterlab>=2.2.2
   - matplotlib>=3.3.0
   - lxml>=4.5.2
+  - twine>=3.2.0
