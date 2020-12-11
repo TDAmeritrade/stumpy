@@ -43,3 +43,4 @@ rm -rf dist
 python3 setup.py sdist bdist_wheel 
 twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
 # twine upload dist/*
+rm -rf build dist stumpy.egg-info
