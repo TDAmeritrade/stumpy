@@ -7,7 +7,8 @@ import logging
 import numpy as np
 from numba import njit, config
 
-from . import core, _stump
+from . import core
+from .stump import _stump
 
 logger = logging.getLogger(__name__)
 

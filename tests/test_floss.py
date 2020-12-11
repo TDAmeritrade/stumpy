@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.testing as npt
-from stumpy import _nnmark, _iac, _cac, _rea, fluss, stump, core, floss
+from stumpy import fluss, stump, core, floss
+from stumpy.floss import _nnmark, _iac, _cac, _rea
 import copy
 import pytest
 import naive

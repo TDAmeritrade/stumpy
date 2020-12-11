@@ -6,7 +6,7 @@ import logging
 
 import numpy as np
 
-from . import _mstump, _get_first_mstump_profile, _get_multi_QT
+from .mstump import _mstump, _get_first_mstump_profile, _get_multi_QT
 from . import core
 
 logger = logging.getLogger(__name__)

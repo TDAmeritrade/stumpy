@@ -2,8 +2,8 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 from stumpy import core, config
-from stumpy import (
-    mstump,
+from stumpy import mstump
+from stumpy.mstump import (
     _mstump,
     _multi_mass,
     _query_mstump_profile,

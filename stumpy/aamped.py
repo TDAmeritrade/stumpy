@@ -6,7 +6,8 @@ import logging
 
 import numpy as np
 
-from . import core, _aamp
+from . import core
+from .aamp import _aamp
 
 logger = logging.getLogger(__name__)
 
