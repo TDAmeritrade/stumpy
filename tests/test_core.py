@@ -138,6 +138,66 @@ def test_welford_nanstd():
     npt.assert_almost_equal(ref_var, comp_var)
 
 
+def test_rolling_nanmin_1d():
+    T = np.random.rand(64)
+    m = 10
+
+    ref_min = np.nanmin(T)
+    comp_min = core._rolling_nanmin_1d(T)
+    npt.assert_almost_equal(ref_min, comp_min)
+
+    m = 11
+
+    ref_min = np.nanmin(T)
+    comp_min = core._rolling_nanmin_1d(T)
+    npt.assert_almost_equal(ref_min, comp_min)
+
+
+def test_rolling_nanmin():
+    T = np.random.rand(64)
+    m = 10
+
+    ref_min = np.nanmin(core.rolling_window(T, m), axis=1)
+    comp_min = core.rolling_nanmin(T, m)
+    npt.assert_almost_equal(ref_min, comp_min)
+
+    m = 11
+
+    ref_min = np.nanmin(core.rolling_window(T, m), axis=1)
+    comp_min = core.rolling_nanmin(T, m)
+    npt.assert_almost_equal(ref_min, comp_min)
+
+
+def test_rolling_nanmax_1d():
+    T = np.random.rand(64)
+    m = 10
+
+    ref_max = np.nanmax(T)
+    comp_max = core._rolling_nanmax_1d(T)
+    npt.assert_almost_equal(ref_max, comp_max)
+
+    m = 11
+
+    ref_max = np.nanmax(T)
+    comp_max = core._rolling_nanmax_1d(T)
+    npt.assert_almost_equal(ref_max, comp_max)
+
+
+def test_rolling_nanmax():
+    T = np.random.rand(64)
+    m = 10
+
+    ref_max = np.nanmax(core.rolling_window(T, m), axis=1)
+    comp_max = core.rolling_nanmax(T, m)
+    npt.assert_almost_equal(ref_max, comp_max)
+
+    m = 11
+
+    ref_max = np.nanmax(core.rolling_window(T, m), axis=1)
+    comp_max = core.rolling_nanmax(T, m)
+    npt.assert_almost_equal(ref_max, comp_max)
+
+
 @pytest.mark.parametrize("Q, T", test_data)
 def test_compute_mean_std(Q, T):
     m = Q.shape[0]

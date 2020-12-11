@@ -5,6 +5,7 @@
 import numpy as np
 from numba import njit, prange
 from scipy.signal import convolve
+from scipy.ndimage.filters import maximum_filter1d, minimum_filter1d
 import tempfile
 import math
 
@@ -439,6 +440,120 @@ def rolling_nanstd(a, w):
     axis = a.ndim - 1  # Account for rolling
     return np.apply_along_axis(
         lambda a_row, w: welford_nanstd(a_row, w), axis=axis, arr=a, w=w
+    )
+
+
+def _rolling_nanmin_1d(a, w=None):
+    """
+    Compute the rolling min for 1-D while ignoring NaNs.
+
+    This essentially replaces:
+
+        `np.nanmin(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray, default None
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanmin.
+    """
+    if w is None:
+        w = a.shape[0]
+
+    half_window_size = int(math.ceil((w - 1) / 2))
+    return minimum_filter1d(a, size=w)[half_window_size : half_window_size - w + 1]
+
+
+def _rolling_nanmax_1d(a, w=None):
+    """
+    Compute the rolling max for 1-D while ignoring NaNs.
+
+    This essentially replaces:
+
+        `np.nanmax(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray, default None
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanmax.
+    """
+    if w is None:
+        w = a.shape[0]
+
+    half_window_size = int(math.ceil((w - 1) / 2))
+    return maximum_filter1d(a, size=w)[half_window_size : half_window_size - w + 1]
+
+
+def rolling_nanmin(a, w):
+    """
+    Compute the rolling min for 1-D and 2-D arrays while ignoring NaNs.
+
+    This a convenience wrapper around `_rolling_nanmin_1d`.
+
+    This essentially replaces:
+
+        `np.nanmin(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanmin.
+    """
+    axis = a.ndim - 1  # Account for rolling
+    return np.apply_along_axis(
+        lambda a_row, w: _rolling_nanmin_1d(a_row, w), axis=axis, arr=a, w=w
+    )
+
+
+def rolling_nanmax(a, w):
+    """
+    Compute the rolling max for 1-D and 2-D arrays while ignoring NaNs.
+
+    This a convenience wrapper around `_rolling_nanmax_1d`.
+
+    This essentially replaces:
+
+        `np.nanmax(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanmax.
+    """
+    axis = a.ndim - 1  # Account for rolling
+    return np.apply_along_axis(
+        lambda a_row, w: _rolling_nanmax_1d(a_row, w), axis=axis, arr=a, w=w
     )
 
 
