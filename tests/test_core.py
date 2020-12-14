@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
+from scipy.spatial.distance import cdist
 from stumpy import core, config
 import pytest
 import os
@@ -140,62 +141,50 @@ def test_welford_nanstd():
 
 def test_rolling_nanmin_1d():
     T = np.random.rand(64)
-    m = 10
+    for m in range(1, 12):
+        ref_min = np.nanmin(T)
+        comp_min = core._rolling_nanmin_1d(T)
+        npt.assert_almost_equal(ref_min, comp_min)
 
-    ref_min = np.nanmin(T)
-    comp_min = core._rolling_nanmin_1d(T)
-    npt.assert_almost_equal(ref_min, comp_min)
-
-    m = 11
-
-    ref_min = np.nanmin(T)
-    comp_min = core._rolling_nanmin_1d(T)
-    npt.assert_almost_equal(ref_min, comp_min)
+        ref_min = np.nanmin(T)
+        comp_min = core._rolling_nanmin_1d(T)
+        npt.assert_almost_equal(ref_min, comp_min)
 
 
 def test_rolling_nanmin():
     T = np.random.rand(64)
-    m = 10
+    for m in range(1, 12):
+        ref_min = np.nanmin(core.rolling_window(T, m), axis=1)
+        comp_min = core.rolling_nanmin(T, m)
+        npt.assert_almost_equal(ref_min, comp_min)
 
-    ref_min = np.nanmin(core.rolling_window(T, m), axis=1)
-    comp_min = core.rolling_nanmin(T, m)
-    npt.assert_almost_equal(ref_min, comp_min)
-
-    m = 11
-
-    ref_min = np.nanmin(core.rolling_window(T, m), axis=1)
-    comp_min = core.rolling_nanmin(T, m)
-    npt.assert_almost_equal(ref_min, comp_min)
+        ref_min = np.nanmin(core.rolling_window(T, m), axis=1)
+        comp_min = core.rolling_nanmin(T, m)
+        npt.assert_almost_equal(ref_min, comp_min)
 
 
 def test_rolling_nanmax_1d():
     T = np.random.rand(64)
-    m = 10
+    for m in range(1, 12):
+        ref_max = np.nanmax(T)
+        comp_max = core._rolling_nanmax_1d(T)
+        npt.assert_almost_equal(ref_max, comp_max)
 
-    ref_max = np.nanmax(T)
-    comp_max = core._rolling_nanmax_1d(T)
-    npt.assert_almost_equal(ref_max, comp_max)
-
-    m = 11
-
-    ref_max = np.nanmax(T)
-    comp_max = core._rolling_nanmax_1d(T)
-    npt.assert_almost_equal(ref_max, comp_max)
+        ref_max = np.nanmax(T)
+        comp_max = core._rolling_nanmax_1d(T)
+        npt.assert_almost_equal(ref_max, comp_max)
 
 
 def test_rolling_nanmax():
     T = np.random.rand(64)
-    m = 10
+    for m in range(1, 12):
+        ref_max = np.nanmax(core.rolling_window(T, m), axis=1)
+        comp_max = core.rolling_nanmax(T, m)
+        npt.assert_almost_equal(ref_max, comp_max)
 
-    ref_max = np.nanmax(core.rolling_window(T, m), axis=1)
-    comp_max = core.rolling_nanmax(T, m)
-    npt.assert_almost_equal(ref_max, comp_max)
-
-    m = 11
-
-    ref_max = np.nanmax(core.rolling_window(T, m), axis=1)
-    comp_max = core.rolling_nanmax(T, m)
-    npt.assert_almost_equal(ref_max, comp_max)
+        ref_max = np.nanmax(core.rolling_window(T, m), axis=1)
+        comp_max = core.rolling_nanmax(T, m)
+        npt.assert_almost_equal(ref_max, comp_max)
 
 
 @pytest.mark.parametrize("Q, T", test_data)
@@ -548,6 +537,34 @@ def test_mass_absolute_sqrt_input_negative():
     ref = 0.0
     comp = core.mass_absolute(Q, Q)
     npt.assert_almost_equal(ref, comp)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_mass_distance_matrix(T_A, T_B):
+    m = 3
+
+    ref_distance_matrix = naive.distance_matrix(T_A, T_B, m)
+    k = T_A.shape[0] - m + 1
+    l = T_B.shape[0] - m + 1
+    comp_distance_matrix = np.full((k, l), np.inf)
+    core._mass_distance_matrix(T_A, T_B, m, comp_distance_matrix)
+
+    npt.assert_almost_equal(ref_distance_matrix, comp_distance_matrix)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_mass_absolute_distance_matrix(T_A, T_B):
+    m = 3
+
+    ref_distance_matrix = cdist(
+        core.rolling_window(T_A, m), core.rolling_window(T_B, m)
+    )
+    k = T_A.shape[0] - m + 1
+    l = T_B.shape[0] - m + 1
+    comp_distance_matrix = np.full((k, l), np.inf)
+    core._mass_absolute_distance_matrix(T_A, T_B, m, comp_distance_matrix)
+
+    npt.assert_almost_equal(ref_distance_matrix, comp_distance_matrix)
 
 
 def test_apply_exclusion_zone():

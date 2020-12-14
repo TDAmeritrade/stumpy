@@ -468,7 +468,9 @@ def _rolling_nanmin_1d(a, w=None):
         w = a.shape[0]
 
     half_window_size = int(math.ceil((w - 1) / 2))
-    return minimum_filter1d(a, size=w)[half_window_size : half_window_size - w + 1]
+    return minimum_filter1d(a, size=w)[
+        half_window_size : half_window_size + a.shape[0] - w + 1
+    ]
 
 
 def _rolling_nanmax_1d(a, w=None):
@@ -496,7 +498,9 @@ def _rolling_nanmax_1d(a, w=None):
         w = a.shape[0]
 
     half_window_size = int(math.ceil((w - 1) / 2))
-    return maximum_filter1d(a, size=w)[half_window_size : half_window_size - w + 1]
+    return maximum_filter1d(a, size=w)[
+        half_window_size : half_window_size + a.shape[0] - w + 1
+    ]
 
 
 def rolling_nanmin(a, w):
@@ -976,6 +980,36 @@ def mass(Q, T, M_T=None, Σ_T=None):
     return distance_profile
 
 
+def _mass_distance_matrix(Q, T, m, distance_matrix):
+    """
+    Compute the full distance matrix between all of the subsequences of `Q` and `T`
+    using the MASS algorithm
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array
+
+    T : ndarray
+        Time series or sequence
+
+    m : int
+        Window size
+
+    distance_matrix : ndarray
+        The full output distance matrix. This is mandatory since it may be reused.
+
+    Returns
+    -------
+        None
+    """
+    k, l = distance_matrix.shape
+    T, M_T, Σ_T = preprocess(T, m)
+
+    for i in range(k):
+        distance_matrix[i, :] = mass(Q[i : i + m], T, M_T, Σ_T)
+
+
 @njit(fastmath=True)
 def _mass_absolute(Q_squared, T_squared, QT):
     """
@@ -1068,6 +1102,35 @@ def mass_absolute(Q, T):
         distance_profile[~T_subseq_isfinite] = np.inf
 
     return distance_profile
+
+
+def _mass_absolute_distance_matrix(Q, T, m, distance_matrix):
+    """
+    Compute the full non-normalized (i.e., without z-normalization) distance matrix
+    between all of the subsequences of `Q` and `T` using the MASS absolute algorithm
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array
+
+    T : ndarray
+        Time series or sequence
+
+    m : int
+        Window size
+
+    distance_matrix : ndarray
+        The full output distance matrix. This is mandatory since it may be reused.
+
+    Returns
+    -------
+    None
+    """
+    k, l = distance_matrix.shape
+
+    for i in range(k):
+        distance_matrix[i, :] = mass_absolute(Q[i : i + m], T)
 
 
 def _get_QT(start, T_A, T_B, m):
