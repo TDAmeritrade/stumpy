@@ -43,6 +43,15 @@ check_flake()
     check_errs $?
 }
 
+check_print()
+{
+    if [[ `grep print */*.py | wc -l` -gt "0" ]]; then
+        echo "Error: print statement found in code"
+        grep print */*.py
+        exit 1
+    fi
+}
+
 test_custom()
 {
     # Test one or more user-defined functions repeatedly
@@ -93,6 +102,12 @@ test_unit()
     check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mstumped_one_subsequence_nan_self_join.py
     check_errs $?
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_ostinato.py
+    check_errs $?
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_ostinato.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mpdist.py
+    check_errs $?
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_mpdist.py
     # aamp
     py.test -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp.py
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp.py tests/test_aampi.py
@@ -121,13 +136,11 @@ test_unit()
     check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_nan_inf_A_B_join_swap.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_ostinato.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_ostinato.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mpdist.py
-    check_errs $?
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp_ostinato.py
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aampdist.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_mpdist.py
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aampdist.py
 }
 
@@ -159,6 +172,7 @@ clean_up()
 
 check_black
 check_flake
+check_print
 
 if [ $test_mode == "unit" ]; then
     echo "Executing Unit Tests Only"

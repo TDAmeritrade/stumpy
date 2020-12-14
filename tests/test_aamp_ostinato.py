@@ -21,8 +21,8 @@ def test_random_ostinato(seed):
     np.random.seed(seed)
     Ts = [np.random.rand(n) for n in [64, 128, 256]]
 
-    ref_radius, ref_Ts_idx, ref_subseq_idx = naive.ostinato(Ts, m)
-    comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.ostinato(Ts, m)
+    ref_radius, ref_Ts_idx, ref_subseq_idx = naive.aamp_ostinato(Ts, m)
+    comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.aamp_ostinato(Ts, m)
 
     npt.assert_almost_equal(ref_radius, comp_radius)
     npt.assert_almost_equal(ref_Ts_idx, comp_Ts_idx)
@@ -35,8 +35,8 @@ def test_deterministic_ostinato(seed):
     np.random.seed(seed)
     Ts = [np.random.rand(n) for n in [64, 128, 256]]
 
-    ref_radius, ref_Ts_idx, ref_subseq_idx = naive.ostinato(Ts, m)
-    comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.ostinato(Ts, m)
+    ref_radius, ref_Ts_idx, ref_subseq_idx = naive.aamp_ostinato(Ts, m)
+    comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.aamp_ostinato(Ts, m)
 
     npt.assert_almost_equal(ref_radius, comp_radius)
     npt.assert_almost_equal(ref_Ts_idx, comp_Ts_idx)
@@ -52,8 +52,8 @@ def test_random_ostinatoed(seed, dask_cluster):
         np.random.seed(seed)
         Ts = [np.random.rand(n) for n in [64, 128, 256]]
 
-        ref_radius, ref_Ts_idx, ref_subseq_idx = naive.ostinato(Ts, m)
-        comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.ostinatoed(
+        ref_radius, ref_Ts_idx, ref_subseq_idx = naive.aamp_ostinato(Ts, m)
+        comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.aamp_ostinatoed(
             dask_client, Ts, m
         )
 
@@ -69,8 +69,8 @@ def test_deterministic_ostinatoed(seed, dask_cluster):
         np.random.seed(seed)
         Ts = [np.random.rand(n) for n in [64, 128, 256]]
 
-        ref_radius, ref_Ts_idx, ref_subseq_idx = naive.ostinato(Ts, m)
-        comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.ostinatoed(
+        ref_radius, ref_Ts_idx, ref_subseq_idx = naive.aamp_ostinato(Ts, m)
+        comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.aamp_ostinatoed(
             dask_client, Ts, m
         )
 

@@ -4,10 +4,12 @@
 
 import numpy as np
 
-from . import core, stump, stumped
+from . import core, aamp, aamped
 
 
-def _across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, M_Ts, Σ_Ts):
+def _aamp_across_series_nearest_neighbors(
+    Ts, Ts_idx, subseq_idx, m, Ts_squared, Ts_subseq_isfinite
+):
     """
     For multiple time series find, per individual time series, the subsequences closest
     to a given query.
@@ -28,11 +30,11 @@ def _across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, M_Ts, Σ_Ts):
     m : int
         Window size
 
-    M_Ts : list
-        A list of rolling window means for each time series in `Ts`
+    Ts_squared : list
+        A list of rolling window `T_squared` for each time series in `Ts`
 
-    Σ_Ts : list
-        A list of rolling window standard deviations for each time series in `Ts`
+    Ts_subseq_isfinite : list
+        A list of rolling window `T_subseq_isfinite` for each time series in `Ts`
 
     Returns
     -------
@@ -46,27 +48,29 @@ def _across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, M_Ts, Σ_Ts):
     """
     k = len(Ts)
     Q = Ts[Ts_idx][subseq_idx : subseq_idx + m]
+    Q_squared = np.sum(Q * Q)
     nns_radii = np.zeros(k, dtype=np.float64)
     nns_subseq_idx = np.zeros(k, dtype=np.int64)
 
     for i in range(k):
-        QT = core.sliding_dot_product(Ts[Ts_idx][subseq_idx : subseq_idx + m], Ts[i])
-        distance_profile = core._mass(
-            Q,
-            Ts[i],
-            QT,
-            M_Ts[Ts_idx][subseq_idx],
-            Σ_Ts[Ts_idx][subseq_idx],
-            M_Ts[i],
-            Σ_Ts[i],
-        )
+        if np.any(~np.isfinite(Q)):  # pragma: no cover
+            distance_profile = np.empty(Ts[i].shape[0] - m + 1)
+            distance_profile[:] = np.inf
+        else:
+            QT = core.sliding_dot_product(
+                Ts[Ts_idx][subseq_idx : subseq_idx + m], Ts[i]
+            )
+            distance_profile = core._mass_absolute(Q_squared, Ts_squared[i], QT)
+            distance_profile[~Ts_subseq_isfinite[i]] = np.inf
         nns_subseq_idx[i] = np.argmin(distance_profile)
         nns_radii[i] = distance_profile[nns_subseq_idx[i]]
 
     return nns_radii, nns_subseq_idx
 
 
-def _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts):
+def _get_aamp_central_motif(
+    Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, Ts_squared, Ts_subseq_isfinite
+):
     """
     Compare subsequences with the same radius and return the most central motif (i.e.,
     having the smallest average nearest neighbor radii)
@@ -88,11 +92,11 @@ def _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_T
     m : int
         Window size
 
-    M_Ts : list
-        A list of rolling window means for each time series in `Ts`
+    Ts_squared : list
+        A list of rolling window `T_squared` for each time series in `Ts`
 
-    Σ_Ts : list
-        A list of rolling window standard deviations for each time series in `Ts`
+    Ts_subseq_isfinite : list
+        A list of rolling window `T_subseq_isfinite` for each time series in `Ts`
 
     Returns
     -------
@@ -107,8 +111,8 @@ def _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_T
         The updated subsequence index in the time series `Ts[bsf_Ts_idx]` that contains
         the most central consensus motif
     """
-    bsf_nns_radii, bsf_nns_subseq_idx = _across_series_nearest_neighbors(
-        Ts, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts
+    bsf_nns_radii, bsf_nns_subseq_idx = _aamp_across_series_nearest_neighbors(
+        Ts, bsf_Ts_idx, bsf_subseq_idx, m, Ts_squared, Ts_subseq_isfinite
     )
     bsf_nns_mean_radii = bsf_nns_radii.mean()
 
@@ -116,8 +120,8 @@ def _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_T
     candidate_nns_subseq_idx = bsf_nns_subseq_idx[candidate_nns_Ts_idx]
 
     for Ts_idx, subseq_idx in zip(candidate_nns_Ts_idx, candidate_nns_subseq_idx):
-        candidate_nns_radii, _ = _across_series_nearest_neighbors(
-            Ts, Ts_idx, subseq_idx, m, M_Ts, Σ_Ts
+        candidate_nns_radii, _ = _aamp_across_series_nearest_neighbors(
+            Ts, Ts_idx, subseq_idx, m, Ts_squared, Ts_subseq_isfinite
         )
         if (
             np.isclose(candidate_nns_radii.max(), bsf_radius)
@@ -130,7 +134,15 @@ def _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_T
     return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
 
 
-def _ostinato(Ts, m, M_Ts, Σ_Ts, dask_client=None, device_id=None, mp_func=stump):
+def _aamp_ostinato(
+    Ts,
+    m,
+    Ts_squared,
+    Ts_subseq_isfinite,
+    dask_client=None,
+    device_id=None,
+    mp_func=aamp,
+):
     """
     Find the consensus motif amongst a list of time series
 
@@ -142,11 +154,11 @@ def _ostinato(Ts, m, M_Ts, Σ_Ts, dask_client=None, device_id=None, mp_func=stum
     m : int
         Window size
 
-    M_Ts : list
-        A list of rolling window means for each time series in `Ts`
+    Ts_squared : list
+        A list of rolling window `T_squared` for each time series in `Ts`
 
-    Σ_Ts : list
-        A list of rolling window standard deviations for each time series in `Ts`
+    Ts_subseq_isfinite : list
+        A list of rolling window `T_subseq_isfinite` for each time series in `Ts`
 
     dask_client : client, default None
         A Dask Distributed client that is connected to a Dask scheduler and
@@ -213,28 +225,23 @@ def _ostinato(Ts, m, M_Ts, Σ_Ts, dask_client=None, device_id=None, mp_func=stum
         mp = partial_mp_func(Ts[j], m, Ts[h], ignore_trivial=False)
         si = np.argsort(mp[:, 0])
         for q in si:
+            Q = Ts[j][q : q + m]
+            Q_squared = np.sum(Q * Q)
             radius = mp[q, 0]
             if radius >= bsf_radius:
                 break
             for i in range(k):
                 if i != j and i != h:
-                    QT = core.sliding_dot_product(Ts[j][q : q + m], Ts[i])
-                    radius = np.max(
-                        (
-                            radius,
-                            np.min(
-                                core._mass(
-                                    Ts[j][q : q + m],
-                                    Ts[i],
-                                    QT,
-                                    M_Ts[j][q],
-                                    Σ_Ts[j][q],
-                                    M_Ts[i],
-                                    Σ_Ts[i],
-                                )
-                            ),
+                    if np.any(~np.isfinite(Q)):  # pragma: no cover
+                        distance_profile = np.empty(Ts[i].shape[0] - m + 1)
+                        distance_profile[:] = np.inf
+                    else:
+                        QT = core.sliding_dot_product(Ts[j][q : q + m], Ts[i])
+                        distance_profile = core._mass_absolute(
+                            Q_squared, Ts_squared[i], QT
                         )
-                    )
+                        distance_profile[~Ts_subseq_isfinite[i]] = np.inf
+                    radius = np.max((radius, np.min(distance_profile)))
                     if radius >= bsf_radius:
                         break
             if radius < bsf_radius:
@@ -243,7 +250,7 @@ def _ostinato(Ts, m, M_Ts, Σ_Ts, dask_client=None, device_id=None, mp_func=stum
     return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
 
 
-def ostinato(Ts, m):
+def aamp_ostinato(Ts, m):
     """
     Find the consensus motif of multiple time series
 
@@ -291,23 +298,24 @@ def ostinato(Ts, m):
     central motif it is necessary to search the subsequences with the
     best radius via `stumpy.ostinato._get_central_motif`
     """
-    M_Ts = [None] * len(Ts)
-    Σ_Ts = [None] * len(Ts)
+    Ts_squared = [None] * len(Ts)
+    Ts_subseq_isfinite = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], M_Ts[i], Σ_Ts[i] = core.preprocess(T, m)
+        Ts[i], Ts_subseq_isfinite[i] = core.preprocess_non_normalized(T, m)
+        Ts_squared[i] = np.sum(core.rolling_window(Ts[i] * Ts[i], m), axis=1)
 
-    bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(Ts, m, M_Ts, Σ_Ts)
+    bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _aamp_ostinato(
+        Ts, m, Ts_squared, Ts_subseq_isfinite
+    )
 
-    (
-        central_radius,
-        central_Ts_idx,
-        central_subseq_idx,
-    ) = _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts)
+    (central_radius, central_Ts_idx, central_subseq_idx,) = _get_aamp_central_motif(
+        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, Ts_squared, Ts_subseq_isfinite
+    )
 
     return central_radius, central_Ts_idx, central_subseq_idx
 
 
-def ostinatoed(dask_client, Ts, m):
+def aamp_ostinatoed(dask_client, Ts, m):
     """
     Find the consensus motif of multiple time series with a distributed dask cluster
 
@@ -361,19 +369,18 @@ def ostinatoed(dask_client, Ts, m):
     central motif it is necessary to search the subsequences with the
     best radius via `stumpy.ostinato._get_central_motif`
     """
-    M_Ts = [None] * len(Ts)
-    Σ_Ts = [None] * len(Ts)
+    Ts_squared = [None] * len(Ts)
+    Ts_subseq_isfinite = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], M_Ts[i], Σ_Ts[i] = core.preprocess(T, m)
+        Ts[i], Ts_subseq_isfinite[i] = core.preprocess_non_normalized(T, m)
+        Ts_squared[i] = np.sum(core.rolling_window(Ts[i] * Ts[i], m), axis=1)
 
-    bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
-        Ts, m, M_Ts, Σ_Ts, dask_client=dask_client, mp_func=stumped
+    bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _aamp_ostinato(
+        Ts, m, Ts_squared, Ts_subseq_isfinite, dask_client=dask_client, mp_func=aamped
     )
 
-    (
-        central_radius,
-        central_Ts_idx,
-        central_subseq_idx,
-    ) = _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts)
+    (central_radius, central_Ts_idx, central_subseq_idx,) = _get_aamp_central_motif(
+        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, Ts_squared, Ts_subseq_isfinite
+    )
 
     return central_radius, central_Ts_idx, central_subseq_idx
