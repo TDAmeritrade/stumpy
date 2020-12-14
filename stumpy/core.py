@@ -2,6 +2,7 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.  # noqa: E501
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
+from functools import partial
 import numpy as np
 from numba import njit, prange
 from scipy.signal import convolve
@@ -1484,3 +1485,42 @@ def rolling_isfinite(a, w):
     a_subseq_isfinite[~a_isfinite[w - 1 :]] = False
 
     return a_isfinite[: a_isfinite.shape[0] - w + 1]
+
+
+def _get_partial_mp_func(mp_func, dask_client=None, device_id=None):
+    """
+    A convenience function for creating a `functools.partial` matrix profile function
+    for single server (parallel CPU), multi-server with Dask distributed (parallel CPU),
+    and multi-GPU implementations.
+
+    Parameters
+    ----------
+    mp_func : object
+        The matrix profile function to be used for computing a matrix profile
+
+    dask_client : client, default None
+        A Dask Distributed client that is connected to a Dask scheduler and
+        Dask workers. Setting up a Dask distributed cluster is beyond the
+        scope of this library. Please refer to the Dask Distributed
+        documentation.
+
+    device_id : int or list, default None
+        The (GPU) device number to use. The default value is `0`. A list of
+        valid device ids (int) may also be provided for parallel GPU-STUMP
+        computation. A list of all valid device ids can be obtained by
+        executing `[device.id for device in numba.cuda.list_devices()]`.
+
+    Returns
+    -------
+    partial_mp_func : object
+        A generic matrix profile function that wraps the `dask_client` or GPU
+        `device_id` into `functools.partial` function where possible
+    """
+    if dask_client is not None:
+        partial_mp_func = partial(mp_func, dask_client)
+    elif device_id is not None:
+        partial_mp_func = partial(mp_func, device_id=device_id)
+    else:
+        partial_mp_func = mp_func
+
+    return partial_mp_func

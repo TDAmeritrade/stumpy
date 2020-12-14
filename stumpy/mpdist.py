@@ -65,24 +65,12 @@ def _compute_P_ABBA(
     See Section III
     """
     n_A = T_A.shape[0]
+    partial_mp_func = core._get_partial_mp_func(
+        mp_func, dask_client=dask_client, device_id=device_id
+    )
 
-    if dask_client is not None:
-        P_ABBA[: n_A - m + 1] = mp_func(dask_client, T_A, m, T_B, ignore_trivial=False)[
-            :, 0
-        ]
-        P_ABBA[n_A - m + 1 :] = mp_func(dask_client, T_B, m, T_A, ignore_trivial=False)[
-            :, 0
-        ]
-    elif device_id is not None:
-        P_ABBA[: n_A - m + 1] = mp_func(
-            T_A, m, T_B, ignore_trivial=False, device_id=device_id
-        )[:, 0]
-        P_ABBA[n_A - m + 1 :] = mp_func(
-            T_B, m, T_A, ignore_trivial=False, device_id=device_id
-        )[:, 0]
-    else:
-        P_ABBA[: n_A - m + 1] = mp_func(T_A, m, T_B, ignore_trivial=False)[:, 0]
-        P_ABBA[n_A - m + 1 :] = mp_func(T_B, m, T_A, ignore_trivial=False)[:, 0]
+    P_ABBA[: n_A - m + 1] = partial_mp_func(T_A, m, T_B, ignore_trivial=False)[:, 0]
+    P_ABBA[n_A - m + 1 :] = partial_mp_func(T_B, m, T_A, ignore_trivial=False)[:, 0]
 
 
 def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
