@@ -23,6 +23,11 @@ STUMPY API
     stumpy.fluss
     stumpy.floss
     stumpy.ostinato
+    stumpy.ostinatoed
+    stumpy.gpu_ostinato
+    stumpy.aamp_ostinato
+    stumpy.aamp_ostinatoed
+    stumpy.aamp_gpu_ostinato
     stumpy.mpdist
     stumpy.mpdisted
     stumpy.gpu_mpdist
@@ -109,6 +114,31 @@ ostinato
 ========
 
 .. autofunction:: stumpy.ostinato
+
+ostinatoed
+========
+
+.. autofunction:: stumpy.ostinatoed
+
+gpu_ostinato
+========
+
+.. autofunction:: gpu_ostinato(Ts, m, device_id=0)
+
+aamp_ostinato
+========
+
+.. autofunction:: stumpy.aamp_ostinato
+
+aamp_ostinatoed
+========
+
+.. autofunction:: stumpy.aamp_ostinatoed
+
+gpu_aamp_ostinato
+========
+
+.. autofunction:: stumpy.gpu_aamp_ostinato(Ts, m, device_id=0)
 
 mpdist
 ======
