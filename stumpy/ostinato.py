@@ -245,7 +245,7 @@ def _ostinato(Ts, m, M_Ts, Σ_Ts, dask_client=None, device_id=None, mp_func=stum
 
 def ostinato(Ts, m):
     """
-    Find the consensus motif of multiple time series
+    Find the z-normalized consensus motif of multiple time series
 
     This is a wrapper around the vanilla version of the ostinato algorithm
     which finds the best radius and a helper function that finds the most
@@ -309,7 +309,8 @@ def ostinato(Ts, m):
 
 def ostinatoed(dask_client, Ts, m):
     """
-    Find the consensus motif of multiple time series with a distributed dask cluster
+    Find the z-normalized consensus motif of multiple time series with a distributed
+    dask cluster
 
     This is a wrapper around the vanilla version of the ostinato algorithm
     which finds the best radius and a helper function that finds the most

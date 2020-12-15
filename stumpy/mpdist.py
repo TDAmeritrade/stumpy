@@ -288,8 +288,8 @@ def _mpdist_vect(
 
 def mpdist(T_A, T_B, m, percentage=0.05, k=None):
     """
-    Compute the matrix profile distance (MPdist) measure between any two time series
-    with `stumpy.stump`.
+    Compute the  z-normalized matrix profile distance (MPdist) measure between any two
+    time series
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
@@ -330,8 +330,8 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None):
 
 def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None):
     """
-    Compute the matrix profile distance (MPdist) measure between any two time series
-    with a distributed dask cluster and `stumpy.stumped`.
+    Compute the z-normalized matrix profile distance (MPdist) measure between any two
+    time series with a distributed dask cluster
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
