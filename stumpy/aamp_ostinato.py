@@ -252,7 +252,8 @@ def _aamp_ostinato(
 
 def aamp_ostinato(Ts, m):
     """
-    Find the consensus motif of multiple time series
+    Find the non-normalized (i.e., without z-normalization) consensus motif of multiple
+    time series
 
     This is a wrapper around the vanilla version of the ostinato algorithm
     which finds the best radius and a helper function that finds the most
@@ -317,7 +318,8 @@ def aamp_ostinato(Ts, m):
 
 def aamp_ostinatoed(dask_client, Ts, m):
     """
-    Find the consensus motif of multiple time series with a distributed dask cluster
+    Find the non-normalized (i.e., without z-normalization) consensus motif of multiple
+    time series with a distributed dask cluster
 
     This is a wrapper around the vanilla version of the ostinato algorithm
     which finds the best radius and a helper function that finds the most

@@ -10,7 +10,8 @@ from .aamp_ostinato import _aamp_ostinato, _get_aamp_central_motif
 
 def gpu_aamp_ostinato(Ts, m, device_id=0):
     """
-    Find the consensus motif of multiple time series with one or more GPU devices
+    Find the non-normalized (i.e., without z-normalization) consensus motif of multiple
+    time series with one or more GPU devices
 
     This is a wrapper around the vanilla version of the ostinato algorithm
     which finds the best radius and a helper function that finds the most
