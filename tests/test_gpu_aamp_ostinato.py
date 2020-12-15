@@ -28,7 +28,7 @@ def test_random_gpu_aamp_ostinato(seed):
     npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)
 
 
-@pytest.mark.parametrize("seed", [79, 109])
+@pytest.mark.parametrize("seed", [41, 88])
 def test_deterministic_gpu_aamp_ostinato(seed):
     m = 50
     np.random.seed(seed)

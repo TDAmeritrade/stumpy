@@ -29,7 +29,7 @@ def test_random_ostinato(seed):
     npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)
 
 
-@pytest.mark.parametrize("seed", [79, 109, 112, 133, 151, 161, 251, 275, 309, 355])
+@pytest.mark.parametrize("seed", [41, 88, 290, 292, 310, 328, 538, 556, 563, 570])
 def test_deterministic_ostinato(seed):
     m = 50
     np.random.seed(seed)
@@ -62,7 +62,7 @@ def test_random_ostinatoed(seed, dask_cluster):
         npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)
 
 
-@pytest.mark.parametrize("seed", [79, 109, 112, 133, 151, 161, 251, 275, 309, 355])
+@pytest.mark.parametrize("seed", [41, 88, 290, 292, 310, 328, 538, 556, 563, 570])
 def test_deterministic_ostinatoed(seed, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 50
