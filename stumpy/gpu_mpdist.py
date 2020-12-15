@@ -11,7 +11,8 @@ from .mpdist import _mpdist
 
 def gpu_mpdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0):
     """
-    Compute the z-normalized matrix profile distance (MPdist) measure between any two time series with one or more GPU devices
+    Compute the z-normalized matrix profile distance (MPdist) measure between any two
+    time series with one or more GPU devices
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
