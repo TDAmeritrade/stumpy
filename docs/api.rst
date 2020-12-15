@@ -27,7 +27,7 @@ STUMPY API
     stumpy.gpu_ostinato
     stumpy.aamp_ostinato
     stumpy.aamp_ostinatoed
-    stumpy.aamp_gpu_ostinato
+    stumpy.gpu_aamp_ostinato
     stumpy.mpdist
     stumpy.mpdisted
     stumpy.gpu_mpdist
