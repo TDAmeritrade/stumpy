@@ -116,27 +116,27 @@ ostinato
 .. autofunction:: stumpy.ostinato
 
 ostinatoed
-========
+==========
 
 .. autofunction:: stumpy.ostinatoed
 
 gpu_ostinato
-========
+============
 
 .. autofunction:: gpu_ostinato(Ts, m, device_id=0)
 
 aamp_ostinato
-========
+=============
 
 .. autofunction:: stumpy.aamp_ostinato
 
 aamp_ostinatoed
-========
+===============
 
 .. autofunction:: stumpy.aamp_ostinatoed
 
 gpu_aamp_ostinato
-========
+=================
 
 .. autofunction:: stumpy.gpu_aamp_ostinato(Ts, m, device_id=0)
 
@@ -156,16 +156,16 @@ gpu_mpdist
 .. autofunction:: stumpy.gpu_mpdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0)
 
 aampdist
-======
+========
 
 .. autofunction:: stumpy.aampdist
 
 aampdisted
-========
+==========
 
 .. autofunction:: stumpy.aampdisted
 
 gpu_aampdist
-==========
+============
 
 .. autofunction:: stumpy.gpu_aampdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0)
