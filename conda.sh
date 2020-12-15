@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 conda update -y conda
 conda update -y --all
