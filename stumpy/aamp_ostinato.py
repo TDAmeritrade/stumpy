@@ -126,7 +126,7 @@ def _get_aamp_central_motif(
         if (
             np.isclose(candidate_nns_radii.max(), bsf_radius)
             and candidate_nns_radii.mean() < bsf_nns_mean_radii
-        ):
+        ):  # pragma: no cover
             bsf_Ts_idx = Ts_idx
             bsf_subseq_idx = subseq_idx
             bsf_nns_mean_radii = candidate_nns_radii.mean()

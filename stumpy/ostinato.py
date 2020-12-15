@@ -122,7 +122,7 @@ def _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_T
         if (
             np.isclose(candidate_nns_radii.max(), bsf_radius)
             and candidate_nns_radii.mean() < bsf_nns_mean_radii
-        ):
+        ):  # pragma: no cover
             bsf_Ts_idx = Ts_idx
             bsf_subseq_idx = subseq_idx
             bsf_nns_mean_radii = candidate_nns_radii.mean()
