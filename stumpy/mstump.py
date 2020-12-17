@@ -693,7 +693,7 @@ def mstump(T, m, include=None, discords=False):
 
     See mSTAMP Algorithm
     """
-    T_A = core.transpose_dataframe(T)
+    T_A = T
     T_B = T_A
 
     T_A, M_T, Σ_T = core.preprocess(T_A, m)

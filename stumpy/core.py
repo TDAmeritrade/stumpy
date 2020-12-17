@@ -185,7 +185,7 @@ def transpose_dataframe(df):  # pragma: no cover
     Returns
     -------
     output : df
-        If a is a Pandas `DataFrame` then return `a.T`. Otherwise, return `a`
+        If `df` is a Pandas `DataFrame` then return `df.T`. Otherwise, return `df`
     """
     if type(df).__name__ == "DataFrame":
         return df.T
@@ -1235,6 +1235,7 @@ def preprocess(T, m):
         Rolling standard deviation
     """
     T = T.copy()
+    T = transpose_dataframe(T)
     T = np.asarray(T)
     check_dtype(T)
 
@@ -1273,6 +1274,7 @@ def preprocess_non_normalized(T, m):
         `np.nan`/`np.inf` value (False)
     """
     T = T.copy()
+    T = transpose_dataframe(T)
     T = np.asarray(T)
     check_dtype(T)
 
