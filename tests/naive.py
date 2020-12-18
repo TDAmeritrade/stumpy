@@ -2,6 +2,7 @@ import math
 import numpy as np
 from scipy.spatial.distance import cdist
 from stumpy import core
+from stumpy.mstump import _apply_include
 
 
 def z_norm(a, axis=0, threshold=1e-7):
@@ -242,10 +243,6 @@ def mstump(T, m, excl_zone, include=None, discords=False):
 
     P = np.full((d, k), np.inf)
     I = np.ones((d, k), dtype="int64") * -1
-    S = np.empty((d, k), dtype=object)
-    for i in range(d):
-        for j in range(k):
-            S[i, j] = -np.ones(i + 1, dtype=np.int64)
 
     for i in range(k):
         Q = T[:, i : i + m]
@@ -280,14 +277,35 @@ def mstump(T, m, excl_zone, include=None, discords=False):
         P_i, I_i = PI(D_prime_prime, i, excl_zone)
 
         for dim in range(T.shape[0]):
-            for col_idx in range(P.shape[1]):
-                if P[dim, col_idx] > P_i[dim, col_idx]:
-                    S[dim, col_idx] = sorted_idx[: dim + 1, col_idx]
             col_mask = P[dim] > P_i[dim]
             P[dim, col_mask] = P_i[dim, col_mask]
             I[dim, col_mask] = I_i[dim, col_mask]
 
-    return P.T, I.T, S.T
+    return P.T, I.T
+
+
+def subspace(T, m, motif_idx, nn_idx, include=None, discords=False):
+    S = np.empty(T.shape[0], dtype=object)
+    D = distance(
+        z_norm(T[:, motif_idx : motif_idx + m], axis=1),
+        z_norm(T[:, nn_idx : nn_idx + m], axis=1),
+        axis=1,
+    )
+
+    if include is None:
+        include = []
+
+    if discords:
+        D[include] = np.inf
+        sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
+    else:
+        D[include] = 0.0
+        sorted_idx = D.argsort(axis=0, kind="mergesort")
+
+    for k in range(T.shape[0]):
+        S[k] = sorted_idx[: k + 1]
+
+    return S
 
 
 def get_array_ranges(a, n_chunks, truncate=False):

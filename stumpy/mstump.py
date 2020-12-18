@@ -12,6 +12,34 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
+def _preprocess_include(include):
+    """
+    A utility function for processing the `include` input
+
+    Parameters
+    ----------
+    include : ndarray
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    Returns
+    -------
+    include : ndarray
+        Process `include` and remove any redundant index values
+    """
+    include = np.asarray(include)
+    _, idx = np.unique(include, return_index=True)
+    if include.shape[0] != idx.shape[0]:  # pragma: no cover
+        logger.warning("Removed repeating indices in `include`")
+        include = include[np.sort(idx)]
+
+    return include
+
+
 def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
     """
     A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
@@ -99,6 +127,8 @@ def _apply_include(
     tmp_swap : ndarray, default None
         A reusable array to aid in array element swapping
     """
+    include = _preprocess_include(include)
+
     if restricted_indices is None:
         restricted_indices = include[include < include.shape[0]]
 
@@ -118,27 +148,92 @@ def _apply_include(
     D[unrestricted_indices] = tmp_swap[mask]
 
 
+def _get_subspace(T, m, motif_idx, nn_idx, include=None, discords=False):
+    """
+    Compute the multi-dimensional matrix profile subspace for a given motif index and
+    its nearest neighbor index
+
+    Parameters
+    ----------
+    T : ndarray
+        The time series or sequence for which the multi-dimensional matrix profile,
+        multi-dimensional matrix profile indices were computed
+
+    m : int
+        Window size
+
+    motif_idx : int
+        The motif index in T
+
+    nn_idx : int
+        The nearest neighbor index in T
+
+    include : ndarray, default None
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    discords : bool, default False
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
+
+    Returns
+    -------
+        S : ndarray
+        A ragged array of ndarrays that contain the multi-dimensional subspace for the
+        window with index equal to `query_idx`. The `len(S)` will be equal to the total
+        number of dimensions, `d`, and where `S[i]` corresponds to the list of subspace
+        indices for the `i+1`th subspace dimension (i.e., `S[1]` corresponds to the
+        subspace with dimension `2` and with `len(S[1]) == 2`).
+    """
+    T, _, _ = core.preprocess(T, m)
+
+    S = np.empty(T.shape[0], dtype=object)
+    D = np.linalg.norm(
+        core.z_norm(T[:, motif_idx : motif_idx + m], axis=1)
+        - core.z_norm(T[:, nn_idx : nn_idx + m], axis=1),
+        axis=1,
+    )
+
+    if include is not None:
+        include = _preprocess_include(include)
+    else:
+        include = []
+
+    if discords:
+        D[include] = np.inf
+        sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
+    else:
+        D[include] = 0.0
+        sorted_idx = D.argsort(axis=0, kind="mergesort")
+
+    for k in range(T.shape[0]):
+        S[k] = sorted_idx[: k + 1]
+
+    return S
+
+
 def _query_mstump_profile(
     query_idx, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include=None, discords=False
 ):
     """
-    Multi-dimensional wrapper to compute the multi-dimensional matrix profile,
-    the multi-dimensional matrix profile index, the multi-dimensional matrix profile
-    subspace for a given query window within the times series or sequence that is
-    denoted by the `query_idx` index. Essentially, this is a convenience wrapper around
-    `_multi_mass`.
+    Multi-dimensional wrapper to compute the multi-dimensional matrix profile and
+    the multi-dimensional matrix profile index for a given query window within the times
+    series or sequence that is denoted by the `query_idx` index. Essentially, this is a
+    convenience wrapper around `_multi_mass`.
 
     Parameters
     ----------
     query_idx : int
-        The window index to calculate the first multi-dimensional matrix profile,
-        multi-dimensional matrix profile indices, and multi-dimensional matrix profile
-        subspace.
+        The window index to calculate the first multi-dimensional matrix profile and
+        multi-dimensional matrix profile indices
 
     T_A : ndarray
-        The time series or sequence for which the multi-dimensional matrix profile,
-        multi-dimensional matrix profile indices, and multi-dimensional matrix profile
-        subspace will be returned
+        The time series or sequence for which the multi-dimensional matrix profile and
+        multi-dimensional matrix profile indices
 
     T_B : ndarray
         The time series or sequence that contains your query subsequences
@@ -182,13 +277,6 @@ def _query_mstump_profile(
     I : ndarray
         Multi-dimensional matrix profile indices for the window with index
         equal to `query_idx`
-
-    S : ndarray
-        A ragged array of ndarrays that contain the multi-dimensional subspace for the
-        window with index equal to `query_idx`. The `len(S)` will be equal to the total
-        number of dimensions, `d`, and where `S[i]` corresponds to the list of subspace
-        indices for the `i+1`th subspace dimension (i.e., `S[1]` corresponds to the
-        subspace with dimension `2` and with `len(S[1]) == 2`).
     """
     d, n = T_A.shape
     k = n - m + 1
@@ -204,19 +292,14 @@ def _query_mstump_profile(
     )
 
     if include is not None:
+        include = _preprocess_include(include)
         _apply_include(D, include)
         start_row_idx = include.shape[0]
 
     if discords:
-        # D[start_row_idx:][::-1].sort(axis=0)
-        sorted_idx = D[start_row_idx:][::-1].argsort(axis=0, kind="mergesort")
-        broadcast_idx = np.arange(D[start_row_idx:].shape[1])[np.newaxis, :]
-        D[start_row_idx:][::-1] = D[start_row_idx:][::-1][sorted_idx, broadcast_idx]
+        D[start_row_idx:][::-1].sort(axis=0, kind="mergesort")
     else:
-        # D[start_row_idx:].sort(axis=0)
-        sorted_idx = D[start_row_idx:].argsort(axis=0, kind="mergesort")
-        broadcast_idx = np.arange(D[start_row_idx:].shape[1])[np.newaxis, :]
-        D[start_row_idx:] = D[start_row_idx:][sorted_idx, broadcast_idx]
+        D[start_row_idx:].sort(axis=0, kind="mergesort")
 
     D_prime = np.zeros(k)
     for i in range(d):
@@ -227,18 +310,15 @@ def _query_mstump_profile(
 
     P = np.full(d, np.inf, dtype="float64")
     I = np.full(d, -1, dtype="int64")
-    S = np.empty(d, dtype=object)
 
     for i in range(d):
         min_index = np.argmin(D[i])
         I[i] = min_index
         P[i] = D[i, min_index]
-        S[i] = sorted_idx[: i + 1, min_index]
         if np.isinf(P[i]):  # pragma nocover
             I[i] = -1
-            S[i][:] = -1
 
-    return P, I, S
+    return P, I
 
 
 def _get_first_mstump_profile(
@@ -306,7 +386,7 @@ def _get_first_mstump_profile(
         Multi-dimensional matrix profile indices for the window with index
         equal to `start`
     """
-    P, I, _ = _query_mstump_profile(
+    P, I = _query_mstump_profile(
         start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
     )
     return P, I
@@ -706,11 +786,7 @@ def mstump(T, m, include=None, discords=False):
     core.check_window_size(m)
 
     if include is not None:
-        include = np.asarray(include)
-        _, idx = np.unique(include, return_index=True)
-        if include.shape[0] != idx.shape[0]:  # pragma: no cover
-            logger.warning("Removed repeating indices in `include`")
-            include = include[np.sort(idx)]
+        include = _preprocess_include(include)
 
     d, n = T_B.shape
     k = n - m + 1
