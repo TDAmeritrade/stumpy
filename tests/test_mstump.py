@@ -24,19 +24,6 @@ def naive_rolling_window_dot_product(Q, T):
     return result
 
 
-def naive_apply_include(D, include):
-    tmp = []
-    for i in range(include.shape[0]):
-        tmp.append(D[i])
-
-    for i in range(include.shape[0]):
-        D[i] = D[include[i]]
-
-    for i in range(include.shape[0]):
-        if include[i] >= include.shape[0]:
-            D[include[i]] = tmp[i]
-
-
 test_data = [
     (np.array([[584, -11, 23, 79, 1001, 0, -19]], dtype=np.float64), 3),
     (np.random.uniform(-1000, 1000, [5, 20]).astype(np.float64), 5),
@@ -56,7 +43,7 @@ def test_apply_include():
             comp_D[:, :] = D[:, :]
             include = np.asarray(range(i, i + width + 1))
 
-            naive_apply_include(D, include)
+            naive.apply_include(D, include)
             _apply_include(D, include)
 
             npt.assert_almost_equal(ref_D, comp_D)
@@ -151,11 +138,11 @@ def test_get_multi_QT(T, m):
 def test_subspace(T, m):
     motif_idx = 1
     nn_idx = 4
-    ref_S = naive.subspace(T, m, motif_idx, nn_idx)
-    comp_S = _get_subspace(T, m, motif_idx, nn_idx)
 
-    for k in range(ref_S.shape[0]):
-        npt.assert_almost_equal(ref_S[k], comp_S[k])
+    for k in range(T.shape[0]):
+        ref_S = naive.subspace(T, m, motif_idx, nn_idx, k)
+        comp_S = _get_subspace(T, m, motif_idx, nn_idx, k)
+        npt.assert_almost_equal(ref_S, comp_S)
 
 
 @pytest.mark.parametrize("T, m", test_data)
@@ -166,11 +153,10 @@ def test_subspace_include(T, m):
         for i in range(T.shape[0] - width):
             include = np.asarray(range(i, i + width + 1))
 
-            ref_S = naive.subspace(T, m, motif_idx, nn_idx, include)
-            comp_S = _get_subspace(T, m, motif_idx, nn_idx, include)
-
-            for k in range(ref_S.shape[0]):
-                npt.assert_almost_equal(ref_S[k], comp_S[k])
+            for k in range(T.shape[0]):
+                ref_S = naive.subspace(T, m, motif_idx, nn_idx, k, include)
+                comp_S = _get_subspace(T, m, motif_idx, nn_idx, k, include)
+                npt.assert_almost_equal(ref_S, comp_S)
 
 
 @pytest.mark.parametrize("T, m", test_data)
@@ -178,11 +164,10 @@ def test_subspace_discords(T, m):
     motif_idx = 1
     nn_idx = 4
 
-    ref_S = naive.subspace(T, m, motif_idx, nn_idx, discords=True)
-    comp_S = _get_subspace(T, m, motif_idx, nn_idx, discords=True)
-
-    for k in range(ref_S.shape[0]):
-        npt.assert_almost_equal(ref_S[k], comp_S[k])
+    for k in range(T.shape[0]):
+        ref_S = naive.subspace(T, m, motif_idx, nn_idx, k, discords=True)
+        comp_S = _get_subspace(T, m, motif_idx, nn_idx, k, discords=True)
+        npt.assert_almost_equal(ref_S, comp_S)
 
 
 @pytest.mark.parametrize("T, m", test_data)
@@ -193,11 +178,14 @@ def test_subspace_include_discords(T, m):
         for i in range(T.shape[0] - width):
             include = np.asarray(range(i, i + width + 1))
 
-            ref_S = naive.subspace(T, m, motif_idx, nn_idx, include, discords=True)
-            comp_S = _get_subspace(T, m, motif_idx, nn_idx, include, discords=True)
-
-            for k in range(ref_S.shape[0]):
-                npt.assert_almost_equal(ref_S[k], comp_S[k])
+            for k in range(T.shape[0]):
+                ref_S = naive.subspace(
+                    T, m, motif_idx, nn_idx, k, include, discords=True
+                )
+                comp_S = _get_subspace(
+                    T, m, motif_idx, nn_idx, k, include, discords=True
+                )
+                npt.assert_almost_equal(ref_S, comp_S)
 
 
 def test_naive_mstump():

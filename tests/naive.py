@@ -2,7 +2,6 @@ import math
 import numpy as np
 from scipy.spatial.distance import cdist
 from stumpy import core
-from stumpy.mstump import _apply_include
 
 
 def z_norm(a, axis=0, threshold=1e-7):
@@ -235,6 +234,26 @@ def PI(D, trivial_idx, excl_zone):
     return P, I
 
 
+def apply_include(D, include):
+    restricted_indices = []
+    unrestricted_indices = []
+    mask = np.ones(include.shape[0], bool)
+
+    for i in range(include.shape[0]):
+        if include[i] < include.shape[0]:
+            restricted_indices.append(include[i])
+        if include[i] >= include.shape[0]:
+            unrestricted_indices.append(include[i])
+
+    restricted_indices = np.array(restricted_indices, dtype=np.int64)
+    unrestricted_indices = np.array(unrestricted_indices, dtype=np.int64)
+    mask[restricted_indices] = False
+    tmp_swap = D[: include.shape[0]].copy()
+
+    D[: include.shape[0]] = D[include]
+    D[unrestricted_indices] = tmp_swap[mask]
+
+
 def mstump(T, m, excl_zone, include=None, discords=False):
     T = T.copy()
 
@@ -250,20 +269,12 @@ def mstump(T, m, excl_zone, include=None, discords=False):
 
         start_row_idx = 0
         if include is not None:
-            restricted_indices = include[include < include.shape[0]]
-            unrestricted_indices = include[include >= include.shape[0]]
-            mask = np.ones(include.shape[0], bool)
-            mask[restricted_indices] = False
-            tmp_swap = D[: include.shape[0]].copy()
-            D[: include.shape[0]] = D[include]
-            D[unrestricted_indices] = tmp_swap[mask]
+            apply_include(D, include)
             start_row_idx = include.shape[0]
 
         if discords:
-            sorted_idx = D[start_row_idx:][::-1].argsort(axis=0, kind="mergesort")
             D[start_row_idx:][::-1].sort(axis=0)
         else:
-            sorted_idx = D[start_row_idx:].argsort(axis=0, kind="mergesort")
             D[start_row_idx:].sort(axis=0)
 
         D_prime = np.zeros(n - m + 1)
@@ -284,26 +295,34 @@ def mstump(T, m, excl_zone, include=None, discords=False):
     return P.T, I.T
 
 
-def subspace(T, m, motif_idx, nn_idx, include=None, discords=False):
-    S = np.empty(T.shape[0], dtype=object)
+def subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
     D = distance(
         z_norm(T[:, motif_idx : motif_idx + m], axis=1),
         z_norm(T[:, nn_idx : nn_idx + m], axis=1),
         axis=1,
     )
 
-    if include is None:
-        include = []
-
     if discords:
-        D[include] = np.inf
         sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
     else:
-        D[include] = 0.0
         sorted_idx = D.argsort(axis=0, kind="mergesort")
 
-    for k in range(T.shape[0]):
-        S[k] = sorted_idx[: k + 1]
+    # `include` processing can occur since we are dealing with indices, not distances
+    if include is not None:
+        include_idx = []
+        for i in range(include.shape[0]):
+            include_idx.append(np.isin(sorted_idx, include[i]).nonzero()[0])
+        include_idx = np.array(include_idx).flatten()
+        include_idx.sort()
+        exclude_idx = np.ones(T.shape[0], dtype=bool)
+        exclude_idx[include_idx] = False
+        exclude_idx = exclude_idx.nonzero()[0]
+        sorted_idx[: include_idx.shape[0]], sorted_idx[include_idx.shape[0] :] = (
+            sorted_idx[include_idx],
+            sorted_idx[exclude_idx],
+        )
+
+    S = sorted_idx[: k + 1]
 
     return S
 

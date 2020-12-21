@@ -40,53 +40,6 @@ def _preprocess_include(include):
     return include
 
 
-def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
-    """
-    A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
-    (MASS) to compute multi-dimensional distance profile.
-
-    Parameters
-    ----------
-    Q : ndarray
-        Query array or subsequence
-
-    T : ndarray
-        Time series array or sequence
-
-    m : int
-        Window size
-
-    M_T : ndarray
-        Sliding mean for `T_A`
-
-    Σ_T : ndarray
-        Sliding standard deviation for `T_A`
-
-    μ_Q : ndarray
-        Mean value of `Q`
-
-    σ_Q : ndarray
-        Standard deviation of `Q`
-
-    Returns
-    -------
-    D : ndarray
-        Multi-dimensional distance profile
-    """
-    d, n = T.shape
-    k = n - m + 1
-
-    D = np.empty((d, k), dtype="float64")
-
-    for i in range(d):
-        if np.isinf(μ_Q[i]):
-            D[i, :] = np.inf
-        else:
-            D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
-
-    return D
-
-
 def _apply_include(
     D,
     include,
@@ -148,7 +101,54 @@ def _apply_include(
     D[unrestricted_indices] = tmp_swap[mask]
 
 
-def _get_subspace(T, m, motif_idx, nn_idx, include=None, discords=False):
+def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
+    """
+    A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
+    (MASS) to compute multi-dimensional distance profile.
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array or subsequence
+
+    T : ndarray
+        Time series array or sequence
+
+    m : int
+        Window size
+
+    M_T : ndarray
+        Sliding mean for `T_A`
+
+    Σ_T : ndarray
+        Sliding standard deviation for `T_A`
+
+    μ_Q : ndarray
+        Mean value of `Q`
+
+    σ_Q : ndarray
+        Standard deviation of `Q`
+
+    Returns
+    -------
+    D : ndarray
+        Multi-dimensional distance profile
+    """
+    d, n = T.shape
+    k = n - m + 1
+
+    D = np.empty((d, k), dtype="float64")
+
+    for i in range(d):
+        if np.isinf(μ_Q[i]):
+            D[i, :] = np.inf
+        else:
+            D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
+
+    return D
+
+
+def _get_subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
     """
     Compute the multi-dimensional matrix profile subspace for a given motif index and
     its nearest neighbor index
@@ -168,6 +168,10 @@ def _get_subspace(T, m, motif_idx, nn_idx, include=None, discords=False):
     nn_idx : int
         The nearest neighbor index in T
 
+    k : int
+        The subset number of dimensions out of `D = T.shape[0]`-dimensions to return
+        the subspace for
+
     include : ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
@@ -183,35 +187,32 @@ def _get_subspace(T, m, motif_idx, nn_idx, include=None, discords=False):
     Returns
     -------
         S : ndarray
-        A ragged array of ndarrays that contain the multi-dimensional subspace for the
-        window with index equal to `query_idx`. The `len(S)` will be equal to the total
-        number of dimensions, `d`, and where `S[i]` corresponds to the list of subspace
-        indices for the `i+1`th subspace dimension (i.e., `S[1]` corresponds to the
-        subspace with dimension `2` and with `len(S[1]) == 2`).
+        An array of that contains the `k`th-dimensional subspace for the subsequence
+        with index equal to `motif_idx`
     """
     T, _, _ = core.preprocess(T, m)
 
-    S = np.empty(T.shape[0], dtype=object)
-    D = np.linalg.norm(
-        core.z_norm(T[:, motif_idx : motif_idx + m], axis=1)
-        - core.z_norm(T[:, nn_idx : nn_idx + m], axis=1),
-        axis=1,
-    )
-
-    if include is not None:
-        include = _preprocess_include(include)
-    else:
-        include = []
+    motif = core.z_norm(T[:, motif_idx : motif_idx + m], axis=1)
+    neighbor = core.z_norm(T[:, nn_idx : nn_idx + m], axis=1)
+    D = np.linalg.norm(motif - neighbor, axis=1)
 
     if discords:
-        D[include] = np.inf
         sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
     else:
-        D[include] = 0.0
         sorted_idx = D.argsort(axis=0, kind="mergesort")
 
-    for k in range(T.shape[0]):
-        S[k] = sorted_idx[: k + 1]
+    # `include` processing occur here since we are dealing with indices, not distances
+    if include is not None:
+        include = _preprocess_include(include)
+        mask = np.in1d(sorted_idx, include)
+        include_idx = mask.nonzero()[0]
+        exclude_idx = (~mask).nonzero()[0]
+        sorted_idx[: include_idx.shape[0]], sorted_idx[include_idx.shape[0] :] = (
+            sorted_idx[include_idx],
+            sorted_idx[exclude_idx],
+        )
+
+    S = sorted_idx[: k + 1]
 
     return S
 
@@ -292,7 +293,6 @@ def _query_mstump_profile(
     )
 
     if include is not None:
-        include = _preprocess_include(include)
         _apply_include(D, include)
         start_row_idx = include.shape[0]
 
@@ -700,6 +700,7 @@ def _mstump(
             σ_Q,
         )
 
+        # `include` processing must occur here since we are dealing with distances
         if include is not None:
             _apply_include(
                 D,
