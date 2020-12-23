@@ -5,7 +5,9 @@
 import logging
 
 import numpy as np
+from scipy.stats import norm
 from numba import njit, prange
+from functools import lru_cache
 
 from . import core
 
@@ -148,6 +150,48 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
     return D
 
 
+@lru_cache()
+def _inverse_norm(n_bit=8):
+    """
+    Generate bin edges from an inverse normal distribution
+
+    Parameters
+    ----------
+    n_bit : int, default 8
+        The number of bits to be used in generating the inverse normal distribution
+
+    Returns
+    -------
+    out : ndarray
+        Array of bin edges that can be used for data discretization
+    """
+    return norm.ppf(np.arange(1, (2 ** n_bit)) / (2 ** n_bit))
+
+
+def _discretize(a, bins, right=True):
+    """
+    Discretize each row of the input array
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    bins : ndarray
+        The bin edges used to discretize `a`
+
+    right : bool, default True
+        Indicates whether the intervals for binning include the right or the left bin
+        edge.
+
+    Returns
+    -------
+    out : ndarray
+        Discretized array
+    """
+    return np.digitize(a, bins, right=right)
+
+
 def _get_subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
     """
     Compute the multi-dimensional matrix profile subspace for a given motif index and
@@ -192,9 +236,9 @@ def _get_subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
     """
     T, _, _ = core.preprocess(T, m)
 
-    motif = core.z_norm(T[:, motif_idx : motif_idx + m], axis=1)
-    neighbor = core.z_norm(T[:, nn_idx : nn_idx + m], axis=1)
-    D = np.linalg.norm(motif - neighbor, axis=1)
+    motifs = core.z_norm(T[:, motif_idx : motif_idx + m], axis=1)
+    neighbors = core.z_norm(T[:, nn_idx : nn_idx + m], axis=1)
+    D = np.linalg.norm(motifs - neighbors, axis=1)
 
     if discords:
         sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
@@ -213,6 +257,14 @@ def _get_subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
         )
 
     S = sorted_idx[: k + 1]
+
+    n_bit = 8
+    bins = _inverse_norm()
+    disc_motifs = _discretize(motifs[S], bins)
+    disc_neighbors = _discretize(neighbors[S], bins)
+    n_val = np.unique(disc_motifs - disc_neighbors).shape[0]
+    bit_size = n_bit * (T.shape[0] * m * 2 - k * m)
+    bit_size = bit_size + k * m * np.log2(n_val) + n_val * n_bit
 
     return S
 
