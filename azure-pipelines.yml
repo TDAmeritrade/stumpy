@@ -44,6 +44,15 @@ stages:
         python38_macos:
           imageName: "macos-latest"
           python.version: "3.8"
+        python39_linux:
+          imageName: "ubuntu-latest"
+          python.version: "3.9"
+        python39_windows:
+          imageName: "windows-latest"
+          python.version: "3.9"
+        python39_macos:
+          imageName: "macos-latest"
+          python.version: "3.9"
       maxParallel: 10
 
     pool:
@@ -105,8 +114,16 @@ stages:
         python38_macos:
           imageName: "macos-latest"
           python.version: "3.8"
+        python39_linux:
+          imageName: "ubuntu-latest"
+          python.version: "3.9"
+        python39_windows:
+          imageName: "windows-latest"
+          python.version: "3.9"
+        python39_macos:
+          imageName: "macos-latest"
+          python.version: "3.9"
       maxParallel: 10
-
     pool:
       vmImage: $(imageName)
 
