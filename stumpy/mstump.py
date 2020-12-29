@@ -192,9 +192,9 @@ def _discretize(a, bins, right=True):
     return np.digitize(a, bins, right=right)
 
 
-def _get_subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
+def _get_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
     """
-    Compute the multi-dimensional matrix profile subspace for a given motif index and
+    Compute the multi-dimensional matrix profile subspace for a given subseq index and
     its nearest neighbor index
 
     Parameters
@@ -206,8 +206,8 @@ def _get_subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
     m : int
         Window size
 
-    motif_idx : int
-        The motif index in T
+    subseq_idx : int
+        The subsequence index in T
 
     nn_idx : int
         The nearest neighbor index in T
@@ -236,9 +236,9 @@ def _get_subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
     """
     T, _, _ = core.preprocess(T, m)
 
-    motifs = core.z_norm(T[:, motif_idx : motif_idx + m], axis=1)
+    subseqs = core.z_norm(T[:, subseq_idx : subseq_idx + m], axis=1)
     neighbors = core.z_norm(T[:, nn_idx : nn_idx + m], axis=1)
-    D = np.linalg.norm(motifs - neighbors, axis=1)
+    D = np.linalg.norm(subseqs - neighbors, axis=1)
 
     if discords:
         sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
@@ -260,9 +260,9 @@ def _get_subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
 
     n_bit = 8
     bins = _inverse_norm()
-    disc_motifs = _discretize(motifs[S], bins)
+    disc_subseqs = _discretize(subseqs[S], bins)
     disc_neighbors = _discretize(neighbors[S], bins)
-    n_val = np.unique(disc_motifs - disc_neighbors).shape[0]
+    n_val = np.unique(disc_subseqs - disc_neighbors).shape[0]
     bit_size = n_bit * (T.shape[0] * m * 2 - k * m)
     bit_size = bit_size + k * m * np.log2(n_val) + n_val * n_bit
 
@@ -811,12 +811,12 @@ def mstump(T, m, include=None, discords=False):
     Returns
     -------
     P : ndarray
-        The multi-dimensional matrix profile. Each column of the array corresponds
-        to each matrix profile for a given dimension (i.e., the first column is
-        the 1-D matrix profile and the second column is the 2-D matrix profile).
+        The multi-dimensional matrix profile. Each row of the array corresponds
+        to each matrix profile for a given dimension (i.e., the first row is
+        the 1-D matrix profile and the second row is the 2-D matrix profile).
 
     I : ndarray
-        The multi-dimensional matrix profile index where each column of the array
+        The multi-dimensional matrix profile index where each row of the array
         corresponds to each matrix profile index for a given dimension.
 
     Notes
@@ -874,4 +874,4 @@ def mstump(T, m, include=None, discords=False):
         discords,
     )
 
-    return P.T, I.T
+    return P, I

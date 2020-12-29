@@ -55,12 +55,12 @@ def mstumped(dask_client, T, m, include=None, discords=False):
     Returns
     -------
     P : ndarray
-        The multi-dimensional matrix profile. Each column of the array corresponds
-        to each matrix profile for a given dimension (i.e., the first column is
-        the 1-D matrix profile and the second column is the 2-D matrix profile).
+        The multi-dimensional matrix profile. Each row of the array corresponds
+        to each matrix profile for a given dimension (i.e., the first row is
+        the 1-D matrix profile and the second row is the 2-D matrix profile).
 
     I : ndarray
-        The multi-dimensional matrix profile index where each column of the array
+        The multi-dimensional matrix profile index where each row of the array
         corresponds to each matrix profile index for a given dimension.
 
     Notes
@@ -167,4 +167,4 @@ def mstumped(dask_client, T, m, include=None, discords=False):
     for future in futures:
         dask_client.cancel(future)
 
-    return P.T, I.T
+    return P, I

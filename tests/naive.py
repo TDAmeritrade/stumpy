@@ -292,7 +292,7 @@ def mstump(T, m, excl_zone, include=None, discords=False):
             P[dim, col_mask] = P_i[dim, col_mask]
             I[dim, col_mask] = I_i[dim, col_mask]
 
-    return P.T, I.T
+    return P, I
 
 
 def subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):

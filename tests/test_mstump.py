@@ -85,8 +85,8 @@ def test_query_mstump_profile(T, m):
     excl_zone = int(np.ceil(m / 4))
     for query_idx in range(T.shape[0] - m + 1):
         ref_P, ref_I = naive.mstump(T, m, excl_zone)
-        ref_P = ref_P[query_idx, :]
-        ref_I = ref_I[query_idx, :]
+        ref_P = ref_P[:, query_idx]
+        ref_I = ref_I[:, query_idx]
 
         M_T, Σ_T = core.compute_mean_std(T, m)
         comp_P, comp_I = _query_mstump_profile(
@@ -103,8 +103,8 @@ def test_get_first_mstump_profile(T, m):
     start = 0
 
     ref_P, ref_I = naive.mstump(T, m, excl_zone)
-    ref_P = ref_P[start, :]
-    ref_I = ref_I[start, :]
+    ref_P = ref_P[:, start]
+    ref_I = ref_I[:, start]
 
     M_T, Σ_T = core.compute_mean_std(T, m)
     comp_P, comp_I = _get_first_mstump_profile(
@@ -161,18 +161,18 @@ def test_subspace_include(T, m):
 
 @pytest.mark.parametrize("T, m", test_data)
 def test_subspace_discords(T, m):
-    motif_idx = 1
+    discord_idx = 1
     nn_idx = 4
 
     for k in range(T.shape[0]):
-        ref_S = naive.subspace(T, m, motif_idx, nn_idx, k, discords=True)
-        comp_S = _get_subspace(T, m, motif_idx, nn_idx, k, discords=True)
+        ref_S = naive.subspace(T, m, discord_idx, nn_idx, k, discords=True)
+        comp_S = _get_subspace(T, m, discord_idx, nn_idx, k, discords=True)
         npt.assert_almost_equal(ref_S, comp_S)
 
 
 @pytest.mark.parametrize("T, m", test_data)
 def test_subspace_include_discords(T, m):
-    motif_idx = 1
+    discord_idx = 1
     nn_idx = 4
     for width in range(T.shape[0]):
         for i in range(T.shape[0] - width):
@@ -180,10 +180,10 @@ def test_subspace_include_discords(T, m):
 
             for k in range(T.shape[0]):
                 ref_S = naive.subspace(
-                    T, m, motif_idx, nn_idx, k, include, discords=True
+                    T, m, discord_idx, nn_idx, k, include, discords=True
                 )
                 comp_S = _get_subspace(
-                    T, m, motif_idx, nn_idx, k, include, discords=True
+                    T, m, discord_idx, nn_idx, k, include, discords=True
                 )
                 npt.assert_almost_equal(ref_S, comp_S)
 
@@ -195,8 +195,8 @@ def test_naive_mstump():
     zone = int(np.ceil(m / 4))
 
     ref_mp = naive.stamp(T[0], m, exclusion_zone=zone)
-    ref_P = ref_mp[np.newaxis, :, 0].T
-    ref_I = ref_mp[np.newaxis, :, 1].T
+    ref_P = ref_mp[np.newaxis, :, 0]
+    ref_I = ref_mp[np.newaxis, :, 1]
 
     comp_P, comp_I = naive.mstump(T, m, zone)
 
