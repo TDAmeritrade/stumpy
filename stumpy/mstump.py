@@ -194,7 +194,7 @@ def _discretize(a, bins, right=True):
 
 def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
     """
-    Compute the multi-dimensional matrix profile subspace for a given subseq index and
+    Compute the k-dimensional matrix profile subspace for a given subsequence index and
     its nearest neighbor index
 
     Parameters
