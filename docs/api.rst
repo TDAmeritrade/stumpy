@@ -14,6 +14,7 @@ STUMPY API
     stumpy.stumpi
     stumpy.mstump
     stumpy.mstumped
+    stumpy.subspace
     stumpy.aamp
     stumpy.aamped
     stumpy.gpu_aamp
@@ -69,6 +70,10 @@ mstumped
 ========
 
 .. autofunction:: stumpy.mstumped
+
+subspace
+========
+.. autofunction:: stumpy.subspace
 
 aamp
 ====

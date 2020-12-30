@@ -2,7 +2,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 from stumpy import core, config
-from stumpy import mstump
+from stumpy import mstump, subspace
 from stumpy.mstump import (
     _mstump,
     _multi_mass,
@@ -10,7 +10,6 @@ from stumpy.mstump import (
     _get_first_mstump_profile,
     _get_multi_QT,
     _apply_include,
-    _get_subspace,
 )
 import pytest
 import naive
@@ -141,7 +140,7 @@ def test_subspace(T, m):
 
     for k in range(T.shape[0]):
         ref_S = naive.subspace(T, m, motif_idx, nn_idx, k)
-        comp_S = _get_subspace(T, m, motif_idx, nn_idx, k)
+        comp_S = subspace(T, m, motif_idx, nn_idx, k)
         npt.assert_almost_equal(ref_S, comp_S)
 
 
@@ -155,7 +154,7 @@ def test_subspace_include(T, m):
 
             for k in range(T.shape[0]):
                 ref_S = naive.subspace(T, m, motif_idx, nn_idx, k, include)
-                comp_S = _get_subspace(T, m, motif_idx, nn_idx, k, include)
+                comp_S = subspace(T, m, motif_idx, nn_idx, k, include)
                 npt.assert_almost_equal(ref_S, comp_S)
 
 
@@ -166,7 +165,7 @@ def test_subspace_discords(T, m):
 
     for k in range(T.shape[0]):
         ref_S = naive.subspace(T, m, discord_idx, nn_idx, k, discords=True)
-        comp_S = _get_subspace(T, m, discord_idx, nn_idx, k, discords=True)
+        comp_S = subspace(T, m, discord_idx, nn_idx, k, discords=True)
         npt.assert_almost_equal(ref_S, comp_S)
 
 
@@ -182,9 +181,7 @@ def test_subspace_include_discords(T, m):
                 ref_S = naive.subspace(
                     T, m, discord_idx, nn_idx, k, include, discords=True
                 )
-                comp_S = _get_subspace(
-                    T, m, discord_idx, nn_idx, k, include, discords=True
-                )
+                comp_S = subspace(T, m, discord_idx, nn_idx, k, include, discords=True)
                 npt.assert_almost_equal(ref_S, comp_S)
 
 

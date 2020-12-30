@@ -2,7 +2,7 @@ from pkg_resources import get_distribution, DistributionNotFound
 import os.path
 from .stump import stump  # noqa: F401
 from .stumped import stumped  # noqa: F401
-from .mstump import mstump  # noqa: F401
+from .mstump import mstump, subspace  # noqa: F401
 from .mstumped import mstumped  # noqa: F401
 from .aamp import aamp  # noqa: F401
 from .aamped import aamped  # noqa: F401

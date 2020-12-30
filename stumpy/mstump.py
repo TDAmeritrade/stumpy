@@ -192,7 +192,7 @@ def _discretize(a, bins, right=True):
     return np.digitize(a, bins, right=right)
 
 
-def _get_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
+def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
     """
     Compute the multi-dimensional matrix profile subspace for a given subseq index and
     its nearest neighbor index
