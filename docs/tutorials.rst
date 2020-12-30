@@ -15,3 +15,4 @@ Tutorials
     Tutorial_Pattern_Searching.ipynb
     Tutorial_AB_Joins.ipynb
     Tutorial_Consensus_Motif.ipynb
+    Tutorial_Multidimensional_Motif_Discovery.ipynb
