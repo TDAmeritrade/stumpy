@@ -1,4 +1,31 @@
-# 2020-10-19    [ 1.6.0 ]:
+# 2020-12-30    [ 1.6.1 ]:
+--------------------------
+* bugfixes
+  - Fixed inconsistent `mstump`/`mstumped` output to match description in published work
+* features
+  - Added `subspace` function for compute multi-dimensional matrix profile subspace
+  - Added `include` and `discords` handling to `subspace`
+  - Added `mdl` building blocks
+  - Added `ostinato` Dask distributed, GPU, and `aamp` variants
+  - Added fast rolling min/max functions
+* tasks
+  - Updated Azure Pipelines CI coverage tests to use latest images
+  - Added `mstump` tutorial to Binder
+  - Fixed bad reference to `aamp_gpu_ostinato`
+  - Fixed `aamp_ostinato` unit test coverage
+  - Converted `conda.sh` to `bash`
+  - Moved all private functions out of `__init__.py`
+  - Added commands to remove `build/`, `dist/`, and `stumpy.egg/` after PyPI upload
+  - Added twine to environment setup script
+  - Fixed incorrect date in `CHANGELOG.md`
+* documentation
+  - Added `mstump` tutorial to RTD
+  - Updated various function docstrings
+  - Added Github Discussions to README and RTD
+  - Updated API list on RTD
+
+
+# 2020-12-10    [ 1.6.0 ]:
 --------------------------
 * bugfixes
   - Fixed incorrect cancelling of Dask data that was being scattered with `hash=False`
