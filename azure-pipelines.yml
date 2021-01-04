@@ -1,8 +1,3 @@
-# Python package
-# Create and test a Python package on multiple Python versions.
-# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/python
-
 trigger:
 - master
 
@@ -149,9 +144,9 @@ stages:
     - bash: ./test.sh coverage
       displayName: "Running test coverage"
 
-    - script: |
-        codecov --token=$(CODECOV_TOKEN)
-      displayName: "Uploading test coverage results"
+    # - script: |
+    #     codecov --token=$(CODECOV_TOKEN)
+    #   displayName: "Uploading test coverage results"
 
 - stage: Scan
   displayName: "FOSSA"
