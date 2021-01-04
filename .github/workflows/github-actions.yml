@@ -15,11 +15,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Display Python Version
         run: python -c "import sys; print(sys.version)"
+        shell: bash
       - name: Install STUMPY And Other Dependencies
         run: pip install --editable .[ci]
+        shell: bash
       - name: Run Black
         run: black --check --diff ./
+        shell: bash
       - name: Run Flake8
         run: flake8 ./
+        shell: bash
       - name: Run Unit Tests
         run: ./test.sh unit
+        shell: bash
