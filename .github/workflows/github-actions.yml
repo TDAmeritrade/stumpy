@@ -28,3 +28,33 @@ jobs:
       - name: Run Unit Tests
         run: ./test.sh unit
         shell: bash
+jobs:
+  coverage-testing:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.6', '3.7', '3.8']
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set Up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Display Python Version
+        run: python -c "import sys; print(sys.version)"
+        shell: bash
+      - name: Install STUMPY And Other Dependencies
+        run: pip install --editable .[ci]
+        shell: bash
+      - name: Run Black
+        run: black --check --diff ./
+        shell: bash
+      - name: Run Flake8
+        run: flake8 ./
+        shell: bash
+      - name: Run Coverage Tests
+        run: ./test.sh coverage
+        shell: bash
+      - name: Upload Coverage Tests Results
+        uses: codecov/codecov-action@v1
