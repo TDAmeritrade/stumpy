@@ -28,7 +28,6 @@ jobs:
       - name: Run Unit Tests
         run: ./test.sh unit
         shell: bash
-jobs:
   coverage-testing:
     runs-on: ${{ matrix.os }}
     strategy:
