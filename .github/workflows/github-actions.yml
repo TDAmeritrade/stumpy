@@ -1,5 +1,9 @@
-name: github-actions
-on: [push, pull_request]
+name: Tests
+on:
+  push:
+    branches: master
+  pull_request:
+    branches: master
 jobs:
   unit-testing:
     runs-on: ${{ matrix.os }}
