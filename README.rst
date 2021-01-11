@@ -346,6 +346,14 @@ If you have used this codebase in a scientific publication and wish to cite it, 
       pages={1504},
       year={2019}
     }
+    
+----------------
+Acknowledgements
+----------------
+The work of STUMPY was inspired by other open-source implementations of the Matrix Profile:
+
+1. `matrixprofile-ts <https://github.com/target/matrixprofile-ts>`__
+2. `matrixprofile <https://github.com/matrix-profile-foundation/matrixprofile>`__
 
 ----------
 References
