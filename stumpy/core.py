@@ -247,14 +247,19 @@ def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
     return False
 
 
-def check_window_size(m):
+def check_window_size(m, max_size=None):
     """
-    Check the window size and ensure that it is greater than or equal to 3
+    Check the window size and ensure that it is greater than or equal to 3 and, if
+    `max_size` is provided, ensure that the window size is less than or equal to the
+    `max_size`
 
     Parameters
     ----------
     m : int
         Window size
+
+    max_size : int, default None
+        The maximum window size allowed
 
     Returns
     -------
@@ -273,6 +278,9 @@ def check_window_size(m):
             time series is large enough to contain both scenarios).
             """,
         )
+
+    if max_size is not None and m > max_size:
+        raise ValueError(f"The window size must be less than or equal to {max_size}")
 
 
 def sliding_dot_product(Q, T):
@@ -979,6 +987,12 @@ def mass(Q, T, M_T=None, Σ_T=None):
     if T.ndim != 1:  # pragma: no cover
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
 
+    if m > n:  # pragma: no cover
+        raise ValueError(
+            f"The length of `Q` ({len(Q)}) must be less than or equal to "
+            f"the length of `T` ({len(T)}). "
+        )
+
     distance_profile = np.empty(n - m + 1)
     if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
@@ -1103,6 +1117,12 @@ def mass_absolute(Q, T):
 
     if T.ndim != 1:  # pragma: no cover
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
+
+    if m > n:  # pragma: no cover
+        raise ValueError(
+            f"The length of `Q` ({len(Q)}) must be less than or equal to "
+            f"the length of `T` ({len(T)}). "
+        )
 
     distance_profile = np.empty(n - m + 1)
     if np.any(~np.isfinite(Q)):

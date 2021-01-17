@@ -197,7 +197,7 @@ def prescrump(T_A, m, T_B=None, s=None):
     core.check_dtype(T_B)
     T_B[np.isinf(T_B)] = np.nan
 
-    core.check_window_size(m)
+    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
     μ_Q, σ_Q = core.compute_mean_std(T_A, m)
     M_T, Σ_T = core.compute_mean_std(T_B, m)
@@ -377,7 +377,7 @@ class scrump(object):
                 "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
             )
 
-        core.check_window_size(self._m)
+        core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
         if self._ignore_trivial is False and core.are_arrays_equal(
             self._T_A, self._T_B

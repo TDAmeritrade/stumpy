@@ -134,7 +134,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
 
-    core.check_window_size(m)
+    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
     if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
         logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")

@@ -31,6 +31,12 @@ def test_check_window_size():
             core.check_window_size(m)
 
 
+def test_check_max_window_size():
+    for m in range(4, 7):
+        with pytest.raises(ValueError):
+            core.check_window_size(m, max_size=3)
+
+
 def naive_compute_mean_std(T, m):
     n = T.shape[0]
 
