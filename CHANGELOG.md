@@ -1,3 +1,19 @@
+# 2021-01-17    [ 1.7.0 ]:
+--------------------------
+* bugfixes
+  - None
+* features
+  - Added maximum window size check
+  - Added window size checking to preprocessing
+* tasks
+  - Replaced array comparison in `core.are_arrays_equal` with `np.array_equal`
+  - Added Github Actions and badge
+  - Improved stability for integration with other packages
+* documentation
+  - Fixed typo
+  - Replaced NABDConf motivation video with PyData Global video
+
+
 # 2020-12-30    [ 1.6.1 ]:
 --------------------------
 * bugfixes
