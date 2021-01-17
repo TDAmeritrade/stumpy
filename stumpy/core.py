@@ -1255,6 +1255,7 @@ def preprocess(T, m):
     T = transpose_dataframe(T)
     T = np.asarray(T)
     check_dtype(T)
+    check_window_size(m, max_size=T.shape[-1])
 
     T[np.isinf(T)] = np.nan
     M_T, Σ_T = compute_mean_std(T, m)
@@ -1294,6 +1295,7 @@ def preprocess_non_normalized(T, m):
     T = transpose_dataframe(T)
     T = np.asarray(T)
     check_dtype(T)
+    check_window_size(m, max_size=T.shape[-1])
 
     T[np.isinf(T)] = np.nan
     T_subseq_isfinite = rolling_isfinite(T, m)
