@@ -28,7 +28,7 @@ def get_extras_require():
 
 configuration = {
     "name": "stumpy",
-    "version": "1.7.0",
+    "version": "1.7.1",
     "python_requires=": ">=3.6",
     "author": "Sean M. Law",
     "author_email": "seanmylaw@gmail.com",
@@ -58,7 +58,7 @@ configuration = {
     "maintainer_email": "seanmylaw@gmail.com",
     "license": "BSD-3",
     "packages": ["stumpy"],
-    "install_requires": ["numpy >= 1.13", "scipy >= 1.2.1", "numba >= 0.42.0"],
+    "install_requires": ["numpy >= 1.19", "scipy >= 1.2.1", "numba >= 0.42.0"],
     "ext_modules": [],
     "cmdclass": {},
     "tests_require": ["pytest"],

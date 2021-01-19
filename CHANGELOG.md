@@ -1,3 +1,15 @@
+# 2021-01-19    [ 1.7.1 ]:
+--------------------------
+* bugfixes
+  - None
+* features
+  - None
+* tasks
+  - Bumped minimum NumPy version to use `np.array_equal`
+* documentation
+  - None
+
+
 # 2021-01-17    [ 1.7.0 ]:
 --------------------------
 * bugfixes
