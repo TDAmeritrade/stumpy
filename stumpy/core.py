@@ -214,7 +214,13 @@ def are_arrays_equal(a, b):  # pragma: no cover
     if id(a) == id(b):
         return True
 
-    return np.array_equal(a, b, equal_nan=True)
+    # For numpy >= 1.19
+    # return np.array_equal(a, b, equal_nan=True)
+
+    if a.shape != b.shape:
+        return False
+
+    return ((a == b) | (np.isnan(a) & np.isnan(b))).all()
 
 
 def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover

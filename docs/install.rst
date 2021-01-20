@@ -2,6 +2,8 @@
 Installation
 ------------
 
+Supported Python and NumPy versions are determined according to the `NEP 29 deprecation policy <https://numpy.org/neps/nep-0029-deprecation_policy.html>`__.
+
 Using conda/pip
 ===============
 

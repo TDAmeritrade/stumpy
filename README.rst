@@ -179,6 +179,8 @@ Semantic Segmentation with `Fast Low-cost Unipotent Semantic Segmentation (FLUSS
 Dependencies
 ------------
 
+Supported Python and NumPy versions are determined according to the `NEP 29 deprecation policy <https://numpy.org/neps/nep-0029-deprecation_policy.html>`__.
+
 * `NumPy <http://www.numpy.org/>`__
 * `Numba <http://numba.pydata.org/>`__
 * `SciPy <https://www.scipy.org/>`__
@@ -313,7 +315,7 @@ Tests are written in the ``tests`` directory and processed using `PyTest <https:
 Python Version
 --------------
 
-STUMPY supports `Python 3.6+ <https://python3statement.org/>`__ and, due to the use of unicode variable names/identifiers, is not compatible with Python 2.x. Given the small dependencies, STUMPY may work on older versions of Python but this is beyond the scope of our support and we strongly recommend that you upgrade to the most recent version of Python.
+STUMPY supports `Python 3.7+ <https://python3statement.org/>`__ and, due to the use of unicode variable names/identifiers, is not compatible with Python 2.x. Given the small dependencies, STUMPY may work on older versions of Python but this is beyond the scope of our support and we strongly recommend that you upgrade to the most recent version of Python.
 
 ------------
 Getting Help
