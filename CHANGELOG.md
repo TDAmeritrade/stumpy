@@ -1,3 +1,15 @@
+# 2021-01-20    [ 1.7.2 ]:
+--------------------------
+* bugfixes
+  - None
+* features
+  - Added the NEP 29 policy
+* tasks
+  - Added CI for minimum version dependencies
+* documentation
+  - Updated README to convery NEP 29
+
+
 # 2021-01-19    [ 1.7.1 ]:
 --------------------------
 * bugfixes
