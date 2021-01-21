@@ -89,12 +89,14 @@ Distributed usage for 1-dimensional time series data with Dask Distributed via `
     import stumpy
     import numpy as np
     from dask.distributed import Client
-    dask_client = Client()
+
+    if __name__ == "__main__":
+        dask_client = Client()
     
-    your_time_series = np.random.rand(10000)
-    window_size = 50  # Approximately, how many data points might be found in a pattern 
+        your_time_series = np.random.rand(10000)
+        window_size = 50  # Approximately, how many data points might be found in a pattern 
     
-    matrix_profile = stumpy.stumped(dask_client, your_time_series, m=window_size)
+        matrix_profile = stumpy.stumped(dask_client, your_time_series, m=window_size)
 
 GPU usage for 1-dimensional time series data with `GPU-STUMP <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.gpu_stump>`__:
 
@@ -104,11 +106,12 @@ GPU usage for 1-dimensional time series data with `GPU-STUMP <https://stumpy.rea
     import numpy as np
     from numba import cuda
 
-    your_time_series = np.random.rand(10000)
-    window_size = 50  # Approximately, how many data points might be found in a pattern
-    all_gpu_devices = [device.id for device in cuda.list_devices()]  # Get a list of all available GPU devices
+    if __name__ == "__main__":
+        your_time_series = np.random.rand(10000)
+        window_size = 50  # Approximately, how many data points might be found in a pattern
+        all_gpu_devices = [device.id for device in cuda.list_devices()]  # Get a list of all available GPU devices
 
-    matrix_profile = stumpy.gpu_stump(your_time_series, m=window_size, device_id=all_gpu_devices)
+        matrix_profile = stumpy.gpu_stump(your_time_series, m=window_size, device_id=all_gpu_devices)
 
 Multi-dimensional time series data with `MSTUMP <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.mstump>`__:
 
@@ -129,12 +132,14 @@ Distributed multi-dimensional time series data analysis with Dask Distributed `M
     import stumpy
     import numpy as np
     from dask.distributed import Client
-    dask_client = Client()
 
-    your_time_series = np.random.rand(3, 1000)   # Each row represents data from a different dimension while each column represents data from the same dimension
-    window_size = 50  # Approximately, how many data points might be found in a pattern
+    if __name__ == "__main__":
+        dask_client = Client()
 
-    matrix_profile, matrix_profile_indices = stumpy.mstumped(dask_client, your_time_series, m=window_size)
+        your_time_series = np.random.rand(3, 1000)   # Each row represents data from a different dimension while each column represents data from the same dimension
+        window_size = 50  # Approximately, how many data points might be found in a pattern
+
+        matrix_profile, matrix_profile_indices = stumpy.mstumped(dask_client, your_time_series, m=window_size)
 
 Time Series Chains with `Anchored Time Series Chains (ATSC) <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.atsc>`__:
 
