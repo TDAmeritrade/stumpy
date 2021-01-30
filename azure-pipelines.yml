@@ -1,8 +1,8 @@
 trigger:
-- master
+- main
 
 pr:
-- master
+- main
 
 stages:
 - stage: Unit
