@@ -6,6 +6,8 @@ from .mstump import mstump, subspace  # noqa: F401
 from .mstumped import mstumped  # noqa: F401
 from .aamp import aamp  # noqa: F401
 from .aamped import aamped  # noqa: F401
+from .maamp import maamp, maamp_subspace  # noqa: F401
+from .maamped import maamped  # noqa: F401
 from .aampi import aampi  # noqa: F401
 from .chains import atsc, allc  # noqa: F401
 from .floss import floss, fluss  # noqa: F401

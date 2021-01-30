@@ -1493,7 +1493,7 @@ def _get_array_ranges(a, n_chunks, truncate=False):
     return array_ranges
 
 
-def rolling_isfinite(a, w):
+def _rolling_isfinite_1d(a, w):
     """
     Determine if all elements in each rolling window `isfinite`
 
@@ -1526,6 +1526,31 @@ def rolling_isfinite(a, w):
     a_subseq_isfinite[~a_isfinite[w - 1 :]] = False
 
     return a_isfinite[: a_isfinite.shape[0] - w + 1]
+
+
+def rolling_isfinite(a, w):
+    """
+    Compute the rolling `isfinite` for 1-D and 2-D arrays.
+
+    This a convenience wrapper around `_rolling_isfinite_1d`.
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanmax.
+    """
+    axis = a.ndim - 1  # Account for rolling
+    return np.apply_along_axis(
+        lambda a_row, w: _rolling_isfinite_1d(a_row, w), axis=axis, arr=a, w=w
+    )
 
 
 def _get_partial_mp_func(mp_func, dask_client=None, device_id=None):

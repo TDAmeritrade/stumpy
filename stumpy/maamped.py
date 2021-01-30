@@ -6,24 +6,20 @@ import logging
 
 import numpy as np
 
-from .mstump import (
-    _mstump,
-    _get_first_mstump_profile,
-    _get_multi_QT,
-    _preprocess_include,
-)
+from .maamp import _maamp, _get_first_maamp_profile
+from .mstump import _get_multi_QT, _preprocess_include
 from . import core
 
 logger = logging.getLogger(__name__)
 
 
-def mstumped(dask_client, T, m, include=None, discords=False):
+def maamped(dask_client, T, m, include=None, discords=False):
     """
-    Compute the multi-dimensional z-normalized matrix profile with a distributed
-    dask cluster
+    Compute the multi-dimensional non-normalized (i.e., without z-normalization) matrix
+    profile with a distributed dask cluster
 
     This is a highly distributed implementation around the Numba JIT-compiled
-    parallelized `_mstump` function which computes the multi-dimensional matrix
+    parallelized `_maamp` function which computes the multi-dimensional matrix
     profile according to STOMP. Note that only self-joins are supported.
 
     Parameters
@@ -78,8 +74,10 @@ def mstumped(dask_client, T, m, include=None, discords=False):
     T_A = T
     T_B = T_A
 
-    T_A, M_T, Σ_T = core.preprocess(T_A, m)
-    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
+    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
+    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
+    T_A_subseq_squared = np.sum(core.rolling_window(T_A * T_A, m), axis=2)
+    T_B_subseq_squared = np.sum(core.rolling_window(T_B * T_B, m), axis=2)
 
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
@@ -103,16 +101,31 @@ def mstumped(dask_client, T, m, include=None, discords=False):
     step = 1 + k // nworkers
 
     for i, start in enumerate(range(0, k, step)):
-        P[:, start], I[:, start] = _get_first_mstump_profile(
-            start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
+        P[:, start], I[:, start] = _get_first_maamp_profile(
+            start,
+            T_A,
+            T_B,
+            m,
+            excl_zone,
+            T_B_subseq_isfinite,
+            include,
+            discords,
         )
 
     # Scatter data to Dask cluster
     T_A_future = dask_client.scatter(T_A, broadcast=True, hash=False)
-    M_T_future = dask_client.scatter(M_T, broadcast=True, hash=False)
-    Σ_T_future = dask_client.scatter(Σ_T, broadcast=True, hash=False)
-    μ_Q_future = dask_client.scatter(μ_Q, broadcast=True, hash=False)
-    σ_Q_future = dask_client.scatter(σ_Q, broadcast=True, hash=False)
+    T_A_subseq_isfinite_future = dask_client.scatter(
+        T_A_subseq_isfinite, broadcast=True, hash=False
+    )
+    T_B_subseq_isfinite_future = dask_client.scatter(
+        T_B_subseq_isfinite, broadcast=True, hash=False
+    )
+    T_A_subseq_squared_future = dask_client.scatter(
+        T_A_subseq_squared, broadcast=True, hash=False
+    )
+    T_B_subseq_squared_future = dask_client.scatter(
+        T_B_subseq_squared, broadcast=True, hash=False
+    )
 
     QT_futures = []
     QT_first_futures = []
@@ -132,17 +145,17 @@ def mstumped(dask_client, T, m, include=None, discords=False):
 
         futures.append(
             dask_client.submit(
-                _mstump,
+                _maamp,
                 T_A_future,
                 m,
                 stop,
                 excl_zone,
-                M_T_future,
-                Σ_T_future,
+                T_A_subseq_isfinite_future,
+                T_B_subseq_isfinite_future,
+                T_A_subseq_squared_future,
+                T_B_subseq_squared_future,
                 QT_futures[i],
                 QT_first_futures[i],
-                μ_Q_future,
-                σ_Q_future,
                 k,
                 start + 1,
                 include,
@@ -157,10 +170,10 @@ def mstumped(dask_client, T, m, include=None, discords=False):
 
     # Delete data from Dask cluster
     dask_client.cancel(T_A_future)
-    dask_client.cancel(M_T_future)
-    dask_client.cancel(Σ_T_future)
-    dask_client.cancel(μ_Q_future)
-    dask_client.cancel(σ_Q_future)
+    dask_client.cancel(T_A_subseq_isfinite_future)
+    dask_client.cancel(T_B_subseq_isfinite_future)
+    dask_client.cancel(T_A_subseq_squared_future)
+    dask_client.cancel(T_B_subseq_squared_future)
     for QT_future in QT_futures:
         dask_client.cancel(QT_future)
     for QT_first_future in QT_first_futures:

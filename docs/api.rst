@@ -19,6 +19,9 @@ STUMPY API
     stumpy.aamped
     stumpy.gpu_aamp
     stumpy.aampi
+    stumpy.maamp
+    stumpy.maamped
+    stumpy.maamp_subspace
     stumpy.atsc
     stumpy.allc
     stumpy.fluss
@@ -94,6 +97,21 @@ aampi
 =====
 
 .. autofunction:: stumpy.aampi
+
+maamp
+=====
+
+.. autofunction:: stumpy.maamp
+
+maamped
+=======
+
+.. autofunction:: stumpy.maamped
+
+maamp_subspace
+==============
+
+.. autofunction:: stumpy.maamp_subspace
 
 atsc
 ====

@@ -192,6 +192,75 @@ def stump(T_A, m, T_B=None, exclusion_zone=None):
     return result
 
 
+def aamp(T_A, m, T_B=None, exclusion_zone=None):
+    T_A = np.asarray(T_A)
+    T_A = T_A.copy()
+
+    if T_B is None:
+        T_B = T_A.copy()
+        ignore_trivial = True
+    else:
+        T_B = np.asarray(T_B)
+        T_B = T_B.copy()
+        ignore_trivial = False
+
+    T_A[np.isinf(T_A)] = np.nan
+    T_B[np.isinf(T_B)] = np.nan
+
+    rolling_T_A = core.rolling_window(T_A, m)
+    rolling_T_B = core.rolling_window(T_B, m)
+
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_A - m + 1
+    if exclusion_zone is None:
+        exclusion_zone = int(np.ceil(m / 4))
+
+    distance_matrix = cdist(rolling_T_A, rolling_T_B)
+
+    if ignore_trivial:
+        diags = np.arange(exclusion_zone + 1, n_A - m + 1)
+    else:
+        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
+
+    P = np.full((l, 3), np.inf)
+    I = np.full((l, 3), -1, dtype=np.int64)
+
+    for k in diags:
+        if k >= 0:
+            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - k))
+        else:
+            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
+
+        for i in iter_range:
+            D = distance_matrix[i, i + k]
+            if D < P[i, 0]:
+                P[i, 0] = D
+                I[i, 0] = i + k
+
+            if ignore_trivial:  # Self-joins only
+                if D < P[i + k, 0]:
+                    P[i + k, 0] = D
+                    I[i + k, 0] = i
+
+                if i < i + k:
+                    # Left matrix profile and left matrix profile index
+                    if D < P[i + k, 1]:
+                        P[i + k, 1] = D
+                        I[i + k, 1] = i
+
+                    if D < P[i, 2]:
+                        # right matrix profile and right matrix profile index
+                        P[i, 2] = D
+                        I[i, 2] = i + k
+
+    result = np.empty((l, 4), dtype=object)
+    result[:, 0] = P[:, 0]
+    result[:, 1:4] = I[:, :]
+
+    return result
+
+
 def replace_inf(x, value=0):
     x[x == np.inf] = value
     x[x == -np.inf] = value
@@ -214,6 +283,28 @@ def multi_mass(Q, T, m, include=None, discords=False):
     D = np.empty((d, n - m + 1))
     for i in range(d):
         D[i] = distance_profile(Q[i], T[i], m)
+
+    D[np.isnan(D)] = np.inf
+
+    return D
+
+
+def multi_mass_absolute(Q, T, m, include=None, discords=False):
+    T_inf = np.isinf(T)
+    if np.any(T_inf):
+        T = T.copy()
+        T[T_inf] = np.nan
+
+    Q_inf = np.isinf(Q)
+    if np.any(Q_inf):
+        Q = Q.copy()
+        Q[Q_inf] = np.nan
+
+    d, n = T.shape
+
+    D = np.empty((d, n - m + 1))
+    for i in range(d):
+        D[i] = aamp_distance_profile(Q[i], T[i], m)
 
     D[np.isnan(D)] = np.inf
 
@@ -295,10 +386,85 @@ def mstump(T, m, excl_zone, include=None, discords=False):
     return P, I
 
 
+def maamp(T, m, excl_zone, include=None, discords=False):
+    T = T.copy()
+    T_isfinite = core.rolling_isfinite(T, m)
+
+    d, n = T.shape
+    k = n - m + 1
+
+    P = np.full((d, k), np.inf)
+    I = np.ones((d, k), dtype="int64") * -1
+
+    for i in range(k):
+        Q = T[:, i : i + m]
+        Q_isfinite = core.rolling_isfinite(Q, m)
+        D = multi_mass_absolute(Q, T, m, include, discords)
+
+        start_row_idx = 0
+        if include is not None:
+            apply_include(D, include)
+            start_row_idx = include.shape[0]
+
+        if discords:
+            D[start_row_idx:][::-1].sort(axis=0)
+        else:
+            D[start_row_idx:].sort(axis=0)
+
+        D_prime = np.zeros(n - m + 1)
+        D_prime_prime = np.zeros((d, n - m + 1))
+        for j in range(d):
+            D_prime[:] = D_prime + D[j]
+            D_prime_prime[j, :] = D_prime / (j + 1)
+
+        apply_exclusion_zone(D_prime_prime, i, excl_zone)
+
+        P_i, I_i = PI(D_prime_prime, i, excl_zone)
+
+        for dim in range(T.shape[0]):
+            col_mask = P[dim] > P_i[dim]
+            P[dim, col_mask] = P_i[dim, col_mask]
+            I[dim, col_mask] = I_i[dim, col_mask]
+
+    return P, I
+
+
 def subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
     D = distance(
         z_norm(T[:, motif_idx : motif_idx + m], axis=1),
         z_norm(T[:, nn_idx : nn_idx + m], axis=1),
+        axis=1,
+    )
+
+    if discords:
+        sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
+    else:
+        sorted_idx = D.argsort(axis=0, kind="mergesort")
+
+    # `include` processing can occur since we are dealing with indices, not distances
+    if include is not None:
+        include_idx = []
+        for i in range(include.shape[0]):
+            include_idx.append(np.isin(sorted_idx, include[i]).nonzero()[0])
+        include_idx = np.array(include_idx).flatten()
+        include_idx.sort()
+        exclude_idx = np.ones(T.shape[0], dtype=bool)
+        exclude_idx[include_idx] = False
+        exclude_idx = exclude_idx.nonzero()[0]
+        sorted_idx[: include_idx.shape[0]], sorted_idx[include_idx.shape[0] :] = (
+            sorted_idx[include_idx],
+            sorted_idx[exclude_idx],
+        )
+
+    S = sorted_idx[: k + 1]
+
+    return S
+
+
+def maamp_subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
+    D = distance(
+        T[:, motif_idx : motif_idx + m],
+        T[:, nn_idx : nn_idx + m],
         axis=1,
     )
 
@@ -352,75 +518,6 @@ def get_array_ranges(a, n_chunks, truncate=False):
         out = out[:ranges_idx]
 
     return out
-
-
-def aamp(T_A, m, T_B=None, exclusion_zone=None):
-    T_A = np.asarray(T_A)
-    T_A = T_A.copy()
-
-    if T_B is None:
-        T_B = T_A.copy()
-        ignore_trivial = True
-    else:
-        T_B = np.asarray(T_B)
-        T_B = T_B.copy()
-        ignore_trivial = False
-
-    T_A[np.isinf(T_A)] = np.nan
-    T_B[np.isinf(T_B)] = np.nan
-
-    rolling_T_A = core.rolling_window(T_A, m)
-    rolling_T_B = core.rolling_window(T_B, m)
-
-    n_A = T_A.shape[0]
-    n_B = T_B.shape[0]
-    l = n_A - m + 1
-    if exclusion_zone is None:
-        exclusion_zone = int(np.ceil(m / 4))
-
-    distance_matrix = cdist(rolling_T_A, rolling_T_B)
-
-    if ignore_trivial:
-        diags = np.arange(exclusion_zone + 1, n_A - m + 1)
-    else:
-        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
-
-    P = np.full((l, 3), np.inf)
-    I = np.full((l, 3), -1, dtype=np.int64)
-
-    for k in diags:
-        if k >= 0:
-            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - k))
-        else:
-            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
-
-        for i in iter_range:
-            D = distance_matrix[i, i + k]
-            if D < P[i, 0]:
-                P[i, 0] = D
-                I[i, 0] = i + k
-
-            if ignore_trivial:  # Self-joins only
-                if D < P[i + k, 0]:
-                    P[i + k, 0] = D
-                    I[i + k, 0] = i
-
-                if i < i + k:
-                    # Left matrix profile and left matrix profile index
-                    if D < P[i + k, 1]:
-                        P[i + k, 1] = D
-                        I[i + k, 1] = i
-
-                    if D < P[i, 2]:
-                        # right matrix profile and right matrix profile index
-                        P[i, 2] = D
-                        I[i, 2] = i + k
-
-    result = np.empty((l, 4), dtype=object)
-    result[:, 0] = P[:, 0]
-    result[:, 1:4] = I[:, :]
-
-    return result
 
 
 class aampi_egress(object):

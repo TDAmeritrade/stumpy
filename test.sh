@@ -136,6 +136,14 @@ test_unit()
     check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_nan_inf_A_B_join_swap.py
     check_errs $?
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_maamp.py
+    check_errs $?
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mstumped.py
+    check_errs $?
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mstumped_one_subsequence_inf_self_join.py
+    check_errs $?
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mstumped_one_subsequence_nan_self_join.py
+    check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_ostinato.py
     check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp_ostinato.py
