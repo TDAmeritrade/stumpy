@@ -192,9 +192,62 @@ def _discretize(a, bins, right=True):
     return np.digitize(a, bins, right=right)
 
 
-def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
+def _subspace(D, k, include=None, discords=False):
     """
-    Compute the k-dimensional matrix profile subspace for a given subsequence index and
+    Compute the k-dimensional matrixrofile subspace for a given subsequence index and
+    its nearest neighbor index
+
+    Parameters
+    ----------
+    D : ndarray
+        The multi-dimensional distance profile
+
+    k : int
+        The subset number of dimensions out of `D = T.shape[0]`-dimensions to return
+        the subspace for
+
+    include : ndarray, default None
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    discords : bool, default False
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
+
+    Returns
+    -------
+        S : ndarray
+        An array of that contains the `k`th-dimensional subspace for the subsequence
+        with index equal to `motif_idx`
+    """
+    if discords:
+        sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
+    else:
+        sorted_idx = D.argsort(axis=0, kind="mergesort")
+
+    # `include` processing occur here since we are dealing with indices, not distances
+    if include is not None:
+        include = _preprocess_include(include)
+        mask = np.in1d(sorted_idx, include)
+        include_idx = mask.nonzero()[0]
+        exclude_idx = (~mask).nonzero()[0]
+        sorted_idx[: include_idx.shape[0]], sorted_idx[include_idx.shape[0] :] = (
+            sorted_idx[include_idx],
+            sorted_idx[exclude_idx],
+        )
+
+    S = sorted_idx[: k + 1]
+
+    return S
+
+
+def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normalize=True):
+    """
+    Compute the k-dimensional matrixrofile subspace for a given subsequence index and
     its nearest neighbor index
 
     Parameters
@@ -228,36 +281,33 @@ def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
         When set to `True`, this reverses the distance profile to favor discords rather
         than motifs. Note that indices in `include` are still maintained and respected.
 
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing nearest
+        neighbor distances. Z-normalization must be used when the corresponding
+        multi-dimensional matrix profile is computed by `mstump` or `mstumped`. This
+        should be set to `False` when the corresponding multi-dimensional matrix profile
+        is computed by `maamp` or `maamped`.
+
     Returns
     -------
         S : ndarray
         An array of that contains the `k`th-dimensional subspace for the subsequence
         with index equal to `motif_idx`
     """
-    T, _, _ = core.preprocess(T, m)
+    if normalize:
+        T, _, _ = core.preprocess(T, m)
+        subseqs = core.z_norm(T[:, subseq_idx : subseq_idx + m], axis=1)
+        neighbors = core.z_norm(T[:, nn_idx : nn_idx + m], axis=1)
+    else:
+        T, _ = core.preprocess_non_normalized(T, m)
+        subseqs = T[:, subseq_idx : subseq_idx + m]
+        neighbors = T[:, nn_idx : nn_idx + m]
 
-    subseqs = core.z_norm(T[:, subseq_idx : subseq_idx + m], axis=1)
-    neighbors = core.z_norm(T[:, nn_idx : nn_idx + m], axis=1)
     D = np.linalg.norm(subseqs - neighbors, axis=1)
 
-    if discords:
-        sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
-    else:
-        sorted_idx = D.argsort(axis=0, kind="mergesort")
+    S = _subspace(D, k, include=include, discords=discords)
 
-    # `include` processing occur here since we are dealing with indices, not distances
-    if include is not None:
-        include = _preprocess_include(include)
-        mask = np.in1d(sorted_idx, include)
-        include_idx = mask.nonzero()[0]
-        exclude_idx = (~mask).nonzero()[0]
-        sorted_idx[: include_idx.shape[0]], sorted_idx[include_idx.shape[0] :] = (
-            sorted_idx[include_idx],
-            sorted_idx[exclude_idx],
-        )
-
-    S = sorted_idx[: k + 1]
-
+    # MDL
     n_bit = 8
     bins = _inverse_norm()
     disc_subseqs = _discretize(subseqs[S], bins)

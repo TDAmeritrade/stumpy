@@ -8,7 +8,13 @@ import numpy as np
 from numba import njit, prange
 
 from . import core, config
-from .mstump import _apply_include, _preprocess_include, _get_multi_QT, _compute_PI
+from .mstump import (
+    _apply_include,
+    _preprocess_include,
+    _get_multi_QT,
+    _compute_PI,
+    subspace,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -102,31 +108,7 @@ def maamp_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
         An array of that contains the `k`th-dimensional subspace for the subsequence
         with index equal to `motif_idx`
     """
-    T, _ = core.preprocess_non_normalized(T, m)
-
-    subseqs = T[:, subseq_idx : subseq_idx + m]
-    neighbors = T[:, nn_idx : nn_idx + m]
-    D = np.linalg.norm(subseqs - neighbors, axis=1)
-
-    if discords:
-        sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
-    else:
-        sorted_idx = D.argsort(axis=0, kind="mergesort")
-
-    # `include` processing occur here since we are dealing with indices, not distances
-    if include is not None:
-        include = _preprocess_include(include)
-        mask = np.in1d(sorted_idx, include)
-        include_idx = mask.nonzero()[0]
-        exclude_idx = (~mask).nonzero()[0]
-        sorted_idx[: include_idx.shape[0]], sorted_idx[include_idx.shape[0] :] = (
-            sorted_idx[include_idx],
-            sorted_idx[exclude_idx],
-        )
-
-    S = sorted_idx[: k + 1]
-
-    return S
+    return subspace(T, m, subseq_idx, nn_idx, k, include, discords, normalize=False)
 
 
 def _query_maamp_profile(

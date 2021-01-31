@@ -21,7 +21,6 @@ STUMPY API
     stumpy.aampi
     stumpy.maamp
     stumpy.maamped
-    stumpy.maamp_subspace
     stumpy.atsc
     stumpy.allc
     stumpy.fluss
@@ -107,11 +106,6 @@ maamped
 =======
 
 .. autofunction:: stumpy.maamped
-
-maamp_subspace
-==============
-
-.. autofunction:: stumpy.maamp_subspace
 
 atsc
 ====
