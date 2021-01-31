@@ -13,18 +13,15 @@
 .. image:: https://img.shields.io/pypi/l/stumpy.svg
     :target: https://github.com/TDAmeritrade/stumpy/blob/master/LICENSE.txt
     :alt: License
-.. image:: https://dev.azure.com/stumpy-dev/stumpy/_apis/build/status/TDAmeritrade.stumpy?branchName=master
-    :target: https://dev.azure.com/stumpy-dev/stumpy/_build/latest?definitionId=2&branchName=master
-    :alt: Build Status
 .. image:: https://github.com/TDAmeritrade/stumpy/workflows/Tests/badge.svg
     :target: https://github.com/TDAmeritrade/stumpy/actions?query=workflow%3ATests+branch%3Amaster)
     :alt: Test Status
-.. image:: https://readthedocs.org/projects/stumpy/badge/?version=latest
-    :target: https://stumpy.readthedocs.io/
-    :alt: ReadTheDocs Status
 .. image:: https://codecov.io/gh/TDAmeritrade/stumpy/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/TDAmeritrade/stumpy
     :alt: Code Coverage
+.. image:: https://readthedocs.org/projects/stumpy/badge/?version=latest
+    :target: https://stumpy.readthedocs.io/
+    :alt: ReadTheDocs Status
 .. image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/TDAmeritrade/stumpy/master?filepath=notebooks
     :alt: Binder
