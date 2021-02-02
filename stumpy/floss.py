@@ -335,6 +335,9 @@ class floss(object):
         A custom idealized arc curve (IAC) that will used for correcting the
         arc curve
 
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances
+
     Attributes
     ----------
     cac_1d_ : ndarray
@@ -370,7 +373,16 @@ class floss(object):
     """
 
     def __init__(
-        self, mp, T, m, L, excl_factor=5, n_iter=1000, n_samples=1000, custom_iac=None
+        self,
+        mp,
+        T,
+        m,
+        L,
+        excl_factor=5,
+        n_iter=1000,
+        n_samples=1000,
+        custom_iac=None,
+        normalize=True,
     ):
         """
         Initialize the FLOSS object
@@ -416,6 +428,10 @@ class floss(object):
         custom_iac : ndarray, default None
             A custom idealized arc curve (IAC) that will used for correcting the
             arc curve
+
+        normalize : bool, default True
+            When set to `True`, this z-normalizes subsequences prior to computing
+            distances
         """
         self._mp = copy.deepcopy(np.asarray(mp))
         self._T = copy.deepcopy(np.asarray(T))
@@ -425,6 +441,7 @@ class floss(object):
         self._n_iter = n_iter
         self._n_samples = n_samples
         self._custom_iac = custom_iac
+        self._normalize = normalize
         self._k = self._mp.shape[0]
         self._n = self._T.shape[0]
         self._last_idx = self._n - self._m + 1  # Depends on the changing length of `T`
@@ -453,11 +470,17 @@ class floss(object):
         # Note that any -1 indices must have a np.inf matrix profile value
         right_indices = [np.arange(IR, IR + self._m) for IR in self._mp[:, 3].tolist()]
         right_nn[:] = self._T[np.array(right_indices)]
-        self._mp[:, 0] = np.linalg.norm(
-            core.z_norm(core.rolling_window(self._T, self._m), 1)
-            - core.z_norm(right_nn, 1),
-            axis=1,
-        )
+        if self._normalize:
+            self._mp[:, 0] = np.linalg.norm(
+                core.z_norm(core.rolling_window(self._T, self._m), 1)
+                - core.z_norm(right_nn, 1),
+                axis=1,
+            )
+        else:
+            self._mp[:, 0] = np.linalg.norm(
+                core.rolling_window(self._T, self._m) - right_nn,
+                axis=1,
+            )
         inf_indices = np.argwhere(self._mp[:, 3] < 0).flatten()
         self._mp[inf_indices, 0] = np.inf
         self._mp[inf_indices, 3] = inf_indices
@@ -508,9 +531,12 @@ class floss(object):
         self._mp[-1, 3] = self._last_idx
 
         # Ingress
-        M_T, Σ_T = core.compute_mean_std(self._T, self._m)
+        if self._normalize:
+            M_T, Σ_T = core.compute_mean_std(self._T, self._m)
+            D = core.mass(self._finite_Q, self._finite_T, M_T, Σ_T)
+        else:
+            D = core.mass_absolute(self._T[-self._m :], self._T)
 
-        D = core.mass(self._finite_Q, self._finite_T, M_T, Σ_T)
         D[zone_start:] = np.inf
 
         T_subseq_isfinite = core.rolling_isfinite(self._T_isfinite, self._m)
