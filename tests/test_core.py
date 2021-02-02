@@ -767,3 +767,9 @@ def test_rolling_isfinite():
     comp = core.rolling_isfinite(a, w)
 
     npt.assert_almost_equal(ref, comp)
+
+
+def test_compare_parameters():
+    assert (
+        core.compare_parameters(core.rolling_window, core.z_norm, exclude=[]) == False
+    )

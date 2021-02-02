@@ -2,9 +2,8 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-from . import aamp, aamped
+from . import aamp, aamped, mpdist
 from .core import _mass_absolute_distance_matrix
-from .mpdist import _mpdist, _mpdist_vect
 
 
 def _aampdist_vect(
@@ -47,7 +46,7 @@ def _aampdist_vect(
         `MPdist` value. The `percentage` and `k` parameters are ignored when
         `custom_func` is not None.
     """
-    return _mpdist_vect(
+    return mpdist._mpdist_vect(
         Q,
         T,
         m,
@@ -97,7 +96,7 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None):
 
     See Section III
     """
-    return _mpdist(T_A, T_B, m, percentage, k, mp_func=aamp)
+    return mpdist._mpdist(T_A, T_B, m, percentage, k, mp_func=aamp)
 
 
 def aampdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None):
@@ -150,4 +149,6 @@ def aampdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None):
 
     See Section III
     """
-    return _mpdist(T_A, T_B, m, percentage, k, dask_client=dask_client, mp_func=aamped)
+    return mpdist._mpdist(
+        T_A, T_B, m, percentage, k, dask_client=dask_client, mp_func=aamped
+    )

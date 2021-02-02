@@ -13,11 +13,13 @@ from .mstump import (
     _preprocess_include,
 )
 from . import core
+from .maamped import maamped
 
 logger = logging.getLogger(__name__)
 
 
-def mstumped(dask_client, T, m, include=None, discords=False):
+@core.non_normalized(maamped)
+def mstumped(dask_client, T, m, include=None, discords=False, normalize=True):
     """
     Compute the multi-dimensional z-normalized matrix profile with a distributed
     dask cluster
@@ -56,6 +58,11 @@ def mstumped(dask_client, T, m, include=None, discords=False):
         multi-dimensional matrix profile that favors larger matrix profile values
         (i.e., discords) rather than smaller values (i.e., motifs). Note that indices
         in `include` are still maintained and respected.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------

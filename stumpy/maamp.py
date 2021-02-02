@@ -7,14 +7,7 @@ import logging
 import numpy as np
 from numba import njit, prange
 
-from . import core, config
-from .mstump import (
-    _apply_include,
-    _preprocess_include,
-    _get_multi_QT,
-    _compute_PI,
-    subspace,
-)
+from . import core, config, mstump
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +101,15 @@ def maamp_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
         An array of that contains the `k`th-dimensional subspace for the subsequence
         with index equal to `motif_idx`
     """
-    return subspace(T, m, subseq_idx, nn_idx, k, include, discords, normalize=False)
+    T, _ = core.preprocess_non_normalized(T, m)
+    subseqs = T[:, subseq_idx : subseq_idx + m]
+    neighbors = T[:, nn_idx : nn_idx + m]
+
+    D = np.linalg.norm(subseqs - neighbors, axis=1)
+
+    S = mstump._subspace(D, k, include=include, discords=discords)
+
+    return S
 
 
 def _query_maamp_profile(
@@ -178,7 +179,7 @@ def _query_maamp_profile(
     )
 
     if include is not None:
-        _apply_include(D, include)
+        mstump._apply_include(D, include)
         start_row_idx = include.shape[0]
 
     if discords:
@@ -526,7 +527,7 @@ def _maamp(
 
         # `include` processing must occur here since we are dealing with distances
         if include is not None:
-            _apply_include(
+            mstump._apply_include(
                 D,
                 include,
                 restricted_indices,
@@ -541,7 +542,7 @@ def _maamp(
         else:
             D[start_row_idx:].sort(axis=0)
 
-        _compute_PI(d, idx, D, D_prime, range_start, P, I)
+        mstump._compute_PI(d, idx, D, D_prime, range_start, P, I)
 
     return P, I
 
@@ -614,7 +615,7 @@ def maamp(T, m, include=None, discords=False):
     core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]))
 
     if include is not None:
-        include = _preprocess_include(include)
+        include = mstump._preprocess_include(include)
 
     d, n = T_B.shape
     k = n - m + 1
@@ -637,7 +638,7 @@ def maamp(T, m, include=None, discords=False):
         discords,
     )
 
-    QT, QT_first = _get_multi_QT(start, T_A, m)
+    QT, QT_first = mstump._get_multi_QT(start, T_A, m)
 
     P[:, start + 1 : stop], I[:, start + 1 : stop] = _maamp(
         T_A,

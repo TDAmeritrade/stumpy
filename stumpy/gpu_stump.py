@@ -10,6 +10,7 @@ import numpy as np
 from numba import cuda
 
 from . import core, config
+from .gpu_aamp import gpu_aamp
 
 logger = logging.getLogger(__name__)
 
@@ -371,7 +372,8 @@ def _gpu_stump(
     return profile_fname, indices_fname
 
 
-def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
+@core.non_normalized(gpu_aamp)
+def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True):
     """
     Compute the z-normalized matrix profile with one or more GPU devices
 
@@ -400,6 +402,11 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
         valid device ids (int) may also be provided for parallel GPU-STUMP
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------

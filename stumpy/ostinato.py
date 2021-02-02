@@ -5,6 +5,7 @@
 import numpy as np
 
 from . import core, stump, stumped
+from .aamp_ostinato import aamp_ostinato, aamp_ostinatoed
 
 
 def _across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, M_Ts, Σ_Ts):
@@ -243,7 +244,8 @@ def _ostinato(Ts, m, M_Ts, Σ_Ts, dask_client=None, device_id=None, mp_func=stum
     return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
 
 
-def ostinato(Ts, m):
+@core.non_normalized(aamp_ostinato)
+def ostinato(Ts, m, normalize=True):
     """
     Find the z-normalized consensus motif of multiple time series
 
@@ -259,6 +261,9 @@ def ostinato(Ts, m):
     m : int
         Window size
 
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances
+
     Returns
     -------
     central_radius : float
@@ -270,6 +275,11 @@ def ostinato(Ts, m):
     central_subseq_idx : int
         The subsequence index within time series `Ts[central_motif_Ts_idx]` the contains
         most central consensus motif
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Notes
     -----
@@ -307,7 +317,8 @@ def ostinato(Ts, m):
     return central_radius, central_Ts_idx, central_subseq_idx
 
 
-def ostinatoed(dask_client, Ts, m):
+@core.non_normalized(aamp_ostinatoed)
+def ostinatoed(dask_client, Ts, m, normalize=True):
     """
     Find the z-normalized consensus motif of multiple time series with a distributed
     dask cluster
@@ -329,6 +340,11 @@ def ostinatoed(dask_client, Ts, m):
 
     m : int
         Window size
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------

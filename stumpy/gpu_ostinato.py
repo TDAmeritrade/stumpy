@@ -4,9 +4,11 @@
 
 from . import core, gpu_stump
 from .ostinato import _ostinato, _get_central_motif
+from .gpu_aamp_ostinato import gpu_aamp_ostinato
 
 
-def gpu_ostinato(Ts, m, device_id=0):
+@core.non_normalized(gpu_aamp_ostinato)
+def gpu_ostinato(Ts, m, device_id=0, normalize=True):
     """
     Find the z-normalized consensus motif of multiple time series with one or more GPU
     devices
@@ -28,6 +30,11 @@ def gpu_ostinato(Ts, m, device_id=0):
         valid device ids (int) may also be provided for parallel GPU-STUMP
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------

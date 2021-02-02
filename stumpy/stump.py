@@ -8,6 +8,7 @@ import numpy as np
 from numba import njit, prange, config
 
 from . import core
+from .aamp import aamp
 from stumpy.config import STUMPY_D_SQUARED_THRESHOLD
 
 logger = logging.getLogger(__name__)
@@ -422,7 +423,8 @@ def _stump(
     return P[:, :], I[0, :, :]
 
 
-def stump(T_A, m, T_B=None, ignore_trivial=True):
+@core.non_normalized(aamp)
+def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True):
     """
     Compute the z-normalized matrix profile
 
@@ -446,6 +448,11 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     ignore_trivial : bool, default True
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
         to `False`. Default is `True`.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------

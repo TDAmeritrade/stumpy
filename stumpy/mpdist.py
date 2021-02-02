@@ -7,6 +7,7 @@ import math
 
 from . import stump, stumped, core
 from .core import _mass_distance_matrix
+from .aampdist import aampdist, aampdisted
 
 
 def _compute_P_ABBA(
@@ -286,7 +287,8 @@ def _mpdist_vect(
     return MPdist_vect
 
 
-def mpdist(T_A, T_B, m, percentage=0.05, k=None):
+@core.non_normalized(aampdist)
+def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True):
     """
     Compute the  z-normalized matrix profile distance (MPdist) measure between any two
     time series
@@ -313,6 +315,11 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None):
         The percentage of distances that will be used to report `mpdist`. The value
         is between 0.0 and 1.0.
 
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
+
     Returns
     -------
     MPdist : float
@@ -328,7 +335,8 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None):
     return _mpdist(T_A, T_B, m, percentage, k, mp_func=stump)
 
 
-def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None):
+@core.non_normalized(aampdisted)
+def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, normalize=True):
     """
     Compute the z-normalized matrix profile distance (MPdist) measure between any two
     time series with a distributed dask cluster
@@ -364,6 +372,11 @@ def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None):
     k : int
         Specify the `k`th value in the concatenated matrix profiles to return. When `k`
         is not `None`, then the `percentage` parameter is ignored.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------

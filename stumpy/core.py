@@ -2,7 +2,10 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.  # noqa: E501
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-from functools import partial
+import logging
+import functools
+import inspect
+
 import numpy as np
 from numba import njit, prange
 from scipy.signal import convolve
@@ -16,6 +19,8 @@ try:
     from numba.cuda.cudadrv.driver import _raise_driver_not_found
 except ImportError:
     pass
+
+logger = logging.getLogger(__name__)
 
 
 def driver_not_found(*args, **kwargs):  # pragma: no cover
@@ -1583,10 +1588,88 @@ def _get_partial_mp_func(mp_func, dask_client=None, device_id=None):
         `device_id` into `functools.partial` function where possible
     """
     if dask_client is not None:
-        partial_mp_func = partial(mp_func, dask_client)
+        partial_mp_func = functools.partial(mp_func, dask_client)
     elif device_id is not None:
-        partial_mp_func = partial(mp_func, device_id=device_id)
+        partial_mp_func = functools.partial(mp_func, device_id=device_id)
     else:
         partial_mp_func = mp_func
 
     return partial_mp_func
+
+
+def compare_parameters(norm, non_norm, exclude=None):
+    """
+    Compare if the parameters in `norm` and `non_norm` are the same
+
+    Parameters
+    ----------
+    norm : object
+        The normalized function (or class) that is complementary to the
+        non-normalized function (or class)
+
+    non_norm : object
+        The non-normalized function (or class) that is complementary to the
+        z-normalized function (or class)
+
+    exclude : list
+        A list of parameters to exclude
+
+    Returns
+    -------
+    is_same_params : bool
+        `True` if parameters from both `norm` and `non-norm` are the same. `False`
+        otherwise.
+    """
+    norm_params = list(inspect.signature(norm).parameters.keys())
+    non_norm_params = list(inspect.signature(non_norm).parameters.keys())
+
+    if exclude is not None:
+        for param in exclude:
+            norm_params.remove(param)
+
+    is_same_params = set(norm_params) == set(non_norm_params)
+    if not is_same_params:
+        if exclude is not None:
+            logger.warning(f"Excluding `{exclude}` parameters, ")
+        logger.warning(f"`{norm}` and `{non_norm}` have different parameters.")
+
+    return is_same_params
+
+
+def non_normalized(non_norm):
+    """
+    Decorator for swapping a z-normalized function (or class) for its complementary
+    non-normalized function (or class) as defined by `non_norm`. This requires that
+    the z-normalized function (or class) has a `normalize` parameter.
+
+    With the exception of `normalize` parameter, the `non_norm` function (or class)
+    must have the same siganture as the `norm` function (or class) signature in order
+    to be compatible.
+
+    Parameters
+    ----------
+    non_norm : object
+        The non-normalized function (or class) that is complementary to the
+        z-normalized function (or class)
+
+    Returns
+    -------
+    outer_wrapper : object
+        The desired z-normalized/non-normalized function (or class)
+    """
+
+    @functools.wraps(non_norm)
+    def outer_wrapper(norm):
+        @functools.wraps(norm)
+        def inner_wrapper(*args, **kwargs):
+            is_same_params = compare_parameters(norm, non_norm, exclude=["normalize"])
+
+            if not is_same_params or kwargs.get("normalize", True):
+                return norm(*args, **kwargs)
+            else:
+                kwargs = {k: v for k, v in kwargs.items() if k != "normalize"}
+                return non_norm(*args, **kwargs)
+
+        return inner_wrapper
+
+    return outer_wrapper

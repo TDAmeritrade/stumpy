@@ -10,6 +10,7 @@ from numba import njit, prange
 from functools import lru_cache
 
 from . import core
+from .maamp import maamp, maamp_subspace
 
 logger = logging.getLogger(__name__)
 
@@ -245,6 +246,7 @@ def _subspace(D, k, include=None, discords=False):
     return S
 
 
+@core.non_normalized(maamp_subspace)
 def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normalize=True):
     """
     Compute the k-dimensional matrixrofile subspace for a given subsequence index and
@@ -282,11 +284,9 @@ def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normaliz
         than motifs. Note that indices in `include` are still maintained and respected.
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing nearest
-        neighbor distances. Z-normalization must be used when the corresponding
-        multi-dimensional matrix profile is computed by `mstump` or `mstumped`. This
-        should be set to `False` when the corresponding multi-dimensional matrix profile
-        is computed by `maamp` or `maamped`.
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------
@@ -294,14 +294,9 @@ def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normaliz
         An array of that contains the `k`th-dimensional subspace for the subsequence
         with index equal to `motif_idx`
     """
-    if normalize:
-        T, _, _ = core.preprocess(T, m)
-        subseqs = core.z_norm(T[:, subseq_idx : subseq_idx + m], axis=1)
-        neighbors = core.z_norm(T[:, nn_idx : nn_idx + m], axis=1)
-    else:
-        T, _ = core.preprocess_non_normalized(T, m)
-        subseqs = T[:, subseq_idx : subseq_idx + m]
-        neighbors = T[:, nn_idx : nn_idx + m]
+    T, _, _ = core.preprocess(T, m)
+    subseqs = core.z_norm(T[:, subseq_idx : subseq_idx + m], axis=1)
+    neighbors = core.z_norm(T[:, nn_idx : nn_idx + m], axis=1)
 
     D = np.linalg.norm(subseqs - neighbors, axis=1)
 
@@ -824,7 +819,8 @@ def _mstump(
     return P, I
 
 
-def mstump(T, m, include=None, discords=False):
+@core.non_normalized(maamp)
+def mstump(T, m, include=None, discords=False, normalize=True):
     """
     Compute the multi-dimensional z-normalized matrix profile
 
@@ -857,6 +853,11 @@ def mstump(T, m, include=None, discords=False):
         multi-dimensional matrix profile that favors larger matrix profile values
         (i.e., discords) rather than smaller values (i.e., motifs). Note that indices
         in `include` are still maintained and respected.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------
