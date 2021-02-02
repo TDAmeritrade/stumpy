@@ -235,7 +235,8 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
     for static data (i.e., batch processing)
 
     Essentially, this is a wrapper to compute the corrected arc curve and
-    regime locations.
+    regime locations. Note that since the matrix profile indices, `I`, are pre-computed,
+    this function is agnostic to subsequence normalization.
 
     Parameters
     ----------
