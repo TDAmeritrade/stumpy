@@ -110,7 +110,7 @@ test_unit()
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_mpdist.py
     # aamp
     py.test -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp.py
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp.py tests/test_aampi.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp.py tests/test_maamp.py tests/test_scraamp.py tests/test_aampi.py
     check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped.py
     check_errs $?
@@ -136,13 +136,11 @@ test_unit()
     check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_nan_inf_A_B_join_swap.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_maamp.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_maamped.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mstumped.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_maamped_one_subsequence_inf_self_join.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mstumped_one_subsequence_inf_self_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mstumped_one_subsequence_nan_self_join.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_maamped_one_subsequence_nan_self_join.py
     check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_ostinato.py
     check_errs $?

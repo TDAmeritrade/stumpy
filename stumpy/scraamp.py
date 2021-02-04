@@ -7,21 +7,22 @@ import logging
 import numpy as np
 from numba import njit, config
 
-from . import core, scraamp
-from .stump import _stump
+from . import core
+from .aamp import _aamp
+from .config import STUMPY_D_SQUARED_THRESHOLD
 
 logger = logging.getLogger(__name__)
 
 
 @njit(parallel=True, fastmath=True)
-def _prescrump(
+def _prescraamp(
     T_A,
     T_B,
     m,
-    M_T,
-    Σ_T,
-    μ_Q,
-    σ_Q,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
+    T_A_squared,
+    T_B_squared,
     QT,
     i,
     s,
@@ -31,7 +32,8 @@ def _prescrump(
     excl_zone=None,
 ):
     """
-    A Numba JIT-compiled implementation of the preSCRIMP algorithm.
+    A Numba JIT-compiled implementation of the non-normalized (i.e., without
+    z-normalization) preSCRIMP algorithm.
 
     Parameters
     ----------
@@ -45,18 +47,19 @@ def _prescrump(
     m : int
         Window size
 
-    M_T : ndarray
-        Sliding window mean for T_A
+    T_A_subseq_isfinite : ndarray
+        A boolean array that indicates whether a subsequence in `T_A` contains a
+        `np.nan`/`np.inf` value (False)
 
-    Σ_T : ndarray
-        Sliding window standard deviation for T_A
+    T_B_subseq_isfinite : ndarray
+        A boolean array that indicates whether a subsequence in `T_B` contains a
+        `np.nan`/`np.inf` value (False)
 
-    μ_Q : ndarray
-        Mean of the query sequence, `Q`, relative to the current sliding window in `T_B`
+    T_A_squared : ndarray
+        Rolling window `T_A_squared`
 
-    σ_Q : ndarray
-        Standard deviation of the query sequence, `Q`, relative to the current
-        sliding window in `T_B`
+    T_B_squared : ndarray
+        Rolling window `T_B_squared`
 
     QT : ndarray
         Sliding dot product between `Q` in `T_B` and `T_A`
@@ -88,9 +91,17 @@ def _prescrump(
     """
     l = QT.shape[0]
     # Update P[i] relative to all T[j : j + m]
-    Q = T_A[i : i + m]
-    squared_distance_profile[:] = core._mass(Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
-    squared_distance_profile[:] = np.square(squared_distance_profile)
+    if not T_A_subseq_isfinite[i]:  # pragma: no cover
+        squared_distance_profile[:] = np.inf
+    else:
+        squared_distance_profile[:] = core._mass_absolute(
+            T_A_squared[i], T_B_squared, QT
+        )
+        squared_distance_profile[:] = np.square(squared_distance_profile)
+        squared_distance_profile[
+            squared_distance_profile < STUMPY_D_SQUARED_THRESHOLD
+        ] = 0.0
+        squared_distance_profile[~T_B_subseq_isfinite] = np.inf
     if excl_zone is not None:
         zone_start = max(0, i - excl_zone)
         zone_stop = min(l, i + excl_zone)
@@ -102,7 +113,7 @@ def _prescrump(
     else:
         j = I[i]
         # Given the squared distance, work backwards and compute QT
-        QT_j = (m - P_squared[i] / 2.0) * (Σ_T[j] * σ_Q[i]) + (m * M_T[j] * μ_Q[i])
+        QT_j = (P_squared[i] - T_A_squared[i] - T_B_squared[j]) / -2.0
         QT_j_prime = QT_j
         for k in range(1, min(s, l - max(i, j))):
             QT_j = (
@@ -110,14 +121,14 @@ def _prescrump(
                 - T_B[i + k - 1] * T_A[j + k - 1]
                 + T_B[i + k + m - 1] * T_A[j + k + m - 1]
             )
-            D_squared = core._calculate_squared_distance(
-                m,
-                QT_j,
-                M_T[i + k],
-                Σ_T[i + k],
-                μ_Q[j + k],
-                σ_Q[j + k],
-            )
+            if (
+                not T_A_subseq_isfinite[i + k] or not T_B_subseq_isfinite[j + k]
+            ):  # pragma: no cover
+                D_squared = np.inf
+            else:
+                D_squared = T_A_squared[i + k] + T_B_squared[j + k] - 2 * QT_j
+                if D_squared < STUMPY_D_SQUARED_THRESHOLD:  # pragma: no cover
+                    D_squared = 0.0
             if D_squared < P_squared[i + k]:
                 P_squared[i + k] = D_squared
                 I[i + k] = j + k
@@ -127,14 +138,14 @@ def _prescrump(
         QT_j = QT_j_prime
         for k in range(1, min(s, i + 1, j + 1)):
             QT_j = QT_j - T_B[i - k + m] * T_A[j - k + m] + T_B[i - k] * T_A[j - k]
-            D_squared = core._calculate_squared_distance(
-                m,
-                QT_j,
-                M_T[i - k],
-                Σ_T[i - k],
-                μ_Q[j - k],
-                σ_Q[j - k],
-            )
+            if (
+                not T_A_subseq_isfinite[i - k] or not T_B_subseq_isfinite[j - k]
+            ):  # pragma: no cover
+                D_squared = np.inf
+            else:
+                D_squared = T_A_squared[i - k] + T_B_squared[j - k] - 2 * QT_j
+                if D_squared < STUMPY_D_SQUARED_THRESHOLD:  # pragma: no cover
+                    D_squared = 0.0
             if D_squared < P_squared[i - k]:
                 P_squared[i - k] = D_squared
                 I[i - k] = j - k
@@ -145,12 +156,11 @@ def _prescrump(
     return
 
 
-@core.non_normalized(scraamp.prescraamp)
-def prescrump(T_A, m, T_B=None, s=None, normalize=True):
+def prescraamp(T_A, m, T_B=None, s=None):
     """
-    A convenience wrapper around the Numba JIT-compiled parallelized `_prescrump`
-    function which computes the approximate matrix profile according to the preSCRIMP
-    algorithm
+    A convenience wrapper around the Numba JIT-compiled parallelized `_prescraamp`
+    function which computes the approximate matrix profile according to the
+    non-normalized (i.e., without z-normalization) preSCRIMP algorithm
 
     Parameters
     ----------
@@ -166,11 +176,6 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
 
     s : int, default None
         The sampling interval that defaults to `int(np.ceil(m / 4))`
-
-    normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------
@@ -205,11 +210,8 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
 
     core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
-    μ_Q, σ_Q = core.compute_mean_std(T_A, m)
-    M_T, Σ_T = core.compute_mean_std(T_B, m)
-
-    T_A[np.isnan(T_A)] = 0
-    T_B[np.isnan(T_B)] = 0
+    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
+    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
@@ -217,20 +219,22 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
     P_squared = np.full(l, np.inf)
     I = np.full(l, -1, dtype=np.int64)
     squared_distance_profile = np.empty(n_B - m + 1)
+    T_A_squared = np.sum(core.rolling_window(T_A * T_A, m), axis=1)
+    T_B_squared = np.sum(core.rolling_window(T_B * T_B, m), axis=1)
 
     if s is None:  # pragma: no cover
         s = excl_zone
 
     for i in np.random.permutation(range(0, l, s)):
         QT = core.sliding_dot_product(T_A[i : i + m], T_B)
-        _prescrump(
+        _prescraamp(
             T_A,
             T_B,
             m,
-            M_T,
-            Σ_T,
-            μ_Q,
-            σ_Q,
+            T_A_subseq_isfinite,
+            T_B_subseq_isfinite,
+            T_A_squared,
+            T_B_squared,
             QT,
             i,
             s,
@@ -245,13 +249,13 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
     return P, I
 
 
-@core.non_normalized(scraamp.scraamp)
-class scrump(object):
+class scraamp(object):
     """
-    Compute an approximate z-normalized matrix profile
+    Compute an approximate non-normalized (i.e., without z-normalization) matrix profile
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
-    `_stump` function which computes the matrix profile according to SCRIMP.
+    `_aamp` function which computes the non-normalized (i.e., without z-normalization)
+    matrix profile according to SCRIMP.
 
     Parameters
     ----------
@@ -272,20 +276,15 @@ class scrump(object):
     percentage : float
         Approximate percentage completed. The value is between 0.0 and 1.0.
 
-    pre_scrump : bool
+    pre_scraamp : bool
         A flag for whether or not to perform the PreSCRIMP calculation prior to
         computing SCRIMP. If set to `True`, this is equivalent to computing
         SCRIMP++ and may lead to faster convergence
 
     s : int
-        The size of the PreSCRIMP fixed interval. If `pre_scrump=True` and `s=None`,
+        The size of the PreSCRIMP fixed interval. If `pre_scraamp=True` and `s=None`,
         then `s` will automatically be set to `s=int(np.ceil(m/4))`, the size of
         the exclusion zone.
-
-    normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this class gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` class decorator.
 
     Attributes
     ----------
@@ -317,12 +316,11 @@ class scrump(object):
         T_B=None,
         ignore_trivial=True,
         percentage=0.01,
-        pre_scrump=False,
+        pre_scraamp=False,
         s=None,
-        normalize=True,
     ):
         """
-        Initialize the `scrump` object
+        Initialize the `scraamp` object
 
         Parameters
         ----------
@@ -343,20 +341,15 @@ class scrump(object):
         percentage : float, default 0.01
             Approximate percentage completed. The value is between 0.0 and 1.0.
 
-        pre_scrump : bool, default False
+        pre_scraamp : bool, default False
             A flag for whether or not to perform the PreSCRIMP calculation prior to
             computing SCRIMP. If set to `True`, this is equivalent to computing
             SCRIMP++
 
         s : int, default None
-            The size of the PreSCRIMP fixed interval. If `pre_scrump=True` and `s=None`,
-            then `s` will automatically be set to `s=int(np.ceil(m/4))`, the size of
-            the exclusion zone.
-
-        normalize : bool, default True
-            When set to `True`, this z-normalizes subsequences prior to computing
-            distances. Otherwise, this class gets re-routed to its complementary
-            non-normalized equivalent set in the `@core.non_normalized` class decorator.
+            The size of the PreSCRIMP fixed interval. If `pre_scraamp=True` and
+            `s=None`, then `s` will automatically be set to `s=int(np.ceil(m/4))`, the
+            size of the exclusion zone.
         """
         self._ignore_trivial = ignore_trivial
 
@@ -365,23 +358,13 @@ class scrump(object):
             self._ignore_trivial = True
 
         self._m = m
-        (
-            self._T_A,
-            self._μ_Q,
-            self._σ_Q_inverse,
-            self._μ_Q_m_1,
-            self._T_A_subseq_isfinite,
-            self._T_A_subseq_isconstant,
-        ) = core.preprocess_diagonal(T_A, self._m)
 
-        (
-            self._T_B,
-            self._M_T,
-            self._Σ_T_inverse,
-            self._M_T_m_1,
-            self._T_B_subseq_isfinite,
-            self._T_B_subseq_isconstant,
-        ) = core.preprocess_diagonal(T_B, self._m)
+        self._T_A, self._T_A_subseq_isfinite = core.preprocess_non_normalized(
+            T_A, self._m
+        )
+        self._T_B, self._T_B_subseq_isfinite = core.preprocess_non_normalized(
+            T_B, self._m
+        )
 
         if self._T_A.ndim != 1:  # pragma: no cover
             raise ValueError(
@@ -424,11 +407,11 @@ class scrump(object):
         if s is None:
             s = self._excl_zone
 
-        if pre_scrump:
+        if pre_scraamp:
             if self._ignore_trivial:
-                P, I = prescrump(T_A, m, s=s)
+                P, I = prescraamp(T_A, m, s=s)
             else:
-                P, I = prescrump(T_A, m, T_B=T_B, s=s)
+                P, I = prescraamp(T_A, m, T_B=T_B, s=s)
             for i in range(P.shape[0]):
                 if self._P[i, 0] > P[i]:
                     self._P[i, 0] = P[i]
@@ -464,20 +447,12 @@ class scrump(object):
         if self._chunk_idx < self._n_chunks:
             start_idx, stop_idx = self._chunk_diags_ranges[self._chunk_idx]
 
-            P, I = _stump(
+            P, I = _aamp(
                 self._T_A,
                 self._T_B,
                 self._m,
-                self._M_T,
-                self._μ_Q,
-                self._Σ_T_inverse,
-                self._σ_Q_inverse,
-                self._M_T_m_1,
-                self._μ_Q_m_1,
                 self._T_A_subseq_isfinite,
                 self._T_B_subseq_isfinite,
-                self._T_A_subseq_isconstant,
-                self._T_B_subseq_isconstant,
                 self._diags[start_idx:stop_idx],
                 self._ignore_trivial,
             )

@@ -62,6 +62,18 @@ def distance_matrix(T_A, T_B, m):
     return distance_matrix
 
 
+def aamp_distance_matrix(T_A, T_B, m):
+    T_A[np.isinf(T_A)] = np.nan
+    T_B[np.isinf(T_B)] = np.nan
+
+    rolling_T_A = core.rolling_window(T_A, m)
+    rolling_T_B = core.rolling_window(T_B, m)
+
+    distance_matrix = cdist(rolling_T_A, rolling_T_B)
+
+    return distance_matrix
+
+
 def mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     Q = np.asarray(Q)
     T = np.asarray(T)

@@ -30,6 +30,76 @@ def test_stump(T, m):
     npt.assert_almost_equal(ref, comp)
 
 
+@pytest.mark.parametrize("T, m", test_data)
+def test_prescrump(T, m):
+    if T.ndim > 1:
+        T = T.copy()
+        T = T[0]
+
+    ref = stumpy.prescraamp(T, m)
+    comp = stumpy.prescrump(T, m, normalize=False)
+    npt.assert_almost_equal(ref, comp)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_scrump(T, m):
+    if T.ndim > 1:
+        T = T.copy()
+        T = T[0]
+
+    seed = np.random.randint(100000)
+
+    np.random.seed(seed)
+    ref = stumpy.scraamp(T, m)
+    np.random.seed(seed)
+    comp = stumpy.scrump(T, m, normalize=False)
+    npt.assert_almost_equal(ref.P_, comp.P_)
+
+    for i in range(10):
+        ref.update()
+        comp.update()
+        npt.assert_almost_equal(ref.P_, comp.P_)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_scrump_plus_plus(T, m):
+    if T.ndim > 1:
+        T = T.copy()
+        T = T[0]
+    seed = np.random.randint(100000)
+
+    np.random.seed(seed)
+    ref = stumpy.scraamp(T, m, pre_scraamp=True)
+    np.random.seed(seed)
+    comp = stumpy.scrump(T, m, pre_scrump=True, normalize=False)
+    npt.assert_almost_equal(ref.P_, comp.P_)
+
+    for i in range(10):
+        ref.update()
+        comp.update()
+        npt.assert_almost_equal(ref.P_, comp.P_)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_scrump_plus_plus_full(T, m):
+    if T.ndim > 1:
+        T = T.copy()
+        T = T[0]
+
+    seed = np.random.randint(100000)
+
+    np.random.seed(seed)
+    ref = stumpy.scraamp(T, m, percentage=0.1, pre_scraamp=True)
+    np.random.seed(seed)
+    comp = stumpy.scrump(T, m, percentage=0.1, pre_scrump=True, normalize=False)
+    npt.assert_almost_equal(ref.P_, comp.P_)
+
+    for i in range(10):
+        ref.update()
+        comp.update()
+        npt.assert_almost_equal(ref.P_, comp.P_)
+
+
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T, m", test_data)
 def test_stumped(T, m, dask_cluster):

@@ -1597,7 +1597,7 @@ def _get_partial_mp_func(mp_func, dask_client=None, device_id=None):
     return partial_mp_func
 
 
-def compare_parameters(norm, non_norm, exclude=None):
+def compare_parameters(norm, non_norm, exclude=None, translate=None):
     """
     Compare if the parameters in `norm` and `non_norm` are the same
 
@@ -1625,7 +1625,10 @@ def compare_parameters(norm, non_norm, exclude=None):
 
     if exclude is not None:
         for param in exclude:
-            norm_params.remove(param)
+            if param in norm_params:
+                norm_params.remove(param)
+            if param in non_norm_params:
+                non_norm_params.remove(param)
 
     is_same_params = set(norm_params) == set(non_norm_params)
     if not is_same_params:
@@ -1662,12 +1665,15 @@ def non_normalized(non_norm):
     def outer_wrapper(norm):
         @functools.wraps(norm)
         def inner_wrapper(*args, **kwargs):
-            is_same_params = compare_parameters(norm, non_norm, exclude=["normalize"])
+            exclude = ["normalize", "pre_scrump", "pre_scraamp"]
+            is_same_params = compare_parameters(norm, non_norm, exclude=exclude)
 
             if not is_same_params or kwargs.get("normalize", True):
                 return norm(*args, **kwargs)
             else:
                 kwargs = {k: v for k, v in kwargs.items() if k != "normalize"}
+                if "pre_scrump" in kwargs.keys():
+                    kwargs["pre_scraamp"] = kwargs.pop("pre_scrump")
                 return non_norm(*args, **kwargs)
 
         return inner_wrapper
