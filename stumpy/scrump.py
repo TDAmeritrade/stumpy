@@ -451,8 +451,9 @@ class scrump(object):
             self._diags, self._m, self._n_A, self._n_B
         )
         self._chunk_diags_ranges = core._get_array_ranges(
-            self._ndist_counts, self._n_chunks
+            self._ndist_counts, self._n_chunks, truncate=True
         )
+        self._n_chunks = self._chunk_diags_ranges.shape[0]
         self._chunk_idx = 0
 
     def update(self):

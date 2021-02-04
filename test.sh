@@ -54,6 +54,8 @@ check_print()
 
 test_custom()
 {
+    # export NUMBA_DISABLE_JIT=1
+    # export NUMBA_ENABLE_CUDASIM=1
     # Test one or more user-defined functions repeatedly
     for VARIABLE in {1..10}
     do
