@@ -1,3 +1,24 @@
+# 2021-02-04    [ 1.8.0 ]:
+--------------------------
+* bugfixes
+  - Fixed chunk size for `scrump` and `scraamp` when time series are short
+* features
+  - Added `maamp` and `maamped` functions
+  - Added `scraamp` function
+  - Added a new `core.non_normalized` decorator that re-routes normalized functions to non-normalized functions
+  - All z-normalized functions now accept a `normalize` parameter
+* tasks
+  - Renamed `main` branch
+  - Removed Azure pipelines badge
+  - Refactored `subspace`
+  - Refactored non-normalized functions
+  - Added non-normalized support to `floss`
+* documentation
+  - Updated README with `if __name__ == "__main__"` for Dask and Jupyter notebooks
+  - Removed all `aamp` references as `normalize=False` should be used instead
+  - Fixed function docstrings and typos in API docs
+
+
 # 2021-01-20    [ 1.7.2 ]:
 --------------------------
 * bugfixes
@@ -7,7 +28,7 @@
 * tasks
   - Added CI for minimum version dependencies
 * documentation
-  - Updated README to convery NEP 29
+  - Updated README to conver NEP 29
 
 
 # 2021-01-19    [ 1.7.1 ]:

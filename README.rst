@@ -74,10 +74,11 @@ Typical usage (1-dimensional time series data) with `STUMP <https://stumpy.readt
     import stumpy
     import numpy as np
     
-    your_time_series = np.random.rand(10000)
-    window_size = 50  # Approximately, how many data points might be found in a pattern 
+    if __name__ == "__main__":
+        your_time_series = np.random.rand(10000)
+        window_size = 50  # Approximately, how many data points might be found in a pattern 
     
-    matrix_profile = stumpy.stump(your_time_series, m=window_size)
+        matrix_profile = stumpy.stump(your_time_series, m=window_size)
 
 Distributed usage for 1-dimensional time series data with Dask Distributed via `STUMPED <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.stumped>`__:
 
@@ -117,10 +118,11 @@ Multi-dimensional time series data with `MSTUMP <https://stumpy.readthedocs.io/e
     import stumpy
     import numpy as np
 
-    your_time_series = np.random.rand(3, 1000)  # Each row represents data from a different dimension while each column represents data from the same dimension
-    window_size = 50  # Approximately, how many data points might be found in a pattern
+    if __name__ == "__main__":
+        your_time_series = np.random.rand(3, 1000)  # Each row represents data from a different dimension while each column represents data from the same dimension
+        window_size = 50  # Approximately, how many data points might be found in a pattern
 
-    matrix_profile, matrix_profile_indices = stumpy.mstump(your_time_series, m=window_size)
+        matrix_profile, matrix_profile_indices = stumpy.mstump(your_time_series, m=window_size)
 
 Distributed multi-dimensional time series data analysis with Dask Distributed `MSTUMPED <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.mstumped>`__:
 
@@ -145,18 +147,19 @@ Time Series Chains with `Anchored Time Series Chains (ATSC) <https://stumpy.read
     import stumpy
     import numpy as np
     
-    your_time_series = np.random.rand(10000)
-    window_size = 50  # Approximately, how many data points might be found in a pattern 
-    
-    matrix_profile = stumpy.stump(your_time_series, m=window_size)
+    if __name__ == "__main__":
+        your_time_series = np.random.rand(10000)
+        window_size = 50  # Approximately, how many data points might be found in a pattern 
+        
+        matrix_profile = stumpy.stump(your_time_series, m=window_size)
 
-    left_matrix_profile_index = matrix_profile[:, 2]
-    right_matrix_profile_index = matrix_profile[:, 3]
-    idx = 10  # Subsequence index for which to retrieve the anchored time series chain for
+        left_matrix_profile_index = matrix_profile[:, 2]
+        right_matrix_profile_index = matrix_profile[:, 3]
+        idx = 10  # Subsequence index for which to retrieve the anchored time series chain for
 
-    anchored_chain = stumpy.atsc(left_matrix_profile_index, right_matrix_profile_index, idx)
+        anchored_chain = stumpy.atsc(left_matrix_profile_index, right_matrix_profile_index, idx)
 
-    all_chain_set, longest_unanchored_chain = stumpy.allc(left_matrix_profile_index, right_matrix_profile_index)
+        all_chain_set, longest_unanchored_chain = stumpy.allc(left_matrix_profile_index, right_matrix_profile_index)
 
 Semantic Segmentation with `Fast Low-cost Unipotent Semantic Segmentation (FLUSS) <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.fluss>`__:
 
@@ -165,17 +168,18 @@ Semantic Segmentation with `Fast Low-cost Unipotent Semantic Segmentation (FLUSS
     import stumpy
     import numpy as np
 
-    your_time_series = np.random.rand(10000)
-    window_size = 50  # Approximately, how many data points might be found in a pattern
+    if __name__ == "__main__":
+        your_time_series = np.random.rand(10000)
+        window_size = 50  # Approximately, how many data points might be found in a pattern
 
-    matrix_profile = stumpy.stump(your_time_series, m=window_size)
+        matrix_profile = stumpy.stump(your_time_series, m=window_size)
 
-    subseq_len = 50
-    correct_arc_curve, regime_locations = stumpy.fluss(matrix_profile[:, 1], 
-                                                       L=subseq_len, 
-                                                       n_regimes=2, 
-                                                       excl_factor=1
-                                                      )
+        subseq_len = 50
+        correct_arc_curve, regime_locations = stumpy.fluss(matrix_profile[:, 1], 
+                                                        L=subseq_len, 
+                                                        n_regimes=2, 
+                                                        excl_factor=1
+                                                        )
 
 ------------
 Dependencies
