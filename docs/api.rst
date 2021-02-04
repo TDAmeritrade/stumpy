@@ -36,7 +36,7 @@ stumped
 
 .. autofunction:: stumpy.stumped
 
-gpu-stump
+gpu_stump
 =========
 
 .. autofunction:: stumpy.gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True)
@@ -98,7 +98,7 @@ ostinatoed
 gpu_ostinato
 ============
 
-.. autofunction:: gpu_ostinato(Ts, m, device_id=0, normalize=True)
+.. autofunction:: stumpy.gpu_ostinato(Ts, m, device_id=0, normalize=True)
 
 mpdist
 ======

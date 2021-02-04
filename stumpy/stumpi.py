@@ -10,8 +10,9 @@ from .aampi import aampi
 @core.non_normalized(aampi)
 class stumpi(object):
     """
-    Compute an incremental z-normalized matrix profile for streaming data. This
-    is based on the on-line STOMPI and STAMPI algorithms.
+    Compute an incremental z-normalized matrix profile for streaming data
+
+    This is based on the on-line STOMPI and STAMPI algorithms.
 
     Parameters
     ----------

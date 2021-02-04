@@ -11,6 +11,9 @@ def atsc(IL, IR, j):
     """
     Compute the anchored time series chain (ATSC)
 
+    Note that since the matrix profile indices, `IL` and `IR`, are pre-computed,
+    this function is agnostic to subsequence normalization.
+
     Parameters
     ----------
     IL : ndarray
@@ -52,6 +55,9 @@ def atsc(IL, IR, j):
 def allc(IL, IR):
     """
     Compute the all-chain set (ALLC)
+
+    Note that since the matrix profile indices, `IL` and `IR`, are pre-computed,
+    this function is agnostic to subsequence normalization.
 
     Parameters
     ----------
