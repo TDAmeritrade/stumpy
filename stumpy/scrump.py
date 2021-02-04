@@ -245,7 +245,11 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
     return P, I
 
 
-@core.non_normalized(scraamp.scraamp)
+@core.non_normalized(
+    scraamp.scraamp,
+    exclude=["normalize", "pre_scrump", "pre_scraamp"],
+    replace={"pre_scrump": "pre_scraamp"},
+)
 class scrump(object):
     """
     Compute an approximate z-normalized matrix profile

@@ -1597,7 +1597,7 @@ def _get_partial_mp_func(mp_func, dask_client=None, device_id=None):
     return partial_mp_func
 
 
-def compare_parameters(norm, non_norm, exclude=None, translate=None):
+def compare_parameters(norm, non_norm, exclude=None):
     """
     Compare if the parameters in `norm` and `non_norm` are the same
 
@@ -1612,7 +1612,7 @@ def compare_parameters(norm, non_norm, exclude=None, translate=None):
         z-normalized function (or class)
 
     exclude : list
-        A list of parameters to exclude
+        A list of parameters to exclude for the comparison
 
     Returns
     -------
@@ -1634,12 +1634,14 @@ def compare_parameters(norm, non_norm, exclude=None, translate=None):
     if not is_same_params:
         if exclude is not None:
             logger.warning(f"Excluding `{exclude}` parameters, ")
-        logger.warning(f"`{norm}` and `{non_norm}` have different parameters.")
+        logger.warning(f"`{norm}`: ({norm_params}) and ")
+        logger.warning(f"`{non_norm}`: ({non_norm_params}) ")
+        logger.warning("have different parameters.")
 
     return is_same_params
 
 
-def non_normalized(non_norm):
+def non_normalized(non_norm, exclude=None, replace=None):
     """
     Decorator for swapping a z-normalized function (or class) for its complementary
     non-normalized function (or class) as defined by `non_norm`. This requires that
@@ -1655,25 +1657,37 @@ def non_normalized(non_norm):
         The non-normalized function (or class) that is complementary to the
         z-normalized function (or class)
 
+    exclude : list, default None
+        A list of function (or class) parameter names to exclude when comparing the
+        function (or class) signatures
+
+    replace : dict, default None
+        A dictionary of function (or class) parameter key-value pairs. Each key that
+        is found as a parameter name in the `norm` function (or class) will be replaced
+        by its corresponding or complementary parameter name in the `non_norm` function
+        (or class).
+
     Returns
     -------
     outer_wrapper : object
         The desired z-normalized/non-normalized function (or class)
     """
+    if exclude is None:
+        exclude = ["normalize"]
 
     @functools.wraps(non_norm)
     def outer_wrapper(norm):
         @functools.wraps(norm)
         def inner_wrapper(*args, **kwargs):
-            exclude = ["normalize", "pre_scrump", "pre_scraamp"]
             is_same_params = compare_parameters(norm, non_norm, exclude=exclude)
-
             if not is_same_params or kwargs.get("normalize", True):
                 return norm(*args, **kwargs)
             else:
                 kwargs = {k: v for k, v in kwargs.items() if k != "normalize"}
-                if "pre_scrump" in kwargs.keys():
-                    kwargs["pre_scraamp"] = kwargs.pop("pre_scrump")
+                if replace is not None:
+                    for k, v in replace.items():
+                        if k in kwargs.keys():
+                            kwargs[v] = kwargs.pop(k)
                 return non_norm(*args, **kwargs)
 
         return inner_wrapper
