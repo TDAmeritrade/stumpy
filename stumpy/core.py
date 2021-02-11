@@ -1480,20 +1480,21 @@ def _get_array_ranges(a, n_chunks, truncate=False):
         contains the stop indices.
     """
     array_ranges = np.zeros((n_chunks, 2), np.int64)
-    cumsum = a.cumsum() / a.sum()
-    insert = np.linspace(0, 1, n_chunks + 1)[1:-1]
-    idx = 1 + np.searchsorted(cumsum, insert)
-    array_ranges[1:, 0] = idx  # Fill the first column with start indices
-    array_ranges[:-1, 1] = idx  # Fill the second column with exclusive stop indices
-    array_ranges[-1, 1] = a.shape[0]  # Handle the stop index for the final chunk
+    if n_chunks > 0:
+        cumsum = a.cumsum() / a.sum()
+        insert = np.linspace(0, 1, n_chunks + 1)[1:-1]
+        idx = 1 + np.searchsorted(cumsum, insert)
+        array_ranges[1:, 0] = idx  # Fill the first column with start indices
+        array_ranges[:-1, 1] = idx  # Fill the second column with exclusive stop indices
+        array_ranges[-1, 1] = a.shape[0]  # Handle the stop index for the final chunk
 
-    diff_idx = np.diff(idx)
-    if np.any(diff_idx == 0):
-        row_truncation_idx = np.argmin(diff_idx) + 2
-        array_ranges[row_truncation_idx:, 0] = a.shape[0]
-        array_ranges[row_truncation_idx - 1 :, 1] = a.shape[0]
-        if truncate:
-            array_ranges = array_ranges[:row_truncation_idx]
+        diff_idx = np.diff(idx)
+        if np.any(diff_idx == 0):
+            row_truncation_idx = np.argmin(diff_idx) + 2
+            array_ranges[row_truncation_idx:, 0] = a.shape[0]
+            array_ranges[row_truncation_idx - 1 :, 1] = a.shape[0]
+            if truncate:
+                array_ranges = array_ranges[:row_truncation_idx]
 
     return array_ranges
 
