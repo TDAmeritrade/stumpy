@@ -59,6 +59,7 @@ if [ $install_mode == "min" ]; then
 else
     # conda env update --file environment.yml
     mamba env update --file environment.yml
+    echo "Please reboot the server to resolve any CUDA driver/library version mismatches"
 fi
 
 fix_libopenblas
