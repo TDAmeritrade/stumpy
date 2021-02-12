@@ -52,6 +52,12 @@ conda update -y conda
 conda update -y --all
 conda install -y -c conda-forge mamba
 
+if [[ `uname` == "Linux" && `which nvcc | wc -l` -lt "1" ]]; then
+    # conda install -y -c conda-forge cudatoolkit-dev
+    mamba install -y -c conda-forge cudatoolkit-dev
+    echo "Please reboot the server to resolve any CUDA driver/library version mismatches"
+fi
+
 if [ $install_mode == "min" ]; then
     generate_min_environment_yaml
     # conda env update --file environment.min.yml
@@ -59,15 +65,9 @@ if [ $install_mode == "min" ]; then
 else
     # conda env update --file environment.yml
     mamba env update --file environment.yml
-    echo "Please reboot the server to resolve any CUDA driver/library version mismatches"
 fi
 
 fix_libopenblas
-
-if [[ `uname` == "Linux" && `which nvcc | wc -l` -lt "1" ]]; then
-    # conda install -y -c conda-forge cudatoolkit-dev
-    mamba install -y -c conda-forge cudatoolkit-dev
-fi
 
 #conda install -y -c conda-forge numpy scipy numba pandas flake8 flake8-docstrings black pytest-cov
 #conda install -y -c conda-forge dask distributed
