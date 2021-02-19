@@ -1,5 +1,6 @@
 from pkg_resources import get_distribution, DistributionNotFound
 import os.path
+from .core import mass  # noqa: F401
 from .stump import stump  # noqa: F401
 from .stumped import stumped  # noqa: F401
 from .mstump import mstump, subspace  # noqa: F401

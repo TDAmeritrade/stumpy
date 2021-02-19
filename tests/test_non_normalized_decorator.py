@@ -19,6 +19,21 @@ test_data = [
 ]
 
 
+def test_mass():
+    Q = np.random.rand(10)
+    T = np.random.rand(20)
+    ref = stumpy.core.mass_absolute(Q, T)
+    comp = stumpy.core.mass(Q, T, normalize=False)
+    npt.assert_almost_equal(ref, comp)
+
+    Q = np.random.rand(10)
+    T = np.random.rand(20)
+    T, M_T, Σ_T = stumpy.core.preprocess(T, 10)
+    ref = stumpy.core.mass_absolute(Q, T)
+    comp = stumpy.core.mass(Q, T, M_T=M_T, Σ_T=Σ_T, normalize=False)
+    npt.assert_almost_equal(ref, comp)
+
+
 @pytest.mark.parametrize("T, m", test_data)
 def test_stump(T, m):
     if T.ndim > 1:

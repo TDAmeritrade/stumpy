@@ -23,6 +23,124 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+def _compare_parameters(norm, non_norm, exclude=None):
+    """
+    Compare if the parameters in `norm` and `non_norm` are the same
+
+    Parameters
+    ----------
+    norm : object
+        The normalized function (or class) that is complementary to the
+        non-normalized function (or class)
+
+    non_norm : object
+        The non-normalized function (or class) that is complementary to the
+        z-normalized function (or class)
+
+    exclude : list
+        A list of parameters to exclude for the comparison
+
+    Returns
+    -------
+    is_same_params : bool
+        `True` if parameters from both `norm` and `non-norm` are the same. `False`
+        otherwise.
+    """
+    norm_params = list(inspect.signature(norm).parameters.keys())
+    non_norm_params = list(inspect.signature(non_norm).parameters.keys())
+
+    if exclude is not None:
+        for param in exclude:
+            if param in norm_params:
+                norm_params.remove(param)
+            if param in non_norm_params:
+                non_norm_params.remove(param)
+
+    is_same_params = set(norm_params) == set(non_norm_params)
+    if not is_same_params:
+        if exclude is not None:
+            logger.warning(f"Excluding `{exclude}` parameters, ")
+        logger.warning(f"`{norm}`: ({norm_params}) and ")
+        logger.warning(f"`{non_norm}`: ({non_norm_params}) ")
+        logger.warning("have different parameters.")
+
+    return is_same_params
+
+
+def non_normalized(non_norm, exclude=None, replace=None):
+    """
+    Decorator for swapping a z-normalized function (or class) for its complementary
+    non-normalized function (or class) as defined by `non_norm`. This requires that
+    the z-normalized function (or class) has a `normalize` parameter.
+
+    With the exception of `normalize` parameter, the `non_norm` function (or class)
+    must have the same siganture as the `norm` function (or class) signature in order
+    to be compatible. Please use a combination of the `exclude` and/or `replace`
+    parameters when necessary.
+
+    ```
+    def non_norm_func(Q, T, A):
+        ...
+        return
+
+
+    @non_normalized(
+        non_norm_func,
+        exclude=["normalize", "A", "B"],
+        replace={"A": None},
+    )
+    def norm_func(Q, T, B=None, normalize=True):
+        ...
+        return
+    ```
+
+    Parameters
+    ----------
+    non_norm : object
+        The non-normalized function (or class) that is complementary to the
+        z-normalized function (or class)
+
+    exclude : list, default None
+        A list of function (or class) parameter names to exclude when comparing the
+        function (or class) signatures
+
+    replace : dict, default None
+        A dictionary of function (or class) parameter key-value pairs. Each key that
+        is found as a parameter name in the `norm` function (or class) will be replaced
+        by its corresponding or complementary parameter name in the `non_norm` function
+        (or class).
+
+    Returns
+    -------
+    outer_wrapper : object
+        The desired z-normalized/non-normalized function (or class)
+    """
+    if exclude is None:
+        exclude = ["normalize"]
+
+    @functools.wraps(non_norm)
+    def outer_wrapper(norm):
+        @functools.wraps(norm)
+        def inner_wrapper(*args, **kwargs):
+            is_same_params = _compare_parameters(norm, non_norm, exclude=exclude)
+            if not is_same_params or kwargs.get("normalize", True):
+                return norm(*args, **kwargs)
+            else:
+                kwargs = {k: v for k, v in kwargs.items() if k != "normalize"}
+                if replace is not None:
+                    for k, v in replace.items():
+                        if k in kwargs.keys():
+                            if v is None:
+                                _ = kwargs.pop(k)
+                            else:
+                                kwargs[v] = kwargs.pop(k)
+                return non_norm(*args, **kwargs)
+
+        return inner_wrapper
+
+    return outer_wrapper
+
+
 def driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Helper function to raise CudaSupportError driver not found error.
@@ -823,6 +941,143 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return np.sqrt(D_squared)
 
 
+@njit(fastmath=True)
+def _mass_absolute(Q_squared, T_squared, QT):
+    """
+    A Numba JIT compiled algorithm for computing the non-normalized distance profile
+    using the MASS absolute algorithm.
+
+    Parameters
+    ----------
+    Q_squared : ndarray
+        Squared query array or subsequence
+
+    T_squared : ndarray
+        Squared time series or sequence
+
+    QT : ndarray
+        Sliding window dot product of `Q` and `T`
+
+    Returns
+    -------
+    output : ndarray
+        Unnormalized distance profile
+
+    Notes
+    -----
+    `See Mueen's Absolute Algorithm for Similarity Search \
+    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
+    """
+    D = Q_squared + T_squared - 2 * QT
+    D[D < config.STUMPY_D_SQUARED_THRESHOLD] = 0.0
+
+    return np.sqrt(D)
+
+
+def mass_absolute(Q, T, T_subseq_isfinite=None, T_squared=None):
+    """
+    Compute the non-normalized distance profile (i.e., without z-normalization) using
+    the "MASS absolute" algorithm. This is a convenience wrapper around the Numba JIT
+    compiled `_mass_absolute` function.
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array or subsequence
+
+    T : ndarray
+        Time series or sequence
+
+    T_subseq_isfinite : ndarray, default None
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_squared : ndarray, default None
+        Squared time series or sequence
+
+    Returns
+    -------
+    output : ndarray
+        Unnormalized Distance profile
+
+    Notes
+    -----
+    `See Mueen's Absolute Algorithm for Similarity Search \
+    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
+    """
+    Q = Q.copy()
+    Q = np.asarray(Q)
+    check_dtype(Q)
+    m = Q.shape[0]
+
+    if Q.ndim == 2 and Q.shape[1] == 1:  # pragma: no cover
+        Q = Q.flatten()
+
+    if Q.ndim != 1:  # pragma: no cover
+        raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
+
+    T = T.copy()
+    T = np.asarray(T)
+    check_dtype(T)
+    n = T.shape[0]
+
+    if T.ndim == 2 and T.shape[1] == 1:  # pragma: no cover
+        T = T.flatten()
+
+    if T.ndim != 1:  # pragma: no cover
+        raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
+
+    if m > n:  # pragma: no cover
+        raise ValueError(
+            f"The length of `Q` ({len(Q)}) must be less than or equal to "
+            f"the length of `T` ({len(T)}). "
+        )
+
+    distance_profile = np.empty(n - m + 1)
+    if np.any(~np.isfinite(Q)):
+        distance_profile[:] = np.inf
+    else:
+        if T_subseq_isfinite is None:
+            T, T_subseq_isfinite = preprocess_non_normalized(T, m)
+        QT = sliding_dot_product(Q, T)
+        Q_squared = np.sum(Q * Q)
+        if T_squared is None:
+            T_squared = np.sum(rolling_window(T * T, m), axis=1)
+        distance_profile[:] = _mass_absolute(Q_squared, T_squared, QT)
+        distance_profile[~T_subseq_isfinite] = np.inf
+
+    return distance_profile
+
+
+def _mass_absolute_distance_matrix(Q, T, m, distance_matrix):
+    """
+    Compute the full non-normalized (i.e., without z-normalization) distance matrix
+    between all of the subsequences of `Q` and `T` using the MASS absolute algorithm
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array
+
+    T : ndarray
+        Time series or sequence
+
+    m : int
+        Window size
+
+    distance_matrix : ndarray
+        The full output distance matrix. This is mandatory since it may be reused.
+
+    Returns
+    -------
+    None
+    """
+    k, l = distance_matrix.shape
+
+    for i in range(k):
+        distance_matrix[i, :] = mass_absolute(Q[i : i + m], T)
+
+
 def mueen_calculate_distance_profile(Q, T):
     """
     Compute the mueen distance profile
@@ -937,7 +1192,12 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
     return calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
 
 
-def mass(Q, T, M_T=None, Σ_T=None):
+@non_normalized(
+    mass_absolute,
+    exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "T_squared"],
+    replace={"M_T": None, "Σ_T": None},
+)
+def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
     """
     Compute the distance profile using the MASS algorithm. This is a convenience
     wrapper around the Numba JIT compiled `_mass` function.
@@ -955,6 +1215,11 @@ def mass(Q, T, M_T=None, Σ_T=None):
 
     Σ_T : ndarray, default None
         Sliding standard deviation of `T`
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------
@@ -1045,135 +1310,6 @@ def _mass_distance_matrix(Q, T, m, distance_matrix):
 
     for i in range(k):
         distance_matrix[i, :] = mass(Q[i : i + m], T, M_T, Σ_T)
-
-
-@njit(fastmath=True)
-def _mass_absolute(Q_squared, T_squared, QT):
-    """
-    A Numba JIT compiled algorithm for computing the non-normalized distance profile
-    using the MASS absolute algorithm.
-
-    Parameters
-    ----------
-    Q_squared : ndarray
-        Squared query array or subsequence
-
-    T_squared : ndarray
-        Squared time series or sequence
-
-    QT : ndarray
-        Sliding window dot product of `Q` and `T`
-
-    Returns
-    -------
-    output : ndarray
-        Unnormalized distance profile
-
-    Notes
-    -----
-    `See Mueen's Absolute Algorithm for Similarity Search \
-    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
-    """
-    D = Q_squared + T_squared - 2 * QT
-    D[D < config.STUMPY_D_SQUARED_THRESHOLD] = 0.0
-
-    return np.sqrt(D)
-
-
-def mass_absolute(Q, T):
-    """
-    Compute the non-normalized distance profile (i.e., without z-normalization) using
-    the "MASS absolute" algorithm. This is a convenience wrapper around the Numba JIT
-    compiled `_mass_absolute` function.
-
-    Parameters
-    ----------
-    Q : ndarray
-        Query array or subsequence
-
-    T : ndarray
-        Time series or sequence
-
-    Returns
-    -------
-    output : ndarray
-        Unnormalized Distance profile
-
-    Notes
-    -----
-    `See Mueen's Absolute Algorithm for Similarity Search \
-    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
-    """
-    Q = Q.copy()
-    Q = np.asarray(Q)
-    check_dtype(Q)
-    m = Q.shape[0]
-
-    if Q.ndim == 2 and Q.shape[1] == 1:  # pragma: no cover
-        Q = Q.flatten()
-
-    if Q.ndim != 1:  # pragma: no cover
-        raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
-
-    T = T.copy()
-    T = np.asarray(T)
-    check_dtype(T)
-    n = T.shape[0]
-
-    if T.ndim == 2 and T.shape[1] == 1:  # pragma: no cover
-        T = T.flatten()
-
-    if T.ndim != 1:  # pragma: no cover
-        raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
-
-    if m > n:  # pragma: no cover
-        raise ValueError(
-            f"The length of `Q` ({len(Q)}) must be less than or equal to "
-            f"the length of `T` ({len(T)}). "
-        )
-
-    distance_profile = np.empty(n - m + 1)
-    if np.any(~np.isfinite(Q)):
-        distance_profile[:] = np.inf
-    else:
-        T_subseq_isfinite = rolling_isfinite(T, m)
-        T[~np.isfinite(T)] = 0.0
-        QT = sliding_dot_product(Q, T)
-        Q_squared = np.sum(Q * Q)
-        T_squared = np.sum(rolling_window(T * T, m), axis=1)
-        distance_profile[:] = _mass_absolute(Q_squared, T_squared, QT)
-        distance_profile[~T_subseq_isfinite] = np.inf
-
-    return distance_profile
-
-
-def _mass_absolute_distance_matrix(Q, T, m, distance_matrix):
-    """
-    Compute the full non-normalized (i.e., without z-normalization) distance matrix
-    between all of the subsequences of `Q` and `T` using the MASS absolute algorithm
-
-    Parameters
-    ----------
-    Q : ndarray
-        Query array
-
-    T : ndarray
-        Time series or sequence
-
-    m : int
-        Window size
-
-    distance_matrix : ndarray
-        The full output distance matrix. This is mandatory since it may be reused.
-
-    Returns
-    -------
-    None
-    """
-    k, l = distance_matrix.shape
-
-    for i in range(k):
-        distance_matrix[i, :] = mass_absolute(Q[i : i + m], T)
 
 
 def _get_QT(start, T_A, T_B, m):
@@ -1308,9 +1444,8 @@ def preprocess_non_normalized(T, m):
     check_dtype(T)
     check_window_size(m, max_size=T.shape[-1])
 
-    T[np.isinf(T)] = np.nan
     T_subseq_isfinite = rolling_isfinite(T, m)
-    T[np.isnan(T)] = 0
+    T[~np.isfinite(T)] = 0.0
 
     return T, T_subseq_isfinite
 
@@ -1596,101 +1731,3 @@ def _get_partial_mp_func(mp_func, dask_client=None, device_id=None):
         partial_mp_func = mp_func
 
     return partial_mp_func
-
-
-def compare_parameters(norm, non_norm, exclude=None):
-    """
-    Compare if the parameters in `norm` and `non_norm` are the same
-
-    Parameters
-    ----------
-    norm : object
-        The normalized function (or class) that is complementary to the
-        non-normalized function (or class)
-
-    non_norm : object
-        The non-normalized function (or class) that is complementary to the
-        z-normalized function (or class)
-
-    exclude : list
-        A list of parameters to exclude for the comparison
-
-    Returns
-    -------
-    is_same_params : bool
-        `True` if parameters from both `norm` and `non-norm` are the same. `False`
-        otherwise.
-    """
-    norm_params = list(inspect.signature(norm).parameters.keys())
-    non_norm_params = list(inspect.signature(non_norm).parameters.keys())
-
-    if exclude is not None:
-        for param in exclude:
-            if param in norm_params:
-                norm_params.remove(param)
-            if param in non_norm_params:
-                non_norm_params.remove(param)
-
-    is_same_params = set(norm_params) == set(non_norm_params)
-    if not is_same_params:
-        if exclude is not None:
-            logger.warning(f"Excluding `{exclude}` parameters, ")
-        logger.warning(f"`{norm}`: ({norm_params}) and ")
-        logger.warning(f"`{non_norm}`: ({non_norm_params}) ")
-        logger.warning("have different parameters.")
-
-    return is_same_params
-
-
-def non_normalized(non_norm, exclude=None, replace=None):
-    """
-    Decorator for swapping a z-normalized function (or class) for its complementary
-    non-normalized function (or class) as defined by `non_norm`. This requires that
-    the z-normalized function (or class) has a `normalize` parameter.
-
-    With the exception of `normalize` parameter, the `non_norm` function (or class)
-    must have the same siganture as the `norm` function (or class) signature in order
-    to be compatible.
-
-    Parameters
-    ----------
-    non_norm : object
-        The non-normalized function (or class) that is complementary to the
-        z-normalized function (or class)
-
-    exclude : list, default None
-        A list of function (or class) parameter names to exclude when comparing the
-        function (or class) signatures
-
-    replace : dict, default None
-        A dictionary of function (or class) parameter key-value pairs. Each key that
-        is found as a parameter name in the `norm` function (or class) will be replaced
-        by its corresponding or complementary parameter name in the `non_norm` function
-        (or class).
-
-    Returns
-    -------
-    outer_wrapper : object
-        The desired z-normalized/non-normalized function (or class)
-    """
-    if exclude is None:
-        exclude = ["normalize"]
-
-    @functools.wraps(non_norm)
-    def outer_wrapper(norm):
-        @functools.wraps(norm)
-        def inner_wrapper(*args, **kwargs):
-            is_same_params = compare_parameters(norm, non_norm, exclude=exclude)
-            if not is_same_params or kwargs.get("normalize", True):
-                return norm(*args, **kwargs)
-            else:
-                kwargs = {k: v for k, v in kwargs.items() if k != "normalize"}
-                if replace is not None:
-                    for k, v in replace.items():
-                        if k in kwargs.keys():
-                            kwargs[v] = kwargs.pop(k)
-                return non_norm(*args, **kwargs)
-
-        return inner_wrapper
-
-    return outer_wrapper

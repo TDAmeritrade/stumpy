@@ -10,6 +10,7 @@ STUMPY API
     stumpy.stump
     stumpy.stumped
     stumpy.gpu_stump
+    stumpy.mass
     stumpy.scrump
     stumpy.stumpi
     stumpy.mstump
@@ -40,6 +41,11 @@ gpu_stump
 =========
 
 .. autofunction:: stumpy.gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True)
+
+mass
+====
+
+.. autofunction:: stumpy.mass
 
 scrump
 ======

@@ -771,5 +771,5 @@ def test_rolling_isfinite():
 
 def test_compare_parameters():
     assert (
-        core.compare_parameters(core.rolling_window, core.z_norm, exclude=[]) == False
+        core._compare_parameters(core.rolling_window, core.z_norm, exclude=[]) == False
     )
