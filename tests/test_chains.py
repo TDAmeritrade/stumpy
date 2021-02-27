@@ -22,7 +22,6 @@ def test_atsc(Value, IR, IL):
 
 @pytest.mark.parametrize("Value, IR, IL", test_data)
 def test_allc(Value, IR, IL):
-    j = 2
     S_ref = [
         np.array([1, 7, 11], dtype=np.int64),
         np.array([0], dtype=np.int64),

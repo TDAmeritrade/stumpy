@@ -2,9 +2,8 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 from stumpy import gpu_aamp
-from stumpy import core, config
+from stumpy import config
 from numba import cuda
-import math
 import pytest
 import naive
 

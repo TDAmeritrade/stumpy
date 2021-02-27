@@ -16,7 +16,6 @@ def test_aampi_int_input():
 
 def test_aampi_self_join():
     m = 3
-    zone = int(np.ceil(m / 4))
 
     seed = np.random.randint(100000)
     np.random.seed(seed)
@@ -78,7 +77,6 @@ def test_aampi_self_join():
 
 def test_aampi_self_join_egress():
     m = 3
-    zone = int(np.ceil(m / 4))
 
     seed = np.random.randint(100000)
     np.random.seed(seed)
@@ -185,7 +183,6 @@ def test_aampi_self_join_egress():
 @pytest.mark.parametrize("substitution_locations", substitution_locations)
 def test_aampi_init_nan_inf_self_join(substitute, substitution_locations):
     m = 3
-    zone = int(np.ceil(m / 4))
 
     seed = np.random.randint(100000)
     # seed = 58638
@@ -242,7 +239,6 @@ def test_aampi_init_nan_inf_self_join(substitute, substitution_locations):
 @pytest.mark.parametrize("substitution_locations", substitution_locations)
 def test_aampi_init_nan_inf_self_join_egress(substitute, substitution_locations):
     m = 3
-    zone = int(np.ceil(m / 4))
 
     seed = np.random.randint(100000)
     # seed = 58638
@@ -359,7 +355,6 @@ def test_aampi_init_nan_inf_self_join_egress(substitute, substitution_locations)
 @pytest.mark.parametrize("substitution_locations", substitution_locations)
 def test_aampi_stream_nan_inf_self_join(substitute, substitution_locations):
     m = 3
-    zone = int(np.ceil(m / 4))
 
     seed = np.random.randint(100000)
 
@@ -412,7 +407,6 @@ def test_aampi_stream_nan_inf_self_join(substitute, substitution_locations):
 @pytest.mark.parametrize("substitution_locations", substitution_locations)
 def test_aampi_stream_nan_inf_self_join_egress(substitute, substitution_locations):
     m = 3
-    zone = int(np.ceil(m / 4))
 
     seed = np.random.randint(100000)
 
@@ -526,7 +520,6 @@ def test_aampi_stream_nan_inf_self_join_egress(substitute, substitution_location
 
 def test_aampi_constant_subsequence_self_join():
     m = 3
-    zone = int(np.ceil(m / 4))
 
     seed = np.random.randint(100000)
     np.random.seed(seed)
@@ -538,11 +531,11 @@ def test_aampi_constant_subsequence_self_join():
         stream.update(t)
 
     comp_P = stream.P_
-    comp_I = stream.I_
+    # comp_I = stream.I_
 
     ref_mp = naive.aamp(stream.T_, m)
     ref_P = ref_mp[:, 0]
-    ref_I = ref_mp[:, 1]
+    # ref_I = ref_mp[:, 1]
 
     naive.replace_inf(ref_P)
     naive.replace_inf(comp_P)
@@ -559,7 +552,7 @@ def test_aampi_constant_subsequence_self_join():
         stream.update(t)
 
     comp_P = stream.P_
-    comp_I = stream.I_
+    # comp_I = stream.I_
 
     naive.replace_inf(comp_P)
 
@@ -569,7 +562,6 @@ def test_aampi_constant_subsequence_self_join():
 
 def test_aampi_constant_subsequence_self_join_egress():
     m = 3
-    zone = int(np.ceil(m / 4))
 
     seed = np.random.randint(100000)
     np.random.seed(seed)
@@ -578,16 +570,16 @@ def test_aampi_constant_subsequence_self_join_egress():
 
     ref_mp = naive.aampi_egress(T, m)
     ref_P = ref_mp.P_.copy()
-    ref_I = ref_mp.I_
+    # ref_I = ref_mp.I_
     ref_left_P = ref_mp.left_P_.copy()
-    ref_left_I = ref_mp.left_I_
+    # ref_left_I = ref_mp.left_I_
 
     stream = aampi(T, m, egress=True)
 
     comp_P = stream.P_.copy()
-    comp_I = stream.I_
+    # comp_I = stream.I_
     comp_left_P = stream.left_P_.copy()
-    comp_left_I = stream.left_I_
+    # comp_left_I = stream.left_I_
 
     naive.replace_inf(ref_P)
     naive.replace_inf(comp_P)
@@ -605,14 +597,14 @@ def test_aampi_constant_subsequence_self_join_egress():
         stream.update(t)
 
         comp_P = stream.P_.copy()
-        comp_I = stream.I_
+        # comp_I = stream.I_
         comp_left_P = stream.left_P_.copy()
-        comp_left_I = stream.left_I_
+        # comp_left_I = stream.left_I_
 
         ref_P = ref_mp.P_.copy()
-        ref_I = ref_mp.I_
+        # ref_I = ref_mp.I_
         ref_left_P = ref_mp.left_P_.copy()
-        ref_left_I = ref_mp.left_I_
+        # ref_left_I = ref_mp.left_I_
 
         naive.replace_inf(ref_P)
         naive.replace_inf(ref_left_P)
@@ -630,16 +622,16 @@ def test_aampi_constant_subsequence_self_join_egress():
 
     ref_mp = naive.aampi_egress(T, m)
     ref_P = ref_mp.P_.copy()
-    ref_I = ref_mp.I_
+    # ref_I = ref_mp.I_
     ref_left_P = ref_mp.left_P_.copy()
-    ref_left_I = ref_mp.left_I_
+    # ref_left_I = ref_mp.left_I_
 
     stream = aampi(T, m, egress=True)
 
     comp_P = stream.P_.copy()
-    comp_I = stream.I_
+    # comp_I = stream.I_
     comp_left_P = stream.left_P_.copy()
-    comp_left_I = stream.left_I_
+    # comp_left_I = stream.left_I_
 
     naive.replace_inf(ref_P)
     naive.replace_inf(comp_P)
@@ -657,14 +649,14 @@ def test_aampi_constant_subsequence_self_join_egress():
         stream.update(t)
 
         comp_P = stream.P_.copy()
-        comp_I = stream.I_
+        # comp_I = stream.I_
         comp_left_P = stream.left_P_.copy()
-        comp_left_I = stream.left_I_
+        # comp_left_I = stream.left_I_
 
         ref_P = ref_mp.P_.copy()
-        ref_I = ref_mp.I_
+        # ref_I = ref_mp.I_
         ref_left_P = ref_mp.left_P_.copy()
-        ref_left_I = ref_mp.left_I_
+        # ref_left_I = ref_mp.left_I_
 
         naive.replace_inf(ref_P)
         naive.replace_inf(ref_left_P)
@@ -679,8 +671,6 @@ def test_aampi_constant_subsequence_self_join_egress():
 
 def test_aampi_identical_subsequence_self_join():
     m = 3
-    zone = int(np.ceil(m / 4))
-
     seed = np.random.randint(100000)
     np.random.seed(seed)
 
@@ -694,11 +684,11 @@ def test_aampi_identical_subsequence_self_join():
         stream.update(t)
 
     comp_P = stream.P_
-    comp_I = stream.I_
+    # comp_I = stream.I_
 
     ref_mp = naive.aamp(stream.T_, m)
     ref_P = ref_mp[:, 0]
-    ref_I = ref_mp[:, 1]
+    # ref_I = ref_mp[:, 1]
 
     naive.replace_inf(ref_P)
     naive.replace_inf(comp_P)
@@ -718,7 +708,7 @@ def test_aampi_identical_subsequence_self_join():
         stream.update(t)
 
     comp_P = stream.P_
-    comp_I = stream.I_
+    # comp_I = stream.I_
 
     naive.replace_inf(comp_P)
 
@@ -728,7 +718,6 @@ def test_aampi_identical_subsequence_self_join():
 
 def test_aampi_identical_subsequence_self_join_egress():
     m = 3
-    zone = int(np.ceil(m / 4))
 
     seed = np.random.randint(100000)
     np.random.seed(seed)
@@ -740,16 +729,16 @@ def test_aampi_identical_subsequence_self_join_egress():
 
     ref_mp = naive.aampi_egress(T, m)
     ref_P = ref_mp.P_.copy()
-    ref_I = ref_mp.I_
+    # ref_I = ref_mp.I_
     ref_left_P = ref_mp.left_P_.copy()
-    ref_left_I = ref_mp.left_I_
+    # ref_left_I = ref_mp.left_I_
 
     stream = aampi(T, m, egress=True)
 
     comp_P = stream.P_.copy()
-    comp_I = stream.I_
+    # comp_I = stream.I_
     comp_left_P = stream.left_P_.copy()
-    comp_left_I = stream.left_I_
+    # comp_left_I = stream.left_I_
 
     naive.replace_inf(ref_P)
     naive.replace_inf(comp_P)
@@ -769,14 +758,14 @@ def test_aampi_identical_subsequence_self_join_egress():
         stream.update(t)
 
         comp_P = stream.P_.copy()
-        comp_I = stream.I_
+        # comp_I = stream.I_
         comp_left_P = stream.left_P_.copy()
-        comp_left_I = stream.left_I_
+        # comp_left_I = stream.left_I_
 
         ref_P = ref_mp.P_.copy()
-        ref_I = ref_mp.I_
+        # ref_I = ref_mp.I_
         ref_left_P = ref_mp.left_P_.copy()
-        ref_left_I = ref_mp.left_I_
+        # ref_left_I = ref_mp.left_I_
 
         naive.replace_inf(ref_P)
         naive.replace_inf(ref_left_P)
@@ -799,16 +788,16 @@ def test_aampi_identical_subsequence_self_join_egress():
 
     ref_mp = naive.aampi_egress(T, m)
     ref_P = ref_mp.P_.copy()
-    ref_I = ref_mp.I_
+    # ref_I = ref_mp.I_
     ref_left_P = ref_mp.left_P_.copy()
-    ref_left_I = ref_mp.left_I_
+    # ref_left_I = ref_mp.left_I_
 
     stream = aampi(T, m, egress=True)
 
     comp_P = stream.P_.copy()
-    comp_I = stream.I_
+    # comp_I = stream.I_
     comp_left_P = stream.left_P_.copy()
-    comp_left_I = stream.left_I_
+    # comp_left_I = stream.left_I_
 
     naive.replace_inf(ref_P)
     naive.replace_inf(comp_P)
@@ -828,14 +817,14 @@ def test_aampi_identical_subsequence_self_join_egress():
         stream.update(t)
 
         comp_P = stream.P_.copy()
-        comp_I = stream.I_
+        # comp_I = stream.I_
         comp_left_P = stream.left_P_.copy()
-        comp_left_I = stream.left_I_
+        # comp_left_I = stream.left_I_
 
         ref_P = ref_mp.P_.copy()
-        ref_I = ref_mp.I_
+        # ref_I = ref_mp.I_
         ref_left_P = ref_mp.left_P_.copy()
-        ref_left_I = ref_mp.left_I_
+        # ref_left_I = ref_mp.left_I_
 
         naive.replace_inf(ref_P)
         naive.replace_inf(ref_left_P)

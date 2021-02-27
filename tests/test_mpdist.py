@@ -2,7 +2,7 @@ from functools import partial
 import math
 import numpy as np
 import numpy.testing as npt
-from stumpy import mpdist, mpdisted, core
+from stumpy import mpdist, mpdisted
 from stumpy.mpdist import (
     _mpdist,
     _compute_P_ABBA,
