@@ -400,7 +400,6 @@ def mstump(T, m, excl_zone, include=None, discords=False):
 
 def maamp(T, m, excl_zone, include=None, discords=False):
     T = T.copy()
-    T_isfinite = core.rolling_isfinite(T, m)
 
     d, n = T.shape
     k = n - m + 1
@@ -410,7 +409,6 @@ def maamp(T, m, excl_zone, include=None, discords=False):
 
     for i in range(k):
         Q = T[:, i : i + m]
-        Q_isfinite = core.rolling_isfinite(Q, m)
         D = multi_mass_absolute(Q, T, m, include, discords)
 
         start_row_idx = 0

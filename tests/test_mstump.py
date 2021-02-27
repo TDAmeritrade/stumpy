@@ -4,7 +4,6 @@ import pandas as pd
 from stumpy import core, config
 from stumpy import mstump, subspace
 from stumpy.mstump import (
-    _mstump,
     _multi_mass,
     _query_mstump_profile,
     _get_first_mstump_profile,

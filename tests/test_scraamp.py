@@ -1,6 +1,5 @@
 import numpy as np
 import numpy.testing as npt
-import pandas as pd
 from stumpy import scraamp, core, aamp, config
 from stumpy.scraamp import prescraamp
 import pytest
@@ -28,7 +27,6 @@ def naive_prescraamp(T_A, m, T_B, s, exclusion_zone=None):
     distance_matrix = naive.aamp_distance_matrix(T_A, T_B, m)
 
     n_A = T_A.shape[0]
-    n_B = T_B.shape[0]
     l = n_A - m + 1
 
     P = np.empty(l)
@@ -283,7 +281,7 @@ def test_scraamp_A_B_join_swap(T_A, T_B, percentages):
         np.random.seed(seed)
         ref_mp = naive_scraamp(T_B, m, T_A, percentage, None, False, None)
         ref_P = ref_mp[:, 0]
-        ref_I = ref_mp[:, 1]
+        # ref_I = ref_mp[:, 1]
         ref_left_I = ref_mp[:, 2]
         ref_right_I = ref_mp[:, 3]
 
@@ -293,7 +291,7 @@ def test_scraamp_A_B_join_swap(T_A, T_B, percentages):
         )
         approx.update()
         comp_P = approx.P_
-        comp_I = approx.I_
+        # comp_I = approx.I_
         comp_left_I = approx.left_I_
         comp_right_I = approx.right_I_
 
@@ -384,7 +382,6 @@ def test_scraamp_self_join_full(T_A, T_B):
 def test_scraamp_A_B_join_full(T_A, T_B):
 
     m = 3
-    zone = int(np.ceil(m / 4))
 
     ref_mp = naive.aamp(T_A, m, T_B=T_B)
     ref_P = ref_mp[:, 0]
@@ -425,7 +422,6 @@ def test_scraamp_A_B_join_full(T_A, T_B):
 def test_scraamp_A_B_join_full_swap(T_A, T_B):
 
     m = 3
-    zone = int(np.ceil(m / 4))
 
     ref_mp = naive.aamp(T_B, m, T_B=T_A)
     ref_P = ref_mp[:, 0]
@@ -498,8 +494,8 @@ def test_scraamp_plus_plus_self_join(T_A, T_B, percentages):
                     ref_mp[i, 1] = ref_I[i]
             ref_P = ref_mp[:, 0]
             ref_I = ref_mp[:, 1]
-            ref_left_I = ref_mp[:, 2]
-            ref_right_I = ref_mp[:, 3]
+            # ref_left_I = ref_mp[:, 2]
+            # ref_right_I = ref_mp[:, 3]
 
             np.random.seed(seed)
             approx = scraamp(
@@ -513,8 +509,8 @@ def test_scraamp_plus_plus_self_join(T_A, T_B, percentages):
             approx.update()
             comp_P = approx.P_
             comp_I = approx.I_
-            comp_left_I = approx.left_I_
-            comp_right_I = approx.right_I_
+            # comp_left_I = approx.left_I_
+            # comp_right_I = approx.right_I_
 
             naive.replace_inf(ref_P)
             naive.replace_inf(comp_I)
@@ -671,9 +667,9 @@ def test_scraamp_constant_subsequence_self_join(percentages):
         np.random.seed(seed)
         ref_mp = naive_scraamp(T, m, T, percentage, zone, False, None)
         ref_P = ref_mp[:, 0]
-        ref_I = ref_mp[:, 1]
-        ref_left_I = ref_mp[:, 2]
-        ref_right_I = ref_mp[:, 3]
+        # ref_I = ref_mp[:, 1]
+        # ref_left_I = ref_mp[:, 2]
+        # ref_right_I = ref_mp[:, 3]
 
         np.random.seed(seed)
         approx = scraamp(
@@ -681,9 +677,9 @@ def test_scraamp_constant_subsequence_self_join(percentages):
         )
         approx.update()
         comp_P = approx.P_
-        comp_I = approx.I_
-        comp_left_I = approx.left_I_
-        comp_right_I = approx.right_I_
+        # comp_I = approx.I_
+        # comp_left_I = approx.left_I_
+        # comp_right_I = approx.right_I_
 
         naive.replace_inf(ref_P)
         naive.replace_inf(comp_P)
@@ -709,9 +705,9 @@ def test_scraamp_identical_subsequence_self_join(percentages):
         np.random.seed(seed)
         ref_mp = naive_scraamp(T, m, T, percentage, zone, False, None)
         ref_P = ref_mp[:, 0]
-        ref_I = ref_mp[:, 1]
-        ref_left_I = ref_mp[:, 2]
-        ref_right_I = ref_mp[:, 3]
+        # ref_I = ref_mp[:, 1]
+        # ref_left_I = ref_mp[:, 2]
+        # ref_right_I = ref_mp[:, 3]
 
         np.random.seed(seed)
         approx = scraamp(
@@ -719,9 +715,9 @@ def test_scraamp_identical_subsequence_self_join(percentages):
         )
         approx.update()
         comp_P = approx.P_
-        comp_I = approx.I_
-        comp_left_I = approx.left_I_
-        comp_right_I = approx.right_I_
+        # comp_I = approx.I_
+        # comp_left_I = approx.left_I_
+        # comp_right_I = approx.right_I_
 
         naive.replace_inf(ref_P)
         naive.replace_inf(comp_P)

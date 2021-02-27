@@ -4,7 +4,6 @@ import pandas as pd
 from stumpy import config, aamped
 from dask.distributed import Client, LocalCluster
 import pytest
-import warnings
 import naive
 
 
@@ -145,7 +144,6 @@ def test_aamped_one_constant_subsequence_self_join(dask_cluster):
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        zone = int(np.ceil(m / 4))
         ref_mp = naive.aamp(T_A, m)
         comp_mp = aamped(dask_client, T_A, m, ignore_trivial=True)
         naive.replace_inf(ref_mp)
@@ -165,7 +163,6 @@ def test_aamped_one_constant_subsequence_self_join_df(dask_cluster):
             (np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64))
         )
         m = 3
-        zone = int(np.ceil(m / 4))
         ref_mp = naive.aamp(T_A, m)
         comp_mp = aamped(dask_client, pd.Series(T_A), m, ignore_trivial=True)
         naive.replace_inf(ref_mp)
@@ -270,7 +267,6 @@ def test_aamped_identical_subsequence_self_join(dask_cluster):
         T_A[1 : 1 + identical.shape[0]] = identical
         T_A[11 : 11 + identical.shape[0]] = identical
         m = 3
-        zone = int(np.ceil(m / 4))
         ref_mp = naive.aamp(T_A, m)
         comp_mp = aamped(dask_client, T_A, m, ignore_trivial=True)
         naive.replace_inf(ref_mp)
@@ -286,7 +282,7 @@ def test_aamped_identical_subsequence_self_join(dask_cluster):
 @pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
-def test_aamped_one_constant_subsequence_A_B_join(dask_cluster):
+def test_aamped_identical_subsequence_A_B_join(dask_cluster):
     with Client(dask_cluster) as dask_client:
         identical = np.random.rand(8)
         T_A = np.random.rand(20)
@@ -340,7 +336,6 @@ def test_aamped_one_subsequence_inf_self_join(
         T_B_sub = T_B.copy()
         T_B_sub[substitution_location_B] = np.inf
 
-        zone = int(np.ceil(m / 4))
         ref_mp = naive.aamp(T_B_sub, m)
         comp_mp = aamped(dask_client, T_B_sub, m, ignore_trivial=True)
         naive.replace_inf(ref_mp)
@@ -357,7 +352,6 @@ def test_aamped_nan_zero_mean_self_join(dask_cluster):
         T = np.array([-1, 0, 1, np.inf, 1, 0, -1])
         m = 3
 
-        zone = int(np.ceil(m / 4))
         ref_mp = naive.aamp(T, m)
         comp_mp = aamped(dask_client, T, m, ignore_trivial=True)
 
@@ -403,7 +397,6 @@ def test_aamped_one_subsequence_nan_self_join(
         T_B_sub = T_B.copy()
         T_B_sub[substitution_location_B] = np.nan
 
-        zone = int(np.ceil(m / 4))
         ref_mp = naive.aamp(T_B_sub, m)
         comp_mp = aamped(dask_client, T_B_sub, m, ignore_trivial=True)
         naive.replace_inf(ref_mp)

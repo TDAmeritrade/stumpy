@@ -4,7 +4,6 @@ import pandas as pd
 from stumpy import core, config
 from stumpy import maamp, maamp_subspace
 from stumpy.maamp import (
-    _maamp,
     _multi_mass_absolute,
     _query_maamp_profile,
     _get_first_maamp_profile,

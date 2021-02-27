@@ -1,10 +1,9 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import core, maamped, config
+from stumpy import maamped, config
 import pytest
 from dask.distributed import Client, LocalCluster
-import warnings
 import naive
 
 
