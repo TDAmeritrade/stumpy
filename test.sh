@@ -116,33 +116,7 @@ test_unit()
     check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_constant_subsequence.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_constant_subsequences.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_constant_subsequences_swap.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_subsequence_nan_self_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_subsequence_inf_self_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_subsequence_nan_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_subsequence_inf_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_nan_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_inf_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_nan_inf_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_nan_inf_A_B_join_swap.py
-    check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_maamped.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_maamped_one_subsequence_inf_self_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_maamped_one_subsequence_nan_self_join.py
     check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_ostinato.py
     check_errs $?

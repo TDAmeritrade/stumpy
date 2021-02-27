@@ -20,6 +20,8 @@ test_data = [
     (np.random.uniform(-1000, 1000, [5, 20]).astype(np.float64), 5),
 ]
 
+substitution_locations = [slice(0, 0), 0, -1, slice(1, 3), [0, 3]]
+
 
 def test_maamped_int_input(dask_cluster):
     with pytest.raises(TypeError):
@@ -136,3 +138,79 @@ def test_maamped_identical_subsequence_self_join(dask_cluster):
         npt.assert_almost_equal(
             ref_P, comp_P, decimal=config.STUMPY_TEST_PRECISION
         )  # ignore indices
+
+
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.parametrize("T, m", test_data)
+@pytest.mark.parametrize("substitution_location", substitution_locations)
+def test_maamped_one_subsequence_inf_self_join_first_dimension(
+    T, m, substitution_location, dask_cluster
+):
+    with Client(dask_cluster) as dask_client:
+        excl_zone = int(np.ceil(m / 4))
+
+        T_sub = T.copy()
+        T_sub[0, substitution_location] = np.inf
+
+        ref_P, ref_I = naive.maamp(T_sub, m, excl_zone)
+        comp_P, comp_I = maamped(dask_client, T_sub, m)
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+
+
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.parametrize("T, m", test_data)
+@pytest.mark.parametrize("substitution_location", substitution_locations)
+def test_maamped_one_subsequence_inf_self_join_all_dimensions(
+    T, m, substitution_location, dask_cluster
+):
+    with Client(dask_cluster) as dask_client:
+        excl_zone = int(np.ceil(m / 4))
+
+        T_sub = T.copy()
+        T_sub[:, substitution_location] = np.inf
+
+        ref_P, ref_I = naive.maamp(T_sub, m, excl_zone)
+        comp_P, comp_I = maamped(dask_client, T_sub, m)
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+
+
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.parametrize("T, m", test_data)
+@pytest.mark.parametrize("substitution_location", substitution_locations)
+def test_maamped_one_subsequence_nan_self_join_first_dimension(
+    T, m, substitution_location, dask_cluster
+):
+    with Client(dask_cluster) as dask_client:
+        excl_zone = int(np.ceil(m / 4))
+
+        T_sub = T.copy()
+        T_sub[0, substitution_location] = np.nan
+
+        ref_P, ref_I = naive.maamp(T_sub, m, excl_zone)
+        comp_P, comp_I = maamped(dask_client, T_sub, m)
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+
+
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.parametrize("T, m", test_data)
+@pytest.mark.parametrize("substitution_location", substitution_locations)
+def test_maamped_one_subsequence_nan_self_join_all_dimensions(
+    T, m, substitution_location, dask_cluster
+):
+    with Client(dask_cluster) as dask_client:
+        excl_zone = int(np.ceil(m / 4))
+
+        T_sub = T.copy()
+        T_sub[:, substitution_location] = np.nan
+
+        ref_P, ref_I = naive.maamp(T_sub, m, excl_zone)
+        comp_P, comp_I = maamped(dask_client, T_sub, m)
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
