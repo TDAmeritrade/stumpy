@@ -23,7 +23,7 @@
     :target: https://stumpy.readthedocs.io/
     :alt: ReadTheDocs Status
 .. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/gh/TDAmeritrade/stumpy/master?filepath=notebooks
+    :target: https://mybinder.org/v2/gh/TDAmeritrade/stumpy/main?filepath=notebooks
     :alt: Binder
 .. image:: http://joss.theoj.org/papers/10.21105/joss.01504/status.svg
     :target: https://doi.org/10.21105/joss.01504
