@@ -47,9 +47,7 @@ def test_motifs_one_motif():
     left_profile_values = [0]
 
     P = stump(T, m, ignore_trivial=True)
-    right_indices, right_profile_values = search.motifs(
-        T, P[:, 0], k=k, atol=0.001
-    )
+    right_indices, right_profile_values = search.motifs(T, P[:, 0], k=k, atol=0.001)
 
     npt.assert_array_equal(left_indices, right_indices)
     npt.assert_almost_equal(left_profile_values, right_profile_values, decimal=4)
