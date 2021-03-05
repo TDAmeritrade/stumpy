@@ -16,7 +16,9 @@ else
     else
         python_version="$3"
     fi
+    echo "Installing python=$python_version" 
     conda install -y -c conda-forge python=$python_version
+    echo "Installing numba=$numba_version"
     conda install -y -c numba numba=$numba_version
     ./conda.sh
 fi
