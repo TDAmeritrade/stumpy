@@ -127,6 +127,7 @@ clean_up()
 #   Main  #
 ###########
 
+clean_up
 check_black
 check_flake
 check_print
@@ -147,6 +148,7 @@ elif [ $test_mode == "custom" ]; then
 else
     echo "Executing Unit Tests And Code Coverage"
     test_unit
+    clean_up
     test_coverage
 fi
 
