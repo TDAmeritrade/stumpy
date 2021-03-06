@@ -7,6 +7,7 @@ if [ "${arch_name}" = "arm64" ]; then
 else
     conda update -y conda
     conda update -y --all
+    conda install -y -c conda-forge mamba
 
     if [ -z "$2" ]; then
         numba_version=`conda search --override-channels -c numba numba | tail -n 1 | awk '{print $2}'`
@@ -25,17 +26,20 @@ else
     echo ""
     echo "Installing python=$python_version"
     echo ""
-    conda install -y -c conda-forge python=$python_version
+    # conda install -y -c conda-forge python=$python_version
+    mamba install -y -c conda-forge python=$python_version
 
     echo ""
     echo "Installing numba=$numba_version"
     echo ""
-    conda install -y -c numba numba=$numba_version
+    # conda install -y -c numba numba=$numba_version
+    mamba install -y -c numba numba=$numba_version
 
     echo ""
     echo "Installing STUMPY environment"
     echo ""
     grep -Ev "numba|python" environment.yml > environment.numba.yml
-    conda env update --file environment.numba.yml
+    # conda env update --file environment.numba.yml
+    mamba env update --file environment.numba.yml
     rm -rf environment.numba.yml
 fi
