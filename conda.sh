@@ -1,7 +1,7 @@
 #!/bin/bash
 
 arch_name="$(uname -m)"
-if [ $1 == "numba" ] && [ "${arch_name}" = "arm64" ]; then
+if [[ $1 == "numba" ]] && [[ $arch_name == "arm64" ]]; then
     echo "Sorry, cannot install numba release candidate envrionment for ARM64 architecture"
 fi
 install_mode="normal"
