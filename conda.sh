@@ -7,25 +7,25 @@ fi
 install_mode="normal"
 
 # Parse first command line argument
-if [ $# -gt 0 ]; then
+if [[ $# -gt 0 ]]; then
     if [ $1 == "min" ]; then
         install_mode="min"
         echo "Installing minimum dependencies with install_mode=\"min\""
-    elif [ $1 == "numba" ] && [ "${arch_name}" != "arm64"  ]; then
+    elif [[ $1 == "numba" ]] && [[ "${arch_name}" != "arm64" ]]; then
         install_mode="numba"
         echo "Installing numba release candidate dependencies with install_mode=\"numba\""
-        if [ -z "$2" ]; then
+        if [[ -z $2 ]]; then
             numba_version=`conda search --override-channels -c numba numba | tail -n 1 | awk '{print $2}'`
         else
-            numba_version="$2"
+            numba_version=$2
         fi
         # Set Python version
-        if [ -z "$3" ]; then
+        if [[ -z $3 ]]; then
             python_version=`conda search --override-channels -c conda-forge python | tail -n 1 | awk '{print $2}'`
             # Strip away patch version
             # python_version="${python_version%.*}"
         else
-            python_version="$3"
+            python_version=$3
         fi
     else
         echo "Using default install_mode=\"normal\""
@@ -85,11 +85,11 @@ if [[ `uname` == "Linux" && `which nvcc | wc -l` -lt "1" ]]; then
     echo "Please reboot the server to resolve any CUDA driver/library version mismatches"
 fi
 
-if [ $install_mode == "min" ]; then
+if [[ $install_mode == "min" ]]; then
     generate_min_environment_yaml
     # conda env update --file environment.min.yml
     mamba env update --file environment.min.yml
-elif [ $install_mode == "numba" ]; then
+elif [[ $install_mode == "numba" ]]; then
     echo ""
     echo "Installing python=$python_version"
     echo ""

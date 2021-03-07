@@ -3,12 +3,12 @@
 test_mode="all"
 
 # Parse first command line argument
-if [ $# -gt 0 ]; then
-    if [ $1 == "unit" ]; then
+if [[ $# -gt 0 ]]; then
+    if [[ $1 == "unit" ]]; then
         test_mode="unit"
-    elif [ $1 == "coverage" ]; then
+    elif [[ $1 == "coverage" ]]; then
         test_mode="coverage"
-    elif [ $1 == "custom" ]; then
+    elif [[ $1 == "custom" ]]; then
         test_mode="custom"
     else
         echo "Using default test_mode=\"all\""
@@ -22,10 +22,10 @@ fi
 check_errs()
 {
   # Function. Parameter 1 is the return code
-  if [ "${1}" -ne "0" ]; then
-    echo "Error: pytest encountered exit code ${1}"
+  if [[ $1 -ne "0" ]]; then
+    echo "Error: pytest encountered exit code $1"
     # as a bonus, make our script exit with the right error code.
-    exit ${1}
+    exit $1
   fi
 }
 
@@ -132,13 +132,13 @@ check_black
 check_flake
 check_print
 
-if [ $test_mode == "unit" ]; then
+if [[ $test_mode == "unit" ]]; then
     echo "Executing Unit Tests Only"
     test_unit
-elif [ $test_mode == "coverage" ]; then
+elif [[ $test_mode == "coverage" ]]; then
     echo "Executing Code Coverage Only"
     test_coverage
-elif [ $test_mode == "custom" ]; then
+elif [[ $test_mode == "custom" ]]; then
     echo "Executing Custom User-Defined Tests Only"
     # Define tests in `test_custom` function above
     # echo "Disabling Numba JIT and CUDA Compiled Functions"
