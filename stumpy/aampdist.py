@@ -7,12 +7,7 @@ from .core import _mass_absolute_distance_matrix
 
 
 def _aampdist_vect(
-    Q,
-    T,
-    m,
-    percentage=0.05,
-    k=None,
-    custom_func=None,
+    Q, T, m, percentage=0.05, k=None, custom_func=None,
 ):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile distance

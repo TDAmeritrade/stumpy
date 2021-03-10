@@ -800,12 +800,7 @@ def _mstump(
         # `include` processing must occur here since we are dealing with distances
         if include is not None:
             _apply_include(
-                D,
-                include,
-                restricted_indices,
-                unrestricted_indices,
-                mask,
-                tmp_swap,
+                D, include, restricted_indices, unrestricted_indices, mask, tmp_swap,
             )
             start_row_idx = include.shape[0]
 

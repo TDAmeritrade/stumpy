@@ -102,14 +102,7 @@ def maamped(dask_client, T, m, include=None, discords=False):
 
     for i, start in enumerate(range(0, k, step)):
         P[:, start], I[:, start] = _get_first_maamp_profile(
-            start,
-            T_A,
-            T_B,
-            m,
-            excl_zone,
-            T_B_subseq_isfinite,
-            include,
-            discords,
+            start, T_A, T_B, m, excl_zone, T_B_subseq_isfinite, include, discords,
         )
 
     # Scatter data to Dask cluster
