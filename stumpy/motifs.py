@@ -34,7 +34,17 @@ def _fill_result_with_nans(top_Q_indices, top_Q_values):
 
 
 def _motifs(
-    T, P, k, M_T, Σ_T, excl_zone, min_neighbors, max_occurrences, atol, rtol, normalize,
+    T,
+    P,
+    k,
+    M_T,
+    Σ_T,
+    excl_zone,
+    min_neighbors,
+    max_occurrences,
+    atol,
+    rtol,
+    normalize,
 ):
     n = T.shape[1]
     l = P.shape[1]

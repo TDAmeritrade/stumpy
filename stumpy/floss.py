@@ -479,7 +479,8 @@ class floss(object):
             )
         else:
             self._mp[:, 0] = np.linalg.norm(
-                core.rolling_window(self._T, self._m) - right_nn, axis=1,
+                core.rolling_window(self._T, self._m) - right_nn,
+                axis=1,
             )
         inf_indices = np.argwhere(self._mp[:, 3] < 0).flatten()
         self._mp[inf_indices, 0] = np.inf

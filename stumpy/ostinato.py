@@ -308,9 +308,11 @@ def ostinato(Ts, m, normalize=True):
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(Ts, m, M_Ts, Σ_Ts)
 
-    (central_radius, central_Ts_idx, central_subseq_idx,) = _get_central_motif(
-        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts
-    )
+    (
+        central_radius,
+        central_Ts_idx,
+        central_subseq_idx,
+    ) = _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts)
 
     return central_radius, central_Ts_idx, central_subseq_idx
 
@@ -385,8 +387,10 @@ def ostinatoed(dask_client, Ts, m, normalize=True):
         Ts, m, M_Ts, Σ_Ts, dask_client=dask_client, mp_func=stumped
     )
 
-    (central_radius, central_Ts_idx, central_subseq_idx,) = _get_central_motif(
-        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts
-    )
+    (
+        central_radius,
+        central_Ts_idx,
+        central_subseq_idx,
+    ) = _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts)
 
     return central_radius, central_Ts_idx, central_subseq_idx

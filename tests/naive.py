@@ -130,7 +130,8 @@ def stamp(T_A, m, T_B=None, exclusion_zone=None):
         )
     else:
         result = np.array(
-            [mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)], dtype=object,
+            [mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)],
+            dtype=object,
         )
     return result
 
@@ -471,7 +472,11 @@ def subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
 
 
 def maamp_subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
-    D = distance(T[:, motif_idx : motif_idx + m], T[:, nn_idx : nn_idx + m], axis=1,)
+    D = distance(
+        T[:, motif_idx : motif_idx + m],
+        T[:, nn_idx : nn_idx + m],
+        axis=1,
+    )
 
     if discords:
         sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")

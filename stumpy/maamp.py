@@ -528,7 +528,12 @@ def _maamp(
         # `include` processing must occur here since we are dealing with distances
         if include is not None:
             mstump._apply_include(
-                D, include, restricted_indices, unrestricted_indices, mask, tmp_swap,
+                D,
+                include,
+                restricted_indices,
+                unrestricted_indices,
+                mask,
+                tmp_swap,
             )
             start_row_idx = include.shape[0]
 
@@ -623,7 +628,14 @@ def maamp(T, m, include=None, discords=False):
     stop = k
 
     P[:, start], I[:, start] = _get_first_maamp_profile(
-        start, T_A, T_B, m, excl_zone, T_B_subseq_isfinite, include, discords,
+        start,
+        T_A,
+        T_B,
+        m,
+        excl_zone,
+        T_B_subseq_isfinite,
+        include,
+        discords,
     )
 
     QT, QT_first = mstump._get_multi_QT(start, T_A, m)
