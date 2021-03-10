@@ -1,29 +1,46 @@
 from pkg_resources import get_distribution, DistributionNotFound
 import os.path
-from .stump import stump, _stump, _get_first_stump_profile, _get_QT  # noqa: F401
+from .core import mass  # noqa: F401
+from .stump import stump  # noqa: F401
 from .stumped import stumped  # noqa: F401
-from .mstump import (  # noqa: F401
-    mstump,
-    _mstump,
-    _get_first_mstump_profile,
-    _get_multi_QT,
-    _multi_mass,
-    _apply_include,
-)
+from .mstump import mstump, subspace  # noqa: F401
 from .mstumped import mstumped  # noqa: F401
+from .aamp import aamp  # noqa: F401
+from .aamped import aamped  # noqa: F401
+from .maamp import maamp, maamp_subspace  # noqa: F401
+from .maamped import maamped  # noqa: F401
+from .aampi import aampi  # noqa: F401
 from .chains import atsc, allc  # noqa: F401
-from .floss import floss, fluss, _nnmark, _iac, _cac, _rea  # noqa: F401
-from .scrump import scrump  # noqa: F401
-from .search import motifs, search_occurrences  # noqa: F401
+from .floss import floss, fluss  # noqa: F401
+from .ostinato import ostinato, ostinatoed  # noqa: F401
+from .aamp_ostinato import aamp_ostinato, aamp_ostinatoed  # noqa: F401
+from .scrump import scrump, prescrump  # noqa: F401
+from .scraamp import scraamp, prescraamp  # noqa: F401
+from .stumpi import stumpi  # noqa: F401
+from .mpdist import mpdist, mpdisted  # noqa: F401
+from .aampdist import aampdist, aampdisted  # noqa: F401
 from numba import cuda
 
 if cuda.is_available():
     from .gpu_stump import gpu_stump  # noqa: F401
+    from .gpu_aamp import gpu_aamp  # noqa: F401
+    from .gpu_ostinato import gpu_ostinato  # noqa: F401
+    from .gpu_aamp_ostinato import gpu_aamp_ostinato  # noqa: F401
+    from .gpu_mpdist import gpu_mpdist  # noqa: F401
+    from .gpu_aampdist import gpu_aampdist  # noqa: F401
 else:  # pragma: no cover
-    from .core import driver_not_found as gpu_stump  # noqa: F401
+    from .core import _gpu_stump_driver_not_found as gpu_stump  # noqa: F401
+    from .core import _gpu_aamp_driver_not_found as gpu_aamp  # noqa: F401
+    from .core import _gpu_ostinato_driver_not_found as gpu_ostinato  # noqa: F401
+    from .core import (
+        _gpu_aamp_ostinato_driver_not_found as gpu_aamp_ostinato,
+    )  # noqa: F401
+    from .core import _gpu_mpdist_driver_not_found as gpu_mpdist  # noqa: F401
+    from .core import _gpu_aampdist_driver_not_found as gpu_aampdist  # noqa: F401
     import ast
     import pathlib
 
+    # Fix GPU-STUMP Docs
     gpu_stump.__doc__ = ""
     filepath = pathlib.Path(__file__).parent / "gpu_stump.py"
 
@@ -37,6 +54,81 @@ else:  # pragma: no cover
     for fd in function_definitions:
         if fd.name == "gpu_stump":
             gpu_stump.__doc__ = ast.get_docstring(fd)
+
+    # Fix GPU-AAMP Docs
+    gpu_aamp.__doc__ = ""
+    filepath = pathlib.Path(__file__).parent / "gpu_aamp.py"
+
+    file_contents = ""
+    with open(filepath, encoding="utf8") as f:
+        file_contents = f.read()
+    module = ast.parse(file_contents)
+    function_definitions = [
+        node for node in module.body if isinstance(node, ast.FunctionDef)
+    ]
+    for fd in function_definitions:
+        if fd.name == "gpu_aamp":
+            gpu_aamp.__doc__ = ast.get_docstring(fd)
+
+    # Fix GPU-OSTINATO Docs
+    gpu_ostinato.__doc__ = ""
+    filepath = pathlib.Path(__file__).parent / "gpu_ostinato.py"
+
+    file_contents = ""
+    with open(filepath, encoding="utf8") as f:
+        file_contents = f.read()
+    module = ast.parse(file_contents)
+    function_definitions = [
+        node for node in module.body if isinstance(node, ast.FunctionDef)
+    ]
+    for fd in function_definitions:
+        if fd.name == "gpu_ostinato":
+            gpu_ostinato.__doc__ = ast.get_docstring(fd)
+
+    # Fix GPU-AAMP-OSTINATO Docs
+    gpu_aamp_ostinato.__doc__ = ""
+    filepath = pathlib.Path(__file__).parent / "gpu_aamp_ostinato.py"
+
+    file_contents = ""
+    with open(filepath, encoding="utf8") as f:
+        file_contents = f.read()
+    module = ast.parse(file_contents)
+    function_definitions = [
+        node for node in module.body if isinstance(node, ast.FunctionDef)
+    ]
+    for fd in function_definitions:
+        if fd.name == "gpu_aamp_ostinato":
+            gpu_aamp_ostinato.__doc__ = ast.get_docstring(fd)
+
+    # Fix GPU-MPDIST Docs
+    gpu_mpdist.__doc__ = ""
+    filepath = pathlib.Path(__file__).parent / "gpu_mpdist.py"
+
+    file_contents = ""
+    with open(filepath, encoding="utf8") as f:
+        file_contents = f.read()
+    module = ast.parse(file_contents)
+    function_definitions = [
+        node for node in module.body if isinstance(node, ast.FunctionDef)
+    ]
+    for fd in function_definitions:
+        if fd.name == "gpu_mpdist":
+            gpu_mpdist.__doc__ = ast.get_docstring(fd)
+
+    # Fix GPU-AAMPDIST Docs
+    gpu_aampdist.__doc__ = ""
+    filepath = pathlib.Path(__file__).parent / "gpu_aampdist.py"
+
+    file_contents = ""
+    with open(filepath, encoding="utf8") as f:
+        file_contents = f.read()
+    module = ast.parse(file_contents)
+    function_definitions = [
+        node for node in module.body if isinstance(node, ast.FunctionDef)
+    ]
+    for fd in function_definitions:
+        if fd.name == "gpu_aampdist":
+            gpu_aampdist.__doc__ = ast.get_docstring(fd)
 
 try:
     _dist = get_distribution("stumpy")

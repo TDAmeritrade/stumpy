@@ -13,17 +13,17 @@
 .. image:: https://img.shields.io/pypi/l/stumpy.svg
     :target: https://github.com/TDAmeritrade/stumpy/blob/master/LICENSE.txt
     :alt: License
-.. image:: https://dev.azure.com/stumpy-dev/stumpy/_apis/build/status/TDAmeritrade.stumpy?branchName=master
-    :target: https://dev.azure.com/stumpy-dev/stumpy/_build/latest?definitionId=2&branchName=master
-    :alt: Build Status
-.. image:: https://readthedocs.org/projects/stumpy/badge/?version=latest
-    :target: https://stumpy.readthedocs.io/
-    :alt: ReadTheDocs Status
+.. image:: https://github.com/TDAmeritrade/stumpy/workflows/Tests/badge.svg
+    :target: https://github.com/TDAmeritrade/stumpy/actions?query=workflow%3ATests+branch%3Amaster)
+    :alt: Test Status
 .. image:: https://codecov.io/gh/TDAmeritrade/stumpy/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/TDAmeritrade/stumpy
     :alt: Code Coverage
+.. image:: https://readthedocs.org/projects/stumpy/badge/?version=latest
+    :target: https://stumpy.readthedocs.io/
+    :alt: ReadTheDocs Status
 .. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/gh/TDAmeritrade/stumpy/master?filepath=notebooks
+    :target: https://mybinder.org/v2/gh/TDAmeritrade/stumpy/main?filepath=notebooks
     :alt: Binder
 .. image:: http://joss.theoj.org/papers/10.21105/joss.01504/status.svg
     :target: https://doi.org/10.21105/joss.01504
@@ -54,7 +54,8 @@ STUMPY is a powerful and scalable library that efficiently computes something ca
 * anomaly/novelty (discord) discovery
 * shapelet discovery
 * semantic segmentation 
-* density estimation
+* streaming (on-line) data
+* fast approximate matrix profiles
 * time series chains (temporally ordered set of subsequence patterns)
 * `and more ... <https://www.cs.ucr.edu/~eamonn/100_Time_Series_Data_Mining_Questions__with_Answers.pdf>`__
 
@@ -73,10 +74,11 @@ Typical usage (1-dimensional time series data) with `STUMP <https://stumpy.readt
     import stumpy
     import numpy as np
     
-    your_time_series = np.random.rand(10000)
-    window_size = 50  # Approximately, how many data points might be found in a pattern 
+    if __name__ == "__main__":
+        your_time_series = np.random.rand(10000)
+        window_size = 50  # Approximately, how many data points might be found in a pattern 
     
-    matrix_profile = stumpy.stump(your_time_series, m=window_size)
+        matrix_profile = stumpy.stump(your_time_series, m=window_size)
 
 Distributed usage for 1-dimensional time series data with Dask Distributed via `STUMPED <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.stumped>`__:
 
@@ -85,12 +87,14 @@ Distributed usage for 1-dimensional time series data with Dask Distributed via `
     import stumpy
     import numpy as np
     from dask.distributed import Client
-    dask_client = Client()
+
+    if __name__ == "__main__":
+        dask_client = Client()
     
-    your_time_series = np.random.rand(10000)
-    window_size = 50  # Approximately, how many data points might be found in a pattern 
+        your_time_series = np.random.rand(10000)
+        window_size = 50  # Approximately, how many data points might be found in a pattern 
     
-    matrix_profile = stumpy.stumped(dask_client, your_time_series, m=window_size)
+        matrix_profile = stumpy.stumped(dask_client, your_time_series, m=window_size)
 
 GPU usage for 1-dimensional time series data with `GPU-STUMP <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.gpu_stump>`__:
 
@@ -100,11 +104,12 @@ GPU usage for 1-dimensional time series data with `GPU-STUMP <https://stumpy.rea
     import numpy as np
     from numba import cuda
 
-    your_time_series = np.random.rand(10000)
-    window_size = 50  # Approximately, how many data points might be found in a pattern
-    all_gpu_devices = [device.id for device in cuda.list_devices()]  # Get a list of all available GPU devices
+    if __name__ == "__main__":
+        your_time_series = np.random.rand(10000)
+        window_size = 50  # Approximately, how many data points might be found in a pattern
+        all_gpu_devices = [device.id for device in cuda.list_devices()]  # Get a list of all available GPU devices
 
-    matrix_profile = stumpy.gpu_stump(your_time_series, m=window_size, device_id=all_gpu_devices)
+        matrix_profile = stumpy.gpu_stump(your_time_series, m=window_size, device_id=all_gpu_devices)
 
 Multi-dimensional time series data with `MSTUMP <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.mstump>`__:
 
@@ -113,10 +118,11 @@ Multi-dimensional time series data with `MSTUMP <https://stumpy.readthedocs.io/e
     import stumpy
     import numpy as np
 
-    your_time_series = np.random.rand(3, 1000)  # Each row represents data from a different dimension while each column represents data from the same dimension
-    window_size = 50  # Approximately, how many data points might be found in a pattern
+    if __name__ == "__main__":
+        your_time_series = np.random.rand(3, 1000)  # Each row represents data from a different dimension while each column represents data from the same dimension
+        window_size = 50  # Approximately, how many data points might be found in a pattern
 
-    matrix_profile, matrix_profile_indices = stumpy.mstump(your_time_series, m=window_size)
+        matrix_profile, matrix_profile_indices = stumpy.mstump(your_time_series, m=window_size)
 
 Distributed multi-dimensional time series data analysis with Dask Distributed `MSTUMPED <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.mstumped>`__:
 
@@ -125,12 +131,14 @@ Distributed multi-dimensional time series data analysis with Dask Distributed `M
     import stumpy
     import numpy as np
     from dask.distributed import Client
-    dask_client = Client()
 
-    your_time_series = np.random.rand(3, 1000)   # Each row represents data from a different dimension while each column represents data from the same dimension
-    window_size = 50  # Approximately, how many data points might be found in a pattern
+    if __name__ == "__main__":
+        dask_client = Client()
 
-    matrix_profile, matrix_profile_indices = stumpy.mstumped(dask_client, your_time_series, m=window_size)
+        your_time_series = np.random.rand(3, 1000)   # Each row represents data from a different dimension while each column represents data from the same dimension
+        window_size = 50  # Approximately, how many data points might be found in a pattern
+
+        matrix_profile, matrix_profile_indices = stumpy.mstumped(dask_client, your_time_series, m=window_size)
 
 Time Series Chains with `Anchored Time Series Chains (ATSC) <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.atsc>`__:
 
@@ -139,18 +147,19 @@ Time Series Chains with `Anchored Time Series Chains (ATSC) <https://stumpy.read
     import stumpy
     import numpy as np
     
-    your_time_series = np.random.rand(10000)
-    window_size = 50  # Approximately, how many data points might be found in a pattern 
-    
-    matrix_profile = stumpy.stump(your_time_series, m=window_size)
+    if __name__ == "__main__":
+        your_time_series = np.random.rand(10000)
+        window_size = 50  # Approximately, how many data points might be found in a pattern 
+        
+        matrix_profile = stumpy.stump(your_time_series, m=window_size)
 
-    left_matrix_profile_index = matrix_profile[:, 2]
-    right_matrix_profile_index = matrix_profile[:, 3]
-    idx = 10  # Subsequence index for which to retrieve the anchored time series chain for
+        left_matrix_profile_index = matrix_profile[:, 2]
+        right_matrix_profile_index = matrix_profile[:, 3]
+        idx = 10  # Subsequence index for which to retrieve the anchored time series chain for
 
-    anchored_chain = stumpy.atsc(left_matrix_profile_index, right_matrix_profile_index, idx)
+        anchored_chain = stumpy.atsc(left_matrix_profile_index, right_matrix_profile_index, idx)
 
-    all_chain_set, longest_unanchored_chain = stumpy.allc(left_matrix_profile_index, right_matrix_profile_index)
+        all_chain_set, longest_unanchored_chain = stumpy.allc(left_matrix_profile_index, right_matrix_profile_index)
 
 Semantic Segmentation with `Fast Low-cost Unipotent Semantic Segmentation (FLUSS) <https://stumpy.readthedocs.io/en/latest/api.html#stumpy.fluss>`__:
 
@@ -159,21 +168,24 @@ Semantic Segmentation with `Fast Low-cost Unipotent Semantic Segmentation (FLUSS
     import stumpy
     import numpy as np
 
-    your_time_series = np.random.rand(10000)
-    window_size = 50  # Approximately, how many data points might be found in a pattern
+    if __name__ == "__main__":
+        your_time_series = np.random.rand(10000)
+        window_size = 50  # Approximately, how many data points might be found in a pattern
 
-    matrix_profile = stumpy.stump(your_time_series, m=window_size)
+        matrix_profile = stumpy.stump(your_time_series, m=window_size)
 
-    subseq_len = 50
-    correct_arc_curve, regime_locations = stumpy.fluss(matrix_profile[:, 1], 
-                                                       L=subseq_len, 
-                                                       n_regimes=2, 
-                                                       excl_factor=1
-                                                      )
+        subseq_len = 50
+        correct_arc_curve, regime_locations = stumpy.fluss(matrix_profile[:, 1], 
+                                                        L=subseq_len, 
+                                                        n_regimes=2, 
+                                                        excl_factor=1
+                                                        )
 
 ------------
 Dependencies
 ------------
+
+Supported Python and NumPy versions are determined according to the `NEP 29 deprecation policy <https://numpy.org/neps/nep-0029-deprecation_policy.html>`__.
 
 * `NumPy <http://www.numpy.org/>`__
 * `Numba <http://numba.pydata.org/>`__
@@ -309,13 +321,13 @@ Tests are written in the ``tests`` directory and processed using `PyTest <https:
 Python Version
 --------------
 
-STUMPY supports `Python 3.6+ <https://python3statement.org/>`__ and, due to the use of unicode variable names/identifiers, is not compatible with Python 2.x. Given the small dependencies, STUMPY may work on older versions of Python but this is beyond the scope of our support and we strongly recommend that you upgrade to the most recent version of Python.
+STUMPY supports `Python 3.7+ <https://python3statement.org/>`__ and, due to the use of unicode variable names/identifiers, is not compatible with Python 2.x. Given the small dependencies, STUMPY may work on older versions of Python but this is beyond the scope of our support and we strongly recommend that you upgrade to the most recent version of Python.
 
 ------------
 Getting Help
 ------------
 
-First, please check the `issues on github <https://github.com/TDAmeritrade/stumpy/issues?utf8=%E2%9C%93&q=>`__ to see if your question has already been answered there. If no solution is available there feel free to open a new issue and the authors will attempt to respond in a reasonably timely fashion.
+First, please check the `discussions <https://github.com/TDAmeritrade/stumpy/discussions>`__ and `issues <https://github.com/TDAmeritrade/stumpy/issues?utf8=%E2%9C%93&q=>`__ on Github to see if your question has already been answered there. If no solution is available there feel free to open a new discussion or issue and the authors will attempt to respond in a reasonably timely fashion.
 
 ------------
 Contributing
@@ -359,7 +371,19 @@ Zhu, Yan, et al. (2017) Matrix Profile VII: Time Series Chains: A New Primitive 
 
 Gharghabi, Shaghayegh, et al. (2017) Matrix Profile VIII: Domain Agnostic Online Semantic Segmentation at Superhuman Performance Levels. ICDM:117-126. `Link <https://ieeexplore.ieee.org/abstract/document/8215484>`__
 
+Zhu, Yan, et al. (2017) Exploiting a Novel Algorithm and GPUs to Break the Ten Quadrillion Pairwise Comparisons Barrier for Time Series Motifs and Joins. KAIS:203-236. `Link <https://link.springer.com/article/10.1007%2Fs10115-017-1138-x>`__
+
 Zhu, Yan, et al. (2018) Matrix Profile XI: SCRIMP++: Time Series Motif Discovery at Interactive Speeds. ICDM:837-846. `Link <https://ieeexplore.ieee.org/abstract/document/8594908>`__
+
+Yeh, Chin-Chia Michael, et al. (2018) Time Series Joins, Motifs, Discords and Shapelets: a Unifying View that Exploits the Matrix Profile. Data Min Knowl Disc:83-123. `Link <https://link.springer.com/article/10.1007/s10618-017-0519-9>`__
+
+Gharghabi, Shaghayegh, et al. (2018) "Matrix Profile XII: MPdist: A Novel Time Series Distance Measure to Allow Data Mining in More Challenging Scenarios." ICDM:965-970. `Link <https://ieeexplore.ieee.org/abstract/document/8594928>`__
+
+Zimmerman, Zachary, et al. (2019) Matrix Profile XIV: Scaling Time Series Motif Discovery with GPUs to Break a Quintillion Pairwise Comparisons a Day and Beyond. SoCC '19:74-86. `Link <https://dl.acm.org/doi/10.1145/3357223.3362721>`__
+
+Akbarinia, Reza, and Betrand Cloez. (2019) Efficient Matrix Profile Computation Using Different Distance Functions. arXiv:1901.05708. `Link <https://arxiv.org/abs/1901.05708>`__
+
+Kamgar, Kaveh, et al. (2019) Matrix Profile XV: Exploiting Time Series Consensus Motifs to Find Structure in Time Series Sets. ICDM:1156-1161. `Link <https://ieeexplore.ieee.org/abstract/document/8970797>`__
 
 -------------------
 License & Trademark

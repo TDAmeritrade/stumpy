@@ -5,11 +5,103 @@
 import logging
 
 import numpy as np
+from scipy.stats import norm
 from numba import njit, prange
+from functools import lru_cache
 
 from . import core
+from .maamp import maamp, maamp_subspace
 
 logger = logging.getLogger(__name__)
+
+
+def _preprocess_include(include):
+    """
+    A utility function for processing the `include` input
+
+    Parameters
+    ----------
+    include : ndarray
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    Returns
+    -------
+    include : ndarray
+        Process `include` and remove any redundant index values
+    """
+    include = np.asarray(include)
+    _, idx = np.unique(include, return_index=True)
+    if include.shape[0] != idx.shape[0]:  # pragma: no cover
+        logger.warning("Removed repeating indices in `include`")
+        include = include[np.sort(idx)]
+
+    return include
+
+
+def _apply_include(
+    D,
+    include,
+    restricted_indices=None,
+    unrestricted_indices=None,
+    mask=None,
+    tmp_swap=None,
+):
+    """
+    Apply a transformation to the multi-dimensional distance profile so that specific
+    dimensions are always included. Essentially, it is swapping rows within the distance
+    profile.
+
+    Parameters
+    ----------
+    D : ndarray
+        The multi-dimensional distance profile
+
+    include : ndarray
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    restricted_indices : ndarray, default None
+        A list of indices specified in `include` that reside in the first
+        `include.shape[0]` rows
+
+    unrestricted_indices : ndarray, default None
+        A list of indices specified in `include` that do not reside in the first
+        `include.shape[0]` rows
+
+    mask : ndarray, default None
+        A boolean mask to select for unrestricted indices
+
+    tmp_swap : ndarray, default None
+        A reusable array to aid in array element swapping
+    """
+    include = _preprocess_include(include)
+
+    if restricted_indices is None:
+        restricted_indices = include[include < include.shape[0]]
+
+    if unrestricted_indices is None:
+        unrestricted_indices = include[include >= include.shape[0]]
+
+    if mask is None:
+        mask = np.ones(include.shape[0], bool)
+        mask[restricted_indices] = False
+
+    if tmp_swap is None:
+        tmp_swap = D[: include.shape[0]].copy()
+    else:
+        tmp_swap[:] = D[: include.shape[0]]
+
+    D[: include.shape[0]] = D[include]
+    D[unrestricted_indices] = tmp_swap[mask]
 
 
 def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
@@ -40,18 +132,6 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
     σ_Q : ndarray
         Standard deviation of `Q`
 
-    include : ndarray
-        A list of (zero-based) indices corresponding to the dimensions in `T` that
-        must be included in the constrained multidimensional motif search.
-        For more information, see Section IV D in:
-
-        `DOI: 10.1109/ICDM.2017.66 \
-        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
-
-    discords : bool
-        When set to `True`, this reverses the distance profile to favor discords rather
-        than motifs. Note that indices in `include` are still maintained and respected.
-
     Returns
     -------
     D : ndarray
@@ -71,25 +151,63 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
     return D
 
 
-def _apply_include(
-    D,
-    include,
-    restricted_indices=None,
-    unrestricted_indices=None,
-    mask=None,
-    tmp_swap=None,
-):
+@lru_cache()
+def _inverse_norm(n_bit=8):
     """
-    Apply a transformation to the multi-dimensional distance profile so that specific
-    dimensions are always included. Essentially, it is swapping rows within the distance
-    profile.
+    Generate bin edges from an inverse normal distribution
+
+    Parameters
+    ----------
+    n_bit : int, default 8
+        The number of bits to be used in generating the inverse normal distribution
+
+    Returns
+    -------
+    out : ndarray
+        Array of bin edges that can be used for data discretization
+    """
+    return norm.ppf(np.arange(1, (2 ** n_bit)) / (2 ** n_bit))
+
+
+def _discretize(a, bins, right=True):
+    """
+    Discretize each row of the input array
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    bins : ndarray
+        The bin edges used to discretize `a`
+
+    right : bool, default True
+        Indicates whether the intervals for binning include the right or the left bin
+        edge.
+
+    Returns
+    -------
+    out : ndarray
+        Discretized array
+    """
+    return np.digitize(a, bins, right=right)
+
+
+def _subspace(D, k, include=None, discords=False):
+    """
+    Compute the k-dimensional matrixrofile subspace for a given subsequence index and
+    its nearest neighbor index
 
     Parameters
     ----------
     D : ndarray
         The multi-dimensional distance profile
 
-    include : ndarray
+    k : int
+        The subset number of dimensions out of `D = T.shape[0]`-dimensions to return
+        the subspace for
+
+    include : ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -97,37 +215,207 @@ def _apply_include(
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
-    restricted_indices : ndarray
-        A list of indices specified in `include` that reside in the first
-        `include.shape[0]` rows
+    discords : bool, default False
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
 
-    unrestricted_indices : ndarray
-        A list of indices specified in `include` that do not reside in the first
-        `include.shape[0]` rows
-
-    mask : ndarray
-        A boolean mask to select for unrestricted indices
-
-    tmp_swap : ndarray
-        A reusable array to aid in array element swapping
+    Returns
+    -------
+        S : ndarray
+        An array of that contains the `k`th-dimensional subspace for the subsequence
+        with index equal to `motif_idx`
     """
-    if restricted_indices is None:
-        restricted_indices = include[include < include.shape[0]]
-
-    if unrestricted_indices is None:
-        unrestricted_indices = include[include >= include.shape[0]]
-
-    if mask is None:
-        mask = np.ones(include.shape[0], bool)
-        mask[restricted_indices] = False
-
-    if tmp_swap is None:
-        tmp_swap = D[: include.shape[0]].copy()
+    if discords:
+        sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
     else:
-        tmp_swap[:] = D[: include.shape[0]]
+        sorted_idx = D.argsort(axis=0, kind="mergesort")
 
-    D[: include.shape[0]] = D[include]
-    D[unrestricted_indices] = tmp_swap[mask]
+    # `include` processing occur here since we are dealing with indices, not distances
+    if include is not None:
+        include = _preprocess_include(include)
+        mask = np.in1d(sorted_idx, include)
+        include_idx = mask.nonzero()[0]
+        exclude_idx = (~mask).nonzero()[0]
+        sorted_idx[: include_idx.shape[0]], sorted_idx[include_idx.shape[0] :] = (
+            sorted_idx[include_idx],
+            sorted_idx[exclude_idx],
+        )
+
+    S = sorted_idx[: k + 1]
+
+    return S
+
+
+@core.non_normalized(maamp_subspace)
+def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normalize=True):
+    """
+    Compute the k-dimensional matrixrofile subspace for a given subsequence index and
+    its nearest neighbor index
+
+    Parameters
+    ----------
+    T : ndarray
+        The time series or sequence for which the multi-dimensional matrix profile,
+        multi-dimensional matrix profile indices were computed
+
+    m : int
+        Window size
+
+    subseq_idx : int
+        The subsequence index in T
+
+    nn_idx : int
+        The nearest neighbor index in T
+
+    k : int
+        The subset number of dimensions out of `D = T.shape[0]`-dimensions to return
+        the subspace for
+
+    include : ndarray, default None
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    discords : bool, default False
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
+
+    Returns
+    -------
+        S : ndarray
+        An array of that contains the `k`th-dimensional subspace for the subsequence
+        with index equal to `motif_idx`
+    """
+    T, _, _ = core.preprocess(T, m)
+    subseqs = core.z_norm(T[:, subseq_idx : subseq_idx + m], axis=1)
+    neighbors = core.z_norm(T[:, nn_idx : nn_idx + m], axis=1)
+
+    D = np.linalg.norm(subseqs - neighbors, axis=1)
+
+    S = _subspace(D, k, include=include, discords=discords)
+
+    # MDL
+    n_bit = 8
+    bins = _inverse_norm()
+    disc_subseqs = _discretize(subseqs[S], bins)
+    disc_neighbors = _discretize(neighbors[S], bins)
+    n_val = np.unique(disc_subseqs - disc_neighbors).shape[0]
+    bit_size = n_bit * (T.shape[0] * m * 2 - k * m)
+    bit_size = bit_size + k * m * np.log2(n_val) + n_val * n_bit
+
+    return S
+
+
+def _query_mstump_profile(
+    query_idx, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include=None, discords=False
+):
+    """
+    Multi-dimensional wrapper to compute the multi-dimensional matrix profile and
+    the multi-dimensional matrix profile index for a given query window within the times
+    series or sequence that is denoted by the `query_idx` index. Essentially, this is a
+    convenience wrapper around `_multi_mass`.
+
+    Parameters
+    ----------
+    query_idx : int
+        The window index to calculate the first multi-dimensional matrix profile and
+        multi-dimensional matrix profile indices
+
+    T_A : ndarray
+        The time series or sequence for which the multi-dimensional matrix profile and
+        multi-dimensional matrix profile indices
+
+    T_B : ndarray
+        The time series or sequence that contains your query subsequences
+
+    m : int
+        Window size
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the `query_idx`.
+
+    M_T : ndarray
+        Sliding mean for `T_A`
+
+    Σ_T : ndarray
+        Sliding standard deviation for `T_A`
+
+    μ_Q : ndarray
+        Sliding mean for `T_B`
+
+    σ_Q : ndarray
+        Sliding standard deviation for `T_B`
+
+    include : ndarray, default None
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    discords : bool, default False
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
+
+    Returns
+    -------
+    P : ndarray
+        Multi-dimensional matrix profile for the window with index equal to
+        `query_idx`
+
+    I : ndarray
+        Multi-dimensional matrix profile indices for the window with index
+        equal to `query_idx`
+    """
+    d, n = T_A.shape
+    k = n - m + 1
+    start_row_idx = 0
+    D = _multi_mass(
+        T_B[:, query_idx : query_idx + m],
+        T_A,
+        m,
+        M_T,
+        Σ_T,
+        μ_Q[:, query_idx],
+        σ_Q[:, query_idx],
+    )
+
+    if include is not None:
+        _apply_include(D, include)
+        start_row_idx = include.shape[0]
+
+    if discords:
+        D[start_row_idx:][::-1].sort(axis=0, kind="mergesort")
+    else:
+        D[start_row_idx:].sort(axis=0, kind="mergesort")
+
+    D_prime = np.zeros(k)
+    for i in range(d):
+        D_prime[:] = D_prime + D[i]
+        D[i, :] = D_prime / (i + 1)
+
+    core.apply_exclusion_zone(D, query_idx, excl_zone)
+
+    P = np.full(d, np.inf, dtype="float64")
+    I = np.full(d, -1, dtype="int64")
+
+    for i in range(d):
+        min_index = np.argmin(D[i])
+        I[i] = min_index
+        P[i] = D[i, min_index]
+        if np.isinf(P[i]):  # pragma nocover
+            I[i] = -1
+
+    return P, I
 
 
 def _get_first_mstump_profile(
@@ -136,18 +424,21 @@ def _get_first_mstump_profile(
     """
     Multi-dimensional wrapper to compute the multi-dimensional matrix profile
     and multi-dimensional matrix profile index for a given window within the
-    times series or sequence that is denote by the `start` index.
-    Essentially, this is a convenience wrapper around `_multi_mass`
+    times series or sequence that is denoted by the `start` index.
+    Essentially, this is a convenience wrapper around `_multi_mass`. This is a
+    convenience wrapper for the `_query_mstump_profile` function but does not return
+    the multi-dimensional matrix profile subspace.
 
     Parameters
     ----------
     start : int
-        The window index to calculate the first matrix profile, matrix profile
-        index, left matrix profile index, and right matrix profile index for.
+        The window index to calculate the first multi-dimensional matrix profile,
+        multi-dimensional matrix profile indices, and multi-dimensional subspace.
 
     T_A : ndarray
-        The time series or sequence for which the matrix profile index will
-        be returned
+        The time series or sequence for which the multi-dimensional matrix profile,
+        multi-dimensional matrix profile indices, and multi-dimensional subspace will be
+        returned
 
     T_B : ndarray
         The time series or sequence that contains your query subsequences
@@ -170,7 +461,7 @@ def _get_first_mstump_profile(
     σ_Q : ndarray
         Sliding standard deviation for `T_B`
 
-    include : ndarray
+    include : ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -178,7 +469,7 @@ def _get_first_mstump_profile(
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
-    discords : bool
+    discords : bool, default False
         When set to `True`, this reverses the distance profile to favor discords rather
         than motifs. Note that indices in `include` are still maintained and respected.
 
@@ -189,42 +480,12 @@ def _get_first_mstump_profile(
         `start`
 
     I : ndarray
-        Multi-dimensional matrix profile index for the window with index
+        Multi-dimensional matrix profile indices for the window with index
         equal to `start`
     """
-    d, n = T_A.shape
-    k = n - m + 1
-    start_row_idx = 0
-    D = _multi_mass(
-        T_B[:, start : start + m], T_A, m, M_T, Σ_T, μ_Q[:, start], σ_Q[:, start]
+    P, I = _query_mstump_profile(
+        start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
     )
-
-    if include is not None:
-        _apply_include(D, include)
-        start_row_idx = include.shape[0]
-
-    if discords:
-        D[start_row_idx:][::-1].sort(axis=0)
-    else:
-        D[start_row_idx:].sort(axis=0)
-
-    D_prime = np.zeros(k)
-    for i in range(d):
-        D_prime[:] = D_prime + D[i]
-        D[i, :] = D_prime / (i + 1)
-
-    core.apply_exclusion_zone(D, start, excl_zone)
-
-    P = np.full(d, np.inf, dtype="float64")
-    I = np.ones(d, dtype="int64") * -1
-
-    for i in range(d):
-        min_index = np.argmin(D[i])
-        I[i] = min_index
-        P[i] = D[i, min_index]
-        if np.isinf(P[i]):  # pragma nocover
-            I[i] = -1
-
     return P, I
 
 
@@ -467,11 +728,11 @@ def _mstump(
     k : int
         The total number of sliding windows to iterate over
 
-    range_start : int
+    range_start : int, default 1
         The starting index value along T_B for which to start the matrix
         profile calculation. Default is 1.
 
-    include : ndarray
+    include : ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -479,7 +740,7 @@ def _mstump(
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
-    discords : bool
+    discords : bool, default False
         When set to `True`, this reverses the distance profile to favor discords rather
         than motifs. Note that indices in `include` are still maintained and respected.
 
@@ -536,9 +797,15 @@ def _mstump(
             σ_Q,
         )
 
+        # `include` processing must occur here since we are dealing with distances
         if include is not None:
             _apply_include(
-                D, include, restricted_indices, unrestricted_indices, mask, tmp_swap,
+                D,
+                include,
+                restricted_indices,
+                unrestricted_indices,
+                mask,
+                tmp_swap,
             )
             start_row_idx = include.shape[0]
 
@@ -552,9 +819,10 @@ def _mstump(
     return P, I
 
 
-def mstump(T, m, include=None, discords=False):
+@core.non_normalized(maamp)
+def mstump(T, m, include=None, discords=False, normalize=True):
     """
-    Compute the multi-dimensional matrix profile with parallelized mSTOMP
+    Compute the multi-dimensional z-normalized matrix profile
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_mstump` function which computes the multi-dimensional matrix profile and
@@ -572,7 +840,7 @@ def mstump(T, m, include=None, discords=False):
     m : int
         Window size
 
-    include : list, ndarray
+    include : list, ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -580,21 +848,26 @@ def mstump(T, m, include=None, discords=False):
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
-    discords : bool
+    discords : bool, default False
         When set to `True`, this reverses the distance matrix which results in a
         multi-dimensional matrix profile that favors larger matrix profile values
         (i.e., discords) rather than smaller values (i.e., motifs). Note that indices
         in `include` are still maintained and respected.
 
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
+
     Returns
     -------
     P : ndarray
-        The multi-dimensional matrix profile. Each column of the array corresponds
-        to each matrix profile for a given dimension (i.e., the first column is
-        the 1-D matrix profile and the second column is the 2-D matrix profile).
+        The multi-dimensional matrix profile. Each row of the array corresponds
+        to each matrix profile for a given dimension (i.e., the first row is
+        the 1-D matrix profile and the second row is the 2-D matrix profile).
 
     I : ndarray
-        The multi-dimensional matrix profile index where each column of the array
+        The multi-dimensional matrix profile index where each row of the array
         corresponds to each matrix profile index for a given dimension.
 
     Notes
@@ -604,7 +877,7 @@ def mstump(T, m, include=None, discords=False):
 
     See mSTAMP Algorithm
     """
-    T_A = core.transpose_dataframe(T)
+    T_A = T
     T_B = T_A
 
     T_A, M_T, Σ_T = core.preprocess(T_A, m)
@@ -614,17 +887,10 @@ def mstump(T, m, include=None, discords=False):
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
         raise ValueError(f"{err}")
 
-    core.check_dtype(T_A)
-    core.check_dtype(T_B)
-
-    core.check_window_size(m)
+    core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]))
 
     if include is not None:
-        include = np.asarray(include)
-        _, idx = np.unique(include, return_index=True)
-        if include.shape[0] != idx.shape[0]:  # pragma: no cover
-            logger.warning("Removed repeating indices in `include`")
-            include = include[np.sort(idx)]
+        include = _preprocess_include(include)
 
     d, n = T_B.shape
     k = n - m + 1
@@ -659,4 +925,4 @@ def mstump(T, m, include=None, discords=False):
         discords,
     )
 
-    return P.T, I.T
+    return P, I

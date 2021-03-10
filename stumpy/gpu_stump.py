@@ -9,7 +9,8 @@ import os
 import numpy as np
 from numba import cuda
 
-from . import core, _get_QT, config
+from . import core, config
+from .gpu_aamp import gpu_aamp
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +50,8 @@ def _compute_and_update_PI_kernel(
         The time series or sequence for which to compute the dot product
 
     T_B : ndarray
-        The time series or sequence that contain your query subsequence
-        of interest
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -115,7 +116,6 @@ def _compute_and_update_PI_kernel(
     """
     start = cuda.grid(1)
     stride = cuda.gridsize(1)
-    threshold = 1e-10
 
     if i % 2 == 0:
         QT_out = QT_even
@@ -137,15 +137,21 @@ def _compute_and_update_PI_kernel(
         if math.isinf(M_T[j]) or math.isinf(μ_Q[i]):
             D = np.inf
         else:
-            if σ_Q[i] < threshold or Σ_T[j] < threshold:
+            if (
+                σ_Q[i] < config.STUMPY_STDDEV_THRESHOLD
+                or Σ_T[j] < config.STUMPY_STDDEV_THRESHOLD
+            ):
                 D = m
             else:
                 denom = m * σ_Q[i] * Σ_T[j]
-                if math.fabs(denom) < threshold:  # pragma nocover
-                    denom = threshold
+                if math.fabs(denom) < config.STUMPY_DENOM_THRESHOLD:  # pragma nocover
+                    denom = config.STUMPY_DENOM_THRESHOLD
                 D = abs(2 * m * (1.0 - (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom))
 
-            if σ_Q[i] < threshold and Σ_T[j] < threshold:
+            if (
+                σ_Q[i] < config.STUMPY_STDDEV_THRESHOLD
+                and Σ_T[j] < config.STUMPY_STDDEV_THRESHOLD
+            ) or D < config.STUMPY_D_SQUARED_THRESHOLD:
                 D = 0
 
         if ignore_trivial:
@@ -192,8 +198,8 @@ def _gpu_stump(
         the matrix profile
 
     T_B_fname : str
-        The file name for the time series or sequence that contain your
-        query subsequences of interest
+        The file name for the time series or sequence that will be used to annotate T_A.
+        For every subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -261,12 +267,12 @@ def _gpu_stump(
 
     See Table II, Figure 5, and Figure 6
 
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
+    Timeseries, T_A, will be annotated with the distance location
+    (or index) of all its subsequences in another times series, T_B.
 
-    Return: For every subsequence, Q, in T_B, you will get a distance
+    Return: For every subsequence, Q, in T_A, you will get a distance
     and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the
+    returned will have length T_A.shape[0]-m+1. Additionally, the
     left and right matrix profiles are also returned.
 
     Note: Unlike in the Table II where T_A.shape is expected to be equal
@@ -310,11 +316,9 @@ def _gpu_stump(
             device_M_T = cuda.to_device(M_T)
             device_Σ_T = cuda.to_device(Σ_T)
 
-        profile = np.empty((k, 3))  # float64
-        indices = np.empty((k, 3), dtype=np.int64)  # int64
+        profile = np.full((k, 3), np.inf)  # float64
+        indices = np.full((k, 3), -1, dtype=np.int64)  # int64
 
-        profile[:] = np.inf
-        indices[:, :] = -1
         device_profile = cuda.to_device(profile)
         device_indices = cuda.to_device(indices)
         _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
@@ -368,9 +372,10 @@ def _gpu_stump(
     return profile_fname, indices_fname
 
 
-def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
+@core.non_normalized(gpu_aamp)
+def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True):
     """
-    Compute the matrix profile with GPU-STOMP
+    Compute the z-normalized matrix profile with one or more GPU devices
 
     This is a convenience wrapper around the Numba `cuda.jit` `_gpu_stump` function
     which computes the matrix profile according to GPU-STOMP.
@@ -383,19 +388,25 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     m : int
         Window size
 
-    T_B : (optional) ndarray
-        The time series or sequence that contain your query subsequences
-        of interest. Default is `None` which corresponds to a self-join.
+    T_B : ndarray, default None
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
+        `None` which corresponds to a self-join.
 
-    ignore_trivial : bool
+    ignore_trivial : bool, default True
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
         to `False`. Default is `True`.
 
-    device_id : int or list
+    device_id : int or list, default 0
         The (GPU) device number to use. The default value is `0`. A list of
         valid device ids (int) may also be provided for parallel GPU-STUMP
         computation. A list of all valid device ids can be obtained by
-        executing `[device.id for device in cuda.list_devices()]`.
+        executing `[device.id for device in numba.cuda.list_devices()]`.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------
@@ -412,12 +423,12 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
 
     See Table II, Figure 5, and Figure 6
 
-    Timeseries, T_B, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_A.
+    Timeseries, T_A, will be annotated with the distance location
+    (or index) of all its subsequences in another times series, T_B.
 
-    Return: For every subsequence, Q, in T_B, you will get a distance
-    and index for the closest subsequence in T_A. Thus, the array
-    returned will have length T_B.shape[0]-m+1. Additionally, the
+    Return: For every subsequence, Q, in T_A, you will get a distance
+    and index for the closest subsequence in T_B. Thus, the array
+    returned will have length T_A.shape[0]-m+1. Additionally, the
     left and right matrix profiles are also returned.
 
     Note: Unlike in the Table II where T_A.shape is expected to be equal
@@ -437,12 +448,6 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
         T_B = T_A
         ignore_trivial = True
 
-    # Swap T_A and T_B for GPU implementation
-    # This keeps the API identical to and compatible with `stumpy.stump`
-    tmp_T = T_A
-    T_A = T_B
-    T_B = tmp_T
-
     T_A, M_T, Σ_T = core.preprocess(T_A, m)
     T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
 
@@ -458,10 +463,7 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
 
-    core.check_dtype(T_A)
-    core.check_dtype(T_B)
-
-    core.check_window_size(m)
+    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
     if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
         logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
@@ -514,7 +516,7 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     for idx, start in enumerate(range(0, l, step)):
         stop = min(l, start + step)
 
-        QT, QT_first = _get_QT(start, T_A, T_B, m)
+        QT, QT_first = core._get_QT(start, T_A, T_B, m)
         QT_fname = core.array_to_temp_file(QT)
         QT_first_fname = core.array_to_temp_file(QT_first)
         QT_fnames.append(QT_fname)

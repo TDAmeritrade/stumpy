@@ -6,16 +6,23 @@ import logging
 
 import numpy as np
 
-from . import _mstump, _get_first_mstump_profile, _get_multi_QT
+from .mstump import (
+    _mstump,
+    _get_first_mstump_profile,
+    _get_multi_QT,
+    _preprocess_include,
+)
 from . import core
+from .maamped import maamped
 
 logger = logging.getLogger(__name__)
 
 
-def mstumped(dask_client, T, m, include=None, discords=False):
+@core.non_normalized(maamped)
+def mstumped(dask_client, T, m, include=None, discords=False, normalize=True):
     """
-    Compute the multi-dimensional matrix profile with parallelized and
-    distributed mSTOMP
+    Compute the multi-dimensional z-normalized matrix profile with a distributed
+    dask cluster
 
     This is a highly distributed implementation around the Numba JIT-compiled
     parallelized `_mstump` function which computes the multi-dimensional matrix
@@ -38,7 +45,7 @@ def mstumped(dask_client, T, m, include=None, discords=False):
     m : int
         Window size
 
-    include : list, ndarray
+    include : list, ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -46,21 +53,26 @@ def mstumped(dask_client, T, m, include=None, discords=False):
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
-    discords : bool
+    discords : bool, default False
         When set to `True`, this reverses the distance matrix which results in a
         multi-dimensional matrix profile that favors larger matrix profile values
         (i.e., discords) rather than smaller values (i.e., motifs). Note that indices
         in `include` are still maintained and respected.
 
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
+
     Returns
     -------
     P : ndarray
-        The multi-dimensional matrix profile. Each column of the array corresponds
-        to each matrix profile for a given dimension (i.e., the first column is
-        the 1-D matrix profile and the second column is the 2-D matrix profile).
+        The multi-dimensional matrix profile. Each row of the array corresponds
+        to each matrix profile for a given dimension (i.e., the first row is
+        the 1-D matrix profile and the second row is the 2-D matrix profile).
 
     I : ndarray
-        The multi-dimensional matrix profile index where each column of the array
+        The multi-dimensional matrix profile index where each row of the array
         corresponds to each matrix profile index for a given dimension.
 
     Notes
@@ -70,7 +82,7 @@ def mstumped(dask_client, T, m, include=None, discords=False):
 
     See mSTAMP Algorithm
     """
-    T_A = core.transpose_dataframe(T)
+    T_A = T
     T_B = T_A
 
     T_A, M_T, Σ_T = core.preprocess(T_A, m)
@@ -80,17 +92,10 @@ def mstumped(dask_client, T, m, include=None, discords=False):
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
         raise ValueError(f"{err}")
 
-    core.check_dtype(T_A)
-    core.check_dtype(T_B)
-
-    core.check_window_size(m)
+    core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]))
 
     if include is not None:
-        include = np.asarray(include)
-        _, idx = np.unique(include, return_index=True)
-        if include.shape[0] != idx.shape[0]:  # pragma: no cover
-            logger.warning("Removed repeating indices in `include`")
-            include = include[np.sort(idx)]
+        include = _preprocess_include(include)
 
     d, n = T_B.shape
     k = n - m + 1
@@ -110,11 +115,11 @@ def mstumped(dask_client, T, m, include=None, discords=False):
         )
 
     # Scatter data to Dask cluster
-    T_A_future = dask_client.scatter(T_A, broadcast=True)
-    M_T_future = dask_client.scatter(M_T, broadcast=True)
-    Σ_T_future = dask_client.scatter(Σ_T, broadcast=True)
-    μ_Q_future = dask_client.scatter(μ_Q, broadcast=True)
-    σ_Q_future = dask_client.scatter(σ_Q, broadcast=True)
+    T_A_future = dask_client.scatter(T_A, broadcast=True, hash=False)
+    M_T_future = dask_client.scatter(M_T, broadcast=True, hash=False)
+    Σ_T_future = dask_client.scatter(Σ_T, broadcast=True, hash=False)
+    μ_Q_future = dask_client.scatter(μ_Q, broadcast=True, hash=False)
+    σ_Q_future = dask_client.scatter(σ_Q, broadcast=True, hash=False)
 
     QT_futures = []
     QT_first_futures = []
@@ -122,8 +127,8 @@ def mstumped(dask_client, T, m, include=None, discords=False):
     for i, start in enumerate(range(0, k, step)):
         QT, QT_first = _get_multi_QT(start, T_A, m)
 
-        QT_future = dask_client.scatter(QT, workers=[hosts[i]])
-        QT_first_future = dask_client.scatter(QT_first, workers=[hosts[i]])
+        QT_future = dask_client.scatter(QT, workers=[hosts[i]], hash=False)
+        QT_first_future = dask_client.scatter(QT_first, workers=[hosts[i]], hash=False)
 
         QT_futures.append(QT_future)
         QT_first_futures.append(QT_first_future)
@@ -157,4 +162,17 @@ def mstumped(dask_client, T, m, include=None, discords=False):
         stop = min(k, start + step)
         P[:, start + 1 : stop], I[:, start + 1 : stop] = results[i]
 
-    return P.T, I.T
+    # Delete data from Dask cluster
+    dask_client.cancel(T_A_future)
+    dask_client.cancel(M_T_future)
+    dask_client.cancel(Σ_T_future)
+    dask_client.cancel(μ_Q_future)
+    dask_client.cancel(σ_Q_future)
+    for QT_future in QT_futures:
+        dask_client.cancel(QT_future)
+    for QT_first_future in QT_first_futures:
+        dask_client.cancel(QT_first_future)
+    for future in futures:
+        dask_client.cancel(future)
+
+    return P, I
