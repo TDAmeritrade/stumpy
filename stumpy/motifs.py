@@ -131,7 +131,7 @@ def _motifs(
 
         Q = T[:, candidate_idx : candidate_idx + m]
 
-        query_occurrences = occurrences(
+        query_occurrences = match(
             Q,
             T,
             M_T=M_T,
@@ -285,7 +285,7 @@ def motifs(
     return result
 
 
-def occurrences(
+def match(
     Q,
     T,
     M_T=None,

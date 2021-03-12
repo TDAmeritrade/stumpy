@@ -2,7 +2,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from stumpy import core, motifs, occurrences
+from stumpy import core, motifs, match
 
 from stumpy.motifs import _create_array_from_jagged_list
 
@@ -22,7 +22,7 @@ test_data = [
 normalized = [True, False]
 
 
-def naive_occurrences(Q, T, excl_zone, profile_value, atol, rtol, normalize):
+def naive_match(Q, T, excl_zone, profile_value, atol, rtol, normalize):
     m = Q.shape[0]
     if normalize:
         D = naive.distance_profile(Q, T, m)
@@ -31,20 +31,20 @@ def naive_occurrences(Q, T, excl_zone, profile_value, atol, rtol, normalize):
 
     # Finds all indices that have a lower distance profile value `D`
     # than `atol + rtol * D`
-    occurrences = []
+    matches = []
     for i in range(D.size):
         dist = D[i]
         if dist < atol + rtol * profile_value:
-            occurrences.append(i)
+            matches.append(i)
 
     # Removes indices that are inside the exclusion zone of some occurrence with
     # a smaller distance to the query
-    occurrences.sort(key=lambda x: D[x])
+    matches.sort(key=lambda x: D[x])
     result = []
-    while len(occurrences) > 0:
-        o = occurrences[0]
+    while len(matches) > 0:
+        o = matches[0]
         result.append([o, D[o]])
-        occurrences = [x for x in occurrences if x < o - excl_zone or x > o + excl_zone]
+        matches = [x for x in matches if x < o - excl_zone or x > o + excl_zone]
 
     return np.array(result, dtype=object)
 
@@ -212,7 +212,7 @@ def test_motifs_two_motifs_aamp():
     np.random.seed(None)
 
 
-def test_naive_occurrences_exact():
+def test_naive_matches_exact():
     # The query can be found as a perfect match two times in the time series
     T = np.array([0.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, 0.0, -0.5, 0.0, 2.0, 0, 0])
     Q = np.array([0.0, 1.0, 0.0])
@@ -221,7 +221,7 @@ def test_naive_occurrences_exact():
 
     left = [[0, 0], [5, 0], [9, 0]]
     right = list(
-        naive_occurrences(
+        naive_match(
             Q,
             T,
             excl_zone=excl_zone,
@@ -237,7 +237,7 @@ def test_naive_occurrences_exact():
     npt.assert_almost_equal(left, right)
 
 
-def test_naive_occurrences_exact_aamp():
+def test_naive_match_exact_aamp():
     # The query can be found as a perfect match two times in the time series
     T = np.array([0.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, 0.0, -0.5])
     Q = np.array([0.0, 1.0, 0.0])
@@ -246,7 +246,7 @@ def test_naive_occurrences_exact_aamp():
 
     left = [[0, 0], [5, 0]]
     right = list(
-        naive_occurrences(
+        naive_match(
             Q,
             T,
             excl_zone=excl_zone,
@@ -262,7 +262,7 @@ def test_naive_occurrences_exact_aamp():
     npt.assert_almost_equal(left, right)
 
 
-def test_naive_occurrences_exclusion_zone():
+def test_naive_match_exclusion_zone():
     # The query appears as a perfect match at location 1 and as very close matches
     # (z-normalized distance of 0.05) at location 0, 5 and 9.
     # However, since we apply an exclusion zone, the match at index 0 is ignored
@@ -277,7 +277,7 @@ def test_naive_occurrences_exclusion_zone():
         [9, naive.distance(core.z_norm(Q), core.z_norm(T[9 : 9 + m]))],
     ]
     right = list(
-        naive_occurrences(
+        naive_match(
             Q,
             T,
             excl_zone=excl_zone,
@@ -293,7 +293,7 @@ def test_naive_occurrences_exclusion_zone():
     npt.assert_almost_equal(left, right)
 
 
-def test_naive_occurrences_exclusion_zone_aamp():
+def test_naive_match_exclusion_zone_aamp():
     # The query appears as a perfect match at location 1 and as very close matches
     # (z-normalized distance of 0.05) at location 0 and 7 (at index 11, the query is
     # not matched in the aamp case).
@@ -311,7 +311,7 @@ def test_naive_occurrences_exclusion_zone_aamp():
         [7, naive.distance(Q, T[7 : 7 + m])],
     ]
     right = list(
-        naive_occurrences(
+        naive_match(
             Q,
             T,
             excl_zone=excl_zone,
@@ -328,14 +328,14 @@ def test_naive_occurrences_exclusion_zone_aamp():
 
 
 @pytest.mark.parametrize("Q, T", test_data)
-def test_occurrences(Q, T):
+def test_match(Q, T):
     m = Q.shape[0]
     excl_zone = int(np.ceil(m / 4))
     rtol = 1
     atol = 1
     profile_value = 1
 
-    left = naive_occurrences(
+    left = naive_match(
         Q,
         T,
         excl_zone,
@@ -345,7 +345,7 @@ def test_occurrences(Q, T):
         normalize=True,
     )
 
-    right = occurrences(
+    right = match(
         Q,
         T,
         excl_zone=excl_zone,
