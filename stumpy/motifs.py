@@ -11,7 +11,7 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
-def _create_array_from_jagged_list(x, dtype, fill_value):
+def _jagged_list_to_array(a, dtype, fill_value):
     """Fits a 2d jagged list into a 2d numpy array of the specified dtype.
     The resulting array will have a shape of (len(x), v), where v is the length
     of the longest list in x. All other lists will be padded with `fill_value`.
@@ -23,7 +23,7 @@ def _create_array_from_jagged_list(x, dtype, fill_value):
     Parameters
     ----------
     x : list
-        Jagged list (two dimensional) to be converted into a ndarray.
+        Jagged list (list-of-lists) to be converted into a ndarray.
 
     dtype : data-type
         The desired data-type for the array.
@@ -36,10 +36,10 @@ def _create_array_from_jagged_list(x, dtype, fill_value):
     out : ndarray
         The resuling ndarray of dtype `dtype`.
     """
-    max_length = max([len(row) for row in x])
+    max_length = max([len(row) for row in a])
 
-    out = np.full((len(x), max_length), fill_value, dtype=dtype)
-    for i, row in enumerate(x):
+    out = np.full((len(a), max_length), fill_value, dtype=dtype)
+    for i, row in enumerate(a):
         out[i, : row.size] = row
 
     return out
@@ -53,7 +53,7 @@ def _motifs(
     Σ_T,
     excl_zone,
     min_neighbors,
-    max_occurrences,
+    max_matches,
     atol,
     rtol,
     normalize,
@@ -73,10 +73,10 @@ def _motifs(
     P : ndarray
         Matrix Profile of `T` (result of a self-join)
 
-    k : int
-        Number of motifs to search. Defaults to `1`.
+    k : int, default 1
+        Number of motifs to search.
 
-    excl_zone : int or None, default None
+    excl_zone : int, default None
         Size of the exclusion zone.
         If `None`, defaults to `m/4`, where `m` is the length of `Q`.
 
@@ -86,7 +86,7 @@ def _motifs(
         Defaults to `1`. This means, that a subsequence has to have
         at least one similar occurrence to be considered a motif.
 
-    max_occurrences : int, default 10
+    max_matches : int, default 10
         The maximum amount of similar occurrences to be returned. The resulting
         occurrences are sorted by distance, so a value of `10` means that the
         indices of the most similar `10` subsequences is returned. If `None`,
@@ -131,24 +131,24 @@ def _motifs(
 
         Q = T[:, candidate_idx : candidate_idx + m]
 
-        query_occurrences = match(
+        query_matches = match(
             Q,
             T,
             M_T=M_T,
             Σ_T=Σ_T,
             excl_zone=excl_zone,
-            max_occurrences=max_occurrences,
+            max_matches=max_matches,
             profile_value=profile_value,
             atol=atol,
             rtol=rtol,
             normalize=normalize,
         )
 
-        if len(query_occurrences) > min_neighbors:
-            top_k_indices.append(query_occurrences[:, 0])
-            top_k_values.append(query_occurrences[:, 1])
+        if len(query_matches) > min_neighbors:
+            top_k_indices.append(query_matches[:, 0])
+            top_k_values.append(query_matches[:, 1])
 
-        for idx in query_occurrences[:, 0]:
+        for idx in query_matches[:, 0]:
             core.apply_exclusion_zone(P, idx, excl_zone)
 
         candidate_idx = np.argmin(P[-1])
@@ -162,7 +162,7 @@ def motifs(
     k=1,
     excl_zone=None,
     min_neighbors=1,
-    max_occurrences=10,
+    max_matches=10,
     atol=None,
     rtol=1.0,
     normalize=True,
@@ -182,10 +182,16 @@ def motifs(
     P : ndarray
         Matrix Profile of `T` (result of a self-join)
 
-    k : int
-        Number of motifs to search. Defaults to `1`.
+    M_T : ndarray
+        Sliding mean of time series, `T`
 
-    excl_zone : int or None, default None
+    Σ_T : ndarray
+        Sliding standard deviation of time series, `T`
+
+    k : int, default 1
+        Number of motifs to search.
+
+    excl_zone : int, default None
         Size of the exclusion zone.
         If `None`, defaults to `m/4`, where `m` is the length of `Q`.
 
@@ -195,7 +201,7 @@ def motifs(
         Defaults to `1`. This means, that a subsequence has to have
         at least one similar occurrence to be considered a motif.
 
-    max_occurrences : int, default 10
+    max_matches : int, default 10
         The maximum amount of similar occurrences to be returned. The resulting
         occurrences are sorted by distance, so a value of `10` means that the
         indices of the most similar `10` subsequences is returned. If `None`,
@@ -261,8 +267,8 @@ def motifs(
         excl_zone = int(np.ceil(m / 4))
     if atol is None:  # pragma: no cover
         atol = 0.25 * np.std(P)
-    if max_occurrences is None:  # pragma: no cover
-        max_occurrences = np.inf
+    if max_matches is None:  # pragma: no cover
+        max_matches = np.inf
 
     result = _motifs(
         T=T,
@@ -272,14 +278,14 @@ def motifs(
         Σ_T=Σ_T,
         excl_zone=excl_zone,
         min_neighbors=min_neighbors,
-        max_occurrences=max_occurrences,
+        max_matches=max_matches,
         atol=atol,
         rtol=rtol,
         normalize=normalize,
     )
     result = (
-        _create_array_from_jagged_list(result[0], fill_value=-1, dtype=int),
-        _create_array_from_jagged_list(result[1], fill_value=np.nan, dtype=float),
+        _jagged_list_to_array(result[0], fill_value=-1, dtype="int64"),
+        _jagged_list_to_array(result[1], fill_value=np.nan, dtype="float64"),
     )
 
     return result
@@ -291,7 +297,7 @@ def match(
     M_T=None,
     Σ_T=None,
     excl_zone=None,
-    max_occurrences=None,
+    max_matches=None,
     profile_value=0.0,
     atol=None,
     rtol=1.0,
@@ -312,27 +318,27 @@ def match(
     T : ndarray
         The time series of interest
 
-    M_T : ndarray or None
+    M_T : ndarray, default None
         Sliding mean of time series, `T`
 
-    Σ_T : ndarray or None
+    Σ_T : ndarray, default None
         Sliding standard deviation of time series, `T`
 
-    excl_zone : int or None, default None
+    excl_zone : int, default None
         Size of the exclusion zone.
         If `None`, defaults to `m/4`, where `m` is the length of `Q`.
 
-    max_occurrences : int or None, default None
+    max_matches : int, default None
         The maximum amount of similar occurrences to be returned. The resulting
         occurrences are sorted by distance, so a value of `10` means that the
         indices of the most similar `10` subsequences is returned. If `None`, then all
         occurrences are returned.
 
-    profile_value : float, default `0.0`
+    profile_value : float, default 0.0
         Reference value for relative tolerance (if `Q` is a subsequence of `T`,
         this will typically be Qs matrix profile value).
 
-    atol : float or None, default None
+    atol : float, default None
         Absolute tolerance (see equation in description).
         If `None`, defaults to `0.25 * np.std(P)`
 
@@ -361,8 +367,8 @@ def match(
 
     if excl_zone is None:  # pragma: no cover
         excl_zone = int(np.ceil(m / 4))
-    if max_occurrences is None:  # pragma: no cover
-        max_occurrences = np.inf
+    if max_matches is None:  # pragma: no cover
+        max_matches = np.inf
 
     if np.any(np.isnan(Q)) or np.any(np.isinf(Q)):  # pragma: no cover
         raise ValueError("Q contains illegal values (NaN or inf)")
@@ -380,15 +386,12 @@ def match(
 
     D = np.sum(D, axis=0) / d
 
-    occurrences = []
+    matches = []
 
     candidate_idx = np.argmin(D)
-    while (
-        D[candidate_idx] < atol + rtol * profile_value
-        and len(occurrences) < max_occurrences
-    ):
-        occurrences.append([candidate_idx, D[candidate_idx]])
+    while D[candidate_idx] < atol + rtol * profile_value and len(matches) < max_matches:
+        matches.append([candidate_idx, D[candidate_idx]])
         core.apply_exclusion_zone(D, candidate_idx, excl_zone)
         candidate_idx = np.argmin(D)
 
-    return np.array(occurrences, dtype=object)
+    return np.array(matches, dtype=object)

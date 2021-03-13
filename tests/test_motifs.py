@@ -4,7 +4,7 @@ import pytest
 
 from stumpy import core, motifs, match
 
-from stumpy.motifs import _create_array_from_jagged_list
+from stumpy.motifs import _jagged_list_to_array
 
 import naive
 
@@ -49,17 +49,17 @@ def naive_match(Q, T, excl_zone, profile_value, atol, rtol, normalize):
     return np.array(result, dtype=object)
 
 
-def test_create_array_from_jagged_list():
+def test_jagged_list_to_array():
     arr = [np.array([0, 1]), np.array([0]), np.array([0, 1, 2, 3])]
 
     left = np.array([[0, 1, -1, -1], [0, -1, -1, -1], [0, 1, 2, 3]], dtype=int)
-    right = _create_array_from_jagged_list(arr, fill_value=-1, dtype=int)
+    right = _jagged_list_to_array(arr, fill_value=-1, dtype=int)
     npt.assert_array_equal(left, right)
 
     left = np.array(
         [[0, 1, np.nan, np.nan], [0, np.nan, np.nan, np.nan], [0, 1, 2, 3]], dtype=float
     )
-    right = _create_array_from_jagged_list(arr, fill_value=np.nan, dtype=float)
+    right = _jagged_list_to_array(arr, fill_value=np.nan, dtype=float)
     npt.assert_array_equal(left, right)
 
 
@@ -349,7 +349,7 @@ def test_match(Q, T):
         Q,
         T,
         excl_zone=excl_zone,
-        max_occurrences=None,
+        max_matches=None,
         profile_value=profile_value,
         atol=atol,
         rtol=rtol,
