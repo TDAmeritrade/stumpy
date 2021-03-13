@@ -392,7 +392,9 @@ def match(
     matches = []
 
     candidate_idx = np.argmin(D)
-    while D[candidate_idx] <= atol + rtol * profile_value and len(matches) < max_matches:
+    while (
+        D[candidate_idx] <= atol + rtol * profile_value and len(matches) < max_matches
+    ):
         matches.append([candidate_idx, D[candidate_idx]])
         core.apply_exclusion_zone(D, candidate_idx, excl_zone)
         candidate_idx = np.argmin(D)
