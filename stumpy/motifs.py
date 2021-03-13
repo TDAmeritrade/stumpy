@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 def _jagged_list_to_array(a, dtype, fill_value):
     """Fits a 2d jagged list into a 2d numpy array of the specified dtype.
-    The resulting array will have a shape of (len(x), v), where v is the length
-    of the longest list in x. All other lists will be padded with `fill_value`.
+    The resulting array will have a shape of (len(a), l), where l is the length
+    of the longest list in a. All other lists will be padded with `fill_value`.
 
     Example:
     [[2, 1, 1], [0]] with a fill value of -1 will become
@@ -22,7 +22,7 @@ def _jagged_list_to_array(a, dtype, fill_value):
 
     Parameters
     ----------
-    x : list
+    a : list
         Jagged list (list-of-lists) to be converted into a ndarray.
 
     dtype : data-type
@@ -60,8 +60,8 @@ def _motifs(
 ):
     """Find the top k motifs of the time series `T`.
 
-    A subsequence `Q` is considered a motif if there is at least `min_neighbor` other
-    occurrences in `T` (outside the exclusion zone) with distance smaller than
+    A subsequence `Q` is considered a motif if there are at least `min_neighbor` other
+    matches in `T` (outside the exclusion zone) with distance less or equal to
     `atol + rtol * profile_value`, where `profile_value` is the matrix profile
     value of `Q`.
 
@@ -81,16 +81,16 @@ def _motifs(
         If `None`, defaults to `m/4`, where `m` is the length of `Q`.
 
     min_neighbors : int, default 1
-        The minimum amount of similar occurrences a subsequence needs to have
+        The minimum amount of similar matches a subsequence needs to have
         to be considered a motif.
         Defaults to `1`. This means, that a subsequence has to have
-        at least one similar occurrence to be considered a motif.
+        at least one similar match to be considered a motif.
 
     max_matches : int, default 10
-        The maximum amount of similar occurrences to be returned. The resulting
-        occurrences are sorted by distance, so a value of `10` means that the
+        The maximum amount of similar matches to be returned. The resulting
+        matches are sorted by distance, so a value of `10` means that the
         indices of the most similar `10` subsequences is returned. If `None`,
-        all occurrences in the given tolerance range are returned.
+        all matches in the given tolerance range are returned.
 
     atol : float, default None
         Absolute tolerance (see equation in description).
@@ -107,13 +107,13 @@ def _motifs(
     Return
     ------
     top_k_indices : list
-        List of the indices of all occurrences of the top k motifs, sorted by distance
+        List of the indices of all matches of the top k motifs, sorted by distance
         from the motif representative. The motif representative starts at the first
         index and is the subsequence with the lowest matrix profile value that is part
         of a motif.
 
     top_k_values : ndarray
-        List of the distances of all occurrences of the top k motifs to the
+        List of the distances of all matches of the top k motifs to the
         motif representative.
     """
     n = T.shape[1]
@@ -169,8 +169,8 @@ def motifs(
 ):
     """Find the top k motifs of the time series `T`.
 
-    A subsequence `Q` is considered a motif if there is at least `min_neighbor` other
-    occurrences in `T` (outside the exclusion zone) with distance smaller than
+    A subsequence `Q` is considered a motif if there are at least `min_neighbor` other
+    matches in `T` (outside the exclusion zone) with distance less or equal to
     `atol + rtol * profile_value`, where `profile_value` is the matrix profile
     value of `Q`.
 
@@ -196,16 +196,16 @@ def motifs(
         If `None`, defaults to `m/4`, where `m` is the length of `Q`.
 
     min_neighbors : int, default 1
-        The minimum amount of similar occurrences a subsequence needs to have
+        The minimum amount of similar matches a subsequence needs to have
         to be considered a motif.
         Defaults to `1`. This means, that a subsequence has to have
-        at least one similar occurrence to be considered a motif.
+        at least one similar match to be considered a motif.
 
     max_matches : int, default 10
-        The maximum amount of similar occurrences to be returned. The resulting
-        occurrences are sorted by distance, so a value of `10` means that the
+        The maximum amount of similar matches to be returned. The resulting
+        matches are sorted by distance, so a value of `10` means that the
         indices of the most similar `10` subsequences is returned. If `None`,
-        all occurrences in the given tolerance range are returned.
+        all matches in the given tolerance range are returned.
 
     atol : float, default None
         Absolute tolerance (see equation in description).
@@ -222,20 +222,20 @@ def motifs(
     Return
     ------
     top_motif_indices : ndarray
-        Array of top motif indices. List of the indices of all occurrences of the top
+        Array of top motif indices. List of the indices of all matches of the top
         k motifs, sorted by distance from the motif representative. The motif
         representative starts at the first index and is the subsequence with the lowest
         matrix profile value that is part of a motif.
 
         There are at most `k` rows, each of which represents
-        one motif. All found occurrences within a distance of `atol + MP * rtol` (where
+        one motif. All found matches within a distance of `atol + MP * rtol` (where
         MP is the matrix profile value of the motif representative) are returned. The
         array has either `max_neighbors` columns if specified, or as many columns as
-        number of occurrences for the motif with most found occurrences. Everything else
+        number of matches for the motif with most found matches. Everything else
         is filled up with -1.
 
     top_motif_values : ndarray
-        For every occurrence its distance to the motif representative.
+        For every match its distance to the motif representative.
     """
     if k < 1:  # pragma: no cover
         logger.warn("The number of motifs, `k`, must be greater than or equal to 1")
@@ -304,9 +304,9 @@ def match(
     normalize=True,
 ):
     """
-    Find all occurrences of a query `Q` in a time series `T`, i.e. the indices
-    of subsequences whose distance to `Q` is smaller than `atol + rtol * profile_value`,
-    sorted by distance (lowest to highest).
+    Find all matches of a query `Q` in a time series `T`, i.e. the indices
+    of subsequences whose distances to `Q` are less or equal to
+    `atol + rtol * profile_value`, sorted by distance (lowest to highest).
 
     Around each occurrence an exclusion zone is applied before searching for the next.
 
@@ -340,9 +340,10 @@ def match(
 
     atol : float, default None
         Absolute tolerance (see equation in description).
-        If `None`, defaults to `0.25 * np.std(P)`
+        If `None`, defaults to the distance of `Q` to its closest match in `T`,
+        which is not `Q`.
 
-    rtol : float, default `1.0`
+    rtol : float, default 1.0
         Relative tolerance (see equation in description
 
     normalize : bool, default True
@@ -385,11 +386,13 @@ def match(
         D = [core.mass_absolute(Q[i], T[i]) for i in range(d)]
 
     D = np.sum(D, axis=0) / d
+    if atol is None:
+        atol = np.min(D[D > 1e-7])
 
     matches = []
 
     candidate_idx = np.argmin(D)
-    while D[candidate_idx] < atol + rtol * profile_value and len(matches) < max_matches:
+    while D[candidate_idx] <= atol + rtol * profile_value and len(matches) < max_matches:
         matches.append([candidate_idx, D[candidate_idx]])
         core.apply_exclusion_zone(D, candidate_idx, excl_zone)
         candidate_idx = np.argmin(D)
