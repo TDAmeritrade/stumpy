@@ -137,6 +137,64 @@ def test_motifs_two_motifs():
     np.random.seed(None)
 
 
+def test_motifs_max_matches():
+    """This test covers the following:
+
+    A time series contains motif A at four locations and motif B at two.
+    If `max_motif=2` the result should contain only the top two matches of motif A
+    and the top two matches of motif B as two separate motifs.
+    """
+    T = np.array(
+        [
+            0.0,  # motif A
+            1.0,
+            0.0,
+            2.3,
+            -1.0,  # motif B
+            -1.0,
+            -2.0,
+            0.0,  # motif A
+            1.0,
+            0.0,
+            -2.0,
+            -1.0,  # motif B
+            -1.03,
+            -2.0,
+            -0.5,
+            2.0,  # motif A
+            3.0,
+            2.04,
+            2.3,
+            2.0,  # motif A
+            3.0,
+            2.02,
+        ]
+    )
+    m = 3
+    k = 3
+
+    left_indices = [[0, 7], [4, 11]]
+    left_profile_values = [
+        [0.0, 0.0],
+        [
+            0.0,
+            naive.distance(
+                core.z_norm(T[left_indices[1][0] : left_indices[1][0] + m]),
+                core.z_norm(T[left_indices[1][1] : left_indices[1][1] + m]),
+            ),
+        ],
+    ]
+
+    P = naive.stump(T, m)
+    right_indices, right_distance_values = motifs(
+        T, P[:, 0], k=k, atol=0.1, rtol=0.0, normalize=True, max_matches=2
+    )
+
+    # We ignore indices because of sorting ambiguities for equal distances.
+    # As long as the distances are correct, the indices will be too.
+    npt.assert_almost_equal(left_profile_values, right_distance_values, decimal=4)
+
+
 def test_motifs_one_motif_aamp():
     # The top motif for m=3 is a [0 1 0] at indices 0 and 5, while the occurrence
     # at index 9 is not a motif in the aamp case.

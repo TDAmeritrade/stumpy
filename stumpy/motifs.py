@@ -137,7 +137,7 @@ def _motifs(
             M_T=M_T,
             Σ_T=Σ_T,
             excl_zone=excl_zone,
-            max_matches=max_matches,
+            max_matches=None,
             profile_value=profile_value,
             atol=atol,
             rtol=rtol,
@@ -145,11 +145,12 @@ def _motifs(
         )
 
         if len(query_matches) > min_neighbors:
-            top_k_indices.append(query_matches[:, 0])
-            top_k_values.append(query_matches[:, 1])
+            top_k_indices.append(query_matches[:max_matches, 0])
+            top_k_values.append(query_matches[:max_matches, 1])
 
-        for idx in query_matches[:, 0]:
-            core.apply_exclusion_zone(P, idx, excl_zone)
+        if len(query_matches) > 0:
+            for idx in query_matches[:, 0]:
+                core.apply_exclusion_zone(P, idx, excl_zone)
 
         candidate_idx = np.argmin(P[-1])
 
