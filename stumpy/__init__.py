@@ -19,6 +19,7 @@ from .scraamp import scraamp, prescraamp  # noqa: F401
 from .stumpi import stumpi  # noqa: F401
 from .mpdist import mpdist, mpdisted  # noqa: F401
 from .aampdist import aampdist, aampdisted  # noqa: F401
+from .motifs import motifs, match  # noqa: F401
 from numba import cuda
 
 if cuda.is_available():

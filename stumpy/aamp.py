@@ -128,15 +128,7 @@ def _compute_diagonal(
 
 
 @njit(parallel=True, fastmath=True)
-def _aamp(
-    T_A,
-    T_B,
-    m,
-    T_A_subseq_isfinite,
-    T_B_subseq_isfinite,
-    diags,
-    ignore_trivial,
-):
+def _aamp(T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_trivial):
     """
     A Numba JIT-compiled version of AAMP for parallel computation of the matrix
     profile and matrix profile indices.
@@ -303,13 +295,7 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
 
     P, I = _aamp(
-        T_A,
-        T_B,
-        m,
-        T_A_subseq_isfinite,
-        T_B_subseq_isfinite,
-        diags,
-        ignore_trivial,
+        T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_trivial
     )
 
     out[:, 0] = P[:, 0]
