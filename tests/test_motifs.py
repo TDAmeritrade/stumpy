@@ -43,7 +43,7 @@ def naive_match(Q, T, excl_zone, max_distance, normalize):
     result = []
     while len(matches) > 0:
         o = matches[0]
-        result.append([o, D[o]])
+        result.append([D[o], o])
         matches = [x for x in matches if x < o - excl_zone or x > o + excl_zone]
 
     return np.array(result, dtype=object)
@@ -86,7 +86,7 @@ def test_motifs_one_motif():
     left_profile_values = [[0.0, 0.0, 0.0]]
 
     P = naive.stump(T, m)
-    right_indices, right_distance_values = motifs(
+    right_distance_values, right_indices = motifs(
         T,
         P[:, 0],
         max_distance=lambda D: 0.001,  # Also test lambda functionality
@@ -143,7 +143,7 @@ def test_motifs_two_motifs():
         ],
     ]
 
-    right_indices, right_distance_values = motifs(
+    right_distance_values, right_indices = motifs(
         T,
         P[:, 0],
         max_motifs=max_motifs,
@@ -208,7 +208,7 @@ def test_motifs_max_matches():
     ]
 
     P = naive.stump(T, m)
-    right_indices, right_distance_values = motifs(
+    right_distance_values, right_indices = motifs(
         T,
         P[:, 0],
         max_motifs=max_motifs,
@@ -234,7 +234,7 @@ def test_motifs_one_motif_aamp():
     left_profile_values = [[0.0, 0.0]]
 
     P = naive.stump(T, m)
-    right_indices, right_distance_values = motifs(
+    right_distance_values, right_indices = motifs(
         T,
         P[:, 0],
         max_motifs=max_motifs,
@@ -291,7 +291,7 @@ def test_motifs_two_motifs_aamp():
         ],
     ]
 
-    right_indices, right_distance_values = motifs(
+    right_distance_values, right_indices = motifs(
         T,
         P[:, 0],
         max_motifs=max_motifs,
@@ -315,7 +315,7 @@ def test_naive_matches_exact():
     m = Q.shape[0]
     excl_zone = int(np.ceil(m / 4))
 
-    left = [[0, 0], [5, 0], [9, 0]]
+    left = [[0, 0], [0, 5], [0, 9]]
     right = list(
         naive_match(
             Q,
@@ -338,7 +338,7 @@ def test_naive_match_exact_aamp():
     m = Q.shape[0]
     excl_zone = int(np.ceil(m / 4))
 
-    left = [[0, 0], [5, 0]]
+    left = [[0, 0], [0, 5]]
     right = list(
         naive_match(
             Q,
@@ -364,9 +364,9 @@ def test_naive_match_exclusion_zone():
     excl_zone = int(np.ceil(m / 4))
 
     left = [
-        [1, 0],
-        [5, naive.distance(core.z_norm(Q), core.z_norm(T[5 : 5 + m]))],
-        [9, naive.distance(core.z_norm(Q), core.z_norm(T[9 : 9 + m]))],
+        [0, 1],
+        [naive.distance(core.z_norm(Q), core.z_norm(T[5 : 5 + m])), 5],
+        [naive.distance(core.z_norm(Q), core.z_norm(T[9 : 9 + m])), 9],
     ]
     right = list(
         naive_match(
@@ -397,8 +397,8 @@ def test_naive_match_exclusion_zone_aamp():
     excl_zone = m
 
     left = [
-        [3, 0],
-        [7, naive.distance(Q, T[7 : 7 + m])],
+        [0, 3],
+        [naive.distance(Q, T[7 : 7 + m]), 7],
     ]
     right = list(
         naive_match(
@@ -410,7 +410,7 @@ def test_naive_match_exclusion_zone_aamp():
         )
     )
     # To avoid sorting errors we first sort based on disance and then based on indices
-    right.sort(key=lambda x: (x[1], x[0]))
+    right.sort(key=lambda x: (x[0], x[1]))
 
     npt.assert_almost_equal(left, right)
 

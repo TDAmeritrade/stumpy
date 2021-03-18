@@ -11,7 +11,7 @@ from . import core
 logger = logging.getLogger(__name__)
 
 
-def _jagged_list_to_array(a, dtype, fill_value):
+def _jagged_list_to_array(a, fill_value, dtype):
     """Fits a 2d jagged list into a 2d numpy array of the specified dtype.
     The resulting array will have a shape of (len(a), l), where l is the length
     of the longest list in a. All other lists will be padded with `fill_value`.
@@ -25,11 +25,11 @@ def _jagged_list_to_array(a, dtype, fill_value):
     a : list
         Jagged list (list-of-lists) to be converted into a ndarray.
 
-    dtype : data-type
-        The desired data-type for the array.
-
-    fill_value : dtype
+    fill_value : int or float
         Missing entries will be filled with this value.
+
+    dtype : dtype
+        The desired data-type for the array.
 
     Return
     ------
@@ -60,12 +60,11 @@ def _motifs(
     max_motifs,
     normalize,
 ):
-    """Find the top k motifs of the time series `T`.
+    """Find the top motifs of the time series `T`.
 
-    A subsequence `Q` is considered a motif if there are at least `min_neighbor` other
-    matches in `T` (outside the exclusion zone) with distance less or equal to
-    `atol + rtol * profile_value`, where `profile_value` is the matrix profile
-    value of `Q`.
+    A subsequence `Q` is called a motif representative there are at least
+    `min_neighbor` other matches in `T` (outside the exclusion zone) with a
+    distance less or equal to `max_distance`.
 
     Parameters
     ----------
@@ -74,6 +73,12 @@ def _motifs(
 
     P : ndarray
         Matrix Profile of `T` (result of a self-join)
+
+    M_T : ndarray
+        Sliding mean for `T`
+
+    Σ_T : ndarray
+        Sliding standard deviation for `T`
 
     excl_zone : int
         Size of the exclusion zone.
@@ -85,13 +90,13 @@ def _motifs(
         Defaults to `1`. This means, that a subsequence has to have
         at least one similar match to be considered a motif.
 
-    max_distance : float or function
-        Maximum distance between a motif candidate `Q` and a subsequence `S` and  for
-        `S` to be considered a match of the motif represented by `Q`.
-        If a function, then it has to be a function of one argument `D`, which will be
-        the distance profile of `Q` with `T` (a 1D numpy array of size `n-m+1`).
-        If None, defaults to `max(np.mean(D) - 2 * np.std(D), np.min(D))`, meaning
-        that least the closest match will be returned.
+    max_distance : float or function, default None
+        Maximum distance between a motif representative `Q` and a subsequence `S` for
+        `S` to be considered a match of `Q`.
+        If `max_distance` is a function, then it has to be a function of one argument
+        `D`, which will be the distance profile of `Q` with `T` (a 1D numpy array of
+        size `n-m+1`).
+        If None, defaults to `max(np.mean(D) - 2 * np.std(D), np.min(D))`.
 
     max_matches : int
         The maximum amount of similar matches to be returned. The resulting
@@ -109,27 +114,29 @@ def _motifs(
 
     Return
     ------
-    top_k_indices : list
-        List of the indices of all matches of the top k motifs, sorted by distance
-        from the motif representative. The motif representative starts at the first
-        index and is the subsequence with the lowest matrix profile value that is part
-        of a motif.
+    motif_distances : list
 
-    top_k_values : ndarray
-        List of the distances of all matches of the top k motifs to the
-        motif representative.
+
+    motif_indices : list
+
     """
     n = T.shape[1]
     l = P.shape[1]
     m = n - l + 1
 
-    top_k_indices = []
-    top_k_values = []
+    motif_indices = []
+    motif_distances = []
 
     candidate_idx = np.argmin(P[-1])
-    while len(top_k_indices) < max_motifs:
+    while len(motif_indices) < max_motifs:
         profile_value = P[-1, candidate_idx]
-        if np.isinf(profile_value):  # pragma: no cover
+        if np.isinf(profile_value):
+            break
+
+        # If max_distance is a constant (independent of the distance profile D of Q
+        # and T), then we can stop the iteration if the matrix profile value of Q is
+        # larger than the maximum distance.
+        if isinstance(max_distance, float) and profile_value > max_distance:
             break
 
         Q = T[:, candidate_idx : candidate_idx + m]
@@ -146,20 +153,15 @@ def _motifs(
         )
 
         if len(query_matches) > min_neighbors:
-            top_k_indices.append(query_matches[:max_matches, 0])
-            top_k_values.append(query_matches[:max_matches, 1])
+            motif_distances.append(query_matches[:max_matches, 0])
+            motif_indices.append(query_matches[:max_matches, 1])
 
-        if len(query_matches) > 0:
-            for idx in query_matches[:, 0]:
-                core.apply_exclusion_zone(P, idx, excl_zone)
-        else:  # pragma: no cover
-            # I no match was found, still apply an exclusion zone around the candidate
-            # index, we do not want to consider it as a motif candidate again.
-            core.apply_exclusion_zone(P, candidate_idx, excl_zone)
+        for idx in query_matches[:, 1]:
+            core.apply_exclusion_zone(P, int(idx), excl_zone)
 
         candidate_idx = np.argmin(P[-1])
 
-    return top_k_indices, top_k_values
+    return motif_distances, motif_indices
 
 
 def motifs(
@@ -173,12 +175,11 @@ def motifs(
     max_motifs=1,
     normalize=True,
 ):
-    """Find the top k motifs of the time series `T`.
+    """Find the top motifs of the time series `T`.
 
-    A subsequence `Q` is considered a motif if there are at least `min_neighbor` other
-    matches in `T` (outside the exclusion zone) with distance less or equal to
-    `atol + rtol * profile_value`, where `profile_value` is the matrix profile
-    value of `Q`.
+    A subsequence `Q` is called a motif representative there are at least
+    `min_neighbor` other matches in `T` (outside the exclusion zone) with a
+    distance less or equal to `max_distance`.
 
     Parameters
     ----------
@@ -188,39 +189,34 @@ def motifs(
     P : ndarray
         Matrix Profile of `T` (result of a self-join)
 
-    M_T : ndarray
-        Sliding mean of time series, `T`
-
-    Σ_T : ndarray
-        Sliding standard deviation of time series, `T`
-
     excl_zone : int, default None
         Size of the exclusion zone.
         If `None`, defaults to `m/4`, where `m` is the length of `Q`.
 
     min_neighbors : int, default 1
         The minimum amount of similar matches a subsequence needs to have
-        to be considered a motif.
+        to be considered a motif representative.
         Defaults to `1`. This means, that a subsequence has to have
         at least one similar match to be considered a motif.
 
     max_distance : float or function, default None
-        Maximum distance between a motif candidate `Q` and a subsequence `S` and  for
-        `S` to be considered a match of the motif represented by `Q`.
-        If a function, then it has to be a function of one argument `D`, which will be
-        the distance profile of `Q` with `T` (a 1D numpy array of size `n-m+1`).
-        If None, defaults to `max(np.mean(D) - 2 * np.std(D), np.min(D))`, meaning
-        that least the closest match will be returned.
+        Maximum distance between a motif representative `Q` and a subsequence `S` for
+        `S` to be considered a match of `Q`.
+        If `max_distance` is a function, then it has to be a function of one argument
+        `D`, which will be the distance profile of `Q` with `T` (a 1D numpy array of
+        size `n-m+1`).
+        If None, defaults to `max(np.mean(D) - 2 * np.std(D), np.min(D))`.
 
     cutoff : float, default None
         The largest matrix profile value a motif representative is allowed to have.
         If `None`, defaults to `max(np.mean(P) - 2 * np.std(P), np.min(P))`
 
     max_matches : int, default 10
-        The maximum amount of similar matches to be returned. The resulting
-        matches are sorted by distance, so a value of `10` means that the
-        indices of the most similar `10` subsequences is returned. If `None`,
-        all matches in the given tolerance range are returned.
+        The maximum amount of similar matches of a motif representative to be returned.
+        The resulting matches are sorted by distance, so a value of `10` means that the
+        indices of the most similar `10` subsequences is returned.
+        If `None`, all matches within `max_distance` of the motif representative
+        will be returned.
 
     max_motifs : int, default 1
         Maxmimum number of motifs to return.
@@ -232,21 +228,7 @@ def motifs(
 
     Return
     ------
-    top_motif_indices : ndarray
-        Array of top motif indices. List of the indices of all matches of the top
-        k motifs, sorted by distance from the motif representative. The motif
-        representative starts at the first index and is the subsequence with the lowest
-        matrix profile value that is part of a motif.
 
-        There are at most `k` rows, each of which represents
-        one motif. All found matches within a distance of `atol + MP * rtol` (where
-        MP is the matrix profile value of the motif representative) are returned. The
-        array has either `max_neighbors` columns if specified, or as many columns as
-        number of matches for the motif with most found matches. Everything else
-        is filled up with -1.
-
-    top_motif_values : ndarray
-        For every match its distance to the motif representative.
     """
     if max_motifs < 1:  # pragma: no cover
         logger.warn(
@@ -276,13 +258,13 @@ def motifs(
     if cutoff is None:  # pragma: no cover
         cutoff = max(np.mean(P) - 2 * np.std(P), np.min(P))
 
+    # Maybe it makes sense to set max_distance to some constant default value if None
+    # is passed.
+
     # core.preprocess performs a copy, so modifiying this T will not
     # change the function input time series
     T, M_T, Σ_T = core.preprocess(T[np.newaxis, :], m)
-
-    P = P.copy().astype(float)
-    P[P > cutoff] = np.inf
-    P = P[np.newaxis, :]
+    P = P[np.newaxis, :].astype("float64")
 
     result = _motifs(
         T=T,
@@ -297,8 +279,8 @@ def motifs(
         normalize=normalize,
     )
     result = (
-        _jagged_list_to_array(result[0], fill_value=-1, dtype="int64"),
-        _jagged_list_to_array(result[1], fill_value=np.nan, dtype="float64"),
+        _jagged_list_to_array(result[0], fill_value=np.nan, dtype="float64"),
+        _jagged_list_to_array(result[1], fill_value=-1, dtype="int64"),
     )
 
     return result
@@ -361,9 +343,9 @@ def match(
     Returns
     -------
     out : ndarray
-        The first column consists of indices of subsequences of `T` whose distances
-        to `Q` are smaller than `atol + rtol * profile_value`, sorted by distance
-        (lowest to highest). The second column consist of the corresponding distances.
+        The first column consists of distances of subsequences of `T` whose distances
+        to `Q` are smaller than `max_distance`, sorted by distance (lowest to highest).
+        The second column consist of the corresponding indices in `T`.
     """
     if len(Q.shape) == 1:
         Q = Q[np.newaxis, :]
@@ -389,10 +371,9 @@ def match(
         def max_distance(D):
             return max(np.mean(D) - 2 * np.std(D), np.min(D))
 
-    if M_T is None or Σ_T is None:  # pragma: no cover
-        T, M_T, Σ_T = core.preprocess(T, m)
-
     if normalize:
+        if M_T is None or Σ_T is None:  # pragma: no cover
+            T, M_T, Σ_T = core.preprocess(T, m)
         D = [core.mass(Q[i], T[i], M_T[i], Σ_T[i]) for i in range(d)]
     else:
         D = [core.mass_absolute(Q[i], T[i]) for i in range(d)]
@@ -405,7 +386,7 @@ def match(
 
     candidate_idx = np.argmin(D)
     while D[candidate_idx] <= max_distance and len(matches) < max_matches:
-        matches.append([candidate_idx, D[candidate_idx]])
+        matches.append([D[candidate_idx], candidate_idx])
         core.apply_exclusion_zone(D, candidate_idx, excl_zone)
         candidate_idx = np.argmin(D)
 
