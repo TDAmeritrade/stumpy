@@ -250,7 +250,7 @@ def motifs(
             "Multidimensional motif discovery is not yet supported."
         )
 
-    m = T.shape[0] - P.shape[0] + 1
+    m = T.shape[-1] - P.shape[-1] + 1
     if excl_zone is None:  # pragma: no cover
         excl_zone = int(np.ceil(m / 4))
     if max_matches is None:  # pragma: no cover
