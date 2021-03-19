@@ -130,7 +130,7 @@ def _motifs(
     candidate_idx = np.argmin(P[-1])
     while len(motif_indices) < max_motifs:
         profile_value = P[-1, candidate_idx]
-        if np.isinf(profile_value):
+        if np.isinf(profile_value):  # pragma: no cover
             break
 
         # If max_distance is a constant (independent of the distance profile D of Q
