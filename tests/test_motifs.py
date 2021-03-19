@@ -22,7 +22,7 @@ test_data = [
 normalized = [True, False]
 
 
-def naive_match(Q, T, excl_zone, profile_value, atol, rtol, normalize):
+def naive_match(Q, T, excl_zone, max_distance, normalize):
     m = Q.shape[0]
     if normalize:
         D = naive.distance_profile(Q, T, m)
@@ -34,7 +34,7 @@ def naive_match(Q, T, excl_zone, profile_value, atol, rtol, normalize):
     matches = []
     for i in range(D.size):
         dist = D[i]
-        if dist < atol + rtol * profile_value:
+        if dist <= max_distance:
             matches.append(i)
 
     # Removes indices that are inside the exclusion zone of some occurrence with
@@ -43,7 +43,7 @@ def naive_match(Q, T, excl_zone, profile_value, atol, rtol, normalize):
     result = []
     while len(matches) > 0:
         o = matches[0]
-        result.append([o, D[o]])
+        result.append([D[o], o])
         matches = [x for x in matches if x < o - excl_zone or x > o + excl_zone]
 
     return np.array(result, dtype=object)
@@ -52,14 +52,27 @@ def naive_match(Q, T, excl_zone, profile_value, atol, rtol, normalize):
 def test_jagged_list_to_array():
     arr = [np.array([0, 1]), np.array([0]), np.array([0, 1, 2, 3])]
 
-    left = np.array([[0, 1, -1, -1], [0, -1, -1, -1], [0, 1, 2, 3]], dtype=int)
-    right = _jagged_list_to_array(arr, fill_value=-1, dtype=int)
+    left = np.array([[0, 1, -1, -1], [0, -1, -1, -1], [0, 1, 2, 3]], dtype="int64")
+    right = _jagged_list_to_array(arr, fill_value=-1, dtype="int64")
     npt.assert_array_equal(left, right)
 
     left = np.array(
-        [[0, 1, np.nan, np.nan], [0, np.nan, np.nan, np.nan], [0, 1, 2, 3]], dtype=float
+        [[0, 1, np.nan, np.nan], [0, np.nan, np.nan, np.nan], [0, 1, 2, 3]],
+        dtype="float64",
     )
-    right = _jagged_list_to_array(arr, fill_value=np.nan, dtype=float)
+    right = _jagged_list_to_array(arr, fill_value=np.nan, dtype="float64")
+    npt.assert_array_equal(left, right)
+
+
+def test_jagged_list_to_array_empty():
+    arr = []
+
+    left = np.array([[]], dtype="int64")
+    right = _jagged_list_to_array(arr, fill_value=-1, dtype="int64")
+    npt.assert_array_equal(left, right)
+
+    left = np.array([[]], dtype="float64")
+    right = _jagged_list_to_array(arr, fill_value=np.nan, dtype="float64")
     npt.assert_array_equal(left, right)
 
 
@@ -67,14 +80,19 @@ def test_motifs_one_motif():
     # The top motif for m=3 is a [0 1 0] at indices 0, 5 and 9
     T = np.array([0.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, 0.0, -0.5, 2.0, 3.0, 2.0])
     m = 3
-    k = 1
+    max_motifs = 1
 
     left_indices = [[0, 5, 9]]
     left_profile_values = [[0.0, 0.0, 0.0]]
 
     P = naive.stump(T, m)
-    right_indices, right_distance_values = motifs(
-        T, P[:, 0], k=k, atol=0.001, normalize=True
+    right_distance_values, right_indices = motifs(
+        T,
+        P[:, 0],
+        max_distance=lambda D: 0.001,  # Also test lambda functionality
+        max_motifs=max_motifs,
+        cutoff=np.inf,
+        normalize=True,
     )
 
     npt.assert_array_equal(left_indices, right_indices)
@@ -111,7 +129,7 @@ def test_motifs_two_motifs():
     T[170:190] = np.arange(m) * 0.1
     # naive.distance(naive.z_norm(T[70:90]), naive.z_norm(T[170:190])) = 0.0
 
-    k = 2
+    max_motifs = 2
 
     P = naive.stump(T, m)
 
@@ -125,8 +143,13 @@ def test_motifs_two_motifs():
         ],
     ]
 
-    right_indices, right_distance_values = motifs(
-        T, P[:, 0], k=k, rtol=3.0, normalize=True
+    right_distance_values, right_indices = motifs(
+        T,
+        P[:, 0],
+        max_motifs=max_motifs,
+        max_distance=0.5,
+        cutoff=np.inf,
+        normalize=True,
     )
 
     # We ignore indices because of sorting ambiguities for equal distances.
@@ -137,19 +160,87 @@ def test_motifs_two_motifs():
     np.random.seed(None)
 
 
+def test_motifs_max_matches():
+    # This test covers the following:
+
+    # A time series contains motif A at four locations and motif B at two.
+    # If `max_motifs=2` the result should contain only the top two matches of motif A
+    # and the top two matches of motif B as two separate motifs.
+    T = np.array(
+        [
+            0.0,  # motif A
+            1.0,
+            0.0,
+            2.3,
+            -1.0,  # motif B
+            -1.0,
+            -2.0,
+            0.0,  # motif A
+            1.0,
+            0.0,
+            -2.0,
+            -1.0,  # motif B
+            -1.03,
+            -2.0,
+            -0.5,
+            2.0,  # motif A
+            3.0,
+            2.04,
+            2.3,
+            2.0,  # motif A
+            3.0,
+            2.02,
+        ]
+    )
+    m = 3
+    max_motifs = 3
+
+    left_indices = [[0, 7], [4, 11]]
+    left_profile_values = [
+        [0.0, 0.0],
+        [
+            0.0,
+            naive.distance(
+                core.z_norm(T[left_indices[1][0] : left_indices[1][0] + m]),
+                core.z_norm(T[left_indices[1][1] : left_indices[1][1] + m]),
+            ),
+        ],
+    ]
+
+    P = naive.stump(T, m)
+    right_distance_values, right_indices = motifs(
+        T,
+        P[:, 0],
+        max_motifs=max_motifs,
+        max_distance=0.1,
+        cutoff=np.inf,
+        normalize=True,
+        max_matches=2,
+    )
+
+    # We ignore indices because of sorting ambiguities for equal distances.
+    # As long as the distances are correct, the indices will be too.
+    npt.assert_almost_equal(left_profile_values, right_distance_values, decimal=4)
+
+
 def test_motifs_one_motif_aamp():
     # The top motif for m=3 is a [0 1 0] at indices 0 and 5, while the occurrence
     # at index 9 is not a motif in the aamp case.
     T = np.array([0.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, 0.0, -0.5, 2.0, 3.0, 2.0])
     m = 3
-    k = 1
+    max_motifs = 1
 
     left_indices = [[0, 5]]
     left_profile_values = [[0.0, 0.0]]
 
     P = naive.stump(T, m)
-    right_indices, right_distance_values = motifs(
-        T, P[:, 0], k=k, atol=0.001, normalize=False
+    right_distance_values, right_indices = motifs(
+        T,
+        P[:, 0],
+        max_motifs=max_motifs,
+        max_distance=0.001,
+        cutoff=np.inf,
+        normalize=False,
     )
 
     npt.assert_array_equal(left_indices, right_indices)
@@ -187,7 +278,7 @@ def test_motifs_two_motifs_aamp():
     T[170:190] = np.arange(m) * 0.1
     # naive.distance(naive.z_norm(T[70:90]), naive.z_norm(T[170:190])) = 0.0
 
-    k = 2
+    max_motifs = 2
 
     P = naive.stump(T, m)
 
@@ -200,8 +291,13 @@ def test_motifs_two_motifs_aamp():
         ],
     ]
 
-    right_indices, right_distance_values = motifs(
-        T, P[:, 0], k=k, rtol=3.0, normalize=False
+    right_distance_values, right_indices = motifs(
+        T,
+        P[:, 0],
+        max_motifs=max_motifs,
+        max_distance=0.5,
+        cutoff=np.inf,
+        normalize=False,
     )
 
     # We ignore indices because of sorting ambiguities for equal distances.
@@ -219,15 +315,13 @@ def test_naive_matches_exact():
     m = Q.shape[0]
     excl_zone = int(np.ceil(m / 4))
 
-    left = [[0, 0], [5, 0], [9, 0]]
+    left = [[0, 0], [0, 5], [0, 9]]
     right = list(
         naive_match(
             Q,
             T,
             excl_zone=excl_zone,
-            profile_value=0.0,
-            atol=0.001,  # Small absolute tolerance as matches are identical
-            rtol=0.0,
+            max_distance=0.001,  # Small max_distance as matches are identical
             normalize=True,
         )
     )
@@ -244,15 +338,13 @@ def test_naive_match_exact_aamp():
     m = Q.shape[0]
     excl_zone = int(np.ceil(m / 4))
 
-    left = [[0, 0], [5, 0]]
+    left = [[0, 0], [0, 5]]
     right = list(
         naive_match(
             Q,
             T,
             excl_zone=excl_zone,
-            profile_value=0.0,
-            atol=0.001,  # Small absolute tolerance as matches are identical
-            rtol=0.0,
+            max_distance=0.001,  # Small max_distance as matches are identical
             normalize=False,
         )
     )
@@ -272,18 +364,16 @@ def test_naive_match_exclusion_zone():
     excl_zone = int(np.ceil(m / 4))
 
     left = [
-        [1, 0],
-        [5, naive.distance(core.z_norm(Q), core.z_norm(T[5 : 5 + m]))],
-        [9, naive.distance(core.z_norm(Q), core.z_norm(T[9 : 9 + m]))],
+        [0, 1],
+        [naive.distance(core.z_norm(Q), core.z_norm(T[5 : 5 + m])), 5],
+        [naive.distance(core.z_norm(Q), core.z_norm(T[9 : 9 + m])), 9],
     ]
     right = list(
         naive_match(
             Q,
             T,
             excl_zone=excl_zone,
-            profile_value=0.0,
-            atol=0.1,
-            rtol=0.001,
+            max_distance=0.1,
             normalize=True,
         )
     )
@@ -307,22 +397,20 @@ def test_naive_match_exclusion_zone_aamp():
     excl_zone = m
 
     left = [
-        [3, 0],
-        [7, naive.distance(Q, T[7 : 7 + m])],
+        [0, 3],
+        [naive.distance(Q, T[7 : 7 + m]), 7],
     ]
     right = list(
         naive_match(
             Q,
             T,
             excl_zone=excl_zone,
-            profile_value=0.0,
-            atol=0.2,
-            rtol=0.001,
+            max_distance=0.2,
             normalize=False,
         )
     )
     # To avoid sorting errors we first sort based on disance and then based on indices
-    right.sort(key=lambda x: (x[1], x[0]))
+    right.sort(key=lambda x: (x[0], x[1]))
 
     npt.assert_almost_equal(left, right)
 
@@ -331,17 +419,13 @@ def test_naive_match_exclusion_zone_aamp():
 def test_match(Q, T):
     m = Q.shape[0]
     excl_zone = int(np.ceil(m / 4))
-    rtol = 1
-    atol = 1
-    profile_value = 1
+    max_distance = 0.3
 
     left = naive_match(
         Q,
         T,
         excl_zone,
-        profile_value=profile_value,
-        atol=atol,
-        rtol=rtol,
+        max_distance=max_distance,
         normalize=True,
     )
 
@@ -350,10 +434,34 @@ def test_match(Q, T):
         T,
         excl_zone=excl_zone,
         max_matches=None,
-        profile_value=profile_value,
-        atol=atol,
-        rtol=rtol,
+        max_distance=lambda D: max_distance,  # also test lambda functionality
         normalize=True,
+    )
+
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_match_aamp(Q, T):
+    m = Q.shape[0]
+    excl_zone = int(np.ceil(m / 4))
+    max_distance = 0.3
+
+    left = naive_match(
+        Q,
+        T,
+        excl_zone,
+        max_distance=max_distance,
+        normalize=False,
+    )
+
+    right = match(
+        Q,
+        T,
+        excl_zone=excl_zone,
+        max_matches=None,
+        max_distance=max_distance,
+        normalize=False,
     )
 
     npt.assert_almost_equal(left, right)
