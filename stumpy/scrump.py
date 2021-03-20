@@ -250,7 +250,7 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
     exclude=["normalize", "pre_scrump", "pre_scraamp"],
     replace={"pre_scrump": "pre_scraamp"},
 )
-class scrump(object):
+class scrump:
     """
     Compute an approximate z-normalized matrix profile
 

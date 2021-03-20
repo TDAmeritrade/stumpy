@@ -249,7 +249,7 @@ def prescraamp(T_A, m, T_B=None, s=None):
     return P, I
 
 
-class scraamp(object):
+class scraamp:
     """
     Compute an approximate non-normalized (i.e., without z-normalization) matrix profile
 

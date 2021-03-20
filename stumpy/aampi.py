@@ -7,7 +7,7 @@ from stumpy import core
 import stumpy
 
 
-class aampi(object):
+class aampi:
     """
     Compute an incremental non-normalized (i.e., without z-normalization) matrix profile
     for streaming data
