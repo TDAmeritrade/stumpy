@@ -5,18 +5,17 @@
 import logging
 
 import numpy as np
-from .aamp_motifs import aamp_motifs, aamp_match
 
 from . import core
 
 logger = logging.getLogger(__name__)
 
 
-def _motifs(
+def _aamp_motifs(
     T,
     P,
-    M_T,
-    Σ_T,
+    T_subseq_isfinite,
+    T_squared,
     excl_zone,
     min_neighbors,
     max_distance,
@@ -24,7 +23,8 @@ def _motifs(
     max_motifs,
 ):
     """
-    Find the top motifs for time series `T`.
+    Find the top non-normalized motifs (i.e., without z-normalization) for time series
+    `T`.
 
     A subsequence, `Q`, becomes a candidate motif if there are at least `min_neighbor`
     number of other subsequence matches in `T` (outside the exclusion zone) with a
@@ -36,13 +36,14 @@ def _motifs(
         The time series or sequence
 
     P : ndarray
-        Matrix Profile of time series, `T`
+        Matrix Profile of `T`
 
-    M_T : ndarray
-        Sliding mean of time series, `T`
+    T_subseq_isfinite : ndarray
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False)
 
-    Σ_T : ndarray
-        Sliding standard deviation of time series, `T`
+    T_squared : ndarray
+        Squared time series or sequence
 
     excl_zone : int
         Size of the exclusion zone
@@ -64,11 +65,6 @@ def _motifs(
 
     max_motifs : int
         The maximum number of motifs to return.
-
-    normalize : bool
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
 
     Return
     ------
@@ -101,11 +97,9 @@ def _motifs(
 
         Q = T[:, candidate_idx : candidate_idx + m]
 
-        query_matches = match(
+        query_matches = aamp_match(
             Q,
             T,
-            M_T=M_T,
-            Σ_T=Σ_T,
             excl_zone=excl_zone,
             max_matches=None,
             max_distance=max_distance,
@@ -130,8 +124,7 @@ def _motifs(
     return motif_distances, motif_indices
 
 
-@core.non_normalized(aamp_motifs)
-def motifs(
+def aamp_motifs(
     T,
     P,
     excl_zone=None,
@@ -140,10 +133,10 @@ def motifs(
     cutoff=None,
     max_matches=10,
     max_motifs=1,
-    normalize=True,
 ):
     """
-    Discover the top motifs for time series `T`.
+    Discover the top non-normalized motifs (i.e., without z-normalization) for time
+    series `T`.
 
     A subsequence, `Q`, becomes a candidate motif if there are at least `min_neighbor`
     number of other subsequence matches in `T` (outside the exclusion zone) with a
@@ -152,7 +145,7 @@ def motifs(
     Parameters
     ----------
     T : ndarray
-        The time series or sequence
+            The time series or sequence
 
     P : ndarray
         Matrix Profile of `T`
@@ -163,26 +156,27 @@ def motifs(
 
     min_neighbors : int, default 1
         The minimum number of similar matches a subsequence needs to have in order
-        to be considered a motif. This defaults to `1`, which means that a subsequence
-        must have at least one similar match in order to be considered a motif.
+        to be considered a motif. This defaults to `1`, which means that a
+        subsequence must have at least one similar match in order to be considered
+        a motif.
 
     max_distance : float or function, default None
-        For a candidate motif, `Q`, and a non-trivial subsequence, `S`, `max_distance`
-        is the maximum distance allowed between `Q` and `S` so that `S` is considered
-        a match of `Q`. If `max_distance` is a function, then it must be a function
-        that accepts a single parameter, `D`, in its function signature, which is the
-        distance profile between `Q` and `T`. If None, this defaults to
-        `max(np.mean(D) - 2 * np.std(D), np.min(D))`.
+        For a candidate motif, `Q`, and a non-trivial subsequence, `S`,
+        `max_distance` is the maximum distance allowed between `Q` and `S` so that
+        `S` is considered a match of `Q`. If `max_distance` is a function, then it
+        must be a function that accepts a single parameter, `D`, in its function
+        signature, which is the distance profile between `Q` and `T`. If None, this
+        defaults to `max(np.mean(D) - 2 * np.std(D), np.min(D))`.
 
     cutoff : float, default None
-        The largest matrix profile value (distance) that a candidate motif is allowed
-        to have. If `None`, this defaults to
+        The largest matrix profile value (distance) that a candidate motif is
+        allowed to have. If `None`, this defaults to
         `max(np.mean(P) - 2 * np.std(P), np.min(P))`
 
     max_matches : int, default 10
-        The maximum amount of similar matches of a motif representative to be returned.
-        The resulting matches are sorted by distance, so a value of `10` means that the
-        indices of the most similar `10` subsequences is returned.
+        The maximum amount of similar matches of a motif representative to be
+        returned. The resulting matches are sorted by distance, so a value of `10`
+        means that the indices of the most similar `10` subsequences is returned.
         If `None`, all matches within `max_distance` of the motif representative
         will be returned.
 
@@ -190,18 +184,14 @@ def motifs(
         The maximum number of similar matches to be returned. The resulting
         matches are sorted by distance (starting with the most similar).
 
-    normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
-
     Return
     ------
     motif_distances : ndarray
-        The distances corresponding to a set of subsequence matches for each motif
+    The distances corresponding to a set of subsequence matches for each motif
 
     motif_indices : ndarray
         The indices corresponding to a set of subsequences matches for each motif
+
     """
     if max_motifs < 1:  # pragma: no cover
         logger.warn(
@@ -231,14 +221,15 @@ def motifs(
     if cutoff is None:  # pragma: no cover
         cutoff = max(np.mean(P) - 2 * np.std(P), np.min(P))
 
-    T, M_T, Σ_T = core.preprocess(T[np.newaxis, :], m)
+    T, T_subseq_isfinite = core.preprocess_non_normalized(T[np.newaxis, :], m)
+    T_squared = np.sum(core.rolling_window(T * T, m), axis=-1)
     P = P[np.newaxis, :].astype("float64")
 
-    motif_distances, motif_indices = _motifs(
+    motif_distances, motif_indices = _aamp_motifs(
         T,
         P,
-        M_T,
-        Σ_T,
+        T_subseq_isfinite,
+        T_squared,
         excl_zone,
         min_neighbors,
         max_distance,
@@ -249,20 +240,14 @@ def motifs(
     return motif_distances, motif_indices
 
 
-@core.non_normalized(
-    aamp_match,
-    exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "T_squared"],
-    replace={"M_T": "T_subseq_isfinite", "Σ_T": "T_squared"},
-)
-def match(
+def aamp_match(
     Q,
     T,
-    M_T=None,
-    Σ_T=None,
+    T_subseq_isfinite=None,
+    T_squared=None,
     excl_zone=None,
     max_distance=None,
     max_matches=None,
-    normalize=True,
 ):
     """
     Find all matches of a query `Q` in a time series `T`, i.e. the indices
@@ -278,12 +263,6 @@ def match(
 
     T : ndarray
         The time series of interest
-
-    M_T : ndarray, default None
-        Sliding mean of time series, `T`
-
-    Σ_T : ndarray, default None
-        Sliding standard deviation of time series, `T`
 
     excl_zone : int, default None
         Size of the exclusion zone.
@@ -302,11 +281,6 @@ def match(
         occurrences are sorted by distance, so a value of `10` means that the
         indices of the most similar `10` subsequences is returned. If `None`, then all
         occurrences are returned.
-
-    normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------
@@ -339,10 +313,14 @@ def match(
         def max_distance(D):
             return max(np.mean(D) - 2 * np.std(D), np.min(D))
 
-    if M_T is None or Σ_T is None:  # pragma: no cover
-        T, M_T, Σ_T = core.preprocess(T, m)
+    if T_subseq_isfinite is None or T_squared is None:
+        T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
+        T_squared = np.sum(core.rolling_window(T * T, m), axis=-1)
 
-    D = [core.mass(Q[i], T[i], M_T[i], Σ_T[i]) for i in range(d)]
+    D = [
+        core.mass_absolute(Q[i], T[i], T_subseq_isfinite[i], T_squared[i])
+        for i in range(d)
+    ]
 
     D = np.sum(D, axis=0) / d
     if not isinstance(max_distance, float):

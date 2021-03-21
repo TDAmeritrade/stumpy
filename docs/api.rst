@@ -26,6 +26,8 @@ STUMPY API
     stumpy.mpdist
     stumpy.mpdisted
     stumpy.gpu_mpdist
+    stumpy.motifs
+    stumpy.match
 
 stump
 =====
@@ -120,3 +122,13 @@ gpu_mpdist
 ==========
 
 .. autofunction:: stumpy.gpu_mpdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0, normalize=True)
+
+motifs
+======
+
+.. autofunction:: stumpy.motifs
+
+match
+=====
+
+.. autofunction:: stumpy.match

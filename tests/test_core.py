@@ -773,3 +773,30 @@ def test_compare_parameters():
     assert (
         core._compare_parameters(core.rolling_window, core.z_norm, exclude=[]) is False
     )
+
+
+def test_jagged_list_to_array():
+    arr = [np.array([0, 1]), np.array([0]), np.array([0, 1, 2, 3])]
+
+    left = np.array([[0, 1, -1, -1], [0, -1, -1, -1], [0, 1, 2, 3]], dtype="int64")
+    right = core._jagged_list_to_array(arr, fill_value=-1, dtype="int64")
+    npt.assert_array_equal(left, right)
+
+    left = np.array(
+        [[0, 1, np.nan, np.nan], [0, np.nan, np.nan, np.nan], [0, 1, 2, 3]],
+        dtype="float64",
+    )
+    right = core._jagged_list_to_array(arr, fill_value=np.nan, dtype="float64")
+    npt.assert_array_equal(left, right)
+
+
+def test_jagged_list_to_array_empty():
+    arr = []
+
+    left = np.array([[]], dtype="int64")
+    right = core._jagged_list_to_array(arr, fill_value=-1, dtype="int64")
+    npt.assert_array_equal(left, right)
+
+    left = np.array([[]], dtype="float64")
+    right = core._jagged_list_to_array(arr, fill_value=np.nan, dtype="float64")
+    npt.assert_array_equal(left, right)

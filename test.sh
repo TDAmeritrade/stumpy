@@ -83,6 +83,8 @@ test_unit()
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_ostinato.py
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mpdist.py
     check_errs $?
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_motifs.py
+    check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_mpdist.py
     # aamp
     py.test -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp.py
@@ -96,6 +98,8 @@ test_unit()
     check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp_ostinato.py
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aampdist.py
+    check_errs $?
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_motifs.py
     check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aampdist.py
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_non_normalized_decorator.py

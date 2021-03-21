@@ -20,6 +20,7 @@ from .stumpi import stumpi  # noqa: F401
 from .mpdist import mpdist, mpdisted  # noqa: F401
 from .aampdist import aampdist, aampdisted  # noqa: F401
 from .motifs import motifs, match  # noqa: F401
+from .aamp_motifs import aamp_motifs, aamp_match  # noqa: F401
 from numba import cuda
 
 if cuda.is_available():

@@ -1042,7 +1042,7 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, T_squared=None):
         QT = sliding_dot_product(Q, T)
         Q_squared = np.sum(Q * Q)
         if T_squared is None:
-            T_squared = np.sum(rolling_window(T * T, m), axis=1)
+            T_squared = np.sum(rolling_window(T * T, m), axis=-1)
         distance_profile[:] = _mass_absolute(Q_squared, T_squared, QT)
         distance_profile[~T_subseq_isfinite] = np.inf
 
@@ -1731,3 +1731,42 @@ def _get_partial_mp_func(mp_func, dask_client=None, device_id=None):
         partial_mp_func = mp_func
 
     return partial_mp_func
+
+
+def _jagged_list_to_array(a, fill_value, dtype):
+    """
+    Fits a 2d jagged list into a 2d numpy array of the specified dtype.
+    The resulting array will have a shape of (len(a), l), where l is the length
+    of the longest list in a. All other lists will be padded with `fill_value`.
+
+    Example:
+    [[2, 1, 1], [0]] with a fill value of -1 will become
+    np.array([[2, 1, 1], [0, -1, -1]])
+
+    Parameters
+    ----------
+    a : list
+        Jagged list (list-of-lists) to be converted into a ndarray.
+
+    fill_value : int or float
+        Missing entries will be filled with this value.
+
+    dtype : dtype
+        The desired data-type for the array.
+
+    Return
+    ------
+    out : ndarray
+        The resuling ndarray of dtype `dtype`.
+    """
+    if not a:
+        return np.array([[]])
+
+    max_length = max([len(row) for row in a])
+
+    out = np.full((len(a), max_length), fill_value, dtype=dtype)
+
+    for i, row in enumerate(a):
+        out[i, : row.size] = row
+
+    return out
