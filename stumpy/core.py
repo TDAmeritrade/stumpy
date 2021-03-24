@@ -558,7 +558,7 @@ def welford_nanstd(a, w=None):
     if w is None:
         w = a.shape[0]
 
-    return np.sqrt(welford_nanvar(a, w))
+    return np.sqrt(np.clip(welford_nanvar(a, w), a_min=0, a_max=None))
 
 
 def rolling_nanstd(a, w):
