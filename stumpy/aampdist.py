@@ -37,7 +37,7 @@ def _aampdist_vect(
     k : int, default None
         Specify the `k`th value in the concatenated matrix profiles to return. When `k`
         is not `None`, then the `percentage` parameter is ignored. This parameter is
-        ignored when `k_func` is not None.
+        ignored when `custom_func` is not None.
 
     custom_func : object, default None
         A custom user defined function for selecting the desired value from the
@@ -83,6 +83,10 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None):
     percentage : float, default 0.05
         The percentage of distances that will be used to report `mpdist`. The value
         is between 0.0 and 1.0.
+
+    k : int
+        Specify the `k`th value in the concatenated matrix profiles to return. When `k`
+        is not `None`, then the `percentage` parameter is ignored.
 
     Returns
     -------

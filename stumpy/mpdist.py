@@ -251,7 +251,7 @@ def _mpdist_vect(
     k : int, default None
         Specify the `k`th value in the concatenated matrix profiles to return. When `k`
         is not `None`, then the `percentage` parameter is ignored. This parameter is
-        ignored when `k_func` is not None.
+        ignored when `custom_func` is not None.
 
     custom_func : object, default None
         A custom user defined function for selecting the desired value from the
@@ -290,7 +290,7 @@ def _mpdist_vect(
 @core.non_normalized(aampdist)
 def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True):
     """
-    Compute the  z-normalized matrix profile distance (MPdist) measure between any two
+    Compute the z-normalized matrix profile distance (MPdist) measure between any two
     time series
 
     The MPdist distance measure considers two time series to be similar if they share
@@ -314,6 +314,10 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True):
     percentage : float, default 0.05
         The percentage of distances that will be used to report `mpdist`. The value
         is between 0.0 and 1.0.
+
+    k : int
+        Specify the `k`th value in the concatenated matrix profiles to return. When `k`
+        is not `None`, then the `percentage` parameter is ignored.
 
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
