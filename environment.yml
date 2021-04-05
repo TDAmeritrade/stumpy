@@ -17,3 +17,6 @@ dependencies:
   - matplotlib>=3.3.0
   - lxml>=4.5.2
   - twine>=3.2.0
+  - sphinx>=3.5.3
+  - nbsphinx>=0.8.1
+  - pydata-sphinx-theme>=0.5.2

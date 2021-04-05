@@ -1,1 +1,4 @@
-.wy-nav-content {max-width: 100%;}
+.navbar-brand img {
+    height: auto;
+    width: auto;
+}
