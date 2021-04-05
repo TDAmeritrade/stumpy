@@ -108,25 +108,13 @@ html_theme_options = {
             "icon": "fab fa-twitter-square",
         },
     ],
-    "favicons": [
-        {
-            "rel": "icon",
-            "sizes": "16x16",
-            "href": "https://secure.example.com/favicon/favicon-16x16.png",
-        },
-        {
-            "rel": "icon",
-            "sizes": "32x32",
-            "href": "favicon-32x32.png",
-        },
-    ],
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
-html_favicon = 'favicon.ico'
+html_favicon = "favicon.ico"
 
 # These paths are either relative to html_static_path
 # or fully qualified paths (eg. https://...)
