@@ -109,17 +109,17 @@ html_theme_options = {
         },
     ],
     "favicons": [
-      {
-         "rel": "icon",
-         "sizes": "16x16",
-         "href": "https://secure.example.com/favicon/favicon-16x16.png",
-      },
-      {
-         "rel": "icon",
-         "sizes": "32x32",
-         "href": "favicon-32x32.png",
-      },
-   ]
+        {
+            "rel": "icon",
+            "sizes": "16x16",
+            "href": "https://secure.example.com/favicon/favicon-16x16.png",
+        },
+        {
+            "rel": "icon",
+            "sizes": "32x32",
+            "href": "favicon-32x32.png",
+        },
+    ],
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
