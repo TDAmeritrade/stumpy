@@ -287,3 +287,25 @@ def test_match(T, m):
     ref = stumpy.aamp_match(Q, T)
     comp = stumpy.match(Q, T, normalize=False)
     npt.assert_almost_equal(ref, comp)
+
+
+def test_snippets():
+    T = np.random.rand(64)
+    m = 10
+    k = 2
+
+    (
+        ref_snippets,
+        ref_indices,
+        ref_profiles,
+        ref_fractions,
+        ref_areas,
+    ) = stumpy.aampdist_snippets(T, m, k)
+    (
+        cmp_snippets,
+        cmp_indices,
+        cmp_profiles,
+        cmp_fractions,
+        cmp_areas,
+    ) = stumpy.snippets(T, m, k, normalize=False)
+    npt.assert_almost_equal(ref_snippets, cmp_snippets)

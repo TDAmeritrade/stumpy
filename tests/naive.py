@@ -944,6 +944,52 @@ def aamp_ostinato(Ts, m):
     return radius, Ts_idx, subseq_idx
 
 
+def mpdist_vect(T_A, T_B, m, percentage=0.05, k=None):
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    j = n_A - m + 1  # `k` is reserved for `P_ABBA` selection
+    P_ABBA = np.empty(2 * j, dtype=np.float64)
+    MPdist_vect = np.empty(n_B - n_A + 1)
+
+    if k is None:
+        percentage = min(percentage, 1.0)
+        percentage = max(percentage, 0.0)
+        k = min(math.ceil(percentage * (2 * n_A)), 2 * j - 1)
+
+    k = min(int(k), P_ABBA.shape[0] - 1)
+
+    for i in range(n_B - n_A + 1):
+        P_ABBA[:j] = stump(T_A, m, T_B[i : i + n_A])[:, 0]
+        P_ABBA[j:] = stump(T_B[i : i + n_A], m, T_A)[:, 0]
+        P_ABBA.sort()
+        MPdist_vect[i] = P_ABBA[min(k, P_ABBA.shape[0] - 1)]
+
+    return MPdist_vect
+
+
+def aampdist_vect(T_A, T_B, m, percentage=0.05, k=None):
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    j = n_A - m + 1  # `k` is reserved for `P_ABBA` selection
+    P_ABBA = np.empty(2 * j, dtype=np.float64)
+    aaMPdist_vect = np.empty(n_B - n_A + 1)
+
+    if k is None:
+        percentage = min(percentage, 1.0)
+        percentage = max(percentage, 0.0)
+        k = min(math.ceil(percentage * (2 * n_A)), 2 * j - 1)
+
+    k = min(int(k), P_ABBA.shape[0] - 1)
+
+    for i in range(n_B - n_A + 1):
+        P_ABBA[:j] = aamp(T_A, m, T_B[i : i + n_A])[:, 0]
+        P_ABBA[j:] = aamp(T_B[i : i + n_A], m, T_A)[:, 0]
+        P_ABBA.sort()
+        aaMPdist_vect[i] = P_ABBA[k]
+
+    return aaMPdist_vect
+
+
 def mpdist(T_A, T_B, m, percentage=0.05, k=None):
     percentage = min(percentage, 1.0)
     percentage = max(percentage, 0.0)
@@ -988,3 +1034,172 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None):
         MPdist = P_ABBA[k]
 
     return MPdist
+
+
+def get_all_mpdist_profiles(
+    T,
+    m,
+    percentage=1.0,
+    s=None,
+    mpdist_percentage=0.05,
+    mpdist_k=None,
+    mpdist_vect_func=mpdist_vect,
+):
+    right_pad = 0
+    if T.shape[0] % m != 0:
+        right_pad = int(m * np.ceil(T.shape[0] / m) - T.shape[0])
+        pad_width = (0, right_pad)
+        T = np.pad(T, pad_width, constant_values=np.nan)
+
+    n_padded = T.shape[0]
+    D = np.empty(((n_padded // m) - 1, n_padded - m + 1))
+
+    if s is not None:
+        s = min(int(s), m)
+    else:
+        percentage = min(percentage, 1.0)
+        percentage = max(percentage, 0.0)
+        s = min(math.ceil(percentage * m), m)
+
+    # Iterate over non-overlapping subsequences, see Definition 3
+    for i in range((n_padded // m) - 1):
+        start = i * m
+        stop = (i + 1) * m
+        S_i = T[start:stop]
+        D[i, :] = mpdist_vect_func(
+            S_i,
+            T,
+            s,
+            percentage=mpdist_percentage,
+            k=mpdist_k,
+        )
+
+    stop_idx = n_padded - m + 1 - right_pad
+    D = D[:, :stop_idx]
+
+    return D
+
+
+def mpdist_snippets(
+    T,
+    m,
+    k,
+    percentage=1.0,
+    s=None,
+    mpdist_percentage=0.05,
+    mpdist_k=None,
+):
+
+    D = get_all_mpdist_profiles(
+        T,
+        m,
+        percentage,
+        s,
+        mpdist_percentage,
+        mpdist_k,
+    )
+
+    pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
+    T_padded = np.pad(T, pad_width, constant_values=0.0)
+    n_padded = T_padded.shape[0]
+
+    snippets = np.empty((k, m))
+    snippets_indices = np.empty(k, dtype=np.int64)
+    snippets_profiles = np.empty((k, D.shape[-1]))
+    snippets_fractions = np.empty(k)
+    snippets_areas = np.empty(k)
+    Q = np.inf
+    indices = np.arange(0, n_padded - m, m)
+
+    for snippet_idx in range(k):
+        min_area = np.inf
+        for i in range(D.shape[0]):
+            profile_area = np.sum(np.minimum(D[i], Q))
+            if min_area > profile_area:
+                min_area = profile_area
+                idx = i
+
+        snippets[snippet_idx] = T[indices[idx] : indices[idx] + m]
+        snippets_indices[snippet_idx] = indices[idx]
+        snippets_profiles[snippet_idx] = D[idx]
+        snippets_areas[snippet_idx] = np.sum(np.minimum(D[idx], Q))
+
+        Q = np.minimum(D[idx], Q)
+
+    total_min = np.min(snippets_profiles, axis=0)
+
+    for i in range(k):
+        mask = snippets_profiles[i] <= total_min
+        snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
+        total_min = total_min - mask.astype(float)
+
+    return (
+        snippets,
+        snippets_indices,
+        snippets_profiles,
+        snippets_fractions,
+        snippets_areas,
+    )
+
+
+def aampdist_snippets(
+    T,
+    m,
+    k,
+    percentage=1.0,
+    s=None,
+    mpdist_percentage=0.05,
+    mpdist_k=None,
+):
+
+    D = get_all_mpdist_profiles(
+        T,
+        m,
+        percentage,
+        s,
+        mpdist_percentage,
+        mpdist_k,
+        aampdist_vect,
+    )
+
+    pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
+    T_padded = np.pad(T, pad_width, constant_values=0.0)
+    n_padded = T_padded.shape[0]
+
+    snippets = np.empty((k, m))
+    snippets_indices = np.empty(k, dtype=np.int64)
+    snippets_profiles = np.empty((k, D.shape[-1]))
+    snippets_fractions = np.empty(k)
+    snippets_areas = np.empty(k)
+    Q = np.inf
+    indices = np.arange(0, n_padded - m, m)
+
+    for snippet_idx in range(k):
+        min_area = np.inf
+        for i in range(D.shape[0]):
+            profile_area = np.sum(np.minimum(D[i], Q))
+            if min_area > profile_area:
+                min_area = profile_area
+                idx = i
+
+        snippets[snippet_idx] = T[indices[idx] : indices[idx] + m]
+        snippets_indices[snippet_idx] = indices[idx]
+        snippets_profiles[snippet_idx] = D[idx]
+        snippets_areas[snippet_idx] = np.sum(np.minimum(D[idx], Q))
+
+        Q = np.minimum(D[idx], Q)
+
+    total_min = np.min(snippets_profiles, axis=0)
+
+    for i in range(k):
+        mask = snippets_profiles[i] <= total_min
+        snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
+        total_min = total_min - mask.astype(float)
+
+    return (
+        snippets,
+        snippets_indices,
+        snippets_profiles,
+        snippets_fractions,
+        snippets_areas,
+    )

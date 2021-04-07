@@ -50,10 +50,10 @@ def _aampdist_vect(
         Q,
         T,
         m,
-        distance_matrix_func=_mass_absolute_distance_matrix,
         percentage=percentage,
         k=k,
         custom_func=custom_func,
+        distance_matrix_func=_mass_absolute_distance_matrix,
     )
 
 

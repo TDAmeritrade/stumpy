@@ -1,3 +1,7 @@
 .navbar-brand img {
     width: auto;
 }
+.table {
+    display: block;
+    overflow-x: scroll;
+}

@@ -220,10 +220,10 @@ def _mpdist_vect(
     Q,
     T,
     m,
-    distance_matrix_func=_mass_distance_matrix,
     percentage=0.05,
     k=None,
     custom_func=None,
+    distance_matrix_func=_mass_distance_matrix,
 ):
     """
     Compute the matrix profile distance measure vector between `Q` and each subsequence,
@@ -239,9 +239,6 @@ def _mpdist_vect(
 
     m : int
         Window size
-
-    distance_matrix_func : object, default _mass_distance_matrix
-        The function to use to compute the distance matrix between `Q` and `T`
 
     percentage : float, 0.05
         The percentage of distances that will be used to report `mpdist`. The value
@@ -259,6 +256,9 @@ def _mpdist_vect(
         and should take `P_ABBA` as its only input parameter and return a single
         `MPdist` value. The `percentage` and `k` parameters are ignored when
         `custom_func` is not None.
+
+    distance_matrix_func : object, default _mass_distance_matrix
+        The function to use to compute the distance matrix between `Q` and `T`
     """
     j = Q.shape[0] - m + 1  # `k` is reserved for `P_ABBA` selection
     l = T.shape[0] - m + 1

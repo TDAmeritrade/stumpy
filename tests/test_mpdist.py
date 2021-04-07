@@ -66,22 +66,7 @@ def test_compute_P_ABBA(T_A, T_B):
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_mpdist_vect(T_A, T_B):
     m = 3
-    n_A = T_A.shape[0]
-    n_B = T_B.shape[0]
-    j = n_A - m + 1  # `k` is reserved for `P_ABBA` selection
-    P_ABBA = np.empty(2 * j, dtype=np.float64)
-    ref_mpdist_vect = np.empty(n_B - n_A + 1)
-
-    percentage = 0.05
-    k = min(math.ceil(percentage * (2 * n_A)), 2 * j - 1)
-    k = min(int(k), P_ABBA.shape[0] - 1)
-
-    for i in range(n_B - n_A + 1):
-        P_ABBA[:j] = naive.stump(T_A, m, T_B[i : i + n_A])[:, 0]
-        P_ABBA[j:] = naive.stump(T_B[i : i + n_A], m, T_A)[:, 0]
-        P_ABBA.sort()
-        ref_mpdist_vect[i] = P_ABBA[k]
-
+    ref_mpdist_vect = naive.mpdist_vect(T_A, T_B, m)
     comp_mpdist_vect = _mpdist_vect(T_A, T_B, m)
 
     npt.assert_almost_equal(ref_mpdist_vect, comp_mpdist_vect)
@@ -91,21 +76,7 @@ def test_mpdist_vect(T_A, T_B):
 @pytest.mark.parametrize("percentage", percentage)
 def test_mpdist_vect_percentage(T_A, T_B, percentage):
     m = 3
-    n_A = T_A.shape[0]
-    n_B = T_B.shape[0]
-    j = n_A - m + 1  # `k` is reserved for `P_ABBA` selection
-    P_ABBA = np.empty(2 * j, dtype=np.float64)
-    ref_mpdist_vect = np.empty(n_B - n_A + 1)
-
-    k = min(math.ceil(percentage * (2 * n_A)), 2 * j - 1)
-    k = min(int(k), P_ABBA.shape[0] - 1)
-
-    for i in range(n_B - n_A + 1):
-        P_ABBA[:j] = naive.stump(T_A, m, T_B[i : i + n_A])[:, 0]
-        P_ABBA[j:] = naive.stump(T_B[i : i + n_A], m, T_A)[:, 0]
-        P_ABBA.sort()
-        ref_mpdist_vect[i] = P_ABBA[min(k, P_ABBA.shape[0] - 1)]
-
+    ref_mpdist_vect = naive.mpdist_vect(T_A, T_B, m, percentage=percentage)
     comp_mpdist_vect = _mpdist_vect(T_A, T_B, m, percentage=percentage)
 
     npt.assert_almost_equal(ref_mpdist_vect, comp_mpdist_vect)
@@ -115,20 +86,7 @@ def test_mpdist_vect_percentage(T_A, T_B, percentage):
 @pytest.mark.parametrize("k", k)
 def test_mpdist_vect_k(T_A, T_B, k):
     m = 3
-    n_A = T_A.shape[0]
-    n_B = T_B.shape[0]
-    j = n_A - m + 1  # `k` is reserved for `P_ABBA` selection
-    P_ABBA = np.empty(2 * j, dtype=np.float64)
-    ref_mpdist_vect = np.empty(n_B - n_A + 1)
-
-    k = min(int(k), P_ABBA.shape[0] - 1)
-
-    for i in range(n_B - n_A + 1):
-        P_ABBA[:j] = naive.stump(T_A, m, T_B[i : i + n_A])[:, 0]
-        P_ABBA[j:] = naive.stump(T_B[i : i + n_A], m, T_A)[:, 0]
-        P_ABBA.sort()
-        ref_mpdist_vect[i] = P_ABBA[min(k, P_ABBA.shape[0] - 1)]
-
+    ref_mpdist_vect = naive.mpdist_vect(T_A, T_B, m, k=k)
     comp_mpdist_vect = _mpdist_vect(T_A, T_B, m, k=k)
 
     npt.assert_almost_equal(ref_mpdist_vect, comp_mpdist_vect)
