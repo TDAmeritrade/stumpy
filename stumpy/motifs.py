@@ -266,7 +266,7 @@ def match(
 ):
     """
     Find all matches of a query `Q` in a time series `T`, i.e. the indices
-    of subsequences whose distances to `Q` are less or equal to
+    of subsequences whose distances to `Q` are less than or equal to
     `max_distance`, sorted by distance (lowest to highest).
 
     Around each occurrence an exclusion zone is applied before searching for the next.
