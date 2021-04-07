@@ -1049,7 +1049,7 @@ def get_all_mpdist_profiles(
     if T.shape[0] % m != 0:
         right_pad = int(m * np.ceil(T.shape[0] / m) - T.shape[0])
         pad_width = (0, right_pad)
-        T = np.pad(T, pad_width, constant_values=np.nan)
+        T = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
 
     n_padded = T.shape[0]
     D = np.empty(((n_padded // m) - 1, n_padded - m + 1))
@@ -1100,7 +1100,7 @@ def mpdist_snippets(
     )
 
     pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
-    T_padded = np.pad(T, pad_width, constant_values=0.0)
+    T_padded = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
     n_padded = T_padded.shape[0]
 
     snippets = np.empty((k, m))
@@ -1163,7 +1163,7 @@ def aampdist_snippets(
     )
 
     pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
-    T_padded = np.pad(T, pad_width, constant_values=0.0)
+    T_padded = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
     n_padded = T_padded.shape[0]
 
     snippets = np.empty((k, m))
