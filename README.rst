@@ -14,7 +14,7 @@
     :target: https://github.com/TDAmeritrade/stumpy/blob/master/LICENSE.txt
     :alt: License
 .. image:: https://github.com/TDAmeritrade/stumpy/workflows/Tests/badge.svg
-    :target: https://github.com/TDAmeritrade/stumpy/actions?query=workflow%3ATests+branch%3Amaster)
+    :target: https://github.com/TDAmeritrade/stumpy/actions?query=workflow%3ATests+branch%3Amain)
     :alt: Test Status
 .. image:: https://codecov.io/gh/TDAmeritrade/stumpy/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/TDAmeritrade/stumpy
