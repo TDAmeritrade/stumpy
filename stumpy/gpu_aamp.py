@@ -455,8 +455,7 @@ def _gpu_aamp(
     with cuda.gpus[device_id]:
         threads_per_block = config.STUMPY_THREADS_PER_BLOCK
         if cooperative:
-            defns = _compute_and_update_PI_kernel_cg.overloads
-            defn = next(iter(defns.values()))
+            defn = _compute_and_update_PI_kernel_cg.definition
             blocks_per_grid = defn.max_cooperative_grid_blocks(threads_per_block)
         else:
             blocks_per_grid = math.ceil(k / threads_per_block)
