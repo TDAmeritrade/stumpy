@@ -581,8 +581,15 @@ def _gpu_stump(
 
 
 @core.non_normalized(gpu_aamp)
-def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0,
-              normalize=True, cooperative=False):
+def gpu_stump(
+    T_A,
+    m,
+    T_B=None,
+    ignore_trivial=True,
+    device_id=0,
+    normalize=True,
+    cooperative=False,
+):
     """
     Compute the z-normalized matrix profile with one or more GPU devices
 
