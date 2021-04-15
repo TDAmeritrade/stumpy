@@ -7,7 +7,8 @@ import logging
 import numpy as np
 from numba import njit, config
 
-from . import core, _stump
+from . import core, scraamp
+from .stump import _stump
 
 logger = logging.getLogger(__name__)
 
@@ -98,53 +99,54 @@ def _prescrump(
     P_squared[i] = squared_distance_profile[I[i]]
     if P_squared[i] == np.inf:  # pragma: no cover
         I[i] = -1
-
-    j = I[i]
-    # Given the squared distance, work backwards and compute QT
-    QT_j = (m - P_squared[i] / 2.0) * (Σ_T[j] * σ_Q[i]) + (m * M_T[j] * μ_Q[i])
-    QT_j_prime = QT_j
-    for k in range(1, min(s, l - max(i, j))):
-        QT_j = (
-            QT_j
-            - T_B[i + k - 1] * T_A[j + k - 1]
-            + T_B[i + k + m - 1] * T_A[j + k + m - 1]
-        )
-        D_squared = core._calculate_squared_distance(
-            m,
-            QT_j,
-            M_T[i + k],
-            Σ_T[i + k],
-            μ_Q[j + k],
-            σ_Q[j + k],
-        )
-        if D_squared < P_squared[i + k]:
-            P_squared[i + k] = D_squared
-            I[i + k] = j + k
-        if D_squared < P_squared[j + k]:
-            P_squared[j + k] = D_squared
-            I[j + k] = i + k
-    QT_j = QT_j_prime
-    for k in range(1, min(s, i + 1, j + 1)):
-        QT_j = QT_j - T_B[i - k + m] * T_A[j - k + m] + T_B[i - k] * T_A[j - k]
-        D_squared = core._calculate_squared_distance(
-            m,
-            QT_j,
-            M_T[i - k],
-            Σ_T[i - k],
-            μ_Q[j - k],
-            σ_Q[j - k],
-        )
-        if D_squared < P_squared[i - k]:
-            P_squared[i - k] = D_squared
-            I[i - k] = j - k
-        if D_squared < P_squared[j - k]:
-            P_squared[j - k] = D_squared
-            I[j - k] = i - k
+    else:
+        j = I[i]
+        # Given the squared distance, work backwards and compute QT
+        QT_j = (m - P_squared[i] / 2.0) * (Σ_T[j] * σ_Q[i]) + (m * M_T[j] * μ_Q[i])
+        QT_j_prime = QT_j
+        for k in range(1, min(s, l - max(i, j))):
+            QT_j = (
+                QT_j
+                - T_B[i + k - 1] * T_A[j + k - 1]
+                + T_B[i + k + m - 1] * T_A[j + k + m - 1]
+            )
+            D_squared = core._calculate_squared_distance(
+                m,
+                QT_j,
+                M_T[i + k],
+                Σ_T[i + k],
+                μ_Q[j + k],
+                σ_Q[j + k],
+            )
+            if D_squared < P_squared[i + k]:
+                P_squared[i + k] = D_squared
+                I[i + k] = j + k
+            if D_squared < P_squared[j + k]:
+                P_squared[j + k] = D_squared
+                I[j + k] = i + k
+        QT_j = QT_j_prime
+        for k in range(1, min(s, i + 1, j + 1)):
+            QT_j = QT_j - T_B[i - k + m] * T_A[j - k + m] + T_B[i - k] * T_A[j - k]
+            D_squared = core._calculate_squared_distance(
+                m,
+                QT_j,
+                M_T[i - k],
+                Σ_T[i - k],
+                μ_Q[j - k],
+                σ_Q[j - k],
+            )
+            if D_squared < P_squared[i - k]:
+                P_squared[i - k] = D_squared
+                I[i - k] = j - k
+            if D_squared < P_squared[j - k]:
+                P_squared[j - k] = D_squared
+                I[j - k] = i - k
 
     return
 
 
-def prescrump(T_A, m, T_B=None, s=None):
+@core.non_normalized(scraamp.prescraamp)
+def prescrump(T_A, m, T_B=None, s=None, normalize=True):
     """
     A convenience wrapper around the Numba JIT-compiled parallelized `_prescrump`
     function which computes the approximate matrix profile according to the preSCRIMP
@@ -158,12 +160,17 @@ def prescrump(T_A, m, T_B=None, s=None):
     m : int
         Window size
 
-    T_B : ndarray
+    T_B : ndarray, default None
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
-    s : int
+    s : int, default None
         The sampling interval that defaults to `int(np.ceil(m / 4))`
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------
@@ -196,7 +203,7 @@ def prescrump(T_A, m, T_B=None, s=None):
     core.check_dtype(T_B)
     T_B[np.isinf(T_B)] = np.nan
 
-    core.check_window_size(m)
+    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
     μ_Q, σ_Q = core.compute_mean_std(T_A, m)
     M_T, Σ_T = core.compute_mean_std(T_B, m)
@@ -238,7 +245,12 @@ def prescrump(T_A, m, T_B=None, s=None):
     return P, I
 
 
-class scrump(object):
+@core.non_normalized(
+    scraamp.scraamp,
+    exclude=["normalize", "pre_scrump", "pre_scraamp"],
+    replace={"pre_scrump": "pre_scraamp"},
+)
+class scrump:
     """
     Compute an approximate z-normalized matrix profile
 
@@ -270,9 +282,14 @@ class scrump(object):
         SCRIMP++ and may lead to faster convergence
 
     s : int
-        The size of the PreSCRIMP fixed interval. If `pre-scrump=True` and `s=None`,
+        The size of the PreSCRIMP fixed interval. If `pre_scrump=True` and `s=None`,
         then `s` will automatically be set to `s=int(np.ceil(m/4))`, the size of
         the exclusion zone.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this class gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` class decorator.
 
     Attributes
     ----------
@@ -306,6 +323,7 @@ class scrump(object):
         percentage=0.01,
         pre_scrump=False,
         s=None,
+        normalize=True,
     ):
         """
         Initialize the `scrump` object
@@ -315,29 +333,34 @@ class scrump(object):
         T_A : ndarray
             The time series or sequence for which to compute the matrix profile
 
-        T_B : ndarray
-            The time series or sequence that will be used to annotate T_A. For every
-            subsequence in T_A, its nearest neighbor in T_B will be recorded.
-
         m : int
             Window size
 
-        ignore_trivial : bool
+        T_B : ndarray, default None
+            The time series or sequence that will be used to annotate T_A. For every
+            subsequence in T_A, its nearest neighbor in T_B will be recorded.
+
+        ignore_trivial : bool, default True
             Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
             `False`. Default is `True`.
 
-        percentage : float
+        percentage : float, default 0.01
             Approximate percentage completed. The value is between 0.0 and 1.0.
 
-        pre_scrump : bool
+        pre_scrump : bool, default False
             A flag for whether or not to perform the PreSCRIMP calculation prior to
             computing SCRIMP. If set to `True`, this is equivalent to computing
             SCRIMP++
 
-        s : int
-            The size of the PreSCRIMP fixed interval. If `pre-scrump=True` and `s=None`,
+        s : int, default None
+            The size of the PreSCRIMP fixed interval. If `pre_scrump=True` and `s=None`,
             then `s` will automatically be set to `s=int(np.ceil(m/4))`, the size of
             the exclusion zone.
+
+        normalize : bool, default True
+            When set to `True`, this z-normalizes subsequences prior to computing
+            distances. Otherwise, this class gets re-routed to its complementary
+            non-normalized equivalent set in the `@core.non_normalized` class decorator.
         """
         self._ignore_trivial = ignore_trivial
 
@@ -376,7 +399,7 @@ class scrump(object):
                 "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
             )
 
-        core.check_window_size(self._m)
+        core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
         if self._ignore_trivial is False and core.are_arrays_equal(
             self._T_A, self._T_B
@@ -407,7 +430,7 @@ class scrump(object):
 
         if pre_scrump:
             if self._ignore_trivial:
-                P, I = prescrump(self._T_A, self._m, s=s)
+                P, I = prescrump(T_A, m, s=s)
             else:
                 P, I = prescrump(T_A, m, T_B=T_B, s=s)
             for i in range(P.shape[0]):
@@ -432,8 +455,9 @@ class scrump(object):
             self._diags, self._m, self._n_A, self._n_B
         )
         self._chunk_diags_ranges = core._get_array_ranges(
-            self._ndist_counts, self._n_chunks
+            self._ndist_counts, self._n_chunks, truncate=True
         )
+        self._n_chunks = self._chunk_diags_ranges.shape[0]
         self._chunk_idx = 0
 
     def update(self):

@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from scipy.spatial.distance import cdist
 from stumpy import core
@@ -37,10 +38,38 @@ def distance_profile(Q, T, m):
     return D
 
 
+def aamp_distance_profile(Q, T, m):
+    T_inf = np.isinf(T)
+    if np.any(T_inf):
+        T = T.copy()
+        T[T_inf] = np.nan
+
+    Q_inf = np.isinf(Q)
+    if np.any(Q_inf):
+        Q = Q.copy()
+        Q[Q_inf] = np.nan
+
+    D = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1)
+
+    return D
+
+
 def distance_matrix(T_A, T_B, m):
     distance_matrix = np.array(
         [distance_profile(Q, T_B, m) for Q in core.rolling_window(T_A, m)]
     )
+
+    return distance_matrix
+
+
+def aamp_distance_matrix(T_A, T_B, m):
+    T_A[np.isinf(T_A)] = np.nan
+    T_B[np.isinf(T_B)] = np.nan
+
+    rolling_T_A = core.rolling_window(T_A, m)
+    rolling_T_B = core.rolling_window(T_B, m)
+
+    distance_matrix = cdist(rolling_T_A, rolling_T_B)
 
     return distance_matrix
 
@@ -175,122 +204,6 @@ def stump(T_A, m, T_B=None, exclusion_zone=None):
     return result
 
 
-def replace_inf(x, value=0):
-    x[x == np.inf] = value
-    x[x == -np.inf] = value
-    return
-
-
-def multi_mass(Q, T, m, include=None, discords=False):
-    T_inf = np.isinf(T)
-    if np.any(T_inf):
-        T = T.copy()
-        T[T_inf] = np.nan
-
-    Q_inf = np.isinf(Q)
-    if np.any(Q_inf):
-        Q = Q.copy()
-        Q[Q_inf] = np.nan
-
-    d, n = T.shape
-
-    D = np.empty((d, n - m + 1))
-    for i in range(d):
-        D[i] = distance_profile(Q[i], T[i], m)
-
-    D[np.isnan(D)] = np.inf
-
-    return D
-
-
-def PI(D, trivial_idx, excl_zone):
-    d, k = D.shape
-
-    P = np.full((d, k), np.inf)
-    I = np.ones((d, k), dtype="int64") * -1
-
-    for i in range(d):
-        col_mask = P[i] > D[i]
-        P[i, col_mask] = D[i, col_mask]
-        I[i, col_mask] = trivial_idx
-
-    return P, I
-
-
-def mstump(T, m, excl_zone, include=None, discords=False):
-    T = T.copy()
-
-    d, n = T.shape
-    k = n - m + 1
-
-    P = np.full((d, k), np.inf)
-    I = np.ones((d, k), dtype="int64") * -1
-
-    for i in range(k):
-        Q = T[:, i : i + m]
-        D = multi_mass(Q, T, m, include, discords)
-
-        start_row_idx = 0
-        if include is not None:
-            restricted_indices = include[include < include.shape[0]]
-            unrestricted_indices = include[include >= include.shape[0]]
-            mask = np.ones(include.shape[0], bool)
-            mask[restricted_indices] = False
-            tmp_swap = D[: include.shape[0]].copy()
-            D[: include.shape[0]] = D[include]
-            D[unrestricted_indices] = tmp_swap[mask]
-            start_row_idx = include.shape[0]
-
-        if discords:
-            D[start_row_idx:][::-1].sort(axis=0)
-        else:
-            D[start_row_idx:].sort(axis=0)
-
-        D_prime = np.zeros(n - m + 1)
-        D_prime_prime = np.zeros((d, n - m + 1))
-        for j in range(d):
-            D_prime[:] = D_prime + D[j]
-            D_prime_prime[j, :] = D_prime / (j + 1)
-
-        apply_exclusion_zone(D_prime_prime, i, excl_zone)
-
-        P_i, I_i = PI(D_prime_prime, i, excl_zone)
-
-        for dim in range(T.shape[0]):
-            col_mask = P[dim] > P_i[dim]
-            P[dim, col_mask] = P_i[dim, col_mask]
-            I[dim, col_mask] = I_i[dim, col_mask]
-
-    return P.T, I.T
-
-
-def get_array_ranges(a, n_chunks, truncate=False):
-    out = np.zeros((n_chunks, 2), np.int64)
-    ranges_idx = 0
-    range_start_idx = 0
-
-    sum = 0
-    for i in range(a.shape[0]):
-        sum += a[i]
-        if sum > a.sum() / n_chunks:
-            out[ranges_idx, 0] = range_start_idx
-            out[ranges_idx, 1] = min(i + 1, a.shape[0])  # Exclusive stop index
-            # Reset and Update
-            range_start_idx = i + 1
-            ranges_idx += 1
-            sum = 0
-    # Handle final range outside of for loop
-    out[ranges_idx, 0] = range_start_idx
-    out[ranges_idx, 1] = a.shape[0]
-    if ranges_idx < n_chunks - 1:
-        out[ranges_idx:] = a.shape[0]
-
-    if truncate:
-        out = out[:ranges_idx]
-
-    return out
-
-
 def aamp(T_A, m, T_B=None, exclusion_zone=None):
     T_A = np.asarray(T_A)
     T_A = T_A.copy()
@@ -358,6 +271,263 @@ def aamp(T_A, m, T_B=None, exclusion_zone=None):
     result[:, 1:4] = I[:, :]
 
     return result
+
+
+def replace_inf(x, value=0):
+    x[x == np.inf] = value
+    x[x == -np.inf] = value
+    return
+
+
+def multi_mass(Q, T, m, include=None, discords=False):
+    T_inf = np.isinf(T)
+    if np.any(T_inf):
+        T = T.copy()
+        T[T_inf] = np.nan
+
+    Q_inf = np.isinf(Q)
+    if np.any(Q_inf):
+        Q = Q.copy()
+        Q[Q_inf] = np.nan
+
+    d, n = T.shape
+
+    D = np.empty((d, n - m + 1))
+    for i in range(d):
+        D[i] = distance_profile(Q[i], T[i], m)
+
+    D[np.isnan(D)] = np.inf
+
+    return D
+
+
+def multi_mass_absolute(Q, T, m, include=None, discords=False):
+    T_inf = np.isinf(T)
+    if np.any(T_inf):
+        T = T.copy()
+        T[T_inf] = np.nan
+
+    Q_inf = np.isinf(Q)
+    if np.any(Q_inf):
+        Q = Q.copy()
+        Q[Q_inf] = np.nan
+
+    d, n = T.shape
+
+    D = np.empty((d, n - m + 1))
+    for i in range(d):
+        D[i] = aamp_distance_profile(Q[i], T[i], m)
+
+    D[np.isnan(D)] = np.inf
+
+    return D
+
+
+def PI(D, trivial_idx, excl_zone):
+    d, k = D.shape
+
+    P = np.full((d, k), np.inf)
+    I = np.ones((d, k), dtype="int64") * -1
+
+    for i in range(d):
+        col_mask = P[i] > D[i]
+        P[i, col_mask] = D[i, col_mask]
+        I[i, col_mask] = trivial_idx
+
+    return P, I
+
+
+def apply_include(D, include):
+    restricted_indices = []
+    unrestricted_indices = []
+    mask = np.ones(include.shape[0], bool)
+
+    for i in range(include.shape[0]):
+        if include[i] < include.shape[0]:
+            restricted_indices.append(include[i])
+        if include[i] >= include.shape[0]:
+            unrestricted_indices.append(include[i])
+
+    restricted_indices = np.array(restricted_indices, dtype=np.int64)
+    unrestricted_indices = np.array(unrestricted_indices, dtype=np.int64)
+    mask[restricted_indices] = False
+    tmp_swap = D[: include.shape[0]].copy()
+
+    D[: include.shape[0]] = D[include]
+    D[unrestricted_indices] = tmp_swap[mask]
+
+
+def mstump(T, m, excl_zone, include=None, discords=False):
+    T = T.copy()
+
+    d, n = T.shape
+    k = n - m + 1
+
+    P = np.full((d, k), np.inf)
+    I = np.ones((d, k), dtype="int64") * -1
+
+    for i in range(k):
+        Q = T[:, i : i + m]
+        D = multi_mass(Q, T, m, include, discords)
+
+        start_row_idx = 0
+        if include is not None:
+            apply_include(D, include)
+            start_row_idx = include.shape[0]
+
+        if discords:
+            D[start_row_idx:][::-1].sort(axis=0)
+        else:
+            D[start_row_idx:].sort(axis=0)
+
+        D_prime = np.zeros(n - m + 1)
+        D_prime_prime = np.zeros((d, n - m + 1))
+        for j in range(d):
+            D_prime[:] = D_prime + D[j]
+            D_prime_prime[j, :] = D_prime / (j + 1)
+
+        apply_exclusion_zone(D_prime_prime, i, excl_zone)
+
+        P_i, I_i = PI(D_prime_prime, i, excl_zone)
+
+        for dim in range(T.shape[0]):
+            col_mask = P[dim] > P_i[dim]
+            P[dim, col_mask] = P_i[dim, col_mask]
+            I[dim, col_mask] = I_i[dim, col_mask]
+
+    return P, I
+
+
+def maamp(T, m, excl_zone, include=None, discords=False):
+    T = T.copy()
+
+    d, n = T.shape
+    k = n - m + 1
+
+    P = np.full((d, k), np.inf)
+    I = np.ones((d, k), dtype="int64") * -1
+
+    for i in range(k):
+        Q = T[:, i : i + m]
+        D = multi_mass_absolute(Q, T, m, include, discords)
+
+        start_row_idx = 0
+        if include is not None:
+            apply_include(D, include)
+            start_row_idx = include.shape[0]
+
+        if discords:
+            D[start_row_idx:][::-1].sort(axis=0)
+        else:
+            D[start_row_idx:].sort(axis=0)
+
+        D_prime = np.zeros(n - m + 1)
+        D_prime_prime = np.zeros((d, n - m + 1))
+        for j in range(d):
+            D_prime[:] = D_prime + D[j]
+            D_prime_prime[j, :] = D_prime / (j + 1)
+
+        apply_exclusion_zone(D_prime_prime, i, excl_zone)
+
+        P_i, I_i = PI(D_prime_prime, i, excl_zone)
+
+        for dim in range(T.shape[0]):
+            col_mask = P[dim] > P_i[dim]
+            P[dim, col_mask] = P_i[dim, col_mask]
+            I[dim, col_mask] = I_i[dim, col_mask]
+
+    return P, I
+
+
+def subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
+    D = distance(
+        z_norm(T[:, motif_idx : motif_idx + m], axis=1),
+        z_norm(T[:, nn_idx : nn_idx + m], axis=1),
+        axis=1,
+    )
+
+    if discords:
+        sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
+    else:
+        sorted_idx = D.argsort(axis=0, kind="mergesort")
+
+    # `include` processing can occur since we are dealing with indices, not distances
+    if include is not None:
+        include_idx = []
+        for i in range(include.shape[0]):
+            include_idx.append(np.isin(sorted_idx, include[i]).nonzero()[0])
+        include_idx = np.array(include_idx).flatten()
+        include_idx.sort()
+        exclude_idx = np.ones(T.shape[0], dtype=bool)
+        exclude_idx[include_idx] = False
+        exclude_idx = exclude_idx.nonzero()[0]
+        sorted_idx[: include_idx.shape[0]], sorted_idx[include_idx.shape[0] :] = (
+            sorted_idx[include_idx],
+            sorted_idx[exclude_idx],
+        )
+
+    S = sorted_idx[: k + 1]
+
+    return S
+
+
+def maamp_subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
+    D = distance(
+        T[:, motif_idx : motif_idx + m],
+        T[:, nn_idx : nn_idx + m],
+        axis=1,
+    )
+
+    if discords:
+        sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
+    else:
+        sorted_idx = D.argsort(axis=0, kind="mergesort")
+
+    # `include` processing can occur since we are dealing with indices, not distances
+    if include is not None:
+        include_idx = []
+        for i in range(include.shape[0]):
+            include_idx.append(np.isin(sorted_idx, include[i]).nonzero()[0])
+        include_idx = np.array(include_idx).flatten()
+        include_idx.sort()
+        exclude_idx = np.ones(T.shape[0], dtype=bool)
+        exclude_idx[include_idx] = False
+        exclude_idx = exclude_idx.nonzero()[0]
+        sorted_idx[: include_idx.shape[0]], sorted_idx[include_idx.shape[0] :] = (
+            sorted_idx[include_idx],
+            sorted_idx[exclude_idx],
+        )
+
+    S = sorted_idx[: k + 1]
+
+    return S
+
+
+def get_array_ranges(a, n_chunks, truncate=False):
+    out = np.zeros((n_chunks, 2), np.int64)
+    ranges_idx = 0
+    range_start_idx = 0
+
+    sum = 0
+    for i in range(a.shape[0]):
+        sum += a[i]
+        if sum > a.sum() / n_chunks:
+            out[ranges_idx, 0] = range_start_idx
+            out[ranges_idx, 1] = min(i + 1, a.shape[0])  # Exclusive stop index
+            # Reset and Update
+            range_start_idx = i + 1
+            ranges_idx += 1
+            sum = 0
+    # Handle final range outside of for loop
+    out[ranges_idx, 0] = range_start_idx
+    out[ranges_idx, 1] = a.shape[0]
+    if ranges_idx < n_chunks - 1:
+        out[ranges_idx:] = a.shape[0]
+
+    if truncate:
+        out = out[:ranges_idx]
+
+    return out
 
 
 class aampi_egress(object):
@@ -490,3 +660,546 @@ class stumpi_egress(object):
 
         self.left_I_[-1] = I_last + self._n_appended
         self.left_P_[-1] = D[I_last]
+
+
+def across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m):
+    """
+    For multiple time series find, per individual time series, the subsequences closest
+    to a query.
+
+    Parameters
+    ----------
+    Ts : list
+        A list of time series for which to find the nearest neighbor subsequences that
+        are closest to the query subsequence `Ts[Ts_idx][subseq_idx : subseq_idx + m]`
+
+    Ts_idx : int
+        The index of time series in `Ts` which contains the query subsequence
+        `Ts[Ts_idx][subseq_idx : subseq_idx + m]`
+
+    subseq_idx : int
+        The subsequence index in the time series `Ts[Ts_idx]` that contains the query
+        subsequence `Ts[Ts_idx][subseq_idx : subseq_idx + m]`
+
+    m : int
+        Subsequence window size
+
+    Returns
+    -------
+    nns_radii : ndarray
+        Nearest neighbor radii to subsequences in `Ts` that are closest to the query
+        `Ts[Ts_idx][subseq_idx : subseq_idx + m]`
+
+    nns_subseq_idx : ndarray
+        Nearest neighbor indices to subsequences in `Ts` that are closest to the query
+        `Ts[Ts_idx][subseq_idx : subseq_idx + m]`
+    """
+    k = len(Ts)
+    Q = Ts[Ts_idx][subseq_idx : subseq_idx + m]
+    nns_radii = np.zeros(k, dtype=np.float64)
+    nns_subseq_idx = np.zeros(k, dtype=np.int64)
+
+    for i in range(k):
+        dist_profile = distance_profile(Q, Ts[i], len(Q))
+        nns_subseq_idx[i] = np.argmin(dist_profile)
+        nns_radii[i] = dist_profile[nns_subseq_idx[i]]
+
+    return nns_radii, nns_subseq_idx
+
+
+def get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m):
+    """
+    Compare subsequences with the same radius and return the most central motif
+
+    Parameters
+    ----------
+    Ts : list
+        List of time series for which to find the most central motif
+
+    bsf_radius : float
+        Best radius found by a consensus search algorithm
+
+    bsf_Ts_idx : int
+        Index of time series in which `radius` was first found
+
+    bsf_subseq_idx : int
+        Start index of the subsequence in `Ts[Ts_idx]` that has radius `radius`
+
+    m : int
+        Window size
+
+    Returns
+    -------
+    bsf_radius : float
+        The updated radius of the most central consensus motif
+
+    bsf_Ts_idx : int
+        The updated index of time series which contains the most central consensus motif
+
+    bsf_subseq_idx : int
+        The update subsequence index of most central consensus motif within the time
+        series `bsf_Ts_idx` that contains it
+    """
+    bsf_nns_radii, bsf_nns_subseq_idx = across_series_nearest_neighbors(
+        Ts, bsf_Ts_idx, bsf_subseq_idx, m
+    )
+    bsf_nns_mean_radii = bsf_nns_radii.mean()
+
+    candidate_nns_Ts_idx = np.flatnonzero(np.isclose(bsf_nns_radii, bsf_radius))
+    candidate_nns_subseq_idx = bsf_nns_subseq_idx[candidate_nns_Ts_idx]
+
+    for Ts_idx, subseq_idx in zip(candidate_nns_Ts_idx, candidate_nns_subseq_idx):
+        candidate_nns_radii, _ = across_series_nearest_neighbors(
+            Ts, Ts_idx, subseq_idx, m
+        )
+        if (
+            np.isclose(candidate_nns_radii.max(), bsf_radius)
+            and candidate_nns_radii.mean() < bsf_nns_mean_radii
+        ):
+            bsf_Ts_idx = Ts_idx
+            bsf_subseq_idx = subseq_idx
+            bsf_nns_mean_radii = candidate_nns_radii.mean()
+
+    return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
+
+
+def consensus_search(Ts, m):
+    """
+    Brute force consensus motif from
+    <https://www.cs.ucr.edu/~eamonn/consensus_Motif_ICDM_Long_version.pdf>
+
+    See Table 1
+
+    Note that there is a bug in the pseudocode at line 8 where `i` should be `j`.
+    This implementation fixes it.
+    """
+    k = len(Ts)
+
+    bsf_radius = np.inf
+    bsf_Ts_idx = 0
+    bsf_subseq_idx = 0
+
+    for j in range(k):
+        radii = np.zeros(len(Ts[j]) - m + 1)
+        for i in range(k):
+            if i != j:
+                mp = stump(Ts[j], m, Ts[i])
+                radii = np.maximum(radii, mp[:, 0])
+        min_radius_idx = np.argmin(radii)
+        min_radius = radii[min_radius_idx]
+        if min_radius < bsf_radius:
+            bsf_radius = min_radius
+            bsf_Ts_idx = j
+            bsf_subseq_idx = min_radius_idx
+
+    return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
+
+
+def ostinato(Ts, m):
+    bsf_radius, bsf_Ts_idx, bsf_subseq_idx = consensus_search(Ts, m)
+    radius, Ts_idx, subseq_idx = get_central_motif(
+        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m
+    )
+    return radius, Ts_idx, subseq_idx
+
+
+def aamp_across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m):
+    """
+    For multiple time series find, per individual time series, the subsequences closest
+    to a query.
+
+    Parameters
+    ----------
+    Ts : list
+        A list of time series for which to find the nearest neighbor subsequences that
+        are closest to the query subsequence `Ts[Ts_idx][subseq_idx : subseq_idx + m]`
+
+    Ts_idx : int
+        The index of time series in `Ts` which contains the query subsequence
+        `Ts[Ts_idx][subseq_idx : subseq_idx + m]`
+
+    subseq_idx : int
+        The subsequence index in the time series `Ts[Ts_idx]` that contains the query
+        subsequence `Ts[Ts_idx][subseq_idx : subseq_idx + m]`
+
+    m : int
+        Subsequence window size
+
+    Returns
+    -------
+    nns_radii : ndarray
+        Nearest neighbor radii to subsequences in `Ts` that are closest to the query
+        `Ts[Ts_idx][subseq_idx : subseq_idx + m]`
+
+    nns_subseq_idx : ndarray
+        Nearest neighbor indices to subsequences in `Ts` that are closest to the query
+        `Ts[Ts_idx][subseq_idx : subseq_idx + m]`
+    """
+    k = len(Ts)
+    Q = Ts[Ts_idx][subseq_idx : subseq_idx + m]
+    nns_radii = np.zeros(k, dtype=np.float64)
+    nns_subseq_idx = np.zeros(k, dtype=np.int64)
+
+    for i in range(k):
+        dist_profile = aamp_distance_profile(Q, Ts[i], len(Q))
+        nns_subseq_idx[i] = np.argmin(dist_profile)
+        nns_radii[i] = dist_profile[nns_subseq_idx[i]]
+
+    return nns_radii, nns_subseq_idx
+
+
+def get_aamp_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m):
+    """
+    Compare subsequences with the same radius and return the most central motif
+
+    Parameters
+    ----------
+    Ts : list
+        List of time series for which to find the most central motif
+
+    bsf_radius : float
+        Best radius found by a consensus search algorithm
+
+    bsf_Ts_idx : int
+        Index of time series in which `radius` was first found
+
+    bsf_subseq_idx : int
+        Start index of the subsequence in `Ts[Ts_idx]` that has radius `radius`
+
+    m : int
+        Window size
+
+    Returns
+    -------
+    bsf_radius : float
+        The updated radius of the most central consensus motif
+
+    bsf_Ts_idx : int
+        The updated index of time series which contains the most central consensus motif
+
+    bsf_subseq_idx : int
+        The update subsequence index of most central consensus motif within the time
+        series `bsf_Ts_idx` that contains it
+    """
+    bsf_nns_radii, bsf_nns_subseq_idx = aamp_across_series_nearest_neighbors(
+        Ts, bsf_Ts_idx, bsf_subseq_idx, m
+    )
+    bsf_nns_mean_radii = bsf_nns_radii.mean()
+
+    candidate_nns_Ts_idx = np.flatnonzero(np.isclose(bsf_nns_radii, bsf_radius))
+    candidate_nns_subseq_idx = bsf_nns_subseq_idx[candidate_nns_Ts_idx]
+
+    for Ts_idx, subseq_idx in zip(candidate_nns_Ts_idx, candidate_nns_subseq_idx):
+        candidate_nns_radii, _ = aamp_across_series_nearest_neighbors(
+            Ts, Ts_idx, subseq_idx, m
+        )
+        if (
+            np.isclose(candidate_nns_radii.max(), bsf_radius)
+            and candidate_nns_radii.mean() < bsf_nns_mean_radii
+        ):
+            bsf_Ts_idx = Ts_idx
+            bsf_subseq_idx = subseq_idx
+            bsf_nns_mean_radii = candidate_nns_radii.mean()
+
+    return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
+
+
+def aamp_consensus_search(Ts, m):
+    """
+    Brute force consensus motif from
+    <https://www.cs.ucr.edu/~eamonn/consensus_Motif_ICDM_Long_version.pdf>
+
+    See Table 1
+
+    Note that there is a bug in the pseudocode at line 8 where `i` should be `j`.
+    This implementation fixes it.
+    """
+    k = len(Ts)
+
+    bsf_radius = np.inf
+    bsf_Ts_idx = 0
+    bsf_subseq_idx = 0
+
+    for j in range(k):
+        radii = np.zeros(len(Ts[j]) - m + 1)
+        for i in range(k):
+            if i != j:
+                mp = aamp(Ts[j], m, Ts[i])
+                radii = np.maximum(radii, mp[:, 0])
+        min_radius_idx = np.argmin(radii)
+        min_radius = radii[min_radius_idx]
+        if min_radius < bsf_radius:
+            bsf_radius = min_radius
+            bsf_Ts_idx = j
+            bsf_subseq_idx = min_radius_idx
+
+    return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
+
+
+def aamp_ostinato(Ts, m):
+    bsf_radius, bsf_Ts_idx, bsf_subseq_idx = aamp_consensus_search(Ts, m)
+    radius, Ts_idx, subseq_idx = get_aamp_central_motif(
+        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m
+    )
+    return radius, Ts_idx, subseq_idx
+
+
+def mpdist_vect(T_A, T_B, m, percentage=0.05, k=None):
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    j = n_A - m + 1  # `k` is reserved for `P_ABBA` selection
+    P_ABBA = np.empty(2 * j, dtype=np.float64)
+    MPdist_vect = np.empty(n_B - n_A + 1)
+
+    if k is None:
+        percentage = min(percentage, 1.0)
+        percentage = max(percentage, 0.0)
+        k = min(math.ceil(percentage * (2 * n_A)), 2 * j - 1)
+
+    k = min(int(k), P_ABBA.shape[0] - 1)
+
+    for i in range(n_B - n_A + 1):
+        P_ABBA[:j] = stump(T_A, m, T_B[i : i + n_A])[:, 0]
+        P_ABBA[j:] = stump(T_B[i : i + n_A], m, T_A)[:, 0]
+        P_ABBA.sort()
+        MPdist_vect[i] = P_ABBA[min(k, P_ABBA.shape[0] - 1)]
+
+    return MPdist_vect
+
+
+def aampdist_vect(T_A, T_B, m, percentage=0.05, k=None):
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    j = n_A - m + 1  # `k` is reserved for `P_ABBA` selection
+    P_ABBA = np.empty(2 * j, dtype=np.float64)
+    aaMPdist_vect = np.empty(n_B - n_A + 1)
+
+    if k is None:
+        percentage = min(percentage, 1.0)
+        percentage = max(percentage, 0.0)
+        k = min(math.ceil(percentage * (2 * n_A)), 2 * j - 1)
+
+    k = min(int(k), P_ABBA.shape[0] - 1)
+
+    for i in range(n_B - n_A + 1):
+        P_ABBA[:j] = aamp(T_A, m, T_B[i : i + n_A])[:, 0]
+        P_ABBA[j:] = aamp(T_B[i : i + n_A], m, T_A)[:, 0]
+        P_ABBA.sort()
+        aaMPdist_vect[i] = P_ABBA[k]
+
+    return aaMPdist_vect
+
+
+def mpdist(T_A, T_B, m, percentage=0.05, k=None):
+    percentage = min(percentage, 1.0)
+    percentage = max(percentage, 0.0)
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
+    if k is not None:
+        k = int(k)
+    else:
+        k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
+
+    P_ABBA[: n_A - m + 1] = stump(T_A, m, T_B)[:, 0]
+    P_ABBA[n_A - m + 1 :] = stump(T_B, m, T_A)[:, 0]
+
+    P_ABBA.sort()
+    MPdist = P_ABBA[k]
+    if ~np.isfinite(MPdist):
+        k = np.isfinite(P_ABBA[:k]).sum() - 1
+        MPdist = P_ABBA[k]
+
+    return MPdist
+
+
+def aampdist(T_A, T_B, m, percentage=0.05, k=None):
+    percentage = min(percentage, 1.0)
+    percentage = max(percentage, 0.0)
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
+    if k is not None:
+        k = int(k)
+    else:
+        k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
+
+    P_ABBA[: n_A - m + 1] = aamp(T_A, m, T_B)[:, 0]
+    P_ABBA[n_A - m + 1 :] = aamp(T_B, m, T_A)[:, 0]
+
+    P_ABBA.sort()
+    MPdist = P_ABBA[k]
+    if ~np.isfinite(MPdist):
+        k = np.isfinite(P_ABBA[:k]).sum() - 1
+        MPdist = P_ABBA[k]
+
+    return MPdist
+
+
+def get_all_mpdist_profiles(
+    T,
+    m,
+    percentage=1.0,
+    s=None,
+    mpdist_percentage=0.05,
+    mpdist_k=None,
+    mpdist_vect_func=mpdist_vect,
+):
+    right_pad = 0
+    if T.shape[0] % m != 0:
+        right_pad = int(m * np.ceil(T.shape[0] / m) - T.shape[0])
+        pad_width = (0, right_pad)
+        T = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
+
+    n_padded = T.shape[0]
+    D = np.empty(((n_padded // m) - 1, n_padded - m + 1))
+
+    if s is not None:
+        s = min(int(s), m)
+    else:
+        percentage = min(percentage, 1.0)
+        percentage = max(percentage, 0.0)
+        s = min(math.ceil(percentage * m), m)
+
+    # Iterate over non-overlapping subsequences, see Definition 3
+    for i in range((n_padded // m) - 1):
+        start = i * m
+        stop = (i + 1) * m
+        S_i = T[start:stop]
+        D[i, :] = mpdist_vect_func(
+            S_i,
+            T,
+            s,
+            percentage=mpdist_percentage,
+            k=mpdist_k,
+        )
+
+    stop_idx = n_padded - m + 1 - right_pad
+    D = D[:, :stop_idx]
+
+    return D
+
+
+def mpdist_snippets(
+    T,
+    m,
+    k,
+    percentage=1.0,
+    s=None,
+    mpdist_percentage=0.05,
+    mpdist_k=None,
+):
+
+    D = get_all_mpdist_profiles(
+        T,
+        m,
+        percentage,
+        s,
+        mpdist_percentage,
+        mpdist_k,
+    )
+
+    pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
+    T_padded = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
+    n_padded = T_padded.shape[0]
+
+    snippets = np.empty((k, m))
+    snippets_indices = np.empty(k, dtype=np.int64)
+    snippets_profiles = np.empty((k, D.shape[-1]))
+    snippets_fractions = np.empty(k)
+    snippets_areas = np.empty(k)
+    Q = np.inf
+    indices = np.arange(0, n_padded - m, m)
+
+    for snippet_idx in range(k):
+        min_area = np.inf
+        for i in range(D.shape[0]):
+            profile_area = np.sum(np.minimum(D[i], Q))
+            if min_area > profile_area:
+                min_area = profile_area
+                idx = i
+
+        snippets[snippet_idx] = T[indices[idx] : indices[idx] + m]
+        snippets_indices[snippet_idx] = indices[idx]
+        snippets_profiles[snippet_idx] = D[idx]
+        snippets_areas[snippet_idx] = np.sum(np.minimum(D[idx], Q))
+
+        Q = np.minimum(D[idx], Q)
+
+    total_min = np.min(snippets_profiles, axis=0)
+
+    for i in range(k):
+        mask = snippets_profiles[i] <= total_min
+        snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
+        total_min = total_min - mask.astype(float)
+
+    return (
+        snippets,
+        snippets_indices,
+        snippets_profiles,
+        snippets_fractions,
+        snippets_areas,
+    )
+
+
+def aampdist_snippets(
+    T,
+    m,
+    k,
+    percentage=1.0,
+    s=None,
+    mpdist_percentage=0.05,
+    mpdist_k=None,
+):
+
+    D = get_all_mpdist_profiles(
+        T,
+        m,
+        percentage,
+        s,
+        mpdist_percentage,
+        mpdist_k,
+        aampdist_vect,
+    )
+
+    pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
+    T_padded = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
+    n_padded = T_padded.shape[0]
+
+    snippets = np.empty((k, m))
+    snippets_indices = np.empty(k, dtype=np.int64)
+    snippets_profiles = np.empty((k, D.shape[-1]))
+    snippets_fractions = np.empty(k)
+    snippets_areas = np.empty(k)
+    Q = np.inf
+    indices = np.arange(0, n_padded - m, m)
+
+    for snippet_idx in range(k):
+        min_area = np.inf
+        for i in range(D.shape[0]):
+            profile_area = np.sum(np.minimum(D[i], Q))
+            if min_area > profile_area:
+                min_area = profile_area
+                idx = i
+
+        snippets[snippet_idx] = T[indices[idx] : indices[idx] + m]
+        snippets_indices[snippet_idx] = indices[idx]
+        snippets_profiles[snippet_idx] = D[idx]
+        snippets_areas[snippet_idx] = np.sum(np.minimum(D[idx], Q))
+
+        Q = np.minimum(D[idx], Q)
+
+    total_min = np.min(snippets_profiles, axis=0)
+
+    for i in range(k):
+        mask = snippets_profiles[i] <= total_min
+        snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
+        total_min = total_min - mask.astype(float)
+
+    return (
+        snippets,
+        snippets_indices,
+        snippets_profiles,
+        snippets_fractions,
+        snippets_areas,
+    )

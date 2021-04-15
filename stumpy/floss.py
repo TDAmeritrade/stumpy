@@ -64,18 +64,18 @@ def _iac(
         The width of the bidirectional idealized arc curve. This is equal
         to the length of the matrix profile index.
 
-    bidirectional : bool
+    bidirectional : bool, default True
         Flag for computing a bidirectional (`True`) or 1-dimensional (`False`)
         idealized arc curve
 
-    n_iter : int
+    n_iter : int, default 1000
         Number of iterations to average over when determining the parameters for
         beta distribution
 
-    n_samples : int
+    n_samples : int, default 1000
         Number of distribution samples to draw during each iteration
 
-    seed : int
+    seed : int, default 0
         NumPy random seed used in sampling the beta distribution. Set this to your
         desired value for reproducibility purposes. The default value is set to `0`.
 
@@ -132,19 +132,19 @@ def _cac(I, L, bidirectional=True, excl_factor=5, custom_iac=None, seed=0):
         be different since this is only used to manage edge effects
         and has no bearing on any of the IAC or CAC core calculations.
 
-    bidirectional : bool
+    bidirectional : bool, default True
         Flag for normalizing the arc curve with a bidirectional (`True`) or
         1-dimensional (`False`) idealized arc curve. If a `custom_iac` is
         specified then this flag is ignored.
 
-    excl_factor : int
+    excl_factor : int, default 5
         The multiplying factor for the first and last regime exclusion zones
 
-    custom_iac : np.array
+    custom_iac : ndarray, default None
         A custom idealized arc curve (IAC) that will used for correcting the
         arc curve
 
-    seed : int
+    seed : int, default 0
         NumPy random seed used in sampling the `iac` beta distribution. Set this
         to your desired value for reproducibility purposes. The default value is
         set to `0`.
@@ -202,7 +202,7 @@ def _rea(cac, n_regimes, L, excl_factor=5):
         be different since this is only used to manage edge effects
         and has no bearing on any of the IAC or CAC core calculations.
 
-    excl_factor : int
+    excl_factor : int, default 5
         The multiplying factor for the regime exclusion zone
 
     Returns
@@ -235,7 +235,8 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
     for static data (i.e., batch processing)
 
     Essentially, this is a wrapper to compute the corrected arc curve and
-    regime locations.
+    regime locations. Note that since the matrix profile indices, `I`, are pre-computed,
+    this function is agnostic to subsequence normalization.
 
     Parameters
     ----------
@@ -258,10 +259,10 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
         window size used to compute the matrix profile and matrix
         profile index.
 
-    excl_factor : int
+    excl_factor : int, default 5
         The multiplying factor for the regime exclusion zone
 
-    custom_iac : np.array
+    custom_iac : ndarray, default None
         A custom idealized arc curve (IAC) that will used for correcting the
         arc curve
 
@@ -288,7 +289,7 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
     return cac, regime_locs
 
 
-class floss(object):
+class floss:
     """
     Compute the Fast Low-cost Online Semantic Segmentation (FLOSS) for
     streaming data
@@ -319,21 +320,24 @@ class floss(object):
         be different since this is only used to manage edge effects
         and has no bearing on any of the IAC or CAC core calculations.
 
-    excl_factor : int
+    excl_factor : int, default 5
         The multiplying factor for the regime exclusion zone. Note that this
         is unrelated to the `excl_zone` used in to compute the matrix profile.
 
-    n_iter : int
+    n_iter : int, default 1000
         Number of iterations to average over when determining the parameters for
         the IAC beta distribution
 
-    n_samples : int
+    n_samples : int, default 1000
         Number of distribution samples to draw during each iteration when
         computing the IAC
 
-    custom_iac : np.array
+    custom_iac : ndarray, default None
         A custom idealized arc curve (IAC) that will used for correcting the
         arc curve
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances
 
     Attributes
     ----------
@@ -370,7 +374,16 @@ class floss(object):
     """
 
     def __init__(
-        self, mp, T, m, L, excl_factor=5, n_iter=1000, n_samples=1000, custom_iac=None
+        self,
+        mp,
+        T,
+        m,
+        L,
+        excl_factor=5,
+        n_iter=1000,
+        n_samples=1000,
+        custom_iac=None,
+        normalize=True,
     ):
         """
         Initialize the FLOSS object
@@ -401,21 +414,25 @@ class floss(object):
             be different since this is only used to manage edge effects
             and has no bearing on any of the IAC or CAC core calculations.
 
-        excl_factor : int
+        excl_factor : int, default 5
             The multiplying factor for the regime exclusion zone. Note that this
             is unrelated to the `excl_zone` used in to compute the matrix profile.
 
-        n_iter : int
+        n_iter : int, default 1000
             Number of iterations to average over when determining the parameters for
             the IAC beta distribution
 
-        n_samples : int
+        n_samples : int, default 1000
             Number of distribution samples to draw during each iteration when
             computing the IAC
 
-        custom_iac : np.array
+        custom_iac : ndarray, default None
             A custom idealized arc curve (IAC) that will used for correcting the
             arc curve
+
+        normalize : bool, default True
+            When set to `True`, this z-normalizes subsequences prior to computing
+            distances
         """
         self._mp = copy.deepcopy(np.asarray(mp))
         self._T = copy.deepcopy(np.asarray(T))
@@ -425,10 +442,15 @@ class floss(object):
         self._n_iter = n_iter
         self._n_samples = n_samples
         self._custom_iac = custom_iac
+        self._normalize = normalize
         self._k = self._mp.shape[0]
         self._n = self._T.shape[0]
         self._last_idx = self._n - self._m + 1  # Depends on the changing length of `T`
         self._n_appended = 0
+        self._T_isfinite = np.isfinite(self._T)
+        self._finite_T = self._T.copy()
+        self._finite_T[~np.isfinite(self._finite_T)] = 0.0
+        self._finite_Q = self._finite_T[-self._m :].copy()
 
         if self._custom_iac is None:  # pragma: no cover
             self._custom_iac = _iac(
@@ -449,11 +471,17 @@ class floss(object):
         # Note that any -1 indices must have a np.inf matrix profile value
         right_indices = [np.arange(IR, IR + self._m) for IR in self._mp[:, 3].tolist()]
         right_nn[:] = self._T[np.array(right_indices)]
-        self._mp[:, 0] = np.linalg.norm(
-            core.z_norm(core.rolling_window(self._T, self._m), 1)
-            - core.z_norm(right_nn, 1),
-            axis=1,
-        )
+        if self._normalize:
+            self._mp[:, 0] = np.linalg.norm(
+                core.z_norm(core.rolling_window(self._T, self._m), 1)
+                - core.z_norm(right_nn, 1),
+                axis=1,
+            )
+        else:
+            self._mp[:, 0] = np.linalg.norm(
+                core.rolling_window(self._T, self._m) - right_nn,
+                axis=1,
+            )
         inf_indices = np.argwhere(self._mp[:, 3] < 0).flatten()
         self._mp[inf_indices, 0] = np.inf
         self._mp[inf_indices, 3] = inf_indices
@@ -482,8 +510,15 @@ class floss(object):
         Segmentation (FLOSS).
         """
         self._T[:-1] = self._T[1:]
+        self._T_isfinite[:-1] = self._T_isfinite[1:]
+        self._finite_T[:-1] = self._finite_T[1:]
+        self._finite_Q[:-1] = self._finite_Q[1:]
         self._T[-1] = t
-        Q = self._T[-self._m :]
+        self._T_isfinite[-1] = np.isfinite(t)
+        self._finite_T[-1] = t
+        if not np.isfinite(t):
+            self._finite_T[-1] = 0.0
+        self._finite_Q[-1] = self._finite_T[-1]
         excl_zone = int(np.ceil(self._m / 4))
         # Note that the start of the exclusion zone is relative to
         # the unchanging length of the matrix profile index
@@ -497,10 +532,19 @@ class floss(object):
         self._mp[-1, 3] = self._last_idx
 
         # Ingress
-        M_T, Σ_T = core.compute_mean_std(self._T, self._m)
+        if self._normalize:
+            M_T, Σ_T = core.compute_mean_std(self._T, self._m)
+            D = core.mass(self._finite_Q, self._finite_T, M_T, Σ_T)
+        else:
+            D = core.mass_absolute(self._T[-self._m :], self._T)
 
-        D = core.mass(Q, self._T, M_T, Σ_T)
         D[zone_start:] = np.inf
+
+        T_subseq_isfinite = core.rolling_isfinite(self._T_isfinite, self._m)
+
+        D[~T_subseq_isfinite] = np.inf
+        if not T_subseq_isfinite[-1]:
+            D[:] = np.inf
 
         # Update nearest neighbor for old data if any old subsequences
         # are closer to the newly arrived subsequence
@@ -538,7 +582,7 @@ class floss(object):
         """
         Get the updated (right) matrix profile indices
         """
-        return self._mp[:, 3].astype(np.float)
+        return self._mp[:, 3].astype(np.int)
 
     @property
     def T_(self):

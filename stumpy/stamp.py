@@ -25,18 +25,18 @@ def _mass_PI(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=F
     Σ_T : ndarray
         Sliding standard deviation for `T`
 
-    trivial_idx : (optional) int
+    trivial_idx : int, default None
         Index for the start of the trivial self-join
 
-    excl_zone : int
+    excl_zone : int, default 0
         The half width for the exclusion zone relative to the `trivial_idx`.
         If the `trivial_idx` is `None` then this parameter is ignored.
 
-    left : bool
+    left : bool, default False
         Return the left matrix profile indices if `True`. If `right` is True
         then this parameter is ignored.
 
-    right : bool
+    right : bool, default False
         Return the right matrix profiles indices if `True`
 
     Returns
@@ -103,7 +103,7 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     m : int
         Window size
 
-    ignore_trivial : bool
+    ignore_trivial : bool, default False
         `True` if this is a self join and `False` otherwise (i.e., AB-join).
 
     Returns
@@ -136,7 +136,7 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
 
-    core.check_window_size(m)
+    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
     subseq_T_A = core.rolling_window(T_A, m)
     excl_zone = int(np.ceil(m / 2))
 

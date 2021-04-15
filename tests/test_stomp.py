@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.testing as npt
-from stumpy import stomp, core
+from stumpy import stomp
 import pytest
 import naive
 

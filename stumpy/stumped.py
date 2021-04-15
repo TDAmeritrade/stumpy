@@ -6,12 +6,15 @@ import logging
 
 import numpy as np
 
-from . import core, _stump
+from . import core
+from .stump import _stump
+from .aamped import aamped
 
 logger = logging.getLogger(__name__)
 
 
-def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
+@core.non_normalized(aamped)
+def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
     """
     Compute the z-normalized matrix profile with a distributed dask cluster
 
@@ -33,14 +36,19 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     m : int
         Window size
 
-    T_B : ndarray
+    T_B : ndarray, default None
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
         `None` which corresponds to a self-join.
 
-    ignore_trivial : bool
+    ignore_trivial : bool, default True
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
         to `False`. Default is `True`.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------
@@ -133,7 +141,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
 
-    core.check_window_size(m)
+    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
     if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
         logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
@@ -163,31 +171,33 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     diags_ranges += diags[0]
 
     # Scatter data to Dask cluster
-    T_A_future = dask_client.scatter(T_A, broadcast=True)
-    T_B_future = dask_client.scatter(T_B, broadcast=True)
-    M_T_future = dask_client.scatter(M_T, broadcast=True)
-    μ_Q_future = dask_client.scatter(μ_Q, broadcast=True)
-    Σ_T_inverse_future = dask_client.scatter(Σ_T_inverse, broadcast=True)
-    σ_Q_inverse_future = dask_client.scatter(σ_Q_inverse, broadcast=True)
-    M_T_m_1_future = dask_client.scatter(M_T_m_1, broadcast=True)
-    μ_Q_m_1_future = dask_client.scatter(μ_Q_m_1, broadcast=True)
+    T_A_future = dask_client.scatter(T_A, broadcast=True, hash=False)
+    T_B_future = dask_client.scatter(T_B, broadcast=True, hash=False)
+    M_T_future = dask_client.scatter(M_T, broadcast=True, hash=False)
+    μ_Q_future = dask_client.scatter(μ_Q, broadcast=True, hash=False)
+    Σ_T_inverse_future = dask_client.scatter(Σ_T_inverse, broadcast=True, hash=False)
+    σ_Q_inverse_future = dask_client.scatter(σ_Q_inverse, broadcast=True, hash=False)
+    M_T_m_1_future = dask_client.scatter(M_T_m_1, broadcast=True, hash=False)
+    μ_Q_m_1_future = dask_client.scatter(μ_Q_m_1, broadcast=True, hash=False)
     T_A_subseq_isfinite_future = dask_client.scatter(
-        T_A_subseq_isfinite, broadcast=True
+        T_A_subseq_isfinite, broadcast=True, hash=False
     )
     T_B_subseq_isfinite_future = dask_client.scatter(
-        T_B_subseq_isfinite, broadcast=True
+        T_B_subseq_isfinite, broadcast=True, hash=False
     )
     T_A_subseq_isconstant_future = dask_client.scatter(
-        T_A_subseq_isconstant, broadcast=True
+        T_A_subseq_isconstant, broadcast=True, hash=False
     )
     T_B_subseq_isconstant_future = dask_client.scatter(
-        T_B_subseq_isconstant, broadcast=True
+        T_B_subseq_isconstant, broadcast=True, hash=False
     )
 
     diags_futures = []
     for i, host in enumerate(hosts):
         diags_future = dask_client.scatter(
-            np.arange(diags_ranges[i, 0], diags_ranges[i, 1]), workers=[host]
+            np.arange(diags_ranges[i, 0], diags_ranges[i, 1]),
+            workers=[host],
+            hash=False,
         )
         diags_futures.append(diags_future)
 
@@ -225,6 +235,24 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
 
     out[:, 0] = profile[:, 0]
     out[:, 1:4] = indices
+
+    # Delete data from Dask cluster
+    dask_client.cancel(T_A_future)
+    dask_client.cancel(T_B_future)
+    dask_client.cancel(M_T_future)
+    dask_client.cancel(μ_Q_future)
+    dask_client.cancel(Σ_T_inverse_future)
+    dask_client.cancel(σ_Q_inverse_future)
+    dask_client.cancel(M_T_m_1_future)
+    dask_client.cancel(μ_Q_m_1_future)
+    dask_client.cancel(T_A_subseq_isfinite_future)
+    dask_client.cancel(T_B_subseq_isfinite_future)
+    dask_client.cancel(T_A_subseq_isconstant_future)
+    dask_client.cancel(T_B_subseq_isconstant_future)
+    for diags_future in diags_futures:
+        dask_client.cancel(diags_future)
+    for future in futures:
+        dask_client.cancel(future)
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover

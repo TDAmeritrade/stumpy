@@ -3,9 +3,9 @@ channels:
   - defaults
 dependencies:
   - python>=3.6
-  - numpy>=1.13
-  - scipy>=1.2.1
-  - numba>=0.42.0
+  - numpy>=1.15
+  - scipy>=1.5
+  - numba>=0.48
   - pandas>=0.20.0
   - flake8>=3.7.7
   - flake8-docstrings>=1.5.0
@@ -16,3 +16,7 @@ dependencies:
   - jupyterlab>=2.2.2
   - matplotlib>=3.3.0
   - lxml>=4.5.2
+  - twine>=3.2.0
+  - sphinx>=3.5.3
+  - nbsphinx>=0.8.1
+  - pydata-sphinx-theme>=0.5.2

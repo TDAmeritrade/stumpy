@@ -1,13 +1,8 @@
-# Python package
-# Create and test a Python package on multiple Python versions.
-# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/python
-
 trigger:
-- master
+- main
 
 pr:
-- master
+- main
 
 stages:
 - stage: Unit
@@ -18,32 +13,41 @@ stages:
     strategy:
       matrix:
         python36_linux:
-          imageName: "ubuntu-16.04"
+          imageName: "ubuntu-latest"
           python.version: "3.6"
         python36_windows:
-          imageName: "vs2017-win2016"
+          imageName: "windows-latest"
           python.version: "3.6"
         python36_macos:
-          imageName: "macos-10.14"
+          imageName: "macos-latest"
           python.version: "3.6"
         python37_linux:
-          imageName: "ubuntu-16.04"
+          imageName: "ubuntu-latest"
           python.version: "3.7"
         python37_windows:
-          imageName: "vs2017-win2016"
+          imageName: "windows-latest"
           python.version: "3.7"
         python37_macos:
-          imageName: "macos-10.14"
+          imageName: "macos-latest"
           python.version: "3.7"
         python38_linux:
-          imageName: "ubuntu-16.04"
+          imageName: "ubuntu-latest"
           python.version: "3.8"
         python38_windows:
-          imageName: "vs2017-win2016"
+          imageName: "windows-latest"
           python.version: "3.8"
         python38_macos:
-          imageName: "macos-10.14"
+          imageName: "macos-latest"
           python.version: "3.8"
+        # python39_linux:
+        #   imageName: "ubuntu-latest"
+        #   python.version: "3.9"
+        # python39_windows:
+        #   imageName: "windows-latest"
+        #   python.version: "3.9"
+        # python39_macos:
+        #   imageName: "macos-latest"
+        #   python.version: "3.9"
       maxParallel: 10
 
     pool:
@@ -79,34 +83,42 @@ stages:
     strategy:
       matrix:
         python36_linux:
-          imageName: "ubuntu-16.04"
+          imageName: "ubuntu-latest"
           python.version: "3.6"
         python36_windows:
-          imageName: "vs2017-win2016"
+          imageName: "windows-latest"
           python.version: "3.6"
         python36_macos:
-          imageName: "macos-10.14"
+          imageName: "macos-latest"
           python.version: "3.6"
         python37_linux:
-          imageName: "ubuntu-16.04"
+          imageName: "ubuntu-latest"
           python.version: "3.7"
         python37_windows:
-          imageName: "vs2017-win2016"
+          imageName: "windows-latest"
           python.version: "3.7"
         python37_macos:
-          imageName: "macos-10.14"
+          imageName: "macos-latest"
           python.version: "3.7"
         python38_linux:
-          imageName: "ubuntu-16.04"
+          imageName: "ubuntu-latest"
           python.version: "3.8"
         python38_windows:
-          imageName: "vs2017-win2016"
+          imageName: "windows-latest"
           python.version: "3.8"
         python38_macos:
-          imageName: "macos-10.14"
+          imageName: "macos-latest"
           python.version: "3.8"
+        # python39_linux:
+        #   imageName: "ubuntu-latest"
+        #   python.version: "3.9"
+        # python39_windows:
+        #   imageName: "windows-latest"
+        #   python.version: "3.9"
+        # python39_macos:
+        #   imageName: "macos-latest"
+        #   python.version: "3.9"
       maxParallel: 10
-
     pool:
       vmImage: $(imageName)
 
@@ -132,9 +144,9 @@ stages:
     - bash: ./test.sh coverage
       displayName: "Running test coverage"
 
-    - script: |
-        codecov --token=$(CODECOV_TOKEN)
-      displayName: "Uploading test coverage results"
+    # - script: |
+    #     codecov --token=$(CODECOV_TOKEN)
+    #   displayName: "Uploading test coverage results"
 
 - stage: Scan
   displayName: "FOSSA"

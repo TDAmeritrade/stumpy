@@ -6,7 +6,8 @@ import logging
 
 import numpy as np
 
-from . import core, _aamp
+from . import core
+from .aamp import _aamp
 
 logger = logging.getLogger(__name__)
 
@@ -33,12 +34,12 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     m : int
         Window size
 
-    T_B : ndarray
+    T_B : ndarray, default None
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
         `None` which corresponds to a self-join.
 
-    ignore_trivial : bool
+    ignore_trivial : bool, default True
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
         to `False`. Default is `True`.
 
@@ -70,7 +71,7 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
 
-    core.check_window_size(m)
+    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
     if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
         logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
@@ -100,19 +101,21 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     diags_ranges += diags[0]
 
     # Scatter data to Dask cluster
-    T_A_future = dask_client.scatter(T_A, broadcast=True)
-    T_B_future = dask_client.scatter(T_B, broadcast=True)
+    T_A_future = dask_client.scatter(T_A, broadcast=True, hash=False)
+    T_B_future = dask_client.scatter(T_B, broadcast=True, hash=False)
     T_A_subseq_isfinite_future = dask_client.scatter(
-        T_A_subseq_isfinite, broadcast=True
+        T_A_subseq_isfinite, broadcast=True, hash=False
     )
     T_B_subseq_isfinite_future = dask_client.scatter(
-        T_B_subseq_isfinite, broadcast=True
+        T_B_subseq_isfinite, broadcast=True, hash=False
     )
 
     diags_futures = []
     for i, host in enumerate(hosts):
         diags_future = dask_client.scatter(
-            np.arange(diags_ranges[i, 0], diags_ranges[i, 1]), workers=[host]
+            np.arange(diags_ranges[i, 0], diags_ranges[i, 1]),
+            workers=[host],
+            hash=False,
         )
         diags_futures.append(diags_future)
 
@@ -142,6 +145,16 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
 
     out[:, 0] = profile[:, 0]
     out[:, 1:4] = indices
+
+    # Delete data from Dask cluster
+    dask_client.cancel(T_A_future)
+    dask_client.cancel(T_B_future)
+    dask_client.cancel(T_A_subseq_isfinite_future)
+    dask_client.cancel(T_B_subseq_isfinite_future)
+    for diags_future in diags_futures:
+        dask_client.cancel(diags_future)
+    for future in futures:
+        dask_client.cancel(future)
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover

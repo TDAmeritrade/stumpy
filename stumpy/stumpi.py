@@ -4,12 +4,15 @@
 
 import numpy as np
 from . import core, stump
+from .aampi import aampi
 
 
-class stumpi(object):
+@core.non_normalized(aampi)
+class stumpi:
     """
-    Compute an incremental z-normalized matrix profile for streaming data. This
-    is based on the on-line STOMPI and STAMPI algorithms.
+    Compute an incremental z-normalized matrix profile for streaming data
+
+    This is based on the on-line STOMPI and STAMPI algorithms.
 
     Parameters
     ----------
@@ -20,9 +23,18 @@ class stumpi(object):
     m : int
         Window size
 
-    excl_zone : int
+    excl_zone : int, default None
         The half width for the exclusion zone relative to the current
         sliding window
+
+    egress : bool, default True
+        If set to `True`, the oldest data point in the time series is removed and
+        the time series length remains constant rather than forever increasing
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this class gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` class decorator.
 
     Attributes
     ----------
@@ -58,7 +70,7 @@ class stumpi(object):
     Note that line 11 is missing an important `sqrt` operation!
     """
 
-    def __init__(self, T, m, excl_zone=None, egress=True):
+    def __init__(self, T, m, excl_zone=None, egress=True, normalize=True):
         """
         Initialize the `stumpi` object
 
@@ -71,13 +83,18 @@ class stumpi(object):
         m : int
             Window size
 
-        excl_zone : int
+        excl_zone : int, default None
             The half width for the exclusion zone relative to the current
             sliding window
 
-        egress : bool
+        egress : bool, default True
             If set to `True`, the oldest data point in the time series is removed and
             the time series length remains constant rather than forever increasing
+
+        normalize : bool, default True
+            When set to `True`, this z-normalizes subsequences prior to computing
+            distances. Otherwise, this class gets re-routed to its complementary
+            non-normalized equivalent set in the `@core.non_normalized` class decorator.
         """
         self._T = T.copy()
         self._T = np.asarray(self._T)

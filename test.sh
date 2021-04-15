@@ -3,17 +3,17 @@
 test_mode="all"
 
 # Parse first command line argument
-if [ $# -gt 0 ]; then
-    if [ $1 == "unit" ]; then
+if [[ $# -gt 0 ]]; then
+    if [[ $1 == "unit" ]]; then
         test_mode="unit"
-    elif [ $1 == "coverage" ]; then
+    elif [[ $1 == "coverage" ]]; then
         test_mode="coverage"
-    elif [ $1 == "custom" ]; then
+    elif [[ $1 == "custom" ]]; then
         test_mode="custom"
     else
         echo "Using default test_mode=\"all\""
     fi
-fi 
+fi
 
 ###############
 #  Functions  #
@@ -22,10 +22,10 @@ fi
 check_errs()
 {
   # Function. Parameter 1 is the return code
-  if [ "${1}" -ne "0" ]; then
-    echo "Error: pytest encountered exit code ${1}"
+  if [[ $1 -ne "0" ]]; then
+    echo "Error: pytest encountered exit code $1"
     # as a bonus, make our script exit with the right error code.
-    exit ${1}
+    exit $1
   fi
 }
 
@@ -43,8 +43,19 @@ check_flake()
     check_errs $?
 }
 
+check_print()
+{
+    if [[ `grep print */*.py | wc -l` -gt "0" ]]; then
+        echo "Error: print statement found in code"
+        grep print */*.py
+        exit 1
+    fi
+}
+
 test_custom()
 {
+    # export NUMBA_DISABLE_JIT=1
+    # export NUMBA_ENABLE_CUDASIM=1
     # Test one or more user-defined functions repeatedly
     for VARIABLE in {1..10}
     do
@@ -63,64 +74,39 @@ test_unit()
     check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump.py tests/test_mstump.py tests/test_scrump.py tests/test_stumpi.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped.py 
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_one_constant_subsequence.py 
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mstumped.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_two_constant_subsequences.py 
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_ostinato.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_two_constant_subsequences_swap.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_ostinato.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mpdist.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_one_subsequence_nan_self_join.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_motifs.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_one_subsequence_inf_self_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_one_subsequence_nan_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_one_subsequence_inf_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_two_subsequences_nan_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_two_subsequences_inf_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_two_subsequences_nan_inf_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped_two_subsequences_nan_inf_A_B_join_swap.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mstumped.py 
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mstumped_one_subsequence_nan_self_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mstumped_one_subsequence_nan_self_join.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_mpdist.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_snippets.py
     check_errs $?
     # aamp
     py.test -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp.py
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp.py tests/test_aampi.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp.py tests/test_maamp.py tests/test_scraamp.py tests/test_aampi.py
     check_errs $?
     py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_constant_subsequence.py 
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_maamped.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_constant_subsequences.py 
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_ostinato.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_constant_subsequences_swap.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp_ostinato.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aampdist.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_subsequence_nan_self_join.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_motifs.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_subsequence_inf_self_join.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aampdist.py
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aampdist_snippets.py
     check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_subsequence_nan_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_one_subsequence_inf_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_nan_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_inf_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_nan_inf_A_B_join.py
-    check_errs $?
-    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped_two_subsequences_nan_inf_A_B_join_swap.py
-    check_errs $?
+    py.test -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_non_normalized_decorator.py
 }
 
 test_coverage()
@@ -149,16 +135,18 @@ clean_up()
 #   Main  #
 ###########
 
+clean_up
 check_black
 check_flake
+check_print
 
-if [ $test_mode == "unit" ]; then
+if [[ $test_mode == "unit" ]]; then
     echo "Executing Unit Tests Only"
     test_unit
-elif [ $test_mode == "coverage" ]; then
+elif [[ $test_mode == "coverage" ]]; then
     echo "Executing Code Coverage Only"
     test_coverage
-elif [ $test_mode == "custom" ]; then
+elif [[ $test_mode == "custom" ]]; then
     echo "Executing Custom User-Defined Tests Only"
     # Define tests in `test_custom` function above
     # echo "Disabling Numba JIT and CUDA Compiled Functions"
@@ -168,6 +156,7 @@ elif [ $test_mode == "custom" ]; then
 else
     echo "Executing Unit Tests And Code Coverage"
     test_unit
+    clean_up
     test_coverage
 fi
 

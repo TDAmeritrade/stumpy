@@ -1,3 +1,154 @@
+# 2021-02-04    [ 1.8.0 ]:
+--------------------------
+* bugfixes
+  - Fixed chunk size for `scrump` and `scraamp` when time series are short
+* features
+  - Added `maamp` and `maamped` functions
+  - Added `scraamp` function
+  - Added a new `core.non_normalized` decorator that re-routes normalized functions to non-normalized functions
+  - All z-normalized functions now accept a `normalize` parameter
+* tasks
+  - Renamed `main` branch
+  - Removed Azure pipelines badge
+  - Refactored `subspace`
+  - Refactored non-normalized functions
+  - Added non-normalized support to `floss`
+* documentation
+  - Updated README with `if __name__ == "__main__"` for Dask and Jupyter notebooks
+  - Removed all `aamp` references as `normalize=False` should be used instead
+  - Fixed function docstrings and typos in API docs
+
+
+# 2021-01-20    [ 1.7.2 ]:
+--------------------------
+* bugfixes
+  - None
+* features
+  - Added the NEP 29 policy
+* tasks
+  - Added CI for minimum version dependencies
+* documentation
+  - Updated README to conver NEP 29
+
+
+# 2021-01-19    [ 1.7.1 ]:
+--------------------------
+* bugfixes
+  - None
+* features
+  - None
+* tasks
+  - Bumped minimum NumPy version to use `np.array_equal`
+* documentation
+  - None
+
+
+# 2021-01-17    [ 1.7.0 ]:
+--------------------------
+* bugfixes
+  - None
+* features
+  - Added maximum window size check
+  - Added window size checking to preprocessing
+* tasks
+  - Replaced array comparison in `core.are_arrays_equal` with `np.array_equal`
+  - Added Github Actions and badge
+  - Improved stability for integration with other packages
+* documentation
+  - Fixed typo
+  - Replaced NABDConf motivation video with PyData Global video
+
+
+# 2020-12-30    [ 1.6.1 ]:
+--------------------------
+* bugfixes
+  - Fixed inconsistent `mstump`/`mstumped` output to match description in published work
+* features
+  - Added `subspace` function for compute multi-dimensional matrix profile subspace
+  - Added `include` and `discords` handling to `subspace`
+  - Added `mdl` building blocks
+  - Added `ostinato` Dask distributed, GPU, and `aamp` variants
+  - Added fast rolling min/max functions
+* tasks
+  - Updated Azure Pipelines CI coverage tests to use latest images
+  - Added `mstump` tutorial to Binder
+  - Fixed bad reference to `aamp_gpu_ostinato`
+  - Fixed `aamp_ostinato` unit test coverage
+  - Converted `conda.sh` to `bash`
+  - Moved all private functions out of `__init__.py`
+  - Added commands to remove `build/`, `dist/`, and `stumpy.egg/` after PyPI upload
+  - Added twine to environment setup script
+  - Fixed incorrect date in `CHANGELOG.md`
+* documentation
+  - Added `mstump` tutorial to RTD
+  - Updated various function docstrings
+  - Added Github Discussions to README and RTD
+  - Updated API list on RTD
+
+
+# 2020-12-10    [ 1.6.0 ]:
+--------------------------
+* bugfixes
+  - Fixed incorrect cancelling of Dask data that was being scattered with `hash=False`
+  - Fixed floating point imprecision in computing distances with `mass_absolute`
+* features
+  - Added `ostinato` function for computing consensus motifs
+  - Added new approach for retrieving the most central consensus motif from `ostinato`
+  - Added `mpdist` function for computing the MPdist distance measure
+  - Added `mpdisted` function for computing the MPdist distance measure
+  - Added `gpu_mpdist` function for computing the MPdist distance measure
+  - Added `aampdist` function for computing the MPdist distance measure
+  - Added `aampdisted` function for computing the MPdist distance measure
+  - Added `gpu_aampdist` function for computing the MPdist distance measure
+  - Changed `np.convolve` to the faster `scipy.signal.convolve` for FFT
+  - Added matrix profile subspace for multi-dimensional motif discovery
+  - Replaced existing rolling functions with fast Welford nanstd and nanvar functions
+* tasks
+  - Updated Azure Pipelines CI to use latest images
+  - Fixed tutorial typos
+  - Added ostinato paper to README References
+  - Added `mamba` to speed up Python environment installation
+  - Added `ostinato` tutorial
+  - Added a series of new unit tests (maintained at 100% test coverage)
+  - Updated all tutorials to use Zenodo links for data retrieval
+  - Removed tutorial plotting function that set default plotting conditions
+  - Added AB-join tutorial
+  - Replaced rolling window isfinite with a much faster function
+  - Updated Github PR template to use conda-forge channel
+  - Updated Welford corrected-sum-of-squares derivation
+  - Updated Binder environment to use STUMPY release in Binder postBuild
+* documentation
+  - Fixed GPU function signatures that were being displayed on RTD
+  - Fixed incorrect docstring indentation
+  - Added STUMPY docs and Github code repo to Resources section of tutorials
+  - Added default values to docstrings
+
+
+# 2020-10-19    [ 1.5.1 ]:
+--------------------------
+* bugfixes
+  - Fixed AB-join so that it now matches the published definition (previously, BA-join)
+* features
+  - Added nan/inf support to FLOSS/FLUSS
+* tasks
+  - Removed Pandas series in GPU tests to improve unit test speed in CI
+  - Identify operating system prior to installing cuda toolkit
+  - Changed `left`/`right` keywords in all unit tests to `ref`/`comp`
+  - Split up unit tests and coverage testing 
+  - Updated `displayNames` in Azure Pipelines
+  - `test.sh` now accepts `unit`, `custom`, and `coverage` keywords 
+  - Fixed typos
+  - Added pattern searching (MASS) tutorial
+  - Added `Contribute` notebook to RTD table of contents for first time contributors
+  - Refactored `_compute_diagonal` for speed improvements
+  - Replaced `np.roll` with slice indexing in `stumpy.floss`
+  - Refactored and improved `aampi` and `stumpi` update performance
+  - Added `lxml` to environment.yml  
+* documentation
+  - Added `plt.show()` to code figures in tutorials
+  - Updated `stumpi` tutorial with `egress=False`
+
+
 # 2020-08-31    [ 1.5.0 ]:
 --------------------------
 * bugfixes

@@ -10,6 +10,7 @@ import numpy as np
 from numba import cuda
 
 from . import core, config
+from .gpu_aamp import gpu_aamp
 
 logger = logging.getLogger(__name__)
 
@@ -579,7 +580,9 @@ def _gpu_stump(
     return profile_fname, indices_fname
 
 
-def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, cooperative=False):
+@core.non_normalized(gpu_aamp)
+def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0,
+              normalize=True, cooperative=False):
     """
     Compute the z-normalized matrix profile with one or more GPU devices
 
@@ -594,20 +597,25 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, cooperative=Fa
     m : int
         Window size
 
-    T_B : (optional) ndarray
+    T_B : ndarray, default None
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
         `None` which corresponds to a self-join.
 
-    ignore_trivial : bool
+    ignore_trivial : bool, default True
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
         to `False`. Default is `True`.
 
-    device_id : int or list
+    device_id : int or list, default 0
         The (GPU) device number to use. The default value is `0`. A list of
         valid device ids (int) may also be provided for parallel GPU-STUMP
         computation. A list of all valid device ids can be obtained by
-        executing `[device.id for device in cuda.list_devices()]`.
+        executing `[device.id for device in numba.cuda.list_devices()]`.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------
@@ -664,7 +672,7 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, cooperative=Fa
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
 
-    core.check_window_size(m)
+    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
     if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
         logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")

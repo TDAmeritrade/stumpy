@@ -8,6 +8,7 @@ import numpy as np
 from numba import njit, prange, config
 
 from . import core
+from .aamp import aamp
 from stumpy.config import STUMPY_D_SQUARED_THRESHOLD
 
 logger = logging.getLogger(__name__)
@@ -422,7 +423,8 @@ def _stump(
     return P[:, :], I[0, :, :]
 
 
-def stump(T_A, m, T_B=None, ignore_trivial=True):
+@core.non_normalized(aamp)
+def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True):
     """
     Compute the z-normalized matrix profile
 
@@ -438,14 +440,19 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
     m : int
         Window size
 
-    T_B : ndarray
+    T_B : ndarray, default None
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
         `None` which corresponds to a self-join.
 
-    ignore_trivial : bool
+    ignore_trivial : bool, default True
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
         to `False`. Default is `True`.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------
@@ -534,7 +541,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True):
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
 
-    core.check_window_size(m)
+    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
     if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
         logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")

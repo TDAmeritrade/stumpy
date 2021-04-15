@@ -2,9 +2,14 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.  # noqa: E501
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
+import logging
+import functools
+import inspect
+
 import numpy as np
 from numba import njit, prange
-import scipy.signal
+from scipy.signal import convolve
+from scipy.ndimage.filters import maximum_filter1d, minimum_filter1d
 import tempfile
 import math
 
@@ -14,6 +19,126 @@ try:
     from numba.cuda.cudadrv.driver import _raise_driver_not_found
 except ImportError:
     pass
+
+logger = logging.getLogger(__name__)
+
+
+def _compare_parameters(norm, non_norm, exclude=None):
+    """
+    Compare if the parameters in `norm` and `non_norm` are the same
+
+    Parameters
+    ----------
+    norm : object
+        The normalized function (or class) that is complementary to the
+        non-normalized function (or class)
+
+    non_norm : object
+        The non-normalized function (or class) that is complementary to the
+        z-normalized function (or class)
+
+    exclude : list
+        A list of parameters to exclude for the comparison
+
+    Returns
+    -------
+    is_same_params : bool
+        `True` if parameters from both `norm` and `non-norm` are the same. `False`
+        otherwise.
+    """
+    norm_params = list(inspect.signature(norm).parameters.keys())
+    non_norm_params = list(inspect.signature(non_norm).parameters.keys())
+
+    if exclude is not None:
+        for param in exclude:
+            if param in norm_params:
+                norm_params.remove(param)
+            if param in non_norm_params:
+                non_norm_params.remove(param)
+
+    is_same_params = set(norm_params) == set(non_norm_params)
+    if not is_same_params:
+        if exclude is not None:
+            logger.warning(f"Excluding `{exclude}` parameters, ")
+        logger.warning(f"`{norm}`: ({norm_params}) and ")
+        logger.warning(f"`{non_norm}`: ({non_norm_params}) ")
+        logger.warning("have different parameters.")
+
+    return is_same_params
+
+
+def non_normalized(non_norm, exclude=None, replace=None):
+    """
+    Decorator for swapping a z-normalized function (or class) for its complementary
+    non-normalized function (or class) as defined by `non_norm`. This requires that
+    the z-normalized function (or class) has a `normalize` parameter.
+
+    With the exception of `normalize` parameter, the `non_norm` function (or class)
+    must have the same siganture as the `norm` function (or class) signature in order
+    to be compatible. Please use a combination of the `exclude` and/or `replace`
+    parameters when necessary.
+
+    ```
+    def non_norm_func(Q, T, A):
+        ...
+        return
+
+
+    @non_normalized(
+        non_norm_func,
+        exclude=["normalize", "A", "B"],
+        replace={"A": None},
+    )
+    def norm_func(Q, T, B=None, normalize=True):
+        ...
+        return
+    ```
+
+    Parameters
+    ----------
+    non_norm : object
+        The non-normalized function (or class) that is complementary to the
+        z-normalized function (or class)
+
+    exclude : list, default None
+        A list of function (or class) parameter names to exclude when comparing the
+        function (or class) signatures
+
+    replace : dict, default None
+        A dictionary of function (or class) parameter key-value pairs. Each key that
+        is found as a parameter name in the `norm` function (or class) will be replaced
+        by its corresponding or complementary parameter name in the `non_norm` function
+        (or class).
+
+    Returns
+    -------
+    outer_wrapper : object
+        The desired z-normalized/non-normalized function (or class)
+    """
+    if exclude is None:
+        exclude = ["normalize"]
+
+    @functools.wraps(non_norm)
+    def outer_wrapper(norm):
+        @functools.wraps(norm)
+        def inner_wrapper(*args, **kwargs):
+            is_same_params = _compare_parameters(norm, non_norm, exclude=exclude)
+            if not is_same_params or kwargs.get("normalize", True):
+                return norm(*args, **kwargs)
+            else:
+                kwargs = {k: v for k, v in kwargs.items() if k != "normalize"}
+                if replace is not None:
+                    for k, v in replace.items():
+                        if k in kwargs.keys():
+                            if v is None:
+                                _ = kwargs.pop(k)
+                            else:
+                                kwargs[v] = kwargs.pop(k)
+                return non_norm(*args, **kwargs)
+
+        return inner_wrapper
+
+    return outer_wrapper
 
 
 def driver_not_found(*args, **kwargs):  # pragma: no cover
@@ -31,6 +156,34 @@ def _gpu_stump_driver_not_found(*args, **kwargs):  # pragma: no cover
 
 
 def _gpu_aamp_driver_not_found(*args, **kwargs):  # pragma: no cover
+    """
+    Dummy function to raise CudaSupportError driver not found error.
+    """
+    driver_not_found()
+
+
+def _gpu_ostinato_driver_not_found(*args, **kwargs):  # pragma: no cover
+    """
+    Dummy function to raise CudaSupportError driver not found error.
+    """
+    driver_not_found()
+
+
+def _gpu_aamp_ostinato_driver_not_found(*args, **kwargs):  # pragma: no cover
+    """
+    Dummy function to raise CudaSupportError driver not found error.
+    """
+    driver_not_found()
+
+
+def _gpu_mpdist_driver_not_found(*args, **kwargs):  # pragma: no cover
+    """
+    Dummy function to raise CudaSupportError driver not found error.
+    """
+    driver_not_found()
+
+
+def _gpu_aampdist_driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Dummy function to raise CudaSupportError driver not found error.
     """
@@ -76,10 +229,10 @@ def z_norm(a, axis=0):
     Parameters
     ----------
     a : ndarray
-        numpy array
+        NumPy array
 
-    axis : int
-        numpy axis
+    axis : int, default 0
+        NumPy array axis
 
     Returns
     -------
@@ -95,6 +248,11 @@ def z_norm(a, axis=0):
 def check_nan(a):  # pragma: no cover
     """
     Check if the array contains NaNs.
+
+    Parameters
+    ----------
+    a : ndarray
+        NumPy array
 
     Raises
     ------
@@ -112,6 +270,14 @@ def check_dtype(a, dtype=np.floating):  # pragma: no cover
     """
     Check if the array type of `a` is of type specified by `dtype` parameter.
 
+    Parameters
+    ----------
+    a : ndarray
+        NumPy array
+
+    dtype : dtype, , default np.floating
+        NumPy `dtype`
+
     Raises
     ------
     TypeError
@@ -125,7 +291,7 @@ def check_dtype(a, dtype=np.floating):  # pragma: no cover
     return True
 
 
-def transpose_dataframe(a):  # pragma: no cover
+def transpose_dataframe(df):  # pragma: no cover
     """
     Check if the input is a column-wise Pandas `DataFrame`. If `True`, return a
     transpose dataframe since stumpy assumes that each row represents data from a
@@ -136,18 +302,18 @@ def transpose_dataframe(a):  # pragma: no cover
 
     Parameters
     ----------
-    a : ndarray
-        First argument.
+    df : ndarray
+        Pandas dataframe
 
     Returns
     -------
-    output : a
-        If a is a Pandas `DataFrame` then return `a.T`. Otherwise, return `a`
+    output : df
+        If `df` is a Pandas `DataFrame` then return `df.T`. Otherwise, return `df`
     """
-    if type(a).__name__ == "DataFrame":
-        return a.T
+    if type(df).__name__ == "DataFrame":
+        return df.T
 
-    return a
+    return df
 
 
 def are_arrays_equal(a, b):  # pragma: no cover
@@ -158,10 +324,10 @@ def are_arrays_equal(a, b):  # pragma: no cover
     Parameters
     ----------
     a : ndarray
-        First argument.
+        NumPy array
 
     b : ndarray
-        Second argument.
+        NumPy array
 
     Returns
     -------
@@ -170,6 +336,9 @@ def are_arrays_equal(a, b):  # pragma: no cover
     """
     if id(a) == id(b):
         return True
+
+    # For numpy >= 1.19
+    # return np.array_equal(a, b, equal_nan=True)
 
     if a.shape != b.shape:
         return False
@@ -187,9 +356,9 @@ def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
     Parameters
     ----------
     a : ndarray
-        First argument.
+        NumPy array
 
-    threshold : float
+    threshold : float, default 10e-6
         Minimum value in which to compare the matrix profile to
 
     Returns
@@ -204,14 +373,19 @@ def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
     return False
 
 
-def check_window_size(m):
+def check_window_size(m, max_size=None):
     """
-    Check the window size and ensure that it is greater than or equal to 3
+    Check the window size and ensure that it is greater than or equal to 3 and, if
+    `max_size` is provided, ensure that the window size is less than or equal to the
+    `max_size`
 
     Parameters
     ----------
     m : int
         Window size
+
+    max_size : int, default None
+        The maximum window size allowed
 
     Returns
     -------
@@ -230,6 +404,9 @@ def check_window_size(m):
             time series is large enough to contain both scenarios).
             """,
         )
+
+    if max_size is not None and m > max_size:
+        raise ValueError(f"The window size must be less than or equal to {max_size}")
 
 
 def sliding_dot_product(Q, T):
@@ -266,9 +443,271 @@ def sliding_dot_product(Q, T):
     n = T.shape[0]
     m = Q.shape[0]
     Qr = np.flipud(Q)  # Reverse/flip Q
-    QT = convolution(Qr, T)
+    QT = convolve(Qr, T)
 
     return QT.real[m - 1 : n]
+
+
+@njit(fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
+def _welford_nanvar(a, w, a_subseq_isfinite):
+    """
+    Compute the rolling variance for a 1-D array while ignoring NaNs using a modified
+    version of Welford's algorithm but is much faster than using `np.nanstd` with stride
+    tricks.
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray
+        The rolling window size
+
+    a_subseq_isfinite : ndarray
+        A boolean array that describes whether each subequence of length `w` within `a`
+        is finite.
+
+    Returns
+    -------
+    all_variances : ndarray
+        Rolling window nanvar
+    """
+    all_variances = np.empty(a.shape[0] - w + 1, dtype=np.float64)
+    prev_mean = 0.0
+    prev_var = 0.0
+
+    for start_idx in range(a.shape[0] - w + 1):
+        prev_start_idx = start_idx - 1
+        stop_idx = start_idx + w  # Exclusive index value
+        last_idx = start_idx + w - 1  # Last inclusive index value
+
+        if (
+            start_idx == 0
+            or not a_subseq_isfinite[prev_start_idx]
+            or not a_subseq_isfinite[start_idx]
+        ):
+            curr_mean = np.nanmean(a[start_idx:stop_idx])
+            curr_var = np.nanvar(a[start_idx:stop_idx])
+        else:
+            curr_mean = prev_mean + (a[last_idx] - a[prev_start_idx]) / w
+            curr_var = (
+                prev_var
+                + (a[last_idx] - a[prev_start_idx])
+                * (a[last_idx] - curr_mean + a[prev_start_idx] - prev_mean)
+                / w
+            )
+
+        all_variances[start_idx] = curr_var
+
+        prev_mean = curr_mean
+        prev_var = curr_var
+
+    return all_variances
+
+
+def welford_nanvar(a, w=None):
+    """
+    Compute the rolling variance for a 1-D array while ignoring NaNs using a modified
+    version of Welford's algorithm but is much faster than using `np.nanstd` with stride
+    tricks.
+
+    This is a convenience wrapper around the `_welford_nanvar` function.
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray, default None
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanvar.
+    """
+    if w is None:
+        w = a.shape[0]
+
+    a_subseq_isfinite = rolling_isfinite(a, w)
+
+    return _welford_nanvar(a, w, a_subseq_isfinite)
+
+
+def welford_nanstd(a, w=None):
+    """
+    Compute the rolling standard deviation for a 1-D array while ignoring NaNs using
+    a modified version of Welford's algorithm but is much faster than using `np.nanstd`
+    with stride tricks.
+
+    This a convenience wrapper around `welford_nanvar`.
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray, default None
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanstd.
+    """
+    if w is None:
+        w = a.shape[0]
+
+    return np.sqrt(np.clip(welford_nanvar(a, w), a_min=0, a_max=None))
+
+
+def rolling_nanstd(a, w):
+    """
+    Compute the rolling standard deviation for 1-D and 2-D arrays while ignoring NaNs
+    using a modified version of Welford's algorithm but is much faster than using
+    `np.nanstd` with stride tricks.
+
+    This a convenience wrapper around `welford_nanstd`.
+
+    This essentially replaces:
+
+        `np.nanstd(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanstd.
+    """
+    axis = a.ndim - 1  # Account for rolling
+    return np.apply_along_axis(
+        lambda a_row, w: welford_nanstd(a_row, w), axis=axis, arr=a, w=w
+    )
+
+
+def _rolling_nanmin_1d(a, w=None):
+    """
+    Compute the rolling min for 1-D while ignoring NaNs.
+
+    This essentially replaces:
+
+        `np.nanmin(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray, default None
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanmin.
+    """
+    if w is None:
+        w = a.shape[0]
+
+    half_window_size = int(math.ceil((w - 1) / 2))
+    return minimum_filter1d(a, size=w)[
+        half_window_size : half_window_size + a.shape[0] - w + 1
+    ]
+
+
+def _rolling_nanmax_1d(a, w=None):
+    """
+    Compute the rolling max for 1-D while ignoring NaNs.
+
+    This essentially replaces:
+
+        `np.nanmax(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray, default None
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanmax.
+    """
+    if w is None:
+        w = a.shape[0]
+
+    half_window_size = int(math.ceil((w - 1) / 2))
+    return maximum_filter1d(a, size=w)[
+        half_window_size : half_window_size + a.shape[0] - w + 1
+    ]
+
+
+def rolling_nanmin(a, w):
+    """
+    Compute the rolling min for 1-D and 2-D arrays while ignoring NaNs.
+
+    This a convenience wrapper around `_rolling_nanmin_1d`.
+
+    This essentially replaces:
+
+        `np.nanmin(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanmin.
+    """
+    axis = a.ndim - 1  # Account for rolling
+    return np.apply_along_axis(
+        lambda a_row, w: _rolling_nanmin_1d(a_row, w), axis=axis, arr=a, w=w
+    )
+
+
+def rolling_nanmax(a, w):
+    """
+    Compute the rolling max for 1-D and 2-D arrays while ignoring NaNs.
+
+    This a convenience wrapper around `_rolling_nanmax_1d`.
+
+    This essentially replaces:
+
+        `np.nanmax(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanmax.
+    """
+    axis = a.ndim - 1  # Account for rolling
+    return np.apply_along_axis(
+        lambda a_row, w: _rolling_nanmax_1d(a_row, w), axis=axis, arr=a, w=w
+    )
 
 
 def compute_mean_std(T, m):
@@ -334,7 +773,7 @@ def compute_mean_std(T, m):
 
                 tmp_mean = np.mean(rolling_window(T[..., start:stop], m), axis=T.ndim)
                 mean_chunks.append(tmp_mean)
-                tmp_std = np.nanstd(rolling_window(T[..., start:stop], m), axis=T.ndim)
+                tmp_std = rolling_nanstd(T[..., start:stop], m)
                 std_chunks.append(tmp_std)
 
             M_T = np.hstack(mean_chunks)
@@ -502,6 +941,143 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return np.sqrt(D_squared)
 
 
+@njit(fastmath=True)
+def _mass_absolute(Q_squared, T_squared, QT):
+    """
+    A Numba JIT compiled algorithm for computing the non-normalized distance profile
+    using the MASS absolute algorithm.
+
+    Parameters
+    ----------
+    Q_squared : ndarray
+        Squared query array or subsequence
+
+    T_squared : ndarray
+        Squared time series or sequence
+
+    QT : ndarray
+        Sliding window dot product of `Q` and `T`
+
+    Returns
+    -------
+    output : ndarray
+        Unnormalized distance profile
+
+    Notes
+    -----
+    `See Mueen's Absolute Algorithm for Similarity Search \
+    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
+    """
+    D = Q_squared + T_squared - 2 * QT
+    D[D < config.STUMPY_D_SQUARED_THRESHOLD] = 0.0
+
+    return np.sqrt(D)
+
+
+def mass_absolute(Q, T, T_subseq_isfinite=None, T_squared=None):
+    """
+    Compute the non-normalized distance profile (i.e., without z-normalization) using
+    the "MASS absolute" algorithm. This is a convenience wrapper around the Numba JIT
+    compiled `_mass_absolute` function.
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array or subsequence
+
+    T : ndarray
+        Time series or sequence
+
+    T_subseq_isfinite : ndarray, default None
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_squared : ndarray, default None
+        Squared time series or sequence
+
+    Returns
+    -------
+    output : ndarray
+        Unnormalized Distance profile
+
+    Notes
+    -----
+    `See Mueen's Absolute Algorithm for Similarity Search \
+    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
+    """
+    Q = Q.copy()
+    Q = np.asarray(Q)
+    check_dtype(Q)
+    m = Q.shape[0]
+
+    if Q.ndim == 2 and Q.shape[1] == 1:  # pragma: no cover
+        Q = Q.flatten()
+
+    if Q.ndim != 1:  # pragma: no cover
+        raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
+
+    T = T.copy()
+    T = np.asarray(T)
+    check_dtype(T)
+    n = T.shape[0]
+
+    if T.ndim == 2 and T.shape[1] == 1:  # pragma: no cover
+        T = T.flatten()
+
+    if T.ndim != 1:  # pragma: no cover
+        raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
+
+    if m > n:  # pragma: no cover
+        raise ValueError(
+            f"The length of `Q` ({len(Q)}) must be less than or equal to "
+            f"the length of `T` ({len(T)}). "
+        )
+
+    distance_profile = np.empty(n - m + 1)
+    if np.any(~np.isfinite(Q)):
+        distance_profile[:] = np.inf
+    else:
+        if T_subseq_isfinite is None:
+            T, T_subseq_isfinite = preprocess_non_normalized(T, m)
+        QT = sliding_dot_product(Q, T)
+        Q_squared = np.sum(Q * Q)
+        if T_squared is None:
+            T_squared = np.sum(rolling_window(T * T, m), axis=-1)
+        distance_profile[:] = _mass_absolute(Q_squared, T_squared, QT)
+        distance_profile[~T_subseq_isfinite] = np.inf
+
+    return distance_profile
+
+
+def _mass_absolute_distance_matrix(Q, T, m, distance_matrix):
+    """
+    Compute the full non-normalized (i.e., without z-normalization) distance matrix
+    between all of the subsequences of `Q` and `T` using the MASS absolute algorithm
+
+    Parameters
+    ----------
+    Q : ndarray
+        Query array
+
+    T : ndarray
+        Time series or sequence
+
+    m : int
+        Window size
+
+    distance_matrix : ndarray
+        The full output distance matrix. This is mandatory since it may be reused.
+
+    Returns
+    -------
+    None
+    """
+    k, l = distance_matrix.shape
+
+    for i in range(k):
+        distance_matrix[i, :] = mass_absolute(Q[i : i + m], T)
+
+
 def mueen_calculate_distance_profile(Q, T):
     """
     Compute the mueen distance profile
@@ -616,7 +1192,12 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
     return calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
 
 
-def mass(Q, T, M_T=None, Σ_T=None):
+@non_normalized(
+    mass_absolute,
+    exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "T_squared"],
+    replace={"M_T": None, "Σ_T": None},
+)
+def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
     """
     Compute the distance profile using the MASS algorithm. This is a convenience
     wrapper around the Numba JIT compiled `_mass` function.
@@ -629,11 +1210,16 @@ def mass(Q, T, M_T=None, Σ_T=None):
     T : ndarray
         Time series or sequence
 
-    M_T : ndarray (optional)
+    M_T : ndarray, default None
         Sliding mean of `T`
 
-    Σ_T : ndarray (optional)
+    Σ_T : ndarray, default None
         Sliding standard deviation of `T`
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------
@@ -674,6 +1260,12 @@ def mass(Q, T, M_T=None, Σ_T=None):
     if T.ndim != 1:  # pragma: no cover
         raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
 
+    if m > n:  # pragma: no cover
+        raise ValueError(
+            f"The length of `Q` ({len(Q)}) must be less than or equal to "
+            f"the length of `T` ({len(T)}). "
+        )
+
     distance_profile = np.empty(n - m + 1)
     if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
@@ -690,95 +1282,34 @@ def mass(Q, T, M_T=None, Σ_T=None):
     return distance_profile
 
 
-@njit(fastmath=True)
-def _mass_absolute(Q_squared, T_squared, QT):
+def _mass_distance_matrix(Q, T, m, distance_matrix):
     """
-    A Numba JIT compiled algorithm for computing the non-normalized distance profile
-    using the MASS absolute algorithm.
-
-    Parameters
-    ----------
-    Q_squared : ndarray
-        Squared query array or subsequence
-
-    T_squared : ndarray
-        Squared time series or sequence
-
-    QT : ndarray
-        Sliding window dot product of `Q` and `T`
-
-    Returns
-    -------
-    output : ndarray
-        Unnormalized distance profile
-
-    Notes
-    -----
-    `See Mueen's Absolute Algorithm for Similarity Search \
-    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
-    """
-    return np.sqrt(Q_squared + T_squared - 2 * QT)
-
-
-def mass_absolute(Q, T):
-    """
-    Compute the non-normalized distance profile (i.e., without z-normalization) using
-    the "MASS absolute" algorithm. This is a convenience wrapper around the Numba JIT
-    compiled `_mass_absolute` function.
+    Compute the full distance matrix between all of the subsequences of `Q` and `T`
+    using the MASS algorithm
 
     Parameters
     ----------
     Q : ndarray
-        Query array or subsequence
+        Query array
 
     T : ndarray
         Time series or sequence
 
+    m : int
+        Window size
+
+    distance_matrix : ndarray
+        The full output distance matrix. This is mandatory since it may be reused.
+
     Returns
     -------
-    output : ndarray
-        Unnormalized Distance profile
-
-    Notes
-    -----
-    `See Mueen's Absolute Algorithm for Similarity Search \
-    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
+        None
     """
-    Q = Q.copy()
-    Q = np.asarray(Q)
-    check_dtype(Q)
-    m = Q.shape[0]
+    k, l = distance_matrix.shape
+    T, M_T, Σ_T = preprocess(T, m)
 
-    if Q.ndim == 2 and Q.shape[1] == 1:  # pragma: no cover
-        Q = Q.flatten()
-
-    if Q.ndim != 1:  # pragma: no cover
-        raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
-
-    T = T.copy()
-    T = np.asarray(T)
-    check_dtype(T)
-    n = T.shape[0]
-
-    if T.ndim == 2 and T.shape[1] == 1:  # pragma: no cover
-        T = T.flatten()
-
-    if T.ndim != 1:  # pragma: no cover
-        raise ValueError(f"T is {T.ndim}-dimensional and must be 1-dimensional. ")
-
-    distance_profile = np.empty(n - m + 1)
-    if np.any(~np.isfinite(Q)):
-        distance_profile[:] = np.inf
-    else:
-        T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
-        T[~np.isfinite(T)] = 0.0
-        QT = sliding_dot_product(Q, T)
-        Q_squared = np.sum(Q * Q)
-        T_squared = np.sum(rolling_window(T * T, m), axis=1)
-        distance_profile[:] = _mass_absolute(Q_squared, T_squared, QT)
-        distance_profile[~T_subseq_isfinite] = np.inf
-
-    return distance_profile
+    for i in range(k):
+        distance_matrix[i, :] = mass(Q[i : i + m], T, M_T, Σ_T)
 
 
 def _get_QT(start, T_A, T_B, m):
@@ -868,8 +1399,10 @@ def preprocess(T, m):
         Rolling standard deviation
     """
     T = T.copy()
+    T = transpose_dataframe(T)
     T = np.asarray(T)
     check_dtype(T)
+    check_window_size(m, max_size=T.shape[-1])
 
     T[np.isinf(T)] = np.nan
     M_T, Σ_T = compute_mean_std(T, m)
@@ -906,12 +1439,13 @@ def preprocess_non_normalized(T, m):
         `np.nan`/`np.inf` value (False)
     """
     T = T.copy()
+    T = transpose_dataframe(T)
     T = np.asarray(T)
     check_dtype(T)
+    check_window_size(m, max_size=T.shape[-1])
 
-    T[np.isinf(T)] = np.nan
-    T_subseq_isfinite = np.all(np.isfinite(rolling_window(T, m)), axis=1)
-    T[np.isnan(T)] = 0
+    T_subseq_isfinite = rolling_isfinite(T, m)
+    T[~np.isfinite(T)] = 0.0
 
     return T, T_subseq_isfinite
 
@@ -987,7 +1521,7 @@ def replace_distance(D, search_val, replace_val, epsilon=0.0):
     replace_val : float
         Value to replace with
 
-    epsilon : float
+    epsilon : float, default 0.0
         Threshold below `search_val` in which to still allow for a replacement
 
     Return
@@ -1004,7 +1538,7 @@ def array_to_temp_file(a):
     Parameters
     ----------
     a : ndarray
-        An array to be written to a file
+        A NumPy array to be written to a file
 
     Returns
     -------
@@ -1067,7 +1601,7 @@ def _get_array_ranges(a, n_chunks, truncate=False):
     n_chunks : int
         Number of chunks to split the array into
 
-    truncate : bool
+    truncate : bool, default False
         If `truncate=True`, truncate the rows of `array_ranges` if there are not enough
         elements in `a` to be chunked up into `n_chunks`.  Otherwise, if
         `truncate=False`, all extra chunks will have their start and stop indices set
@@ -1081,22 +1615,158 @@ def _get_array_ranges(a, n_chunks, truncate=False):
         contains the stop indices.
     """
     array_ranges = np.zeros((n_chunks, 2), np.int64)
-    cumsum = a.cumsum() / a.sum()
-    insert = np.linspace(0, 1, n_chunks + 1)[1:-1]
-    idx = 1 + np.searchsorted(cumsum, insert)
-    array_ranges[1:, 0] = idx  # Fill the first column with start indices
-    array_ranges[:-1, 1] = idx  # Fill the second column with exclusive stop indices
-    array_ranges[-1, 1] = a.shape[0]  # Handle the stop index for the final chunk
+    if n_chunks > 0:
+        cumsum = a.cumsum() / a.sum()
+        insert = np.linspace(0, 1, n_chunks + 1)[1:-1]
+        idx = 1 + np.searchsorted(cumsum, insert)
+        array_ranges[1:, 0] = idx  # Fill the first column with start indices
+        array_ranges[:-1, 1] = idx  # Fill the second column with exclusive stop indices
+        array_ranges[-1, 1] = a.shape[0]  # Handle the stop index for the final chunk
 
-    diff_idx = np.diff(idx)
-    if np.any(diff_idx == 0):
-        row_truncation_idx = np.argmin(diff_idx) + 2
-        array_ranges[row_truncation_idx:, 0] = a.shape[0]
-        array_ranges[row_truncation_idx - 1 :, 1] = a.shape[0]
-        if truncate:
-            array_ranges = array_ranges[:row_truncation_idx]
+        diff_idx = np.diff(idx)
+        if np.any(diff_idx == 0):
+            row_truncation_idx = np.argmin(diff_idx) + 2
+            array_ranges[row_truncation_idx:, 0] = a.shape[0]
+            array_ranges[row_truncation_idx - 1 :, 1] = a.shape[0]
+            if truncate:
+                array_ranges = array_ranges[:row_truncation_idx]
 
     return array_ranges
 
 
-convolution = scipy.signal.fftconvolve  # Swap for other convolution function
+def _rolling_isfinite_1d(a, w):
+    """
+    Determine if all elements in each rolling window `isfinite`
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : int
+        The length of the rolling window
+
+    Return
+    ------
+    output : ndarray
+        A boolean array of length `a.shape[0] - w + 1` that records whether each
+        rolling window subsequence contain all finite values
+    """
+    if a.dtype == np.dtype("bool"):
+        a_isfinite = a.copy()
+    else:
+        a_isfinite = np.isfinite(a)
+    a_subseq_isfinite = rolling_window(a_isfinite, w)
+
+    # Process first subsequence
+    a_first_subseq = ~a_isfinite[:w]
+    if a_first_subseq.any():
+        a_isfinite[: np.flatnonzero(a_first_subseq).max()] = False
+
+    # Shift `a_isfinite` and fill forward by `w`
+    a_subseq_isfinite[~a_isfinite[w - 1 :]] = False
+
+    return a_isfinite[: a_isfinite.shape[0] - w + 1]
+
+
+def rolling_isfinite(a, w):
+    """
+    Compute the rolling `isfinite` for 1-D and 2-D arrays.
+
+    This a convenience wrapper around `_rolling_isfinite_1d`.
+
+    Parameters
+    ----------
+    a : ndarray
+        The input array
+
+    w : ndarray
+        The rolling window size
+
+    Returns
+    -------
+    output : ndarray
+        Rolling window nanmax.
+    """
+    axis = a.ndim - 1  # Account for rolling
+    return np.apply_along_axis(
+        lambda a_row, w: _rolling_isfinite_1d(a_row, w), axis=axis, arr=a, w=w
+    )
+
+
+def _get_partial_mp_func(mp_func, dask_client=None, device_id=None):
+    """
+    A convenience function for creating a `functools.partial` matrix profile function
+    for single server (parallel CPU), multi-server with Dask distributed (parallel CPU),
+    and multi-GPU implementations.
+
+    Parameters
+    ----------
+    mp_func : object
+        The matrix profile function to be used for computing a matrix profile
+
+    dask_client : client, default None
+        A Dask Distributed client that is connected to a Dask scheduler and
+        Dask workers. Setting up a Dask distributed cluster is beyond the
+        scope of this library. Please refer to the Dask Distributed
+        documentation.
+
+    device_id : int or list, default None
+        The (GPU) device number to use. The default value is `0`. A list of
+        valid device ids (int) may also be provided for parallel GPU-STUMP
+        computation. A list of all valid device ids can be obtained by
+        executing `[device.id for device in numba.cuda.list_devices()]`.
+
+    Returns
+    -------
+    partial_mp_func : object
+        A generic matrix profile function that wraps the `dask_client` or GPU
+        `device_id` into `functools.partial` function where possible
+    """
+    if dask_client is not None:
+        partial_mp_func = functools.partial(mp_func, dask_client)
+    elif device_id is not None:
+        partial_mp_func = functools.partial(mp_func, device_id=device_id)
+    else:
+        partial_mp_func = mp_func
+
+    return partial_mp_func
+
+
+def _jagged_list_to_array(a, fill_value, dtype):
+    """
+    Fits a 2d jagged list into a 2d numpy array of the specified dtype.
+    The resulting array will have a shape of (len(a), l), where l is the length
+    of the longest list in a. All other lists will be padded with `fill_value`.
+
+    Example:
+    [[2, 1, 1], [0]] with a fill value of -1 will become
+    np.array([[2, 1, 1], [0, -1, -1]])
+
+    Parameters
+    ----------
+    a : list
+        Jagged list (list-of-lists) to be converted into a ndarray.
+
+    fill_value : int or float
+        Missing entries will be filled with this value.
+
+    dtype : dtype
+        The desired data-type for the array.
+
+    Return
+    ------
+    out : ndarray
+        The resuling ndarray of dtype `dtype`.
+    """
+    if not a:
+        return np.array([[]])
+
+    max_length = max([len(row) for row in a])
+
+    out = np.full((len(a), max_length), fill_value, dtype=dtype)
+
+    for i, row in enumerate(a):
+        out[i, : row.size] = row
+
+    return out

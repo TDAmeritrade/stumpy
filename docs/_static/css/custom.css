@@ -1,1 +1,7 @@
-.wy-nav-content {max-width: 100%;}
+.navbar-brand img {
+    width: auto;
+}
+.table {
+    display: block;
+    overflow-x: scroll;
+}

@@ -181,7 +181,6 @@ def test_aamp_nan_inf_self_join(T_A, T_B, substitute_B, substitution_locations):
         T_B_sub[:] = T_B[:]
         T_B_sub[substitution_location_B] = substitute_B
 
-        zone = int(np.ceil(m / 4))
         ref_mp = naive.aamp(T_B_sub, m)
         comp_mp = aamp(T_B_sub, m, ignore_trivial=True)
         naive.replace_inf(ref_mp)
@@ -229,7 +228,6 @@ def test_aamp_nan_zero_mean_self_join():
     T = np.array([-1, 0, 1, np.inf, 1, 0, -1])
     m = 3
 
-    zone = int(np.ceil(m / 4))
     ref_mp = naive.aamp(T, m)
     comp_mp = aamp(T, m, ignore_trivial=True)
 
