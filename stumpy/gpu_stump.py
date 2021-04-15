@@ -482,7 +482,8 @@ def _gpu_stump(
 
         threads_per_block = config.STUMPY_THREADS_PER_BLOCK
         if cooperative:
-            defn = _compute_and_update_PI_kernel_cg.definition
+            defns = _compute_and_update_PI_kernel_cg.overloads
+            defn = next(iter(defns.values()))
             blocks_per_grid = defn.max_cooperative_grid_blocks(threads_per_block)
         else:
             blocks_per_grid = math.ceil(k / threads_per_block)
