@@ -23,7 +23,14 @@ PyPI install with ``pip``:
 From source
 ===========
 
-To install stumpy from source, you'll need to install the dependencies above. For maximum performance, it is recommended that you install all dependencies using `conda`:
+To install stumpy from source, first clone the source repository:
+
+.. code:: bash
+
+    git clone https://github.com/TDAmeritrade/stumpy.git
+    cd stumpy
+
+Next, you'll need to install the dependencies above. For maximum performance, it is recommended that you install all dependencies using `conda`:
 
 .. code:: bash
 
