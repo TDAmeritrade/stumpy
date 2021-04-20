@@ -1224,7 +1224,7 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
 
     Returns
     -------
-    output : ndarray
+    distance_profile : ndarray
         Distance profile
 
     Notes

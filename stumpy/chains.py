@@ -27,7 +27,7 @@ def atsc(IL, IR, j):
 
     Returns
     -------
-    output : ndarray
+    out : ndarray
         Anchored time series chain for index, `j`
 
     Notes
@@ -49,7 +49,9 @@ def atsc(IL, IR, j):
             j = IR[j]
             C.append(j)
 
-    return np.array(list(C), dtype=np.int64)
+    out = np.array(list(C), dtype=np.int64)
+
+    return out
 
 
 def allc(IL, IR):

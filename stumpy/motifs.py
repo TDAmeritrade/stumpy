@@ -356,4 +356,6 @@ def match(
         core.apply_exclusion_zone(D, candidate_idx, excl_zone)
         candidate_idx = np.argmin(D)
 
-    return np.array(matches, dtype=object)
+    out = np.array(matches, dtype=object)
+
+    return out

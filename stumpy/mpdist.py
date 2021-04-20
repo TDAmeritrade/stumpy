@@ -336,7 +336,9 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True):
 
     See Section III
     """
-    return _mpdist(T_A, T_B, m, percentage, k, mp_func=stump)
+    MPdist = _mpdist(T_A, T_B, m, percentage, k, mp_func=stump)
+
+    return MPdist
 
 
 @core.non_normalized(aampdisted)
@@ -394,4 +396,8 @@ def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, normalize=True):
 
     See Section III
     """
-    return _mpdist(T_A, T_B, m, percentage, k, dask_client=dask_client, mp_func=stumped)
+    MPdist = _mpdist(
+        T_A, T_B, m, percentage, k, dask_client=dask_client, mp_func=stumped
+    )
+
+    return MPdist
