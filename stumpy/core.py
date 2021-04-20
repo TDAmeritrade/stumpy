@@ -1199,8 +1199,9 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
 )
 def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
     """
-    Compute the distance profile using the MASS algorithm. This is a convenience
-    wrapper around the Numba JIT compiled `_mass` function.
+    Compute the distance profile using the MASS algorithm
+
+    This is a convenience wrapper around the Numba JIT compiled `_mass` function.
 
     Parameters
     ----------

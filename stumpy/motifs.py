@@ -143,7 +143,7 @@ def motifs(
     normalize=True,
 ):
     """
-    Discover the top motifs for time series `T`.
+    Discover the top motifs for time series `T`
 
     A subsequence, `Q`, becomes a candidate motif if there are at least `min_neighbor`
     number of other subsequence matches in `T` (outside the exclusion zone) with a
@@ -265,11 +265,11 @@ def match(
     normalize=True,
 ):
     """
-    Find all matches of a query `Q` in a time series `T`, i.e. the indices
-    of subsequences whose distances to `Q` are less than or equal to
-    `max_distance`, sorted by distance (lowest to highest).
+    Find all matches of a query `Q` in a time series `T`
 
-    Around each occurrence an exclusion zone is applied before searching for the next.
+    The indices of subsequences whose distances to `Q` are less than or equal to
+    `max_distance`, sorted by distance (lowest to highest). Around each occurrence an
+    exclusion zone is applied before searching for the next.
 
     Parameters
     ----------
