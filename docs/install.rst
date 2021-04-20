@@ -30,7 +30,7 @@ To install stumpy from source, first clone the source repository:
     git clone https://github.com/TDAmeritrade/stumpy.git
     cd stumpy
 
-Next, you'll need to install the necessary dependencies. For maximum performance(or if you are installing stumpy for the Apple M1 ARM-based chip), it is recommended that you install all dependencies using `conda`:
+Next, you'll need to install the necessary dependencies. For maximum performance (or if you are installing stumpy for the Apple M1 ARM-based chip), it is recommended that you install all dependencies using `conda`:
 
 .. code:: bash
 
