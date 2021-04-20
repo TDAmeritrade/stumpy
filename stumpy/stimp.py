@@ -15,10 +15,10 @@ def _bfs_indices(n):
     n : int
         The number indices to generate the ordered indices for
 
-    Returns
-    -------
-    level_idx : Generator[int]
-        A generator that yields the next level order index
+    Yields
+    ------
+    level_idx : int
+        The next breadth first search (level order) index
     """
     nlevel = np.floor(np.log2(n) + 1).astype(int)
     nindices = np.power(2, np.arange(nlevel))
