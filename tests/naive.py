@@ -1,7 +1,7 @@
 import math
 import numpy as np
 from scipy.spatial.distance import cdist
-from stumpy import core
+from stumpy import core, config
 
 
 def z_norm(a, axis=0, threshold=1e-7):
@@ -159,7 +159,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None):
     n_B = T_B.shape[0]
     l = n_A - m + 1
     if exclusion_zone is None:
-        exclusion_zone = int(np.ceil(m / 4))
+        exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
     if ignore_trivial:
         diags = np.arange(exclusion_zone + 1, n_A - m + 1)
@@ -226,7 +226,7 @@ def aamp(T_A, m, T_B=None, exclusion_zone=None):
     n_B = T_B.shape[0]
     l = n_A - m + 1
     if exclusion_zone is None:
-        exclusion_zone = int(np.ceil(m / 4))
+        exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
     distance_matrix = cdist(rolling_T_A, rolling_T_B)
 
@@ -537,7 +537,7 @@ class aampi_egress(object):
         self._T_isfinite = np.isfinite(self._T)
         self._m = m
         if excl_zone is None:
-            self._excl_zone = int(np.ceil(self._m / 4))
+            self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
         mp = aamp(T, m)
@@ -604,7 +604,7 @@ class stumpi_egress(object):
         self._T_isfinite = np.isfinite(self._T)
         self._m = m
         if excl_zone is None:
-            self._excl_zone = int(np.ceil(self._m / 4))
+            self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
         mp = stump(T, m)
@@ -1203,3 +1203,103 @@ def aampdist_snippets(
         snippets_fractions,
         snippets_areas,
     )
+
+
+def prescrump(T_A, m, T_B, s, exclusion_zone=None):
+    dist_matrix = distance_matrix(T_A, T_B, m)
+
+    n_A = T_A.shape[0]
+    l = n_A - m + 1
+
+    P = np.empty(l)
+    I = np.empty(l, dtype=np.int64)
+    P[:] = np.inf
+    I[:] = -1
+
+    for i in np.random.permutation(range(0, l, s)):
+        distance_profile = dist_matrix[i]
+        if exclusion_zone is not None:
+            apply_exclusion_zone(distance_profile, i, exclusion_zone)
+        I[i] = np.argmin(distance_profile)
+        P[i] = distance_profile[I[i]]
+        if P[i] == np.inf:
+            I[i] = -1
+        else:
+            j = I[i]
+            for k in range(1, min(s, l - max(i, j))):
+                d = dist_matrix[i + k, j + k]
+                if d < P[i + k]:
+                    P[i + k] = d
+                    I[i + k] = j + k
+                if d < P[j + k]:
+                    P[j + k] = d
+                    I[j + k] = i + k
+
+            for k in range(1, min(s, i + 1, j + 1)):
+                d = dist_matrix[i - k, j - k]
+                if d < P[i - k]:
+                    P[i - k] = d
+                    I[i - k] = j - k
+                if d < P[j - k]:
+                    P[j - k] = d
+                    I[j - k] = i - k
+
+    return P, I
+
+
+def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
+    dist_matrix = distance_matrix(T_A, T_B, m)
+
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_A - m + 1
+
+    if exclusion_zone is not None:
+        diags = np.random.permutation(range(exclusion_zone + 1, n_A - m + 1))
+    else:
+        diags = np.random.permutation(range(-(n_A - m + 1) + 1, n_B - m + 1))
+
+    n_chunks = int(np.ceil(1.0 / percentage))
+    ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
+    diags_ranges = core._get_array_ranges(ndist_counts, n_chunks)
+    diags_ranges_start = diags_ranges[0, 0]
+    diags_ranges_stop = diags_ranges[0, 1]
+
+    out = np.full((l, 4), np.inf, dtype=object)
+    out[:, 1:] = -1
+    left_P = np.full(l, np.inf, dtype=np.float64)
+    right_P = np.full(l, np.inf, dtype=np.float64)
+
+    for diag_idx in range(diags_ranges_start, diags_ranges_stop):
+        k = diags[diag_idx]
+
+        for i in range(n_A - m + 1):
+            for j in range(n_B - m + 1):
+                if j - i == k:
+                    if dist_matrix[i, j] < out[i, 0]:
+                        out[i, 0] = dist_matrix[i, j]
+                        out[i, 1] = i + k
+
+                    if exclusion_zone is not None and dist_matrix[i, j] < out[i + k, 0]:
+                        out[i + k, 0] = dist_matrix[i, j]
+                        out[i + k, 1] = i
+
+                    # left matrix profile and left matrix profile indices
+                    if (
+                        exclusion_zone is not None
+                        and i < i + k
+                        and dist_matrix[i, j] < left_P[i + k]
+                    ):
+                        left_P[i + k] = dist_matrix[i, j]
+                        out[i + k, 2] = i
+
+                    # right matrix profile and right matrix profile indices
+                    if (
+                        exclusion_zone is not None
+                        and i + k > i
+                        and dist_matrix[i, j] < right_P[i]
+                    ):
+                        right_P[i] = dist_matrix[i, j]
+                        out[i, 3] = i + k
+
+    return out

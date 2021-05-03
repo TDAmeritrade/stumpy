@@ -444,7 +444,9 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     n = T_B.shape[0]
     k = T_A.shape[0] - m + 1
     l = n - m + 1
-    excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
+    excl_zone = int(
+        np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
+    )  # See Definition 3 and Figure 3
 
     T_A_fname = core.array_to_temp_file(T_A)
     T_B_fname = core.array_to_temp_file(T_B)

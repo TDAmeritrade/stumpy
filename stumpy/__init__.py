@@ -23,6 +23,7 @@ from .motifs import motifs, match  # noqa: F401
 from .aamp_motifs import aamp_motifs, aamp_match  # noqa: F401
 from .snippets import snippets  # noqa: F401
 from .aampdist_snippets import aampdist_snippets  # noqa: F401
+from .stimp import stimp  # noqa: F401
 from numba import cuda
 
 if cuda.is_available():

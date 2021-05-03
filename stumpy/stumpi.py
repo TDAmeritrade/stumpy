@@ -5,6 +5,7 @@
 import numpy as np
 from . import core, stump
 from .aampi import aampi
+from .config import STUMPY_EXCL_ZONE_DENOM
 
 
 @core.non_normalized(aampi)
@@ -104,7 +105,7 @@ class stumpi:
         if excl_zone is not None:  # pragma: no cover
             self._excl_zone = excl_zone
         else:
-            self._excl_zone = int(np.ceil(self._m / 4))
+            self._excl_zone = int(np.ceil(self._m / STUMPY_EXCL_ZONE_DENOM))
         self._T_isfinite = np.isfinite(self._T)
         self._egress = egress
 

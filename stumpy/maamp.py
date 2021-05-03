@@ -619,7 +619,9 @@ def maamp(T, m, include=None, discords=False):
 
     d, n = T_B.shape
     k = n - m + 1
-    excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
+    excl_zone = int(
+        np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
+    )  # See Definition 3 and Figure 3
 
     P = np.empty((d, k), dtype="float64")
     I = np.empty((d, k), dtype="int64")

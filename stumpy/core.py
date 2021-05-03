@@ -373,6 +373,34 @@ def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
     return False
 
 
+def get_max_window_size(n):
+    """
+    Get the maximum window size for a self-join
+
+    Parameters
+    ----------
+    n : int
+        The length of the time series
+
+    Returns
+    -------
+    max_m : int
+        The maximum window size allowed given `config.STUMPY_EXCL_ZONE_DENOM`
+    """
+    max_m = (
+        int(
+            n
+            - np.floor(
+                (n + (config.STUMPY_EXCL_ZONE_DENOM - 1))
+                // (config.STUMPY_EXCL_ZONE_DENOM + 1)
+            )
+        )
+        - 1
+    )
+
+    return max_m
+
+
 def check_window_size(m, max_size=None):
     """
     Check the window size and ensure that it is greater than or equal to 3 and, if

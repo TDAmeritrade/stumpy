@@ -5,6 +5,7 @@ from scipy.spatial.distance import cdist
 from stumpy import core, config
 import pytest
 import os
+import math
 
 import naive
 
@@ -23,6 +24,22 @@ def test_check_dtype_float32():
 
 def test_check_dtype_float64():
     assert core.check_dtype(np.random.rand(10))
+
+
+def test_get_max_window_size():
+    for n in range(3, 10):
+        ref_max_m = (
+            int(
+                n
+                - math.floor(
+                    (n + (config.STUMPY_EXCL_ZONE_DENOM - 1))
+                    // (config.STUMPY_EXCL_ZONE_DENOM + 1)
+                )
+            )
+            - 1
+        )
+        cmp_max_m = core.get_max_window_size(n)
+        assert ref_max_m == cmp_max_m
 
 
 def test_check_window_size():

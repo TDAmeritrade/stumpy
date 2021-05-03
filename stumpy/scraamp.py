@@ -9,7 +9,7 @@ from numba import njit, config
 
 from . import core
 from .aamp import _aamp
-from .config import STUMPY_D_SQUARED_THRESHOLD
+from .config import STUMPY_D_SQUARED_THRESHOLD, STUMPY_EXCL_ZONE_DENOM
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,8 @@ def _prescraamp(
         The subsequence index in `T_B` that corresponds to `Q`
 
     s : int
-        The sampling interval that defaults to `int(np.ceil(m / 4))`
+        The sampling interval that defaults to
+        `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
 
     squared_distance_profile : ndarray
         A reusable array to store the computed squared distance profile
@@ -175,7 +176,8 @@ def prescraamp(T_A, m, T_B=None, s=None):
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     s : int, default None
-        The sampling interval that defaults to `int(np.ceil(m / 4))`
+        The sampling interval that defaults to
+        `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
 
     Returns
     -------
@@ -199,7 +201,7 @@ def prescraamp(T_A, m, T_B=None, s=None):
 
     if T_B is None:
         T_B = T_A
-        excl_zone = int(np.ceil(m / 4))
+        excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
     else:
         excl_zone = None
 
@@ -283,8 +285,9 @@ class scraamp:
 
     s : int
         The size of the PreSCRIMP fixed interval. If `pre_scraamp=True` and `s=None`,
-        then `s` will automatically be set to `s=int(np.ceil(m/4))`, the size of
-        the exclusion zone.
+        then `s` will automatically be set to
+        `s=int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`, the size of the exclusion
+        zone.
 
     Attributes
     ----------
@@ -348,7 +351,8 @@ class scraamp:
 
         s : int, default None
             The size of the PreSCRIMP fixed interval. If `pre_scraamp=True` and
-            `s=None`, then `s` will automatically be set to `s=int(np.ceil(m/4))`, the
+            `s=None`, then `s` will automatically be set to
+            `s=int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`, the
             size of the exclusion zone.
         """
         self._ignore_trivial = ignore_trivial
@@ -402,7 +406,7 @@ class scraamp:
         self._P[:, :] = np.inf
         self._I[:, :] = -1
 
-        self._excl_zone = int(np.ceil(self._m / 4))
+        self._excl_zone = int(np.ceil(self._m / STUMPY_EXCL_ZONE_DENOM))
 
         if s is None:
             s = self._excl_zone
@@ -421,6 +425,12 @@ class scraamp:
             self._diags = np.random.permutation(
                 range(self._excl_zone + 1, self._n_A - self._m + 1)
             )
+            if self._diags.shape[0] == 0:  # pragma: no cover
+                max_m = core.get_max_window_size(self._T_A.shape[0])
+                raise ValueError(
+                    f"The window size, `m = {self._m}`, is too long for a self join. "
+                    f"Please try a value of `m <= {max_m}`"
+                )
         else:
             self._diags = np.random.permutation(
                 range(-(self._n_A - self._m + 1) + 1, self._n_B - self._m + 1)

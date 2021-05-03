@@ -9,7 +9,7 @@ from numba import njit, prange, config
 
 from . import core
 from .aamp import aamp
-from stumpy.config import STUMPY_D_SQUARED_THRESHOLD
+from stumpy.config import STUMPY_D_SQUARED_THRESHOLD, STUMPY_EXCL_ZONE_DENOM
 
 logger = logging.getLogger(__name__)
 
@@ -555,7 +555,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True):
     n_B = T_B.shape[0]
     l = n_A - m + 1
 
-    excl_zone = int(np.ceil(m / 4))
+    excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
     out = np.empty((l, 4), dtype=object)
 
     if ignore_trivial:

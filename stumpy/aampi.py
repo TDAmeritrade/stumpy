@@ -3,8 +3,9 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from stumpy import core
-import stumpy
+from . import core
+from .aamp import aamp
+from .config import STUMPY_EXCL_ZONE_DENOM
 
 
 class aampi:
@@ -92,10 +93,10 @@ class aampi:
         if excl_zone is not None:  # pragma: no cover
             self._excl_zone = excl_zone
         else:
-            self._excl_zone = int(np.ceil(self._m / 4))
+            self._excl_zone = int(np.ceil(self._m / STUMPY_EXCL_ZONE_DENOM))
         self._egress = egress
 
-        mp = stumpy.aamp(self._T, self._m)
+        mp = aamp(self._T, self._m)
         self._P = mp[:, 0]
         self._I = mp[:, 1]
         self._left_I = mp[:, 2]

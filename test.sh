@@ -1,19 +1,23 @@
 #!/bin/bash
 
 test_mode="all"
+print_mode="verbose"
 
-# Parse first command line argument
-if [[ $# -gt 0 ]]; then
-    if [[ $1 == "unit" ]]; then
+# Parse command line arguments
+for var in "$@"
+do
+    if [[ $var == "unit" ]]; then
         test_mode="unit"
-    elif [[ $1 == "coverage" ]]; then
+    elif [[ $var == "coverage" ]]; then
         test_mode="coverage"
-    elif [[ $1 == "custom" ]]; then
+    elif [[ $var == "custom" ]]; then
         test_mode="custom"
+    elif [[ $var == "silent" || $var == "print" ]]; then
+        print_mode="silent"
     else
         echo "Using default test_mode=\"all\""
     fi
-fi
+done
 
 ###############
 #  Functions  #
@@ -45,10 +49,12 @@ check_flake()
 
 check_print()
 {
-    if [[ `grep print */*.py | wc -l` -gt "0" ]]; then
-        echo "Error: print statement found in code"
-        grep print */*.py
-        exit 1
+    if [[ $print_mode == "verbose" ]]; then
+        if [[ `grep print */*.py | wc -l` -gt "0" ]]; then
+            echo "Error: print statement found in code"
+            grep print */*.py
+            exit 1
+        fi
     fi
 }
 

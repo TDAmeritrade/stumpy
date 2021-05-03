@@ -8,6 +8,7 @@ import numpy as np
 import scipy.stats
 
 from . import core
+from .config import STUMPY_EXCL_ZONE_DENOM
 
 
 def _nnmark(I):
@@ -519,7 +520,7 @@ class floss:
         if not np.isfinite(t):
             self._finite_T[-1] = 0.0
         self._finite_Q[-1] = self._finite_T[-1]
-        excl_zone = int(np.ceil(self._m / 4))
+        excl_zone = int(np.ceil(self._m / STUMPY_EXCL_ZONE_DENOM))
         # Note that the start of the exclusion zone is relative to
         # the unchanging length of the matrix profile index
         zone_start = max(0, self._k - excl_zone)
