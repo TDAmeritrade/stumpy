@@ -22,19 +22,19 @@ def _bfs_indices(n):
         The breadth first search (level order) indices
     """
     if n == 1:  # pragma: no cover
-        return np.array([0], dtype=np.int32)
+        return np.array([0], dtype=np.int64)
 
-    nlevel = np.floor(np.log2(n) + 1).astype(int)
+    nlevel = np.floor(np.log2(n) + 1).astype(np.int64)
     nindices = np.power(2, np.arange(nlevel))
     cumsum_nindices = np.cumsum(nindices)
     nindices[-1] = n - cumsum_nindices[np.searchsorted(cumsum_nindices, n) - 1]
 
-    indices = np.empty((2, nindices.max()), dtype=np.int32)
+    indices = np.empty((2, nindices.max()), dtype=np.int64)
     indices[0, 0] = 0
     indices[1, 0] = n
-    tmp_indices = np.empty((2, 2 * nindices.max()), dtype=np.int32)
+    tmp_indices = np.empty((2, 2 * nindices.max()), dtype=np.int64)
 
-    out = np.empty(n, dtype=np.int32)
+    out = np.empty(n, dtype=np.int64)
     out_idx = 0
 
     for nidx in nindices:

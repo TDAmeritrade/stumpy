@@ -489,25 +489,25 @@ class scraamp:
         """
         Get the updated matrix profile
         """
-        return self._P[:, 0].astype(np.float)
+        return self._P[:, 0].astype(np.float64)
 
     @property
     def I_(self):
         """
         Get the updated matrix profile indices
         """
-        return self._I[:, 0].astype(np.int)
+        return self._I[:, 0].astype(np.int64)
 
     @property
     def left_I_(self):
         """
         Get the updated left matrix profile indices
         """
-        return self._I[:, 1].astype(np.int)
+        return self._I[:, 1].astype(np.int64)
 
     @property
     def right_I_(self):
         """
         Get the updated right matrix profile indices
         """
-        return self._I[:, 2].astype(np.int)
+        return self._I[:, 2].astype(np.int64)

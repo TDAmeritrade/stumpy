@@ -224,7 +224,7 @@ def aamp_motifs(
 
     T, T_subseq_isfinite = core.preprocess_non_normalized(T[np.newaxis, :], m)
     T_squared = np.sum(core.rolling_window(T * T, m), axis=-1)
-    P = P[np.newaxis, :].astype("float64")
+    P = P[np.newaxis, :].astype(np.float64)
 
     motif_distances, motif_indices = _aamp_motifs(
         T,

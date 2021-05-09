@@ -110,9 +110,9 @@ class stumpi:
         self._egress = egress
 
         mp = stump(self._T, self._m)
-        self._P = mp[:, 0]
-        self._I = mp[:, 1]
-        self._left_I = mp[:, 2]
+        self._P = mp[:, 0].astype(np.float64)
+        self._I = mp[:, 1].astype(np.int64)
+        self._left_I = mp[:, 2].astype(np.int64)
         self._left_P = np.empty(self._P.shape)
         self._left_P[:] = np.inf
 

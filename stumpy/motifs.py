@@ -233,7 +233,7 @@ def motifs(
         cutoff = max(np.mean(P) - 2 * np.std(P), np.min(P))
 
     T, M_T, Σ_T = core.preprocess(T[np.newaxis, :], m)
-    P = P[np.newaxis, :].astype("float64")
+    P = P[np.newaxis, :].astype(np.float64)
 
     motif_distances, motif_indices = _motifs(
         T,
