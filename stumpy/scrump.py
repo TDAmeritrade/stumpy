@@ -459,8 +459,7 @@ class scrump:
             )
 
         self._n_threads = config.NUMBA_NUM_THREADS
-        self._percentage = min(percentage, 1.0)
-        self._percentage = max(percentage, 0.0)
+        self._percentage = np.clip(percentage, 0.0, 1.0)
         self._n_chunks = int(np.ceil(1.0 / percentage))
         self._ndist_counts = core._count_diagonal_ndist(
             self._diags, self._m, self._n_A, self._n_B

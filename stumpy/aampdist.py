@@ -41,7 +41,7 @@ def _aampdist_vect(
 
     custom_func : object, default None
         A custom user defined function for selecting the desired value from the
-        sorted `P_ABBA` array. This function may need to leverage `functools.partial`
+        unsorted `P_ABBA` array. This function may need to leverage `functools.partial`
         and should take `P_ABBA` as its only input parameter and return a single
         `MPdist` value. The `percentage` and `k` parameters are ignored when
         `custom_func` is not None.
@@ -64,10 +64,10 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None):
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
-    concatenates and sorts the output of an AB-join and a BA-join and returns the value
-    of the `k`th smallest number as the reported distance. Note that MPdist is a
-    measure and not a metric. Therefore, it does not obey the triangular inequality but
-    the method is highly scalable.
+    concatenates the output of an AB-join and a BA-join and returns the `k`th smallest
+    value as the reported distance. Note that MPdist is a measure and not a metric.
+    Therefore, it does not obey the triangular inequality but the method is highly
+    scalable.
 
     Parameters
     ----------
@@ -111,10 +111,10 @@ def aampdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None):
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
-    concatenates and sorts the output of an AB-join and a BA-join and returns the value
-    of the `k`th smallest number as the reported distance. Note that MPdist is a
-    measure and not a metric. Therefore, it does not obey the triangular inequality but
-    the method is highly scalable.
+    concatenates the output of an AB-join and a BA-join and returns the `k`th smallest
+    value as the reported distance. Note that MPdist is a measure and not a metric.
+    Therefore, it does not obey the triangular inequality but the method is highly
+    scalable.
 
     Parameters
     ----------

@@ -20,10 +20,10 @@ def _compute_P_ABBA(
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
-    concatenates and sorts the output of an AB-join and a BA-join and returns the value
-    of the `k`th smallest number as the reported distance. Note that MPdist is a
-    measure and not a metric. Therefore, it does not obey the triangular inequality but
-    the method is highly scalable.
+    concatenates the output of an AB-join and a BA-join and returns the `k`th smallest
+    value as the reported distance. Note that MPdist is a measure and not a metric.
+    Therefore, it does not obey the triangular inequality but the method is highly
+    scalable.
 
     Parameters
     ----------
@@ -81,15 +81,15 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
-    concatenates and sorts the output of an AB-join and a BA-join and returns the value
-    of the `k`th smallest number as the reported distance. Note that MPdist is a
-    measure and not a metric. Therefore, it does not obey the triangular inequality but
-    the method is highly scalable.
+    concatenates the output of an AB-join and a BA-join and returns the `k`th smallest
+    value as the reported distance. Note that MPdist is a measure and not a metric.
+    Therefore, it does not obey the triangular inequality but the method is highly
+    scalable.
 
     Parameters
     ----------
     P_ABBA : ndarray
-        A pre-sorted array resulting from the concatenation of the outputs from an
+        An unsorted array resulting from the concatenation of the outputs from an
         AB-joinand BA-join for two time series, `T_A` and `T_B`
 
     k : int
@@ -98,7 +98,7 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
 
     custom_func : object, default None
         A custom user defined function for selecting the desired value from the
-        sorted `P_ABBA` array. This function may need to leverage `functools.partial`
+        unsorted `P_ABBA` array. This function may need to leverage `functools.partial`
         and should take `P_ABBA` as its only input parameter and return a single
         `MPdist` value. The `percentage` and `k` parameters are ignored when
         `custom_func` is not None.
@@ -112,10 +112,12 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
     if custom_func is not None:
         MPdist = custom_func(P_ABBA)
     else:
-        MPdist = P_ABBA[k]
+        partition = np.partition(P_ABBA, k)
+        MPdist = partition[k]
         if ~np.isfinite(MPdist):
-            k = max(0, np.count_nonzero(np.isfinite(P_ABBA[:k])) - 1)
-            MPdist = P_ABBA[k]
+            partition[:k].sort()
+            k = max(0, np.count_nonzero(np.isfinite(partition[:k])) - 1)
+            MPdist = partition[k]
 
     return MPdist
 
@@ -137,10 +139,10 @@ def _mpdist(
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
-    concatenates and sorts the output of an AB-join and a BA-join and returns the value
-    of the `k`th smallest number as the reported distance. Note that MPdist is a
-    measure and not a metric. Therefore, it does not obey the triangular inequality but
-    the method is highly scalable.
+    concatenates the output of an AB-join and a BA-join and returns the `k`th smallest
+    value as the reported distance. Note that MPdist is a measure and not a metric.
+    Therefore, it does not obey the triangular inequality but the method is highly
+    scalable.
 
     Parameters
     ----------
@@ -180,7 +182,7 @@ def _mpdist(
 
     custom_func : object, default None
         A custom user defined function for selecting the desired value from the
-        sorted `P_ABBA` array. This function may need to leverage `functools.partial`
+        unsorted `P_ABBA` array. This function may need to leverage `functools.partial`
         and should take `P_ABBA` as its only input parameter and return a single
         `MPdist` value. The `percentage` and `k` parameters are ignored when
         `custom_func` is not None.
@@ -202,13 +204,11 @@ def _mpdist(
     P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
 
     _compute_P_ABBA(T_A, T_B, m, P_ABBA, dask_client, device_id, mp_func)
-    P_ABBA.sort()
 
     if k is not None:
         k = min(int(k), P_ABBA.shape[0] - 1)
     else:
-        percentage = min(percentage, 1.0)
-        percentage = max(percentage, 0.0)
+        percentage = np.clip(percentage, 0.0, 1.0)
         k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
 
     MPdist = _select_P_ABBA_value(P_ABBA, k, custom_func)
@@ -252,7 +252,7 @@ def _mpdist_vect(
 
     custom_func : object, default None
         A custom user defined function for selecting the desired value from the
-        sorted `P_ABBA` array. This function may need to leverage `functools.partial`
+        unsorted `P_ABBA` array. This function may need to leverage `functools.partial`
         and should take `P_ABBA` as its only input parameter and return a single
         `MPdist` value. The `percentage` and `k` parameters are ignored when
         `custom_func` is not None.
@@ -267,8 +267,7 @@ def _mpdist_vect(
     P_ABBA = np.empty(2 * j)
 
     if k is None:
-        percentage = min(percentage, 1.0)
-        percentage = max(percentage, 0.0)
+        percentage = np.clip(percentage, 0.0, 1.0)
         k = min(math.ceil(percentage * (2 * Q.shape[0])), 2 * j - 1)
 
     k = min(int(k), P_ABBA.shape[0] - 1)
@@ -281,7 +280,6 @@ def _mpdist_vect(
     for i in range(MPdist_vect.shape[0]):
         P_ABBA[:j] = rolling_row_min[:, i]
         P_ABBA[j:] = col_min[i : i + j]
-        P_ABBA.sort()
         MPdist_vect[i] = _select_P_ABBA_value(P_ABBA, k, custom_func)
 
     return MPdist_vect
@@ -295,10 +293,10 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True):
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
-    concatenates and sorts the output of an AB-join and a BA-join and returns the value
-    of the `k`th smallest number as the reported distance. Note that MPdist is a
-    measure and not a metric. Therefore, it does not obey the triangular inequality but
-    the method is highly scalable.
+    concatenates the output of an AB-join and a BA-join and returns the `k`th smallest
+    value as the reported distance. Note that MPdist is a measure and not a metric.
+    Therefore, it does not obey the triangular inequality but the method is highly
+    scalable.
 
     Parameters
     ----------
@@ -349,10 +347,10 @@ def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, normalize=True):
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
-    concatenates and sorts the output of an AB-join and a BA-join and returns the value
-    of the `k`th smallest number as the reported distance. Note that MPdist is a
-    measure and not a metric. Therefore, it does not obey the triangular inequality but
-    the method is highly scalable.
+    concatenates the output of an AB-join and a BA-join and returns the `k`th smallest
+    value as the reported distance. Note that MPdist is a measure and not a metric.
+    Therefore, it does not obey the triangular inequality but the method is highly
+    scalable.
 
     Parameters
     ----------

@@ -93,8 +93,7 @@ def _get_all_profiles(
     if s is not None:
         s = min(int(s), m)
     else:
-        percentage = min(percentage, 1.0)
-        percentage = max(percentage, 0.0)
+        percentage = np.clip(percentage, 0.0, 1.0)
         s = min(math.ceil(percentage * m), m)
 
     # Iterate over non-overlapping subsequences, see Definition 3

@@ -110,8 +110,7 @@ class stimp:
         self._bfs_indices = _bfs_indices(M.shape[0])
         self._M = M[self._bfs_indices]
         self._idx = 0
-        percentage = min(1.0, percentage)
-        percentage = max(0.0, percentage)
+        percentage = np.clip(percentage, 0.0, 1.0)
         self._percentage = percentage
         self._pre_scrump = pre_scrump
         self._normalize = normalize

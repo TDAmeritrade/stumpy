@@ -18,6 +18,7 @@ def some_func(P_ABBA, m, percentage, n_A, n_B):
     percentage = min(percentage, 1.0)
     percentage = max(percentage, 0.0)
     k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
+    P_ABBA.sort()
     MPdist = P_ABBA[k]
     if ~np.isfinite(MPdist):
         k = np.count_nonzero(np.isfinite(P_ABBA[:k])) - 1
@@ -124,10 +125,12 @@ def test_mpdist_k(T_A, T_B, k):
 def test_select_P_ABBA_val_inf():
     P_ABBA = np.random.rand(10)
     k = 2
-    P_ABBA[k] = np.inf
+    P_ABBA[k:] = np.inf
+    p_abba = P_ABBA.copy()
 
-    ref = P_ABBA[k - 1]
     comp = _select_P_ABBA_value(P_ABBA, k=k)
+    p_abba.sort()
+    ref = p_abba[k - 1]
     npt.assert_almost_equal(ref, comp)
 
 
