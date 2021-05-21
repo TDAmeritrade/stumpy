@@ -58,7 +58,7 @@ configuration = {
     "maintainer_email": "seanmylaw@gmail.com",
     "license": "BSD-3",
     "packages": ["stumpy"],
-    "install_requires": ["numpy >= 1.15", "scipy >= 1.5", "numba >= 0.48"],
+    "install_requires": ["numpy >= 1.15", "scipy >= 1.5", "numba >= 0.53.1"],
     "ext_modules": [],
     "cmdclass": {},
     "tests_require": ["pytest"],
