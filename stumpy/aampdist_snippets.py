@@ -91,8 +91,7 @@ def _get_all_aampdist_profiles(
     if s is not None:
         s = min(int(s), m)
     else:
-        percentage = min(percentage, 1.0)
-        percentage = max(percentage, 0.0)
+        percentage = np.clip(percentage, 0.0, 1.0)
         s = min(math.ceil(percentage * m), m)
 
     # Iterate over non-overlapping subsequences, see Definition 3
@@ -231,7 +230,7 @@ def aampdist_snippets(
     for i in range(k):
         mask = snippets_profiles[i] <= total_min
         snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
-        total_min = total_min - mask.astype(float)
+        total_min = total_min - mask.astype(np.float64)
 
     return (
         snippets,

@@ -373,6 +373,34 @@ def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
     return False
 
 
+def get_max_window_size(n):
+    """
+    Get the maximum window size for a self-join
+
+    Parameters
+    ----------
+    n : int
+        The length of the time series
+
+    Returns
+    -------
+    max_m : int
+        The maximum window size allowed given `config.STUMPY_EXCL_ZONE_DENOM`
+    """
+    max_m = (
+        int(
+            n
+            - np.floor(
+                (n + (config.STUMPY_EXCL_ZONE_DENOM - 1))
+                // (config.STUMPY_EXCL_ZONE_DENOM + 1)
+            )
+        )
+        - 1
+    )
+
+    return max_m
+
+
 def check_window_size(m, max_size=None):
     """
     Check the window size and ensure that it is greater than or equal to 3 and, if
@@ -1199,8 +1227,9 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
 )
 def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
     """
-    Compute the distance profile using the MASS algorithm. This is a convenience
-    wrapper around the Numba JIT compiled `_mass` function.
+    Compute the distance profile using the MASS algorithm
+
+    This is a convenience wrapper around the Numba JIT compiled `_mass` function.
 
     Parameters
     ----------
@@ -1223,7 +1252,7 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
 
     Returns
     -------
-    output : ndarray
+    distance_profile : ndarray
         Distance profile
 
     Notes

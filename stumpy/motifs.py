@@ -8,6 +8,7 @@ import numpy as np
 from .aamp_motifs import aamp_motifs, aamp_match
 
 from . import core
+from .config import STUMPY_EXCL_ZONE_DENOM
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +144,7 @@ def motifs(
     normalize=True,
 ):
     """
-    Discover the top motifs for time series `T`.
+    Discover the top motifs for time series `T`
 
     A subsequence, `Q`, becomes a candidate motif if there are at least `min_neighbor`
     number of other subsequence matches in `T` (outside the exclusion zone) with a
@@ -225,14 +226,14 @@ def motifs(
 
     m = T.shape[-1] - P.shape[-1] + 1
     if excl_zone is None:  # pragma: no cover
-        excl_zone = int(np.ceil(m / 4))
+        excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
     if max_matches is None:  # pragma: no cover
         max_matches = np.inf
     if cutoff is None:  # pragma: no cover
         cutoff = max(np.mean(P) - 2 * np.std(P), np.min(P))
 
     T, M_T, Σ_T = core.preprocess(T[np.newaxis, :], m)
-    P = P[np.newaxis, :].astype("float64")
+    P = P[np.newaxis, :].astype(np.float64)
 
     motif_distances, motif_indices = _motifs(
         T,
@@ -265,11 +266,11 @@ def match(
     normalize=True,
 ):
     """
-    Find all matches of a query `Q` in a time series `T`, i.e. the indices
-    of subsequences whose distances to `Q` are less than or equal to
-    `max_distance`, sorted by distance (lowest to highest).
+    Find all matches of a query `Q` in a time series `T`
 
-    Around each occurrence an exclusion zone is applied before searching for the next.
+    The indices of subsequences whose distances to `Q` are less than or equal to
+    `max_distance`, sorted by distance (lowest to highest). Around each occurrence an
+    exclusion zone is applied before searching for the next.
 
     Parameters
     ----------
@@ -324,15 +325,12 @@ def match(
     m = Q.shape[1]
 
     if excl_zone is None:  # pragma: no cover
-        excl_zone = int(np.ceil(m / 4))
+        excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
     if max_matches is None:  # pragma: no cover
         max_matches = np.inf
 
     if np.any(np.isnan(Q)) or np.any(np.isinf(Q)):  # pragma: no cover
         raise ValueError("Q contains illegal values (NaN or inf)")
-
-    if excl_zone is None:  # pragma: no cover
-        excl_zone = int(np.ceil(m / 4))
 
     if max_distance is None:  # pragma: no cover
 
@@ -356,4 +354,6 @@ def match(
         core.apply_exclusion_zone(D, candidate_idx, excl_zone)
         candidate_idx = np.argmin(D)
 
-    return np.array(matches, dtype=object)
+    out = np.array(matches, dtype=object)
+
+    return out

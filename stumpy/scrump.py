@@ -8,6 +8,7 @@ import numpy as np
 from numba import njit, config
 
 from . import core, scraamp
+from .config import STUMPY_EXCL_ZONE_DENOM
 from .stump import _stump
 
 logger = logging.getLogger(__name__)
@@ -65,7 +66,8 @@ def _prescrump(
         The subsequence index in `T_B` that corresponds to `Q`
 
     s : int
-        The sampling interval that defaults to `int(np.ceil(m / 4))`
+        The sampling interval that defaults to
+        `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
 
     squared_distance_profile : ndarray
         A reusable array to store the computed squared distance profile
@@ -165,7 +167,8 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     s : int, default None
-        The sampling interval that defaults to `int(np.ceil(m / 4))`
+        The sampling interval that defaults to
+        `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
 
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
@@ -194,7 +197,7 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
 
     if T_B is None:
         T_B = T_A
-        excl_zone = int(np.ceil(m / 4))
+        excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
     else:
         excl_zone = None
 
@@ -283,8 +286,9 @@ class scrump:
 
     s : int
         The size of the PreSCRIMP fixed interval. If `pre_scrump=True` and `s=None`,
-        then `s` will automatically be set to `s=int(np.ceil(m/4))`, the size of
-        the exclusion zone.
+        then `s` will automatically be set to
+        `s=int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`, the size of the exclusion
+        zone.
 
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
@@ -354,8 +358,9 @@ class scrump:
 
         s : int, default None
             The size of the PreSCRIMP fixed interval. If `pre_scrump=True` and `s=None`,
-            then `s` will automatically be set to `s=int(np.ceil(m/4))`, the size of
-            the exclusion zone.
+            then `s` will automatically be set to
+            `s=int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`, the size of the
+            exclusion zone.
 
         normalize : bool, default True
             When set to `True`, this z-normalizes subsequences prior to computing
@@ -423,7 +428,7 @@ class scrump:
         self._P[:, :] = np.inf
         self._I[:, :] = -1
 
-        self._excl_zone = int(np.ceil(self._m / 4))
+        self._excl_zone = int(np.ceil(self._m / STUMPY_EXCL_ZONE_DENOM))
 
         if s is None:
             s = self._excl_zone
@@ -442,14 +447,19 @@ class scrump:
             self._diags = np.random.permutation(
                 range(self._excl_zone + 1, self._n_A - self._m + 1)
             )
+            if self._diags.shape[0] == 0:  # pragma: no cover
+                max_m = core.get_max_window_size(self._T_A.shape[0])
+                raise ValueError(
+                    f"The window size, `m = {self._m}`, is too long for a self join. "
+                    f"Please try a value of `m <= {max_m}`"
+                )
         else:
             self._diags = np.random.permutation(
                 range(-(self._n_A - self._m + 1) + 1, self._n_B - self._m + 1)
             )
 
         self._n_threads = config.NUMBA_NUM_THREADS
-        self._percentage = min(percentage, 1.0)
-        self._percentage = max(percentage, 0.0)
+        self._percentage = np.clip(percentage, 0.0, 1.0)
         self._n_chunks = int(np.ceil(1.0 / percentage))
         self._ndist_counts = core._count_diagonal_ndist(
             self._diags, self._m, self._n_A, self._n_B
@@ -508,25 +518,25 @@ class scrump:
         """
         Get the updated matrix profile
         """
-        return self._P[:, 0].astype(np.float)
+        return self._P[:, 0].astype(np.float64)
 
     @property
     def I_(self):
         """
         Get the updated matrix profile indices
         """
-        return self._I[:, 0].astype(np.int)
+        return self._I[:, 0].astype(np.int64)
 
     @property
     def left_I_(self):
         """
         Get the updated left matrix profile indices
         """
-        return self._I[:, 1].astype(np.int)
+        return self._I[:, 1].astype(np.int64)
 
     @property
     def right_I_(self):
         """
         Get the updated right matrix profile indices
         """
-        return self._I[:, 2].astype(np.int)
+        return self._I[:, 2].astype(np.int64)

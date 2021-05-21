@@ -7,6 +7,7 @@ import logging
 import numpy as np
 
 from . import core
+from .config import STUMPY_EXCL_ZONE_DENOM
 
 logger = logging.getLogger(__name__)
 
@@ -215,7 +216,7 @@ def aamp_motifs(
 
     m = T.shape[-1] - P.shape[-1] + 1
     if excl_zone is None:  # pragma: no cover
-        excl_zone = int(np.ceil(m / 4))
+        excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
     if max_matches is None:  # pragma: no cover
         max_matches = np.inf
     if cutoff is None:  # pragma: no cover
@@ -223,7 +224,7 @@ def aamp_motifs(
 
     T, T_subseq_isfinite = core.preprocess_non_normalized(T[np.newaxis, :], m)
     T_squared = np.sum(core.rolling_window(T * T, m), axis=-1)
-    P = P[np.newaxis, :].astype("float64")
+    P = P[np.newaxis, :].astype(np.float64)
 
     motif_distances, motif_indices = _aamp_motifs(
         T,
@@ -298,15 +299,12 @@ def aamp_match(
     m = Q.shape[1]
 
     if excl_zone is None:  # pragma: no cover
-        excl_zone = int(np.ceil(m / 4))
+        excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
     if max_matches is None:  # pragma: no cover
         max_matches = np.inf
 
     if np.any(np.isnan(Q)) or np.any(np.isinf(Q)):  # pragma: no cover
         raise ValueError("Q contains illegal values (NaN or inf)")
-
-    if excl_zone is None:  # pragma: no cover
-        excl_zone = int(np.ceil(m / 4))
 
     if max_distance is None:  # pragma: no cover
 
