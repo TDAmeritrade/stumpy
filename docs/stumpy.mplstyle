@@ -1,0 +1,2 @@
+figure.figsize : 20, 6
+xtick.direction : out

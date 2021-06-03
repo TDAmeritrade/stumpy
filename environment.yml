@@ -13,10 +13,12 @@ dependencies:
   - pytest-cov>=2.10.0
   - dask>=1.2.2
   - distributed>=1.28.1
-  - jupyterlab>=2.2.2
+  - jupyterlab>=3.0
   - matplotlib>=3.3.0
   - lxml>=4.5.2
   - twine>=3.2.0
   - sphinx>=3.5.3
   - nbsphinx>=0.8.1
   - pydata-sphinx-theme>=0.5.2
+  - ipywidgets>=7.6.3
+  - ipympl>=0.7.0
