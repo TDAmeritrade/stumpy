@@ -24,10 +24,6 @@ class stumpi:
     m : int
         Window size
 
-    excl_zone : int, default None
-        The half width for the exclusion zone relative to the current
-        sliding window
-
     egress : bool, default True
         If set to `True`, the oldest data point in the time series is removed and
         the time series length remains constant rather than forever increasing
@@ -71,7 +67,7 @@ class stumpi:
     Note that line 11 is missing an important `sqrt` operation!
     """
 
-    def __init__(self, T, m, excl_zone=None, egress=True, normalize=True):
+    def __init__(self, T, m, egress=True, normalize=True):
         """
         Initialize the `stumpi` object
 
@@ -83,10 +79,6 @@ class stumpi:
 
         m : int
             Window size
-
-        excl_zone : int, default None
-            The half width for the exclusion zone relative to the current
-            sliding window
 
         egress : bool, default True
             If set to `True`, the oldest data point in the time series is removed and
@@ -102,10 +94,7 @@ class stumpi:
         core.check_dtype(self._T)
         self._m = m
         self._n = self._T.shape[0]
-        if excl_zone is not None:  # pragma: no cover
-            self._excl_zone = excl_zone
-        else:
-            self._excl_zone = int(np.ceil(self._m / STUMPY_EXCL_ZONE_DENOM))
+        self._excl_zone = int(np.ceil(self._m / STUMPY_EXCL_ZONE_DENOM))
         self._T_isfinite = np.isfinite(self._T)
         self._egress = egress
 

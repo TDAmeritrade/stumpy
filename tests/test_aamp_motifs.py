@@ -195,7 +195,6 @@ def test_aamp_match(Q, T):
     right = aamp_match(
         Q,
         T,
-        excl_zone=excl_zone,
         max_matches=None,
         max_distance=max_distance,
     )

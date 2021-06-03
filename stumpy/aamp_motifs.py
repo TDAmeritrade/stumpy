@@ -101,7 +101,6 @@ def _aamp_motifs(
         query_matches = aamp_match(
             Q,
             T,
-            excl_zone=excl_zone,
             max_matches=None,
             max_distance=max_distance,
         )
@@ -128,7 +127,6 @@ def _aamp_motifs(
 def aamp_motifs(
     T,
     P,
-    excl_zone=None,
     min_neighbors=1,
     max_distance=None,
     cutoff=None,
@@ -150,10 +148,6 @@ def aamp_motifs(
 
     P : ndarray
         Matrix Profile of `T`
-
-    excl_zone : int, default None
-        Size of the exclusion zone. If `None`, this defaults to `m/4`, where `m` is
-        the window size (inferred from the time series and matrix profile lengths).
 
     min_neighbors : int, default 1
         The minimum number of similar matches a subsequence needs to have in order
@@ -215,8 +209,7 @@ def aamp_motifs(
         )
 
     m = T.shape[-1] - P.shape[-1] + 1
-    if excl_zone is None:  # pragma: no cover
-        excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
+    excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
     if max_matches is None:  # pragma: no cover
         max_matches = np.inf
     if cutoff is None:  # pragma: no cover
@@ -246,7 +239,6 @@ def aamp_match(
     T,
     T_subseq_isfinite=None,
     T_squared=None,
-    excl_zone=None,
     max_distance=None,
     max_matches=None,
 ):
@@ -264,10 +256,6 @@ def aamp_match(
 
     T : ndarray
         The time series of interest
-
-    excl_zone : int, default None
-        Size of the exclusion zone.
-        If `None`, defaults to `m/4`, where `m` is the length of `Q`.
 
     max_distance : float or function, default None
         Maximum distance between `Q` and a subsequence `S` for `S` to be considered a
@@ -298,8 +286,7 @@ def aamp_match(
     d, n = T.shape
     m = Q.shape[1]
 
-    if excl_zone is None:  # pragma: no cover
-        excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
+    excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
     if max_matches is None:  # pragma: no cover
         max_matches = np.inf
 

@@ -229,7 +229,6 @@ def test_match(Q, T):
     right = match(
         Q,
         T,
-        excl_zone=excl_zone,
         max_matches=None,
         max_distance=lambda D: max_distance,  # also test lambda functionality
     )

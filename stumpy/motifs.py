@@ -107,7 +107,6 @@ def _motifs(
             T,
             M_T=M_T,
             Σ_T=Σ_T,
-            excl_zone=excl_zone,
             max_matches=None,
             max_distance=max_distance,
         )
@@ -135,7 +134,6 @@ def _motifs(
 def motifs(
     T,
     P,
-    excl_zone=None,
     min_neighbors=1,
     max_distance=None,
     cutoff=None,
@@ -157,10 +155,6 @@ def motifs(
 
     P : ndarray
         Matrix Profile of `T`
-
-    excl_zone : int, default None
-        Size of the exclusion zone. If `None`, this defaults to `m/4`, where `m` is
-        the window size (inferred from the time series and matrix profile lengths).
 
     min_neighbors : int, default 1
         The minimum number of similar matches a subsequence needs to have in order
@@ -225,8 +219,7 @@ def motifs(
         )
 
     m = T.shape[-1] - P.shape[-1] + 1
-    if excl_zone is None:  # pragma: no cover
-        excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
+    excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
     if max_matches is None:  # pragma: no cover
         max_matches = np.inf
     if cutoff is None:  # pragma: no cover
@@ -260,7 +253,6 @@ def match(
     T,
     M_T=None,
     Σ_T=None,
-    excl_zone=None,
     max_distance=None,
     max_matches=None,
     normalize=True,
@@ -285,10 +277,6 @@ def match(
 
     Σ_T : ndarray, default None
         Sliding standard deviation of time series, `T`
-
-    excl_zone : int, default None
-        Size of the exclusion zone.
-        If `None`, defaults to `m/4`, where `m` is the length of `Q`.
 
     max_distance : float or function, default None
         Maximum distance between `Q` and a subsequence `S` for `S` to be considered a
@@ -324,8 +312,7 @@ def match(
     d, n = T.shape
     m = Q.shape[1]
 
-    if excl_zone is None:  # pragma: no cover
-        excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
+    excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
     if max_matches is None:  # pragma: no cover
         max_matches = np.inf
 
