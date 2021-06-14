@@ -78,8 +78,7 @@ def naive_transform_pan(pan, ms, threshold, bfs_indices, n_processed):
 
     nrepeat = np.diff(np.append(-1, sorted_idx))
     pan[: np.sum(nrepeat)] = np.repeat(pan[sorted_idx], nrepeat, axis=0)
-    pan[:] = np.nan_to_num(pan, nan=np.nanmax(pan))
-    pan[np.isnan(pan)] = np.nanmax(pan)]
+    pan[np.isnan(pan)] = np.nanmax(pan)
 
     return pan
 
