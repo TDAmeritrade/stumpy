@@ -389,7 +389,7 @@ class stimp:
         # the rows where matrix profiles were computed, this gives us the "blocky" look
         nrepeat = np.diff(np.append(-1, sorted_idx))
         PAN[: np.sum(nrepeat)] = np.repeat(PAN[sorted_idx], nrepeat, axis=0)
-        PAN[:] = np.nan_to_num(PAN, nan=np.nanmax(PAN))
+        PAN[np.isnan(PAN)] = np.nanmax(PAN)
 
         return PAN
 
