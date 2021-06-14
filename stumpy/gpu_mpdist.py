@@ -65,4 +65,6 @@ def gpu_mpdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0, normalize=True
 
     See Section III
     """
-    return _mpdist(T_A, T_B, m, percentage, k, device_id=device_id, mp_func=gpu_stump)
+    MPdist = _mpdist(T_A, T_B, m, percentage, k, device_id=device_id, mp_func=gpu_stump)
+
+    return MPdist

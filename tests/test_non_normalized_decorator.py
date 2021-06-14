@@ -263,3 +263,49 @@ def test_subspace(T, m):
         ref_S = stumpy.maamp_subspace(T, m, motif_idx, nn_idx, k)
         comp_S = stumpy.subspace(T, m, motif_idx, nn_idx, k, normalize=False)
         npt.assert_almost_equal(ref_S, comp_S)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_motifs(T, m):
+    if T.ndim > 1:
+        T = T.copy()
+        T = T[0]
+
+    mp = stumpy.aamp(T, m)
+    ref = stumpy.aamp_motifs(T, mp[:, 0])
+    comp = stumpy.motifs(T, mp[:, 0], normalize=False)
+    npt.assert_almost_equal(ref, comp)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_match(T, m):
+    if T.ndim > 1:
+        T = T.copy()
+        T = T[0]
+
+    Q = T[:m]
+    ref = stumpy.aamp_match(Q, T)
+    comp = stumpy.match(Q, T, normalize=False)
+    npt.assert_almost_equal(ref, comp)
+
+
+def test_snippets():
+    T = np.random.rand(64)
+    m = 10
+    k = 2
+
+    (
+        ref_snippets,
+        ref_indices,
+        ref_profiles,
+        ref_fractions,
+        ref_areas,
+    ) = stumpy.aampdist_snippets(T, m, k)
+    (
+        cmp_snippets,
+        cmp_indices,
+        cmp_profiles,
+        cmp_fractions,
+        cmp_areas,
+    ) = stumpy.snippets(T, m, k, normalize=False)
+    npt.assert_almost_equal(ref_snippets, cmp_snippets)

@@ -9,6 +9,7 @@ import numpy as np
 from . import core
 from .stump import _stump
 from .aamped import aamped
+from .config import STUMPY_EXCL_ZONE_DENOM
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +156,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
     n_B = T_B.shape[0]
     l = n_A - m + 1
 
-    excl_zone = int(np.ceil(m / 4))
+    excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
     out = np.empty((l, 4), dtype=object)
 
     hosts = list(dask_client.ncores().keys())

@@ -14,6 +14,7 @@ from .mstump import (
 )
 from . import core
 from .maamped import maamped
+from .config import STUMPY_EXCL_ZONE_DENOM
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +100,9 @@ def mstumped(dask_client, T, m, include=None, discords=False, normalize=True):
 
     d, n = T_B.shape
     k = n - m + 1
-    excl_zone = int(np.ceil(m / 4))  # See Definition 3 and Figure 3
+    excl_zone = int(
+        np.ceil(m / STUMPY_EXCL_ZONE_DENOM)
+    )  # See Definition 3 and Figure 3
 
     P = np.empty((d, k), dtype="float64")
     I = np.empty((d, k), dtype="int64")

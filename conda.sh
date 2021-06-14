@@ -1,5 +1,5 @@
 #!/bin/bash
-
+conda_env="$(conda info --envs | grep '*' | awk '{print $1}')"
 arch_name="$(uname -m)"
 if [[ $1 == "numba" ]] && [[ $arch_name == "arm64" ]]; then
     echo "Sorry, cannot install numba release candidate envrionment for ARM64 architecture"
@@ -87,27 +87,22 @@ fi
 
 if [[ $install_mode == "min" ]]; then
     generate_min_environment_yaml
-    # conda env update --file environment.min.yml
-    mamba env update --file environment.min.yml
+    mamba env update --name $conda_env --file environment.min.yml || conda env update --name $conda_env --file environment.min.yml
 elif [[ $install_mode == "numba" ]]; then
     echo ""
     echo "Installing python=$python_version"
     echo ""
-    # conda install -y -c conda-forge python=$python_version
-    mamba install -y -c conda-forge python=$python_version
+    mamba install -y -c conda-forge python=$python_version || conda install -y -c conda-forge python=$python_version
 
     echo ""
     echo "Installing numba=$numba_version"
     echo ""
-    # conda install -y -c numba numba=$numba_version
-    mamba install -y -c numba numba=$numba_version
+    mamba install -y -c numba numba=$numba_version || conda install -y -c numba numba=$numba_version
 
     generate_numba_environment_yaml
-    # conda env update --file environment.numba.yml
-    mamba env update --file environment.numba.yml
+    mamba env update --name $conda_env --file environment.numba.yml || conda env update --name $conda_env --file environment.numba.yml
 else
-    # conda env update --file environment.yml
-    mamba env update --file environment.yml
+    mamba env update --name $conda_env --file environment.yml || conda env update --name $conda_env --file environment.yml
 fi
 
 fix_libopenblas

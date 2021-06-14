@@ -3,11 +3,12 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from stumpy import core
-import stumpy
+from . import core
+from .aamp import aamp
+from .config import STUMPY_EXCL_ZONE_DENOM
 
 
-class aampi(object):
+class aampi:
     """
     Compute an incremental non-normalized (i.e., without z-normalization) matrix profile
     for streaming data
@@ -20,10 +21,6 @@ class aampi(object):
 
     m : int
         Window size
-
-    excl_zone : int, default None
-        The half width for the exclusion zone relative to the current
-        sliding window
 
     egress : bool, default True
         If set to `True`, the oldest data point in the time series is removed and
@@ -63,7 +60,7 @@ class aampi(object):
     Note that we have extended this algorithm for AB-joins as well.
     """
 
-    def __init__(self, T, m, excl_zone=None, egress=True):
+    def __init__(self, T, m, egress=True):
         """
         Initialize the `stumpi` object
 
@@ -76,10 +73,6 @@ class aampi(object):
         m : int
             Window size
 
-        excl_zone : int, default None
-            The half width for the exclusion zone relative to the current
-            sliding window
-
         egress : bool, default True
             If set to `True`, the oldest data point in the time series is removed and
             the time series length remains constant rather than forever increasing
@@ -89,16 +82,13 @@ class aampi(object):
         core.check_dtype(self._T)
         self._m = m
         self._n = self._T.shape[0]
-        if excl_zone is not None:  # pragma: no cover
-            self._excl_zone = excl_zone
-        else:
-            self._excl_zone = int(np.ceil(self._m / 4))
+        self._excl_zone = int(np.ceil(self._m / STUMPY_EXCL_ZONE_DENOM))
         self._egress = egress
 
-        mp = stumpy.aamp(self._T, self._m)
-        self._P = mp[:, 0]
-        self._I = mp[:, 1]
-        self._left_I = mp[:, 2]
+        mp = aamp(self._T, self._m)
+        self._P = mp[:, 0].astype(np.float64)
+        self._I = mp[:, 1].astype(np.int64)
+        self._left_I = mp[:, 2].astype(np.int64)
         self._left_P = np.empty(self._P.shape)
         self._left_P[:] = np.inf
 

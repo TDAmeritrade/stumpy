@@ -1,7 +1,7 @@
 import math
 import numpy as np
 from scipy.spatial.distance import cdist
-from stumpy import core
+from stumpy import core, config
 
 
 def z_norm(a, axis=0, threshold=1e-7):
@@ -159,7 +159,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None):
     n_B = T_B.shape[0]
     l = n_A - m + 1
     if exclusion_zone is None:
-        exclusion_zone = int(np.ceil(m / 4))
+        exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
     if ignore_trivial:
         diags = np.arange(exclusion_zone + 1, n_A - m + 1)
@@ -226,7 +226,7 @@ def aamp(T_A, m, T_B=None, exclusion_zone=None):
     n_B = T_B.shape[0]
     l = n_A - m + 1
     if exclusion_zone is None:
-        exclusion_zone = int(np.ceil(m / 4))
+        exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
     distance_matrix = cdist(rolling_T_A, rolling_T_B)
 
@@ -537,7 +537,7 @@ class aampi_egress(object):
         self._T_isfinite = np.isfinite(self._T)
         self._m = m
         if excl_zone is None:
-            self._excl_zone = int(np.ceil(self._m / 4))
+            self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
         mp = aamp(T, m)
@@ -604,7 +604,7 @@ class stumpi_egress(object):
         self._T_isfinite = np.isfinite(self._T)
         self._m = m
         if excl_zone is None:
-            self._excl_zone = int(np.ceil(self._m / 4))
+            self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
         mp = stump(T, m)
@@ -944,6 +944,52 @@ def aamp_ostinato(Ts, m):
     return radius, Ts_idx, subseq_idx
 
 
+def mpdist_vect(T_A, T_B, m, percentage=0.05, k=None):
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    j = n_A - m + 1  # `k` is reserved for `P_ABBA` selection
+    P_ABBA = np.empty(2 * j, dtype=np.float64)
+    MPdist_vect = np.empty(n_B - n_A + 1)
+
+    if k is None:
+        percentage = min(percentage, 1.0)
+        percentage = max(percentage, 0.0)
+        k = min(math.ceil(percentage * (2 * n_A)), 2 * j - 1)
+
+    k = min(int(k), P_ABBA.shape[0] - 1)
+
+    for i in range(n_B - n_A + 1):
+        P_ABBA[:j] = stump(T_A, m, T_B[i : i + n_A])[:, 0]
+        P_ABBA[j:] = stump(T_B[i : i + n_A], m, T_A)[:, 0]
+        P_ABBA.sort()
+        MPdist_vect[i] = P_ABBA[min(k, P_ABBA.shape[0] - 1)]
+
+    return MPdist_vect
+
+
+def aampdist_vect(T_A, T_B, m, percentage=0.05, k=None):
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    j = n_A - m + 1  # `k` is reserved for `P_ABBA` selection
+    P_ABBA = np.empty(2 * j, dtype=np.float64)
+    aaMPdist_vect = np.empty(n_B - n_A + 1)
+
+    if k is None:
+        percentage = min(percentage, 1.0)
+        percentage = max(percentage, 0.0)
+        k = min(math.ceil(percentage * (2 * n_A)), 2 * j - 1)
+
+    k = min(int(k), P_ABBA.shape[0] - 1)
+
+    for i in range(n_B - n_A + 1):
+        P_ABBA[:j] = aamp(T_A, m, T_B[i : i + n_A])[:, 0]
+        P_ABBA[j:] = aamp(T_B[i : i + n_A], m, T_A)[:, 0]
+        P_ABBA.sort()
+        aaMPdist_vect[i] = P_ABBA[k]
+
+    return aaMPdist_vect
+
+
 def mpdist(T_A, T_B, m, percentage=0.05, k=None):
     percentage = min(percentage, 1.0)
     percentage = max(percentage, 0.0)
@@ -988,3 +1034,272 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None):
         MPdist = P_ABBA[k]
 
     return MPdist
+
+
+def get_all_mpdist_profiles(
+    T,
+    m,
+    percentage=1.0,
+    s=None,
+    mpdist_percentage=0.05,
+    mpdist_k=None,
+    mpdist_vect_func=mpdist_vect,
+):
+    right_pad = 0
+    if T.shape[0] % m != 0:
+        right_pad = int(m * np.ceil(T.shape[0] / m) - T.shape[0])
+        pad_width = (0, right_pad)
+        T = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
+
+    n_padded = T.shape[0]
+    D = np.empty(((n_padded // m) - 1, n_padded - m + 1))
+
+    if s is not None:
+        s = min(int(s), m)
+    else:
+        percentage = min(percentage, 1.0)
+        percentage = max(percentage, 0.0)
+        s = min(math.ceil(percentage * m), m)
+
+    # Iterate over non-overlapping subsequences, see Definition 3
+    for i in range((n_padded // m) - 1):
+        start = i * m
+        stop = (i + 1) * m
+        S_i = T[start:stop]
+        D[i, :] = mpdist_vect_func(
+            S_i,
+            T,
+            s,
+            percentage=mpdist_percentage,
+            k=mpdist_k,
+        )
+
+    stop_idx = n_padded - m + 1 - right_pad
+    D = D[:, :stop_idx]
+
+    return D
+
+
+def mpdist_snippets(
+    T,
+    m,
+    k,
+    percentage=1.0,
+    s=None,
+    mpdist_percentage=0.05,
+    mpdist_k=None,
+):
+
+    D = get_all_mpdist_profiles(
+        T,
+        m,
+        percentage,
+        s,
+        mpdist_percentage,
+        mpdist_k,
+    )
+
+    pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
+    T_padded = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
+    n_padded = T_padded.shape[0]
+
+    snippets = np.empty((k, m))
+    snippets_indices = np.empty(k, dtype=np.int64)
+    snippets_profiles = np.empty((k, D.shape[-1]))
+    snippets_fractions = np.empty(k)
+    snippets_areas = np.empty(k)
+    Q = np.inf
+    indices = np.arange(0, n_padded - m, m)
+
+    for snippet_idx in range(k):
+        min_area = np.inf
+        for i in range(D.shape[0]):
+            profile_area = np.sum(np.minimum(D[i], Q))
+            if min_area > profile_area:
+                min_area = profile_area
+                idx = i
+
+        snippets[snippet_idx] = T[indices[idx] : indices[idx] + m]
+        snippets_indices[snippet_idx] = indices[idx]
+        snippets_profiles[snippet_idx] = D[idx]
+        snippets_areas[snippet_idx] = np.sum(np.minimum(D[idx], Q))
+
+        Q = np.minimum(D[idx], Q)
+
+    total_min = np.min(snippets_profiles, axis=0)
+
+    for i in range(k):
+        mask = snippets_profiles[i] <= total_min
+        snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
+        total_min = total_min - mask.astype(float)
+
+    return (
+        snippets,
+        snippets_indices,
+        snippets_profiles,
+        snippets_fractions,
+        snippets_areas,
+    )
+
+
+def aampdist_snippets(
+    T,
+    m,
+    k,
+    percentage=1.0,
+    s=None,
+    mpdist_percentage=0.05,
+    mpdist_k=None,
+):
+
+    D = get_all_mpdist_profiles(
+        T,
+        m,
+        percentage,
+        s,
+        mpdist_percentage,
+        mpdist_k,
+        aampdist_vect,
+    )
+
+    pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
+    T_padded = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
+    n_padded = T_padded.shape[0]
+
+    snippets = np.empty((k, m))
+    snippets_indices = np.empty(k, dtype=np.int64)
+    snippets_profiles = np.empty((k, D.shape[-1]))
+    snippets_fractions = np.empty(k)
+    snippets_areas = np.empty(k)
+    Q = np.inf
+    indices = np.arange(0, n_padded - m, m)
+
+    for snippet_idx in range(k):
+        min_area = np.inf
+        for i in range(D.shape[0]):
+            profile_area = np.sum(np.minimum(D[i], Q))
+            if min_area > profile_area:
+                min_area = profile_area
+                idx = i
+
+        snippets[snippet_idx] = T[indices[idx] : indices[idx] + m]
+        snippets_indices[snippet_idx] = indices[idx]
+        snippets_profiles[snippet_idx] = D[idx]
+        snippets_areas[snippet_idx] = np.sum(np.minimum(D[idx], Q))
+
+        Q = np.minimum(D[idx], Q)
+
+    total_min = np.min(snippets_profiles, axis=0)
+
+    for i in range(k):
+        mask = snippets_profiles[i] <= total_min
+        snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
+        total_min = total_min - mask.astype(float)
+
+    return (
+        snippets,
+        snippets_indices,
+        snippets_profiles,
+        snippets_fractions,
+        snippets_areas,
+    )
+
+
+def prescrump(T_A, m, T_B, s, exclusion_zone=None):
+    dist_matrix = distance_matrix(T_A, T_B, m)
+
+    n_A = T_A.shape[0]
+    l = n_A - m + 1
+
+    P = np.empty(l)
+    I = np.empty(l, dtype=np.int64)
+    P[:] = np.inf
+    I[:] = -1
+
+    for i in np.random.permutation(range(0, l, s)):
+        distance_profile = dist_matrix[i]
+        if exclusion_zone is not None:
+            apply_exclusion_zone(distance_profile, i, exclusion_zone)
+        I[i] = np.argmin(distance_profile)
+        P[i] = distance_profile[I[i]]
+        if P[i] == np.inf:
+            I[i] = -1
+        else:
+            j = I[i]
+            for k in range(1, min(s, l - max(i, j))):
+                d = dist_matrix[i + k, j + k]
+                if d < P[i + k]:
+                    P[i + k] = d
+                    I[i + k] = j + k
+                if d < P[j + k]:
+                    P[j + k] = d
+                    I[j + k] = i + k
+
+            for k in range(1, min(s, i + 1, j + 1)):
+                d = dist_matrix[i - k, j - k]
+                if d < P[i - k]:
+                    P[i - k] = d
+                    I[i - k] = j - k
+                if d < P[j - k]:
+                    P[j - k] = d
+                    I[j - k] = i - k
+
+    return P, I
+
+
+def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
+    dist_matrix = distance_matrix(T_A, T_B, m)
+
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_A - m + 1
+
+    if exclusion_zone is not None:
+        diags = np.random.permutation(range(exclusion_zone + 1, n_A - m + 1))
+    else:
+        diags = np.random.permutation(range(-(n_A - m + 1) + 1, n_B - m + 1))
+
+    n_chunks = int(np.ceil(1.0 / percentage))
+    ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
+    diags_ranges = core._get_array_ranges(ndist_counts, n_chunks)
+    diags_ranges_start = diags_ranges[0, 0]
+    diags_ranges_stop = diags_ranges[0, 1]
+
+    out = np.full((l, 4), np.inf, dtype=object)
+    out[:, 1:] = -1
+    left_P = np.full(l, np.inf, dtype=np.float64)
+    right_P = np.full(l, np.inf, dtype=np.float64)
+
+    for diag_idx in range(diags_ranges_start, diags_ranges_stop):
+        k = diags[diag_idx]
+
+        for i in range(n_A - m + 1):
+            for j in range(n_B - m + 1):
+                if j - i == k:
+                    if dist_matrix[i, j] < out[i, 0]:
+                        out[i, 0] = dist_matrix[i, j]
+                        out[i, 1] = i + k
+
+                    if exclusion_zone is not None and dist_matrix[i, j] < out[i + k, 0]:
+                        out[i + k, 0] = dist_matrix[i, j]
+                        out[i + k, 1] = i
+
+                    # left matrix profile and left matrix profile indices
+                    if (
+                        exclusion_zone is not None
+                        and i < i + k
+                        and dist_matrix[i, j] < left_P[i + k]
+                    ):
+                        left_P[i + k] = dist_matrix[i, j]
+                        out[i + k, 2] = i
+
+                    # right matrix profile and right matrix profile indices
+                    if (
+                        exclusion_zone is not None
+                        and i + k > i
+                        and dist_matrix[i, j] < right_P[i]
+                    ):
+                        right_P[i] = dist_matrix[i, j]
+                        out[i, 3] = i + k
+
+    return out

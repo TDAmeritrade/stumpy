@@ -5,6 +5,7 @@ from scipy.spatial.distance import cdist
 from stumpy import core, config
 import pytest
 import os
+import math
 
 import naive
 
@@ -23,6 +24,22 @@ def test_check_dtype_float32():
 
 def test_check_dtype_float64():
     assert core.check_dtype(np.random.rand(10))
+
+
+def test_get_max_window_size():
+    for n in range(3, 10):
+        ref_max_m = (
+            int(
+                n
+                - math.floor(
+                    (n + (config.STUMPY_EXCL_ZONE_DENOM - 1))
+                    // (config.STUMPY_EXCL_ZONE_DENOM + 1)
+                )
+            )
+            - 1
+        )
+        cmp_max_m = core.get_max_window_size(n)
+        assert ref_max_m == cmp_max_m
 
 
 def test_check_window_size():
@@ -773,3 +790,30 @@ def test_compare_parameters():
     assert (
         core._compare_parameters(core.rolling_window, core.z_norm, exclude=[]) is False
     )
+
+
+def test_jagged_list_to_array():
+    arr = [np.array([0, 1]), np.array([0]), np.array([0, 1, 2, 3])]
+
+    left = np.array([[0, 1, -1, -1], [0, -1, -1, -1], [0, 1, 2, 3]], dtype="int64")
+    right = core._jagged_list_to_array(arr, fill_value=-1, dtype="int64")
+    npt.assert_array_equal(left, right)
+
+    left = np.array(
+        [[0, 1, np.nan, np.nan], [0, np.nan, np.nan, np.nan], [0, 1, 2, 3]],
+        dtype="float64",
+    )
+    right = core._jagged_list_to_array(arr, fill_value=np.nan, dtype="float64")
+    npt.assert_array_equal(left, right)
+
+
+def test_jagged_list_to_array_empty():
+    arr = []
+
+    left = np.array([[]], dtype="int64")
+    right = core._jagged_list_to_array(arr, fill_value=-1, dtype="int64")
+    npt.assert_array_equal(left, right)
+
+    left = np.array([[]], dtype="float64")
+    right = core._jagged_list_to_array(arr, fill_value=np.nan, dtype="float64")
+    npt.assert_array_equal(left, right)

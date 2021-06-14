@@ -8,6 +8,7 @@ import numpy as np
 import scipy.stats
 
 from . import core
+from .config import STUMPY_EXCL_ZONE_DENOM
 
 
 def _nnmark(I):
@@ -32,7 +33,7 @@ def _nnmark(I):
 
     This is a fast and vectorized implementation of the nnmark algorithm.
     """
-    I = I.astype(int)
+    I = I.astype(np.int64)
 
     # Replace index values that are less than zero with its own positional index
     idx = np.argwhere(I < 0).flatten()
@@ -289,7 +290,7 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
     return cac, regime_locs
 
 
-class floss(object):
+class floss:
     """
     Compute the Fast Low-cost Online Semantic Segmentation (FLOSS) for
     streaming data
@@ -519,7 +520,7 @@ class floss(object):
         if not np.isfinite(t):
             self._finite_T[-1] = 0.0
         self._finite_Q[-1] = self._finite_T[-1]
-        excl_zone = int(np.ceil(self._m / 4))
+        excl_zone = int(np.ceil(self._m / STUMPY_EXCL_ZONE_DENOM))
         # Note that the start of the exclusion zone is relative to
         # the unchanging length of the matrix profile index
         zone_start = max(0, self._k - excl_zone)
@@ -568,25 +569,25 @@ class floss(object):
         """
         Get the updated 1-dimensional corrected arc curve (CAC_1D)
         """
-        return self._cac.astype(np.float)
+        return self._cac.astype(np.float64)
 
     @property
     def P_(self):
         """
         Get the updated matrix profile
         """
-        return self._mp[:, 0].astype(np.float)
+        return self._mp[:, 0].astype(np.float64)
 
     @property
     def I_(self):
         """
         Get the updated (right) matrix profile indices
         """
-        return self._mp[:, 3].astype(np.int)
+        return self._mp[:, 3].astype(np.int64)
 
     @property
     def T_(self):
         """
         Get the updated time series, `T`
         """
-        return self._T.astype(np.float)
+        return self._T.astype(np.float64)

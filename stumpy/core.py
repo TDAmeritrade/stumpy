@@ -373,6 +373,34 @@ def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
     return False
 
 
+def get_max_window_size(n):
+    """
+    Get the maximum window size for a self-join
+
+    Parameters
+    ----------
+    n : int
+        The length of the time series
+
+    Returns
+    -------
+    max_m : int
+        The maximum window size allowed given `config.STUMPY_EXCL_ZONE_DENOM`
+    """
+    max_m = (
+        int(
+            n
+            - np.floor(
+                (n + (config.STUMPY_EXCL_ZONE_DENOM - 1))
+                // (config.STUMPY_EXCL_ZONE_DENOM + 1)
+            )
+        )
+        - 1
+    )
+
+    return max_m
+
+
 def check_window_size(m, max_size=None):
     """
     Check the window size and ensure that it is greater than or equal to 3 and, if
@@ -558,7 +586,7 @@ def welford_nanstd(a, w=None):
     if w is None:
         w = a.shape[0]
 
-    return np.sqrt(welford_nanvar(a, w))
+    return np.sqrt(np.clip(welford_nanvar(a, w), a_min=0, a_max=None))
 
 
 def rolling_nanstd(a, w):
@@ -1042,7 +1070,7 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, T_squared=None):
         QT = sliding_dot_product(Q, T)
         Q_squared = np.sum(Q * Q)
         if T_squared is None:
-            T_squared = np.sum(rolling_window(T * T, m), axis=1)
+            T_squared = np.sum(rolling_window(T * T, m), axis=-1)
         distance_profile[:] = _mass_absolute(Q_squared, T_squared, QT)
         distance_profile[~T_subseq_isfinite] = np.inf
 
@@ -1199,8 +1227,9 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
 )
 def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
     """
-    Compute the distance profile using the MASS algorithm. This is a convenience
-    wrapper around the Numba JIT compiled `_mass` function.
+    Compute the distance profile using the MASS algorithm
+
+    This is a convenience wrapper around the Numba JIT compiled `_mass` function.
 
     Parameters
     ----------
@@ -1223,7 +1252,7 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
 
     Returns
     -------
-    output : ndarray
+    distance_profile : ndarray
         Distance profile
 
     Notes
@@ -1731,3 +1760,42 @@ def _get_partial_mp_func(mp_func, dask_client=None, device_id=None):
         partial_mp_func = mp_func
 
     return partial_mp_func
+
+
+def _jagged_list_to_array(a, fill_value, dtype):
+    """
+    Fits a 2d jagged list into a 2d numpy array of the specified dtype.
+    The resulting array will have a shape of (len(a), l), where l is the length
+    of the longest list in a. All other lists will be padded with `fill_value`.
+
+    Example:
+    [[2, 1, 1], [0]] with a fill value of -1 will become
+    np.array([[2, 1, 1], [0, -1, -1]])
+
+    Parameters
+    ----------
+    a : list
+        Jagged list (list-of-lists) to be converted into a ndarray.
+
+    fill_value : int or float
+        Missing entries will be filled with this value.
+
+    dtype : dtype
+        The desired data-type for the array.
+
+    Return
+    ------
+    out : ndarray
+        The resuling ndarray of dtype `dtype`.
+    """
+    if not a:
+        return np.array([[]])
+
+    max_length = max([len(row) for row in a])
+
+    out = np.full((len(a), max_length), fill_value, dtype=dtype)
+
+    for i, row in enumerate(a):
+        out[i, : row.size] = row
+
+    return out
