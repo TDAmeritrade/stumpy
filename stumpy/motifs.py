@@ -7,8 +7,7 @@ import logging
 import numpy as np
 from .aamp_motifs import aamp_motifs, aamp_match
 
-from . import core
-from .config import STUMPY_EXCL_ZONE_DENOM
+from . import core, config
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +218,7 @@ def motifs(
         )
 
     m = T.shape[-1] - P.shape[-1] + 1
-    excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     if max_matches is None:  # pragma: no cover
         max_matches = np.inf
     if cutoff is None:  # pragma: no cover
@@ -312,7 +311,7 @@ def match(
     d, n = T.shape
     m = Q.shape[1]
 
-    excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     if max_matches is None:  # pragma: no cover
         max_matches = np.inf
 

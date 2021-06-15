@@ -5,11 +5,11 @@
 import logging
 
 import numpy as np
-from numba import njit, config
+from numba import njit
+import numba
 
-from . import core
+from . import core, config
 from .aamp import _aamp
-from .config import STUMPY_D_SQUARED_THRESHOLD, STUMPY_EXCL_ZONE_DENOM
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +100,7 @@ def _prescraamp(
         )
         squared_distance_profile[:] = np.square(squared_distance_profile)
         squared_distance_profile[
-            squared_distance_profile < STUMPY_D_SQUARED_THRESHOLD
+            squared_distance_profile < config.STUMPY_D_SQUARED_THRESHOLD
         ] = 0.0
         squared_distance_profile[~T_B_subseq_isfinite] = np.inf
     if excl_zone is not None:
@@ -128,7 +128,7 @@ def _prescraamp(
                 D_squared = np.inf
             else:
                 D_squared = T_A_squared[i + k] + T_B_squared[j + k] - 2 * QT_j
-                if D_squared < STUMPY_D_SQUARED_THRESHOLD:  # pragma: no cover
+                if D_squared < config.STUMPY_D_SQUARED_THRESHOLD:  # pragma: no cover
                     D_squared = 0.0
             if D_squared < P_squared[i + k]:
                 P_squared[i + k] = D_squared
@@ -145,7 +145,7 @@ def _prescraamp(
                 D_squared = np.inf
             else:
                 D_squared = T_A_squared[i - k] + T_B_squared[j - k] - 2 * QT_j
-                if D_squared < STUMPY_D_SQUARED_THRESHOLD:  # pragma: no cover
+                if D_squared < config.STUMPY_D_SQUARED_THRESHOLD:  # pragma: no cover
                     D_squared = 0.0
             if D_squared < P_squared[i - k]:
                 P_squared[i - k] = D_squared
@@ -201,7 +201,7 @@ def prescraamp(T_A, m, T_B=None, s=None):
 
     if T_B is None:
         T_B = T_A
-        excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
+        excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     else:
         excl_zone = None
 
@@ -406,7 +406,7 @@ class scraamp:
         self._P[:, :] = np.inf
         self._I[:, :] = -1
 
-        self._excl_zone = int(np.ceil(self._m / STUMPY_EXCL_ZONE_DENOM))
+        self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         if s is None:
             s = self._excl_zone
@@ -436,7 +436,7 @@ class scraamp:
                 range(-(self._n_A - self._m + 1) + 1, self._n_B - self._m + 1)
             )
 
-        self._n_threads = config.NUMBA_NUM_THREADS
+        self._n_threads = numba.config.NUMBA_NUM_THREADS
         self._percentage = np.clip(percentage, 0.0, 1.0)
         self._n_chunks = int(np.ceil(1.0 / percentage))
         self._ndist_counts = core._count_diagonal_ndist(

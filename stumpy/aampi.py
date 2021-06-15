@@ -3,9 +3,8 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from . import core
+from . import core, config
 from .aamp import aamp
-from .config import STUMPY_EXCL_ZONE_DENOM
 
 
 class aampi:
@@ -82,7 +81,7 @@ class aampi:
         core.check_dtype(self._T)
         self._m = m
         self._n = self._T.shape[0]
-        self._excl_zone = int(np.ceil(self._m / STUMPY_EXCL_ZONE_DENOM))
+        self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
         self._egress = egress
 
         mp = aamp(self._T, self._m)
