@@ -187,21 +187,20 @@ def _aamp(T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_t
 
     for thread_idx in prange(n_threads):
         # Compute and update P, I within a single thread while avoiding race conditions
-        if len(diags) > 0 and diags_ranges[thread_idx, 0] < diags_ranges[thread_idx, 1]:
-            _compute_diagonal(
-                T_A,
-                T_B,
-                m,
-                T_A_subseq_isfinite,
-                T_B_subseq_isfinite,
-                diags,
-                diags_ranges[thread_idx, 0],
-                diags_ranges[thread_idx, 1],
-                thread_idx,
-                P,
-                I,
-                ignore_trivial,
-            )
+        _compute_diagonal(
+            T_A,
+            T_B,
+            m,
+            T_A_subseq_isfinite,
+            T_B_subseq_isfinite,
+            diags,
+            diags_ranges[thread_idx, 0],
+            diags_ranges[thread_idx, 1],
+            thread_idx,
+            P,
+            I,
+            ignore_trivial,
+        )
 
     # Reduction of results from all threads
     for thread_idx in range(1, n_threads):

@@ -1651,7 +1651,7 @@ def _get_array_ranges(a, n_chunks, truncate=False):
         contains the stop indices.
     """
     array_ranges = np.zeros((n_chunks, 2), np.int64)
-    if n_chunks > 0:
+    if a.shape[0] > 0 and n_chunks > 0:
         cumsum = a.cumsum() / a.sum()
         insert = np.linspace(0, 1, n_chunks + 1)[1:-1]
         idx = 1 + np.searchsorted(cumsum, insert)
