@@ -3,7 +3,7 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from . import core, stump, scrump
+from . import core, stump, scrump, stumped
 
 
 def _bfs_indices(n):
@@ -174,7 +174,7 @@ def _binarize_pan(pan, threshold, bfs_indices, n_processed):
     pan[idx] = np.where(pan[idx] <= threshold, 0.0, 1.0)
 
 
-class stimp:
+class _stimp:
     """
     Compute the Pan Matrix Profile
 
@@ -207,6 +207,21 @@ class stimp:
         A flag for whether or not to perform the PreSCRIMP calculation prior to
         computing SCRIMP. If set to `True`, this is equivalent to computing
         SCRIMP++. This parameter is ignored when `percentage = 1.0`.
+
+    dask_client : client, default None
+        A Dask Distributed client that is connected to a Dask scheduler and
+        Dask workers. Setting up a Dask distributed cluster is beyond the
+        scope of this library. Please refer to the Dask Distributed
+        documentation.
+
+    device_id : int or list, default None
+        The (GPU) device number to use. The default value is `0`. A list of
+        valid device ids (int) may also be provided for parallel GPU-STUMP
+        computation. A list of all valid device ids can be obtained by
+        executing `[device.id for device in numba.cuda.list_devices()]`.
+
+    mp_func : object, default stump
+        The matrix profile function to use when `percentage = 1.0`
 
     Attributes
     ----------
@@ -241,6 +256,9 @@ class stimp:
         percentage=0.01,
         pre_scrump=True,
         # normalize=True,
+        dask_client=None,
+        device_id=None,
+        mp_func=stump,
     ):
         """
         Initialize the `stimp` object and compute the Pan Matrix Profile
@@ -272,6 +290,21 @@ class stimp:
             A flag for whether or not to perform the PreSCRIMP calculation prior to
             computing SCRIMP. If set to `True`, this is equivalent to computing
             SCRIMP++. This parameter is ignored when `percentage = 1.0`.
+
+        dask_client : client, default None
+        A Dask Distributed client that is connected to a Dask scheduler and
+        Dask workers. Setting up a Dask distributed cluster is beyond the
+        scope of this library. Please refer to the Dask Distributed
+        documentation.
+
+        device_id : int or list, default None
+            The (GPU) device number to use. The default value is `0`. A list of
+            valid device ids (int) may also be provided for parallel GPU-STUMP
+            computation. A list of all valid device ids can be obtained by
+            executing `[device.id for device in numba.cuda.list_devices()]`.
+
+        mp_func : object, default stump
+            The matrix profile function to use when `percentage = 1.0`
         """
         self._T = T
         if max_m is None:
@@ -291,6 +324,10 @@ class stimp:
         self._percentage = percentage
         self._pre_scrump = pre_scrump
         # self._normalize = normalize
+        partial_mp_func = core._get_partial_mp_func(
+            mp_func, dask_client=dask_client, device_id=device_id
+        )
+        self._mp_func = partial_mp_func
 
         self._PAN = np.full((self._M.shape[0], self._T.shape[0]), fill_value=np.inf)
 
@@ -322,7 +359,7 @@ class stimp:
                     self._bfs_indices[self._n_processed], : approx.P_.shape[0]
                 ] = approx.P_
             else:
-                out = stump(
+                out = self._mp_func(
                     self._T,
                     m,
                     ignore_trivial=True,
@@ -421,3 +458,220 @@ class stimp:
     #     Get the total number of windows that have been processed
     #     """
     #     return self._n_processed
+
+
+class stimp(_stimp):
+    """
+    Compute the Pan Matrix Profile
+
+    This is based on the SKIMP algorithm.
+
+    Parameters
+    ----------
+    T : ndarray
+        The time series or sequence for which to compute the pan matrix profile
+
+    m_start : int, default 3
+        The starting (or minimum) subsequence window size for which a matrix profile
+        may be computed
+
+    m_stop : int, default None
+        The stopping (or maximum) subsequence window size for which a matrix profile
+        may be computed. When `m_stop = Non`, this is set to the maximum allowable
+        subsequence window size
+
+    m_step : int, default 1
+        The step between subsequence window sizes
+
+    percentage : float, default 0.01
+        The percentage of the full matrix profile to compute for each subsequence
+        window size. When `percentage < 1.0`, then the `scrump` algorithm is used.
+        Otherwise, the `stump` algorithm is used when the exact matrix profile is
+        requested.
+
+    pre_scrump : bool, default True
+        A flag for whether or not to perform the PreSCRIMP calculation prior to
+        computing SCRIMP. If set to `True`, this is equivalent to computing
+        SCRIMP++. This parameter is ignored when `percentage = 1.0`.
+
+    Attributes
+    ----------
+    PAN_ : ndarray
+        The transformed (i.e., normalized, contrasted, binarized, and repeated)
+        pan matrix profile
+
+    M_ : ndarray
+        The full list of (breadth first search (level) ordered) subsequence window
+        sizes
+
+    Methods
+    -------
+    update():
+        Compute the next matrix profile using the next available (breadth-first-search
+        (level) ordered) subsequence window size and update the pan matrix profile
+
+    Notes
+    -----
+    `DOI: 10.1109/ICBK.2019.00031 \
+    <https://www.cs.ucr.edu/~eamonn/PAN_SKIMP%20%28Matrix%20Profile%20XX%29.pdf>`__
+
+    See Table 2
+    """
+
+    def __init__(
+        self,
+        T,
+        min_m=3,
+        max_m=None,
+        step=1,
+        percentage=0.01,
+        pre_scrump=True,
+        # normalize=True,
+    ):
+        """
+        Initialize the `stimp` object and compute the Pan Matrix Profile
+
+        Parameters
+        ----------
+        T : ndarray
+            The time series or sequence for which to compute the pan matrix profile
+
+        min_m : int, default 3
+            The minimum subsequence window size to consider computing a matrix profile
+            for
+
+        max_m : int, default None
+            The maximum subsequence window size to consider computing a matrix profile
+            for. When `max_m = None`, this is set to the maximum allowable subsequence
+            window size
+
+        step : int, default 1
+            The step between subsequence window sizes
+
+        percentage : float, default 0.01
+            The percentage of the full matrix profile to compute for each subsequence
+            window size. When `percentage < 1.0`, then the `scrump` algorithm is used.
+            Otherwise, the `stump` algorithm is used when the exact matrix profile is
+            requested.
+
+        pre_scrump : bool, default True
+            A flag for whether or not to perform the PreSCRIMP calculation prior to
+            computing SCRIMP. If set to `True`, this is equivalent to computing
+            SCRIMP++. This parameter is ignored when `percentage = 1.0`.
+        """
+        super().__init__(
+            T,
+            min_m=min_m,
+            max_m=max_m,
+            step=step,
+            percentage=percentage,
+            pre_scrump=pre_scrump,
+            # normalize=normalize,
+            mp_func=stump,
+        )
+
+
+class stimped(_stimp):
+    """
+    Compute the Pan Matrix Profile with a distributed dask cluster
+
+    This is based on the SKIMP algorithm.
+
+    Parameters
+    ----------
+    T : ndarray
+        The time series or sequence for which to compute the pan matrix profile
+
+    m_start : int, default 3
+        The starting (or minimum) subsequence window size for which a matrix profile
+        may be computed
+
+    m_stop : int, default None
+        The stopping (or maximum) subsequence window size for which a matrix profile
+        may be computed. When `m_stop = Non`, this is set to the maximum allowable
+        subsequence window size
+
+    m_step : int, default 1
+        The step between subsequence window sizes
+
+    Attributes
+    ----------
+    PAN_ : ndarray
+        The transformed (i.e., normalized, contrasted, binarized, and repeated)
+        pan matrix profile
+
+    M_ : ndarray
+        The full list of (breadth first search (level) ordered) subsequence window
+        sizes
+
+    Methods
+    -------
+    update():
+        Compute the next matrix profile using the next available (breadth-first-search
+        (level) ordered) subsequence window size and update the pan matrix profile
+
+    Notes
+    -----
+    `DOI: 10.1109/ICBK.2019.00031 \
+    <https://www.cs.ucr.edu/~eamonn/PAN_SKIMP%20%28Matrix%20Profile%20XX%29.pdf>`__
+
+    See Table 2
+    """
+
+    def __init__(
+        self,
+        dask_client,
+        T,
+        min_m=3,
+        max_m=None,
+        step=1,
+        # normalize=True,
+    ):
+        """
+        Initialize the `stimp` object and compute the Pan Matrix Profile
+
+        Parameters
+        ----------
+        dask_client : client
+            A Dask Distributed client that is connected to a Dask scheduler and
+            Dask workers. Setting up a Dask distributed cluster is beyond the
+            scope of this library. Please refer to the Dask Distributed
+            documentation.
+
+        T : ndarray
+            The time series or sequence for which to compute the pan matrix profile
+
+        min_m : int, default 3
+            The minimum subsequence window size to consider computing a matrix profile
+            for
+
+        max_m : int, default None
+            The maximum subsequence window size to consider computing a matrix profile
+            for. When `max_m = None`, this is set to the maximum allowable subsequence
+            window size
+
+        step : int, default 1
+            The step between subsequence window sizes
+
+        percentage : float, default 0.01
+            The percentage of the full matrix profile to compute for each subsequence
+            window size. When `percentage < 1.0`, then the `scrump` algorithm is used.
+            Otherwise, the `stump` algorithm is used when the exact matrix profile is
+            requested.
+
+        pre_scrump : bool, default True
+            A flag for whether or not to perform the PreSCRIMP calculation prior to
+            computing SCRIMP. If set to `True`, this is equivalent to computing
+            SCRIMP++. This parameter is ignored when `percentage = 1.0`.
+        """
+        super().__init__(
+            T,
+            min_m=min_m,
+            max_m=max_m,
+            step=step,
+            percentage=1.0,
+            pre_scrump=False,
+            # normalize=normalize,
+            dask_client=dask_client,
+            mp_func=stumped,
+        )

@@ -369,30 +369,31 @@ def _stump(
 
     for thread_idx in prange(n_threads):
         # Compute and update cov, I within a single thread to avoiding race conditions
-        _compute_diagonal(
-            T_A,
-            T_B,
-            m,
-            M_T,
-            μ_Q,
-            Σ_T_inverse,
-            σ_Q_inverse,
-            cov_a,
-            cov_b,
-            cov_c,
-            cov_d,
-            T_A_subseq_isfinite,
-            T_B_subseq_isfinite,
-            T_A_subseq_isconstant,
-            T_B_subseq_isconstant,
-            diags,
-            diags_ranges[thread_idx, 0],
-            diags_ranges[thread_idx, 1],
-            thread_idx,
-            ρ,
-            I,
-            ignore_trivial,
-        )
+        if len(diags) > 0 and diags_ranges[thread_idx, 0] < diags_ranges[thread_idx, 1]:
+            _compute_diagonal(
+                T_A,
+                T_B,
+                m,
+                M_T,
+                μ_Q,
+                Σ_T_inverse,
+                σ_Q_inverse,
+                cov_a,
+                cov_b,
+                cov_c,
+                cov_d,
+                T_A_subseq_isfinite,
+                T_B_subseq_isfinite,
+                T_A_subseq_isconstant,
+                T_B_subseq_isconstant,
+                diags,
+                diags_ranges[thread_idx, 0],
+                diags_ranges[thread_idx, 1],
+                thread_idx,
+                ρ,
+                I,
+                ignore_trivial,
+            )
 
     # Reduction of results from all threads
     for thread_idx in range(1, n_threads):
