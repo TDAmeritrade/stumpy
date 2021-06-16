@@ -33,6 +33,7 @@ if cuda.is_available():
     from .gpu_aamp_ostinato import gpu_aamp_ostinato  # noqa: F401
     from .gpu_mpdist import gpu_mpdist  # noqa: F401
     from .gpu_aampdist import gpu_aampdist  # noqa: F401
+    from .gpu_stimp import gpu_stimp  # noqa: F401
 else:  # pragma: no cover
     from .core import _gpu_stump_driver_not_found as gpu_stump  # noqa: F401
     from .core import _gpu_aamp_driver_not_found as gpu_aamp  # noqa: F401
@@ -42,6 +43,7 @@ else:  # pragma: no cover
     )  # noqa: F401
     from .core import _gpu_mpdist_driver_not_found as gpu_mpdist  # noqa: F401
     from .core import _gpu_aampdist_driver_not_found as gpu_aampdist  # noqa: F401
+    from .core import _gpu_stimp_driver_not_found as gpu_stimp  # noqa: F401
     import ast
     import pathlib
 
@@ -133,6 +135,21 @@ else:  # pragma: no cover
     ]
     for fd in function_definitions:
         if fd.name == "gpu_aampdist":
+            gpu_aampdist.__doc__ = ast.get_docstring(fd)
+
+    # Fix GPU-STIMP Docs
+    gpu_stimp.__doc__ = ""
+    filepath = pathlib.Path(__file__).parent / "gpu_stimp.py"
+
+    file_contents = ""
+    with open(filepath, encoding="utf8") as f:
+        file_contents = f.read()
+    module = ast.parse(file_contents)
+    function_definitions = [
+        node for node in module.body if isinstance(node, ast.FunctionDef)
+    ]
+    for fd in function_definitions:
+        if fd.name == "gpu_stimp":
             gpu_aampdist.__doc__ = ast.get_docstring(fd)
 
 try:

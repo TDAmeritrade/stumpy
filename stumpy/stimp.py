@@ -255,7 +255,6 @@ class _stimp:
         step=1,
         percentage=0.01,
         pre_scrump=True,
-        # normalize=True,
         dask_client=None,
         device_id=None,
         mp_func=stump,
@@ -292,10 +291,10 @@ class _stimp:
             SCRIMP++. This parameter is ignored when `percentage = 1.0`.
 
         dask_client : client, default None
-        A Dask Distributed client that is connected to a Dask scheduler and
-        Dask workers. Setting up a Dask distributed cluster is beyond the
-        scope of this library. Please refer to the Dask Distributed
-        documentation.
+            A Dask Distributed client that is connected to a Dask scheduler and
+            Dask workers. Setting up a Dask distributed cluster is beyond the
+            scope of this library. Please refer to the Dask Distributed
+            documentation.
 
         device_id : int or list, default None
             The (GPU) device number to use. The default value is `0`. A list of
@@ -566,7 +565,6 @@ class stimp(_stimp):
             step=step,
             percentage=percentage,
             pre_scrump=pre_scrump,
-            # normalize=normalize,
             mp_func=stump,
         )
 
@@ -579,6 +577,12 @@ class stimped(_stimp):
 
     Parameters
     ----------
+    dask_client : client
+            A Dask Distributed client that is connected to a Dask scheduler and
+            Dask workers. Setting up a Dask distributed cluster is beyond the
+            scope of this library. Please refer to the Dask Distributed
+            documentation.
+
     T : ndarray
         The time series or sequence for which to compute the pan matrix profile
 
@@ -652,17 +656,6 @@ class stimped(_stimp):
 
         step : int, default 1
             The step between subsequence window sizes
-
-        percentage : float, default 0.01
-            The percentage of the full matrix profile to compute for each subsequence
-            window size. When `percentage < 1.0`, then the `scrump` algorithm is used.
-            Otherwise, the `stump` algorithm is used when the exact matrix profile is
-            requested.
-
-        pre_scrump : bool, default True
-            A flag for whether or not to perform the PreSCRIMP calculation prior to
-            computing SCRIMP. If set to `True`, this is equivalent to computing
-            SCRIMP++. This parameter is ignored when `percentage = 1.0`.
         """
         super().__init__(
             T,
@@ -671,7 +664,6 @@ class stimped(_stimp):
             step=step,
             percentage=1.0,
             pre_scrump=False,
-            # normalize=normalize,
             dask_client=dask_client,
             mp_func=stumped,
         )

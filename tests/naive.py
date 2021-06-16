@@ -1303,3 +1303,51 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
                         out[i, 3] = i + k
 
     return out
+
+
+def normalize_pan(pan, ms, bfs_indices, n_processed):
+    idx = bfs_indices[:n_processed]
+    for i in range(n_processed):
+        norm = 1.0 / np.sqrt(2 * ms[i])
+        pan[idx] = pan[idx] * norm
+
+
+def contrast_pan(pan, threshold, bfs_indices, n_processed):
+    idx = bfs_indices[:n_processed]
+    l = n_processed * pan.shape[1]
+    tmp = pan[idx].argsort(kind="mergesort", axis=None)
+    ranks = np.empty(l, dtype=np.int64)
+    for i in range(l):
+        ranks[tmp[i]] = i
+
+    percentile = np.full(ranks.shape, np.nan)
+    percentile[:l] = np.linspace(0, 1, l)
+    percentile = percentile[ranks].reshape(pan[idx].shape)
+    for i in range(percentile.shape[0]):
+        pan[idx[i]] = 1.0 / (1.0 + np.exp(-10 * (percentile[i] - threshold)))
+
+
+def binarize_pan(pan, threshold, bfs_indices, n_processed):
+    idx = bfs_indices[:n_processed]
+    for i in range(idx.shape[0]):
+        mask = pan[idx[i]] <= threshold
+        pan[idx[i], mask] = 0.0
+        mask = pan[idx[i]] > threshold
+        pan[idx[i], mask] = 1.0
+
+
+def transform_pan(pan, ms, threshold, bfs_indices, n_processed):
+    idx = bfs_indices[:n_processed]
+    sorted_idx = np.sort(idx)
+    pan[pan == np.inf] = np.nan
+    normalize_pan(pan, ms, bfs_indices, n_processed)
+    contrast_pan(pan, threshold, bfs_indices, n_processed)
+    binarize_pan(pan, threshold, bfs_indices, n_processed)
+
+    pan[idx] = np.clip(pan[idx], 0.0, 1.0)
+
+    nrepeat = np.diff(np.append(-1, sorted_idx))
+    pan[: np.sum(nrepeat)] = np.repeat(pan[sorted_idx], nrepeat, axis=0)
+    pan[np.isnan(pan)] = np.nanmax(pan)
+
+    return pan
