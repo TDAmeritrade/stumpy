@@ -772,6 +772,16 @@ def test_get_array_ranges_exhausted_truncated():
     npt.assert_almost_equal(ref, comp)
 
 
+def test_get_array_ranges_empty_array():
+    x = np.array([])
+    n_chunks = 6
+
+    ref = naive.get_array_ranges(x, n_chunks)
+
+    comp = core._get_array_ranges(x, n_chunks)
+    npt.assert_almost_equal(ref, comp)
+
+
 def test_rolling_isfinite():
     a = np.arange(12).astype(np.float64)
     w = 3
