@@ -196,7 +196,7 @@ def _discretize(a, bins, right=True):
 
 def _subspace(D, k, include=None, discords=False):
     """
-    Compute the k-dimensional matrixrofile subspace for a given subsequence index and
+    Compute the k-dimensional matrix profile subspace for a given subsequence index and
     its nearest neighbor index
 
     Parameters
@@ -250,7 +250,7 @@ def _subspace(D, k, include=None, discords=False):
 @core.non_normalized(maamp_subspace)
 def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normalize=True):
     """
-    Compute the k-dimensional matrixrofile subspace for a given subsequence index and
+    Compute the k-dimensional matrix profile subspace for a given subsequence index and
     its nearest neighbor index
 
     Parameters
