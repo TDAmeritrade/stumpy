@@ -23,7 +23,6 @@ def _get_mask_slices(mask):
     slices: slices of indices where the mask is True
 
     """
-
     m1 = np.r_[0, mask]
     m2 = np.r_[mask, 0]
 
