@@ -3,9 +3,8 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from . import core, stump
+from . import core, stump, config
 from .aampi import aampi
-from .config import STUMPY_EXCL_ZONE_DENOM
 
 
 @core.non_normalized(aampi)
@@ -94,7 +93,7 @@ class stumpi:
         core.check_dtype(self._T)
         self._m = m
         self._n = self._T.shape[0]
-        self._excl_zone = int(np.ceil(self._m / STUMPY_EXCL_ZONE_DENOM))
+        self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
         self._T_isfinite = np.isfinite(self._T)
         self._egress = egress
 

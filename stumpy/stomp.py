@@ -6,8 +6,7 @@ import logging
 
 import numpy as np
 
-from . import core, stamp
-from .config import STUMPY_EXCL_ZONE_DENOM
+from . import core, stamp, config
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +99,7 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
     n = T_A.shape[0]
     l = n - m + 1
     excl_zone = int(
-        np.ceil(m / STUMPY_EXCL_ZONE_DENOM)
+        np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
     )  # See Definition 3 and Figure 3
 
     out = np.empty((l, 4), dtype=object)
