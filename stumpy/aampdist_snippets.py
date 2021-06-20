@@ -8,6 +8,31 @@ from .core import check_window_size
 from .aampdist import _aampdist_vect
 
 
+def _get_mask_slices(mask):
+    """
+    For a boolean vector mask, returns the slices of indices at which the mask is True.
+
+    Parameters
+    ----------
+    mask: boolean ndarray
+
+    Returns
+    -------
+    slices: slices of indices where the mask is True
+
+    """
+
+    m1 = np.r_[0, mask]
+    m2 = np.r_[mask, 0]
+
+    (starts, ) = np.where(~m1 & m2)
+    (ends, ) = np.where(m1 & ~m2)
+
+    slices = np.c_[starts, ends]
+
+    return slices
+
+
 def _get_all_aampdist_profiles(
     T,
     m,
@@ -213,6 +238,7 @@ def aampdist_snippets(
     snippets_areas = np.empty(k)
     Q = np.full(D.shape[-1], np.inf)
     indices = np.arange(0, n_padded - m, m)
+    snippets_regimes = []
 
     for i in range(k):
         profile_areas = np.sum(np.minimum(D, Q), axis=1)
@@ -231,6 +257,7 @@ def aampdist_snippets(
         mask = snippets_profiles[i] <= total_min
         snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
         total_min = total_min - mask.astype(np.float64)
+        snippets_regimes.append(_get_mask_slices(mask))
 
     return (
         snippets,
@@ -238,4 +265,5 @@ def aampdist_snippets(
         snippets_profiles,
         snippets_fractions,
         snippets_areas,
+        snippets_regimes,
     )
