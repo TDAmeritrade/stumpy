@@ -27,7 +27,7 @@ def _get_mask_slices(idx, mask):
     (starts, ) = np.where(~m1 & m2)
     (ends, ) = np.where(m1 & ~m2)
 
-    slices = np.c_[[idx]*len(starts), starts, ends]
+    slices = np.c_[[idx] * len(starts), starts, ends]
 
     return slices
 
@@ -238,7 +238,7 @@ def aampdist_snippets(
     Q = np.full(D.shape[-1], np.inf)
     indices = np.arange(0, n_padded - m, m)
     snippets_regimes = []
-    snippets_regimes = np.empty((0,3), int)
+    snippets_regimes = np.empty((0, 3), int)
 
     for i in range(k):
         profile_areas = np.sum(np.minimum(D, Q), axis=1)
@@ -257,7 +257,8 @@ def aampdist_snippets(
         mask = snippets_profiles[i] <= total_min
         snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
         total_min = total_min - mask.astype(np.float64)
-        snippets_regimes = np.append(snippets_regimes,_get_mask_slices(i, mask),axis=0)
+        slices = _get_mask_slices(i, mask)
+        snippets_regimes = np.append(snippets_regimes, slices, axis=0)
 
     return (
         snippets,
