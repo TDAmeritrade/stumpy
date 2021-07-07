@@ -5,6 +5,7 @@
 import math
 import numpy as np
 from .core import check_window_size
+from .core import _get_mask_slices
 from .aampdist import _aampdist_vect
 
 
@@ -214,7 +215,6 @@ def aampdist_snippets(
     Q = np.full(D.shape[-1], np.inf)
     indices = np.arange(0, n_padded - m, m)
     snippets_regimes = []
-    snippets_regimes = np.empty((0, 3), int)
 
     for i in range(k):
         profile_areas = np.sum(np.minimum(D, Q), axis=1)
@@ -233,8 +233,10 @@ def aampdist_snippets(
         mask = snippets_profiles[i] <= total_min
         snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
         total_min = total_min - mask.astype(np.float64)
-        slices = _get_mask_slices(i, mask)
-        snippets_regimes = np.append(snippets_regimes, slices, axis=0)
+        slices = _get_mask_slices(mask)
+        snippets_regimes.append(np.insert(slices, 0, value=i, axis=1))
+
+    snippets_regimes = np.array(snippets_regimes)
 
     return (
         snippets,
