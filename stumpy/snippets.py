@@ -188,6 +188,9 @@ def snippets(
         The area under the curve corresponding to each profile for each of the top `k`
         snippets
 
+    snippets_regimes: ndarray
+        The slices of indices that show the starting and ending indices of snippets
+
     Notes
     -----
     `DOI: 10.1109/ICBK.2018.00058 \
@@ -245,7 +248,7 @@ def snippets(
         slices = _get_mask_slices(mask)
         snippets_regimes.append(np.insert(slices, 0, i, axis=1))
 
-    snippets_regimes = np.array(snippets_regimes)
+    snippets_regimes = np.array(snippets_regimes, dtype=object)
 
     return (
         snippets,
