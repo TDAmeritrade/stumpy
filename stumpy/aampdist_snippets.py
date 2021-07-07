@@ -234,7 +234,7 @@ def aampdist_snippets(
         snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
         total_min = total_min - mask.astype(np.float64)
         slices = _get_mask_slices(mask)
-        snippets_regimes.append(np.insert(slices, 0, value=i, axis=1))
+        snippets_regimes.append(np.insert(slices, 0, i, axis=1))
 
     snippets_regimes = np.array(snippets_regimes)
 
