@@ -8,30 +8,6 @@ from .core import check_window_size
 from .aampdist import _aampdist_vect
 
 
-def _get_mask_slices(idx, mask):
-    """
-    For a boolean vector mask, returns the slices of indices at which the mask is True.
-
-    Parameters
-    ----------
-    mask: boolean ndarray
-
-    Returns
-    -------
-    slices: slices of indices where the mask is True
-
-    """
-    m1 = np.r_[0, mask]
-    m2 = np.r_[mask, 0]
-
-    (starts, ) = np.where(~m1 & m2)
-    (ends, ) = np.where(m1 & ~m2)
-
-    slices = np.c_[[idx] * len(starts), starts, ends]
-
-    return slices
-
-
 def _get_all_aampdist_profiles(
     T,
     m,
