@@ -1821,8 +1821,8 @@ def _get_mask_slices(mask):
     -------
     slices: ndarray
             slices of indices where the mask is True. Each slice has a size of two:
-            The first number is the starting index (inclusive)
-            The second number is the stopping index (exclusive)
+            The first number is the start index (inclusive)
+            The second number is the end index (exclusive)
 
     """
     m1 = np.r_[0, mask]
