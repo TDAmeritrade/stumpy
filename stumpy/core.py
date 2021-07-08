@@ -1815,21 +1815,21 @@ def _get_mask_slices(mask):
     Parameters
     ----------
     mask: ndarray
-          A boolean 1D array
+        A boolean 1D array
 
     Returns
     -------
     slices: ndarray
-            slices of indices where the mask is True. Each slice has a size of two:
-            The first number is the start index (inclusive)
-            The second number is the end index (exclusive)
+        slices of indices where the mask is True. Each slice has a size of two:
+        The first number is the start index (inclusive)
+        The second number is the end index (exclusive)
 
     """
     m1 = np.r_[0, mask]
     m2 = np.r_[mask, 0]
 
-    (starts, ) = np.where(~m1 & m2)
-    (ends, ) = np.where(m1 & ~m2)
+    (starts,) = np.where(~m1 & m2)
+    (ends,) = np.where(m1 & ~m2)
 
     slices = np.c_[starts, ends]
 

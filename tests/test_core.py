@@ -10,6 +10,22 @@ import math
 import naive
 
 
+def naive_get_mask_slices(mask):
+    idx = []
+
+    tmp = np.r_[0, mask]
+    for i, val in enumerate(np.diff(tmp)):
+        if val == 1:
+            idx.append(i)
+        if val == -1:
+            idx.append(i)
+
+    if tmp[-1]:
+        idx.append(len(mask))
+
+    return np.array(idx).reshape(len(idx) // 2, 2)
+
+
 def naive_rolling_window_dot_product(Q, T):
     window = len(Q)
     result = np.zeros(len(T) - window + 1)
@@ -829,22 +845,6 @@ def test_jagged_list_to_array_empty():
     npt.assert_array_equal(left, right)
 
 
-def naive_get_mask_slices(mask):
-    idx = []
-
-    tmp = np.r_[0, mask]
-    for i, val in enumerate(np.diff(tmp)):
-        if val == 1:
-            idx.append(i)
-        if val == -1:
-            idx.append(i)
-
-    if tmp[-1]:
-        idx.append(len(mask))
-
-    return np.array(idx).reshape(len(idx) // 2, 2)
-
-
 def test_get_mask_slices():
     bool_lst = [False, True]
     mask_cases = [
@@ -852,7 +852,8 @@ def test_get_mask_slices():
         for x in bool_lst
         for y in bool_lst
         for z in bool_lst
-        for w in bool_lst]
+        for w in bool_lst
+    ]
 
     for mask in mask_cases:
         ref_slices = naive_get_mask_slices(mask)
