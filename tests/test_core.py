@@ -827,3 +827,34 @@ def test_jagged_list_to_array_empty():
     left = np.array([[]], dtype="float64")
     right = core._jagged_list_to_array(arr, fill_value=np.nan, dtype="float64")
     npt.assert_array_equal(left, right)
+
+
+def naive_get_mask_slices(mask):
+    idx = []
+
+    tmp = np.r_[0, mask]
+    for i, val in enumerate(np.diff(tmp)):
+        if val == 1:
+            idx.append(i)
+        if val == -1:
+            idx.append(i)
+
+    if tmp[-1]:
+        idx.append(len(mask))
+
+    return np.array(idx).reshape(len(idx) // 2, 2)
+
+
+def test_get_mask_slices():
+    bool_lst = [False, True]
+    mask_cases = [
+        [x, y, z, w]
+        for x in bool_lst
+        for y in bool_lst
+        for z in bool_lst
+        for w in bool_lst]
+
+    for mask in mask_cases:
+        ref_slices = naive_get_mask_slices(mask)
+        comp_slices = core._get_mask_slices(mask)
+        npt.assert_array_equal(ref_slices, comp_slices)
