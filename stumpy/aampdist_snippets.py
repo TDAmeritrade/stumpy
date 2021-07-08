@@ -238,8 +238,9 @@ def aampdist_snippets(
         slices = _get_mask_slices(mask)
         snippets_regimes_list.append(slices)
 
-    snippets_regimes = np.empty((sum([len(x) for x in snippets_regimes_list]), 3), dtype=object)
-    snippets_regimes[:, 0] = np.repeat(np.arange(len(snippets_regimes_list)), [regime.shape[0] for regime in snippets_regimes_list])
+    n_slices = [regime.shape[0] for regime in snippets_regimes_list]
+    snippets_regimes = np.empty((sum(n_slices), 3), dtype=object)
+    snippets_regimes[:, 0] = np.repeat(np.arange(len(snippets_regimes_list)), n_slices)
     snippets_regimes[:, 1:] = np.vstack(snippets_regimes_list)
 
     return (
