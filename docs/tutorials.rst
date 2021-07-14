@@ -5,7 +5,7 @@ Tutorials
 .. image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/TDAmeritrade/stumpy/main?filepath=notebooks
     :alt: Binder
-
+|
 .. toctree::
     :maxdepth: 1
     :glob:
