@@ -6,8 +6,6 @@ Tutorials
     :target: https://mybinder.org/v2/gh/TDAmeritrade/stumpy/main?filepath=notebooks
     :alt: Binder
 
-:raw-html:`<br />`
-
 .. toctree::
     :maxdepth: 1
     :glob:
