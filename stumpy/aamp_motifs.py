@@ -175,13 +175,12 @@ def aamp_motifs(
         will be returned.
 
     max_motifs : int, default 1
-        The maximum number of similar matches to be returned. The resulting
-        matches are sorted by distance (starting with the most similar).
+        The maximum number of motifs to return.
 
     Return
     ------
     motif_distances : ndarray
-    The distances corresponding to a set of subsequence matches for each motif
+        The distances corresponding to a set of subsequence matches for each motif
 
     motif_indices : ndarray
         The indices corresponding to a set of subsequences matches for each motif
