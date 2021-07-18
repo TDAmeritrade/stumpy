@@ -181,8 +181,7 @@ def motifs(
         will be returned.
 
     max_motifs : int, default 1
-        The maximum number of similar matches to be returned. The resulting
-        matches are sorted by distance (starting with the most similar).
+        The maximum number of motifs to return
 
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
