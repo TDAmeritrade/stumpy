@@ -1351,3 +1351,19 @@ def transform_pan(pan, ms, threshold, bfs_indices, n_processed):
     pan[np.isnan(pan)] = np.nanmax(pan)
 
     return pan
+
+
+def _get_mask_slices(mask):
+    idx = []
+
+    tmp = np.r_[0, mask]
+    for i, val in enumerate(np.diff(tmp)):
+        if val == 1:
+            idx.append(i)
+        if val == -1:
+            idx.append(i)
+
+    if tmp[-1]:
+        idx.append(len(mask))
+
+    return np.array(idx).reshape(len(idx) // 2, 2)
