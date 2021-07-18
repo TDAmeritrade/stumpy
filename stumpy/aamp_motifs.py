@@ -61,7 +61,8 @@ def _aamp_motifs(
 
     max_matches : int
         The maximum number of similar matches to be returned. The resulting
-        matches are sorted by distance (starting with the most similar).
+        matches are sorted by distance (starting with the most similar). Note that the
+        first match is always the self-match/trivial-match for each motif.
 
     max_motifs : int
         The maximum number of motifs to return.
@@ -69,10 +70,14 @@ def _aamp_motifs(
     Return
     ------
     motif_distances : ndarray
-        The distances corresponding to a set of subsequence matches for each motif
+        The distances corresponding to a set of subsequence matches for each motif.
+        Note that the first column always corresponds to the distance for the
+        self-match/trivial-match for each motif.
 
     motif_indices : ndarray
         The indices corresponding to a set of subsequences matches for each motif
+        Note that the first column always corresponds to the index for the
+        self-match/trivial-match for each motif
     """
     n = T.shape[1]
     l = P.shape[1]
@@ -172,7 +177,8 @@ def aamp_motifs(
         returned. The resulting matches are sorted by distance, so a value of `10`
         means that the indices of the most similar `10` subsequences is returned.
         If `None`, all matches within `max_distance` of the motif representative
-        will be returned.
+        will be returned. Note that the first match is always the
+        self-match/trivial-match for each motif.
 
     max_motifs : int, default 1
         The maximum number of motifs to return.
@@ -180,10 +186,14 @@ def aamp_motifs(
     Return
     ------
     motif_distances : ndarray
-        The distances corresponding to a set of subsequence matches for each motif
+        The distances corresponding to a set of subsequence matches for each motif.
+        Note that the first column always corresponds to the distance for the
+        self-match/trivial-match for each motif.
 
     motif_indices : ndarray
         The indices corresponding to a set of subsequences matches for each motif
+        Note that the first column always corresponds to the index for the
+        self-match/trivial-match for each motif.
 
     """
     if max_motifs < 1:  # pragma: no cover
@@ -274,7 +284,7 @@ def aamp_match(
     out : ndarray
         The first column consists of distances of subsequences of `T` whose distances
         to `Q` are smaller than `max_distance`, sorted by distance (lowest to highest).
-        The second column consist of the corresponding indices in `T`.
+        The second column consists of the corresponding indices in `T`.
     """
     if len(Q.shape) == 1:
         Q = Q[np.newaxis, :]
