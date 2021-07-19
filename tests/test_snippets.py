@@ -82,9 +82,7 @@ def test_mpdist_snippets(T, m, k):
     npt.assert_almost_equal(
         ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
     )
-    npt.assert_almost_equal(
-        ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION
-    )
+    npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
     npt.assert_almost_equal(
         ref_regimes, cmp_regimes, decimal=config.STUMPY_TEST_PRECISION
     )
@@ -124,9 +122,7 @@ def test_mpdist_snippets_percentage(T, m, k, percentage):
     npt.assert_almost_equal(
         ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
     )
-    npt.assert_almost_equal(
-        ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION
-    )
+    npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
     npt.assert_almost_equal(
         ref_regimes, cmp_regimes, decimal=config.STUMPY_TEST_PRECISION
     )
@@ -166,9 +162,7 @@ def test_mpdist_snippets_s(T, m, k, s):
     npt.assert_almost_equal(
         ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
     )
-    npt.assert_almost_equal(
-        ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION
-    )
+    npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
     npt.assert_almost_equal(
         ref_regimes, cmp_regimes, decimal=config.STUMPY_TEST_PRECISION
     )
