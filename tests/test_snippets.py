@@ -61,9 +61,14 @@ def test_mpdist_snippets(T, m, k):
         ref_areas,
         ref_regimes,
     ) = naive.mpdist_snippets(T, m, k)
-    cmp_snippets, cmp_indices, cmp_profiles, cmp_fractions, cmp_areas, cmp_regimes = snippets(
-        T, m, k
-    )
+    (
+        cmp_snippets,
+        cmp_indices,
+        cmp_profiles,
+        cmp_fractions,
+        cmp_areas,
+        cmp_regimes,
+    ) = snippets(T, m, k)
 
     npt.assert_almost_equal(
         ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
@@ -80,7 +85,9 @@ def test_mpdist_snippets(T, m, k):
     npt.assert_almost_equal(
         ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION
     )
-    npt.assert_almost_equal(ref_regimes, cmp_regimes, decimal=config.STUMPY_TEST_PRECISION)
+    npt.assert_almost_equal(
+        ref_regimes, cmp_regimes, decimal=config.STUMPY_TEST_PRECISION
+    )
 
 
 @pytest.mark.parametrize("T", test_data)
@@ -96,9 +103,14 @@ def test_mpdist_snippets_percentage(T, m, k, percentage):
         ref_areas,
         ref_regimes,
     ) = naive.mpdist_snippets(T, m, k, percentage=percentage)
-    cmp_snippets, cmp_indices, cmp_profiles, cmp_fractions, cmp_areas, cmp_regimes = snippets(
-        T, m, k, percentage=percentage
-    )
+    (
+        cmp_snippets,
+        cmp_indices,
+        cmp_profiles,
+        cmp_fractions,
+        cmp_areas,
+        cmp_regimes,
+    ) = snippets(T, m, k, percentage=percentage)
 
     npt.assert_almost_equal(
         ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
@@ -114,8 +126,11 @@ def test_mpdist_snippets_percentage(T, m, k, percentage):
     )
     npt.assert_almost_equal(
         ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION
-        )
-    npt.assert_almost_equal(ref_regimes, cmp_regimes, decimal=config.STUMPY_TEST_PRECISION)
+    )
+    npt.assert_almost_equal(
+        ref_regimes, cmp_regimes, decimal=config.STUMPY_TEST_PRECISION
+    )
+
 
 @pytest.mark.parametrize("T", test_data)
 @pytest.mark.parametrize("m", m)
@@ -130,9 +145,14 @@ def test_mpdist_snippets_s(T, m, k, s):
         ref_areas,
         ref_regimes,
     ) = naive.mpdist_snippets(T, m, k, s=s)
-    cmp_snippets, cmp_indices, cmp_profiles, cmp_fractions, cmp_areas, cmp_regimes = snippets(
-        T, m, k, s=s
-    )
+    (
+        cmp_snippets,
+        cmp_indices,
+        cmp_profiles,
+        cmp_fractions,
+        cmp_areas,
+        cmp_regimes,
+    ) = snippets(T, m, k, s=s)
 
     npt.assert_almost_equal(
         ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
@@ -149,4 +169,6 @@ def test_mpdist_snippets_s(T, m, k, s):
     npt.assert_almost_equal(
         ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION
     )
-    npt.assert_almost_equal(ref_regimes, cmp_regimes, decimal=config.STUMPY_TEST_PRECISION)
+    npt.assert_almost_equal(
+        ref_regimes, cmp_regimes, decimal=config.STUMPY_TEST_PRECISION
+    )
