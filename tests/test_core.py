@@ -18,42 +18,6 @@ def naive_rolling_window_dot_product(Q, T):
     return result
 
 
-def test_check_dtype_float32():
-    assert core.check_dtype(np.random.rand(10).astype(np.float32))
-
-
-def test_check_dtype_float64():
-    assert core.check_dtype(np.random.rand(10))
-
-
-def test_get_max_window_size():
-    for n in range(3, 10):
-        ref_max_m = (
-            int(
-                n
-                - math.floor(
-                    (n + (config.STUMPY_EXCL_ZONE_DENOM - 1))
-                    // (config.STUMPY_EXCL_ZONE_DENOM + 1)
-                )
-            )
-            - 1
-        )
-        cmp_max_m = core.get_max_window_size(n)
-        assert ref_max_m == cmp_max_m
-
-
-def test_check_window_size():
-    for m in range(-1, 3):
-        with pytest.raises(ValueError):
-            core.check_window_size(m)
-
-
-def test_check_max_window_size():
-    for m in range(4, 7):
-        with pytest.raises(ValueError):
-            core.check_window_size(m, max_size=3)
-
-
 def naive_compute_mean_std(T, m):
     n = T.shape[0]
 
@@ -101,6 +65,42 @@ test_data = [
     ),
     (np.random.uniform(-1000, 1000, [8]), np.random.uniform(-1000, 1000, [64])),
 ]
+
+
+def test_check_dtype_float32():
+    assert core.check_dtype(np.random.rand(10).astype(np.float32))
+
+
+def test_check_dtype_float64():
+    assert core.check_dtype(np.random.rand(10))
+
+
+def test_get_max_window_size():
+    for n in range(3, 10):
+        ref_max_m = (
+            int(
+                n
+                - math.floor(
+                    (n + (config.STUMPY_EXCL_ZONE_DENOM - 1))
+                    // (config.STUMPY_EXCL_ZONE_DENOM + 1)
+                )
+            )
+            - 1
+        )
+        cmp_max_m = core.get_max_window_size(n)
+        assert ref_max_m == cmp_max_m
+
+
+def test_check_window_size():
+    for m in range(-1, 3):
+        with pytest.raises(ValueError):
+            core.check_window_size(m)
+
+
+def test_check_max_window_size():
+    for m in range(4, 7):
+        with pytest.raises(ValueError):
+            core.check_window_size(m, max_size=3)
 
 
 @pytest.mark.parametrize("Q, T", test_data)
