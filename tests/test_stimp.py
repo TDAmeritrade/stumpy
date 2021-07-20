@@ -23,7 +23,7 @@ def naive_bsf_indices(n):
 
     return np.array(out)
 
-    
+
 T = [
     np.array([584, -11, 23, 79, 1001, 0, -19], dtype=np.float64),
     np.random.uniform(-1000, 1000, [64]).astype(np.float64),

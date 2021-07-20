@@ -28,7 +28,7 @@ def naive_match(Q, T, excl_zone, max_distance):
 
     return np.array(result, dtype=object)
 
-    
+
 test_data = [
     (
         np.array([0.0, 1.0, 0.0]),
