@@ -1136,10 +1136,24 @@ def mpdist_snippets(
         slices = _get_mask_slices(mask)
         snippets_regimes_list.append(slices)
 
-    n_slices = [regime.shape[0] for regime in snippets_regimes_list]
-    snippets_regimes = np.empty((sum(n_slices), 3), dtype=object)
-    snippets_regimes[:, 0] = np.repeat(np.arange(len(snippets_regimes_list)), n_slices)
-    snippets_regimes[:, 1:] = np.vstack(snippets_regimes_list)
+    n_slices = []
+    for regime in snippets_regimes_list:
+        n_slices.append(regime.shape[0])
+
+    snippets_regimes = np.empty((sum(n_slices), 3), dtype=np.int64)
+    i = 0
+    j = 0
+    for n_slice in n_slices:
+        for _ in range(n_slice):
+            snippets_regimes[i, 0] = j
+            i += 1
+        j += 1
+
+    i = 0
+    for regimes in snippets_regimes_list:
+        for regime in regimes:
+            snippets_regimes[i, 1:] = regime
+            i += 1
 
     return (
         snippets,
@@ -1208,10 +1222,24 @@ def aampdist_snippets(
         slices = _get_mask_slices(mask)
         snippets_regimes_list.append(slices)
 
-    n_slices = [regime.shape[0] for regime in snippets_regimes_list]
-    snippets_regimes = np.empty((sum(n_slices), 3), dtype=object)
-    snippets_regimes[:, 0] = np.repeat(np.arange(len(snippets_regimes_list)), n_slices)
-    snippets_regimes[:, 1:] = np.vstack(snippets_regimes_list)
+    n_slices = []
+    for regime in snippets_regimes_list:
+        n_slices.append(regime.shape[0])
+
+    snippets_regimes = np.empty((sum(n_slices), 3), dtype=np.int64)
+    i = 0
+    j = 0
+    for n_slice in n_slices:
+        for _ in range(n_slice):
+            snippets_regimes[i, 0] = j
+            i += 1
+        j += 1
+
+    i = 0
+    for regimes in snippets_regimes_list:
+        for regime in regimes:
+            snippets_regimes[i, 1:] = regime
+            i += 1
 
     return (
         snippets,

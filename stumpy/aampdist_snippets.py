@@ -179,7 +179,10 @@ def aampdist_snippets(
         snippets
 
     snippets_regimes: ndarray
-        The slices of indices that show the starting and ending indices of snippets
+        The index slices corresponding to the set of regimes for each of the top `k`
+        snippets. The first column is the (zero-based) snippet index while the second
+        and third columns correspond to the (inclusive) regime start indices and the
+        (exclusive) regime stop indices, respectively.
 
     Notes
     -----
@@ -239,7 +242,7 @@ def aampdist_snippets(
         snippets_regimes_list.append(slices)
 
     n_slices = [regime.shape[0] for regime in snippets_regimes_list]
-    snippets_regimes = np.empty((sum(n_slices), 3), dtype=object)
+    snippets_regimes = np.empty((sum(n_slices), 3), dtype=np.int64)
     snippets_regimes[:, 0] = np.repeat(np.arange(len(snippets_regimes_list)), n_slices)
     snippets_regimes[:, 1:] = np.vstack(snippets_regimes_list)
 

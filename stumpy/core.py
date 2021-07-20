@@ -1810,7 +1810,8 @@ def _jagged_list_to_array(a, fill_value, dtype):
 
 def _get_mask_slices(mask):
     """
-    For a boolean vector mask, returns the slices of indices at which the mask is True.
+    For a boolean vector mask, return the (inclusive) start and (exclusive) stop
+    indices where the mask is `True`.
 
     Parameters
     ----------
