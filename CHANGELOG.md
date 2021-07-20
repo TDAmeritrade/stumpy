@@ -1,3 +1,38 @@
+# 2021-07-20    [ 1.9.0 ]:
+--------------------------
+* bugfixes
+  - Fixed scenarios where n_chunks == 0 in _get_array_ranges and fixed empty input array edge case
+* features
+  - Added `normalize` to `core.mass`
+  - Added motif discovery (`stumpy.motifs` and `stumpy.match`)
+  - Added snippets for identifying regimes (`stumpy.snippets`)
+  - Added pan matrix profile (`stumpy.stimp`, `stumpy.stimped`, `stumpy.gpu_stimp`)
+  - Added `excl_zone` parameter to config.py (`config.STUMPY_EXCL_ZONE_DENOM`)
+* tasks
+  - Aggregate or Refactor Dask Unit Tests
+  - Added script for testing latest Numba release candidate
+  - Converted bash scripts to [[ ... ]] construct
+  - Updated Python class declaration
+  - Updated to RTD to PyData Sphinx Theme
+  - Updated conda installation environment
+  - Refactored test files and added check to ensure that naive implementations always come ahead of tests
+* documentation
+  - Corrected binder badges to point to "main"
+  - Updated tutorial to discover motif/discord indices
+  - Added missing docstrings and fixed minor typos
+  - Added missing logo file and favicon to _static directory
+  - Updated source installation instructions
+  - Added instructions for Apple M1 chip
+  - Updated Contributor guide
+  - Added include/discords tutorial example to subspace
+  - Added bonus content on interpreting the columns of a matrix profile
+  - Added syntax highlighting to tutorials
+  - Replaced matplotlib params with style file
+  - Added Annotation Vectors Tutorial
+  - Added Binder links to top of tutorials
+  - Added introduction to Snippets Tutorial
+
+
 # 2021-02-04    [ 1.8.0 ]:
 --------------------------
 * bugfixes

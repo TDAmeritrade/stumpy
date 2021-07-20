@@ -29,6 +29,9 @@ STUMPY API
     stumpy.motifs
     stumpy.match
     stumpy.snippets
+    stumpy.stimp
+    stumpy.stimped
+    stumpy.gpu_stimp
 
 stump
 =====
@@ -138,3 +141,18 @@ snippets
 ========
 
 .. autofunction:: stumpy.snippets
+
+stimp
+=====
+
+.. autofunction:: stumpy.stimp
+
+stimped
+=======
+
+.. autofunction:: stumpy.stimped
+
+gpu_stimp
+=========
+
+.. autofunction:: stumpy.gpu_stimp
