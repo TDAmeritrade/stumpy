@@ -1110,6 +1110,7 @@ def mpdist_snippets(
     snippets_areas = np.empty(k)
     Q = np.inf
     indices = np.arange(0, n_padded - m, m)
+    snippets_regimes_list = []
 
     for snippet_idx in range(k):
         min_area = np.inf
@@ -1132,6 +1133,13 @@ def mpdist_snippets(
         mask = snippets_profiles[i] <= total_min
         snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
         total_min = total_min - mask.astype(float)
+        slices = _get_mask_slices(mask)
+        snippets_regimes_list.append(slices)
+
+    n_slices = [regime.shape[0] for regime in snippets_regimes_list]
+    snippets_regimes = np.empty((sum(n_slices), 3), dtype=object)
+    snippets_regimes[:, 0] = np.repeat(np.arange(len(snippets_regimes_list)), n_slices)
+    snippets_regimes[:, 1:] = np.vstack(snippets_regimes_list)
 
     return (
         snippets,
@@ -1139,6 +1147,7 @@ def mpdist_snippets(
         snippets_profiles,
         snippets_fractions,
         snippets_areas,
+        snippets_regimes,
     )
 
 
@@ -1173,6 +1182,7 @@ def aampdist_snippets(
     snippets_areas = np.empty(k)
     Q = np.inf
     indices = np.arange(0, n_padded - m, m)
+    snippets_regimes_list = []
 
     for snippet_idx in range(k):
         min_area = np.inf
@@ -1195,6 +1205,13 @@ def aampdist_snippets(
         mask = snippets_profiles[i] <= total_min
         snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
         total_min = total_min - mask.astype(float)
+        slices = _get_mask_slices(mask)
+        snippets_regimes_list.append(slices)
+
+    n_slices = [regime.shape[0] for regime in snippets_regimes_list]
+    snippets_regimes = np.empty((sum(n_slices), 3), dtype=object)
+    snippets_regimes[:, 0] = np.repeat(np.arange(len(snippets_regimes_list)), n_slices)
+    snippets_regimes[:, 1:] = np.vstack(snippets_regimes_list)
 
     return (
         snippets,
@@ -1202,6 +1219,7 @@ def aampdist_snippets(
         snippets_profiles,
         snippets_fractions,
         snippets_areas,
+        snippets_regimes,
     )
 
 
@@ -1351,3 +1369,19 @@ def transform_pan(pan, ms, threshold, bfs_indices, n_processed):
     pan[np.isnan(pan)] = np.nanmax(pan)
 
     return pan
+
+
+def _get_mask_slices(mask):
+    idx = []
+
+    tmp = np.r_[0, mask]
+    for i, val in enumerate(np.diff(tmp)):
+        if val == 1:
+            idx.append(i)
+        if val == -1:
+            idx.append(i)
+
+    if tmp[-1]:
+        idx.append(len(mask))
+
+    return np.array(idx).reshape(len(idx) // 2, 2)
