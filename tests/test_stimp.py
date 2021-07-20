@@ -8,6 +8,22 @@ import pytest
 import naive
 
 
+def naive_bsf_indices(n):
+    a = np.arange(n)
+    nodes = [a.tolist()]
+    out = []
+
+    while nodes:
+        tmp = []
+        for node in nodes:
+            for n in split(node, out):
+                if n:
+                    tmp.append(n)
+        nodes = tmp
+
+    return np.array(out)
+
+
 T = [
     np.array([584, -11, 23, 79, 1001, 0, -19], dtype=np.float64),
     np.random.uniform(-1000, 1000, [64]).astype(np.float64),
@@ -27,22 +43,6 @@ def split(node, out):
     mid = len(node) // 2
     out.append(node[mid])
     return node[:mid], node[mid + 1 :]
-
-
-def naive_bsf_indices(n):
-    a = np.arange(n)
-    nodes = [a.tolist()]
-    out = []
-
-    while nodes:
-        tmp = []
-        for node in nodes:
-            for n in split(node, out):
-                if n:
-                    tmp.append(n)
-        nodes = tmp
-
-    return np.array(out)
 
 
 @pytest.mark.parametrize("n", n)

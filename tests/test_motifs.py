@@ -6,18 +6,6 @@ from stumpy import core, motifs, match
 
 import naive
 
-test_data = [
-    (
-        np.array([0.0, 1.0, 0.0]),
-        np.array([0.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, 0.0, -0.5]),
-    ),
-    (
-        np.array([0.0, 1.0, 2.0]),
-        np.array([0.1, 1.0, 2.0, 3.0, -1.0, 0.1, 1.0, 2.0, -0.5]),
-    ),
-    (np.random.uniform(-1000, 1000, [8]), np.random.uniform(-1000, 1000, [64])),
-]
-
 
 def naive_match(Q, T, excl_zone, max_distance):
     m = Q.shape[0]
@@ -39,6 +27,19 @@ def naive_match(Q, T, excl_zone, max_distance):
         matches = [x for x in matches if x < o - excl_zone or x > o + excl_zone]
 
     return np.array(result, dtype=object)
+
+
+test_data = [
+    (
+        np.array([0.0, 1.0, 0.0]),
+        np.array([0.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, 0.0, -0.5]),
+    ),
+    (
+        np.array([0.0, 1.0, 2.0]),
+        np.array([0.1, 1.0, 2.0, 3.0, -1.0, 0.1, 1.0, 2.0, -0.5]),
+    ),
+    (np.random.uniform(-1000, 1000, [8]), np.random.uniform(-1000, 1000, [64])),
+]
 
 
 def test_motifs_one_motif():
