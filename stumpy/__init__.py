@@ -147,9 +147,7 @@ else:  # pragma: no cover
     with open(filepath, encoding="utf8") as f:
         file_contents = f.read()
     module = ast.parse(file_contents)
-    class_definitions = [
-        node for node in module.body if isinstance(node, ast.ClassDef)
-    ]
+    class_definitions = [node for node in module.body if isinstance(node, ast.ClassDef)]
     for cd in class_definitions:
         if cd.name == "gpu_stimp":
             gpu_stimp.__doc__ = ast.get_docstring(cd)
