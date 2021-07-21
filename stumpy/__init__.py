@@ -138,6 +138,8 @@ else:  # pragma: no cover
             gpu_aampdist.__doc__ = ast.get_docstring(fd)
 
     # Fix GPU-STIMP Docs
+    # Note that this is a special case for class definitions.
+    # See above for function definitions.
     gpu_stimp.__doc__ = ""
     filepath = pathlib.Path(__file__).parent / "gpu_stimp.py"
 
@@ -145,12 +147,12 @@ else:  # pragma: no cover
     with open(filepath, encoding="utf8") as f:
         file_contents = f.read()
     module = ast.parse(file_contents)
-    function_definitions = [
-        node for node in module.body if isinstance(node, ast.FunctionDef)
+    class_definitions = [
+        node for node in module.body if isinstance(node, ast.ClassDef)
     ]
-    for fd in function_definitions:
-        if fd.name == "gpu_stimp":
-            gpu_aampdist.__doc__ = ast.get_docstring(fd)
+    for cd in class_definitions:
+        if cd.name == "gpu_stimp":
+            gpu_stimp.__doc__ = ast.get_docstring(cd)
 
 try:
     _dist = get_distribution("stumpy")

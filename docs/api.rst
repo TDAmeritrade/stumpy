@@ -155,4 +155,5 @@ stimped
 gpu_stimp
 =========
 
-.. autofunction:: stumpy.gpu_stimp
+.. autofunction:: stumpy.gpu_stimp(T, min_m=3, max_m=None, step=1, device_id=0)
+
