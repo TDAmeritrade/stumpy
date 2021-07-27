@@ -5,10 +5,10 @@
 import logging
 
 import numpy as np
-from numba import njit, config
+from numba import njit
+import numba
 
-from . import core, scraamp
-from .config import STUMPY_EXCL_ZONE_DENOM
+from . import core, scraamp, config
 from .stump import _stump
 
 logger = logging.getLogger(__name__)
@@ -197,7 +197,7 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
 
     if T_B is None:
         T_B = T_A
-        excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
+        excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     else:
         excl_zone = None
 
@@ -428,7 +428,7 @@ class scrump:
         self._P[:, :] = np.inf
         self._I[:, :] = -1
 
-        self._excl_zone = int(np.ceil(self._m / STUMPY_EXCL_ZONE_DENOM))
+        self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         if s is None:
             s = self._excl_zone
@@ -458,7 +458,7 @@ class scrump:
                 range(-(self._n_A - self._m + 1) + 1, self._n_B - self._m + 1)
             )
 
-        self._n_threads = config.NUMBA_NUM_THREADS
+        self._n_threads = numba.config.NUMBA_NUM_THREADS
         self._percentage = np.clip(percentage, 0.0, 1.0)
         self._n_chunks = int(np.ceil(1.0 / percentage))
         self._ndist_counts = core._count_diagonal_ndist(

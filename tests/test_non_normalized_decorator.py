@@ -300,6 +300,7 @@ def test_snippets():
         ref_profiles,
         ref_fractions,
         ref_areas,
+        ref_regimes,
     ) = stumpy.aampdist_snippets(T, m, k)
     (
         cmp_snippets,
@@ -307,5 +308,6 @@ def test_snippets():
         cmp_profiles,
         cmp_fractions,
         cmp_areas,
+        cmp_regimes,
     ) = stumpy.snippets(T, m, k, normalize=False)
     npt.assert_almost_equal(ref_snippets, cmp_snippets)

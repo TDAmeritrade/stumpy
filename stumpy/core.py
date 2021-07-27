@@ -190,6 +190,13 @@ def _gpu_aampdist_driver_not_found(*args, **kwargs):  # pragma: no cover
     driver_not_found()
 
 
+def _gpu_stimp_driver_not_found(*args, **kwargs):  # pragma: no cover
+    """
+    Dummy function to raise CudaSupportError driver not found error.
+    """
+    driver_not_found()
+
+
 def get_pkg_name():  # pragma: no cover
     """
     Return package name.
@@ -1644,7 +1651,7 @@ def _get_array_ranges(a, n_chunks, truncate=False):
         contains the stop indices.
     """
     array_ranges = np.zeros((n_chunks, 2), np.int64)
-    if n_chunks > 0:
+    if a.shape[0] > 0 and n_chunks > 0:
         cumsum = a.cumsum() / a.sum()
         insert = np.linspace(0, 1, n_chunks + 1)[1:-1]
         idx = 1 + np.searchsorted(cumsum, insert)
@@ -1799,3 +1806,32 @@ def _jagged_list_to_array(a, fill_value, dtype):
         out[i, : row.size] = row
 
     return out
+
+
+def _get_mask_slices(mask):
+    """
+    For a boolean vector mask, return the (inclusive) start and (exclusive) stop
+    indices where the mask is `True`.
+
+    Parameters
+    ----------
+    mask: ndarray
+        A boolean 1D array
+
+    Returns
+    -------
+    slices: ndarray
+        slices of indices where the mask is True. Each slice has a size of two:
+        The first number is the start index (inclusive)
+        The second number is the end index (exclusive)
+
+    """
+    m1 = np.r_[0, mask]
+    m2 = np.r_[mask, 0]
+
+    (starts,) = np.where(~m1 & m2)
+    (ends,) = np.where(m1 & ~m2)
+
+    slices = np.c_[starts, ends]
+
+    return slices

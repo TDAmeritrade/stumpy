@@ -1110,6 +1110,7 @@ def mpdist_snippets(
     snippets_areas = np.empty(k)
     Q = np.inf
     indices = np.arange(0, n_padded - m, m)
+    snippets_regimes_list = []
 
     for snippet_idx in range(k):
         min_area = np.inf
@@ -1132,6 +1133,27 @@ def mpdist_snippets(
         mask = snippets_profiles[i] <= total_min
         snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
         total_min = total_min - mask.astype(float)
+        slices = _get_mask_slices(mask)
+        snippets_regimes_list.append(slices)
+
+    n_slices = []
+    for regime in snippets_regimes_list:
+        n_slices.append(regime.shape[0])
+
+    snippets_regimes = np.empty((sum(n_slices), 3), dtype=np.int64)
+    i = 0
+    j = 0
+    for n_slice in n_slices:
+        for _ in range(n_slice):
+            snippets_regimes[i, 0] = j
+            i += 1
+        j += 1
+
+    i = 0
+    for regimes in snippets_regimes_list:
+        for regime in regimes:
+            snippets_regimes[i, 1:] = regime
+            i += 1
 
     return (
         snippets,
@@ -1139,6 +1161,7 @@ def mpdist_snippets(
         snippets_profiles,
         snippets_fractions,
         snippets_areas,
+        snippets_regimes,
     )
 
 
@@ -1173,6 +1196,7 @@ def aampdist_snippets(
     snippets_areas = np.empty(k)
     Q = np.inf
     indices = np.arange(0, n_padded - m, m)
+    snippets_regimes_list = []
 
     for snippet_idx in range(k):
         min_area = np.inf
@@ -1195,6 +1219,27 @@ def aampdist_snippets(
         mask = snippets_profiles[i] <= total_min
         snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
         total_min = total_min - mask.astype(float)
+        slices = _get_mask_slices(mask)
+        snippets_regimes_list.append(slices)
+
+    n_slices = []
+    for regime in snippets_regimes_list:
+        n_slices.append(regime.shape[0])
+
+    snippets_regimes = np.empty((sum(n_slices), 3), dtype=np.int64)
+    i = 0
+    j = 0
+    for n_slice in n_slices:
+        for _ in range(n_slice):
+            snippets_regimes[i, 0] = j
+            i += 1
+        j += 1
+
+    i = 0
+    for regimes in snippets_regimes_list:
+        for regime in regimes:
+            snippets_regimes[i, 1:] = regime
+            i += 1
 
     return (
         snippets,
@@ -1202,6 +1247,7 @@ def aampdist_snippets(
         snippets_profiles,
         snippets_fractions,
         snippets_areas,
+        snippets_regimes,
     )
 
 
@@ -1303,3 +1349,67 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
                         out[i, 3] = i + k
 
     return out
+
+
+def normalize_pan(pan, ms, bfs_indices, n_processed):
+    idx = bfs_indices[:n_processed]
+    for i in range(n_processed):
+        norm = 1.0 / np.sqrt(2 * ms[i])
+        pan[idx] = pan[idx] * norm
+
+
+def contrast_pan(pan, threshold, bfs_indices, n_processed):
+    idx = bfs_indices[:n_processed]
+    l = n_processed * pan.shape[1]
+    tmp = pan[idx].argsort(kind="mergesort", axis=None)
+    ranks = np.empty(l, dtype=np.int64)
+    for i in range(l):
+        ranks[tmp[i]] = i
+
+    percentile = np.full(ranks.shape, np.nan)
+    percentile[:l] = np.linspace(0, 1, l)
+    percentile = percentile[ranks].reshape(pan[idx].shape)
+    for i in range(percentile.shape[0]):
+        pan[idx[i]] = 1.0 / (1.0 + np.exp(-10 * (percentile[i] - threshold)))
+
+
+def binarize_pan(pan, threshold, bfs_indices, n_processed):
+    idx = bfs_indices[:n_processed]
+    for i in range(idx.shape[0]):
+        mask = pan[idx[i]] <= threshold
+        pan[idx[i], mask] = 0.0
+        mask = pan[idx[i]] > threshold
+        pan[idx[i], mask] = 1.0
+
+
+def transform_pan(pan, ms, threshold, bfs_indices, n_processed):
+    idx = bfs_indices[:n_processed]
+    sorted_idx = np.sort(idx)
+    pan[pan == np.inf] = np.nan
+    normalize_pan(pan, ms, bfs_indices, n_processed)
+    contrast_pan(pan, threshold, bfs_indices, n_processed)
+    binarize_pan(pan, threshold, bfs_indices, n_processed)
+
+    pan[idx] = np.clip(pan[idx], 0.0, 1.0)
+
+    nrepeat = np.diff(np.append(-1, sorted_idx))
+    pan[: np.sum(nrepeat)] = np.repeat(pan[sorted_idx], nrepeat, axis=0)
+    pan[np.isnan(pan)] = np.nanmax(pan)
+
+    return pan
+
+
+def _get_mask_slices(mask):
+    idx = []
+
+    tmp = np.r_[0, mask]
+    for i, val in enumerate(np.diff(tmp)):
+        if val == 1:
+            idx.append(i)
+        if val == -1:
+            idx.append(i)
+
+    if tmp[-1]:
+        idx.append(len(mask))
+
+    return np.array(idx).reshape(len(idx) // 2, 2)

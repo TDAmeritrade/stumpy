@@ -5,11 +5,11 @@
 import logging
 
 import numpy as np
-from numba import njit, prange, config
+from numba import njit, prange
+import numba
 
-from . import core
+from . import core, config
 from .aamp import aamp
-from stumpy.config import STUMPY_D_SQUARED_THRESHOLD, STUMPY_EXCL_ZONE_DENOM
 
 logger = logging.getLogger(__name__)
 
@@ -343,7 +343,7 @@ def _stump(
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_A - m + 1
-    n_threads = config.NUMBA_NUM_THREADS
+    n_threads = numba.config.NUMBA_NUM_THREADS
     ρ = np.full((n_threads, l, 3), -np.inf)
     I = np.full((n_threads, l, 3), -1, np.int64)
 
@@ -412,11 +412,11 @@ def _stump(
     # Convert pearson correlations to distances
     D = np.abs(2 * m * (1 - ρ[0, :, :]))
     for i in prange(D.shape[0]):
-        if D[i, 0] < STUMPY_D_SQUARED_THRESHOLD:
+        if D[i, 0] < config.STUMPY_D_SQUARED_THRESHOLD:
             D[i, 0] = 0.0
-        if D[i, 1] < STUMPY_D_SQUARED_THRESHOLD:
+        if D[i, 1] < config.STUMPY_D_SQUARED_THRESHOLD:
             D[i, 1] = 0.0
-        if D[i, 2] < STUMPY_D_SQUARED_THRESHOLD:
+        if D[i, 2] < config.STUMPY_D_SQUARED_THRESHOLD:
             D[i, 2] = 0.0
     P = np.sqrt(D)
 
@@ -555,7 +555,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True):
     n_B = T_B.shape[0]
     l = n_A - m + 1
 
-    excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     out = np.empty((l, 4), dtype=object)
 
     if ignore_trivial:

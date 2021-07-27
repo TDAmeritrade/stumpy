@@ -6,8 +6,7 @@ import logging
 
 import numpy as np
 
-from . import core
-from .config import STUMPY_EXCL_ZONE_DENOM
+from . import core, config
 from .aamp import _aamp
 
 logger = logging.getLogger(__name__)
@@ -86,7 +85,7 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     n_B = T_B.shape[0]
     l = n_A - m + 1
 
-    excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     out = np.empty((l, 4), dtype=object)
 
     hosts = list(dask_client.ncores().keys())

@@ -5,10 +5,10 @@
 import logging
 
 import numpy as np
-from numba import njit, prange, config
+from numba import njit, prange
+import numba
 
-from . import core
-from stumpy.config import STUMPY_D_SQUARED_THRESHOLD, STUMPY_EXCL_ZONE_DENOM
+from . import core, config
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ def _compute_diagonal(
                     + (T_B[i + k + m - 1] - T_A[i + m - 1]) ** 2
                 )
 
-            if D_squared < STUMPY_D_SQUARED_THRESHOLD:
+            if D_squared < config.STUMPY_D_SQUARED_THRESHOLD:
                 D_squared = 0.0
 
             if T_A_subseq_isfinite[i] and T_B_subseq_isfinite[i + k]:
@@ -178,7 +178,7 @@ def _aamp(T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_t
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_A - m + 1
-    n_threads = config.NUMBA_NUM_THREADS
+    n_threads = numba.config.NUMBA_NUM_THREADS
     P = np.full((n_threads, l, 3), np.inf)
     I = np.full((n_threads, l, 3), -1, np.int64)
 
@@ -286,7 +286,7 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
     n_B = T_B.shape[0]
     l = n_A - m + 1
 
-    excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     out = np.empty((l, 4), dtype=object)
 
     if ignore_trivial:

@@ -8,8 +8,7 @@ import numpy as np
 
 from .maamp import _maamp, _get_first_maamp_profile
 from .mstump import _get_multi_QT, _preprocess_include
-from . import core
-from .config import STUMPY_EXCL_ZONE_DENOM
+from . import core, config
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +91,7 @@ def maamped(dask_client, T, m, include=None, discords=False):
     d, n = T_B.shape
     k = n - m + 1
     excl_zone = int(
-        np.ceil(m / STUMPY_EXCL_ZONE_DENOM)
+        np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
     )  # See Definition 3 and Figure 3
 
     P = np.empty((d, k), dtype="float64")

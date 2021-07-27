@@ -18,42 +18,6 @@ def naive_rolling_window_dot_product(Q, T):
     return result
 
 
-def test_check_dtype_float32():
-    assert core.check_dtype(np.random.rand(10).astype(np.float32))
-
-
-def test_check_dtype_float64():
-    assert core.check_dtype(np.random.rand(10))
-
-
-def test_get_max_window_size():
-    for n in range(3, 10):
-        ref_max_m = (
-            int(
-                n
-                - math.floor(
-                    (n + (config.STUMPY_EXCL_ZONE_DENOM - 1))
-                    // (config.STUMPY_EXCL_ZONE_DENOM + 1)
-                )
-            )
-            - 1
-        )
-        cmp_max_m = core.get_max_window_size(n)
-        assert ref_max_m == cmp_max_m
-
-
-def test_check_window_size():
-    for m in range(-1, 3):
-        with pytest.raises(ValueError):
-            core.check_window_size(m)
-
-
-def test_check_max_window_size():
-    for m in range(4, 7):
-        with pytest.raises(ValueError):
-            core.check_window_size(m, max_size=3)
-
-
 def naive_compute_mean_std(T, m):
     n = T.shape[0]
 
@@ -101,6 +65,42 @@ test_data = [
     ),
     (np.random.uniform(-1000, 1000, [8]), np.random.uniform(-1000, 1000, [64])),
 ]
+
+
+def test_check_dtype_float32():
+    assert core.check_dtype(np.random.rand(10).astype(np.float32))
+
+
+def test_check_dtype_float64():
+    assert core.check_dtype(np.random.rand(10))
+
+
+def test_get_max_window_size():
+    for n in range(3, 10):
+        ref_max_m = (
+            int(
+                n
+                - math.floor(
+                    (n + (config.STUMPY_EXCL_ZONE_DENOM - 1))
+                    // (config.STUMPY_EXCL_ZONE_DENOM + 1)
+                )
+            )
+            - 1
+        )
+        cmp_max_m = core.get_max_window_size(n)
+        assert ref_max_m == cmp_max_m
+
+
+def test_check_window_size():
+    for m in range(-1, 3):
+        with pytest.raises(ValueError):
+            core.check_window_size(m)
+
+
+def test_check_max_window_size():
+    for m in range(4, 7):
+        with pytest.raises(ValueError):
+            core.check_window_size(m, max_size=3)
 
 
 @pytest.mark.parametrize("Q, T", test_data)
@@ -772,6 +772,16 @@ def test_get_array_ranges_exhausted_truncated():
     npt.assert_almost_equal(ref, comp)
 
 
+def test_get_array_ranges_empty_array():
+    x = np.array([])
+    n_chunks = 6
+
+    ref = naive.get_array_ranges(x, n_chunks)
+
+    comp = core._get_array_ranges(x, n_chunks)
+    npt.assert_almost_equal(ref, comp)
+
+
 def test_rolling_isfinite():
     a = np.arange(12).astype(np.float64)
     w = 3
@@ -817,3 +827,19 @@ def test_jagged_list_to_array_empty():
     left = np.array([[]], dtype="float64")
     right = core._jagged_list_to_array(arr, fill_value=np.nan, dtype="float64")
     npt.assert_array_equal(left, right)
+
+
+def test_get_mask_slices():
+    bool_lst = [False, True]
+    mask_cases = [
+        [x, y, z, w]
+        for x in bool_lst
+        for y in bool_lst
+        for z in bool_lst
+        for w in bool_lst
+    ]
+
+    for mask in mask_cases:
+        ref_slices = naive._get_mask_slices(mask)
+        comp_slices = core._get_mask_slices(mask)
+        npt.assert_array_equal(ref_slices, comp_slices)

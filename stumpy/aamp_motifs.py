@@ -6,8 +6,7 @@ import logging
 
 import numpy as np
 
-from . import core
-from .config import STUMPY_EXCL_ZONE_DENOM
+from . import core, config
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +19,7 @@ def _aamp_motifs(
     excl_zone,
     min_neighbors,
     max_distance,
+    cutoff,
     max_matches,
     max_motifs,
 ):
@@ -60,9 +60,14 @@ def _aamp_motifs(
         that accepts a single parameter, `D`, in its function signature, which is the
         distance profile between `Q` and `T`.
 
+    cutoff : float
+        The largest matrix profile value (distance) that a candidate motif is allowed
+        to have.
+
     max_matches : int
         The maximum number of similar matches to be returned. The resulting
-        matches are sorted by distance (starting with the most similar).
+        matches are sorted by distance (starting with the most similar). Note that the
+        first match is always the self-match/trivial-match for each motif.
 
     max_motifs : int
         The maximum number of motifs to return.
@@ -70,10 +75,14 @@ def _aamp_motifs(
     Return
     ------
     motif_distances : ndarray
-        The distances corresponding to a set of subsequence matches for each motif
+        The distances corresponding to a set of subsequence matches for each motif.
+        Note that the first column always corresponds to the distance for the
+        self-match/trivial-match for each motif.
 
     motif_indices : ndarray
         The indices corresponding to a set of subsequences matches for each motif
+        Note that the first column always corresponds to the index for the
+        self-match/trivial-match for each motif
     """
     n = T.shape[1]
     l = P.shape[1]
@@ -85,7 +94,7 @@ def _aamp_motifs(
     candidate_idx = np.argmin(P[-1])
     while len(motif_indices) < max_motifs:
         profile_value = P[-1, candidate_idx]
-        if np.isinf(profile_value):  # pragma: no cover
+        if profile_value > cutoff:  # pragma: no cover
             break
 
         # If max_distance is a constant (independent of the distance profile D of Q
@@ -173,19 +182,23 @@ def aamp_motifs(
         returned. The resulting matches are sorted by distance, so a value of `10`
         means that the indices of the most similar `10` subsequences is returned.
         If `None`, all matches within `max_distance` of the motif representative
-        will be returned.
+        will be returned. Note that the first match is always the
+        self-match/trivial-match for each motif.
 
     max_motifs : int, default 1
-        The maximum number of similar matches to be returned. The resulting
-        matches are sorted by distance (starting with the most similar).
+        The maximum number of motifs to return.
 
     Return
     ------
     motif_distances : ndarray
-    The distances corresponding to a set of subsequence matches for each motif
+        The distances corresponding to a set of subsequence matches for each motif.
+        Note that the first column always corresponds to the distance for the
+        self-match/trivial-match for each motif.
 
     motif_indices : ndarray
         The indices corresponding to a set of subsequences matches for each motif
+        Note that the first column always corresponds to the index for the
+        self-match/trivial-match for each motif.
 
     """
     if max_motifs < 1:  # pragma: no cover
@@ -209,7 +222,7 @@ def aamp_motifs(
         )
 
     m = T.shape[-1] - P.shape[-1] + 1
-    excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     if max_matches is None:  # pragma: no cover
         max_matches = np.inf
     if cutoff is None:  # pragma: no cover
@@ -227,6 +240,7 @@ def aamp_motifs(
         excl_zone,
         min_neighbors,
         max_distance,
+        cutoff,
         max_matches,
         max_motifs,
     )
@@ -276,7 +290,7 @@ def aamp_match(
     out : ndarray
         The first column consists of distances of subsequences of `T` whose distances
         to `Q` are smaller than `max_distance`, sorted by distance (lowest to highest).
-        The second column consist of the corresponding indices in `T`.
+        The second column consists of the corresponding indices in `T`.
     """
     if len(Q.shape) == 1:
         Q = Q[np.newaxis, :]
@@ -286,7 +300,7 @@ def aamp_match(
     d, n = T.shape
     m = Q.shape[1]
 
-    excl_zone = int(np.ceil(m / STUMPY_EXCL_ZONE_DENOM))
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     if max_matches is None:  # pragma: no cover
         max_matches = np.inf
 
