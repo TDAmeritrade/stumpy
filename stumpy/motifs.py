@@ -20,6 +20,7 @@ def _motifs(
     excl_zone,
     min_neighbors,
     max_distance,
+    cutoff,
     max_matches,
     max_motifs,
 ):
@@ -58,6 +59,10 @@ def _motifs(
         that accepts a single parameter, `D`, in its function signature, which is the
         distance profile between `Q` and `T`.
 
+    cutoff : float
+        The largest matrix profile value (distance) that a candidate motif is allowed
+        to have.
+
     max_matches : int
         The maximum number of similar matches to be returned. The resulting
         matches are sorted by distance (starting with the most similar). Note that
@@ -93,7 +98,7 @@ def _motifs(
     candidate_idx = np.argmin(P[-1])
     while len(motif_indices) < max_motifs:
         profile_value = P[-1, candidate_idx]
-        if np.isinf(profile_value):  # pragma: no cover
+        if profile_value > cutoff:  # pragma: no cover
             break
 
         # If max_distance is a constant (independent of the distance profile D of Q
@@ -244,6 +249,7 @@ def motifs(
         excl_zone,
         min_neighbors,
         max_distance,
+        cutoff,
         max_matches,
         max_motifs,
     )
