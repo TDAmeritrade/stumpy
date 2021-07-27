@@ -7,7 +7,8 @@ import logging
 import numpy as np
 from .aamp_motifs import aamp_motifs, aamp_match
 
-from . import core, config
+from . import core
+from . import config
 
 logger = logging.getLogger(__name__)
 
