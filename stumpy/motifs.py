@@ -318,6 +318,9 @@ def match(
         to `Q` are smaller than `max_distance`, sorted by distance (lowest to highest).
         The second column consists of the corresponding indices in `T`.
     """
+    Q = np.asarray(Q)
+    T = np.asarray(T)
+
     if len(Q.shape) == 1:
         Q = Q[np.newaxis, :]
     if len(T.shape) == 1:
