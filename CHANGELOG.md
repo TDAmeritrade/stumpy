@@ -1,3 +1,22 @@
+# 2021-07-28    [ 1.9.2 ]:
+--------------------------
+* bugfixes
+  - Fixed #439 cutoff parameter not being used in motifs.py
+* features
+  - Unified motif discovery and pattern matching tools
+* tasks
+  - Added binder link to tutorial
+* documentation
+  - Updated pattern matching tutorial
+  - Added Pearson correlation notebook
+  - Fixed missing sphinx docstring for Python class
+
+
+# 2021-07-20    [ 1.9.1 ]:
+--------------------------
+* tasks
+  Bumped version
+
 # 2021-07-20    [ 1.9.0 ]:
 --------------------------
 * bugfixes
