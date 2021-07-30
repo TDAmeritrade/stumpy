@@ -6,23 +6,6 @@ import pytest
 import naive
 
 
-test_data = [
-    (
-        np.array([9, 8100, -60, 7], dtype=np.float64),
-        np.array([584, -11, 23, 79, 1001, 0, -19], dtype=np.float64),
-    ),
-    (
-        np.random.uniform(-1000, 1000, [8]).astype(np.float64),
-        np.random.uniform(-1000, 1000, [64]).astype(np.float64),
-    ),
-]
-
-window_size = [8, 16, 32]
-substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
-substitution_values = [np.nan, np.inf]
-percentages = [(0.01, 0.1, 1.0)]
-
-
 def naive_prescraamp(T_A, m, T_B, s, exclusion_zone=None):
     distance_matrix = naive.aamp_distance_matrix(T_A, T_B, m)
 
@@ -124,6 +107,24 @@ def naive_scraamp(T_A, m, T_B, percentage, exclusion_zone, pre_scraamp, s):
                         out[i, 3] = i + k
 
     return out
+
+
+test_data = [
+    (
+        np.array([9, 8100, -60, 7], dtype=np.float64),
+        np.array([584, -11, 23, 79, 1001, 0, -19], dtype=np.float64),
+    ),
+    (
+        np.random.uniform(-1000, 1000, [8]).astype(np.float64),
+        np.random.uniform(-1000, 1000, [64]).astype(np.float64),
+    ),
+]
+
+
+window_size = [8, 16, 32]
+substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
+substitution_values = [np.nan, np.inf]
+percentages = [(0.01, 0.1, 1.0)]
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
