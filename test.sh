@@ -58,6 +58,20 @@ check_print()
     fi
 }
 
+check_naive()
+{
+    # Check if there are any naive implementations not at start of test file
+    for testfile in tests/test_*.py
+    do
+        last_naive="$(grep -n 'def naive_' $testfile | tail -n 1 | awk -F: '{print $1}')"
+        first_test="$(grep -n 'def test_' $testfile | head -n 1 | awk -F: '{print $1}')"
+        if [[ ! -z $last_naive && ! -z $first_test && $last_naive -gt $first_test ]]; then
+            echo "Error: naive implementation found in the middle of $testfile line $last_naive"
+            exit 1
+        fi
+    done
+}
+
 test_custom()
 {
     # export NUMBA_DISABLE_JIT=1
@@ -150,6 +164,7 @@ clean_up
 check_black
 check_flake
 check_print
+check_naive
 
 if [[ $test_mode == "unit" ]]; then
     echo "Executing Unit Tests Only"

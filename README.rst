@@ -57,6 +57,8 @@ STUMPY is a powerful and scalable library that efficiently computes something ca
 * streaming (on-line) data
 * fast approximate matrix profiles
 * time series chains (temporally ordered set of subsequence patterns)
+* snippets for summarizing long time series
+* pan matrix profiles for selecting the best subsequence window size(s)
 * `and more ... <https://www.cs.ucr.edu/~eamonn/100_Time_Series_Data_Mining_Questions__with_Answers.pdf>`__
 
 Whether you are an academic, data scientist, software developer, or time series enthusiast, STUMPY is straightforward to install and our goal is to allow you to get to your time series insights faster. See `documentation <https://stumpy.readthedocs.io/en/latest/>`__ for more information.
