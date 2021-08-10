@@ -3,6 +3,7 @@ import numpy.testing as npt
 import stumpy
 from dask.distributed import Client, LocalCluster
 from numba import cuda
+from numba.core.errors import NumbaPerformanceWarning
 import pytest
 
 
@@ -128,6 +129,7 @@ def test_stumped(T, m, dask_cluster):
         npt.assert_almost_equal(ref, comp)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T, m", test_data)
 def test_gpu_stump(T, m):
     if not cuda.is_available():
@@ -187,6 +189,7 @@ def test_ostinatoed(dask_cluster):
         npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 def test_gpu_ostinato():
     if not cuda.is_available():
         pytest.skip("Skipping Tests No GPUs Available")
@@ -225,6 +228,7 @@ def test_mpdisted(dask_cluster):
         npt.assert_almost_equal(ref, comp)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 def test_gpu_mpdist():
     if not cuda.is_available():
         pytest.skip("Skipping Tests No GPUs Available")

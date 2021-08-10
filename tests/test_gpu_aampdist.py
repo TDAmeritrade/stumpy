@@ -2,6 +2,7 @@ import numpy as np
 import numpy.testing as npt
 from stumpy import gpu_aampdist, config
 from numba import cuda
+from numba.core.errors import NumbaPerformanceWarning
 import pytest
 import naive
 
@@ -23,6 +24,7 @@ test_data = [
 ]
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_gpu_aampdist(T_A, T_B):
     m = 3

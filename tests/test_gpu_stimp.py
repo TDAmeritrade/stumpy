@@ -3,6 +3,7 @@ import numpy.testing as npt
 from stumpy import gpu_stimp
 from stumpy import config
 from numba import cuda
+from numba.core.errors import NumbaPerformanceWarning
 import pytest
 import naive
 
@@ -18,6 +19,7 @@ T = [
 ]
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T", T)
 def test_gpu_stimp(T):
     threshold = 0.2

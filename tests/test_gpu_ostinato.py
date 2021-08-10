@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 from numba import cuda
+from numba.core.errors import NumbaPerformanceWarning
 from stumpy import gpu_ostinato, config
 import naive
 import pytest
@@ -12,6 +13,7 @@ if not cuda.is_available():
     pytest.skip("Skipping Tests No GPUs Available", allow_module_level=True)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize(
     "seed", np.random.choice(np.arange(10000), size=2, replace=False)
 )
@@ -28,6 +30,7 @@ def test_random_gpu_ostinato(seed):
     npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("seed", [79, 109])
 def test_deterministic_gpu_ostinato(seed):
     m = 50

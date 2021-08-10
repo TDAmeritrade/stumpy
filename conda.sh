@@ -80,6 +80,7 @@ conda update -y --all
 conda install -y -c conda-forge mamba
 
 if [[ `uname` == "Linux" && `which nvcc | wc -l` -lt "1" ]]; then
+    # conda install -y -c conda-forge cudatoolkit-dev'<11.4'
     # conda install -y -c conda-forge cudatoolkit-dev
     mamba install -y -c conda-forge cudatoolkit-dev
     echo "Please reboot the server to resolve any CUDA driver/library version mismatches"

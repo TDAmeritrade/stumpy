@@ -4,6 +4,7 @@ import pandas as pd
 from stumpy import gpu_stump
 from stumpy import config
 from numba import cuda
+from numba.core.errors import NumbaPerformanceWarning
 import pytest
 import naive
 
@@ -34,6 +35,7 @@ def test_gpu_stump_int_input():
         gpu_stump(np.arange(10), 5, ignore_trivial=True)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_gpu_stump_self_join(T_A, T_B):
     m = 3
@@ -49,6 +51,7 @@ def test_gpu_stump_self_join(T_A, T_B):
     npt.assert_almost_equal(ref_mp, comp_mp)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T_A, T_B", test_data)
 @pytest.mark.parametrize("m", window_size)
 def test_gpu_stump_self_join_larger_window(T_A, T_B, m):
@@ -70,6 +73,7 @@ def test_gpu_stump_self_join_larger_window(T_A, T_B, m):
         # npt.assert_almost_equal(ref_mp, comp_mp)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_gpu_stump_A_B_join(T_A, T_B):
     m = 3
@@ -84,6 +88,7 @@ def test_gpu_stump_A_B_join(T_A, T_B):
     # npt.assert_almost_equal(ref_mp, comp_mp)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_parallel_gpu_stump_self_join(T_A, T_B):
     device_ids = [device.id for device in cuda.list_devices()]
@@ -111,6 +116,7 @@ def test_parallel_gpu_stump_self_join(T_A, T_B):
         # npt.assert_almost_equal(ref_mp, comp_mp)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_parallel_gpu_stump_A_B_join(T_A, T_B):
     device_ids = [device.id for device in cuda.list_devices()]
@@ -139,6 +145,7 @@ def test_parallel_gpu_stump_A_B_join(T_A, T_B):
         # npt.assert_almost_equal(ref_mp, comp_mp)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 def test_gpu_stump_constant_subsequence_self_join():
     T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
@@ -154,6 +161,7 @@ def test_gpu_stump_constant_subsequence_self_join():
     # npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 def test_gpu_stump_one_constant_subsequence_A_B_join():
     T_A = np.random.rand(20)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
@@ -180,6 +188,7 @@ def test_gpu_stump_one_constant_subsequence_A_B_join():
     # npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 def test_gpu_stump_two_constant_subsequences_A_B_join():
     T_A = np.array([0, 0, 0, 0, 0, 1], dtype=np.float64)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
@@ -206,6 +215,7 @@ def test_gpu_stump_two_constant_subsequences_A_B_join():
     # npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 def test_gpu_stump_identical_subsequence_self_join():
     identical = np.random.rand(8)
     T_A = np.random.rand(20)
@@ -228,6 +238,7 @@ def test_gpu_stump_identical_subsequence_self_join():
     # )  # ignore indices
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 def test_gpu_stump_identical_subsequence_A_B_join():
     identical = np.random.rand(8)
     T_A = np.random.rand(20)
@@ -265,6 +276,7 @@ def test_gpu_stump_identical_subsequence_A_B_join():
     # )  # ignore indices
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T_A, T_B", test_data)
 @pytest.mark.parametrize("substitute_B", substitution_values)
 @pytest.mark.parametrize("substitution_locations", substitution_locations)
@@ -289,6 +301,7 @@ def test_gpu_stump_nan_inf_self_join(T_A, T_B, substitute_B, substitution_locati
         # npt.assert_almost_equal(ref_mp, comp_mp)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T_A, T_B", test_data)
 @pytest.mark.parametrize("substitute_A", substitution_values)
 @pytest.mark.parametrize("substitute_B", substitution_values)
@@ -321,6 +334,7 @@ def test_gpu_stump_nan_inf_A_B_join(
             # npt.assert_almost_equal(ref_mp, comp_mp)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 def test_gpu_stump_nan_zero_mean_self_join():
     T = np.array([-1, 0, 1, np.inf, 1, 0, -1])
     m = 3
