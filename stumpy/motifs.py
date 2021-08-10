@@ -176,12 +176,12 @@ def motifs(
         a match of `Q`. If `max_distance` is a function, then it must be a function
         that accepts a single parameter, `D`, in its function signature, which is the
         distance profile between `Q` and `T`. If None, this defaults to
-        `max(np.mean(D) - 2 * np.std(D), np.min(D))`.
+        `np.nanmax([np.nanmean(D) - 2.0 * np.nanstd(D), np.nanmin(D)])`.
 
     cutoff : float, default None
         The largest matrix profile value (distance) that a candidate motif is allowed
         to have. If `None`, this defaults to
-        `max(np.mean(P) - 2 * np.std(P), np.min(P))`
+        `np.nanmax([np.nanmean(P) - 2.0 * np.nanstd(P), np.nanmin(P)])`
 
     max_matches : int, default 10
         The maximum amount of similar matches of a motif representative to be returned.
@@ -236,7 +236,11 @@ def motifs(
     if max_matches is None:  # pragma: no cover
         max_matches = np.inf
     if cutoff is None:  # pragma: no cover
-        cutoff = max(np.mean(P) - 2 * np.std(P), np.min(P))
+        P_copy = P.copy().astype(np.float64)
+        P_copy[np.isinf(P_copy)] = np.nan
+        cutoff = np.nanmax(
+            [np.nanmean(P_copy) - 2.0 * np.nanstd(P_copy), np.nanmin(P_copy)]
+        )
 
     T, M_T, Σ_T = core.preprocess(T[np.newaxis, :], m)
     P = P[np.newaxis, :].astype(np.float64)
@@ -297,8 +301,9 @@ def match(
         match.
         If a function, then it has to be a function of one argument `D`, which will be
         the distance profile of `Q` with `T` (a 1D numpy array of size `n-m+1`).
-        If None, defaults to `max(np.mean(D) - 2 * np.std(D), np.min(D))`, i.e. at
-        least the closest match will be returned.
+        If None, this defaults to
+        `np.nanmax([np.nanmean(D) - 2 * np.nanstd(D), np.nanmin(D)])` (i.e. at
+        least the closest match will be returned).
 
     max_matches : int, default None
         The maximum amount of similar occurrences to be returned. The resulting
@@ -339,7 +344,11 @@ def match(
     if max_distance is None:  # pragma: no cover
 
         def max_distance(D):
-            return max(np.mean(D) - 2 * np.std(D), np.min(D))
+            D_copy = D.copy().astype(np.float64)
+            D_copy[np.isinf(D_copy)] = np.nan
+            return np.nanmax(
+                [np.nanmean(D_copy) - 2.0 * np.nanstd(D_copy), np.nanmin(D_copy)]
+            )
 
     if M_T is None or Σ_T is None:  # pragma: no cover
         T, M_T, Σ_T = core.preprocess(T, m)
