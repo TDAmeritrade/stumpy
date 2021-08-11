@@ -4,7 +4,11 @@ import pandas as pd
 from stumpy import gpu_stump
 from stumpy import config
 from numba import cuda
-from numba.core.errors import NumbaPerformanceWarning
+
+try:
+    from numba.errors import NumbaPerformanceWarning
+except ModuleNotFoundError:
+    from numba.core.errors import NumbaPerformanceWarning
 import pytest
 import naive
 
