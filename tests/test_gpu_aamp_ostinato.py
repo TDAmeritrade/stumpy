@@ -1,7 +1,11 @@
 import numpy as np
 import numpy.testing as npt
 from numba import cuda
-from numba.core.errors import NumbaPerformanceWarning
+
+try:
+    from numba.errors import NumbaPerformanceWarning
+except ModuleNotFoundError:
+    from numba.core.errors import NumbaPerformanceWarning
 from stumpy import gpu_aamp_ostinato, config
 import naive
 import pytest

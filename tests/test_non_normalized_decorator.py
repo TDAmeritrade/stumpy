@@ -3,7 +3,11 @@ import numpy.testing as npt
 import stumpy
 from dask.distributed import Client, LocalCluster
 from numba import cuda
-from numba.core.errors import NumbaPerformanceWarning
+
+try:
+    from numba.errors import NumbaPerformanceWarning
+except ModuleNotFoundError:
+    from numba.core.errors import NumbaPerformanceWarning
 import pytest
 
 
