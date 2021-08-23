@@ -57,6 +57,27 @@ def naive_compute_mean_std_multidimensional(T, m):
     return M_T, Σ_T
 
 
+def naive_idx_to_mp(I, T, m, normalize=True):
+    I = I.astype(np.int64)
+    T = T.copy()
+    T_isfinite = np.isfinite(T)
+    T_subseqs_isfinite = np.all(core.rolling_window(T_isfinite, m), axis=1)
+
+    T[~T_isfinite] = 0.0
+    T_subseqs = core.rolling_window(T, m)
+    nn_subseqs = T_subseqs[I]
+    if normalize:
+        P = naive.distance(
+            naive.z_norm(T_subseqs, axis=1), naive.z_norm(nn_subseqs, axis=1), axis=1
+        )
+    else:
+        P = naive.distance(T_subseqs, nn_subseqs, axis=1)
+    P[~T_subseqs_isfinite] = np.inf
+    P[I < 0] = np.inf
+
+    return P
+
+
 test_data = [
     (np.array([-1, 1, 2], dtype=np.float64), np.array(range(5), dtype=np.float64)),
     (
@@ -843,3 +864,21 @@ def test_get_mask_slices():
         ref_slices = naive._get_mask_slices(mask)
         comp_slices = core._get_mask_slices(mask)
         npt.assert_array_equal(ref_slices, comp_slices)
+
+
+def test_idx_to_mp():
+    n = 64
+    m = 5
+    T = np.random.rand(n)
+    # T[1] = np.nan
+    # T[8] = np.inf
+    # T[:] = 1.0
+    I = np.random.randint(0, n - m + 1, n - m + 1)
+
+    ref_mp = naive_idx_to_mp(I, T, m)
+    cmp_mp = core._idx_to_mp(I, T, m)
+    npt.assert_almost_equal(ref_mp, cmp_mp)
+
+    ref_mp = naive_idx_to_mp(I, T, m, normalize=False)
+    cmp_mp = core._idx_to_mp(I, T, m, normalize=False)
+    npt.assert_almost_equal(ref_mp, cmp_mp)

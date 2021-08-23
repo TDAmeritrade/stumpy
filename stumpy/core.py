@@ -10,6 +10,7 @@ import numpy as np
 from numba import njit, prange
 from scipy.signal import convolve
 from scipy.ndimage.filters import maximum_filter1d, minimum_filter1d
+from scipy import linalg
 import tempfile
 import math
 
@@ -1815,12 +1816,12 @@ def _get_mask_slices(mask):
 
     Parameters
     ----------
-    mask: ndarray
+    mask : ndarray
         A boolean 1D array
 
     Returns
     -------
-    slices: ndarray
+    slices : ndarray
         slices of indices where the mask is True. Each slice has a size of two:
         The first number is the start index (inclusive)
         The second number is the end index (exclusive)
@@ -1835,3 +1836,45 @@ def _get_mask_slices(mask):
     slices = np.c_[starts, ends]
 
     return slices
+
+
+def _idx_to_mp(I, T, m, normalize=True):
+    """
+    Convert a set of matrix profile indices (including left and right indices) to its
+    corresponding matrix profile distances
+
+    Parameters
+    ----------
+    I : ndarray
+        A 1D array of matrix profile indices
+
+    T : ndarray
+        Time series
+
+    m : int
+        Subsequence window size
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances
+
+    Returns
+    -------
+    P : ndarray
+        Matrix profile distances
+    """
+    I = I.astype(np.int64)
+    T = T.copy()
+    T_isfinite = np.isfinite(T)
+    T_subseqs_isfinite = np.all(rolling_window(T_isfinite, m), axis=1)
+
+    T[~T_isfinite] = 0.0
+    T_subseqs = rolling_window(T, m)
+    nn_subseqs = T_subseqs[I]
+    if normalize:
+        P = linalg.norm(z_norm(T_subseqs, axis=1) - z_norm(nn_subseqs, axis=1), axis=1)
+    else:
+        P = linalg.norm(T_subseqs - nn_subseqs, axis=1)
+    P[~T_subseqs_isfinite] = np.inf
+    P[I < 0] = np.inf
+
+    return P
