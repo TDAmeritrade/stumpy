@@ -90,7 +90,7 @@ def _compute_diagonal(
             iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
 
         for i in iter_range:
-            if i == 0 or i == k or (k < 0 and i == -k):
+            if i == 0 or (k < 0 and i == -k):
                 D_squared = np.linalg.norm(T_B[i + k : i + k + m] - T_A[i : i + m]) ** 2
             else:
                 D_squared = np.abs(

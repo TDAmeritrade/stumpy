@@ -158,7 +158,7 @@ def _compute_diagonal(
             iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
 
         for i in iter_range:
-            if i == 0 or i == k or (k < 0 and i == -k):
+            if i == 0 or (k < 0 and i == -k):
                 cov = (
                     np.dot(
                         (T_B[i + k : i + k + m] - M_T[i + k]), (T_A[i : i + m] - μ_Q[i])
