@@ -56,7 +56,7 @@ configuration = {
     "url": "https://github.com/TDAmeritrade/stumpy",
     "maintainer": "Sean M. Law",
     "maintainer_email": "seanmylaw@gmail.com",
-    "license": "BSD-3",
+    "license": "3-clause BSD License",
     "packages": ["stumpy"],
     "install_requires": ["numpy >= 1.15", "scipy >= 1.5", "numba >= 0.48"],
     "ext_modules": [],
