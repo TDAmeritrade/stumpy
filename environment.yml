@@ -20,6 +20,4 @@ dependencies:
   - sphinx>=3.5.3
   - nbsphinx>=0.8.1
   - pydata-sphinx-theme>=0.5.2
-  - ipywidgets>=7.6.3
-  - ipympl>=0.7.0
   - scikit-learn>=0.21.3
