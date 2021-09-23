@@ -20,26 +20,26 @@ def _multi_mass_absolute(Q, T, m, Q_subseq_isfinite, T_subseq_isfinite):
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         Query array or subsequence
 
-    T : ndarray
+    T : numpy.ndarray
         Time series array or sequence
 
     m : int
         Window size
 
-    Q_subseq_isfinite : ndarray
+    Q_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `Q` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_subseq_isfinite : ndarray
+    T_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
 
     Returns
     -------
-    D : ndarray
+    D : numpy.ndarray
         Multi-dimensional non-normalized (i.e., without z-normalization) distance
         profile
     """
@@ -66,7 +66,7 @@ def maamp_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which the multi-dimensional matrix profile,
         multi-dimensional matrix profile indices were computed
 
@@ -83,7 +83,7 @@ def maamp_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
         The subset number of dimensions out of `D = T.shape[0]`-dimensions to return
         the subspace for
 
-    include : ndarray, default None
+    include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -97,7 +97,7 @@ def maamp_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
 
     Returns
     -------
-        S : ndarray
+        S : numpy.ndarray
         An array of that contains the `k`th-dimensional subspace for the subsequence
         with index equal to `motif_idx`
     """
@@ -128,11 +128,11 @@ def _query_maamp_profile(
         The window index to calculate the first multi-dimensional matrix profile and
         multi-dimensional matrix profile indices
 
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which the multi-dimensional matrix profile and
         multi-dimensional matrix profile indices
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that contains your query subsequences
 
     m : int
@@ -141,11 +141,11 @@ def _query_maamp_profile(
     excl_zone : int
         The half width for the exclusion zone relative to the `query_idx`.
 
-    T_B_subseq_isfinite : ndarray
+    T_B_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
-    include : ndarray, default None
+    include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -159,11 +159,11 @@ def _query_maamp_profile(
 
     Returns
     -------
-    P : ndarray
+    P : numpy.ndarray
         Multi-dimensional matrix profile for the window with index equal to
         `query_idx`
 
-    I : ndarray
+    I : numpy.ndarray
         Multi-dimensional matrix profile indices for the window with index
         equal to `query_idx`
     """
@@ -224,12 +224,12 @@ def _get_first_maamp_profile(
         The window index to calculate the first multi-dimensional matrix profile,
         multi-dimensional matrix profile indices, and multi-dimensional subspace.
 
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which the multi-dimensional matrix profile,
         multi-dimensional matrix profile indices, and multi-dimensional subspace will be
         returned
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that contains your query subsequences
 
     m : int
@@ -238,11 +238,11 @@ def _get_first_maamp_profile(
     excl_zone : int
         The half width for the exclusion zone relative to the `start`.
 
-    T_B_subseq_isfinite : ndarray
+    T_B_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `Q` contains a
         `np.nan`/`np.inf` value (False)
 
-    include : ndarray, default None
+    include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -256,11 +256,11 @@ def _get_first_maamp_profile(
 
     Returns
     -------
-    P : ndarray
+    P : numpy.ndarray
         Multi-dimensional matrix profile for the window with index equal to
         `start`
 
-    I : ndarray
+    I : numpy.ndarray
         Multi-dimensional matrix profile indices for the window with index
         equal to `start`
     """
@@ -302,10 +302,10 @@ def _compute_multi_D(
     idx : int
         The row index in `T`
 
-    D : ndarray
+    D : numpy.ndarray
         The output distance profile
 
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
     m : int
@@ -315,27 +315,27 @@ def _compute_multi_D(
         The half width for the exclusion zone relative to the current
         sliding window
 
-    T_A_subseq_isfinite : ndarray
+    T_A_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_B_subseq_isfinite : ndarray
+    T_B_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_A_subseq_squared : ndarray
+    T_A_subseq_squared : numpy.ndarray
         The rolling sum for `T_B * T_B`
 
-    T_B_subseq_squared : ndarray
+    T_B_subseq_squared : numpy.ndarray
         The rolling sum for `T_B * T_B`
 
-    QT_even : ndarray
+    QT_even : numpy.ndarray
         Dot product between some query sequence,`Q`, and time series, `T`
 
-    QT_odd : ndarray
+    QT_odd : numpy.ndarray
         Dot product between some query sequence,`Q`, and time series, `T`
 
-    QT_first : ndarray
+    QT_first : numpy.ndarray
         QT for the first window relative to the current sliding window
 
     Notes
@@ -417,7 +417,7 @@ def _maamp(
 
     Parameters
     ----------
-    T: ndarray
+    T: numpy.ndarray
         The time series or sequence for which to compute the multi-dimensional
         matrix profile
 
@@ -433,24 +433,24 @@ def _maamp(
         The half width for the exclusion zone relative to the current
         sliding window
 
-    T_A_subseq_isfinite : ndarray
+    T_A_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_B_subseq_isfinite : ndarray
+    T_B_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_A_subseq_squared : ndarray
+    T_A_subseq_squared : numpy.ndarray
         The rolling sum for `T_A * T_A`
 
-    T_B_subseq_squared : ndarray
+    T_B_subseq_squared : numpy.ndarray
         The rolling sum for `T_B * T_B`
 
-    QT : ndarray
+    QT : numpy.ndarray
         Dot product between some query sequence,`Q`, and time series, `T`
 
-    QT_first : ndarray
+    QT_first : numpy.ndarray
         QT for the first window relative to the current sliding window
 
     k : int
@@ -460,7 +460,7 @@ def _maamp(
         The starting index value along T_B for which to start the matrix
         profile calculation. Default is 1.
 
-    include : ndarray, default None
+    include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -474,12 +474,12 @@ def _maamp(
 
     Returns
     -------
-    P : ndarray
+    P : numpy.ndarray
         The multi-dimensional matrix profile. Each row of the array corresponds
         to each matrix profile for a given dimension (i.e., the first row is the
         1-D matrix profile and the second row is the 2-D matrix profile).
 
-    I : ndarray
+    I : numpy.ndarray
         The multi-dimensional matrix profile index where each row of the array
         corresponds to each matrix profile index for a given dimension.
 
@@ -559,7 +559,7 @@ def maamp(T, m, include=None, discords=False):
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which to compute the multi-dimensional
         matrix profile. Each row in `T` represents data from a different
         dimension while each column in `T` represents data from the same
@@ -568,7 +568,7 @@ def maamp(T, m, include=None, discords=False):
     m : int
         Window size
 
-    include : list, ndarray, default None
+    include : list, numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -584,12 +584,12 @@ def maamp(T, m, include=None, discords=False):
 
     Returns
     -------
-    P : ndarray
+    P : numpy.ndarray
         The multi-dimensional matrix profile. Each row of the array corresponds
         to each matrix profile for a given dimension (i.e., the first row is
         the 1-D matrix profile and the second row is the 2-D matrix profile).
 
-    I : ndarray
+    I : numpy.ndarray
         The multi-dimensional matrix profile index where each row of the array
         corresponds to each matrix profile index for a given dimension.
 

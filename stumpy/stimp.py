@@ -41,7 +41,7 @@ def _bfs_indices(n):
 
     Returns
     -------
-    level_idx : ndarray
+    level_idx : numpy.ndarray
         The breadth first search (level order) indices
     """
     if n == 1:  # pragma: no cover
@@ -90,16 +90,16 @@ def _normalize_pan(pan, ms, bfs_indices, n_processed):
 
     Parameters
     ----------
-    pan : ndarray
+    pan : numpy.ndarray
         The pan matrix profile
 
-    ms : ndarray
+    ms : numpy.ndarray
         The breadth-first-search sorted subsequence window sizes
 
-    bfs_indices : ndarray
+    bfs_indices : numpy.ndarray
         The breadth-first-search indices
 
-    n_processed : ndarray
+    n_processed : numpy.ndarray
         The number of subsequence window sizes and breadth-first-search indices to
         normalize
 
@@ -119,16 +119,16 @@ def _contrast_pan(pan, threshold, bfs_indices, n_processed):
 
     Parameters
     ----------
-    pan : ndarray
+    pan : numpy.ndarray
         The pan matrix profile
 
     threshold : float
         The distance threshold value in which to center the pan matrix profile around
 
-    bfs_indices : ndarray
+    bfs_indices : numpy.ndarray
         The breadth-first-search indices
 
-    n_processed : ndarray
+    n_processed : numpy.ndarray
         The number of breadth-first-search indices to apply contrast to
 
     Returns
@@ -154,16 +154,16 @@ def _binarize_pan(pan, threshold, bfs_indices, n_processed):
 
     Parameters
     ----------
-    pan : ndarray
+    pan : numpy.ndarray
         The pan matrix profile
 
     threshold : float
         The distance threshold value in which to center the pan matrix profile around
 
-    bfs_indices : ndarray
+    bfs_indices : numpy.ndarray
         The breadth-first-search indices
 
-    n_processed : ndarray
+    n_processed : numpy.ndarray
         The number of breadth-first-search indices to binarize
 
     Returns
@@ -182,7 +182,7 @@ class _stimp:
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which to compute the pan matrix profile
 
     m_start : int, default 3
@@ -225,11 +225,11 @@ class _stimp:
 
     Attributes
     ----------
-    PAN_ : ndarray
+    PAN_ : numpy.ndarray
         The transformed (i.e., normalized, contrasted, binarized, and repeated)
         pan matrix profile
 
-    M_ : ndarray
+    M_ : numpy.ndarray
         The full list of (breadth first search (level) ordered) subsequence window
         sizes
 
@@ -264,7 +264,7 @@ class _stimp:
 
         Parameters
         ----------
-        T : ndarray
+        T : numpy.ndarray
             The time series or sequence for which to compute the pan matrix profile
 
         min_m : int, default 3
@@ -467,7 +467,7 @@ class stimp(_stimp):
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which to compute the pan matrix profile
 
     m_start : int, default 3
@@ -495,11 +495,11 @@ class stimp(_stimp):
 
     Attributes
     ----------
-    PAN_ : ndarray
+    PAN_ : numpy.ndarray
         The transformed (i.e., normalized, contrasted, binarized, and repeated)
         pan matrix profile
 
-    M_ : ndarray
+    M_ : numpy.ndarray
         The full list of (breadth first search (level) ordered) subsequence window
         sizes
 
@@ -532,7 +532,7 @@ class stimp(_stimp):
 
         Parameters
         ----------
-        T : ndarray
+        T : numpy.ndarray
             The time series or sequence for which to compute the pan matrix profile
 
         min_m : int, default 3
@@ -583,7 +583,7 @@ class stimped(_stimp):
             scope of this library. Please refer to the Dask Distributed
             documentation.
 
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which to compute the pan matrix profile
 
     m_start : int, default 3
@@ -600,11 +600,11 @@ class stimped(_stimp):
 
     Attributes
     ----------
-    PAN_ : ndarray
+    PAN_ : numpy.ndarray
         The transformed (i.e., normalized, contrasted, binarized, and repeated)
         pan matrix profile
 
-    M_ : ndarray
+    M_ : numpy.ndarray
         The full list of (breadth first search (level) ordered) subsequence window
         sizes
 
@@ -642,7 +642,7 @@ class stimped(_stimp):
             scope of this library. Please refer to the Dask Distributed
             documentation.
 
-        T : ndarray
+        T : numpy.ndarray
             The time series or sequence for which to compute the pan matrix profile
 
         min_m : int, default 3

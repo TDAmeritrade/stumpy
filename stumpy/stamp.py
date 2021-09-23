@@ -13,16 +13,16 @@ def _mass_PI(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=F
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         Query array or subsequence
 
-    T : ndarray
+    T : numpy.ndarray
         Time series array or sequence
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding mean for `T`
 
-    Σ_T : ndarray
+    Σ_T : numpy.ndarray
         Sliding standard deviation for `T`
 
     trivial_idx : int, default None
@@ -41,10 +41,10 @@ def _mass_PI(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=F
 
     Returns
     -------
-    P : ndarray
+    P : numpy.ndarray
         Matrix profile
 
-    I : ndarray
+    I : numpy.ndarray
         Matrix profile indices
     """
     D = core.mass(Q, T, M_T, Σ_T)
@@ -93,10 +93,10 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which the matrix profile will be returned
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
@@ -108,7 +108,7 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
 
     Returns
     -------
-    out : ndarray
+    out : numpy.ndarray
         Two column numpy array where the first column is the matrix profile
         and the second column is the matrix profile indices
 

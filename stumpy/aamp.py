@@ -34,31 +34,31 @@ def _compute_diagonal(
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
 
-    P : ndarray
+    P : numpy.ndarray
         Matrix profile
 
-    I : ndarray
+    I : numpy.ndarray
         Matrix profile indices
 
-    T_A_subseq_isfinite : ndarray
+    T_A_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_B_subseq_isfinite : ndarray
+    T_B_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
-    diags : ndarray
+    diags : numpy.ndarray
         The diag of diagonals to process and compute
 
     diags_start_idx : int
@@ -135,25 +135,25 @@ def _aamp(T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_t
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
 
-    T_A_subseq_isfinite : ndarray
+    T_A_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_B_subseq_isfinite : ndarray
+    T_B_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
-    diags : ndarray
+    diags : numpy.ndarray
         The diag of diagonals to process and compute
 
     ignore_trivial : bool
@@ -162,10 +162,10 @@ def _aamp(T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_t
 
     Returns
     -------
-    P : ndarray
+    P : numpy.ndarray
         Matrix profile
 
-    I : ndarray
+    I : numpy.ndarray
         Matrix profile indices
 
     Notes
@@ -229,13 +229,13 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
     m : int
         Window size
 
-    T_B : ndarray, default None
+    T_B : numpy.ndarray, default None
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
         `None` which corresponds to a self-join.
@@ -246,7 +246,7 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
 
     Returns
     -------
-    out : ndarray
+    out : numpy.ndarray
         The first column consists of the matrix profile, the second column
         consists of the matrix profile indices.
 

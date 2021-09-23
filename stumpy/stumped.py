@@ -30,13 +30,13 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
         scope of this library. Please refer to the Dask Distributed
         documentation.
 
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
     m : int
         Window size
 
-    T_B : ndarray, default None
+    T_B : numpy.ndarray, default None
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
         `None` which corresponds to a self-join.
@@ -52,7 +52,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
 
     Returns
     -------
-    out : ndarray
+    out : numpy.ndarray
         The first column consists of the matrix profile, the second column
         consists of the matrix profile indices, the third column consists of
         the left matrix profile indices, and the fourth column consists of

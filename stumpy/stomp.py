@@ -17,14 +17,14 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which the matrix profile index will
         be returned
 
     m : int
         Window size
 
-    T_B : ndarray, default None
+    T_B : numpy.ndarray, default None
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
@@ -33,7 +33,7 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
 
     Returns
     -------
-    out : ndarray
+    out : numpy.ndarray
         A four column numpy array where the first column is the matrix profile,
         the second column is the matrix profile indices. The third and fourth
         columns are the left and right matrix profile indices, respectively.

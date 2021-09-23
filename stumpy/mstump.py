@@ -21,7 +21,7 @@ def _preprocess_include(include):
 
     Parameters
     ----------
-    include : ndarray
+    include : numpy.ndarray
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -31,7 +31,7 @@ def _preprocess_include(include):
 
     Returns
     -------
-    include : ndarray
+    include : numpy.ndarray
         Process `include` and remove any redundant index values
     """
     include = np.asarray(include)
@@ -58,10 +58,10 @@ def _apply_include(
 
     Parameters
     ----------
-    D : ndarray
+    D : numpy.ndarray
         The multi-dimensional distance profile
 
-    include : ndarray
+    include : numpy.ndarray
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -69,18 +69,18 @@ def _apply_include(
         `DOI: 10.1109/ICDM.2017.66 \
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
-    restricted_indices : ndarray, default None
+    restricted_indices : numpy.ndarray, default None
         A list of indices specified in `include` that reside in the first
         `include.shape[0]` rows
 
-    unrestricted_indices : ndarray, default None
+    unrestricted_indices : numpy.ndarray, default None
         A list of indices specified in `include` that do not reside in the first
         `include.shape[0]` rows
 
-    mask : ndarray, default None
+    mask : numpy.ndarray, default None
         A boolean mask to select for unrestricted indices
 
-    tmp_swap : ndarray, default None
+    tmp_swap : numpy.ndarray, default None
         A reusable array to aid in array element swapping
     """
     include = _preprocess_include(include)
@@ -111,30 +111,30 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         Query array or subsequence
 
-    T : ndarray
+    T : numpy.ndarray
         Time series array or sequence
 
     m : int
         Window size
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding mean for `T_A`
 
-    Σ_T : ndarray
+    Σ_T : numpy.ndarray
         Sliding standard deviation for `T_A`
 
-    μ_Q : ndarray
+    μ_Q : numpy.ndarray
         Mean value of `Q`
 
-    σ_Q : ndarray
+    σ_Q : numpy.ndarray
         Standard deviation of `Q`
 
     Returns
     -------
-    D : ndarray
+    D : numpy.ndarray
         Multi-dimensional distance profile
     """
     d, n = T.shape
@@ -163,7 +163,7 @@ def _inverse_norm(n_bit=8):
 
     Returns
     -------
-    out : ndarray
+    out : numpy.ndarray
         Array of bin edges that can be used for data discretization
     """
     return norm.ppf(np.arange(1, (2 ** n_bit)) / (2 ** n_bit))
@@ -175,10 +175,10 @@ def _discretize(a, bins, right=True):
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         The input array
 
-    bins : ndarray
+    bins : numpy.ndarray
         The bin edges used to discretize `a`
 
     right : bool, default True
@@ -187,7 +187,7 @@ def _discretize(a, bins, right=True):
 
     Returns
     -------
-    out : ndarray
+    out : numpy.ndarray
         Discretized array
     """
     return np.digitize(a, bins, right=right)
@@ -200,14 +200,14 @@ def _subspace(D, k, include=None, discords=False):
 
     Parameters
     ----------
-    D : ndarray
+    D : numpy.ndarray
         The multi-dimensional distance profile
 
     k : int
         The subset number of dimensions out of `D = T.shape[0]`-dimensions to return
         the subspace for
 
-    include : ndarray, default None
+    include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -221,7 +221,7 @@ def _subspace(D, k, include=None, discords=False):
 
     Returns
     -------
-        S : ndarray
+        S : numpy.ndarray
         An array of that contains the `k`th-dimensional subspace for the subsequence
         with index equal to `motif_idx`
     """
@@ -254,7 +254,7 @@ def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normaliz
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which the multi-dimensional matrix profile,
         multi-dimensional matrix profile indices were computed
 
@@ -271,7 +271,7 @@ def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normaliz
         The subset number of dimensions out of `D = T.shape[0]`-dimensions to return
         the subspace for
 
-    include : ndarray, default None
+    include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -290,7 +290,7 @@ def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normaliz
 
     Returns
     -------
-        S : ndarray
+        S : numpy.ndarray
         An array of that contains the `k`th-dimensional subspace for the subsequence
         with index equal to `motif_idx`
     """
@@ -329,11 +329,11 @@ def _query_mstump_profile(
         The window index to calculate the first multi-dimensional matrix profile and
         multi-dimensional matrix profile indices
 
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which the multi-dimensional matrix profile and
         multi-dimensional matrix profile indices
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that contains your query subsequences
 
     m : int
@@ -342,19 +342,19 @@ def _query_mstump_profile(
     excl_zone : int
         The half width for the exclusion zone relative to the `query_idx`.
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding mean for `T_A`
 
-    Σ_T : ndarray
+    Σ_T : numpy.ndarray
         Sliding standard deviation for `T_A`
 
-    μ_Q : ndarray
+    μ_Q : numpy.ndarray
         Sliding mean for `T_B`
 
-    σ_Q : ndarray
+    σ_Q : numpy.ndarray
         Sliding standard deviation for `T_B`
 
-    include : ndarray, default None
+    include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -368,11 +368,11 @@ def _query_mstump_profile(
 
     Returns
     -------
-    P : ndarray
+    P : numpy.ndarray
         Multi-dimensional matrix profile for the window with index equal to
         `query_idx`
 
-    I : ndarray
+    I : numpy.ndarray
         Multi-dimensional matrix profile indices for the window with index
         equal to `query_idx`
     """
@@ -435,12 +435,12 @@ def _get_first_mstump_profile(
         The window index to calculate the first multi-dimensional matrix profile,
         multi-dimensional matrix profile indices, and multi-dimensional subspace.
 
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which the multi-dimensional matrix profile,
         multi-dimensional matrix profile indices, and multi-dimensional subspace will be
         returned
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that contains your query subsequences
 
     m : int
@@ -449,19 +449,19 @@ def _get_first_mstump_profile(
     excl_zone : int
         The half width for the exclusion zone relative to the `start`.
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding mean for `T_A`
 
-    Σ_T : ndarray
+    Σ_T : numpy.ndarray
         Sliding standard deviation for `T_A`
 
-    μ_Q : ndarray
+    μ_Q : numpy.ndarray
         Sliding mean for `T_B`
 
-    σ_Q : ndarray
+    σ_Q : numpy.ndarray
         Sliding standard deviation for `T_B`
 
-    include : ndarray, default None
+    include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -475,11 +475,11 @@ def _get_first_mstump_profile(
 
     Returns
     -------
-    P : ndarray
+    P : numpy.ndarray
         Multi-dimensional matrix profile for the window with index equal to
         `start`
 
-    I : ndarray
+    I : numpy.ndarray
         Multi-dimensional matrix profile indices for the window with index
         equal to `start`
     """
@@ -500,7 +500,7 @@ def _get_multi_QT(start, T, m):
     start : int
         The window index for T_B from which to calculate the QT dot product
 
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which to compute the dot product
 
     m : int
@@ -508,10 +508,10 @@ def _get_multi_QT(start, T, m):
 
     Returns
     -------
-    QT : ndarray
+    QT : numpy.ndarray
         Given `start`, return the corresponding multi-dimensional QT
 
-    QT_first : ndarray
+    QT_first : numpy.ndarray
         Multi-dimensional QT for the first window
     """
     d = T.shape[0]
@@ -546,10 +546,10 @@ def _compute_multi_D(
     idx : int
         The row index in `T`
 
-    D : ndarray
+    D : numpy.ndarray
         The output distance profile
 
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
     m : int
@@ -559,25 +559,25 @@ def _compute_multi_D(
         The half width for the exclusion zone relative to the current
         sliding window
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding mean of time series, `T`
 
-    Σ_T : ndarray
+    Σ_T : numpy.ndarray
         Sliding standard deviation of time series, `T`
 
-    QT_even : ndarray
+    QT_even : numpy.ndarray
         Dot product between some query sequence,`Q`, and time series, `T`
 
-    QT_odd : ndarray
+    QT_odd : numpy.ndarray
         Dot product between some query sequence,`Q`, and time series, `T`
 
-    QT_first : ndarray
+    QT_first : numpy.ndarray
         QT for the first window relative to the current sliding window
 
-    μ_Q : ndarray
+    μ_Q : numpy.ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window
 
-    σ_Q : ndarray
+    σ_Q : numpy.ndarray
         Standard deviation of the query sequence, `Q`, relative to the current
         sliding window
 
@@ -639,20 +639,20 @@ def _compute_PI(d, idx, D, D_prime, range_start, P, I):
     idx : int
         The row index in `T`
 
-    D : ndarray
+    D : numpy.ndarray
         The distance profile
 
-    D_prime : ndarray
+    D_prime : numpy.ndarray
         A reusable array for storing the column-wise cumulative sum of `D`
 
     range_start : int
         The starting index value along `T` for which to start the matrix
         profile calculation
 
-    P : ndarray
+    P : numpy.ndarray
         The matrix profile
 
-    I : ndarray
+    I : numpy.ndarray
         The matrix profile indices
     """
     D_prime[:] = 0.0
@@ -690,7 +690,7 @@ def _mstump(
 
     Parameters
     ----------
-    T: ndarray
+    T: numpy.ndarray
         The time series or sequence for which to compute the multi-dimensional
         matrix profile
 
@@ -706,22 +706,22 @@ def _mstump(
         The half width for the exclusion zone relative to the current
         sliding window
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding mean of time series, `T`
 
-    Σ_T : ndarray
+    Σ_T : numpy.ndarray
         Sliding standard deviation of time series, `T`
 
-    QT : ndarray
+    QT : numpy.ndarray
         Dot product between some query sequence,`Q`, and time series, `T`
 
-    QT_first : ndarray
+    QT_first : numpy.ndarray
         QT for the first window relative to the current sliding window
 
-    μ_Q : ndarray
+    μ_Q : numpy.ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window
 
-    σ_Q : ndarray
+    σ_Q : numpy.ndarray
         Standard deviation of the query sequence, `Q`, relative to the current
         sliding window
 
@@ -732,7 +732,7 @@ def _mstump(
         The starting index value along T_B for which to start the matrix
         profile calculation. Default is 1.
 
-    include : ndarray, default None
+    include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -746,12 +746,12 @@ def _mstump(
 
     Returns
     -------
-    P : ndarray
+    P : numpy.ndarray
         The multi-dimensional matrix profile. Each row of the array corresponds
         to each matrix profile for a given dimension (i.e., the first row is the
         1-D matrix profile and the second row is the 2-D matrix profile).
 
-    I : ndarray
+    I : numpy.ndarray
         The multi-dimensional matrix profile index where each row of the array
         corresponds to each matrix profile index for a given dimension.
 
@@ -813,7 +813,7 @@ def mstump(T, m, include=None, discords=False, normalize=True):
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which to compute the multi-dimensional
         matrix profile. Each row in `T` represents data from a different
         dimension while each column in `T` represents data from the same
@@ -822,7 +822,7 @@ def mstump(T, m, include=None, discords=False, normalize=True):
     m : int
         Window size
 
-    include : list, ndarray, default None
+    include : list, numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -843,12 +843,12 @@ def mstump(T, m, include=None, discords=False, normalize=True):
 
     Returns
     -------
-    P : ndarray
+    P : numpy.ndarray
         The multi-dimensional matrix profile. Each row of the array corresponds
         to each matrix profile for a given dimension (i.e., the first row is
         the 1-D matrix profile and the second row is the 2-D matrix profile).
 
-    I : ndarray
+    I : numpy.ndarray
         The multi-dimensional matrix profile index where each row of the array
         corresponds to each matrix profile index for a given dimension.
 

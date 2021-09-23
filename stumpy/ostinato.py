@@ -37,11 +37,11 @@ def _across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, M_Ts, Σ_Ts):
 
     Returns
     -------
-    nns_radii : ndarray
+    nns_radii : numpy.ndarray
         Radii to subsequences in each time series of `Ts` that are closest to the
         query subsequence `Ts[Ts_idx][subseq_idx : subseq_idx + m]`
 
-    nns_subseq_idx : ndarray
+    nns_subseq_idx : numpy.ndarray
         Indices to subsequences in each time series of `Ts` that are closest to the
         query subsequence `Ts[Ts_idx][subseq_idx : subseq_idx + m]`
     """

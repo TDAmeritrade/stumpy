@@ -16,12 +16,12 @@ def _nnmark(I):
 
     Parameters
     ----------
-    I : ndarray
+    I : numpy.ndarray
         Matrix profile indices
 
     Returns
     -------
-    nnmark : ndarray
+    nnmark : numpy.ndarray
         Counts of nearest neighbor overheard crossings or arcs.
 
     Notes
@@ -81,7 +81,7 @@ def _iac(
 
     Returns
     -------
-    IAC : ndarray
+    IAC : numpy.ndarray
         Idealized arc curve (IAC)
     """
     np.random.seed(seed)
@@ -122,7 +122,7 @@ def _cac(I, L, bidirectional=True, excl_factor=5, custom_iac=None, seed=0):
 
     Parameters
     ----------
-    I : ndarray
+    I : numpy.ndarray
         The matrix profile indices for the time series of interest
 
     L : int
@@ -140,7 +140,7 @@ def _cac(I, L, bidirectional=True, excl_factor=5, custom_iac=None, seed=0):
     excl_factor : int, default 5
         The multiplying factor for the first and last regime exclusion zones
 
-    custom_iac : ndarray, default None
+    custom_iac : numpy.ndarray, default None
         A custom idealized arc curve (IAC) that will used for correcting the
         arc curve
 
@@ -151,7 +151,7 @@ def _cac(I, L, bidirectional=True, excl_factor=5, custom_iac=None, seed=0):
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         A corrected arc curve (CAC)
 
     Notes
@@ -188,7 +188,7 @@ def _rea(cac, n_regimes, L, excl_factor=5):
 
     Parameters
     ----------
-    cac : ndarray
+    cac : numpy.ndarray
         The corrected arc curve
 
     n_regimes : int
@@ -207,7 +207,7 @@ def _rea(cac, n_regimes, L, excl_factor=5):
 
     Returns
     -------
-    regime_locs : ndarray
+    regime_locs : numpy.ndarray
         The locations of the regimes
 
     Notes
@@ -240,7 +240,7 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
 
     Parameters
     ----------
-    I : ndarray
+    I : numpy.ndarray
         The matrix profile indices for the time series of interest
 
     L : int
@@ -262,16 +262,16 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
     excl_factor : int, default 5
         The multiplying factor for the regime exclusion zone
 
-    custom_iac : ndarray, default None
+    custom_iac : numpy.ndarray, default None
         A custom idealized arc curve (IAC) that will used for correcting the
         arc curve
 
     Returns
     -------
-    cac : ndarray
+    cac : numpy.ndarray
         A corrected arc curve (CAC)
 
-    regime_locs : ndarray
+    regime_locs : numpy.ndarray
         The locations of the regimes
 
     Notes
@@ -296,13 +296,13 @@ class floss:
 
     Parameters
     ----------
-    mp : ndarray
+    mp : numpy.ndarray
         The first column consists of the matrix profile, the second column
         consists of the matrix profile indices, the third column consists of
         the left matrix profile indices, and the fourth column consists of
         the right matrix profile indices.
 
-    T : ndarray
+    T : numpy.ndarray
         A 1-D time series data used to generate the matrix profile and matrix profile
         indices found in `mp`. Note that the the right matrix profile index is used and
         the right matrix profile is intelligently recomputed on the fly from `T` instead
@@ -332,7 +332,7 @@ class floss:
         Number of distribution samples to draw during each iteration when
         computing the IAC
 
-    custom_iac : ndarray, default None
+    custom_iac : numpy.ndarray, default None
         A custom idealized arc curve (IAC) that will used for correcting the
         arc curve
 
@@ -341,19 +341,19 @@ class floss:
 
     Attributes
     ----------
-    cac_1d_ : ndarray
+    cac_1d_ : numpy.ndarray
         A 1-dimensional corrected arc curve (CAC) updated as a result of ingressing a
         single new data point and egressing a single old data point.
 
-    P_ : ndarray
+    P_ : numpy.ndarray
         The matrix profile updated as a result of ingressing a single new data
         point and egressing a single old data point.
 
-    I_ : ndarray
+    I_ : numpy.ndarray
         The (right) matrix profile indices updated as a result of ingressing a single
         new data point and egressing a single old data point.
 
-    T_ : ndarray
+    T_ : numpy.ndarray
         The updated time series, `T`
 
     Methods
@@ -390,13 +390,13 @@ class floss:
 
         Parameters
         ----------
-        mp : ndarray
+        mp : numpy.ndarray
             The first column consists of the matrix profile, the second column
             consists of the matrix profile indices, the third column consists of
             the left matrix profile indices, and the fourth column consists of
             the right matrix profile indices.
 
-        T : ndarray
+        T : numpy.ndarray
             A 1-D time series data used to generate the matrix profile and matrix
             profile indices found in `mp`. Note that the the right matrix profile index
             is used and the right matrix profile is intelligently recomputed on-the-fly
@@ -426,7 +426,7 @@ class floss:
             Number of distribution samples to draw during each iteration when
             computing the IAC
 
-        custom_iac : ndarray, default None
+        custom_iac : numpy.ndarray, default None
             A custom idealized arc curve (IAC) that will used for correcting the
             arc curve
 

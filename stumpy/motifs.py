@@ -33,16 +33,16 @@ def _motifs(
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence
 
-    P : ndarray
+    P : numpy.ndarray
         Matrix Profile of time series, `T`
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding mean of time series, `T`
 
-    Σ_T : ndarray
+    Σ_T : numpy.ndarray
         Sliding standard deviation of time series, `T`
 
     excl_zone : int
@@ -78,12 +78,12 @@ def _motifs(
 
     Return
     ------
-    motif_distances : ndarray
+    motif_distances : numpy.ndarray
         The distances corresponding to a set of subsequence matches for each motif.
         Note that the first column always corresponds to the distance for the
         self-match/trivial-match for each motif.
 
-    motif_indices : ndarray
+    motif_indices : numpy.ndarray
         The indices corresponding to a set of subsequences matches for each motif.
         Note that the first column always corresponds to the index for the
         self-match/trivial-match for each motif.
@@ -159,10 +159,10 @@ def motifs(
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence
 
-    P : ndarray
+    P : numpy.ndarray
         Matrix Profile of `T`
 
     min_neighbors : int, default 1
@@ -201,12 +201,12 @@ def motifs(
 
     Return
     ------
-    motif_distances : ndarray
+    motif_distances : numpy.ndarray
         The distances corresponding to a set of subsequence matches for each motif.
         Note that the first column always corresponds to the distance for the
         self-match/trivial-match for each motif.
 
-    motif_indices : ndarray
+    motif_indices : numpy.ndarray
         The indices corresponding to a set of subsequences matches for each motif.
         Note that the first column always corresponds to the index for the
         self-match/trivial-match for each motif.
@@ -284,16 +284,16 @@ def match(
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         The query sequence. It doesn't have to be a subsequence of `T`
 
-    T : ndarray
+    T : numpy.ndarray
         The time series of interest
 
-    M_T : ndarray, default None
+    M_T : numpy.ndarray, default None
         Sliding mean of time series, `T`
 
-    Σ_T : ndarray, default None
+    Σ_T : numpy.ndarray, default None
         Sliding standard deviation of time series, `T`
 
     max_distance : float or function, default None
@@ -318,7 +318,7 @@ def match(
 
     Returns
     -------
-    out : ndarray
+    out : numpy.ndarray
         The first column consists of distances of subsequences of `T` whose distances
         to `Q` are smaller than `max_distance`, sorted by distance (lowest to highest).
         The second column consists of the corresponding indices in `T`.

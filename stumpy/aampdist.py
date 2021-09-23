@@ -20,10 +20,10 @@ def _aampdist_vect(
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         Query array
 
-    T : ndarray
+    T : numpy.ndarray
         Time series or sequence
 
     m : int
@@ -71,10 +71,10 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None):
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The first time series or sequence for which to compute the matrix profile
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The second time series or sequence for which to compute the matrix profile
 
     m : int
@@ -124,10 +124,10 @@ def aampdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None):
         scope of this library. Please refer to the Dask Distributed
         documentation.
 
-    T_A : ndarray
+    T_A : numpy.ndarray
         The first time series or sequence for which to compute the matrix profile
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The second time series or sequence for which to compute the matrix profile
 
     m : int

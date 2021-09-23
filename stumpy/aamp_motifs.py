@@ -33,17 +33,17 @@ def _aamp_motifs(
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence
 
-    P : ndarray
+    P : numpy.ndarray
         Matrix Profile of `T`
 
-    T_subseq_isfinite : ndarray
+    T_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_squared : ndarray
+    T_squared : numpy.ndarray
         Squared time series or sequence
 
     excl_zone : int
@@ -74,12 +74,12 @@ def _aamp_motifs(
 
     Return
     ------
-    motif_distances : ndarray
+    motif_distances : numpy.ndarray
         The distances corresponding to a set of subsequence matches for each motif.
         Note that the first column always corresponds to the distance for the
         self-match/trivial-match for each motif.
 
-    motif_indices : ndarray
+    motif_indices : numpy.ndarray
         The indices corresponding to a set of subsequences matches for each motif
         Note that the first column always corresponds to the index for the
         self-match/trivial-match for each motif
@@ -152,10 +152,10 @@ def aamp_motifs(
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
             The time series or sequence
 
-    P : ndarray
+    P : numpy.ndarray
         Matrix Profile of `T`
 
     min_neighbors : int, default 1
@@ -190,12 +190,12 @@ def aamp_motifs(
 
     Return
     ------
-    motif_distances : ndarray
+    motif_distances : numpy.ndarray
         The distances corresponding to a set of subsequence matches for each motif.
         Note that the first column always corresponds to the distance for the
         self-match/trivial-match for each motif.
 
-    motif_indices : ndarray
+    motif_indices : numpy.ndarray
         The indices corresponding to a set of subsequences matches for each motif
         Note that the first column always corresponds to the index for the
         self-match/trivial-match for each motif.
@@ -269,10 +269,10 @@ def aamp_match(
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         The query sequence. It doesn't have to be a subsequence of `T`
 
-    T : ndarray
+    T : numpy.ndarray
         The time series of interest
 
     max_distance : float or function, default None
@@ -291,7 +291,7 @@ def aamp_match(
 
     Returns
     -------
-    out : ndarray
+    out : numpy.ndarray
         The first column consists of distances of subsequences of `T` whose distances
         to `Q` are smaller than `max_distance`, sorted by distance (lowest to highest).
         The second column consists of the corresponding indices in `T`.

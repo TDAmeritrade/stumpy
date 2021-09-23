@@ -24,7 +24,7 @@ def _get_all_aampdist_profiles(
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which to find the snippets
 
     m : int
@@ -62,7 +62,7 @@ def _get_all_aampdist_profiles(
 
     Returns
     -------
-    D : ndarray
+    D : numpy.ndarray
         MPdist profiles
 
     Notes
@@ -128,7 +128,7 @@ def aampdist_snippets(
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which to find the snippets
 
     m : int
@@ -162,23 +162,23 @@ def aampdist_snippets(
 
     Returns
     -------
-    snippets : ndarray
+    snippets : numpy.ndarray
         The top `k` snippets
 
-    snippets_indices : ndarray
+    snippets_indices : numpy.ndarray
         The index locations for each of top `k` snippets
 
-    snippets_profiles : ndarray
+    snippets_profiles : numpy.ndarray
         The MPdist profiles for each of the top  `k` snippets
 
-    snippets_fractions : ndarray
+    snippets_fractions : numpy.ndarray
         The fraction of data that each of the top `k` snippets represents
 
-    snippets_areas : ndarray
+    snippets_areas : numpy.ndarray
         The area under the curve corresponding to each profile for each of the top `k`
         snippets
 
-    snippets_regimes: ndarray
+    snippets_regimes: numpy.ndarray
         The index slices corresponding to the set of regimes for each of the top `k`
         snippets. The first column is the (zero-based) snippet index while the second
         and third columns correspond to the (inclusive) regime start indices and the

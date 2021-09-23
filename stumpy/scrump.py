@@ -36,30 +36,30 @@ def _prescrump(
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding window mean for T_A
 
-    Σ_T : ndarray
+    Σ_T : numpy.ndarray
         Sliding window standard deviation for T_A
 
-    μ_Q : ndarray
+    μ_Q : numpy.ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window in `T_B`
 
-    σ_Q : ndarray
+    σ_Q : numpy.ndarray
         Standard deviation of the query sequence, `Q`, relative to the current
         sliding window in `T_B`
 
-    QT : ndarray
+    QT : numpy.ndarray
         Sliding dot product between `Q` in `T_B` and `T_A`
 
     i : int
@@ -69,13 +69,13 @@ def _prescrump(
         The sampling interval that defaults to
         `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
 
-    squared_distance_profile : ndarray
+    squared_distance_profile : numpy.ndarray
         A reusable array to store the computed squared distance profile
 
-    P_squared : ndarray
+    P_squared : numpy.ndarray
         The squared matrix profile
 
-    I : ndarray
+    I : numpy.ndarray
         The matrix profile indices
 
     excl_zone : int
@@ -156,13 +156,13 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
     m : int
         Window size
 
-    T_B : ndarray, default None
+    T_B : numpy.ndarray, default None
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
@@ -177,10 +177,10 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
 
     Returns
     -------
-    P : ndarray
+    P : numpy.ndarray
         Matrix profile
 
-    I : ndarray
+    I : numpy.ndarray
         Matrix profile indices
 
     Notes
@@ -262,10 +262,10 @@ class scrump:
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
@@ -297,10 +297,10 @@ class scrump:
 
     Attributes
     ----------
-    P_ : ndarray
+    P_ : numpy.ndarray
         The updated matrix profile
 
-    I_ : ndarray
+    I_ : numpy.ndarray
         The updated matrix profile indices
 
     Methods
@@ -334,13 +334,13 @@ class scrump:
 
         Parameters
         ----------
-        T_A : ndarray
+        T_A : numpy.ndarray
             The time series or sequence for which to compute the matrix profile
 
         m : int
             Window size
 
-        T_B : ndarray, default None
+        T_B : numpy.ndarray, default None
             The time series or sequence that will be used to annotate T_A. For every
             subsequence in T_A, its nearest neighbor in T_B will be recorded.
 

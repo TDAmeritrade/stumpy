@@ -14,7 +14,7 @@ class aampi:
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which the non-normalized matrix profile and
         matrix profile indices will be returned
 
@@ -27,19 +27,19 @@ class aampi:
 
     Attributes
     ----------
-    P_ : ndarray
+    P_ : numpy.ndarray
         The updated matrix profile for `T`
 
-    I_ : ndarray
+    I_ : numpy.ndarray
         The updated matrix profile indices for `T`
 
-    left_P_ : ndarray
+    left_P_ : numpy.ndarray
         The updated left matrix profile for `T`
 
-    left_I_ : ndarray
+    left_I_ : numpy.ndarray
         The updated left matrix profile indices for `T`
 
-    T_ : ndarray
+    T_ : numpy.ndarray
         The updated time series or sequence for which the matrix profile and matrix
         profile indices are computed
 
@@ -65,7 +65,7 @@ class aampi:
 
         Parameters
         ----------
-        T : ndarray
+        T : numpy.ndarray
             The time series or sequence for which the unnormalized matrix profile and
             matrix profile indices will be returned
 

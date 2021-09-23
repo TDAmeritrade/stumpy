@@ -14,7 +14,7 @@ class gpu_stimp(_stimp):
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which to compute the pan matrix profile
 
     m_start : int, default 3
@@ -37,11 +37,11 @@ class gpu_stimp(_stimp):
 
     Attributes
     ----------
-    PAN_ : ndarray
+    PAN_ : numpy.ndarray
         The transformed (i.e., normalized, contrasted, binarized, and repeated)
         pan matrix profile
 
-    M_ : ndarray
+    M_ : numpy.ndarray
         The full list of (breadth first search (level) ordered) subsequence window
         sizes
 
@@ -73,7 +73,7 @@ class gpu_stimp(_stimp):
 
         Parameters
         ----------
-        T : ndarray
+        T : numpy.ndarray
             The time series or sequence for which to compute the pan matrix profile
 
         min_m : int, default 3

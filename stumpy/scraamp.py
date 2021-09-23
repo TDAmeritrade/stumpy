@@ -37,31 +37,31 @@ def _prescraamp(
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
 
-    T_A_subseq_isfinite : ndarray
+    T_A_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_B_subseq_isfinite : ndarray
+    T_B_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_A_squared : ndarray
+    T_A_squared : numpy.ndarray
         Rolling window `T_A_squared`
 
-    T_B_squared : ndarray
+    T_B_squared : numpy.ndarray
         Rolling window `T_B_squared`
 
-    QT : ndarray
+    QT : numpy.ndarray
         Sliding dot product between `Q` in `T_B` and `T_A`
 
     i : int
@@ -71,13 +71,13 @@ def _prescraamp(
         The sampling interval that defaults to
         `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
 
-    squared_distance_profile : ndarray
+    squared_distance_profile : numpy.ndarray
         A reusable array to store the computed squared distance profile
 
-    P_squared : ndarray
+    P_squared : numpy.ndarray
         The squared matrix profile
 
-    I : ndarray
+    I : numpy.ndarray
         The matrix profile indices
 
     excl_zone : int
@@ -165,13 +165,13 @@ def prescraamp(T_A, m, T_B=None, s=None):
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
     m : int
         Window size
 
-    T_B : ndarray, default None
+    T_B : numpy.ndarray, default None
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
@@ -181,10 +181,10 @@ def prescraamp(T_A, m, T_B=None, s=None):
 
     Returns
     -------
-    P : ndarray
+    P : numpy.ndarray
         Matrix profile
 
-    I : ndarray
+    I : numpy.ndarray
         Matrix profile indices
 
     Notes
@@ -261,10 +261,10 @@ class scraamp:
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
@@ -291,10 +291,10 @@ class scraamp:
 
     Attributes
     ----------
-    P_ : ndarray
+    P_ : numpy.ndarray
         The updated matrix profile
 
-    I_ : ndarray
+    I_ : numpy.ndarray
         The updated matrix profile indices
 
     Methods
@@ -327,13 +327,13 @@ class scraamp:
 
         Parameters
         ----------
-        T_A : ndarray
+        T_A : numpy.ndarray
             The time series or sequence for which to compute the matrix profile
 
         m : int
             Window size
 
-        T_B : ndarray, default None
+        T_B : numpy.ndarray, default None
             The time series or sequence that will be used to annotate T_A. For every
             subsequence in T_A, its nearest neighbor in T_B will be recorded.
 

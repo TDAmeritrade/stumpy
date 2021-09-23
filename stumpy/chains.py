@@ -16,10 +16,10 @@ def atsc(IL, IR, j):
 
     Parameters
     ----------
-    IL : ndarray
+    IL : numpy.ndarray
         Left matrix profile indices
 
-    IR : ndarray
+    IR : numpy.ndarray
         Right matrix profile indices
 
     j : int
@@ -27,7 +27,7 @@ def atsc(IL, IR, j):
 
     Returns
     -------
-    out : ndarray
+    out : numpy.ndarray
         Anchored time series chain for index, `j`
 
     Notes
@@ -63,18 +63,18 @@ def allc(IL, IR):
 
     Parameters
     ----------
-    IL : ndarray
+    IL : numpy.ndarray
         Left matrix profile indices
 
-    IR : ndarray
+    IR : numpy.ndarray
         Right matrix profile indices
 
     Returns
     -------
-    S : list(ndarray)
+    S : list(numpy.ndarray)
         All-chain set
 
-    C : ndarray
+    C : numpy.ndarray
         Anchored time series chain for the longest chain (also known as the
         unanchored chain)
 
