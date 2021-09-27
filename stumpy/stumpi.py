@@ -64,6 +64,17 @@ class stumpi:
     See Table V
 
     Note that line 11 is missing an important `sqrt` operation!
+
+    Examples
+    --------
+    >>> stream = stumpy.stumpi(
+    ...     np.array([584., -11., 23., 79., 1001., 0.]),
+    ...     m=3)
+    >>> stream.update(-19.0)
+    >>> stream.left_P_
+    array([       inf, 3.00009263, 2.69407392, 3.05656417])
+    >>> stream.left_I_
+    array([-1,  0,  1,  2])
     """
 
     def __init__(self, T, m, egress=True, normalize=True):

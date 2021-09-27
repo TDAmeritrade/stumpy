@@ -210,6 +210,19 @@ def motifs(
         The indices corresponding to a set of subsequences matches for each motif.
         Note that the first column always corresponds to the index for the
         self-match/trivial-match for each motif.
+
+    See Also
+    --------
+    stumpy.match : Find all matches of a query Q in a time series T
+
+    Examples
+    --------
+    >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
+    >>> stumpy.motifs(
+    ...     np.array([584., -11., 23., 79., 1001., 0., -19.]),
+    ...     mp[:, 0],
+    ...     max_distance=2.0)
+    (array([[0.        , 0.11633857]]), array([[0, 4]]))
     """
     if max_motifs < 1:  # pragma: no cover
         logger.warn(
@@ -322,6 +335,18 @@ def match(
         The first column consists of distances of subsequences of `T` whose distances
         to `Q` are smaller than `max_distance`, sorted by distance (lowest to highest).
         The second column consists of the corresponding indices in `T`.
+
+    See Also
+    --------
+    stumpy.motifs : Discover the top motifs for time series T
+
+    Examples
+    --------
+    >>> stumpy.match(
+    ...     np.array([-11.1, 23.4, 79.5, 1001.0]),
+    ...     np.array([584., -11., 23., 79., 1001., 0., -19.])
+    ...     )
+    array([[0.0011129739290248121, 1]], dtype=object)
     """
     Q = np.asarray(Q)
     T = np.asarray(T)

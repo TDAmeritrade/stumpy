@@ -509,12 +509,25 @@ class stimp(_stimp):
         Compute the next matrix profile using the next available (breadth-first-search
         (level) ordered) subsequence window size and update the pan matrix profile
 
+    See Also
+    --------
+    stumpy.stimped : Compute the Pan Matrix Profile with a distributed dask cluster
+    stumpy.gpu_stimp : Compute the Pan Matrix Profile with with one or more GPU devices
+
     Notes
     -----
     `DOI: 10.1109/ICBK.2019.00031 \
     <https://www.cs.ucr.edu/~eamonn/PAN_SKIMP%20%28Matrix%20Profile%20XX%29.pdf>`__
 
     See Table 2
+
+    Examples
+    --------
+    >>> pmp = stumpy.stimp(np.array([584., -11., 23., 79., 1001., 0., -19.]))
+    >>> pmp.update()
+    >>> pmp.PAN_
+    array([[0., 1., 1., 1., 1., 1., 1.],
+           [0., 1., 1., 1., 1., 1., 1.]])
     """
 
     def __init__(
@@ -614,12 +627,30 @@ class stimped(_stimp):
         Compute the next matrix profile using the next available (breadth-first-search
         (level) ordered) subsequence window size and update the pan matrix profile
 
+    See Also
+    --------
+    stumpy.stimp : Compute the Pan Matrix Profile
+    stumpy.gpu_stimp : Compute the Pan Matrix Profile with with one or more GPU devices
+
     Notes
     -----
     `DOI: 10.1109/ICBK.2019.00031 \
     <https://www.cs.ucr.edu/~eamonn/PAN_SKIMP%20%28Matrix%20Profile%20XX%29.pdf>`__
 
     See Table 2
+
+    Examples
+    --------
+    >>> from dask.distributed import Client
+    >>> if __name__ == "__main__":
+    ...     dask_client = Client()
+    ...     pmp = stumpy.stimped(
+    ...         dask_client,
+    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]))
+    ...     pmp.update()
+    ...     pmp.PAN_
+    array([[0., 1., 1., 1., 1., 1., 1.],
+           [0., 1., 1., 1., 1., 1., 1.]])
     """
 
     def __init__(

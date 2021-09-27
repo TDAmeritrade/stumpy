@@ -58,6 +58,14 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
         the left matrix profile indices, and the fourth column consists of
         the right matrix profile indices.
 
+    See Also
+    --------
+    stumpy.stump : Compute the z-normalized matrix profile
+        cluster
+    stumpy.gpu_stump : Compute the z-normalized matrix profile with one or more GPU
+        devices
+    stumpy.scrump : Compute an approximate z-normalized matrix profile
+
     Notes
     -----
     `DOI: 10.1007/s10115-017-1138-x \
@@ -106,6 +114,21 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
     trivial match.
 
     Note that left and right matrix profiles are only available for self-joins.
+
+    Examples
+    --------
+    >>> from dask.distributed import Client
+    >>> if __name__ == "__main__":
+    ...     dask_client = Client()
+    ...     stumpy.stumped(
+    ...         dask_client,
+    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]),
+    ...         m=3)
+    array([[0.11633857113691416, 4, -1, 4],
+           [2.694073918063438, 3, -1, 3],
+           [3.0000926340485923, 0, 0, 4],
+           [2.694073918063438, 1, 1, -1],
+           [0.11633857113691416, 0, 0, -1]], dtype=object)
     """
     if T_B is None:
         T_B = T_A

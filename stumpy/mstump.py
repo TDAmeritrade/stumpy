@@ -293,6 +293,28 @@ def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normaliz
         S : numpy.ndarray
         An array of that contains the `k`th-dimensional subspace for the subsequence
         with index equal to `motif_idx`
+
+    See Also
+    --------
+    stumpy.mstump : Compute the multi-dimensional z-normalized matrix profile
+    stumpy.mstumped : Compute the multi-dimensional z-normalized matrix profile with
+        a distributed dask cluster
+
+    Examples
+    --------
+    >>> mps, indices = stumpy.mstump(
+    ...     np.array([[584., -11., 23., 79., 1001., 0., -19.],
+    ...               [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
+    ...     m=3)
+    >>> motifs_idx = np.argsort(mps, axis=1)[:, :2]
+    >>> stumpy.subspace(
+    ...     np.array([[584., -11., 23., 79., 1001., 0., -19.],
+    ...               [  1.,   2.,  4.,  8.,   16., 0.,  32.]],
+    ...     m=3,
+    ...     subseq_idx=motifs_idx[k][0],
+    ...     nn_idx=indices[k][motifs_idx[k][0]],
+    ...     k=1)
+    array([0, 1])
     """
     T, _, _ = core.preprocess(T, m)
     subseqs = core.z_norm(T[:, subseq_idx : subseq_idx + m], axis=1)
@@ -852,12 +874,30 @@ def mstump(T, m, include=None, discords=False, normalize=True):
         The multi-dimensional matrix profile index where each row of the array
         corresponds to each matrix profile index for a given dimension.
 
+    See Also
+    --------
+    stumpy.mstumped : Compute the multi-dimensional z-normalized matrix profile with
+        a distributed dask cluster
+    stumpy.subspace : Compute the k-dimensional matrix profile subspace for a given
+        subsequence index and its nearest neighbor index
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2017.66 \
     <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
     See mSTAMP Algorithm
+
+    Examples
+    --------
+    >>> stumpy.mstump(
+    ...     np.array([[584., -11., 23., 79., 1001., 0., -19.],
+    ...               [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
+    ...     m=3)
+    (array([[0.        , 1.43947142, 0.        , 2.69407392, 0.11633857],
+            [0.777905  , 2.36179922, 1.50004632, 2.92246722, 0.777905  ]]),
+     array([[2, 4, 0, 1, 0],
+            [4, 4, 0, 1, 0]]))
     """
     T_A = T
     T_B = T_A

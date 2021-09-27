@@ -1263,6 +1263,11 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
     distance_profile : numpy.ndarray
         Distance profile
 
+    See Also
+    --------
+    stumpy.motifs : Discover the top motifs for time series `T`
+    stumpy.match : Find all matches of a query `Q` in a time series `T```
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2016.0179 \
@@ -1274,6 +1279,13 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
 
     Note: Unlike the Matrix Profile I paper, here, M_T, Σ_T can be calculated
     once for all subsequences of T and passed in so the redundancy is removed
+
+    Examples
+    --------
+    >>> stumpy.mass(
+    ...     np.array([-11.1, 23.4, 79.5, 1001.0]),
+    ...     np.array([584., -11., 23., 79., 1001., 0., -19.]))
+    array([3.18792463e+00, 1.11297393e-03, 3.23874018e+00, 3.34470195e+00])
     """
     Q = Q.copy()
     Q = np.asarray(Q)

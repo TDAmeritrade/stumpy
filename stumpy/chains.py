@@ -30,6 +30,10 @@ def atsc(IL, IR, j):
     out : numpy.ndarray
         Anchored time series chain for index, `j`
 
+    See Also
+    --------
+    stumpy.allc : Compute the all-chain set (ALLC)
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2017.79 <https://www.cs.ucr.edu/~eamonn/chains_ICDM.pdf>`__
@@ -40,6 +44,12 @@ def atsc(IL, IR, j):
 
     Unlike the original paper, we've replaced the while-loop with a more stable
     for-loop.
+
+    Examples
+    --------
+    >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
+    >>> stumpy.atsc(mp[:, 2], mp[:, 3], 1)
+    array([1, 3])
     """
     C = deque([j])
     for i in range(IL.size):
@@ -78,6 +88,10 @@ def allc(IL, IR):
         Anchored time series chain for the longest chain (also known as the
         unanchored chain)
 
+    See Also
+    --------
+    stumpy.atsc : Compute the anchored time series chain (ATSC)
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2017.79 <https://www.cs.ucr.edu/~eamonn/chains_ICDM.pdf>`__
@@ -92,6 +106,12 @@ def allc(IL, IR):
     all-chain set and unanchored chain are returned.
 
     The all-chain set, S, is returned as a list of unique numpy arrays.
+
+    Examples
+    --------
+    >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
+    >>> stumpy.allc(mp[:, 2], mp[:, 3])
+    ([array([1, 3]), array([2]), array([0, 4])], array([0, 4]))
     """
     L = np.ones(IL.size, dtype=np.int64)
     S = set()  # type: ignore

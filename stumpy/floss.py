@@ -254,11 +254,6 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
         The number of regimes to search for. This is one more than the
         number of regime changes as denoted in the original paper.
 
-    m : int
-        The subsequence length. This is expected to be the same value as the
-        window size used to compute the matrix profile and matrix
-        profile index.
-
     excl_factor : int, default 5
         The multiplying factor for the regime exclusion zone
 
@@ -274,6 +269,11 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
     regime_locs : numpy.ndarray
         The locations of the regimes
 
+    See Also
+    --------
+    stumpy.floss : Compute the Fast Low-Cost Online Semantic Segmentation (FLOSS) for
+        streaming data
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2017.21 <https://www.cs.ucr.edu/~eamonn/Segmentation_ICDM.pdf>`__
@@ -282,6 +282,12 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
 
     This is the implementation for Fast Low-cost Unipotent Semantic
     Segmentation (FLUSS).
+
+    Examples
+    --------
+    >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
+    >>> stumpy.fluss(mp[:, 0], 3, 2)
+    (array([1., 1., 1., 1., 1.]), array([0]))
     """
     cac = _cac(I, L, bidirectional=True, excl_factor=excl_factor, custom_iac=custom_iac)
     regime_locs = _rea(cac, n_regimes, L, excl_factor=excl_factor)
@@ -363,6 +369,11 @@ class floss:
         the oldest single data point from `T`. Then, update the 1-dimensional corrected
         arc curve (CAC_1D) and the matrix profile.
 
+    See Also
+    --------
+    stumpy.fluss : Compute the Fast Low-cost Unipotent Semantic Segmentation (FLUSS)
+        for static data (i.e., batch processing)
+
     Notes
     -----
     DOI: 10.1109/ICDM.2017.21 <https://www.cs.ucr.edu/~eamonn/Segmentation_ICDM.pdf>`__
@@ -371,6 +382,18 @@ class floss:
 
     This is the implementation for Fast Low-cost Online Semantic
     Segmentation (FLOSS).
+
+    Examples
+    --------
+    >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0.]), m=3)
+    >>> stream = stumpy.floss(
+    ...     mp,
+    ...     np.array([584., -11., 23., 79., 1001., 0.]),
+    ...     m=3,
+    ...     L=3)
+    >>> stream.update(19.)
+    >>> stream.cac_1d_
+    array([1., 1., 1., 1.])
     """
 
     def __init__(

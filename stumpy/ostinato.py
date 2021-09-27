@@ -262,7 +262,9 @@ def ostinato(Ts, m, normalize=True):
         Window size
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
 
     Returns
     -------
@@ -276,10 +278,12 @@ def ostinato(Ts, m, normalize=True):
         The subsequence index within time series `Ts[central_motif_Ts_idx]` the contains
         most central consensus motif
 
-    normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+    See Also
+    --------
+    stumpy.ostinatoed : Find the z-normalized consensus motif of multiple time series
+        with a distributed dask cluster
+    stumpy.gpu_ostinato : Find the z-normalized consensus motif of multiple time series
+        with one or more GPU devices
 
     Notes
     -----
@@ -300,6 +304,15 @@ def ostinato(Ts, m, normalize=True):
     distance to nearest neighbors in all other time series. To find this
     central motif it is necessary to search the subsequences with the
     best radius via `stumpy.ostinato._get_central_motif`
+
+    Examples
+    --------
+    >>> stumpy.ostinato(
+    ...     [np.array([584., -11., 23., 79., 1001., 0., 19.]),
+    ...      np.array([600., -10., 23., 17.]),
+    ...      np.array([  1.,   9.,  6.,  0.])],
+    ...     m=3)
+    (1.2370237678153826, 0, 4)
     """
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
@@ -358,6 +371,12 @@ def ostinatoed(dask_client, Ts, m, normalize=True):
         The subsequence index within time series `Ts[central_motif_Ts_idx]` the contains
         most central consensus motif
 
+    See Also
+    --------
+    stumpy.ostinato : Find the z-normalized consensus motif of multiple time series
+    stumpy.gpu_ostinato : Find the z-normalized consensus motif of multiple time series
+        with one or more GPU devices
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2019.00140 \
@@ -377,6 +396,17 @@ def ostinatoed(dask_client, Ts, m, normalize=True):
     distance to nearest neighbors in all other time series. To find this
     central motif it is necessary to search the subsequences with the
     best radius via `stumpy.ostinato._get_central_motif`
+
+    >>> from dask.distributed import Client
+    >>> if __name__ == "__main__":
+    ...     dask_client = Client()
+    ...     stumpy.ostinatoed(
+    ...         dask_client,
+    ...         [np.array([584., -11., 23., 79., 1001., 0., 19.]),
+    ...          np.array([600., -10., 23., 17.]),
+    ...          np.array([  1.,   9.,  6.,  0.])],
+    ...         m=3)
+    (1.2370237678153826, 0, 4)
     """
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)

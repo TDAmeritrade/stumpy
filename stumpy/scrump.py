@@ -310,12 +310,39 @@ class scrump:
         additional new distances (limited by `percentage`) that make up the full
         distance matrix.
 
+    See Also
+    --------
+    stumpy.stump : Compute the z-normalized matrix profile
+    stumpy.stumped : Compute the z-normalized matrix profile with a distributed dask
+        cluster
+    stumpy.gpu_stump : Compute the z-normalized matrix profile with one or more GPU
+        devices
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2018.00099 \
     <https://www.cs.ucr.edu/~eamonn/SCRIMP_ICDM_camera_ready_updated.pdf>`__
 
     See Algorithm 1 and Algorithm 2
+
+    Examples
+    --------
+    >>> approx_mp = stumpy.scrump(
+    ...     np.array([584., -11., 23., 79., 1001., 0., -19.]),
+    ...     m=3)
+    >>> approx_mp.update()
+    >>> approx_mp._P
+    array([[2.982409  ,        inf, 2.982409  ],
+           [3.28412702,        inf, 3.28412702],
+           [       inf,        inf,        inf],
+           [2.982409  , 2.982409  ,        inf],
+           [3.28412702, 3.28412702,        inf]])
+    >>> approx_mp._I
+    array([[ 3, -1,  3],
+           [ 4, -1,  4],
+           [-1, -1, -1],
+           [ 0,  0, -1],
+           [ 1,  1, -1]])
     """
 
     def __init__(

@@ -416,6 +416,13 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True
         the left matrix profile indices, and the fourth column consists of
         the right matrix profile indices.
 
+    See Also
+    --------
+    stumpy.stump : Compute the z-normalized matrix profile
+    stumpy.stumped : Compute the z-normalized matrix profile with a distributed dask
+        cluster
+    stumpy.scrump : Compute an approximate z-normalized matrix profile
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2016.0085 \
@@ -443,6 +450,21 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True
     trivial match.
 
     Note that left and right matrix profiles are only available for self-joins.
+
+    Examples
+    --------
+    >>> from numba import cuda
+    >>> if __name__ == "__main__":
+    ...     all_gpu_devices = [device.id for device in cuda.list_devices()]
+    ...     stumpy.gpu_stump(
+    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]),
+    ...         m=3,
+    ...         device_id=all_gpu_devices)
+    array([[0.11633857113691416, 4, -1, 4],
+           [2.694073918063438, 3, -1, 3],
+           [3.0000926340485923, 0, 0, 4],
+           [2.694073918063438, 1, 1, -1],
+           [0.11633857113691416, 0, 0, -1]], dtype=object)
     """
     if T_B is None:  # Self join!
         T_B = T_A

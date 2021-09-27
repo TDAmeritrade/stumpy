@@ -199,6 +199,22 @@ def snippets(
     <https://www.cs.ucr.edu/~eamonn/Time_Series_Snippets_10pages.pdf>`__
 
     See Table I
+
+    Examples
+    --------
+    >>> stumpy.snippets(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3, k=2)
+    (array([[ 584.,  -11.,   23.],
+            [  79., 1001.,    0.]]),
+     array([0, 3]),
+     array([[0.        , 3.2452632 , 3.00009263, 2.982409  , 0.11633857],
+            [2.982409  , 2.69407392, 3.01719586, 0.        , 2.92154586]]),
+    array([0.6, 0.4]),
+    array([9.3441034 , 5.81050512]),
+    array([[0, 0, 1],
+           [0, 2, 3],
+           [0, 4, 5],
+           [1, 1, 2],
+           [1, 3, 4]]))
     """
     if m > T.shape[0] // 2:  # pragma: no cover
         raise ValueError(
