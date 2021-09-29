@@ -517,6 +517,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True):
 
     Examples
     --------
+    >>> import stumpy
     >>> stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
     array([[0.11633857113691416, 4, -1, 4],
            [2.694073918063438, 3, -1, 3],

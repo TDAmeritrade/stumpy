@@ -345,7 +345,7 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True):
     --------
     >>> stumpy.mpdist(
     ...     np.array([-11.1, 23.4, 79.5, 1001.0]),
-    ...     np.array([584., -11., 23., 79., 1001., 0., -19.])),
+    ...     np.array([584., -11., 23., 79., 1001., 0., -19.]),
     ...     m=3)
     0.00019935236191097894
     """
@@ -424,7 +424,7 @@ def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, normalize=True):
     ...     stumpy.mpdisted(
     ...         dask_client,
     ...         np.array([-11.1, 23.4, 79.5, 1001.0]),
-    ...         np.array([584., -11., 23., 79., 1001., 0., -19.])),
+    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]),
     ...         m=3)
     0.00019935236191097894
     """
