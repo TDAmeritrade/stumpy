@@ -10,6 +10,7 @@ import numpy as np
 from numba import njit, prange
 from scipy.signal import convolve
 from scipy.ndimage.filters import maximum_filter1d, minimum_filter1d
+from scipy import linalg
 import tempfile
 import math
 
@@ -210,7 +211,7 @@ def rolling_window(a, window):
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         numpy array
 
     window : int
@@ -218,7 +219,7 @@ def rolling_window(a, window):
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         This will be a new view of the original input array.
     """
     a = np.asarray(a)
@@ -235,7 +236,7 @@ def z_norm(a, axis=0):
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         NumPy array
 
     axis : int, default 0
@@ -243,8 +244,8 @@ def z_norm(a, axis=0):
 
     Returns
     -------
-    output : ndarray
-        An ndarray with z-normalized values computed along a specified axis.
+    output : numpy.ndarray
+        An array with z-normalized values computed along a specified axis.
     """
     std = np.std(a, axis, keepdims=True)
     std[std == 0] = 1
@@ -258,7 +259,7 @@ def check_nan(a):  # pragma: no cover
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         NumPy array
 
     Raises
@@ -273,16 +274,16 @@ def check_nan(a):  # pragma: no cover
     return
 
 
-def check_dtype(a, dtype=np.floating):  # pragma: no cover
+def check_dtype(a, dtype=np.float64):  # pragma: no cover
     """
     Check if the array type of `a` is of type specified by `dtype` parameter.
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         NumPy array
 
-    dtype : dtype, , default np.floating
+    dtype : dtype, , default np.float64
         NumPy `dtype`
 
     Raises
@@ -292,7 +293,7 @@ def check_dtype(a, dtype=np.floating):  # pragma: no cover
     """
     if not np.issubdtype(a.dtype, dtype):
         msg = f"{dtype} type expected but found {a.dtype}\n"
-        msg += "Please change your input `dtype` with `.astype(float)`"
+        msg += "Please change your input `dtype` with `.astype(np.float64)`"
         raise TypeError(msg)
 
     return True
@@ -309,7 +310,7 @@ def transpose_dataframe(df):  # pragma: no cover
 
     Parameters
     ----------
-    df : ndarray
+    df : numpy.ndarray
         Pandas dataframe
 
     Returns
@@ -330,10 +331,10 @@ def are_arrays_equal(a, b):  # pragma: no cover
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         NumPy array
 
-    b : ndarray
+    b : numpy.ndarray
         NumPy array
 
     Returns
@@ -362,7 +363,7 @@ def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         NumPy array
 
     threshold : float, default 10e-6
@@ -450,15 +451,15 @@ def sliding_dot_product(Q, T):
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         Query array or subsequence
 
-    T : ndarray
+    T : numpy.ndarray
         Time series or sequence
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         Sliding dot product between `Q` and `T`.
 
     Notes
@@ -492,19 +493,19 @@ def _welford_nanvar(a, w, a_subseq_isfinite):
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         The input array
 
-    w : ndarray
+    w : numpy.ndarray
         The rolling window size
 
-    a_subseq_isfinite : ndarray
+    a_subseq_isfinite : numpy.ndarray
         A boolean array that describes whether each subequence of length `w` within `a`
         is finite.
 
     Returns
     -------
-    all_variances : ndarray
+    all_variances : numpy.ndarray
         Rolling window nanvar
     """
     all_variances = np.empty(a.shape[0] - w + 1, dtype=np.float64)
@@ -550,15 +551,15 @@ def welford_nanvar(a, w=None):
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         The input array
 
-    w : ndarray, default None
+    w : numpy.ndarray, default None
         The rolling window size
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         Rolling window nanvar.
     """
     if w is None:
@@ -579,15 +580,15 @@ def welford_nanstd(a, w=None):
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         The input array
 
-    w : ndarray, default None
+    w : numpy.ndarray, default None
         The rolling window size
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         Rolling window nanstd.
     """
     if w is None:
@@ -610,15 +611,15 @@ def rolling_nanstd(a, w):
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         The input array
 
-    w : ndarray
+    w : numpy.ndarray
         The rolling window size
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         Rolling window nanstd.
     """
     axis = a.ndim - 1  # Account for rolling
@@ -637,15 +638,15 @@ def _rolling_nanmin_1d(a, w=None):
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         The input array
 
-    w : ndarray, default None
+    w : numpy.ndarray, default None
         The rolling window size
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         Rolling window nanmin.
     """
     if w is None:
@@ -667,15 +668,15 @@ def _rolling_nanmax_1d(a, w=None):
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         The input array
 
-    w : ndarray, default None
+    w : numpy.ndarray, default None
         The rolling window size
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         Rolling window nanmax.
     """
     if w is None:
@@ -699,15 +700,15 @@ def rolling_nanmin(a, w):
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         The input array
 
-    w : ndarray
+    w : numpy.ndarray
         The rolling window size
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         Rolling window nanmin.
     """
     axis = a.ndim - 1  # Account for rolling
@@ -728,15 +729,15 @@ def rolling_nanmax(a, w):
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         The input array
 
-    w : ndarray
+    w : numpy.ndarray
         The rolling window size
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         Rolling window nanmax.
     """
     axis = a.ndim - 1  # Account for rolling
@@ -752,7 +753,7 @@ def compute_mean_std(T, m):
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         Time series or sequence
 
     m : int
@@ -760,10 +761,10 @@ def compute_mean_std(T, m):
 
     Returns
     -------
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding mean. All nan values are replaced with np.inf
 
-    Σ_T : ndarray
+    Σ_T : numpy.ndarray
         Sliding standard deviation
 
     Notes
@@ -898,24 +899,24 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     m : int
         Window size
 
-    QT : ndarray
+    QT : numpy.ndarray
         Dot product between `Q` and `T`
 
-    μ_Q : ndarray
+    μ_Q : numpy.ndarray
         Mean of `Q`
 
-    σ_Q : ndarray
+    σ_Q : numpy.ndarray
         Standard deviation of `Q`
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding mean of `T`
 
-    Σ_T : ndarray
+    Σ_T : numpy.ndarray
         Sliding standard deviation of `T`
 
     Returns
     -------
-    D_squared : ndarray
+    D_squared : numpy.ndarray
         Squared distance profile
 
     Notes
@@ -944,24 +945,24 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     m : int
         Window size
 
-    QT : ndarray
+    QT : numpy.ndarray
         Dot product between `Q` and `T`
 
-    μ_Q : ndarray
+    μ_Q : numpy.ndarray
         Mean of `Q`
 
-    σ_Q : ndarray
+    σ_Q : numpy.ndarray
         Standard deviation of `Q`
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding mean of `T`
 
-    Σ_T : ndarray
+    Σ_T : numpy.ndarray
         Sliding standard deviation of `T`
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         Distance profile
 
     Notes
@@ -984,18 +985,18 @@ def _mass_absolute(Q_squared, T_squared, QT):
 
     Parameters
     ----------
-    Q_squared : ndarray
+    Q_squared : numpy.ndarray
         Squared query array or subsequence
 
-    T_squared : ndarray
+    T_squared : numpy.ndarray
         Squared time series or sequence
 
-    QT : ndarray
+    QT : numpy.ndarray
         Sliding window dot product of `Q` and `T`
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         Unnormalized distance profile
 
     Notes
@@ -1017,22 +1018,22 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, T_squared=None):
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         Query array or subsequence
 
-    T : ndarray
+    T : numpy.ndarray
         Time series or sequence
 
-    T_subseq_isfinite : ndarray, default None
+    T_subseq_isfinite : numpy.ndarray, default None
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_squared : ndarray, default None
+    T_squared : numpy.ndarray, default None
         Squared time series or sequence
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         Unnormalized Distance profile
 
     Notes
@@ -1091,16 +1092,16 @@ def _mass_absolute_distance_matrix(Q, T, m, distance_matrix):
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         Query array
 
-    T : ndarray
+    T : numpy.ndarray
         Time series or sequence
 
     m : int
         Window size
 
-    distance_matrix : ndarray
+    distance_matrix : numpy.ndarray
         The full output distance matrix. This is mandatory since it may be reused.
 
     Returns
@@ -1119,15 +1120,15 @@ def mueen_calculate_distance_profile(Q, T):
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         Query array or subsequence
 
-    T : ndarray
+    T : numpy.ndarray
         Time series or sequence
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         Distance profile
 
     Notes
@@ -1189,13 +1190,13 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         Query array or subsequence
 
-    T : ndarray
+    T : numpy.ndarray
         Time series or sequence
 
-    QT : ndarray
+    QT : numpy.ndarray
         The sliding dot product of Q and T
 
     μ_Q : float
@@ -1204,10 +1205,10 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
     σ_Q : float
         The scalar standard deviation of Q
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding mean of `T`
 
-    Σ_T : ndarray
+    Σ_T : numpy.ndarray
         Sliding standard deviation of `T`
 
     Notes
@@ -1240,16 +1241,16 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         Query array or subsequence
 
-    T : ndarray
+    T : numpy.ndarray
         Time series or sequence
 
-    M_T : ndarray, default None
+    M_T : numpy.ndarray, default None
         Sliding mean of `T`
 
-    Σ_T : ndarray, default None
+    Σ_T : numpy.ndarray, default None
         Sliding standard deviation of `T`
 
     normalize : bool, default True
@@ -1259,8 +1260,13 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
 
     Returns
     -------
-    distance_profile : ndarray
+    distance_profile : numpy.ndarray
         Distance profile
+
+    See Also
+    --------
+    stumpy.motifs : Discover the top motifs for time series `T`
+    stumpy.match : Find all matches of a query `Q` in a time series `T```
 
     Notes
     -----
@@ -1273,6 +1279,13 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
 
     Note: Unlike the Matrix Profile I paper, here, M_T, Σ_T can be calculated
     once for all subsequences of T and passed in so the redundancy is removed
+
+    Examples
+    --------
+    >>> stumpy.mass(
+    ...     np.array([-11.1, 23.4, 79.5, 1001.0]),
+    ...     np.array([584., -11., 23., 79., 1001., 0., -19.]))
+    array([3.18792463e+00, 1.11297393e-03, 3.23874018e+00, 3.34470195e+00])
     """
     Q = Q.copy()
     Q = np.asarray(Q)
@@ -1325,16 +1338,16 @@ def _mass_distance_matrix(Q, T, m, distance_matrix):
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         Query array
 
-    T : ndarray
+    T : numpy.ndarray
         Time series or sequence
 
     m : int
         Window size
 
-    distance_matrix : ndarray
+    distance_matrix : numpy.ndarray
         The full output distance matrix. This is mandatory since it may be reused.
 
     Returns
@@ -1359,10 +1372,10 @@ def _get_QT(start, T_A, T_B, m):
     start : int
         The window index for T_B from which to calculate the QT dot product
 
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the dot product
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
@@ -1371,10 +1384,10 @@ def _get_QT(start, T_A, T_B, m):
 
     Returns
     -------
-    QT : ndarray
+    QT : numpy.ndarray
         Given `start`, return the corresponding QT
 
-    QT_first : ndarray
+    QT_first : numpy.ndarray
          QT for the first window
     """
     QT = sliding_dot_product(T_B[start : start + m], T_A)
@@ -1394,7 +1407,7 @@ def apply_exclusion_zone(D, idx, excl_zone):
 
     Parameters
     ----------
-    D : ndarray
+    D : numpy.ndarray
         The array you want to apply the exclusion zone to
 
     idx : int
@@ -1419,7 +1432,7 @@ def preprocess(T, m):
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         Time series or sequence
 
     m : int
@@ -1427,11 +1440,11 @@ def preprocess(T, m):
 
     Returns
     -------
-    T : ndarray
+    T : numpy.ndarray
         Modified time series
-    M_T : ndarray
+    M_T : numpy.ndarray
         Rolling mean
-    Σ_T : ndarray
+    Σ_T : numpy.ndarray
         Rolling standard deviation
     """
     T = T.copy()
@@ -1459,7 +1472,7 @@ def preprocess_non_normalized(T, m):
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         Time series or sequence
 
     m : int
@@ -1467,10 +1480,10 @@ def preprocess_non_normalized(T, m):
 
     Returns
     -------
-    T : ndarray
+    T : numpy.ndarray
         Modified time series
 
-    T_subseq_isfinite : ndarray
+    T_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
     """
@@ -1505,7 +1518,7 @@ def preprocess_diagonal(T, m):
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         Time series or sequence
 
     m : int
@@ -1513,23 +1526,23 @@ def preprocess_diagonal(T, m):
 
     Returns
     -------
-    T : ndarray
+    T : numpy.ndarray
         Modified time series
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Rolling mean with a subsequence length of `m`
 
-    Σ_T_inverse : ndarray
+    Σ_T_inverse : numpy.ndarray
         Inverted rolling standard deviation
 
-    M_T_m_1 : ndarray
+    M_T_m_1 : numpy.ndarray
         Rolling mean with a subsequence length of `m-1`
 
-    T_subseq_isfinite : ndarray
+    T_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_subseq_isconstant : ndarray
+    T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` is constant (True)
     """
     T, T_subseq_isfinite = preprocess_non_normalized(T, m)
@@ -1548,7 +1561,7 @@ def replace_distance(D, search_val, replace_val, epsilon=0.0):
 
     Parameters
     ----------
-    D : ndarray
+    D : numpy.ndarray
         Distance array
 
     search_val : float
@@ -1569,11 +1582,11 @@ def replace_distance(D, search_val, replace_val, epsilon=0.0):
 
 def array_to_temp_file(a):
     """
-    Write an ndarray to a file
+    Write an array to a file
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         A NumPy array to be written to a file
 
     Returns
@@ -1599,18 +1612,18 @@ def _count_diagonal_ndist(diags, m, n_A, n_B):
     m : int
         Window size
 
-    n_A : ndarray
+    n_A : numpy.ndarray
         The length of time series `T_A`
 
-    n_B : ndarray
+    n_B : numpy.ndarray
         The length of time series `T_B`
 
-    diags : ndarray
+    diags : numpy.ndarray
         The diagonal indices of interest
 
     Returns
     -------
-    diag_ndist_counts : ndarray
+    diag_ndist_counts : numpy.ndarray
         Counts of distances computed along each diagonal of interest
     """
     diag_ndist_counts = np.zeros(diags.shape[0], dtype=np.int64)
@@ -1631,7 +1644,7 @@ def _get_array_ranges(a, n_chunks, truncate=False):
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         An array to be split
 
     n_chunks : int
@@ -1645,7 +1658,7 @@ def _get_array_ranges(a, n_chunks, truncate=False):
 
     Returns
     -------
-    array_ranges : ndarray
+    array_ranges : numpy.ndarray
         A two column array where each row consists of a start and (exclusive) stop index
         pair. The first column contains the start indices and the second column
         contains the stop indices.
@@ -1676,7 +1689,7 @@ def _rolling_isfinite_1d(a, w):
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         The input array
 
     w : int
@@ -1684,7 +1697,7 @@ def _rolling_isfinite_1d(a, w):
 
     Return
     ------
-    output : ndarray
+    output : numpy.ndarray
         A boolean array of length `a.shape[0] - w + 1` that records whether each
         rolling window subsequence contain all finite values
     """
@@ -1713,15 +1726,15 @@ def rolling_isfinite(a, w):
 
     Parameters
     ----------
-    a : ndarray
+    a : numpy.ndarray
         The input array
 
-    w : ndarray
+    w : numpy.ndarray
         The rolling window size
 
     Returns
     -------
-    output : ndarray
+    output : numpy.ndarray
         Rolling window nanmax.
     """
     axis = a.ndim - 1  # Account for rolling
@@ -1782,7 +1795,7 @@ def _jagged_list_to_array(a, fill_value, dtype):
     Parameters
     ----------
     a : list
-        Jagged list (list-of-lists) to be converted into a ndarray.
+        Jagged list (list-of-lists) to be converted into an array.
 
     fill_value : int or float
         Missing entries will be filled with this value.
@@ -1792,8 +1805,8 @@ def _jagged_list_to_array(a, fill_value, dtype):
 
     Return
     ------
-    out : ndarray
-        The resuling ndarray of dtype `dtype`.
+    out : numpy.ndarray
+        The resulting array of dtype `dtype`.
     """
     if not a:
         return np.array([[]])
@@ -1806,3 +1819,74 @@ def _jagged_list_to_array(a, fill_value, dtype):
         out[i, : row.size] = row
 
     return out
+
+
+def _get_mask_slices(mask):
+    """
+    For a boolean vector mask, return the (inclusive) start and (exclusive) stop
+    indices where the mask is `True`.
+
+    Parameters
+    ----------
+    mask : numpy.ndarray
+        A boolean 1D array
+
+    Returns
+    -------
+    slices : numpy.ndarray
+        slices of indices where the mask is True. Each slice has a size of two:
+        The first number is the start index (inclusive)
+        The second number is the end index (exclusive)
+
+    """
+    m1 = np.r_[0, mask]
+    m2 = np.r_[mask, 0]
+
+    (starts,) = np.where(~m1 & m2)
+    (ends,) = np.where(m1 & ~m2)
+
+    slices = np.c_[starts, ends]
+
+    return slices
+
+
+def _idx_to_mp(I, T, m, normalize=True):
+    """
+    Convert a set of matrix profile indices (including left and right indices) to its
+    corresponding matrix profile distances
+
+    Parameters
+    ----------
+    I : numpy.ndarray
+        A 1D array of matrix profile indices
+
+    T : numpy.ndarray
+        Time series
+
+    m : int
+        Subsequence window size
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances
+
+    Returns
+    -------
+    P : numpy.ndarray
+        Matrix profile distances
+    """
+    I = I.astype(np.int64)
+    T = T.copy()
+    T_isfinite = np.isfinite(T)
+    T_subseqs_isfinite = np.all(rolling_window(T_isfinite, m), axis=1)
+
+    T[~T_isfinite] = 0.0
+    T_subseqs = rolling_window(T, m)
+    nn_subseqs = T_subseqs[I]
+    if normalize:
+        P = linalg.norm(z_norm(T_subseqs, axis=1) - z_norm(nn_subseqs, axis=1), axis=1)
+    else:
+        P = linalg.norm(T_subseqs - nn_subseqs, axis=1)
+    P[~T_subseqs_isfinite] = np.inf
+    P[I < 0] = np.inf
+
+    return P

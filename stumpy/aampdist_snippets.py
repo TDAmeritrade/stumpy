@@ -4,7 +4,7 @@
 
 import math
 import numpy as np
-from .core import check_window_size
+from .core import check_window_size, _get_mask_slices
 from .aampdist import _aampdist_vect
 
 
@@ -24,7 +24,7 @@ def _get_all_aampdist_profiles(
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which to find the snippets
 
     m : int
@@ -62,7 +62,7 @@ def _get_all_aampdist_profiles(
 
     Returns
     -------
-    D : ndarray
+    D : numpy.ndarray
         MPdist profiles
 
     Notes
@@ -128,7 +128,7 @@ def aampdist_snippets(
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which to find the snippets
 
     m : int
@@ -162,21 +162,27 @@ def aampdist_snippets(
 
     Returns
     -------
-    snippets : ndarray
+    snippets : numpy.ndarray
         The top `k` snippets
 
-    snippets_indices : ndarray
+    snippets_indices : numpy.ndarray
         The index locations for each of top `k` snippets
 
-    snippets_profiles : ndarray
+    snippets_profiles : numpy.ndarray
         The MPdist profiles for each of the top  `k` snippets
 
-    snippets_fractions : ndarray
+    snippets_fractions : numpy.ndarray
         The fraction of data that each of the top `k` snippets represents
 
-    snippets_areas : ndarray
+    snippets_areas : numpy.ndarray
         The area under the curve corresponding to each profile for each of the top `k`
         snippets
+
+    snippets_regimes: numpy.ndarray
+        The index slices corresponding to the set of regimes for each of the top `k`
+        snippets. The first column is the (zero-based) snippet index while the second
+        and third columns correspond to the (inclusive) regime start indices and the
+        (exclusive) regime stop indices, respectively.
 
     Notes
     -----
@@ -213,6 +219,7 @@ def aampdist_snippets(
     snippets_areas = np.empty(k)
     Q = np.full(D.shape[-1], np.inf)
     indices = np.arange(0, n_padded - m, m)
+    snippets_regimes_list = []
 
     for i in range(k):
         profile_areas = np.sum(np.minimum(D, Q), axis=1)
@@ -231,6 +238,13 @@ def aampdist_snippets(
         mask = snippets_profiles[i] <= total_min
         snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
         total_min = total_min - mask.astype(np.float64)
+        slices = _get_mask_slices(mask)
+        snippets_regimes_list.append(slices)
+
+    n_slices = [regime.shape[0] for regime in snippets_regimes_list]
+    snippets_regimes = np.empty((sum(n_slices), 3), dtype=np.int64)
+    snippets_regimes[:, 0] = np.repeat(np.arange(len(snippets_regimes_list)), n_slices)
+    snippets_regimes[:, 1:] = np.vstack(snippets_regimes_list)
 
     return (
         snippets,
@@ -238,4 +252,5 @@ def aampdist_snippets(
         snippets_profiles,
         snippets_fractions,
         snippets_areas,
+        snippets_regimes,
     )

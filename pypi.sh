@@ -49,7 +49,7 @@
 # 6. Finally, click the "Publish release" button
 
 rm -rf dist
-python3 setup.py sdist bdist_wheel 
+python3 -m build --sdist --wheel 
 twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
 # twine upload dist/*
 rm -rf build dist stumpy.egg-info

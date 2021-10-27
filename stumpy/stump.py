@@ -46,60 +46,60 @@ def _compute_diagonal(
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding mean of time series, `T`
 
-    μ_Q : ndarray
+    μ_Q : numpy.ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window
 
-    Σ_T_inverse : ndarray
+    Σ_T_inverse : numpy.ndarray
         Inverse sliding standard deviation of time series, `T`
 
-    σ_Q_inverse : ndarray
+    σ_Q_inverse : numpy.ndarray
         Inverse standard deviation of the query sequence, `Q`, relative to the current
         sliding window
 
-    cov_a : ndarray
+    cov_a : numpy.ndarray
         The first covariance term relating T_A[i + k + m - 1] and M_T_m_1[i + k]
 
-    cov_b : ndarray
+    cov_b : numpy.ndarray
         The second covariance term relating T_B[i + m - 1] and μ_Q_m_1[i]
 
-    cov_c : ndarray
+    cov_c : numpy.ndarray
         The third covariance term relating T_A[i + k - 1] and M_T_m_1[i + k]
 
-    cov_d : ndarray
+    cov_d : numpy.ndarray
         The fourth covariance term relating T_B[i - 1] and μ_Q_m_1[i]
 
-    μ_Q_m_1 : ndarray
+    μ_Q_m_1 : numpy.ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window and
         using a window size of `m-1`
 
-    T_A_subseq_isfinite : ndarray
+    T_A_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_B_subseq_isfinite : ndarray
+    T_B_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_A_subseq_isconstant : ndarray
+    T_A_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` is constant (True)
 
-    T_B_subseq_isconstant : ndarray
+    T_B_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_B` is constant (True)
 
-    diags : ndarray
+    diags : numpy.ndarray
         The diagonal indices
 
     diags_start_idx : int
@@ -111,10 +111,10 @@ def _compute_diagonal(
     thread_idx : int
         The thread index
 
-    ρ : ndarray
+    ρ : numpy.ndarray
         The Pearson correlations
 
-    I : ndarray
+    I : numpy.ndarray
         The matrix profile indices
 
     ignore_trivial : bool
@@ -158,7 +158,7 @@ def _compute_diagonal(
             iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
 
         for i in iter_range:
-            if i == 0 or i == k or (k < 0 and i == -k):
+            if i == 0 or (k < 0 and i == -k):
                 cov = (
                     np.dot(
                         (T_B[i + k : i + k + m] - M_T[i + k]), (T_A[i : i + m] - μ_Q[i])
@@ -234,51 +234,51 @@ def _stump(
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding mean of time series, `T`
 
-    μ_Q : ndarray
+    μ_Q : numpy.ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window
 
-    Σ_T_inverse : ndarray
+    Σ_T_inverse : numpy.ndarray
         Inverse sliding standard deviation of time series, `T`
 
-    σ_Q_inverse : ndarray
+    σ_Q_inverse : numpy.ndarray
         Inverse standard deviation of the query sequence, `Q`, relative to the current
         sliding window
 
-    M_T_m_1 : ndarray
+    M_T_m_1 : numpy.ndarray
         Sliding mean of time series, `T`, using a window size of `m-1`
 
-    μ_Q_m_1 : ndarray
+    μ_Q_m_1 : numpy.ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window and
         using a window size of `m-1`
 
-    T_A_subseq_isfinite : ndarray
+    T_A_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_B_subseq_isfinite : ndarray
+    T_B_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_A_subseq_isconstant : ndarray
+    T_A_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` is constant (True)
 
-    T_B_subseq_isconstant : ndarray
+    T_B_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_B` is constant (True)
 
-    diags : ndarray
+    diags : numpy.ndarray
         The diagonal indices
 
     ignore_trivial : bool
@@ -287,10 +287,10 @@ def _stump(
 
     Returns
     -------
-    profile : ndarray
+    profile : numpy.ndarray
         Matrix profile
 
-    indices : ndarray
+    indices : numpy.ndarray
         The first column consists of the matrix profile indices, the second
         column consists of the left matrix profile indices, and the third
         column consists of the right matrix profile indices.
@@ -434,13 +434,13 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True):
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
     m : int
         Window size
 
-    T_B : ndarray, default None
+    T_B : numpy.ndarray, default None
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
         `None` which corresponds to a self-join.
@@ -456,11 +456,19 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True):
 
     Returns
     -------
-    out : ndarray
+    out : numpy.ndarray
         The first column consists of the matrix profile, the second column
         consists of the matrix profile indices, the third column consists of
         the left matrix profile indices, and the fourth column consists of
         the right matrix profile indices.
+
+    See Also
+    --------
+    stumpy.stumped : Compute the z-normalized matrix profile with a distributed dask
+        cluster
+    stumpy.gpu_stump : Compute the z-normalized matrix profile with one or more GPU
+        devices
+    stumpy.scrump : Compute an approximate z-normalized matrix profile
 
     Notes
     -----
@@ -506,6 +514,16 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True):
     trivial match.
 
     Note that left and right matrix profiles are only available for self-joins.
+
+    Examples
+    --------
+    >>> import stumpy
+    >>> stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
+    array([[0.11633857113691416, 4, -1, 4],
+           [2.694073918063438, 3, -1, 3],
+           [3.0000926340485923, 0, 0, 4],
+           [2.694073918063438, 1, 1, -1],
+           [0.11633857113691416, 0, 0, -1]], dtype=object)
     """
     if T_B is None:
         T_B = T_A

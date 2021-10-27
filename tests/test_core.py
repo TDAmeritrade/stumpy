@@ -18,42 +18,6 @@ def naive_rolling_window_dot_product(Q, T):
     return result
 
 
-def test_check_dtype_float32():
-    assert core.check_dtype(np.random.rand(10).astype(np.float32))
-
-
-def test_check_dtype_float64():
-    assert core.check_dtype(np.random.rand(10))
-
-
-def test_get_max_window_size():
-    for n in range(3, 10):
-        ref_max_m = (
-            int(
-                n
-                - math.floor(
-                    (n + (config.STUMPY_EXCL_ZONE_DENOM - 1))
-                    // (config.STUMPY_EXCL_ZONE_DENOM + 1)
-                )
-            )
-            - 1
-        )
-        cmp_max_m = core.get_max_window_size(n)
-        assert ref_max_m == cmp_max_m
-
-
-def test_check_window_size():
-    for m in range(-1, 3):
-        with pytest.raises(ValueError):
-            core.check_window_size(m)
-
-
-def test_check_max_window_size():
-    for m in range(4, 7):
-        with pytest.raises(ValueError):
-            core.check_window_size(m, max_size=3)
-
-
 def naive_compute_mean_std(T, m):
     n = T.shape[0]
 
@@ -93,6 +57,27 @@ def naive_compute_mean_std_multidimensional(T, m):
     return M_T, Σ_T
 
 
+def naive_idx_to_mp(I, T, m, normalize=True):
+    I = I.astype(np.int64)
+    T = T.copy()
+    T_isfinite = np.isfinite(T)
+    T_subseqs_isfinite = np.all(core.rolling_window(T_isfinite, m), axis=1)
+
+    T[~T_isfinite] = 0.0
+    T_subseqs = core.rolling_window(T, m)
+    nn_subseqs = T_subseqs[I]
+    if normalize:
+        P = naive.distance(
+            naive.z_norm(T_subseqs, axis=1), naive.z_norm(nn_subseqs, axis=1), axis=1
+        )
+    else:
+        P = naive.distance(T_subseqs, nn_subseqs, axis=1)
+    P[~T_subseqs_isfinite] = np.inf
+    P[I < 0] = np.inf
+
+    return P
+
+
 test_data = [
     (np.array([-1, 1, 2], dtype=np.float64), np.array(range(5), dtype=np.float64)),
     (
@@ -101,6 +86,44 @@ test_data = [
     ),
     (np.random.uniform(-1000, 1000, [8]), np.random.uniform(-1000, 1000, [64])),
 ]
+
+
+def test_check_bad_dtype():
+    for dtype in [np.int32, np.int64, np.float32]:
+        with pytest.raises(TypeError):
+            core.check_dtype(np.random.rand(10).astype(dtype))
+
+
+def test_check_dtype_float64():
+    assert core.check_dtype(np.random.rand(10))
+
+
+def test_get_max_window_size():
+    for n in range(3, 10):
+        ref_max_m = (
+            int(
+                n
+                - math.floor(
+                    (n + (config.STUMPY_EXCL_ZONE_DENOM - 1))
+                    // (config.STUMPY_EXCL_ZONE_DENOM + 1)
+                )
+            )
+            - 1
+        )
+        cmp_max_m = core.get_max_window_size(n)
+        assert ref_max_m == cmp_max_m
+
+
+def test_check_window_size():
+    for m in range(-1, 3):
+        with pytest.raises(ValueError):
+            core.check_window_size(m)
+
+
+def test_check_max_window_size():
+    for m in range(4, 7):
+        with pytest.raises(ValueError):
+            core.check_window_size(m, max_size=3)
 
 
 @pytest.mark.parametrize("Q, T", test_data)
@@ -827,3 +850,37 @@ def test_jagged_list_to_array_empty():
     left = np.array([[]], dtype="float64")
     right = core._jagged_list_to_array(arr, fill_value=np.nan, dtype="float64")
     npt.assert_array_equal(left, right)
+
+
+def test_get_mask_slices():
+    bool_lst = [False, True]
+    mask_cases = [
+        [x, y, z, w]
+        for x in bool_lst
+        for y in bool_lst
+        for z in bool_lst
+        for w in bool_lst
+    ]
+
+    for mask in mask_cases:
+        ref_slices = naive._get_mask_slices(mask)
+        comp_slices = core._get_mask_slices(mask)
+        npt.assert_array_equal(ref_slices, comp_slices)
+
+
+def test_idx_to_mp():
+    n = 64
+    m = 5
+    T = np.random.rand(n)
+    # T[1] = np.nan
+    # T[8] = np.inf
+    # T[:] = 1.0
+    I = np.random.randint(0, n - m + 1, n - m + 1)
+
+    ref_mp = naive_idx_to_mp(I, T, m)
+    cmp_mp = core._idx_to_mp(I, T, m)
+    npt.assert_almost_equal(ref_mp, cmp_mp)
+
+    ref_mp = naive_idx_to_mp(I, T, m, normalize=False)
+    cmp_mp = core._idx_to_mp(I, T, m, normalize=False)
+    npt.assert_almost_equal(ref_mp, cmp_mp)

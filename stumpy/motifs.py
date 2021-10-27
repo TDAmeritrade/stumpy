@@ -20,6 +20,7 @@ def _motifs(
     excl_zone,
     min_neighbors,
     max_distance,
+    cutoff,
     max_matches,
     max_motifs,
 ):
@@ -32,16 +33,16 @@ def _motifs(
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence
 
-    P : ndarray
+    P : numpy.ndarray
         Matrix Profile of time series, `T`
 
-    M_T : ndarray
+    M_T : numpy.ndarray
         Sliding mean of time series, `T`
 
-    Σ_T : ndarray
+    Σ_T : numpy.ndarray
         Sliding standard deviation of time series, `T`
 
     excl_zone : int
@@ -58,9 +59,14 @@ def _motifs(
         that accepts a single parameter, `D`, in its function signature, which is the
         distance profile between `Q` and `T`.
 
+    cutoff : float
+        The largest matrix profile value (distance) that a candidate motif is allowed
+        to have.
+
     max_matches : int
         The maximum number of similar matches to be returned. The resulting
-        matches are sorted by distance (starting with the most similar).
+        matches are sorted by distance (starting with the most similar). Note that
+        the first match is always the self-match/trivial-match for each motif.
 
     max_motifs : int
         The maximum number of motifs to return.
@@ -72,11 +78,15 @@ def _motifs(
 
     Return
     ------
-    motif_distances : ndarray
-        The distances corresponding to a set of subsequence matches for each motif
+    motif_distances : numpy.ndarray
+        The distances corresponding to a set of subsequence matches for each motif.
+        Note that the first column always corresponds to the distance for the
+        self-match/trivial-match for each motif.
 
-    motif_indices : ndarray
-        The indices corresponding to a set of subsequences matches for each motif
+    motif_indices : numpy.ndarray
+        The indices corresponding to a set of subsequences matches for each motif.
+        Note that the first column always corresponds to the index for the
+        self-match/trivial-match for each motif.
     """
     n = T.shape[1]
     l = P.shape[1]
@@ -88,7 +98,7 @@ def _motifs(
     candidate_idx = np.argmin(P[-1])
     while len(motif_indices) < max_motifs:
         profile_value = P[-1, candidate_idx]
-        if np.isinf(profile_value):  # pragma: no cover
+        if profile_value > cutoff:  # pragma: no cover
             break
 
         # If max_distance is a constant (independent of the distance profile D of Q
@@ -149,10 +159,10 @@ def motifs(
 
     Parameters
     ----------
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence
 
-    P : ndarray
+    P : numpy.ndarray
         Matrix Profile of `T`
 
     min_neighbors : int, default 1
@@ -166,23 +176,23 @@ def motifs(
         a match of `Q`. If `max_distance` is a function, then it must be a function
         that accepts a single parameter, `D`, in its function signature, which is the
         distance profile between `Q` and `T`. If None, this defaults to
-        `max(np.mean(D) - 2 * np.std(D), np.min(D))`.
+        `np.nanmax([np.nanmean(D) - 2.0 * np.nanstd(D), np.nanmin(D)])`.
 
     cutoff : float, default None
         The largest matrix profile value (distance) that a candidate motif is allowed
         to have. If `None`, this defaults to
-        `max(np.mean(P) - 2 * np.std(P), np.min(P))`
+        `np.nanmax([np.nanmean(P) - 2.0 * np.nanstd(P), np.nanmin(P)])`
 
     max_matches : int, default 10
         The maximum amount of similar matches of a motif representative to be returned.
         The resulting matches are sorted by distance, so a value of `10` means that the
         indices of the most similar `10` subsequences is returned.
         If `None`, all matches within `max_distance` of the motif representative
-        will be returned.
+        will be returned. Note that the first match is always the
+        self-match/trivial-match for each motif.
 
     max_motifs : int, default 1
-        The maximum number of similar matches to be returned. The resulting
-        matches are sorted by distance (starting with the most similar).
+        The maximum number of motifs to return
 
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
@@ -191,11 +201,28 @@ def motifs(
 
     Return
     ------
-    motif_distances : ndarray
-        The distances corresponding to a set of subsequence matches for each motif
+    motif_distances : numpy.ndarray
+        The distances corresponding to a set of subsequence matches for each motif.
+        Note that the first column always corresponds to the distance for the
+        self-match/trivial-match for each motif.
 
-    motif_indices : ndarray
-        The indices corresponding to a set of subsequences matches for each motif
+    motif_indices : numpy.ndarray
+        The indices corresponding to a set of subsequences matches for each motif.
+        Note that the first column always corresponds to the index for the
+        self-match/trivial-match for each motif.
+
+    See Also
+    --------
+    stumpy.match : Find all matches of a query Q in a time series T
+
+    Examples
+    --------
+    >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
+    >>> stumpy.motifs(
+    ...     np.array([584., -11., 23., 79., 1001., 0., -19.]),
+    ...     mp[:, 0],
+    ...     max_distance=2.0)
+    (array([[0.        , 0.11633857]]), array([[0, 4]]))
     """
     if max_motifs < 1:  # pragma: no cover
         logger.warn(
@@ -222,7 +249,11 @@ def motifs(
     if max_matches is None:  # pragma: no cover
         max_matches = np.inf
     if cutoff is None:  # pragma: no cover
-        cutoff = max(np.mean(P) - 2 * np.std(P), np.min(P))
+        P_copy = P.copy().astype(np.float64)
+        P_copy[np.isinf(P_copy)] = np.nan
+        cutoff = np.nanmax(
+            [np.nanmean(P_copy) - 2.0 * np.nanstd(P_copy), np.nanmin(P_copy)]
+        )
 
     T, M_T, Σ_T = core.preprocess(T[np.newaxis, :], m)
     P = P[np.newaxis, :].astype(np.float64)
@@ -235,6 +266,7 @@ def motifs(
         excl_zone,
         min_neighbors,
         max_distance,
+        cutoff,
         max_matches,
         max_motifs,
     )
@@ -265,16 +297,16 @@ def match(
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         The query sequence. It doesn't have to be a subsequence of `T`
 
-    T : ndarray
+    T : numpy.ndarray
         The time series of interest
 
-    M_T : ndarray, default None
+    M_T : numpy.ndarray, default None
         Sliding mean of time series, `T`
 
-    Σ_T : ndarray, default None
+    Σ_T : numpy.ndarray, default None
         Sliding standard deviation of time series, `T`
 
     max_distance : float or function, default None
@@ -282,8 +314,9 @@ def match(
         match.
         If a function, then it has to be a function of one argument `D`, which will be
         the distance profile of `Q` with `T` (a 1D numpy array of size `n-m+1`).
-        If None, defaults to `max(np.mean(D) - 2 * np.std(D), np.min(D))`, i.e. at
-        least the closest match will be returned.
+        If None, this defaults to
+        `np.nanmax([np.nanmean(D) - 2 * np.nanstd(D), np.nanmin(D)])` (i.e. at
+        least the closest match will be returned).
 
     max_matches : int, default None
         The maximum amount of similar occurrences to be returned. The resulting
@@ -298,11 +331,26 @@ def match(
 
     Returns
     -------
-    out : ndarray
+    out : numpy.ndarray
         The first column consists of distances of subsequences of `T` whose distances
         to `Q` are smaller than `max_distance`, sorted by distance (lowest to highest).
-        The second column consist of the corresponding indices in `T`.
+        The second column consists of the corresponding indices in `T`.
+
+    See Also
+    --------
+    stumpy.motifs : Discover the top motifs for time series T
+
+    Examples
+    --------
+    >>> stumpy.match(
+    ...     np.array([-11.1, 23.4, 79.5, 1001.0]),
+    ...     np.array([584., -11., 23., 79., 1001., 0., -19.])
+    ...     )
+    array([[0.0011129739290248121, 1]], dtype=object)
     """
+    Q = np.asarray(Q)
+    T = np.asarray(T)
+
     if len(Q.shape) == 1:
         Q = Q[np.newaxis, :]
     if len(T.shape) == 1:
@@ -321,7 +369,11 @@ def match(
     if max_distance is None:  # pragma: no cover
 
         def max_distance(D):
-            return max(np.mean(D) - 2 * np.std(D), np.min(D))
+            D_copy = D.copy().astype(np.float64)
+            D_copy[np.isinf(D_copy)] = np.nan
+            return np.nanmax(
+                [np.nanmean(D_copy) - 2.0 * np.nanstd(D_copy), np.nanmin(D_copy)]
+            )
 
     if M_T is None or Σ_T is None:  # pragma: no cover
         T, M_T, Σ_T = core.preprocess(T, m)

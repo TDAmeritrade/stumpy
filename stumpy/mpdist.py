@@ -27,16 +27,16 @@ def _compute_P_ABBA(
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The first time series or sequence for which to compute the matrix profile
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The second time series or sequence for which to compute the matrix profile
 
     m : int
         Window size
 
-    P_ABBA : ndarray
+    P_ABBA : numpy.ndarray
         The output array to write the concatenated AB-join and BA-join results to
 
     dask_client : client, default None
@@ -88,7 +88,7 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
 
     Parameters
     ----------
-    P_ABBA : ndarray
+    P_ABBA : numpy.ndarray
         An unsorted array resulting from the concatenation of the outputs from an
         AB-joinand BA-join for two time series, `T_A` and `T_B`
 
@@ -146,10 +146,10 @@ def _mpdist(
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The first time series or sequence for which to compute the matrix profile
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The second time series or sequence for which to compute the matrix profile
 
     m : int
@@ -231,10 +231,10 @@ def _mpdist_vect(
 
     Parameters
     ----------
-    Q : ndarray
+    Q : numpy.ndarray
         Query array
 
-    T : ndarray
+    T : numpy.ndarray
         Time series or sequence
 
     m : int
@@ -300,10 +300,10 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True):
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The first time series or sequence for which to compute the matrix profile
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The second time series or sequence for which to compute the matrix profile
 
     m : int
@@ -327,12 +327,27 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True):
     MPdist : float
         The matrix profile distance
 
+    See Also
+    --------
+    mpdisted : Compute the z-normalized matrix profile distance (MPdist) measure
+        between any two time series with a distributed dask cluster
+    gpu_mpdisted : Compute the z-normalized matrix profile distance (MPdist) measure
+        between any two time series with one or more GPU devices
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2018.00119 \
     <https://www.cs.ucr.edu/~eamonn/MPdist_Expanded.pdf>`__
 
     See Section III
+
+    Examples
+    --------
+    >>> stumpy.mpdist(
+    ...     np.array([-11.1, 23.4, 79.5, 1001.0]),
+    ...     np.array([584., -11., 23., 79., 1001., 0., -19.]),
+    ...     m=3)
+    0.00019935236191097894
     """
     MPdist = _mpdist(T_A, T_B, m, percentage, k, mp_func=stump)
 
@@ -360,10 +375,10 @@ def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, normalize=True):
         scope of this library. Please refer to the Dask Distributed
         documentation.
 
-    T_A : ndarray
+    T_A : numpy.ndarray
         The first time series or sequence for which to compute the matrix profile
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The second time series or sequence for which to compute the matrix profile
 
     m : int
@@ -387,12 +402,31 @@ def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, normalize=True):
     MPdist : float
         The matrix profile distance
 
+    See Also
+    --------
+    mpdist : Compute the z-normalized matrix profile distance (MPdist) measure
+        between any two time series
+    gpu_mpdisted : Compute the z-normalized matrix profile distance (MPdist) measure
+        between any two time series with one or more GPU devices
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2018.00119 \
     <https://www.cs.ucr.edu/~eamonn/MPdist_Expanded.pdf>`__
 
     See Section III
+
+    Examples
+    --------
+    >>> from dask.distributed import Client
+    >>> if __name__ == "__main__":
+    ...     dask_client = Client()
+    ...     stumpy.mpdisted(
+    ...         dask_client,
+    ...         np.array([-11.1, 23.4, 79.5, 1001.0]),
+    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]),
+    ...         m=3)
+    0.00019935236191097894
     """
     MPdist = _mpdist(
         T_A, T_B, m, percentage, k, dask_client=dask_client, mp_func=stumped

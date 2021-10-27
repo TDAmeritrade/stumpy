@@ -30,13 +30,13 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
         scope of this library. Please refer to the Dask Distributed
         documentation.
 
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
     m : int
         Window size
 
-    T_B : ndarray, default None
+    T_B : numpy.ndarray, default None
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
         `None` which corresponds to a self-join.
@@ -52,11 +52,19 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
 
     Returns
     -------
-    out : ndarray
+    out : numpy.ndarray
         The first column consists of the matrix profile, the second column
         consists of the matrix profile indices, the third column consists of
         the left matrix profile indices, and the fourth column consists of
         the right matrix profile indices.
+
+    See Also
+    --------
+    stumpy.stump : Compute the z-normalized matrix profile
+        cluster
+    stumpy.gpu_stump : Compute the z-normalized matrix profile with one or more GPU
+        devices
+    stumpy.scrump : Compute an approximate z-normalized matrix profile
 
     Notes
     -----
@@ -106,6 +114,21 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
     trivial match.
 
     Note that left and right matrix profiles are only available for self-joins.
+
+    Examples
+    --------
+    >>> from dask.distributed import Client
+    >>> if __name__ == "__main__":
+    ...     dask_client = Client()
+    ...     stumpy.stumped(
+    ...         dask_client,
+    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]),
+    ...         m=3)
+    array([[0.11633857113691416, 4, -1, 4],
+           [2.694073918063438, 3, -1, 3],
+           [3.0000926340485923, 0, 0, 4],
+           [2.694073918063438, 1, 1, -1],
+           [0.11633857113691416, 0, 0, -1]], dtype=object)
     """
     if T_B is None:
         T_B = T_A

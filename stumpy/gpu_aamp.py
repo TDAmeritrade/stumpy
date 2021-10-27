@@ -46,39 +46,39 @@ def _compute_and_update_PI_kernel(
     i : int
         sliding window `i`
 
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the dot product
 
-    T_B : ndarray
+    T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
 
-    QT_even : ndarray
+    QT_even : numpy.ndarray
         The input QT array (dot product between the query sequence,`Q`, and
         time series, `T`) to use when `i` is even
 
-    QT_odd : ndarray
+    QT_odd : numpy.ndarray
         The input QT array (dot product between the query sequence,`Q`, and
         time series, `T`) to use when `i` is odd
 
-    QT_first : ndarray
+    QT_first : numpy.ndarray
         Dot product between the first query sequence,`Q`, and time series, `T`
 
-    T_A_subseq_isfinite : ndarray
+    T_A_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_B_subseq_isfinite : ndarray
+    T_B_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_A_subseq_squared : ndarray
+    T_A_subseq_squared : numpy.ndarray
         The squared subsequences of `T_A`
 
-    T_B_subseq_squared : ndarray
+    T_B_subseq_squared : numpy.ndarray
         The squared subsequences of `T_B`
 
     k : int
@@ -92,12 +92,12 @@ def _compute_and_update_PI_kernel(
         The half width for the exclusion zone relative to the current
         sliding window
 
-    profile : ndarray
+    profile : numpy.ndarray
         Matrix profile. The first column consists of the global matrix profile,
         the second column consists of the left matrix profile, and the third
         column consists of the right matrix profile.
 
-    indices : ndarray
+    indices : numpy.ndarray
         The first column consists of the matrix profile indices, the second
         column consists of the left matrix profile indices, and the third
         column consists of the right matrix profile indices.
@@ -367,13 +367,13 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
 
     Parameters
     ----------
-    T_A : ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
     m : int
         Window size
 
-    T_B : ndarray, default None
+    T_B : numpy.ndarray, default None
         The time series or sequence that contain your query subsequences
         of interest. Default is `None` which corresponds to a self-join.
 
@@ -389,7 +389,7 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
 
     Returns
     -------
-    out : ndarray
+    out : numpy.ndarray
         The first column consists of the matrix profile, the second column
         consists of the matrix profile indices, the third column consists of
         the left matrix profile indices, and the fourth column consists of

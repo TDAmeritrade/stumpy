@@ -30,7 +30,7 @@ def maamped(dask_client, T, m, include=None, discords=False):
         scope of this library. Please refer to the Dask Distributed
         documentation.
 
-    T : ndarray
+    T : numpy.ndarray
         The time series or sequence for which to compute the multi-dimensional
         matrix profile. Each row in `T` represents data from a different
         dimension while each column in `T` represents data from the same
@@ -39,7 +39,7 @@ def maamped(dask_client, T, m, include=None, discords=False):
     m : int
         Window size
 
-    include : list, ndarray, default None
+    include : list, numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
@@ -55,12 +55,12 @@ def maamped(dask_client, T, m, include=None, discords=False):
 
     Returns
     -------
-    P : ndarray
+    P : numpy.ndarray
         The multi-dimensional matrix profile. Each row of the array corresponds
         to each matrix profile for a given dimension (i.e., the first row is
         the 1-D matrix profile and the second row is the 2-D matrix profile).
 
-    I : ndarray
+    I : numpy.ndarray
         The multi-dimensional matrix profile index where each row of the array
         corresponds to each matrix profile index for a given dimension.
 
