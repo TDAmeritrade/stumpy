@@ -88,8 +88,10 @@ test_data = [
 ]
 
 
-def test_check_dtype_float32():
-    assert core.check_dtype(np.random.rand(10).astype(np.float32))
+def test_check_bad_dtype():
+    for dtype in [np.int32, np.int64, np.float32]:
+        with pytest.raises(TypeError):
+            core.check_dtype(np.random.rand(10).astype(dtype))
 
 
 def test_check_dtype_float64():

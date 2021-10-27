@@ -274,7 +274,7 @@ def check_nan(a):  # pragma: no cover
     return
 
 
-def check_dtype(a, dtype=np.floating):  # pragma: no cover
+def check_dtype(a, dtype=np.float64):  # pragma: no cover
     """
     Check if the array type of `a` is of type specified by `dtype` parameter.
 
@@ -283,7 +283,7 @@ def check_dtype(a, dtype=np.floating):  # pragma: no cover
     a : numpy.ndarray
         NumPy array
 
-    dtype : dtype, , default np.floating
+    dtype : dtype, , default np.float64
         NumPy `dtype`
 
     Raises
@@ -293,7 +293,7 @@ def check_dtype(a, dtype=np.floating):  # pragma: no cover
     """
     if not np.issubdtype(a.dtype, dtype):
         msg = f"{dtype} type expected but found {a.dtype}\n"
-        msg += "Please change your input `dtype` with `.astype(float)`"
+        msg += "Please change your input `dtype` with `.astype(np.float64)`"
         raise TypeError(msg)
 
     return True
