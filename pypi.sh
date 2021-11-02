@@ -47,6 +47,21 @@
 # 4. In the Release title" box, add the version number i.e., "v1.0.0"
 # 5. In the "Describe this release" box, add the description i.e., "Version 1.1.0 Release"
 # 6. Finally, click the "Publish release" button
+#
+# PyPI Stats - https://packaging.python.org/guides/analyzing-pypi-package-downloads/
+# SELECT date, count, SUM(count) OVER (ORDER BY date) AS cumsum
+# FROM (
+#     SELECT DATE(timestamp) AS date, COUNT(*) as count
+#     FROM `bigquery-public-data.pypi.file_downloads`
+#     WHERE file.project = 'stumpy'
+#         AND DATE(timestamp)
+#             BETWEEN DATE('2019-01-01')
+#             AND DATE_ADD(CURRENT_DATE(), INTERVAL -1 DAY)
+#     GROUP BY DATE(timestamp)
+# )
+# ORDER BY date
+# 
+
 
 rm -rf dist
 python3 -m build --sdist --wheel 
