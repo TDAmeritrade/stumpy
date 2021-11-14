@@ -429,7 +429,7 @@ class scraamp:
         if self._ignore_trivial:
             self._diags = np.random.permutation(
                 range(self._excl_zone + 1, self._n_A - self._m + 1)
-            )
+            ).astype(np.int64)
             if self._diags.shape[0] == 0:  # pragma: no cover
                 max_m = core.get_max_window_size(self._T_A.shape[0])
                 raise ValueError(
@@ -439,7 +439,7 @@ class scraamp:
         else:
             self._diags = np.random.permutation(
                 range(-(self._n_A - self._m + 1) + 1, self._n_B - self._m + 1)
-            )
+            ).astype(np.int64)
 
         self._n_threads = numba.config.NUMBA_NUM_THREADS
         self._percentage = np.clip(percentage, 0.0, 1.0)
