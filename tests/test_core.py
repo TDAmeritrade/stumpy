@@ -769,7 +769,7 @@ def test_count_diagonal_ndist():
 
 
 def test_get_array_ranges():
-    x = np.array([3, 9, 2, 1, 5, 4, 7, 7, 8, 6])
+    x = np.array([3, 9, 2, 1, 5, 4, 7, 7, 8, 6], dtype=np.int64)
     for n_chunks in range(2, 5):
         ref = naive.get_array_ranges(x, n_chunks, False)
 
@@ -778,7 +778,7 @@ def test_get_array_ranges():
 
 
 def test_get_array_ranges_exhausted():
-    x = np.array([3, 3, 3, 11, 11, 11])
+    x = np.array([3, 3, 3, 11, 11, 11], dtype=np.int64)
     n_chunks = 6
 
     ref = naive.get_array_ranges(x, n_chunks, False)
@@ -788,7 +788,7 @@ def test_get_array_ranges_exhausted():
 
 
 def test_get_array_ranges_exhausted_truncated():
-    x = np.array([3, 3, 3, 11, 11, 11])
+    x = np.array([3, 3, 3, 11, 11, 11], dtype=np.int64)
     n_chunks = 6
 
     ref = naive.get_array_ranges(x, n_chunks, True)
