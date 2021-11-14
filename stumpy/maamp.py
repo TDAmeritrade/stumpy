@@ -499,10 +499,10 @@ def _maamp(
     QT_even = QT.copy()
     d = T.shape[0]
 
-    P = np.empty((d, range_stop - range_start), dtype=float)
-    I = np.empty((d, range_stop - range_start), dtype=int)
-    D = np.empty((d, k), dtype=float)
-    D_prime = np.empty(k, dtype=float)
+    P = np.empty((d, range_stop - range_start), dtype=np.float64)
+    I = np.empty((d, range_stop - range_start), dtype=np.int64)
+    D = np.empty((d, k), dtype=np.float64)
+    D_prime = np.empty(k, dtype=np.float64)
     start_row_idx = 0
 
     if include is not None:
