@@ -185,9 +185,9 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
     nworkers = len(hosts)
 
     if ignore_trivial:
-        diags = np.arange(excl_zone + 1, n_A - m + 1)
+        diags = np.arange(excl_zone + 1, n_A - m + 1, dtype=np.int64)
     else:
-        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
+        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, nworkers, False)
@@ -218,7 +218,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
     diags_futures = []
     for i, host in enumerate(hosts):
         diags_future = dask_client.scatter(
-            np.arange(diags_ranges[i, 0], diags_ranges[i, 1]),
+            np.arange(diags_ranges[i, 0], diags_ranges[i, 1], dtype=np.int64),
             workers=[host],
             hash=False,
         )

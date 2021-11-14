@@ -586,9 +586,9 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True):
     out = np.empty((l, 4), dtype=object)
 
     if ignore_trivial:
-        diags = np.arange(excl_zone + 1, n_A - m + 1)
+        diags = np.arange(excl_zone + 1, n_A - m + 1, dtype=np.int64)
     else:
-        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
+        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
     P, I = _stump(
         T_A,
