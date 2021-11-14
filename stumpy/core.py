@@ -484,7 +484,7 @@ def sliding_dot_product(Q, T):
     return QT.real[m - 1 : n]
 
 
-@njit(fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
+@njit("f8[:](f8[:], i8, b1[:])", fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
 def _welford_nanvar(a, w, a_subseq_isfinite):
     """
     Compute the rolling variance for a 1-D array while ignoring NaNs using a modified
@@ -496,7 +496,7 @@ def _welford_nanvar(a, w, a_subseq_isfinite):
     a : numpy.ndarray
         The input array
 
-    w : numpy.ndarray
+    w : int
         The rolling window size
 
     a_subseq_isfinite : numpy.ndarray
@@ -831,7 +831,7 @@ def compute_mean_std(T, m):
         )
 
 
-@njit(fastmath=True)
+@njit("f8(i8, f8, f8, f8, f8, f8)", fastmath=True)
 def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     Compute a single squared distance given all scalar inputs. This function serves as
@@ -889,7 +889,7 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return D_squared
 
 
-@njit(parallel=True, fastmath=True)
+@njit("f8[:](i8, f8[:], f8, f8, f8[:], f8[:])", parallel=True, fastmath=True)
 def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     Compute the squared distance profile
@@ -902,10 +902,10 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     QT : numpy.ndarray
         Dot product between `Q` and `T`
 
-    μ_Q : numpy.ndarray
+    μ_Q : float
         Mean of `Q`
 
-    σ_Q : numpy.ndarray
+    σ_Q : float
         Standard deviation of `Q`
 
     M_T : numpy.ndarray
@@ -935,7 +935,7 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return D_squared
 
 
-@njit(parallel=True, fastmath=True)
+@njit("f8[:](i8, f8[:], f8, f8, f8[:], f8[:])", parallel=True, fastmath=True)
 def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     Compute the distance profile
@@ -948,10 +948,10 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     QT : numpy.ndarray
         Dot product between `Q` and `T`
 
-    μ_Q : numpy.ndarray
+    μ_Q : float
         Mean of `Q`
 
-    σ_Q : numpy.ndarray
+    σ_Q : float
         Standard deviation of `Q`
 
     M_T : numpy.ndarray
@@ -977,7 +977,7 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return np.sqrt(D_squared)
 
 
-@njit(fastmath=True)
+@njit("f8[:](f8, f8[:], f8[:])", fastmath=True)
 def _mass_absolute(Q_squared, T_squared, QT):
     """
     A Numba JIT compiled algorithm for computing the non-normalized distance profile
@@ -985,7 +985,7 @@ def _mass_absolute(Q_squared, T_squared, QT):
 
     Parameters
     ----------
-    Q_squared : numpy.ndarray
+    Q_squared : float
         Squared query array or subsequence
 
     T_squared : numpy.ndarray
@@ -1182,7 +1182,7 @@ def mueen_calculate_distance_profile(Q, T):
     return np.sqrt(D)
 
 
-@njit(fastmath=True)
+@njit("f8[:](f8[:], f8[:], f8[:], f8, f8, f8[:], f8[:])", fastmath=True)
 def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     A Numba JIT compiled algorithm for computing the distance profile using the MASS
@@ -1210,6 +1210,11 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
 
     Σ_T : numpy.ndarray
         Sliding standard deviation of `T`
+
+    Returns
+    -------
+    output : numpy.ndarray
+        Distance profile
 
     Notes
     -----
@@ -1396,7 +1401,7 @@ def _get_QT(start, T_A, T_B, m):
     return QT, QT_first
 
 
-@njit(fastmath=True)
+@njit(["(f8[:], i8, i8)", "(f8[:, :], i8, i8)"], fastmath=True)
 def apply_exclusion_zone(D, idx, excl_zone):
     """
     Apply an exclusion zone to an array (inplace), i.e. set all values
@@ -1601,7 +1606,7 @@ def array_to_temp_file(a):
     return fname
 
 
-@njit(parallel=True, fastmath=True)
+@njit("i8[:](i8[:], i8, i8, i8)", parallel=True, fastmath=True)
 def _count_diagonal_ndist(diags, m, n_A, n_B):
     """
     Count the number of distances that would be computed for each diagonal index
@@ -1609,17 +1614,17 @@ def _count_diagonal_ndist(diags, m, n_A, n_B):
 
     Parameters
     ----------
+    diags : numpy.ndarray
+        The diagonal indices of interest
+
     m : int
         Window size
 
-    n_A : numpy.ndarray
+    n_A : int
         The length of time series `T_A`
 
-    n_B : numpy.ndarray
+    n_B : int
         The length of time series `T_B`
-
-    diags : numpy.ndarray
-        The diagonal indices of interest
 
     Returns
     -------
@@ -1637,8 +1642,8 @@ def _count_diagonal_ndist(diags, m, n_A, n_B):
     return diag_ndist_counts
 
 
-@njit()
-def _get_array_ranges(a, n_chunks, truncate=False):
+@njit("i8[:, :](i8[:], i8, b1)")
+def _get_array_ranges(a, n_chunks, truncate):
     """
     Given an input array, split it into `n_chunks`.
 
@@ -1650,7 +1655,7 @@ def _get_array_ranges(a, n_chunks, truncate=False):
     n_chunks : int
         Number of chunks to split the array into
 
-    truncate : bool, default False
+    truncate : bool
         If `truncate=True`, truncate the rows of `array_ranges` if there are not enough
         elements in `a` to be chunked up into `n_chunks`.  Otherwise, if
         `truncate=False`, all extra chunks will have their start and stop indices set

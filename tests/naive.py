@@ -503,7 +503,7 @@ def maamp_subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
     return S
 
 
-def get_array_ranges(a, n_chunks, truncate=False):
+def get_array_ranges(a, n_chunks, truncate):
     out = np.zeros((n_chunks, 2), np.int64)
     ranges_idx = 0
     range_start_idx = 0
@@ -1307,7 +1307,7 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
 
     n_chunks = int(np.ceil(1.0 / percentage))
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
-    diags_ranges = core._get_array_ranges(ndist_counts, n_chunks)
+    diags_ranges = core._get_array_ranges(ndist_counts, n_chunks, False)
     diags_ranges_start = diags_ranges[0, 0]
     diags_ranges_stop = diags_ranges[0, 1]
 

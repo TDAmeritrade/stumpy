@@ -14,7 +14,12 @@ from .aamp import _aamp
 logger = logging.getLogger(__name__)
 
 
-@njit(parallel=True, fastmath=True)
+@njit(
+    "(f8[:], f8[:], i8, b1[:], b1[:], f8[:], f8[:], f8[:], i8, i8, f8[:], f8[:], i8[:],"
+    "optional(i8))",
+    parallel=True,
+    fastmath=True,
+)
 def _prescraamp(
     T_A,
     T_B,
@@ -443,7 +448,7 @@ class scraamp:
             self._diags, self._m, self._n_A, self._n_B
         )
         self._chunk_diags_ranges = core._get_array_ranges(
-            self._ndist_counts, self._n_chunks, truncate=True
+            self._ndist_counts, self._n_chunks, True
         )
         self._n_chunks = self._chunk_diags_ranges.shape[0]
         self._chunk_idx = 0

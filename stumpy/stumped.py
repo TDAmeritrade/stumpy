@@ -190,7 +190,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
-    diags_ranges = core._get_array_ranges(ndist_counts, nworkers)
+    diags_ranges = core._get_array_ranges(ndist_counts, nworkers, False)
     diags_ranges += diags[0]
 
     # Scatter data to Dask cluster

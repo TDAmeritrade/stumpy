@@ -62,7 +62,7 @@ def naive_scraamp(T_A, m, T_B, percentage, exclusion_zone, pre_scraamp, s):
 
     n_chunks = int(np.ceil(1.0 / percentage))
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
-    diags_ranges = core._get_array_ranges(ndist_counts, n_chunks)
+    diags_ranges = core._get_array_ranges(ndist_counts, n_chunks, False)
     diags_ranges_start = diags_ranges[0, 0]
     diags_ranges_stop = diags_ranges[0, 1]
 

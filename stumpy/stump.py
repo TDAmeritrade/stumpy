@@ -14,7 +14,11 @@ from .aamp import aamp
 logger = logging.getLogger(__name__)
 
 
-@njit(fastmath=True)
+@njit(
+    "(f8[:], f8[:], i8, f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], b1[:],"
+    "b1[:], b1[:], b1[:], i8[:], i8, i8, i8, f8[:, :, :], i8[:, :, :], b1)",
+    fastmath=True,
+)
 def _compute_diagonal(
     T_A,
     T_B,
@@ -209,7 +213,12 @@ def _compute_diagonal(
     return
 
 
-@njit(parallel=True, fastmath=True)
+@njit(
+    "(f8[:], f8[:], i8, f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], b1[:], b1[:], b1[:],"
+    "b1[:], i8[:], b1)",
+    parallel=True,
+    fastmath=True,
+)
 def _stump(
     T_A,
     T_B,
@@ -348,7 +357,7 @@ def _stump(
     I = np.full((n_threads, l, 3), -1, np.int64)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
-    diags_ranges = core._get_array_ranges(ndist_counts, n_threads)
+    diags_ranges = core._get_array_ranges(ndist_counts, n_threads, False)
 
     cov_a = T_B[m - 1 :] - M_T_m_1[:-1]
     cov_b = T_A[m - 1 :] - μ_Q_m_1[:-1]

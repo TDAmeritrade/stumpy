@@ -147,7 +147,7 @@ def test_welford_nanvar():
 
 
 def test_welford_nanvar_catastrophic_cancellation():
-    T = np.array([4, 7, 13, 16, 10]) + 10 ** 8
+    T = np.array([4.0, 7.0, 13.0, 16.0, 10.0]) + 10 ** 8
     m = 4
 
     ref_var = np.nanvar(core.rolling_window(T, m), axis=1)
@@ -769,9 +769,9 @@ def test_count_diagonal_ndist():
 def test_get_array_ranges():
     x = np.array([3, 9, 2, 1, 5, 4, 7, 7, 8, 6])
     for n_chunks in range(2, 5):
-        ref = naive.get_array_ranges(x, n_chunks)
+        ref = naive.get_array_ranges(x, n_chunks, False)
 
-        comp = core._get_array_ranges(x, n_chunks)
+        comp = core._get_array_ranges(x, n_chunks, False)
         npt.assert_almost_equal(ref, comp)
 
 
@@ -779,9 +779,9 @@ def test_get_array_ranges_exhausted():
     x = np.array([3, 3, 3, 11, 11, 11])
     n_chunks = 6
 
-    ref = naive.get_array_ranges(x, n_chunks)
+    ref = naive.get_array_ranges(x, n_chunks, False)
 
-    comp = core._get_array_ranges(x, n_chunks)
+    comp = core._get_array_ranges(x, n_chunks, False)
     npt.assert_almost_equal(ref, comp)
 
 
@@ -789,19 +789,19 @@ def test_get_array_ranges_exhausted_truncated():
     x = np.array([3, 3, 3, 11, 11, 11])
     n_chunks = 6
 
-    ref = naive.get_array_ranges(x, n_chunks, truncate=True)
+    ref = naive.get_array_ranges(x, n_chunks, True)
 
-    comp = core._get_array_ranges(x, n_chunks, truncate=True)
+    comp = core._get_array_ranges(x, n_chunks, True)
     npt.assert_almost_equal(ref, comp)
 
 
 def test_get_array_ranges_empty_array():
-    x = np.array([])
+    x = np.array([], dtype=np.int64)
     n_chunks = 6
 
-    ref = naive.get_array_ranges(x, n_chunks)
+    ref = naive.get_array_ranges(x, n_chunks, False)
 
-    comp = core._get_array_ranges(x, n_chunks)
+    comp = core._get_array_ranges(x, n_chunks, False)
     npt.assert_almost_equal(ref, comp)
 
 

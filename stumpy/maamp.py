@@ -270,7 +270,12 @@ def _get_first_maamp_profile(
     return P, I
 
 
-@njit(parallel=True, fastmath=True)
+@njit(
+    "(i8, i8, i8, f8[:, :], f8[:, :], i8, i8, b1[:, :], b1[:, :], f8[:, :], f8[:, :],"
+    "f8[:, :], f8[:, :], f8[:, :])",
+    parallel=True,
+    fastmath=True,
+)
 def _compute_multi_D(
     d,
     k,
@@ -324,7 +329,7 @@ def _compute_multi_D(
         `np.nan`/`np.inf` value (False)
 
     T_A_subseq_squared : numpy.ndarray
-        The rolling sum for `T_B * T_B`
+        The rolling sum for `T_A * T_A`
 
     T_B_subseq_squared : numpy.ndarray
         The rolling sum for `T_B * T_B`
