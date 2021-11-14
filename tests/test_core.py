@@ -755,15 +755,17 @@ def test_count_diagonal_ndist():
     for n_A in range(10, 15):
         for n_B in range(10, 15):
             for m in range(3, 6):
-                diags = np.random.permutation(range(-(n_A - m + 1) + 1, n_B - m + 1))
+                diags = np.random.permutation(
+                    range(-(n_A - m + 1) + 1, n_B - m + 1)
+                ).astype(np.int64)
                 ones_matrix = np.ones((n_A - m + 1, n_B - m + 1), dtype=np.int64)
                 ref_ndist_counts = np.empty(len(diags))
                 for i, diag in enumerate(diags):
                     ref_ndist_counts[i] = ones_matrix.diagonal(offset=diag).sum()
 
-            comp_ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
+                comp_ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
 
-            npt.assert_almost_equal(ref_ndist_counts, comp_ndist_counts)
+                npt.assert_almost_equal(ref_ndist_counts, comp_ndist_counts)
 
 
 def test_get_array_ranges():
