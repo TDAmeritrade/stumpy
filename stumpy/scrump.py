@@ -222,14 +222,14 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_A - m + 1
-    P_squared = np.full(l, np.inf)
+    P_squared = np.full(l, np.inf, dtype=np.float64)
     I = np.full(l, -1, dtype=np.int64)
-    squared_distance_profile = np.empty(n_B - m + 1)
+    squared_distance_profile = np.empty(n_B - m + 1, dtype=np.float64)
 
     if s is None:  # pragma: no cover
         s = excl_zone
 
-    for i in np.random.permutation(range(0, l, s)):
+    for i in np.random.permutation(range(0, l, s)).astype(np.int64):
         QT = core.sliding_dot_product(T_A[i : i + m], T_B)
         _prescrump(
             T_A,

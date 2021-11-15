@@ -353,8 +353,8 @@ def _stump(
     n_B = T_B.shape[0]
     l = n_A - m + 1
     n_threads = numba.config.NUMBA_NUM_THREADS
-    ρ = np.full((n_threads, l, 3), -np.inf)
-    I = np.full((n_threads, l, 3), -1, np.int64)
+    ρ = np.full((n_threads, l, 3), -np.inf, dtype=np.float64)
+    I = np.full((n_threads, l, 3), -1, dtype=np.int64)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, n_threads, False)
@@ -364,14 +364,14 @@ def _stump(
     # The next lines are equivalent and left for reference
     # cov_c = np.roll(T_A, 1)
     # cov_ = cov_c[:M_T_m_1.shape[0]] - M_T_m_1[:]
-    cov_c = np.empty(M_T_m_1.shape[0])
+    cov_c = np.empty(M_T_m_1.shape[0], dtype=np.float64)
     cov_c[1:] = T_B[: M_T_m_1.shape[0] - 1]
     cov_c[0] = T_B[-1]
     cov_c[:] = cov_c - M_T_m_1
     # The next lines are equivalent and left for reference
     # cov_d = np.roll(T_B, 1)
     # cov_d = cov_d[:μ_Q_m_1.shape[0]] - μ_Q_m_1[:]
-    cov_d = np.empty(μ_Q_m_1.shape[0])
+    cov_d = np.empty(μ_Q_m_1.shape[0], dtype=np.float64)
     cov_d[1:] = T_A[: μ_Q_m_1.shape[0] - 1]
     cov_d[0] = T_A[-1]
     cov_d[:] = cov_d - μ_Q_m_1

@@ -927,7 +927,7 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     See Equation on Page 4
     """
     k = M_T.shape[0]
-    D_squared = np.empty(k)
+    D_squared = np.empty(k, dtype=np.float64)
 
     for i in prange(k):
         D_squared[i] = _calculate_squared_distance(m, QT[i], μ_Q, σ_Q, M_T[i], Σ_T[i])
@@ -1069,7 +1069,7 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, T_squared=None):
             f"the length of `T` ({len(T)}). "
         )
 
-    distance_profile = np.empty(n - m + 1)
+    distance_profile = np.empty(n - m + 1, dtype=np.float64)
     if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
@@ -1159,11 +1159,11 @@ def mueen_calculate_distance_profile(Q, T):
     Q_norm = (Q - μ_Q) / σ_Q
     QT = sliding_dot_product(Q_norm, T)
 
-    cumsum_T = np.empty(len(T) + 1)  # Add one element, fix off-by-one
+    cumsum_T = np.empty(len(T) + 1, dtype=np.float64)  # Add one element, fix off-by-one
     np.cumsum(T, out=cumsum_T[1:])  # store output in cumsum_T[1:]
     cumsum_T[0] = 0
 
-    cumsum_T_squared = np.empty(len(T) + 1)
+    cumsum_T_squared = np.empty(len(T) + 1, dtype=np.float64)
     np.cumsum(np.square(T), out=cumsum_T_squared[1:])
     cumsum_T_squared[0] = 0
 
@@ -1320,7 +1320,7 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
             f"the length of `T` ({len(T)}). "
         )
 
-    distance_profile = np.empty(n - m + 1)
+    distance_profile = np.empty(n - m + 1, dtype=np.float64)
     if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
@@ -1668,7 +1668,7 @@ def _get_array_ranges(a, n_chunks, truncate):
         pair. The first column contains the start indices and the second column
         contains the stop indices.
     """
-    array_ranges = np.zeros((n_chunks, 2), np.int64)
+    array_ranges = np.zeros((n_chunks, 2), dtype=np.int64)
     if a.shape[0] > 0 and n_chunks > 0:
         cumsum = a.cumsum() / a.sum()
         insert = np.linspace(0, 1, n_chunks + 1)[1:-1]

@@ -92,7 +92,7 @@ def _apply_include(
         unrestricted_indices = include[include >= include.shape[0]]
 
     if mask is None:
-        mask = np.ones(include.shape[0], bool)
+        mask = np.ones(include.shape[0], dtype=bool)
         mask[restricted_indices] = False
 
     if tmp_swap is None:
@@ -140,7 +140,7 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
     d, n = T.shape
     k = n - m + 1
 
-    D = np.empty((d, k), dtype="float64")
+    D = np.empty((d, k), dtype=np.float64)
 
     for i in range(d):
         if np.isinf(μ_Q[i]):
@@ -420,15 +420,15 @@ def _query_mstump_profile(
     else:
         D[start_row_idx:].sort(axis=0, kind="mergesort")
 
-    D_prime = np.zeros(k)
+    D_prime = np.zeros(k, dtype=np.float64)
     for i in range(d):
         D_prime[:] = D_prime + D[i]
         D[i, :] = D_prime / (i + 1)
 
     core.apply_exclusion_zone(D, query_idx, excl_zone)
 
-    P = np.full(d, np.inf, dtype="float64")
-    I = np.full(d, -1, dtype="int64")
+    P = np.full(d, np.inf, dtype=np.float64)
+    I = np.full(d, -1, dtype=np.int64)
 
     for i in range(d):
         min_index = np.argmin(D[i])
@@ -539,8 +539,8 @@ def _get_multi_QT(start, T, m):
     d = T.shape[0]
     k = T.shape[1] - m + 1
 
-    QT = np.empty((d, k), dtype="float64")
-    QT_first = np.empty((d, k), dtype="float64")
+    QT = np.empty((d, k), dtype=np.float64)
+    QT_first = np.empty((d, k), dtype=np.float64)
 
     for i in range(d):
         QT[i] = core.sliding_dot_product(T[i, start : start + m], T[i])
@@ -800,10 +800,10 @@ def _mstump(
     start_row_idx = 0
 
     if include is not None:
-        tmp_swap = np.empty((include.shape[0], k))
+        tmp_swap = np.empty((include.shape[0], k), dtype=np.float64)
         restricted_indices = include[include < include.shape[0]]
         unrestricted_indices = include[include >= include.shape[0]]
-        mask = np.ones(include.shape[0], bool)
+        mask = np.ones(include.shape[0], dtype=bool)
         mask[restricted_indices] = False
 
     for idx in range(range_start, range_stop):
@@ -925,8 +925,8 @@ def mstump(T, m, include=None, discords=False, normalize=True):
         np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
     )  # See Definition 3 and Figure 3
 
-    P = np.empty((d, k), dtype="float64")
-    I = np.empty((d, k), dtype="int64")
+    P = np.empty((d, k), dtype=np.float64)
+    I = np.empty((d, k), dtype=np.int64)
 
     start = 0
     stop = k

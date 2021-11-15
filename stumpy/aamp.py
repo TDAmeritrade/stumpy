@@ -182,8 +182,8 @@ def _aamp(T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_t
     n_B = T_B.shape[0]
     l = n_A - m + 1
     n_threads = numba.config.NUMBA_NUM_THREADS
-    P = np.full((n_threads, l, 3), np.inf)
-    I = np.full((n_threads, l, 3), -1, np.int64)
+    P = np.full((n_threads, l, 3), np.inf, dtype=np.float64)
+    I = np.full((n_threads, l, 3), -1, dtype=np.int64)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, n_threads, False)

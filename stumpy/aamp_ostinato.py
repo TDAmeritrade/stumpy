@@ -54,7 +54,7 @@ def _aamp_across_series_nearest_neighbors(
 
     for i in range(k):
         if np.any(~np.isfinite(Q)):  # pragma: no cover
-            distance_profile = np.empty(Ts[i].shape[0] - m + 1)
+            distance_profile = np.empty(Ts[i].shape[0] - m + 1, dtype=np.float64)
             distance_profile[:] = np.inf
         else:
             QT = core.sliding_dot_product(

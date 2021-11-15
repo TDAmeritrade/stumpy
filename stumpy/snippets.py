@@ -88,7 +88,7 @@ def _get_all_profiles(
         T = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
 
     n_padded = T.shape[0]
-    D = np.empty(((n_padded // m) - 1, n_padded - m + 1))
+    D = np.empty(((n_padded // m) - 1, n_padded - m + 1), dtype=np.float64)
 
     if s is not None:
         s = min(int(s), m)
@@ -237,13 +237,13 @@ def snippets(
     T_padded = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
     n_padded = T_padded.shape[0]
 
-    snippets = np.empty((k, m))
+    snippets = np.empty((k, m), dtype=np.float64)
     snippets_indices = np.empty(k, dtype=np.int64)
-    snippets_profiles = np.empty((k, D.shape[-1]))
-    snippets_fractions = np.empty(k)
-    snippets_areas = np.empty(k)
-    Q = np.full(D.shape[-1], np.inf)
-    indices = np.arange(0, n_padded - m, m)
+    snippets_profiles = np.empty((k, D.shape[-1]), dtype=np.float64)
+    snippets_fractions = np.empty(k, dtype=np.float64)
+    snippets_areas = np.empty(k, dtype=np.float64)
+    Q = np.full(D.shape[-1], np.inf, dtype=np.float64)
+    indices = np.arange(0, n_padded - m, m, dtype=np.int64)
     snippets_regimes_list = []
 
     for i in range(k):

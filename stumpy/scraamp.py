@@ -225,14 +225,14 @@ def prescraamp(T_A, m, T_B=None, s=None):
     l = n_A - m + 1
     P_squared = np.full(l, np.inf)
     I = np.full(l, -1, dtype=np.int64)
-    squared_distance_profile = np.empty(n_B - m + 1)
+    squared_distance_profile = np.empty(n_B - m + 1, dtype=np.float64)
     T_A_squared = np.sum(core.rolling_window(T_A * T_A, m), axis=1)
     T_B_squared = np.sum(core.rolling_window(T_B * T_B, m), axis=1)
 
     if s is None:  # pragma: no cover
         s = excl_zone
 
-    for i in np.random.permutation(range(0, l, s)):
+    for i in np.random.permutation(range(0, l, s)).astype(np.int64):
         QT = core.sliding_dot_product(T_A[i : i + m], T_B)
         _prescraamp(
             T_A,

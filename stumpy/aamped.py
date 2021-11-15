@@ -113,7 +113,7 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
     diags_futures = []
     for i, host in enumerate(hosts):
         diags_future = dask_client.scatter(
-            np.arange(diags_ranges[i, 0], diags_ranges[i, 1]),
+            np.arange(diags_ranges[i, 0], diags_ranges[i, 1], dtype=np.int64),
             workers=[host],
             hash=False,
         )
