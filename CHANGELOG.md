@@ -1,7 +1,39 @@
+# 2021-11-02    [ 1.10.0 ]:
+---------------------------
+* bugfixes
+  - Raise TypeError for non np.float64 input arrays
+  - Fixed NumbaPerformanceWarning backwards compatibility
+* features
+  - Converted all dtypes to np.float64/np.int64
+  - Added explicit NJIT function signatures
+  - Added Python 3.9 support
+  - Added core._idx_to_mp convenience function
+  - Added Nan/Inf support for motifs and matches functions
+* tasks
+  - Removed "in-tree" build flag for pip
+  - Added pypi stats query for bigquery
+  - Set explicit sphinx version for RTD
+  - Fixed typos
+  - Replaced direct installation via setup.py
+  - Added numpydoc
+  - Removed ipywidgets from requirements
+  - Removed Azure Pipelines from CI
+  - Used official OSI name in the license metadata, added license name in classifiers section
+  - Added Github Citation BIB format
+  - Fixed broken tutorial links
+* documentation
+  - Fixed multi-dimensional matrix profile description
+  - Added clear warning in discord section of MSTUMP tutorial
+  - Added API examples to all docstrings
+  - Updated docstrings to use numpy.ndarray
+  - Added interactive threshold example for STIMP
+  - Updated matplotlib style sheet to use URL for all tutorials
+
+
 # 2021-07-28    [ 1.9.2 ]:
 --------------------------
 * bugfixes
-  - Fixed #439 cutoff parameter not being used in motifs.py
+  - Fixed cutoff parameter not being used in motifs.py
 * features
   - Unified motif discovery and pattern matching tools
 * tasks

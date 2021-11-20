@@ -12,7 +12,7 @@
 #    b) requirements.txt
 #    d) environment.yml
 #    e) recipes/meta.yaml in conda-feedstock
-# 6. Commit all above changes and push
+# 6. Commit all above changes as the latest version number and push
 #
 # For conda-forge
 # 1. Fork the stumpy-feedstock: https://github.com/conda-forge/stumpy-feedstock
