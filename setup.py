@@ -42,7 +42,7 @@ configuration = {
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: 3-clause BSD License",
+        "License :: OSI Approved :: BSD License",
         "Programming Language :: Python",
         "Topic :: Software Development",
         "Topic :: Scientific/Engineering",
