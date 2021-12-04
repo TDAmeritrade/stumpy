@@ -112,7 +112,7 @@ class stumpi:
         self._P = mp[:, 0].astype(np.float64)
         self._I = mp[:, 1].astype(np.int64)
         self._left_I = mp[:, 2].astype(np.int64)
-        self._left_P = np.empty(self._P.shape)
+        self._left_P = np.empty(self._P.shape, dtype=np.float64)
         self._left_P[:] = np.inf
 
         self._T, self._M_T, self._Σ_T = core.preprocess(self._T, self._m)
@@ -125,7 +125,7 @@ class stumpi:
         Q = self._T[-m:]
         self._QT = core.sliding_dot_product(Q, self._T)
         if self._egress:
-            self._QT_new = np.empty(self._QT.shape[0])
+            self._QT_new = np.empty(self._QT.shape[0], dtype=np.float64)
             self._n_appended = 0
 
     def update(self, t):
@@ -230,7 +230,7 @@ class stumpi:
         n = self._T.shape[0]
         l = n - self._m + 1
         T_new = np.append(self._T, t)
-        QT_new = np.empty(self._QT.shape[0] + 1)
+        QT_new = np.empty(self._QT.shape[0] + 1, dtype=np.float64)
         S = T_new[l:]
         t_drop = T_new[l - 1]
 

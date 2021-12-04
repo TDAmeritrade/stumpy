@@ -316,8 +316,8 @@ def _gpu_stump(
             device_M_T = cuda.to_device(M_T)
             device_Σ_T = cuda.to_device(Σ_T)
 
-        profile = np.full((k, 3), np.inf)  # float64
-        indices = np.full((k, 3), -1, dtype=np.int64)  # int64
+        profile = np.full((k, 3), np.inf, dtype=np.float64)
+        indices = np.full((k, 3), -1, dtype=np.int64)
 
         device_profile = cuda.to_device(profile)
         device_indices = cuda.to_device(indices)

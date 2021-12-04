@@ -139,7 +139,7 @@ def _contrast_pan(pan, threshold, bfs_indices, n_processed):
     l = n_processed * pan.shape[1]
     tmp = pan[idx].argsort(kind="mergesort", axis=None)
     ranks = np.empty(l, dtype=np.int64)
-    ranks[tmp] = np.arange(l)
+    ranks[tmp] = np.arange(l).astype(np.int64)
 
     percentile = np.full(ranks.shape, np.nan)
     percentile[:l] = np.linspace(0, 1, l)
@@ -308,14 +308,14 @@ class _stimp:
         self._T = T
         if max_m is None:
             max_m = max(min_m + 1, core.get_max_window_size(self._T.shape[0]))
-            M = np.arange(min_m, max_m + 1, step)
+            M = np.arange(min_m, max_m + 1, step).astype(np.int64)
         else:
             min_m, max_m = sorted([min_m, max_m])
             M = np.arange(
                 max(3, min_m),
                 min(core.get_max_window_size(self._T.shape[0]), max_m) + 1,
                 step,
-            )
+            ).astype(np.int64)
         self._bfs_indices = _bfs_indices(M.shape[0])
         self._M = M[self._bfs_indices]
         self._n_processed = 0
@@ -328,7 +328,9 @@ class _stimp:
         )
         self._mp_func = partial_mp_func
 
-        self._PAN = np.full((self._M.shape[0], self._T.shape[0]), fill_value=np.inf)
+        self._PAN = np.full(
+            (self._M.shape[0], self._T.shape[0]), fill_value=np.inf, dtype=np.float64
+        )
 
     def update(self):
         """

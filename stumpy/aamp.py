@@ -13,7 +13,10 @@ from . import core, config
 logger = logging.getLogger(__name__)
 
 
-@njit(fastmath=True)
+@njit(
+    "(f8[:], f8[:], i8, b1[:], b1[:], i8[:], i8, i8, i8, f8[:, :, :], i8[:, :, :], b1)",
+    fastmath=True,
+)
 def _compute_diagonal(
     T_A,
     T_B,
@@ -127,7 +130,7 @@ def _compute_diagonal(
     return
 
 
-@njit(parallel=True, fastmath=True)
+@njit("(f8[:], f8[:], i8, b1[:], b1[:], i8[:], b1)", parallel=True, fastmath=True)
 def _aamp(T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_trivial):
     """
     A Numba JIT-compiled version of AAMP for parallel computation of the matrix
@@ -179,11 +182,11 @@ def _aamp(T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_t
     n_B = T_B.shape[0]
     l = n_A - m + 1
     n_threads = numba.config.NUMBA_NUM_THREADS
-    P = np.full((n_threads, l, 3), np.inf)
-    I = np.full((n_threads, l, 3), -1, np.int64)
+    P = np.full((n_threads, l, 3), np.inf, dtype=np.float64)
+    I = np.full((n_threads, l, 3), -1, dtype=np.int64)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
-    diags_ranges = core._get_array_ranges(ndist_counts, n_threads)
+    diags_ranges = core._get_array_ranges(ndist_counts, n_threads, False)
 
     for thread_idx in prange(n_threads):
         # Compute and update P, I within a single thread while avoiding race conditions
@@ -290,9 +293,9 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
     out = np.empty((l, 4), dtype=object)
 
     if ignore_trivial:
-        diags = np.arange(excl_zone + 1, n_A - m + 1)
+        diags = np.arange(excl_zone + 1, n_A - m + 1, dtype=np.int64)
     else:
-        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
+        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
     P, I = _aamp(
         T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_trivial

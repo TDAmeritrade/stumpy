@@ -130,10 +130,10 @@ def _motifs(
         candidate_idx = np.argmin(P[-1])
 
     motif_distances = core._jagged_list_to_array(
-        motif_distances, fill_value=np.nan, dtype="float64"
+        motif_distances, fill_value=np.nan, dtype=np.float64
     )
     motif_indices = core._jagged_list_to_array(
-        motif_indices, fill_value=-1, dtype="int64"
+        motif_indices, fill_value=-1, dtype=np.int64
     )
 
     return motif_distances, motif_indices

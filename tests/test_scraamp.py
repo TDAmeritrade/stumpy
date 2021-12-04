@@ -56,13 +56,17 @@ def naive_scraamp(T_A, m, T_B, percentage, exclusion_zone, pre_scraamp, s):
     l = n_A - m + 1
 
     if exclusion_zone is not None:
-        diags = np.random.permutation(range(exclusion_zone + 1, n_A - m + 1))
+        diags = np.random.permutation(range(exclusion_zone + 1, n_A - m + 1)).astype(
+            np.int64
+        )
     else:
-        diags = np.random.permutation(range(-(n_A - m + 1) + 1, n_B - m + 1))
+        diags = np.random.permutation(range(-(n_A - m + 1) + 1, n_B - m + 1)).astype(
+            np.int64
+        )
 
     n_chunks = int(np.ceil(1.0 / percentage))
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
-    diags_ranges = core._get_array_ranges(ndist_counts, n_chunks)
+    diags_ranges = core._get_array_ranges(ndist_counts, n_chunks, False)
     diags_ranges_start = diags_ranges[0, 0]
     diags_ranges_stop = diags_ranges[0, 1]
 

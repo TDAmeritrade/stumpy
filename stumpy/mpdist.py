@@ -262,9 +262,9 @@ def _mpdist_vect(
     """
     j = Q.shape[0] - m + 1  # `k` is reserved for `P_ABBA` selection
     l = T.shape[0] - m + 1
-    MPdist_vect = np.empty(T.shape[0] - Q.shape[0] + 1)
-    distance_matrix = np.full((j, l), np.inf)
-    P_ABBA = np.empty(2 * j)
+    MPdist_vect = np.empty(T.shape[0] - Q.shape[0] + 1, dtype=np.float64)
+    distance_matrix = np.full((j, l), np.inf, dtype=np.float64)
+    P_ABBA = np.empty(2 * j, dtype=np.float64)
 
     if k is None:
         percentage = np.clip(percentage, 0.0, 1.0)

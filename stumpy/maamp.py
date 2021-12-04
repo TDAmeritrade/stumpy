@@ -46,7 +46,7 @@ def _multi_mass_absolute(Q, T, m, Q_subseq_isfinite, T_subseq_isfinite):
     d, n = T.shape
     k = n - m + 1
 
-    D = np.empty((d, k), dtype="float64")
+    D = np.empty((d, k), dtype=np.float64)
 
     for i in range(d):
         if np.any(~Q_subseq_isfinite[i]):
@@ -187,15 +187,15 @@ def _query_maamp_profile(
     else:
         D[start_row_idx:].sort(axis=0, kind="mergesort")
 
-    D_prime = np.zeros(k)
+    D_prime = np.zeros(k, dtype=np.float64)
     for i in range(d):
         D_prime[:] = D_prime + D[i]
         D[i, :] = D_prime / (i + 1)
 
     core.apply_exclusion_zone(D, query_idx, excl_zone)
 
-    P = np.full(d, np.inf, dtype="float64")
-    I = np.full(d, -1, dtype="int64")
+    P = np.full(d, np.inf, dtype=np.float64)
+    I = np.full(d, -1, dtype=np.int64)
 
     for i in range(d):
         min_index = np.argmin(D[i])
@@ -270,7 +270,12 @@ def _get_first_maamp_profile(
     return P, I
 
 
-@njit(parallel=True, fastmath=True)
+@njit(
+    "(i8, i8, i8, f8[:, :], f8[:, :], i8, i8, b1[:, :], b1[:, :], f8[:, :], f8[:, :],"
+    "f8[:, :], f8[:, :], f8[:, :])",
+    parallel=True,
+    fastmath=True,
+)
 def _compute_multi_D(
     d,
     k,
@@ -324,7 +329,7 @@ def _compute_multi_D(
         `np.nan`/`np.inf` value (False)
 
     T_A_subseq_squared : numpy.ndarray
-        The rolling sum for `T_B * T_B`
+        The rolling sum for `T_A * T_A`
 
     T_B_subseq_squared : numpy.ndarray
         The rolling sum for `T_B * T_B`
@@ -494,17 +499,17 @@ def _maamp(
     QT_even = QT.copy()
     d = T.shape[0]
 
-    P = np.empty((d, range_stop - range_start), dtype=float)
-    I = np.empty((d, range_stop - range_start), dtype=int)
-    D = np.empty((d, k), dtype=float)
-    D_prime = np.empty(k, dtype=float)
+    P = np.empty((d, range_stop - range_start), dtype=np.float64)
+    I = np.empty((d, range_stop - range_start), dtype=np.int64)
+    D = np.empty((d, k), dtype=np.float64)
+    D_prime = np.empty(k, dtype=np.float64)
     start_row_idx = 0
 
     if include is not None:
-        tmp_swap = np.empty((include.shape[0], k))
+        tmp_swap = np.empty((include.shape[0], k), dtype=np.float64)
         restricted_indices = include[include < include.shape[0]]
         unrestricted_indices = include[include >= include.shape[0]]
-        mask = np.ones(include.shape[0], bool)
+        mask = np.ones(include.shape[0], dtype=bool)
         mask[restricted_indices] = False
 
     for idx in range(range_start, range_stop):
@@ -623,8 +628,8 @@ def maamp(T, m, include=None, discords=False):
         np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
     )  # See Definition 3 and Figure 3
 
-    P = np.empty((d, k), dtype="float64")
-    I = np.empty((d, k), dtype="int64")
+    P = np.empty((d, k), dtype=np.float64)
+    I = np.empty((d, k), dtype=np.int64)
 
     start = 0
     stop = k

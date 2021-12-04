@@ -300,8 +300,8 @@ def _gpu_aamp(
             device_T_B_subseq_isfinite = cuda.to_device(T_B_subseq_isfinite)
             device_T_B_subseq_squared = cuda.to_device(T_B_subseq_squared)
 
-        profile = np.full((k, 3), np.inf)  # float64
-        indices = np.full((k, 3), -1, dtype=np.int64)  # int64
+        profile = np.full((k, 3), np.inf, dtype=np.float64)
+        indices = np.full((k, 3), -1, dtype=np.int64)
 
         device_profile = cuda.to_device(profile)
         device_indices = cuda.to_device(indices)

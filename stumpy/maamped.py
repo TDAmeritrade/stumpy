@@ -94,8 +94,8 @@ def maamped(dask_client, T, m, include=None, discords=False):
         np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
     )  # See Definition 3 and Figure 3
 
-    P = np.empty((d, k), dtype="float64")
-    I = np.empty((d, k), dtype="int64")
+    P = np.empty((d, k), dtype=np.float64)
+    I = np.empty((d, k), dtype=np.int64)
 
     hosts = list(dask_client.ncores().keys())
     nworkers = len(hosts)

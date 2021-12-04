@@ -14,7 +14,12 @@ from .stump import _stump
 logger = logging.getLogger(__name__)
 
 
-@njit(parallel=True, fastmath=True)
+@njit(
+    "(f8[:], f8[:], i8, f8[:], f8[:], f8[:], f8[:], f8[:], i8, i8, f8[:], f8[:], i8[:],"
+    "optional(i8))",
+    parallel=True,
+    fastmath=True,
+)
 def _prescrump(
     T_A,
     T_B,
@@ -217,14 +222,14 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_A - m + 1
-    P_squared = np.full(l, np.inf)
+    P_squared = np.full(l, np.inf, dtype=np.float64)
     I = np.full(l, -1, dtype=np.int64)
-    squared_distance_profile = np.empty(n_B - m + 1)
+    squared_distance_profile = np.empty(n_B - m + 1, dtype=np.float64)
 
     if s is None:  # pragma: no cover
         s = excl_zone
 
-    for i in np.random.permutation(range(0, l, s)):
+    for i in np.random.permutation(range(0, l, s)).astype(np.int64):
         QT = core.sliding_dot_product(T_A[i : i + m], T_B)
         _prescrump(
             T_A,
@@ -473,7 +478,7 @@ class scrump:
         if self._ignore_trivial:
             self._diags = np.random.permutation(
                 range(self._excl_zone + 1, self._n_A - self._m + 1)
-            )
+            ).astype(np.int64)
             if self._diags.shape[0] == 0:  # pragma: no cover
                 max_m = core.get_max_window_size(self._T_A.shape[0])
                 raise ValueError(
@@ -483,7 +488,7 @@ class scrump:
         else:
             self._diags = np.random.permutation(
                 range(-(self._n_A - self._m + 1) + 1, self._n_B - self._m + 1)
-            )
+            ).astype(np.int64)
 
         self._n_threads = numba.config.NUMBA_NUM_THREADS
         self._percentage = np.clip(percentage, 0.0, 1.0)
@@ -492,7 +497,7 @@ class scrump:
             self._diags, self._m, self._n_A, self._n_B
         )
         self._chunk_diags_ranges = core._get_array_ranges(
-            self._ndist_counts, self._n_chunks, truncate=True
+            self._ndist_counts, self._n_chunks, True
         )
         self._n_chunks = self._chunk_diags_ranges.shape[0]
         self._chunk_idx = 0

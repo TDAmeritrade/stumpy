@@ -39,7 +39,7 @@ def _nnmark(I):
     I[idx] = idx
 
     k = I.shape[0]
-    i = np.arange(k)
+    i = np.arange(k, dtype=np.int64)
 
     nnmark = np.bincount(np.minimum(i, I), minlength=k)
     nnmark -= np.bincount(np.maximum(i, I), minlength=k)
@@ -86,15 +86,15 @@ def _iac(
     """
     np.random.seed(seed)
 
-    I = np.random.randint(0, width, size=width)
+    I = np.random.randint(0, width, size=width, dtype=np.int64)
     if bidirectional is False:  # Idealized 1-dimensional matrix profile index
         I[:-1] = width
         for i in range(width - 1):
-            I[i] = np.random.randint(i + 1, width)
+            I[i] = np.random.randint(i + 1, width, dtype=np.int64)
 
     target_AC = _nnmark(I)
 
-    params = np.empty((n_iter, 2))
+    params = np.empty((n_iter, 2), dtype=np.float64)
     for i in range(n_iter):
         hist_dist = scipy.stats.rv_histogram(
             (target_AC, np.append(np.arange(width), width))
@@ -164,7 +164,7 @@ def _cac(I, L, bidirectional=True, excl_factor=5, custom_iac=None, seed=0):
     """
     k = I.shape[0]
     AC = _nnmark(I)
-    CAC = np.zeros(k)
+    CAC = np.zeros(k, dtype=np.float64)
 
     if custom_iac is None:
         IAC = _iac(k, bidirectional, seed=seed)
@@ -218,7 +218,7 @@ def _rea(cac, n_regimes, L, excl_factor=5):
 
     This is the implementation for the regime extracting algorithm (REA).
     """
-    regime_locs = np.empty(n_regimes - 1, dtype=np.int)
+    regime_locs = np.empty(n_regimes - 1, dtype=np.int64)
     tmp_cac = copy.deepcopy(cac)
     for i in range(n_regimes - 1):
         regime_locs[i] = np.argmin(tmp_cac)
@@ -483,7 +483,7 @@ class floss:
                 n_samples=self._n_samples,
             )
 
-        right_nn = np.zeros((self._k, self._m))
+        right_nn = np.zeros((self._k, self._m), dtype=np.float64)
 
         # Disable the bidirectional matrix profile indices and left indices
         self._mp[:, 1] = -1
@@ -492,7 +492,10 @@ class floss:
         # Update matrix profile distance to be right mp distance and not bidirectional.
         # Use right indices to perform direct distance calculations
         # Note that any -1 indices must have a np.inf matrix profile value
-        right_indices = [np.arange(IR, IR + self._m) for IR in self._mp[:, 3].tolist()]
+        right_indices = [
+            np.arange(IR, IR + self._m, dtype=np.int64)
+            for IR in self._mp[:, 3].tolist()
+        ]
         right_nn[:] = self._T[np.array(right_indices)]
         if self._normalize:
             self._mp[:, 0] = np.linalg.norm(
@@ -509,7 +512,7 @@ class floss:
         self._mp[inf_indices, 0] = np.inf
         self._mp[inf_indices, 3] = inf_indices
 
-        self._cac = np.ones(self._k) * -1
+        self._cac = np.ones(self._k, dtype=np.float64) * -1
 
     def update(self, t):
         """
