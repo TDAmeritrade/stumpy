@@ -5,7 +5,7 @@ from stumpy import core, config
 from stumpy import maamp, maamp_subspace
 from stumpy.maamp import (
     _multi_mass_absolute,
-    _query_maamp_profile,
+    maamp_multi_distance_profile,
     _get_first_maamp_profile,
 )
 import pytest
@@ -57,20 +57,14 @@ def test_multi_mass_absolute(T, m):
 
 
 @pytest.mark.parametrize("T, m", test_data)
-def test_query_maamp_profile(T, m):
+def test_maamp_multi_distance_profile(T, m):
     _T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
-    excl_zone = int(np.ceil(m / 4))
     for query_idx in range(_T.shape[0] - m + 1):
-        ref_P, ref_I = naive.maamp(T, m, excl_zone)
-        ref_P = ref_P[:, query_idx]
-        ref_I = ref_I[:, query_idx]
+        ref_D = naive.maamp_multi_distance_profile(query_idx, _T, m)
 
-        comp_P, comp_I = _query_maamp_profile(
-            query_idx, _T, _T, m, excl_zone, T_subseq_isfinite
-        )
+        comp_D = maamp_multi_distance_profile(query_idx, _T, m)
 
-        npt.assert_almost_equal(ref_P, comp_P)
-        npt.assert_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_D, comp_D)
 
 
 @pytest.mark.parametrize("T, m", test_data)

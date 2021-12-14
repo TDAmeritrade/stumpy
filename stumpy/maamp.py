@@ -112,25 +112,23 @@ def maamp_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
     return S
 
 
-def _query_maamp_profile(
+def _maamp_multi_distance_profile(
     query_idx, T_A, T_B, m, excl_zone, T_B_subseq_isfinite, include=None, discords=False
 ):
     """
     Multi-dimensional wrapper to compute the multi-dimensional non-normalized (i.e.,
-    without z-normalization) matrix profile and the multi-dimensional matrix profile
-    index for a given query window within the times series or sequence that is denoted
-    by the `query_idx` index. Essentially, this is a convenience wrapper around
-    `_multi_mass_absolute`.
+    without z-normalization) distance profile for a given query window within the
+    times series or sequence that is denoted by the `query_idx` index. Essentially,
+    this is a convenience wrapper around `_multi_mass_absolute`.
 
     Parameters
     ----------
     query_idx : int
-        The window index to calculate the first multi-dimensional matrix profile and
-        multi-dimensional matrix profile indices
+        The window index to calculate the multi-dimensional distance profile
 
     T_A : numpy.ndarray
-        The time series or sequence for which the multi-dimensional matrix profile and
-        multi-dimensional matrix profile indices
+        The time series or sequence for which the multi-dimensional distance profile
+        will be returned
 
     T_B : numpy.ndarray
         The time series or sequence that contains your query subsequences
@@ -159,13 +157,9 @@ def _query_maamp_profile(
 
     Returns
     -------
-    P : numpy.ndarray
-        Multi-dimensional matrix profile for the window with index equal to
+    D : numpy.ndarray
+        Multi-dimensional distance profile for the window with index equal to
         `query_idx`
-
-    I : numpy.ndarray
-        Multi-dimensional matrix profile indices for the window with index
-        equal to `query_idx`
     """
     d, n = T_A.shape
     k = n - m + 1
@@ -194,17 +188,65 @@ def _query_maamp_profile(
 
     core.apply_exclusion_zone(D, query_idx, excl_zone)
 
-    P = np.full(d, np.inf, dtype=np.float64)
-    I = np.full(d, -1, dtype=np.int64)
+    return D
 
-    for i in range(d):
-        min_index = np.argmin(D[i])
-        I[i] = min_index
-        P[i] = D[i, min_index]
-        if np.isinf(P[i]):  # pragma nocover
-            I[i] = -1
 
-    return P, I
+def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False):
+    """
+    Multi-dimensional wrapper to compute the multi-dimensional non-normalized (i.e.,
+    without z-normalization) distance profile for a given query window within the
+    times series or sequence that is denoted by the `query_idx` index.
+
+    Parameters
+    ----------
+    query_idx : int
+        The window index to calculate the multi-dimensional distance profile
+
+    T : numpy.ndarray
+        The time series or sequence for which the multi-dimensional distance profile
+        will be returned
+
+    m : int
+        Window size
+
+    include : numpy.ndarray, default None
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    discords : bool, default False
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
+
+    Returns
+    -------
+    D : numpy.ndarray
+        Multi-dimensional distance profile for the window with index equal to
+        `query_idx`
+    """
+    T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
+
+    if T.ndim <= 1:  # pragma: no cover
+        err = f"T is {T.ndim}-dimensional and must be at least 1-dimensional"
+        raise ValueError(f"{err}")
+
+    core.check_window_size(m, max_size=T.shape[1])
+
+    if include is not None:  # pragma: no cover
+        include = mstump._preprocess_include(include)
+
+    excl_zone = int(
+        np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
+    )  # See Definition 3 and Figure 3
+
+    D = _maamp_multi_distance_profile(
+        query_idx, T, T, m, excl_zone, T_subseq_isfinite, include, discords
+    )
+
+    return D
 
 
 def _get_first_maamp_profile(
@@ -215,8 +257,9 @@ def _get_first_maamp_profile(
     z-normalization multi-dimensional matrix profile and multi-dimensional matrix
     profile index for a given window within the times series or sequence that is denoted
     by the `start` index. Essentially, this is a convenience wrapper around
-    `_multi_mass_absolute`. This is a convenience wrapper for the `_query_maamp_profile`
-    function but does not return the multi-dimensional matrix profile subspace.
+    `_multi_mass_absolute`. This is a convenience wrapper for the
+    `_maamp_multi_distance_profile` function but does not return the multi-dimensional
+    matrix profile subspace.
 
     Parameters
     ----------
@@ -264,9 +307,21 @@ def _get_first_maamp_profile(
         Multi-dimensional matrix profile indices for the window with index
         equal to `start`
     """
-    P, I = _query_maamp_profile(
+    D = _maamp_multi_distance_profile(
         start, T_A, T_B, m, excl_zone, T_B_subseq_isfinite, include, discords
     )
+
+    d = T_A.shape[0]
+    P = np.full(d, np.inf, dtype=np.float64)
+    I = np.full(d, -1, dtype=np.int64)
+
+    for i in range(d):
+        min_index = np.argmin(D[i])
+        I[i] = min_index
+        P[i] = D[i, min_index]
+        if np.isinf(P[i]):  # pragma nocover
+            I[i] = -1
+
     return P, I
 
 

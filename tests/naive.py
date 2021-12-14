@@ -357,6 +357,33 @@ def apply_include(D, include):
     D[unrestricted_indices] = tmp_swap[mask]
 
 
+def multi_distance_profile(query_idx, T, m, include=None, discords=False):
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    d, n = T.shape
+    Q = T[:, query_idx : query_idx + m]
+    D = multi_mass(Q, T, m, include, discords)
+
+    start_row_idx = 0
+    if include is not None:
+        apply_include(D, include)
+        start_row_idx = include.shape[0]
+
+    if discords:
+        D[start_row_idx:][::-1].sort(axis=0)
+    else:
+        D[start_row_idx:].sort(axis=0)
+
+    D_prime = np.zeros(n - m + 1)
+    D_prime_prime = np.zeros((d, n - m + 1))
+    for j in range(d):
+        D_prime[:] = D_prime + D[j]
+        D_prime_prime[j, :] = D_prime / (j + 1)
+
+    apply_exclusion_zone(D_prime_prime, query_idx, excl_zone)
+
+    return D_prime_prime
+
+
 def mstump(T, m, excl_zone, include=None, discords=False):
     T = T.copy()
 
@@ -367,28 +394,8 @@ def mstump(T, m, excl_zone, include=None, discords=False):
     I = np.ones((d, k), dtype="int64") * -1
 
     for i in range(k):
-        Q = T[:, i : i + m]
-        D = multi_mass(Q, T, m, include, discords)
-
-        start_row_idx = 0
-        if include is not None:
-            apply_include(D, include)
-            start_row_idx = include.shape[0]
-
-        if discords:
-            D[start_row_idx:][::-1].sort(axis=0)
-        else:
-            D[start_row_idx:].sort(axis=0)
-
-        D_prime = np.zeros(n - m + 1)
-        D_prime_prime = np.zeros((d, n - m + 1))
-        for j in range(d):
-            D_prime[:] = D_prime + D[j]
-            D_prime_prime[j, :] = D_prime / (j + 1)
-
-        apply_exclusion_zone(D_prime_prime, i, excl_zone)
-
-        P_i, I_i = PI(D_prime_prime, i, excl_zone)
+        D = multi_distance_profile(i, T, m, include, discords)
+        P_i, I_i = PI(D, i, excl_zone)
 
         for dim in range(T.shape[0]):
             col_mask = P[dim] > P_i[dim]
@@ -396,6 +403,33 @@ def mstump(T, m, excl_zone, include=None, discords=False):
             I[dim, col_mask] = I_i[dim, col_mask]
 
     return P, I
+
+
+def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False):
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    d, n = T.shape
+    Q = T[:, query_idx : query_idx + m]
+    D = multi_mass_absolute(Q, T, m, include, discords)
+
+    start_row_idx = 0
+    if include is not None:
+        apply_include(D, include)
+        start_row_idx = include.shape[0]
+
+    if discords:
+        D[start_row_idx:][::-1].sort(axis=0)
+    else:
+        D[start_row_idx:].sort(axis=0)
+
+    D_prime = np.zeros(n - m + 1)
+    D_prime_prime = np.zeros((d, n - m + 1))
+    for j in range(d):
+        D_prime[:] = D_prime + D[j]
+        D_prime_prime[j, :] = D_prime / (j + 1)
+
+    apply_exclusion_zone(D_prime_prime, query_idx, excl_zone)
+
+    return D_prime_prime
 
 
 def maamp(T, m, excl_zone, include=None, discords=False):
@@ -408,28 +442,8 @@ def maamp(T, m, excl_zone, include=None, discords=False):
     I = np.ones((d, k), dtype="int64") * -1
 
     for i in range(k):
-        Q = T[:, i : i + m]
-        D = multi_mass_absolute(Q, T, m, include, discords)
-
-        start_row_idx = 0
-        if include is not None:
-            apply_include(D, include)
-            start_row_idx = include.shape[0]
-
-        if discords:
-            D[start_row_idx:][::-1].sort(axis=0)
-        else:
-            D[start_row_idx:].sort(axis=0)
-
-        D_prime = np.zeros(n - m + 1)
-        D_prime_prime = np.zeros((d, n - m + 1))
-        for j in range(d):
-            D_prime[:] = D_prime + D[j]
-            D_prime_prime[j, :] = D_prime / (j + 1)
-
-        apply_exclusion_zone(D_prime_prime, i, excl_zone)
-
-        P_i, I_i = PI(D_prime_prime, i, excl_zone)
+        D = maamp_multi_distance_profile(i, T, m, include, discords)
+        P_i, I_i = PI(D, i, excl_zone)
 
         for dim in range(T.shape[0]):
             col_mask = P[dim] > P_i[dim]

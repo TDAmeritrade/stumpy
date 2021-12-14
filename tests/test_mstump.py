@@ -5,7 +5,7 @@ from stumpy import core, config
 from stumpy import mstump, subspace
 from stumpy.mstump import (
     _multi_mass,
-    _query_mstump_profile,
+    multi_distance_profile,
     _get_first_mstump_profile,
     _get_multi_QT,
     _apply_include,
@@ -79,20 +79,14 @@ def test_multi_mass(T, m):
 
 
 @pytest.mark.parametrize("T, m", test_data)
-def test_query_mstump_profile(T, m):
-    excl_zone = int(np.ceil(m / 4))
+def test_multi_distance_profile(T, m):
     for query_idx in range(T.shape[0] - m + 1):
-        ref_P, ref_I = naive.mstump(T, m, excl_zone)
-        ref_P = ref_P[:, query_idx]
-        ref_I = ref_I[:, query_idx]
+        ref_D = naive.multi_distance_profile(query_idx, T, m)
 
         M_T, Σ_T = core.compute_mean_std(T, m)
-        comp_P, comp_I = _query_mstump_profile(
-            query_idx, T, T, m, excl_zone, M_T, Σ_T, M_T, Σ_T
-        )
+        comp_D = multi_distance_profile(query_idx, T, m)
 
-        npt.assert_almost_equal(ref_P, comp_P)
-        npt.assert_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_D, comp_D)
 
 
 @pytest.mark.parametrize("T, m", test_data)

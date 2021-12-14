@@ -10,7 +10,7 @@ from numba import njit, prange
 from functools import lru_cache
 
 from . import core, config
-from .maamp import maamp, maamp_subspace
+from .maamp import maamp_multi_distance_profile, maamp, maamp_subspace
 
 logger = logging.getLogger(__name__)
 
@@ -336,24 +336,22 @@ def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normaliz
     return S
 
 
-def _query_mstump_profile(
+def _multi_distance_profile(
     query_idx, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include=None, discords=False
 ):
     """
-    Multi-dimensional wrapper to compute the multi-dimensional matrix profile and
-    the multi-dimensional matrix profile index for a given query window within the times
-    series or sequence that is denoted by the `query_idx` index. Essentially, this is a
-    convenience wrapper around `_multi_mass`.
+    Multi-dimensional wrapper to compute the multi-dimensional distance profile for a
+    given query window within the times series or sequence that is denoted by the
+    `query_idx` index. Essentially, this is a convenience wrapper around `_multi_mass`.
 
     Parameters
     ----------
     query_idx : int
-        The window index to calculate the first multi-dimensional matrix profile and
-        multi-dimensional matrix profile indices
+        The window index to calculate the multi-dimensional distance profile for
 
     T_A : numpy.ndarray
-        The time series or sequence for which the multi-dimensional matrix profile and
-        multi-dimensional matrix profile indices
+        The time series or sequence for which the multi-dimensional distance profile
+        is computed
 
     T_B : numpy.ndarray
         The time series or sequence that contains your query subsequences
@@ -371,10 +369,10 @@ def _query_mstump_profile(
         Sliding standard deviation for `T_A`
 
     μ_Q : numpy.ndarray
-        Sliding mean for `T_B`
+        Sliding mean for the query subsequence `T_B`
 
     σ_Q : numpy.ndarray
-        Sliding standard deviation for `T_B`
+        Sliding standard deviation for the query subsequence `T_B`
 
     include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
@@ -390,13 +388,9 @@ def _query_mstump_profile(
 
     Returns
     -------
-    P : numpy.ndarray
-        Multi-dimensional matrix profile for the window with index equal to
+    D : numpy.ndarray
+        Multi-dimensional distance profile for the window with index equal to
         `query_idx`
-
-    I : numpy.ndarray
-        Multi-dimensional matrix profile indices for the window with index
-        equal to `query_idx`
     """
     d, n = T_A.shape
     k = n - m + 1
@@ -427,17 +421,73 @@ def _query_mstump_profile(
 
     core.apply_exclusion_zone(D, query_idx, excl_zone)
 
-    P = np.full(d, np.inf, dtype=np.float64)
-    I = np.full(d, -1, dtype=np.int64)
+    return D
 
-    for i in range(d):
-        min_index = np.argmin(D[i])
-        I[i] = min_index
-        P[i] = D[i, min_index]
-        if np.isinf(P[i]):  # pragma nocover
-            I[i] = -1
 
-    return P, I
+@core.non_normalized(maamp_multi_distance_profile)
+def multi_distance_profile(
+    query_idx, T, m, include=None, discords=False, normalize=True
+):
+    """
+    Multi-dimensional wrapper to compute the multi-dimensional distance profile for a
+    given query window within the times series or sequence that is denoted by the
+    `query_idx` index.
+
+    Parameters
+    ----------
+    query_idx : int
+        The window index to calculate the multi-dimensional distance profile for
+
+    T : numpy.ndarray
+        The multi-dimensional time series or sequence for which the multi-dimensional
+        distance profile will be returned
+
+    m : int
+        Window size
+
+    include : numpy.ndarray, default None
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    discords : bool, default False
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
+
+    Returns
+    -------
+    D : numpy.ndarray
+        Multi-dimensional distance profile for the window with index equal to
+        `query_idx`
+    """
+    T, M_T, Σ_T = core.preprocess(T, m)
+
+    if T.ndim <= 1:  # pragma: no cover
+        err = f"T is {T.ndim}-dimensional and must be at least 1-dimensional"
+        raise ValueError(f"{err}")
+
+    core.check_window_size(m, max_size=T.shape[1])
+
+    if include is not None:  # pragma: no cover
+        include = _preprocess_include(include)
+
+    excl_zone = int(
+        np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
+    )  # See Definition 3 and Figure 3
+
+    D = _multi_distance_profile(
+        query_idx, T, T, m, excl_zone, M_T, Σ_T, M_T, Σ_T, include, discords
+    )
+
+    return D
 
 
 def _get_first_mstump_profile(
@@ -448,8 +498,8 @@ def _get_first_mstump_profile(
     and multi-dimensional matrix profile index for a given window within the
     times series or sequence that is denoted by the `start` index.
     Essentially, this is a convenience wrapper around `_multi_mass`. This is a
-    convenience wrapper for the `_query_mstump_profile` function but does not return
-    the multi-dimensional matrix profile subspace.
+    convenience wrapper for the `_multi_distance_profile` function but does not
+    return the multi-dimensional matrix profile subspace.
 
     Parameters
     ----------
@@ -505,9 +555,21 @@ def _get_first_mstump_profile(
         Multi-dimensional matrix profile indices for the window with index
         equal to `start`
     """
-    P, I = _query_mstump_profile(
+    D = _multi_distance_profile(
         start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
     )
+
+    d = T_A.shape[0]
+    P = np.full(d, np.inf, dtype=np.float64)
+    I = np.full(d, -1, dtype=np.int64)
+
+    for i in range(d):
+        min_index = np.argmin(D[i])
+        I[i] = min_index
+        P[i] = D[i, min_index]
+        if np.isinf(P[i]):  # pragma nocover
+            I[i] = -1
+
     return P, I
 
 

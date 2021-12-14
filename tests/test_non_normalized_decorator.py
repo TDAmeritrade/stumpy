@@ -1,6 +1,8 @@
 import numpy as np
 import numpy.testing as npt
 import stumpy
+from stumpy.mstump import multi_distance_profile
+from stumpy.maamp import maamp_multi_distance_profile
 from dask.distributed import Client, LocalCluster
 from numba import cuda
 
@@ -244,6 +246,14 @@ def test_gpu_mpdist():
     ref = stumpy.gpu_aampdist(T_A, T_B, m)
     comp = stumpy.gpu_mpdist(T_A, T_B, m, normalize=False)
     npt.assert_almost_equal(ref, comp)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_multi_distance_profile(T, m):
+    for i in range(3):
+        ref = maamp_multi_distance_profile(i, T, m)
+        comp = multi_distance_profile(i, T, m, normalize=False)
+        npt.assert_almost_equal(ref, comp)
 
 
 @pytest.mark.parametrize("T, m", test_data)
