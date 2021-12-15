@@ -1,3 +1,16 @@
+# 2021-12-15    [ 1.10.1 ]:
+---------------------------
+* bugfixes
+  - Fixed #495 Reduce import time by removing Numba NJIT signatures 
+* features
+  - Added multi_distance_profile function
+* tasks
+  - Refactored _query_mstump_profile (see multi_distance_profile)
+  - Added SVG STUMPY logo
+* documentation
+  - Refactored tutorial
+
+
 # 2021-11-02    [ 1.10.0 ]:
 ---------------------------
 * bugfixes
