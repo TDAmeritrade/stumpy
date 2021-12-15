@@ -612,8 +612,8 @@ def _get_multi_QT(start, T, m):
 
 
 @njit(
-    "(i8, i8, i8, f8[:, :], f8[:, :], i8, i8, f8[:, :], f8[:, :], f8[:, :], f8[:, :],"
-    "f8[:, :], f8[:, :], f8[:, :])",
+    # "(i8, i8, i8, f8[:, :], f8[:, :], i8, i8, f8[:, :], f8[:, :], f8[:, :],"
+    # "f8[:, :], f8[:, :], f8[:, :], f8[:, :])",
     parallel=True,
     fastmath=True,
 )
@@ -714,7 +714,11 @@ def _compute_multi_D(
     core.apply_exclusion_zone(D, idx, excl_zone)
 
 
-@njit("(i8, i8, f8[:, :], f8[:], i8, f8[:, :], i8[:, :])", parallel=True, fastmath=True)
+@njit(
+    # "(i8, i8, f8[:, :], f8[:], i8, f8[:, :], i8[:, :])",
+    parallel=True,
+    fastmath=True,
+)
 def _compute_PI(d, idx, D, D_prime, range_start, P, I):
     """
     A Numba JIT-compiled version of mSTOMP for updating the matrix profile and matrix
