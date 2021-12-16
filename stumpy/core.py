@@ -484,7 +484,10 @@ def sliding_dot_product(Q, T):
     return QT.real[m - 1 : n]
 
 
-@njit("f8[:](f8[:], i8, b1[:])", fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
+@njit(
+    # "f8[:](f8[:], i8, b1[:])",
+    fastmath={"nsz", "arcp", "contract", "afn", "reassoc"}
+)
 def _welford_nanvar(a, w, a_subseq_isfinite):
     """
     Compute the rolling variance for a 1-D array while ignoring NaNs using a modified
@@ -831,7 +834,10 @@ def compute_mean_std(T, m):
         )
 
 
-@njit("f8(i8, f8, f8, f8, f8, f8)", fastmath=True)
+@njit(
+    # "f8(i8, f8, f8, f8, f8, f8)",
+    fastmath=True
+)
 def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     Compute a single squared distance given all scalar inputs. This function serves as
@@ -889,7 +895,11 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return D_squared
 
 
-@njit("f8[:](i8, f8[:], f8, f8, f8[:], f8[:])", parallel=True, fastmath=True)
+@njit(
+    # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
+    parallel=True,
+    fastmath=True,
+)
 def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     Compute the squared distance profile
@@ -935,7 +945,11 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return D_squared
 
 
-@njit("f8[:](i8, f8[:], f8, f8, f8[:], f8[:])", parallel=True, fastmath=True)
+@njit(
+    # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
+    parallel=True,
+    fastmath=True,
+)
 def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     Compute the distance profile
@@ -977,7 +991,10 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return np.sqrt(D_squared)
 
 
-@njit("f8[:](f8, f8[:], f8[:])", fastmath=True)
+@njit(
+    # "f8[:](f8, f8[:], f8[:])",
+    fastmath=True
+)
 def _mass_absolute(Q_squared, T_squared, QT):
     """
     A Numba JIT compiled algorithm for computing the non-normalized distance profile
@@ -1182,7 +1199,10 @@ def mueen_calculate_distance_profile(Q, T):
     return np.sqrt(D)
 
 
-@njit("f8[:](f8[:], f8[:], f8[:], f8, f8, f8[:], f8[:])", fastmath=True)
+@njit(
+    # "f8[:](f8[:], f8[:], f8[:], f8, f8, f8[:], f8[:])",
+    fastmath=True
+)
 def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     A Numba JIT compiled algorithm for computing the distance profile using the MASS
@@ -1401,7 +1421,10 @@ def _get_QT(start, T_A, T_B, m):
     return QT, QT_first
 
 
-@njit(["(f8[:], i8, i8)", "(f8[:, :], i8, i8)"], fastmath=True)
+@njit(
+    # ["(f8[:], i8, i8)", "(f8[:, :], i8, i8)"],
+    fastmath=True
+)
 def apply_exclusion_zone(D, idx, excl_zone):
     """
     Apply an exclusion zone to an array (inplace), i.e. set all values
@@ -1606,7 +1629,11 @@ def array_to_temp_file(a):
     return fname
 
 
-@njit("i8[:](i8[:], i8, i8, i8)", parallel=True, fastmath=True)
+@njit(
+    # "i8[:](i8[:], i8, i8, i8)",
+    parallel=True,
+    fastmath=True,
+)
 def _count_diagonal_ndist(diags, m, n_A, n_B):
     """
     Count the number of distances that would be computed for each diagonal index
@@ -1642,7 +1669,9 @@ def _count_diagonal_ndist(diags, m, n_A, n_B):
     return diag_ndist_counts
 
 
-@njit("i8[:, :](i8[:], i8, b1)")
+@njit(
+    # "i8[:, :](i8[:], i8, b1)"
+)
 def _get_array_ranges(a, n_chunks, truncate):
     """
     Given an input array, split it into `n_chunks`.

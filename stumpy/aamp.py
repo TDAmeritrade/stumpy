@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 @njit(
-    "(f8[:], f8[:], i8, b1[:], b1[:], i8[:], i8, i8, i8, f8[:, :, :], i8[:, :, :], b1)",
+    # "(f8[:], f8[:], i8, b1[:], b1[:], i8[:], i8, i8, i8, f8[:, :, :], i8[:, :, :],"
+    # "b1)",
     fastmath=True,
 )
 def _compute_diagonal(
@@ -130,7 +131,11 @@ def _compute_diagonal(
     return
 
 
-@njit("(f8[:], f8[:], i8, b1[:], b1[:], i8[:], b1)", parallel=True, fastmath=True)
+@njit(
+    # "(f8[:], f8[:], i8, b1[:], b1[:], i8[:], b1)",
+    parallel=True,
+    fastmath=True,
+)
 def _aamp(T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_trivial):
     """
     A Numba JIT-compiled version of AAMP for parallel computation of the matrix
