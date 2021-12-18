@@ -154,6 +154,7 @@ clean_up()
 {
     echo "Cleaning Up"
     rm -rf "dask-worker-space"
+    rm -rf "stumpy/__pycache__/"
 }
 
 ###########
