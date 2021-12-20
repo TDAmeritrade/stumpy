@@ -157,6 +157,26 @@ def motifs(
     number of other subsequence matches in `T` (outside the exclusion zone) with a
     distance less or equal to `max_distance`.
 
+    Note that, in the best case scenario, the returned arrays would have shape
+    `(max_motifs, max_matches)` and contain all finite values. However, in reality,
+    many conditions (see below) need to be satisfied in order for this to be true. Any
+    truncation in the number of rows (i.e., motifs)  may be the result of insufficient
+    candidate motifs with matches greater than or equal to `min_neighbors` or that the
+    matrix profile value for the candidate motif was larger than `cutoff`. Similarly,
+    any truncationin in the number of columns (i.e., matches) may be the result of
+    insufficient matches being found with distances (to their corresponding candidate
+    motif) that are equal to or less than `max_distance`. Only motifs and matches that
+    satisfy all of these constraints will be returned.
+
+    If you must return a shape of `(max_motifs, max_matches)`, then you may consider
+    specifying a smaller `min_neighors`, a larger `max_distance`, and/or a larger
+    `cutoff`. For example, while it is ill advised, setting `min_neighbors=1`,
+    `max_distance=np.inf`, and `cutoff=np.inf` will ensure that the shape of the output
+    arrays will be `(max_motifs, max_matches)`. However, given the lack of constraints,
+    the quality of each motif and the quality of each match may be drastically
+    different. Setting appropriate conditions will help ensure appropriately
+    constrained results that may be easier to interpret.
+
     Parameters
     ----------
     T : numpy.ndarray
