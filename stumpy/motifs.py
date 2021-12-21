@@ -23,6 +23,7 @@ def _motifs(
     cutoff,
     max_matches,
     max_motifs,
+    atol=1e-8,
 ):
     """
     Find the top motifs for time series `T`.
@@ -71,10 +72,9 @@ def _motifs(
     max_motifs : int
         The maximum number of motifs to return.
 
-    normalize : bool
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+    atol : float, default 1e-8
+        The absolute tolerance parameter. This value will be added to `max_distance`
+        when comparing distances between subsequences.
 
     Return
     ------
@@ -118,6 +118,7 @@ def _motifs(
             Σ_T=Σ_T,
             max_matches=None,
             max_distance=max_distance,
+            atol=atol,
         )
 
         if len(query_matches) > min_neighbors:
@@ -148,6 +149,7 @@ def motifs(
     cutoff=None,
     max_matches=10,
     max_motifs=1,
+    atol=1e-8,
     normalize=True,
 ):
     """
@@ -306,6 +308,7 @@ def match(
     Σ_T=None,
     max_distance=None,
     max_matches=None,
+    atol=1e-8,
     normalize=True,
 ):
     """
@@ -343,6 +346,10 @@ def match(
         occurrences are sorted by distance, so a value of `10` means that the
         indices of the most similar `10` subsequences is returned. If `None`, then all
         occurrences are returned.
+
+    atol : float, default 1e-8
+        The absolute tolerance parameter. This value will be added to `max_distance`
+        when comparing distances between subsequences.
 
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
@@ -407,7 +414,7 @@ def match(
     matches = []
 
     candidate_idx = np.argmin(D)
-    while D[candidate_idx] <= max_distance and len(matches) < max_matches:
+    while D[candidate_idx] <= atol + max_distance and len(matches) < max_matches:
         matches.append([D[candidate_idx], candidate_idx])
         core.apply_exclusion_zone(D, candidate_idx, excl_zone)
         candidate_idx = np.argmin(D)

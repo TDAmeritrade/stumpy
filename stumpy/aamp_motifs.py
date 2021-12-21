@@ -22,6 +22,7 @@ def _aamp_motifs(
     cutoff,
     max_matches,
     max_motifs,
+    atol=1e-8,
 ):
     """
     Find the top non-normalized motifs (i.e., without z-normalization) for time series
@@ -72,6 +73,10 @@ def _aamp_motifs(
     max_motifs : int
         The maximum number of motifs to return.
 
+    atol : float, default 1e-8
+        The absolute tolerance parameter. This value will be added to `max_distance`
+        when comparing distances between subsequences.
+
     Return
     ------
     motif_distances : numpy.ndarray
@@ -112,6 +117,7 @@ def _aamp_motifs(
             T,
             max_matches=None,
             max_distance=max_distance,
+            atol=atol,
         )
 
         if len(query_matches) > min_neighbors:
@@ -141,6 +147,7 @@ def aamp_motifs(
     cutoff=None,
     max_matches=10,
     max_motifs=1,
+    atol=1e-8,
 ):
     """
     Discover the top non-normalized motifs (i.e., without z-normalization) for time
@@ -208,6 +215,10 @@ def aamp_motifs(
     max_motifs : int, default 1
         The maximum number of motifs to return.
 
+    atol : float, default 1e-8
+        The absolute tolerance parameter. This value will be added to `max_distance`
+        when comparing distances between subsequences.
+
     Return
     ------
     motif_distances : numpy.ndarray
@@ -267,6 +278,7 @@ def aamp_motifs(
         cutoff,
         max_matches,
         max_motifs,
+        atol=atol,
     )
 
     return motif_distances, motif_indices
@@ -279,6 +291,7 @@ def aamp_match(
     T_squared=None,
     max_distance=None,
     max_matches=None,
+    atol=1e-8,
 ):
     """
     Find all matches of a query `Q` in a time series `T`, i.e. the indices
@@ -308,6 +321,10 @@ def aamp_match(
         occurrences are sorted by distance, so a value of `10` means that the
         indices of the most similar `10` subsequences is returned. If `None`, then all
         occurrences are returned.
+
+    atol : float, default 1e-8
+        The absolute tolerance parameter. This value will be added to `max_distance`
+        when comparing distances between subsequences.
 
     Returns
     -------
@@ -356,7 +373,7 @@ def aamp_match(
     matches = []
 
     candidate_idx = np.argmin(D)
-    while D[candidate_idx] <= max_distance and len(matches) < max_matches:
+    while D[candidate_idx] <= atol + max_distance and len(matches) < max_matches:
         matches.append([D[candidate_idx], candidate_idx])
         core.apply_exclusion_zone(D, candidate_idx, excl_zone)
         candidate_idx = np.argmin(D)
