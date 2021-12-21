@@ -313,8 +313,8 @@ def aamp_match(
     -------
     out : numpy.ndarray
         The first column consists of distances of subsequences of `T` whose distances
-        to `Q` are smaller than `max_distance`, sorted by distance (lowest to highest).
-        The second column consists of the corresponding indices in `T`.
+        to `Q` are less than or equal to`max_distance`, sorted by distance (lowest to
+        highest). The second column consists of the corresponding indices in `T`.
     """
     if len(Q.shape) == 1:
         Q = Q[np.newaxis, :]
