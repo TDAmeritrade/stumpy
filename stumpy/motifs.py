@@ -262,7 +262,7 @@ def motifs(
 
     if P.ndim != 1:  # pragma: no cover
         raise ValueError(
-            f"T is {P.ndim}-dimensional and must be 1-dimensional. "
+            f"P is {P.ndim}-dimensional and must be 1-dimensional. "
             "Multidimensional motif discovery is not yet supported."
         )
 
