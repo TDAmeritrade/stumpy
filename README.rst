@@ -1,15 +1,12 @@
 .. image:: https://img.shields.io/pypi/v/stumpy.svg
     :target: https://pypi.org/project/stumpy/
     :alt: PyPI Version
-.. image:: https://pepy.tech/badge/stumpy
-    :target: https://pepy.tech/project/stumpy
-    :alt: PyPI Downloads
 .. image:: https://anaconda.org/conda-forge/stumpy/badges/version.svg
     :target: https://anaconda.org/conda-forge/stumpy
     :alt: Conda-forge Version
-.. image:: https://anaconda.org/conda-forge/stumpy/badges/downloads.svg
-    :target: https://anaconda.org/conda-forge/stumpy
-    :alt: Conda-forge Downloads
+.. image:: https://pepy.tech/badge/stumpy/month
+    :target: https://pepy.tech/project/stumpy
+    :alt: PyPI Downloads
 .. image:: https://img.shields.io/pypi/l/stumpy.svg
     :target: https://github.com/TDAmeritrade/stumpy/blob/master/LICENSE.txt
     :alt: License
