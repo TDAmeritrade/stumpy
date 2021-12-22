@@ -414,7 +414,11 @@ def match(
     matches = []
 
     candidate_idx = np.argmin(D)
-    while D[candidate_idx] <= atol + max_distance and len(matches) < max_matches:
+    while (
+        D[candidate_idx] <= atol + max_distance
+        and np.isfinite(D[candidate_idx])
+        and len(matches) < max_matches
+    ):
         matches.append([D[candidate_idx], candidate_idx])
         core.apply_exclusion_zone(D, candidate_idx, excl_zone)
         candidate_idx = np.argmin(D)
