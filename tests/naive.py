@@ -1372,8 +1372,8 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
 def normalize_pan(pan, ms, bfs_indices, n_processed):
     idx = bfs_indices[:n_processed]
     for i in range(n_processed):
-        norm = 1.0 / np.sqrt(2 * ms[i])
-        pan[idx] = np.minimum(1.0, pan[idx] * norm)
+        norm = 1.0 / np.sqrt(2.0 * ms[i])
+        pan[idx] = np.min(1.0, pan[idx] * norm)
 
 
 def contrast_pan(pan, threshold, bfs_indices, n_processed):
