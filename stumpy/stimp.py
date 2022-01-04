@@ -108,8 +108,8 @@ def _normalize_pan(pan, ms, bfs_indices, n_processed):
     None
     """
     idx = bfs_indices[:n_processed]
-    norm = 1.0 / np.sqrt(2 * ms[:n_processed])
-    pan[idx] = pan[idx] * norm[:, np.newaxis]
+    norm = 1.0 / np.sqrt(2.0 * ms[:n_processed])
+    pan[idx] = np.minimum(1.0, pan[idx] * norm[:, np.newaxis])
 
 
 def _contrast_pan(pan, threshold, bfs_indices, n_processed):
