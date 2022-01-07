@@ -1425,13 +1425,13 @@ def _get_QT(start, T_A, T_B, m):
     # ["(f8[:], i8, i8)", "(f8[:, :], i8, i8)"],
     fastmath=True
 )
-def apply_exclusion_zone(D, idx, excl_zone):
+def apply_exclusion_zone(a, idx, excl_zone, val=np.inf):
     """
     Apply an exclusion zone to an array (inplace), i.e. set all values
-    to np.inf in a window around a given index.
+    to `val` in a window around a given index.
 
-    All values in D in [idx - excl_zone, idx + excl_zone] (endpoints included)
-    will be set to np.inf.
+    All values in a in [idx - excl_zone, idx + excl_zone] (endpoints included)
+    will be set to `val`.
 
     Parameters
     ----------
@@ -1443,10 +1443,12 @@ def apply_exclusion_zone(D, idx, excl_zone):
 
     excl_zone : int
         Size of the exclusion zone.
+
+    val : float or bool, default np.inf
     """
     zone_start = max(0, idx - excl_zone)
-    zone_stop = min(D.shape[-1], idx + excl_zone)
-    D[..., zone_start : zone_stop + 1] = np.inf
+    zone_stop = min(a.shape[-1], idx + excl_zone)
+    a[..., zone_start : zone_stop + 1] = val
 
 
 def preprocess(T, m):
