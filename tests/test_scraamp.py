@@ -20,7 +20,7 @@ def naive_prescraamp(T_A, m, T_B, s, exclusion_zone=None):
     for i in np.random.permutation(range(0, l, s)):
         distance_profile = distance_matrix[i]
         if exclusion_zone is not None:
-            naive.apply_exclusion_zone(distance_profile, i, exclusion_zone)
+            naive.apply_exclusion_zone(distance_profile, i, exclusion_zone, np.inf)
         I[i] = np.argmin(distance_profile)
         P[i] = distance_profile[I[i]]
         if P[i] == np.inf:
