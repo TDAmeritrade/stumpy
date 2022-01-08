@@ -419,7 +419,7 @@ def _multi_distance_profile(
         D_prime[:] = D_prime + D[i]
         D[i, :] = D_prime / (i + 1)
 
-    core.apply_exclusion_zone(D, query_idx, excl_zone)
+    core.apply_exclusion_zone(D, query_idx, excl_zone, np.inf)
 
     return D
 
@@ -711,7 +711,7 @@ def _compute_multi_D(
                 m, QT_odd[i], μ_Q[i, idx], σ_Q[i, idx], M_T[i], Σ_T[i]
             )
 
-    core.apply_exclusion_zone(D, idx, excl_zone)
+    core._apply_exclusion_zone(D, idx, excl_zone, np.inf)
 
 
 @njit(

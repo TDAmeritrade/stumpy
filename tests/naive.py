@@ -15,11 +15,11 @@ def distance(a, b, axis=0):
     return np.linalg.norm(a - b, axis=axis)
 
 
-def apply_exclusion_zone(D, trivial_idx, excl_zone):
+def apply_exclusion_zone(a, trivial_idx, excl_zone, val):
     start = max(0, trivial_idx - excl_zone)
-    stop = min(D.shape[-1], trivial_idx + excl_zone + 1)
+    stop = min(a.shape[-1], trivial_idx + excl_zone + 1)
     for i in range(start, stop):
-        D[..., i] = np.inf
+        a[..., i] = val
 
 
 def distance_profile(Q, T, m):
@@ -80,7 +80,7 @@ def mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
 
     D = distance_profile(Q, T, m)
     if ignore_trivial:
-        apply_exclusion_zone(D, trivial_idx, excl_zone)
+        apply_exclusion_zone(D, trivial_idx, excl_zone, np.inf)
         start = max(0, trivial_idx - excl_zone)
         stop = min(D.shape[0], trivial_idx + excl_zone + 1)
     D[np.isnan(D)] = np.inf
@@ -379,7 +379,7 @@ def multi_distance_profile(query_idx, T, m, include=None, discords=False):
         D_prime[:] = D_prime + D[j]
         D_prime_prime[j, :] = D_prime / (j + 1)
 
-    apply_exclusion_zone(D_prime_prime, query_idx, excl_zone)
+    apply_exclusion_zone(D_prime_prime, query_idx, excl_zone, np.inf)
 
     return D_prime_prime
 
@@ -427,7 +427,7 @@ def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False):
         D_prime[:] = D_prime + D[j]
         D_prime_prime[j, :] = D_prime / (j + 1)
 
-    apply_exclusion_zone(D_prime_prime, query_idx, excl_zone)
+    apply_exclusion_zone(D_prime_prime, query_idx, excl_zone, np.inf)
 
     return D_prime_prime
 
@@ -592,7 +592,7 @@ class aampi_egress(object):
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
 
-        apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
+        apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
         for j in range(D.shape[0]):
             if D[j] < self.P_[j]:
                 self.I_[j] = D.shape[0] - 1 + self._n_appended
@@ -657,7 +657,7 @@ class stumpi_egress(object):
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
 
-        apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
+        apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
         for j in range(D.shape[0]):
             if D[j] < self.P_[j]:
                 self.I_[j] = D.shape[0] - 1 + self._n_appended
@@ -1279,7 +1279,7 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None):
     for i in np.random.permutation(range(0, l, s)):
         distance_profile = dist_matrix[i]
         if exclusion_zone is not None:
-            apply_exclusion_zone(distance_profile, i, exclusion_zone)
+            apply_exclusion_zone(distance_profile, i, exclusion_zone, np.inf)
         I[i] = np.argmin(distance_profile)
         P[i] = distance_profile[I[i]]
         if P[i] == np.inf:

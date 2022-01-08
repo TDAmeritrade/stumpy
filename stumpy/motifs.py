@@ -126,7 +126,7 @@ def _motifs(
             motif_indices.append(query_matches[:max_matches, 1])
 
         for idx in query_matches[:, 1]:
-            core.apply_exclusion_zone(P, int(idx), excl_zone)
+            core.apply_exclusion_zone(P, int(idx), excl_zone, np.inf)
 
         candidate_idx = np.argmin(P[-1])
 
@@ -420,7 +420,7 @@ def match(
         and len(matches) < max_matches
     ):
         matches.append([D[candidate_idx], candidate_idx])
-        core.apply_exclusion_zone(D, candidate_idx, excl_zone)
+        core.apply_exclusion_zone(D, candidate_idx, excl_zone, np.inf)
         candidate_idx = np.argmin(D)
 
     out = np.array(matches, dtype=object)

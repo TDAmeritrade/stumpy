@@ -50,7 +50,7 @@ def _mass_PI(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=F
     D = core.mass(Q, T, M_T, Σ_T)
 
     if trivial_idx is not None:
-        core.apply_exclusion_zone(D, trivial_idx, excl_zone)
+        core.apply_exclusion_zone(D, trivial_idx, excl_zone, np.inf)
 
         # Get left and right matrix profiles
         IL = -1

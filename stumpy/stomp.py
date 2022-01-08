@@ -133,7 +133,7 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
             m, QT, μ_Q[i].item(0), σ_Q[i].item(0), M_T, Σ_T
         )
         if ignore_trivial:
-            core.apply_exclusion_zone(D, i, excl_zone)
+            core.apply_exclusion_zone(D, i, excl_zone, np.inf)
 
         I = np.argmin(D)
         P = np.sqrt(D[I])
