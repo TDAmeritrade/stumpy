@@ -308,6 +308,13 @@ def aamp_match(
     T : numpy.ndarray
         The time series of interest
 
+    T_subseq_isfinite : numpy.ndarray, default None
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_squared : numpy.ndarray, default None
+        Squared time series or sequence
+
     max_distance : float or function, default None
         Maximum distance between `Q` and a subsequence `S` for `S` to be considered a
         match. If a function, then it has to be a function of one argument `D`, which
