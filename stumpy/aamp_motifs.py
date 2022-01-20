@@ -99,7 +99,7 @@ def _aamp_motifs(
     candidate_idx = np.argmin(P[-1])
     while len(motif_indices) < max_motifs:
         profile_value = P[-1, candidate_idx]
-        if profile_value > cutoff:  # pragma: no cover
+        if profile_value > cutoff or not np.isfinite(profile_value):  # pragma: no cover
             break
 
         # If max_distance is a constant (independent of the distance profile D of Q
@@ -125,7 +125,7 @@ def _aamp_motifs(
             motif_indices.append(query_matches[:max_matches, 1])
 
         for idx in query_matches[:, 1]:
-            core.apply_exclusion_zone(P, int(idx), excl_zone)
+            core.apply_exclusion_zone(P, int(idx), excl_zone, np.inf)
 
         candidate_idx = np.argmin(P[-1])
 
@@ -308,6 +308,13 @@ def aamp_match(
     T : numpy.ndarray
         The time series of interest
 
+    T_subseq_isfinite : numpy.ndarray, default None
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_squared : numpy.ndarray, default None
+        Squared time series or sequence
+
     max_distance : float or function, default None
         Maximum distance between `Q` and a subsequence `S` for `S` to be considered a
         match. If a function, then it has to be a function of one argument `D`, which
@@ -379,7 +386,7 @@ def aamp_match(
         and len(matches) < max_matches
     ):
         matches.append([D[candidate_idx], candidate_idx])
-        core.apply_exclusion_zone(D, candidate_idx, excl_zone)
+        core.apply_exclusion_zone(D, candidate_idx, excl_zone, np.inf)
         candidate_idx = np.argmin(D)
 
     return np.array(matches, dtype=object)

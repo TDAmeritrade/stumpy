@@ -283,7 +283,7 @@ def check_dtype(a, dtype=np.float64):  # pragma: no cover
     a : numpy.ndarray
         NumPy array
 
-    dtype : dtype, , default np.float64
+    dtype : dtype, default np.float64
         NumPy `dtype`
 
     Raises
@@ -291,9 +291,13 @@ def check_dtype(a, dtype=np.float64):  # pragma: no cover
     TypeError
         If the array type does not match `dtype`
     """
+    if dtype == int:
+        dtype = np.int64
+    if dtype == float:
+        dtype = np.float64
     if not np.issubdtype(a.dtype, dtype):
-        msg = f"{dtype} type expected but found {a.dtype}\n"
-        msg += "Please change your input `dtype` with `.astype(np.float64)`"
+        msg = f"{dtype} dtype expected but found {a.dtype} in input array\n"
+        msg += "Please change your input `dtype` with `.astype(dtype)`"
         raise TypeError(msg)
 
     return True
@@ -1425,17 +1429,17 @@ def _get_QT(start, T_A, T_B, m):
     # ["(f8[:], i8, i8)", "(f8[:, :], i8, i8)"],
     fastmath=True
 )
-def apply_exclusion_zone(D, idx, excl_zone):
+def _apply_exclusion_zone(a, idx, excl_zone, val):
     """
     Apply an exclusion zone to an array (inplace), i.e. set all values
-    to np.inf in a window around a given index.
+    to `val` in a window around a given index.
 
-    All values in D in [idx - excl_zone, idx + excl_zone] (endpoints included)
-    will be set to np.inf.
+    All values in a in [idx - excl_zone, idx + excl_zone] (endpoints included)
+    will be set to `val`.
 
     Parameters
     ----------
-    D : numpy.ndarray
+    a : numpy.ndarray
         The array you want to apply the exclusion zone to
 
     idx : int
@@ -1443,10 +1447,40 @@ def apply_exclusion_zone(D, idx, excl_zone):
 
     excl_zone : int
         Size of the exclusion zone.
+
+    val : float or bool
+        The elements within the exclusion zone will be set to this value
     """
     zone_start = max(0, idx - excl_zone)
-    zone_stop = min(D.shape[-1], idx + excl_zone)
-    D[..., zone_start : zone_stop + 1] = np.inf
+    zone_stop = min(a.shape[-1], idx + excl_zone)
+    a[..., zone_start : zone_stop + 1] = val
+
+
+def apply_exclusion_zone(a, idx, excl_zone, val):
+    """
+    Apply an exclusion zone to an array (inplace), i.e. set all values
+    to `val` in a window around a given index.
+
+    All values in a in [idx - excl_zone, idx + excl_zone] (endpoints included)
+    will be set to `val`. This is a convenience wrapper around the Numba JIT-compiled
+    `_apply_exclusion_zone` function.
+
+    Parameters
+    ----------
+    a : numpy.ndarray
+        The array you want to apply the exclusion zone to
+
+    idx : int
+        The index around which the window should be centered
+
+    excl_zone : int
+        Size of the exclusion zone.
+
+    val : float or bool
+        The elements within the exclusion zone will be set to this value
+    """
+    check_dtype(a, dtype=type(val))
+    _apply_exclusion_zone(a, idx, excl_zone, val)
 
 
 def preprocess(T, m):

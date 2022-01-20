@@ -186,7 +186,7 @@ def _maamp_multi_distance_profile(
         D_prime[:] = D_prime + D[i]
         D[i, :] = D_prime / (i + 1)
 
-    core.apply_exclusion_zone(D, query_idx, excl_zone)
+    core.apply_exclusion_zone(D, query_idx, excl_zone, np.inf)
 
     return D
 
@@ -450,7 +450,7 @@ def _compute_multi_D(
         D[i][~(T_A_subseq_isfinite[i])] = np.inf
         D[i][D[i] < config.STUMPY_D_SQUARED_THRESHOLD] = 0
 
-    core.apply_exclusion_zone(D, idx, excl_zone)
+    core._apply_exclusion_zone(D, idx, excl_zone, np.inf)
 
 
 def _maamp(

@@ -1,3 +1,18 @@
+# 2021-12-15    [ 1.10.2 ]:
+---------------------------
+* bugfixes
+  - Fixed #501 Allow `max_distance = np.inf` in match function
+* features
+  - Added `atol=1e-8` parameter to match and motifs functions 
+* tasks
+  - Fixed typos
+  - Removed conda download badge, updated PyPI download badge
+  - Added removal __pycache__ in test clean up phase
+* documentation
+  - Update pan matrix profile tutorial
+  - Updated docstring for match and motifs functions
+
+
 # 2021-12-15    [ 1.10.1 ]:
 ---------------------------
 * bugfixes

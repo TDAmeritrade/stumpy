@@ -202,7 +202,7 @@ class stumpi:
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
 
-        core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
+        core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
 
         update_idx = np.argwhere(D < self._P).flatten()
         self._I[update_idx] = D.shape[0] + self._n_appended - 1  # D.shape[0] is base-1
@@ -260,7 +260,7 @@ class stumpi:
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
 
-        core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone)
+        core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
 
         update_idx = np.argwhere(D[:l] < self._P[:l]).flatten()
         self._I[update_idx] = l

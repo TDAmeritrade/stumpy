@@ -614,17 +614,53 @@ def test_mass_absolute_distance_matrix(T_A, T_B):
 
 
 def test_apply_exclusion_zone():
-    T = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=float)
-    ref = np.empty(T.shape)
-    comp = np.empty(T.shape)
+    T = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.float64)
+    ref = np.empty(T.shape, dtype=np.float64)
+    comp = np.empty(T.shape, dtype=np.float64)
     exclusion_zone = 2
 
     for i in range(T.shape[0]):
         ref[:] = T[:]
-        naive.apply_exclusion_zone(ref, i, exclusion_zone)
+        naive.apply_exclusion_zone(ref, i, exclusion_zone, np.inf)
 
         comp[:] = T[:]
-        core.apply_exclusion_zone(comp, i, exclusion_zone)
+        core.apply_exclusion_zone(comp, i, exclusion_zone, np.inf)
+
+        naive.replace_inf(ref)
+        naive.replace_inf(comp)
+        npt.assert_array_equal(ref, comp)
+
+
+def test_apply_exclusion_zone_int():
+    T = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int64)
+    ref = np.empty(T.shape, dtype=np.int64)
+    comp = np.empty(T.shape, dtype=np.int64)
+    exclusion_zone = 2
+
+    for i in range(T.shape[0]):
+        ref[:] = T[:]
+        naive.apply_exclusion_zone(ref, i, exclusion_zone, -1)
+
+        comp[:] = T[:]
+        core.apply_exclusion_zone(comp, i, exclusion_zone, -1)
+
+        naive.replace_inf(ref)
+        naive.replace_inf(comp)
+        npt.assert_array_equal(ref, comp)
+
+
+def test_apply_exclusion_zone_bool():
+    T = np.ones(10, dtype=bool)
+    ref = np.empty(T.shape, dtype=bool)
+    comp = np.empty(T.shape, dtype=bool)
+    exclusion_zone = 2
+
+    for i in range(T.shape[0]):
+        ref[:] = T[:]
+        naive.apply_exclusion_zone(ref, i, exclusion_zone, False)
+
+        comp[:] = T[:]
+        core.apply_exclusion_zone(comp, i, exclusion_zone, False)
 
         naive.replace_inf(ref)
         naive.replace_inf(comp)
@@ -633,18 +669,19 @@ def test_apply_exclusion_zone():
 
 def test_apply_exclusion_zone_multidimensional():
     T = np.array(
-        [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]], dtype=float
+        [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
+        dtype=np.float64,
     )
-    ref = np.empty(T.shape)
-    comp = np.empty(T.shape)
+    ref = np.empty(T.shape, dtype=np.float64)
+    comp = np.empty(T.shape, dtype=np.float64)
     exclusion_zone = 2
 
     for i in range(T.shape[1]):
         ref[:, :] = T[:, :]
-        naive.apply_exclusion_zone(ref, i, exclusion_zone)
+        naive.apply_exclusion_zone(ref, i, exclusion_zone, np.inf)
 
         comp[:, :] = T[:, :]
-        core.apply_exclusion_zone(comp, i, exclusion_zone)
+        core.apply_exclusion_zone(comp, i, exclusion_zone, np.inf)
 
         naive.replace_inf(ref)
         naive.replace_inf(comp)
