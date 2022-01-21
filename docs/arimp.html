@@ -14640,7 +14640,7 @@ width=500
 
   <span class="k">if</span> <span class="n">absolute</span><span class="p">:</span>
     <span class="n">incl_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="o">-</span><span class="n">m</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">excl_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="nb">range</span><span class="p">(</span><span class="n">e</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="o">-</span><span class="n">m</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">excl_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">e</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="o">-</span><span class="n">m</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">n</span><span class="o">-</span><span class="n">m</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
   <span class="k">else</span><span class="p">:</span>
     <span class="n">incl_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">m</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">excl_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">m</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -14868,7 +14868,7 @@ width=500
     <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">excl_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">excl_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">if</span> <span class="n">absolute</span><span class="p">:</span>
-      <span class="n">RL_num</span> <span class="o">=</span> <span class="n">e</span>
+      <span class="n">RL_num</span> <span class="o">=</span> <span class="n">e</span><span class="o">+</span><span class="mi">1</span>
       <span class="n">LR_num</span> <span class="o">=</span> <span class="n">s</span><span class="o">-</span><span class="mi">1</span>
     <span class="k">else</span><span class="p">:</span>              
       <span class="n">RL_num</span> <span class="o">=</span> <span class="n">i</span><span class="o">+</span><span class="n">e</span>
@@ -14885,9 +14885,6 @@ width=500
 
         <span class="k">while</span> <span class="n">left</span> <span class="o">&lt;=</span> <span class="n">right</span><span class="p">:</span>
           <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">left</span> <span class="o">+</span> <span class="n">right</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
-          <span class="k">if</span> <span class="n">A</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span> <span class="o">==</span> <span class="n">num</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-            <span class="n">right</span> <span class="o">=</span> <span class="n">mid</span>
-            <span class="k">break</span>
           <span class="k">if</span> <span class="n">A</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">num</span><span class="p">:</span>
             <span class="n">right</span> <span class="o">=</span> <span class="n">mid</span><span class="o">-</span><span class="mi">1</span>
           <span class="k">else</span><span class="p">:</span> 
@@ -14907,9 +14904,6 @@ width=500
 
         <span class="k">while</span> <span class="n">left</span> <span class="o">&lt;=</span> <span class="n">right</span><span class="p">:</span>
           <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">left</span> <span class="o">+</span> <span class="n">right</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
-          <span class="k">if</span> <span class="n">A</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span> <span class="o">==</span> <span class="n">num</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span>
-            <span class="n">right</span> <span class="o">=</span> <span class="n">mid</span>
-            <span class="k">break</span>
           <span class="k">if</span> <span class="n">A</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">num</span><span class="p">:</span>
             <span class="n">right</span> <span class="o">=</span> <span class="n">mid</span><span class="o">-</span><span class="mi">1</span>
           <span class="k">else</span><span class="p">:</span>
@@ -14953,16 +14947,19 @@ as of now unincluded so start/end must be larger than self-join excl_zone</p>
 <p>for exclusive-relative queries, it's probably more user-friendly
 to add the initial self-join exclusion zone to start/end distances;
 as of now unincluded so start/end must be larger than self-join excl_zone</p>
-<p>for testing purposes:
-absolute-exclusive range test:</p>
-<p>s = stumpy.ARIMP(T, m)
-abs_excl_qry = s.query(start, end, inclusive=False)</p>
+<p>for testing purposes:</p>
+<p>absolute-exclusive range test:</p>
+<p>ari = ARIMP(T, m)
+abs_excl_qry = ari.query(start, end, inclusive=False)</p>
 <p>T_excl = np.concatenate([T[:start+m-1], np.atleast_1d(np.nan), T[end+1:] ])</p>
 <p>MP_excl = stumpy.stump(T_excl, m)
-MP_excl = np.concatenate([MP_excl[:start], MP_excl[start+m:] ])</p>
-<p>np.allclose(abs_excl_qry, MP_excl[:,0:2].astype(float).T)</p>
-<p>absolute-inclusive:
-abs_inc = s.query(start, end)
+MP_excl = MP_excl[np.isfinite(MP_excl[:,0].astype(float)), 0:2].astype(float)
+for i, idx in enumerate(MP_excl[:,1]):
+  if idx &gt; start:
+    MP_excl[i,1] = idx + end - start - m + 1</p>
+<p>np.allclose(abs_excl_qry, MP_excl.T)</p>
+<p>absolute-inclusive:</p>
+<p>abs_inc = ari.query(start, end)
 MP = stumpy.stump(T[start:end])
 np.allclose(abs_inc, MP[:,0:2].T)
 &lt;/code&gt;</p>

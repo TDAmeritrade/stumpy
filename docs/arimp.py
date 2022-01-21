@@ -310,7 +310,7 @@ def _query(m, n, start, end, L, LI, R, RI, inclusive=True, absolute=True):
 
     if absolute:
         incl_range = range(s, e - m + 1)
-        excl_range = range(s), range(e + 1, n - m + 1)
+        excl_range = range(s), range(min(e + 1, n - m + 1), n - m + 1)
     else:
         incl_range = range(n - m + 1)
         excl_range = range(n - m + 1), range(0)
@@ -390,8 +390,8 @@ def _query(m, n, start, end, L, LI, R, RI, inclusive=True, absolute=True):
             for i in r:
 
                 if absolute:
-                    RL_num = e
-                    LR_num = s
+                    RL_num = e + 1
+                    LR_num = s - 1
                 else:
                     RL_num = i + e
                     LR_num = i - s
@@ -403,9 +403,6 @@ def _query(m, n, start, end, L, LI, R, RI, inclusive=True, absolute=True):
 
                 while left <= right:
                     mid = (left + right) // 2
-                    if A[mid] == num - 1:
-                        right = mid
-                        break
                     if A[mid] < num:
                         right = mid - 1
                     else:
@@ -424,9 +421,6 @@ def _query(m, n, start, end, L, LI, R, RI, inclusive=True, absolute=True):
 
                 while left <= right:
                     mid = (left + right) // 2
-                    if A[mid] == num + 1:
-                        right = mid
-                        break
                     if A[mid] > num:
                         right = mid - 1
                     else:
