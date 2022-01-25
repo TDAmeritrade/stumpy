@@ -1004,6 +1004,12 @@ def _mass_absolute(Q_squared, T_squared, QT):
     A Numba JIT compiled algorithm for computing the non-normalized distance profile
     using the MASS absolute algorithm.
 
+    This private function assumes only finite numbers in your inputs and it is the
+    responsibility of the user to pre-process and post-process their results if the
+    original time series contains `np.nan`/`np.inf` values. Failure to do so will
+    result in incorrect outputs. See `core.mass_absolute` for common pre-processing
+    and post-processing procedures.
+
     Parameters
     ----------
     Q_squared : float
@@ -1211,6 +1217,12 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     A Numba JIT compiled algorithm for computing the distance profile using the MASS
     algorithm.
+
+    This private function assumes only finite numbers in your inputs and it is the
+    responsibility of the user to pre-process and post-process their results if the
+    original time series contains `np.nan`/`np.inf` values. Failure to do so will
+    result in incorrect outputs. See `core.mass` for common pre-processing and
+    post-processing procedures.
 
     Parameters
     ----------
