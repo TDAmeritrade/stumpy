@@ -1272,7 +1272,7 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
 @non_normalized(
     mass_absolute,
     exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "T_squared"],
-    replace={"M_T": "T_subseq_isfinite", "Σ_T": "T_squared"},
+    replace={"M_T": None, "Σ_T": None},
 )
 def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
     """
