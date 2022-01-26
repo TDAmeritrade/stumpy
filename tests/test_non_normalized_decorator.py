@@ -35,9 +35,18 @@ def test_mass():
 
     Q = np.random.rand(10)
     T = np.random.rand(20)
-    T, M_T, Σ_T = stumpy.core.preprocess(T, 10)
+    T, T_subseq_isfinite = stumpy.core.preprocess_non_normalized(T, 10)
+    T_squared = np.sum(stumpy.core.rolling_window(T * T, Q.shape[0]), axis=-1)
     ref = stumpy.core.mass_absolute(Q, T)
-    comp = stumpy.core.mass(Q, T, M_T=M_T, Σ_T=Σ_T, normalize=False)
+    comp = stumpy.core.mass(Q, T, T_subseq_isfinite=T_subseq_isfinite, normalize=False)
+    npt.assert_almost_equal(ref, comp)
+    ref = stumpy.core.mass_absolute(Q, T)
+    comp = stumpy.core.mass(Q, T, T_squared=T_squared, normalize=False)
+    npt.assert_almost_equal(ref, comp)
+    ref = stumpy.core.mass_absolute(Q, T)
+    comp = stumpy.core.mass(
+        Q, T, T_subseq_isfinite=T_subseq_isfinite, T_squared=T_squared, normalize=False
+    )
     npt.assert_almost_equal(ref, comp)
 
 
