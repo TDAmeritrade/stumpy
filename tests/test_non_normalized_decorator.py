@@ -38,15 +38,11 @@ def test_mass():
     T, T_subseq_isfinite = stumpy.core.preprocess_non_normalized(T, 10)
     T_squared = np.sum(stumpy.core.rolling_window(T * T, Q.shape[0]), axis=-1)
     ref = stumpy.core.mass_absolute(Q, T)
-    comp = stumpy.core.mass(Q, T, T_subseq_isfinite=T_subseq_isfinite, normalize=False)
+    comp = stumpy.core.mass(Q, T, M_T=T_subseq_isfinite, normalize=False)
     npt.assert_almost_equal(ref, comp)
-    ref = stumpy.core.mass_absolute(Q, T)
-    comp = stumpy.core.mass(Q, T, T_squared=T_squared, normalize=False)
+    comp = stumpy.core.mass(Q, T, Σ_T=T_squared, normalize=False)
     npt.assert_almost_equal(ref, comp)
-    ref = stumpy.core.mass_absolute(Q, T)
-    comp = stumpy.core.mass(
-        Q, T, T_subseq_isfinite=T_subseq_isfinite, T_squared=T_squared, normalize=False
-    )
+    comp = stumpy.core.mass(Q, T, M_T=T_subseq_isfinite, Σ_T=T_squared, normalize=False)
     npt.assert_almost_equal(ref, comp)
 
 
