@@ -200,7 +200,8 @@ def maamp_mdl(
     n_bit=8,
 ):
     """
-    Compute the number of bits needed to compress one array with another
+    Compute the multi-dimensional number of bits needed to compress one
+    multi-dimensional subsequence with another along each of the k-dimensions
     using the minimum description length (MDL)
 
     Parameters
