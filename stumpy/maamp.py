@@ -129,6 +129,12 @@ def maamp_subspace(
         An array of that contains the `k`th-dimensional subspace for the subsequence
         with index equal to `motif_idx`
     """
+    T = T.copy()
+    T = core.transpose_dataframe(T)
+    T = np.asarray(T)
+    core.check_dtype(T)
+    core.check_window_size(m, max_size=T.shape[-1])
+
     subseqs, _ = core.preprocess_non_normalized(T[:, subseq_idx : subseq_idx + m], m)
     neighbors, _ = core.preprocess_non_normalized(T[:, nn_idx : nn_idx + m], m)
 

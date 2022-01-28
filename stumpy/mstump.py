@@ -304,6 +304,12 @@ def subspace(
     ...     k=1)
     array([0, 1])
     """
+    T = T.copy()
+    T = core.transpose_dataframe(T)
+    T = np.asarray(T)
+    core.check_dtype(T)
+    core.check_window_size(m, max_size=T.shape[-1])
+
     if discretize_func is None:
         bins = _inverse_norm(n_bit)
         discretize_func = partial(_discretize, bins=bins)
