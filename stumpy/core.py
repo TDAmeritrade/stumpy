@@ -131,7 +131,7 @@ def non_normalized(non_norm, exclude=None, replace=None):
                 if replace is not None:
                     for k, v in replace.items():
                         if k in kwargs.keys():
-                            if v is None:
+                            if v is None:  # pragma: no cover
                                 _ = kwargs.pop(k)
                             else:
                                 kwargs[v] = kwargs.pop(k)

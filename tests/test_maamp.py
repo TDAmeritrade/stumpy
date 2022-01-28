@@ -2,7 +2,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 from stumpy import core, config
-from stumpy import maamp, maamp_subspace
+from stumpy import maamp, maamp_subspace, maamp_mdl
 from stumpy.maamp import (
     _multi_mass_absolute,
     maamp_multi_distance_profile,
@@ -137,6 +137,19 @@ def test_maamp_subspace_include_discords(T, m):
                     T, m, discord_idx, nn_idx, k, include, discords=True
                 )
                 npt.assert_almost_equal(ref_S, comp_S)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_maamp_mdl(T, m):
+    subseq_idx = np.full(T.shape[0], 1)
+    nn_idx = np.full(T.shape[0], 4)
+
+    ref_MDL, ref_S = naive.maamp_mdl(T, m, subseq_idx, nn_idx)
+    comp_MDL, comp_S = maamp_mdl(T, m, subseq_idx, nn_idx)
+    npt.assert_almost_equal(ref_MDL, comp_MDL)
+
+    for ref, cmp in zip(ref_S, comp_S):
+        npt.assert_almost_equal(ref, cmp)
 
 
 def test_naive_maamp():

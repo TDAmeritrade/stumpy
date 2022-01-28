@@ -80,6 +80,8 @@ def mstumped(dask_client, T, m, include=None, discords=False, normalize=True):
     stumpy.mstump : Compute the multi-dimensional z-normalized matrix profile
     stumpy.subspace : Compute the k-dimensional matrix profile subspace for a given
         subsequence index and its nearest neighbor index
+    stumpy.mdl : Compute the number of bits needed to compress one array with another
+        using the minimum description length (MDL)
 
     Notes
     -----
