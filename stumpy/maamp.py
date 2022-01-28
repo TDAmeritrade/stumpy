@@ -6,6 +6,7 @@ import logging
 
 import numpy as np
 from numba import njit, prange
+from functools import partial
 
 from . import core, config, mstump
 
@@ -59,7 +60,17 @@ def _multi_mass_absolute(Q, T, m, Q_subseq_isfinite, T_subseq_isfinite):
     return D
 
 
-def maamp_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
+def maamp_subspace(
+    T,
+    m,
+    subseq_idx,
+    nn_idx,
+    k,
+    include=None,
+    discords=False,
+    discretize_func=None,
+    n_bit=8,
+):
     """
     Compute the k-dimensional matrix profile subspace for a given subsequence index and
     its nearest neighbor index
@@ -95,21 +106,183 @@ def maamp_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
         When set to `True`, this reverses the distance profile to favor discords rather
         than motifs. Note that indices in `include` are still maintained and respected.
 
+    discretize_func : func, default None
+        A function for discretizing each input array. When this is `None`, an
+        appropriate discretization function (based on the `normalize` parameter) will
+        be applied.
+
+    n_bit : int, default 8
+        The number of bits used for discretization. For more information on an
+        appropriate value, see Figure 4 in:
+
+        `DOI: 10.1109/ICDM.2016.0069 \
+        <https://www.cs.ucr.edu/~eamonn/PID4481999_Matrix%20Profile_III.pdf>`__
+
+        and Figure 2 in:
+
+        `DOI: 10.1109/ICDM.2011.54 \
+        <https://www.cs.ucr.edu/~eamonn/ICDM_mdl.pdf>`__
+
     Returns
     -------
-        S : numpy.ndarray
+    S : numpy.ndarray
         An array of that contains the `k`th-dimensional subspace for the subsequence
         with index equal to `motif_idx`
     """
-    T, _ = core.preprocess_non_normalized(T, m)
-    subseqs = T[:, subseq_idx : subseq_idx + m]
-    neighbors = T[:, nn_idx : nn_idx + m]
+    subseqs, _ = core.preprocess_non_normalized(T[:, subseq_idx : subseq_idx + m], m)
+    neighbors, _ = core.preprocess_non_normalized(T[:, nn_idx : nn_idx + m], m)
 
-    D = np.linalg.norm(subseqs - neighbors, axis=1)
+    if discretize_func is None:
+        T_isfinite = np.isfinite(T)
+        T_min = T[T_isfinite].min()
+        T_max = T[T_isfinite].max()
+        discretize_func = partial(
+            _maamp_discretize, a_min=T_min, a_max=T_max, n_bit=n_bit
+        )
+
+    disc_subseqs = discretize_func(subseqs)
+    disc_neighbors = discretize_func(neighbors)
+
+    D = np.linalg.norm(disc_subseqs - disc_neighbors, axis=1)
 
     S = mstump._subspace(D, k, include=include, discords=discords)
 
     return S
+
+
+def _maamp_discretize(a, a_min, a_max, n_bit=8):  # pragma: no cover
+    """
+    Discretize each row of the input array
+
+    This distribution is best suited for non-normalized time seris data
+
+    Parameters
+    ----------
+    a : numpy.ndarray
+        The input array
+
+    a_min : float
+        The minimum value
+
+    a_max : float
+        The maximum value
+
+    n_bit : int, default 8
+        The number of bits to use for computing the bit size
+
+    Returns
+    -------
+    out : numpy.ndarray
+        Discretized array
+    """
+    return (
+        np.round(((a - a_min) / (a_max - a_min)) * ((2 ** n_bit) - 1.0)).astype(
+            np.int64
+        )
+        + 1
+    )
+
+
+def maamp_mdl(
+    T,
+    m,
+    subseq_idx,
+    nn_idx,
+    include=None,
+    discords=False,
+    discretize_func=None,
+    n_bit=8,
+):
+    """
+    Compute the number of bits needed to compress one array with another
+    using the minimum description length (MDL)
+
+    Parameters
+    ----------
+    T : numpy.ndarray
+        The time series or sequence for which the multi-dimensional matrix profile,
+        multi-dimensional matrix profile indices were computed
+
+    m : int
+        Window size
+
+    subseq_idx : numpy.ndarray
+        The multi-dimensional subsequence indices in T
+
+    nn_idx : numpy.ndarray
+        The multi-dimensional nearest neighbor index in T
+
+    include : numpy.ndarray, default None
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    discords : bool, default False
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
+
+    discretize_func : func, default None
+        A function for discretizing each input array. When this is `None`, an
+        appropriate discretization function (based on the `normalization` parameter)
+        will be applied.
+
+    n_bit : int, default 8
+        The number of bits used for discretization and for computing the bit size. For
+        more information on an appropriate value, see Figure 4 in:
+
+        `DOI: 10.1109/ICDM.2016.0069 \
+        <https://www.cs.ucr.edu/~eamonn/PID4481999_Matrix%20Profile_III.pdf>`__
+
+        and Figure 2 in:
+
+        `DOI: 10.1109/ICDM.2011.54 \
+        <https://www.cs.ucr.edu/~eamonn/ICDM_mdl.pdf>`__
+
+    Returns
+    -------
+    bit_sizes : numpy.ndarray
+        The total number of bits computed from MDL for representing each pair of
+        multidimensional subsequences.
+
+    S : list
+        A list of numpy.ndarrays that contains the `k`th-dimensional subspaces
+    """
+    T = T.copy()
+    T = core.transpose_dataframe(T)
+    T = np.asarray(T)
+    core.check_dtype(T)
+    core.check_window_size(m, max_size=T.shape[-1])
+
+    if discretize_func is None:
+        T_isfinite = np.isfinite(T)
+        T_min = T[T_isfinite].min()
+        T_max = T[T_isfinite].max()
+        discretize_func = partial(
+            _maamp_discretize, a_min=T_min, a_max=T_max, n_bit=n_bit
+        )
+
+    bit_sizes = np.empty(T.shape[0])
+    S = [None] * T.shape[0]
+    for k in range(T.shape[0]):
+        subseqs, _ = core.preprocess_non_normalized(
+            T[:, subseq_idx[k] : subseq_idx[k] + m], m
+        )
+        neighbors, _ = core.preprocess_non_normalized(
+            T[:, nn_idx[k] : nn_idx[k] + m], m
+        )
+
+        disc_subseqs = discretize_func(subseqs)
+        disc_neighbors = discretize_func(neighbors)
+
+        D = np.linalg.norm(disc_subseqs - disc_neighbors, axis=1)
+
+        S[k] = mstump._subspace(D, k, include=include, discords=discords)
+        bit_sizes[k] = mstump._mdl(disc_subseqs, disc_neighbors, S[k], n_bit=n_bit)
+
+    return bit_sizes, S
 
 
 def _maamp_multi_distance_profile(

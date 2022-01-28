@@ -279,13 +279,26 @@ def test_mstumped(T, m, dask_cluster):
 
 @pytest.mark.parametrize("T, m", test_data)
 def test_subspace(T, m):
-    motif_idx = 1
+    subseq_idx = 1
     nn_idx = 4
 
     for k in range(T.shape[0]):
-        ref_S = stumpy.maamp_subspace(T, m, motif_idx, nn_idx, k)
-        comp_S = stumpy.subspace(T, m, motif_idx, nn_idx, k, normalize=False)
+        ref_S = stumpy.maamp_subspace(T, m, subseq_idx, nn_idx, k)
+        comp_S = stumpy.subspace(T, m, subseq_idx, nn_idx, k, normalize=False)
         npt.assert_almost_equal(ref_S, comp_S)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_mdl(T, m):
+    subseq_idx = np.full(T.shape[0], 1)
+    nn_idx = np.full(T.shape[0], 4)
+
+    ref_MDL, ref_S = stumpy.maamp_mdl(T, m, subseq_idx, nn_idx)
+    comp_MDL, comp_S = stumpy.mdl(T, m, subseq_idx, nn_idx, normalize=False)
+    npt.assert_almost_equal(ref_MDL, comp_MDL)
+
+    for ref, cmp in zip(ref_S, comp_S):
+        npt.assert_almost_equal(ref, cmp)
 
 
 @pytest.mark.parametrize("T, m", test_data)

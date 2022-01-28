@@ -1,6 +1,7 @@
 import math
 import numpy as np
 from scipy.spatial.distance import cdist
+from scipy.stats import norm
 from stumpy import core, config
 
 
@@ -453,10 +454,19 @@ def maamp(T, m, excl_zone, include=None, discords=False):
     return P, I
 
 
-def subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
+def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
+    n_bit = 8
+    bins = norm.ppf(np.arange(1, (2 ** n_bit)) / (2 ** n_bit))
+
+    subseqs = core.z_norm(T[:, subseq_idx : subseq_idx + m], axis=1)
+    neighbors = core.z_norm(T[:, nn_idx : nn_idx + m], axis=1)
+
+    disc_subseqs = np.searchsorted(bins, subseqs)
+    disc_neighbors = np.searchsorted(bins, neighbors)
+
     D = distance(
-        z_norm(T[:, motif_idx : motif_idx + m], axis=1),
-        z_norm(T[:, nn_idx : nn_idx + m], axis=1),
+        disc_subseqs,
+        disc_neighbors,
         axis=1,
     )
 
@@ -485,10 +495,31 @@ def subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
     return S
 
 
-def maamp_subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
+def maamp_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
+    n_bit = 8
+    T_isfinite = np.isfinite(T)
+    T_min = T[T_isfinite].min()
+    T_max = T[T_isfinite].max()
+
+    subseqs = T[:, subseq_idx : subseq_idx + m]
+    neighbors = T[:, nn_idx : nn_idx + m]
+
+    disc_subseqs = (
+        np.round(((subseqs - T_min) / (T_max - T_min)) * ((2 ** n_bit) - 1.0)).astype(
+            np.int64
+        )
+        + 1
+    )
+    disc_neighbors = (
+        np.round(((neighbors - T_min) / (T_max - T_min)) * ((2 ** n_bit) - 1.0)).astype(
+            np.int64
+        )
+        + 1
+    )
+
     D = distance(
-        T[:, motif_idx : motif_idx + m],
-        T[:, nn_idx : nn_idx + m],
+        disc_subseqs,
+        disc_neighbors,
         axis=1,
     )
 
@@ -515,6 +546,79 @@ def maamp_subspace(T, m, motif_idx, nn_idx, k, include=None, discords=False):
     S = sorted_idx[: k + 1]
 
     return S
+
+
+def mdl(
+    T,
+    m,
+    subseq_idx,
+    nn_idx,
+    include=None,
+    discords=False,
+    discretize_func=None,
+    n_bit=8,
+):
+    ndim = T.shape[0]
+    bins = norm.ppf(np.arange(1, (2 ** n_bit)) / (2 ** n_bit))
+    bit_sizes = np.empty(T.shape[0])
+    S = [None] * T.shape[0]
+    for k in range(T.shape[0]):
+        subseqs = core.z_norm(T[:, subseq_idx[k] : subseq_idx[k] + m], axis=1)
+        neighbors = core.z_norm(T[:, nn_idx[k] : nn_idx[k] + m], axis=1)
+
+        disc_subseqs = np.searchsorted(bins, subseqs)
+        disc_neighbors = np.searchsorted(bins, neighbors)
+
+        S[k] = subspace(T, m, subseq_idx[k], nn_idx[k], k, include, discords)
+
+        n_val = len(set((disc_subseqs[S[k]] - disc_neighbors[S[k]]).flatten()))
+        sub_dims = len(S[k])
+        bit_sizes[k] = n_bit * (2 * ndim * m - sub_dims * m)
+        bit_sizes[k] = bit_sizes[k] + sub_dims * m * np.log2(n_val) + n_val * n_bit
+
+    return bit_sizes, S
+
+
+def maamp_mdl(
+    T,
+    m,
+    subseq_idx,
+    nn_idx,
+    include=None,
+    discords=False,
+    discretize_func=None,
+    n_bit=8,
+):
+    T_isfinite = np.isfinite(T)
+    T_min = T[T_isfinite].min()
+    T_max = T[T_isfinite].max()
+    ndim = T.shape[0]
+
+    bit_sizes = np.empty(T.shape[0])
+    S = [None] * T.shape[0]
+    for k in range(T.shape[0]):
+        subseqs = T[:, subseq_idx[k] : subseq_idx[k] + m]
+        neighbors = T[:, nn_idx[k] : nn_idx[k] + m]
+        disc_subseqs = (
+            np.round(
+                ((subseqs - T_min) / (T_max - T_min)) * ((2 ** n_bit) - 1.0)
+            ).astype(np.int64)
+            + 1
+        )
+        disc_neighbors = (
+            np.round(
+                ((neighbors - T_min) / (T_max - T_min)) * ((2 ** n_bit) - 1.0)
+            ).astype(np.int64)
+            + 1
+        )
+
+        S[k] = maamp_subspace(T, m, subseq_idx[k], nn_idx[k], k, include, discords)
+        sub_dims = len(S[k])
+        n_val = len(set((disc_subseqs[S[k]] - disc_neighbors[S[k]]).flatten()))
+        bit_sizes[k] = n_bit * (2 * ndim * m - sub_dims * m)
+        bit_sizes[k] = bit_sizes[k] + sub_dims * m * np.log2(n_val) + n_val * n_bit
+
+    return bit_sizes, S
 
 
 def get_array_ranges(a, n_chunks, truncate):

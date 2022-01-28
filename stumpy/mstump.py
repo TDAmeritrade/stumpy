@@ -7,10 +7,10 @@ import logging
 import numpy as np
 from scipy.stats import norm
 from numba import njit, prange
-from functools import lru_cache
+from functools import lru_cache, partial
 
 from . import core, config
-from .maamp import maamp_multi_distance_profile, maamp, maamp_subspace
+from .maamp import maamp_multi_distance_profile, maamp, maamp_subspace, maamp_mdl
 
 logger = logging.getLogger(__name__)
 
@@ -151,48 +151,6 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
     return D
 
 
-@lru_cache()
-def _inverse_norm(n_bit=8):
-    """
-    Generate bin edges from an inverse normal distribution
-
-    Parameters
-    ----------
-    n_bit : int, default 8
-        The number of bits to be used in generating the inverse normal distribution
-
-    Returns
-    -------
-    out : numpy.ndarray
-        Array of bin edges that can be used for data discretization
-    """
-    return norm.ppf(np.arange(1, (2 ** n_bit)) / (2 ** n_bit))
-
-
-def _discretize(a, bins, right=True):
-    """
-    Discretize each row of the input array
-
-    Parameters
-    ----------
-    a : numpy.ndarray
-        The input array
-
-    bins : numpy.ndarray
-        The bin edges used to discretize `a`
-
-    right : bool, default True
-        Indicates whether the intervals for binning include the right or the left bin
-        edge.
-
-    Returns
-    -------
-    out : numpy.ndarray
-        Discretized array
-    """
-    return np.digitize(a, bins, right=right)
-
-
 def _subspace(D, k, include=None, discords=False):
     """
     Compute the k-dimensional matrix profile subspace for a given subsequence index and
@@ -205,7 +163,7 @@ def _subspace(D, k, include=None, discords=False):
 
     k : int
         The subset number of dimensions out of `D = T.shape[0]`-dimensions to return
-        the subspace for
+        the subspace for. Note that zero-based indexing is used.
 
     include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
@@ -222,8 +180,8 @@ def _subspace(D, k, include=None, discords=False):
     Returns
     -------
         S : numpy.ndarray
-        An array of that contains the `k`th-dimensional subspace for the subsequence
-        with index equal to `motif_idx`
+        An array that contains the `k`th-dimensional subspace for the subsequence. Note
+        that `k+1` rows will be returned.
     """
     if discords:
         sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
@@ -247,7 +205,18 @@ def _subspace(D, k, include=None, discords=False):
 
 
 @core.non_normalized(maamp_subspace)
-def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normalize=True):
+def subspace(
+    T,
+    m,
+    subseq_idx,
+    nn_idx,
+    k,
+    include=None,
+    discords=False,
+    discretize_func=None,
+    n_bit=8,
+    normalize=True,
+):
     """
     Compute the k-dimensional matrix profile subspace for a given subsequence index and
     its nearest neighbor index
@@ -269,7 +238,7 @@ def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normaliz
 
     k : int
         The subset number of dimensions out of `D = T.shape[0]`-dimensions to return
-        the subspace for
+        the subspace for. Note that zero-based indexing is used.
 
     include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
@@ -283,6 +252,23 @@ def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normaliz
         When set to `True`, this reverses the distance profile to favor discords rather
         than motifs. Note that indices in `include` are still maintained and respected.
 
+    discretize_func : func, default None
+        A function for discretizing each input array. When this is `None`, an
+        appropriate discretization function (based on the `normalize` parameter) will
+        be applied.
+
+    n_bit : int, default 8
+        The number of bits used for discretization. For more information on an
+        appropriate value, see Figure 4 in:
+
+        `DOI: 10.1109/ICDM.2016.0069 \
+        <https://www.cs.ucr.edu/~eamonn/PID4481999_Matrix%20Profile_III.pdf>`__
+
+        and Figure 2 in:
+
+        `DOI: 10.1109/ICDM.2011.54 \
+        <https://www.cs.ucr.edu/~eamonn/ICDM_mdl.pdf>`__
+
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
@@ -290,15 +276,17 @@ def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normaliz
 
     Returns
     -------
-        S : numpy.ndarray
-        An array of that contains the `k`th-dimensional subspace for the subsequence
-        with index equal to `motif_idx`
+    S : numpy.ndarray
+        An array that contains the `k`th-dimensional subspace for the subsequence
+        with index equal to `subseq_idx`. Note that `k+1` rows will be returned.
 
     See Also
     --------
     stumpy.mstump : Compute the multi-dimensional z-normalized matrix profile
     stumpy.mstumped : Compute the multi-dimensional z-normalized matrix profile with
         a distributed dask cluster
+    stumpy.mdl : Compute the number of bits needed to compress one array with another
+        using the minimum description length (MDL)
 
     Examples
     --------
@@ -309,31 +297,237 @@ def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, normaliz
     >>> motifs_idx = np.argsort(mps, axis=1)[:, :2]
     >>> stumpy.subspace(
     ...     np.array([[584., -11., 23., 79., 1001., 0., -19.],
-    ...               [  1.,   2.,  4.,  8.,   16., 0.,  32.]],
+    ...               [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
     ...     m=3,
     ...     subseq_idx=motifs_idx[k][0],
     ...     nn_idx=indices[k][motifs_idx[k][0]],
     ...     k=1)
     array([0, 1])
     """
-    T, _, _ = core.preprocess(T, m)
-    subseqs = core.z_norm(T[:, subseq_idx : subseq_idx + m], axis=1)
-    neighbors = core.z_norm(T[:, nn_idx : nn_idx + m], axis=1)
+    if discretize_func is None:
+        bins = _inverse_norm(n_bit)
+        discretize_func = partial(_discretize, bins=bins)
 
-    D = np.linalg.norm(subseqs - neighbors, axis=1)
+    subseqs, _, _ = core.preprocess(T[:, subseq_idx : subseq_idx + m], m)
+    subseqs = core.z_norm(subseqs, axis=1)
+    neighbors, _, _ = core.preprocess(T[:, nn_idx : nn_idx + m], m)
+    neighbors = core.z_norm(neighbors, axis=1)
+
+    disc_subseqs = discretize_func(subseqs)
+    disc_neighbors = discretize_func(neighbors)
+
+    D = np.linalg.norm(disc_subseqs - disc_neighbors, axis=1)
 
     S = _subspace(D, k, include=include, discords=discords)
 
-    # MDL
-    n_bit = 8
-    bins = _inverse_norm()
-    disc_subseqs = _discretize(subseqs[S], bins)
-    disc_neighbors = _discretize(neighbors[S], bins)
-    n_val = np.unique(disc_subseqs - disc_neighbors).shape[0]
-    bit_size = n_bit * (T.shape[0] * m * 2 - k * m)
-    bit_size = bit_size + k * m * np.log2(n_val) + n_val * n_bit
-
     return S
+
+
+@lru_cache()
+def _inverse_norm(n_bit=8):  # pragma: no cover
+    """
+    Generate bin edges from an inverse normal distribution
+
+    This distribution is best suited for z-normalized time series data
+
+    Parameters
+    ----------
+    n_bit : int, default 8
+        The number of bits to be used in generating the inverse normal distribution
+
+    Returns
+    -------
+    out : numpy.ndarray
+        Array of bin edges that can be used for data discretization
+    """
+    return norm.ppf(np.arange(1, (2 ** n_bit)) / (2 ** n_bit))
+
+
+def _discretize(a, bins, right=True):  # pragma: no cover
+    """
+    Discretize each row of the input array
+
+    This is equivalent to `np.searchsorted(bins, a)`
+
+    Parameters
+    ----------
+    a : numpy.ndarray
+        The input array
+
+    bins : numpy.ndarray
+        The bin edges used to discretize `a`
+
+    right : bool, default True
+        Indicates whether the intervals for binning include the right or the left bin
+        edge.
+
+    Returns
+    -------
+    out : numpy.ndarray
+        Discretized array
+    """
+    return np.digitize(a, bins, right=right)
+
+
+def _mdl(disc_subseqs, disc_neighbors, S, n_bit=8):
+    """
+    Compute the number of bits needed to compress one array with another
+    using the minimum description length (MDL)
+
+    Parameters
+    ----------
+    disc_subseqs : numpy.ndarray
+        The discretized array to be compressed
+
+    disc_neighbors : numpy.ndarray
+        The discretized array that will be used as a hypothesis for compression
+
+    S : numpy.ndarray
+        An array that contains the `k`th-dimensional subspace to be used
+
+    n_bit : int, default 8
+        The number of bits to use for computing the bit size
+
+    Returns
+    -------
+    bit_size : float
+        The total number of bits computed from MDL for representing both input arrays
+    """
+    ndim = disc_subseqs.shape[0]
+    sub_dims, m = disc_subseqs[S].shape
+
+    n_val = len(np.unique(disc_subseqs[S] - disc_neighbors[S]))
+    bit_size = n_bit * (2 * ndim * m - sub_dims * m)
+    bit_size = bit_size + sub_dims * m * np.log2(n_val) + n_val * n_bit
+
+    return bit_size
+
+
+@core.non_normalized(maamp_mdl)
+def mdl(
+    T,
+    m,
+    subseq_idx,
+    nn_idx,
+    include=None,
+    discords=False,
+    discretize_func=None,
+    n_bit=8,
+    normalize=True,
+):
+    """
+    Compute the number of bits needed to compress one array with another
+    using the minimum description length (MDL)
+
+    Parameters
+    ----------
+    T : numpy.ndarray
+        The time series or sequence for which the multi-dimensional matrix profile,
+        multi-dimensional matrix profile indices were computed
+
+    m : int
+        Window size
+
+    subseq_idx : numpy.ndarray
+        The multi-dimensional subsequence indices in T
+
+    nn_idx : numpy.ndarray
+        The multi-dimensional nearest neighbor index in T
+
+    include : numpy.ndarray, default None
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    discords : bool, default False
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
+
+    discretize_func : func, default None
+        A function for discretizing each input array. When this is `None`, an
+        appropriate discretization function (based on the `normalization` parameter)
+        will be applied.
+
+    n_bit : int, default 8
+        The number of bits used for discretization and for computing the bit size. For
+        more information on an appropriate value, see Figure 4 in:
+
+        `DOI: 10.1109/ICDM.2016.0069 \
+        <https://www.cs.ucr.edu/~eamonn/PID4481999_Matrix%20Profile_III.pdf>`__
+
+        and Figure 2 in:
+
+        `DOI: 10.1109/ICDM.2011.54 \
+        <https://www.cs.ucr.edu/~eamonn/ICDM_mdl.pdf>`__
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
+
+    Returns
+    -------
+    bit_sizes : numpy.ndarray
+        The total number of bits computed from MDL for representing each pair of
+        multidimensional subsequences.
+
+    S : list
+        A list of numpy.ndarrays that contain the `k`th-dimensional subspaces
+
+    See Also
+    --------
+    stumpy.mstump : Compute the multi-dimensional z-normalized matrix profile
+    stumpy.mstumped : Compute the multi-dimensional z-normalized matrix profile with
+        a distributed dask cluster
+    stumpy.subspace : Compute the k-dimensional matrix profile subspace for a given
+        subsequence index and its nearest neighbor index
+
+    Examples
+    --------
+    >>> mps, indices = stumpy.mstump(
+    ...     np.array([[584., -11., 23., 79., 1001., 0., -19.],
+    ...               [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
+    ...     m=3)
+    >>> motifs_idx = np.argsort(mps, axis=1)[:, 0]
+    >>> stumpy.mdl(
+    ...     np.array([[584., -11., 23., 79., 1001., 0., -19.],
+    ...               [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
+    ...     m=3,
+    ...     subseq_idx=motifs_idx,
+    ...     nn_idx=indices[np.arange(motifs_idx.shape[0]), motifs_idx])
+    (array([ 80.      , 111.509775]), [array([1]), array([0, 1])])
+    """
+    T = T.copy()
+    T = core.transpose_dataframe(T)
+    T = np.asarray(T)
+    core.check_dtype(T)
+    core.check_window_size(m, max_size=T.shape[-1])
+
+    if discretize_func is None:
+        bins = _inverse_norm(n_bit)
+        discretize_func = partial(_discretize, bins=bins)
+
+    bit_sizes = np.empty(T.shape[0])
+    S = [None] * T.shape[0]
+    for k in range(T.shape[0]):
+        subseqs, _, _ = core.preprocess(T[:, subseq_idx[k] : subseq_idx[k] + m], m)
+        subseqs = core.z_norm(subseqs, axis=1)
+        neighbors, _, _ = core.preprocess(T[:, nn_idx[k] : nn_idx[k] + m], m)
+        neighbors = core.z_norm(neighbors, axis=1)
+
+        disc_subseqs = discretize_func(subseqs)
+        disc_neighbors = discretize_func(neighbors)
+
+        D = np.linalg.norm(disc_subseqs - disc_neighbors, axis=1)
+
+        S[k] = _subspace(D, k, include=include, discords=discords)
+
+        bit_sizes[k] = _mdl(disc_subseqs, disc_neighbors, S[k], n_bit=n_bit)
+
+    return bit_sizes, S
 
 
 def _multi_distance_profile(
@@ -951,6 +1145,8 @@ def mstump(T, m, include=None, discords=False, normalize=True):
         a distributed dask cluster
     stumpy.subspace : Compute the k-dimensional matrix profile subspace for a given
         subsequence index and its nearest neighbor index
+    stumpy.mdl : Compute the number of bits needed to compress one array with another
+        using the minimum description length (MDL)
 
     Notes
     -----

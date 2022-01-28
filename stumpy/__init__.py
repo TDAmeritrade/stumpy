@@ -3,11 +3,11 @@ import os.path
 from .core import mass  # noqa: F401
 from .stump import stump  # noqa: F401
 from .stumped import stumped  # noqa: F401
-from .mstump import mstump, subspace  # noqa: F401
+from .mstump import mstump, subspace, mdl  # noqa: F401
 from .mstumped import mstumped  # noqa: F401
 from .aamp import aamp  # noqa: F401
 from .aamped import aamped  # noqa: F401
-from .maamp import maamp, maamp_subspace  # noqa: F401
+from .maamp import maamp, maamp_subspace, maamp_mdl  # noqa: F401
 from .maamped import maamped  # noqa: F401
 from .aampi import aampi  # noqa: F401
 from .chains import atsc, allc  # noqa: F401
