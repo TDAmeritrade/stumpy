@@ -204,7 +204,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None):
     return result
 
 
-def aamp(T_A, m, T_B=None, exclusion_zone=None):
+def aamp(T_A, m, T_B=None, exclusion_zone=None, p_norm=2):
     T_A = np.asarray(T_A)
     T_A = T_A.copy()
 
@@ -228,7 +228,7 @@ def aamp(T_A, m, T_B=None, exclusion_zone=None):
     if exclusion_zone is None:
         exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    distance_matrix = cdist(rolling_T_A, rolling_T_B)
+    distance_matrix = cdist(rolling_T_A, rolling_T_B, "minkowski", p=p_norm)
 
     if ignore_trivial:
         diags = np.arange(exclusion_zone + 1, n_A - m + 1)

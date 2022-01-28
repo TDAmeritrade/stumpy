@@ -31,6 +31,7 @@ def _compute_diagonal(
     P,
     I,
     ignore_trivial,
+    p_norm=2,
 ):
     """
     Compute (Numba JIT-compiled) and update P, I along a single diagonal using a single
@@ -95,12 +96,15 @@ def _compute_diagonal(
 
         for i in iter_range:
             if i == 0 or (k < 0 and i == -k):
-                D_squared = np.linalg.norm(T_B[i + k : i + k + m] - T_A[i : i + m]) ** 2
+                D_squared = (
+                    np.linalg.norm(T_B[i + k : i + k + m] - T_A[i : i + m], ord=p_norm)
+                    ** p_norm
+                )
             else:
                 D_squared = np.abs(
                     D_squared
-                    - (T_B[i + k - 1] - T_A[i - 1]) ** 2
-                    + (T_B[i + k + m - 1] - T_A[i + m - 1]) ** 2
+                    - np.absolute(T_B[i + k - 1] - T_A[i - 1]) ** p_norm
+                    + np.absolute(T_B[i + k + m - 1] - T_A[i + m - 1]) ** p_norm
                 )
 
             if D_squared < config.STUMPY_D_SQUARED_THRESHOLD:
@@ -136,7 +140,16 @@ def _compute_diagonal(
     parallel=True,
     fastmath=True,
 )
-def _aamp(T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_trivial):
+def _aamp(
+    T_A,
+    T_B,
+    m,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
+    diags,
+    ignore_trivial,
+    p_norm=2,
+):
     """
     A Numba JIT-compiled version of AAMP for parallel computation of the matrix
     profile and matrix profile indices.
@@ -208,6 +221,7 @@ def _aamp(T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_t
             P,
             I,
             ignore_trivial,
+            p_norm,
         )
 
     # Reduction of results from all threads
@@ -224,11 +238,13 @@ def _aamp(T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_t
             if P[0, i, 2] > P[thread_idx, i, 2]:
                 P[0, i, 2] = P[thread_idx, i, 2]
                 I[0, i, 2] = I[thread_idx, i, 2]
+    if p_norm == 2:
+        return np.sqrt(P[0, :, :]), I[0, :, :]
+    else:
+        return np.power(P[0, :, :], 1 / (p_norm)), I[0, :, :]
 
-    return np.sqrt(P[0, :, :]), I[0, :, :]
 
-
-def aamp(T_A, m, T_B=None, ignore_trivial=True):
+def aamp(T_A, m, T_B=None, ignore_trivial=True, p_norm=2):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile
 
@@ -303,7 +319,14 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True):
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
     P, I = _aamp(
-        T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, diags, ignore_trivial
+        T_A,
+        T_B,
+        m,
+        T_A_subseq_isfinite,
+        T_B_subseq_isfinite,
+        diags,
+        ignore_trivial,
+        p_norm,
     )
 
     out[:, 0] = P[:, 0]

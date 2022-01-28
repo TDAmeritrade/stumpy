@@ -42,6 +42,7 @@ def _compute_diagonal(
     ρ,
     I,
     ignore_trivial,
+    p_norm=2,
 ):
     """
     Compute (Numba JIT-compiled) and update the Pearson correlation, ρ, and I
@@ -235,6 +236,7 @@ def _stump(
     T_B_subseq_isconstant,
     diags,
     ignore_trivial,
+    p_norm=2,
 ):
     """
     A Numba JIT-compiled version of STOMPopt with Pearson correlations for parallel
@@ -433,7 +435,7 @@ def _stump(
 
 
 @core.non_normalized(aamp)
-def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True):
+def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p_norm=2):
     """
     Compute the z-normalized matrix profile
 
@@ -606,6 +608,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True):
         T_B_subseq_isconstant,
         diags,
         ignore_trivial,
+        p_norm,
     )
 
     out[:, 0] = P[:, 0]
