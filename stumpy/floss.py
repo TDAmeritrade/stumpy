@@ -170,7 +170,7 @@ def _cac(I, L, bidirectional=True, excl_factor=5, custom_iac=None, seed=0):
         IAC = _iac(k, bidirectional, seed=seed)
     else:
         IAC = custom_iac
-    IAC[IAC == 0.0] = 10 ** -10  # Avoid divide by zero
+    IAC[IAC == 0.0] = 10**-10  # Avoid divide by zero
     CAC[:] = AC / IAC
     CAC[CAC > 1.0] = 1.0  # Equivalent to min
 

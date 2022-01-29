@@ -346,7 +346,7 @@ def _inverse_norm(n_bit=8):  # pragma: no cover
     out : numpy.ndarray
         Array of bin edges that can be used for data discretization
     """
-    return norm.ppf(np.arange(1, (2 ** n_bit)) / (2 ** n_bit))
+    return norm.ppf(np.arange(1, (2**n_bit)) / (2**n_bit))
 
 
 def _discretize(a, bins, right=True):  # pragma: no cover
