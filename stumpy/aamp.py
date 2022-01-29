@@ -79,6 +79,9 @@ def _compute_diagonal(
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
 
+    p : int, default 2
+        p value for p-norm distance
+
     Returns
     -------
     None
@@ -180,6 +183,9 @@ def _aamp(
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
 
+    p : int, default 2
+        p value for p-norm distance
+
     Returns
     -------
     P : numpy.ndarray
@@ -266,6 +272,9 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2):
     ignore_trivial : bool, default True
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
         to `False`. Default is `True`.
+
+    p : int, default 2
+        p value for p-norm distance
 
     Returns
     -------

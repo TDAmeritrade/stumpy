@@ -43,6 +43,10 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2):
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
         to `False`. Default is `True`.
 
+
+    p : int, default 2
+        p value for p-norm distance
+
     Returns
     -------
     out : numpy.ndarray
