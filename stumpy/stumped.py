@@ -13,8 +13,15 @@ from .aamped import aamped
 logger = logging.getLogger(__name__)
 
 
-@core.non_normalized(aamped)
-def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
+@core.non_normalized(aamped, exclude=["normalize", "p"])
+def stumped(
+    dask_client,
+    T_A,
+    m,
+    T_B=None,
+    ignore_trivial=True,
+    normalize=True,
+):
     """
     Compute the z-normalized matrix profile with a distributed dask cluster
 

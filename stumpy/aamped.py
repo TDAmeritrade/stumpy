@@ -12,7 +12,7 @@ from .aamp import _aamp
 logger = logging.getLogger(__name__)
 
 
-def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
+def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile
 
@@ -131,6 +131,7 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True):
                 T_B_subseq_isfinite_future,
                 diags_futures[i],
                 ignore_trivial,
+                p,
             )
         )
 
