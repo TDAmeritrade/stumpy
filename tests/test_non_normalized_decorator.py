@@ -38,15 +38,11 @@ def test_mass():
     T, T_subseq_isfinite = stumpy.core.preprocess_non_normalized(T, 10)
     T_squared = np.sum(stumpy.core.rolling_window(T * T, Q.shape[0]), axis=-1)
     ref = stumpy.core.mass_absolute(Q, T)
-    comp = stumpy.core.mass(Q, T, T_subseq_isfinite=T_subseq_isfinite, normalize=False)
+    comp = stumpy.core.mass(Q, T, M_T=T_subseq_isfinite, normalize=False)
     npt.assert_almost_equal(ref, comp)
-    ref = stumpy.core.mass_absolute(Q, T)
-    comp = stumpy.core.mass(Q, T, T_squared=T_squared, normalize=False)
+    comp = stumpy.core.mass(Q, T, Σ_T=T_squared, normalize=False)
     npt.assert_almost_equal(ref, comp)
-    ref = stumpy.core.mass_absolute(Q, T)
-    comp = stumpy.core.mass(
-        Q, T, T_subseq_isfinite=T_subseq_isfinite, T_squared=T_squared, normalize=False
-    )
+    comp = stumpy.core.mass(Q, T, M_T=T_subseq_isfinite, Σ_T=T_squared, normalize=False)
     npt.assert_almost_equal(ref, comp)
 
 
@@ -283,13 +279,26 @@ def test_mstumped(T, m, dask_cluster):
 
 @pytest.mark.parametrize("T, m", test_data)
 def test_subspace(T, m):
-    motif_idx = 1
+    subseq_idx = 1
     nn_idx = 4
 
     for k in range(T.shape[0]):
-        ref_S = stumpy.maamp_subspace(T, m, motif_idx, nn_idx, k)
-        comp_S = stumpy.subspace(T, m, motif_idx, nn_idx, k, normalize=False)
+        ref_S = stumpy.maamp_subspace(T, m, subseq_idx, nn_idx, k)
+        comp_S = stumpy.subspace(T, m, subseq_idx, nn_idx, k, normalize=False)
         npt.assert_almost_equal(ref_S, comp_S)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_mdl(T, m):
+    subseq_idx = np.full(T.shape[0], 1)
+    nn_idx = np.full(T.shape[0], 4)
+
+    ref_MDL, ref_S = stumpy.maamp_mdl(T, m, subseq_idx, nn_idx)
+    comp_MDL, comp_S = stumpy.mdl(T, m, subseq_idx, nn_idx, normalize=False)
+    npt.assert_almost_equal(ref_MDL, comp_MDL)
+
+    for ref, cmp in zip(ref_S, comp_S):
+        npt.assert_almost_equal(ref, cmp)
 
 
 @pytest.mark.parametrize("T, m", test_data)
