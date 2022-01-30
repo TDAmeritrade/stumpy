@@ -131,7 +131,7 @@ def non_normalized(non_norm, exclude=None, replace=None):
                 if replace is not None:
                     for k, v in replace.items():
                         if k in kwargs.keys():
-                            if v is None:
+                            if v is None:  # pragma: no cover
                                 _ = kwargs.pop(k)
                             else:
                                 kwargs[v] = kwargs.pop(k)
@@ -1004,6 +1004,12 @@ def _mass_absolute(Q_squared, T_squared, QT):
     A Numba JIT compiled algorithm for computing the non-normalized distance profile
     using the MASS absolute algorithm.
 
+    This private function assumes only finite numbers in your inputs and it is the
+    responsibility of the user to pre-process and post-process their results if the
+    original time series contains `np.nan`/`np.inf` values. Failure to do so will
+    result in incorrect outputs. See `core.mass_absolute` for common pre-processing
+    and post-processing procedures.
+
     Parameters
     ----------
     Q_squared : float
@@ -1212,6 +1218,12 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
     A Numba JIT compiled algorithm for computing the distance profile using the MASS
     algorithm.
 
+    This private function assumes only finite numbers in your inputs and it is the
+    responsibility of the user to pre-process and post-process their results if the
+    original time series contains `np.nan`/`np.inf` values. Failure to do so will
+    result in incorrect outputs. See `core.mass` for common pre-processing and
+    post-processing procedures.
+
     Parameters
     ----------
     Q : numpy.ndarray
@@ -1260,7 +1272,7 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
 @non_normalized(
     mass_absolute,
     exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "T_squared"],
-    replace={"M_T": None, "Σ_T": None},
+    replace={"M_T": "T_subseq_isfinite", "Σ_T": "T_squared"},
 )
 def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
     """

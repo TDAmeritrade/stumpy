@@ -16,6 +16,7 @@ STUMPY API
     stumpy.mstump
     stumpy.mstumped
     stumpy.subspace
+    stumpy.mdl
     stumpy.atsc
     stumpy.allc
     stumpy.fluss
@@ -76,6 +77,10 @@ mstumped
 subspace
 ========
 .. autofunction:: stumpy.subspace
+
+mdl
+===
+.. autofunction:: stumpy.mdl
 
 atsc
 ====
