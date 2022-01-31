@@ -47,7 +47,11 @@ def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, 
         max_motifs = 1
 
     # Calculate subsequence length
-    m = T.shape[0] - P.shape[1] + 1   # CHECK CASES
+    T = T.copy()
+    T = core.transpose_dataframe(T)
+    T = np.asarray(T)
+    core.check_dtype(T)
+    m = T.shape[-1] - P.shape[-1] + 1 
     
     # Calculate exclusion zone
     excl_zone = int(
