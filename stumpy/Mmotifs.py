@@ -88,17 +88,18 @@ def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, 
         motif_neighbors_distances.append(0)
         motif_neighbors_indices = []
         motif_neighbors_indices.append(motif_idx)
-        nn_idx = np.argmin(D[k, :])
+        nearest_neighbor_idx = np.argmin(D[k, :])
         while len(motif_neighbors_distances) < max_matches:
-            motif_neighbors_distances.append(D[k, :][nn_idx])
-            motif_neighbors_indices.append(nn_idx)
-            core.apply_exclusion_zone(D[k, :], nn_idx, excl_zone, np.inf)
+            motif_neighbors_distances.append(D[k, :][nearest_neighbor_idx])
+            motif_neighbors_indices.append(nearest_neighbor_idx)
+            core.apply_exclusion_zone(D[k, :], nearest_neighbor_idx, excl_zone, np.inf)
             # Find the next nerarest neighbor index after setting the exclusion zone
-            nn_idx = np.argmin(D[k, :])
+            nearest_neighbor_idx = np.argmin(D[k, :])
 
         # Set exclusion zone and find new candidate_idx for the next motif
         core.apply_exclusion_zone(P, motif_idx, excl_zone, np.inf)
         candidate_idx = np.argsort(P, axis=1)[:, 0]
+        nn_idx = I[np.arange(len(candidate_idx)), candidate_idx]
 
 
     return motif_neighbors_distances, motif_neighbors_indices, subspace
