@@ -182,7 +182,7 @@ def _maamp_discretize(a, a_min, a_max, n_bit=8):  # pragma: no cover
         Discretized array
     """
     return (
-        np.round(((a - a_min) / (a_max - a_min)) * ((2 ** n_bit) - 1.0)).astype(
+        np.round(((a - a_min) / (a_max - a_min)) * ((2**n_bit) - 1.0)).astype(
             np.int64
         )
         + 1

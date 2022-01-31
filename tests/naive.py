@@ -456,7 +456,7 @@ def maamp(T, m, excl_zone, include=None, discords=False):
 
 def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
     n_bit = 8
-    bins = norm.ppf(np.arange(1, (2 ** n_bit)) / (2 ** n_bit))
+    bins = norm.ppf(np.arange(1, (2**n_bit)) / (2**n_bit))
 
     subseqs = core.z_norm(T[:, subseq_idx : subseq_idx + m], axis=1)
     neighbors = core.z_norm(T[:, nn_idx : nn_idx + m], axis=1)
@@ -505,13 +505,13 @@ def maamp_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
     neighbors = T[:, nn_idx : nn_idx + m]
 
     disc_subseqs = (
-        np.round(((subseqs - T_min) / (T_max - T_min)) * ((2 ** n_bit) - 1.0)).astype(
+        np.round(((subseqs - T_min) / (T_max - T_min)) * ((2**n_bit) - 1.0)).astype(
             np.int64
         )
         + 1
     )
     disc_neighbors = (
-        np.round(((neighbors - T_min) / (T_max - T_min)) * ((2 ** n_bit) - 1.0)).astype(
+        np.round(((neighbors - T_min) / (T_max - T_min)) * ((2**n_bit) - 1.0)).astype(
             np.int64
         )
         + 1
@@ -559,7 +559,7 @@ def mdl(
     n_bit=8,
 ):
     ndim = T.shape[0]
-    bins = norm.ppf(np.arange(1, (2 ** n_bit)) / (2 ** n_bit))
+    bins = norm.ppf(np.arange(1, (2**n_bit)) / (2**n_bit))
     bit_sizes = np.empty(T.shape[0])
     S = [None] * T.shape[0]
     for k in range(T.shape[0]):
@@ -601,13 +601,13 @@ def maamp_mdl(
         neighbors = T[:, nn_idx[k] : nn_idx[k] + m]
         disc_subseqs = (
             np.round(
-                ((subseqs - T_min) / (T_max - T_min)) * ((2 ** n_bit) - 1.0)
+                ((subseqs - T_min) / (T_max - T_min)) * ((2**n_bit) - 1.0)
             ).astype(np.int64)
             + 1
         )
         disc_neighbors = (
             np.round(
-                ((neighbors - T_min) / (T_max - T_min)) * ((2 ** n_bit) - 1.0)
+                ((neighbors - T_min) / (T_max - T_min)) * ((2**n_bit) - 1.0)
             ).astype(np.int64)
             + 1
         )

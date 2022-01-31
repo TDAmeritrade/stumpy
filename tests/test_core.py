@@ -147,7 +147,7 @@ def test_welford_nanvar():
 
 
 def test_welford_nanvar_catastrophic_cancellation():
-    T = np.array([4.0, 7.0, 13.0, 16.0, 10.0]) + 10 ** 8
+    T = np.array([4.0, 7.0, 13.0, 16.0, 10.0]) + 10**8
     m = 4
 
     ref_var = np.nanvar(core.rolling_window(T, m), axis=1)
