@@ -47,11 +47,11 @@ def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, 
         max_motifs = 1
 
     # Calculate subsequence length
-    T = T.copy()
-    T = core.transpose_dataframe(T)
-    T = np.asarray(T)
-    core.check_dtype(T)
-    m = T.shape[-1] - P.shape[-1] + 1 
+    T_arr = T.copy()
+    T_arr = core.transpose_dataframe(T_arr)
+    T_arr = np.asarray(T_arr)
+    core.check_dtype(T_arr)
+    m = T_arr.shape[-1] - P.shape[-1] + 1 
     
     # Calculate exclusion zone
     excl_zone = int(
@@ -69,16 +69,15 @@ def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, 
     for motif_number in range(max_motifs):
 
         # Choose dimension k using MDL and compute subspace
-        mdl, subspace = stumpy.mdl(T, m, candidate_idx, nn_idx)
+        mdl, subspace = stumpy.mdl(T_arr, m, candidate_idx, nn_idx)
         k = np.argmin(mdl)
         subspace = subspace[k]
-        subspace = [T.columns.values[s] for s in subspace]
-        sub_dims = T[subspace].copy()
+        sub = [T.columns.values[s] for s in subspace]  # DOESN'T WORK IF T IS ARRAY AND NOT DATAFRAME --> CORRECT!
+        sub_dims = T[sub].copy()
     
 
         # Get k-dimensional motif
         motif_idx = candidate_idx[k]
-        #nearest_neighbor_idx = nn_idx[k]
 
         # Get multidimensional Distance Profile
         T, mean_T, sigma_T = core.preprocess(sub_dims, m)
@@ -102,6 +101,10 @@ def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, 
 
         # Set exclusion zone and find new candidate_idx for the next motif
         core.apply_exclusion_zone(P, motif_idx, excl_zone, np.inf)
+        # core.apply_exclusion_zone(P[subspace], motif_idx, excl_zone, np.inf)
+        # P_subspace = P[subspace]
+        # core.apply_exclusion_zone(P_subspace, motif_idx, excl_zone, np.inf)
+        # P[subspace] = P_subspace
         candidate_idx = np.argsort(P, axis=1)[:, 0]
         nn_idx = I[np.arange(len(candidate_idx)), candidate_idx]
 
