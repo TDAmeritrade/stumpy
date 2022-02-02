@@ -277,8 +277,9 @@ def subspace(
     Returns
     -------
     S : numpy.ndarray
-        An array that contains the `k`th-dimensional subspace for the subsequence
-        with index equal to `subseq_idx`. Note that `k+1` rows will be returned.
+        An array that contains the (singular) `k`th-dimensional subspace for the
+        subsequence with index equal to `subseq_idx`. Note that `k+1` rows will be
+        returned.
 
     See Also
     --------

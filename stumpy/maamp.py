@@ -126,8 +126,9 @@ def maamp_subspace(
     Returns
     -------
     S : numpy.ndarray
-        An array of that contains the `k`th-dimensional subspace for the subsequence
-        with index equal to `motif_idx`
+        An array of that contains the (singular) `k`th-dimensional subspace for the
+        subsequence with index equal to `subseq_idx`. Note that `k+1` rows will be
+        returned.
     """
     T = T.copy()
     T = core.transpose_dataframe(T)
