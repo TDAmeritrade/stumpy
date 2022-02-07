@@ -432,7 +432,7 @@ def _stump(
     return P[:, :], I[0, :, :]
 
 
-@core.non_normalized(aamp)
+@core.non_normalized(aamp, exclude=["normalize", "p"])
 def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True):
     """
     Compute the z-normalized matrix profile
