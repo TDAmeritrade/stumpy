@@ -6,14 +6,14 @@ import logging
 
 import numpy as np
 
-from .maamp import _maamp, _get_first_maamp_profile
-from .mstump import _get_multi_QT, _preprocess_include
+from .maamp import _maamp, _get_first_maamp_profile, _get_multi_p_norm
+from .mstump import _preprocess_include
 from . import core, config
 
 logger = logging.getLogger(__name__)
 
 
-def maamped(dask_client, T, m, include=None, discords=False):
+def maamped(dask_client, T, m, include=None, discords=False, p=2.0):
     """
     Compute the multi-dimensional non-normalized (i.e., without z-normalization) matrix
     profile with a distributed dask cluster
@@ -53,6 +53,9 @@ def maamped(dask_client, T, m, include=None, discords=False):
         (i.e., discords) rather than smaller values (i.e., motifs). Note that indices
         in `include` are still maintained and respected.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     P : numpy.ndarray
@@ -76,8 +79,6 @@ def maamped(dask_client, T, m, include=None, discords=False):
 
     T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
     T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
-    T_A_subseq_squared = np.sum(core.rolling_window(T_A * T_A, m), axis=2)
-    T_B_subseq_squared = np.sum(core.rolling_window(T_B * T_B, m), axis=2)
 
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
@@ -110,6 +111,7 @@ def maamped(dask_client, T, m, include=None, discords=False):
             m,
             excl_zone,
             T_B_subseq_isfinite,
+            p,
             include,
             discords,
         )
@@ -122,24 +124,20 @@ def maamped(dask_client, T, m, include=None, discords=False):
     T_B_subseq_isfinite_future = dask_client.scatter(
         T_B_subseq_isfinite, broadcast=True, hash=False
     )
-    T_A_subseq_squared_future = dask_client.scatter(
-        T_A_subseq_squared, broadcast=True, hash=False
-    )
-    T_B_subseq_squared_future = dask_client.scatter(
-        T_B_subseq_squared, broadcast=True, hash=False
-    )
 
-    QT_futures = []
-    QT_first_futures = []
+    p_norm_futures = []
+    p_norm_first_futures = []
 
     for i, start in enumerate(range(0, k, step)):
-        QT, QT_first = _get_multi_QT(start, T_A, m)
+        p_norm, p_norm_first = _get_multi_p_norm(start, T_A, m)
 
-        QT_future = dask_client.scatter(QT, workers=[hosts[i]], hash=False)
-        QT_first_future = dask_client.scatter(QT_first, workers=[hosts[i]], hash=False)
+        p_norm_future = dask_client.scatter(p_norm, workers=[hosts[i]], hash=False)
+        p_norm_first_future = dask_client.scatter(
+            p_norm_first, workers=[hosts[i]], hash=False
+        )
 
-        QT_futures.append(QT_future)
-        QT_first_futures.append(QT_first_future)
+        p_norm_futures.append(p_norm_future)
+        p_norm_first_futures.append(p_norm_first_future)
 
     futures = []
     for i, start in enumerate(range(0, k, step)):
@@ -154,10 +152,9 @@ def maamped(dask_client, T, m, include=None, discords=False):
                 excl_zone,
                 T_A_subseq_isfinite_future,
                 T_B_subseq_isfinite_future,
-                T_A_subseq_squared_future,
-                T_B_subseq_squared_future,
-                QT_futures[i],
-                QT_first_futures[i],
+                p,
+                p_norm_futures[i],
+                p_norm_first_futures[i],
                 k,
                 start + 1,
                 include,
@@ -174,12 +171,10 @@ def maamped(dask_client, T, m, include=None, discords=False):
     dask_client.cancel(T_A_future)
     dask_client.cancel(T_A_subseq_isfinite_future)
     dask_client.cancel(T_B_subseq_isfinite_future)
-    dask_client.cancel(T_A_subseq_squared_future)
-    dask_client.cancel(T_B_subseq_squared_future)
-    for QT_future in QT_futures:
-        dask_client.cancel(QT_future)
-    for QT_first_future in QT_first_futures:
-        dask_client.cancel(QT_first_future)
+    for p_norm_future in p_norm_futures:
+        dask_client.cancel(p_norm_future)
+    for p_norm_first_future in p_norm_first_futures:
+        dask_client.cancel(p_norm_first_future)
     for future in futures:
         dask_client.cancel(future)
 

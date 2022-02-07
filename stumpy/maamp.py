@@ -13,7 +13,7 @@ from . import core, config, mstump
 logger = logging.getLogger(__name__)
 
 
-def _multi_mass_absolute(Q, T, m, Q_subseq_isfinite, T_subseq_isfinite):
+def _multi_mass_absolute(Q, T, m, Q_subseq_isfinite, T_subseq_isfinite, p=2.0):
     """
     A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
     (MASS) absolute to compute multi-dimensional non-normalized (i.e., without
@@ -38,6 +38,9 @@ def _multi_mass_absolute(Q, T, m, Q_subseq_isfinite, T_subseq_isfinite):
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     D : numpy.ndarray
@@ -53,7 +56,7 @@ def _multi_mass_absolute(Q, T, m, Q_subseq_isfinite, T_subseq_isfinite):
         if np.any(~Q_subseq_isfinite[i]):
             D[i, :] = np.inf
         else:
-            D[i, :] = core.mass_absolute(Q[i], T[i])
+            D[i, :] = core.mass_absolute(Q[i], T[i], p=p)
 
         D[i][~(T_subseq_isfinite[i])] = np.inf
 
@@ -70,6 +73,7 @@ def maamp_subspace(
     discords=False,
     discretize_func=None,
     n_bit=8,
+    p=2.0,
 ):
     """
     Compute the k-dimensional matrix profile subspace for a given subsequence index and
@@ -123,6 +127,9 @@ def maamp_subspace(
         `DOI: 10.1109/ICDM.2011.54 \
         <https://www.cs.ucr.edu/~eamonn/ICDM_mdl.pdf>`__
 
+    p : float
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     S : numpy.ndarray
@@ -150,7 +157,7 @@ def maamp_subspace(
     disc_subseqs = discretize_func(subseqs)
     disc_neighbors = discretize_func(neighbors)
 
-    D = np.linalg.norm(disc_subseqs - disc_neighbors, axis=1)
+    D = np.linalg.norm(disc_subseqs - disc_neighbors, axis=1, ord=p)
 
     S = mstump._subspace(D, k, include=include, discords=discords)
 
@@ -199,6 +206,7 @@ def maamp_mdl(
     discords=False,
     discretize_func=None,
     n_bit=8,
+    p=2.0,
 ):
     """
     Compute the multi-dimensional number of bits needed to compress one
@@ -249,6 +257,9 @@ def maamp_mdl(
         `DOI: 10.1109/ICDM.2011.54 \
         <https://www.cs.ucr.edu/~eamonn/ICDM_mdl.pdf>`__
 
+    p : float
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     bit_sizes : numpy.ndarray
@@ -285,7 +296,7 @@ def maamp_mdl(
         disc_subseqs = discretize_func(subseqs)
         disc_neighbors = discretize_func(neighbors)
 
-        D = np.linalg.norm(disc_subseqs - disc_neighbors, axis=1)
+        D = np.linalg.norm(disc_subseqs - disc_neighbors, axis=1, ord=p)
 
         S[k] = mstump._subspace(D, k, include=include, discords=discords)
         bit_sizes[k] = mstump._mdl(disc_subseqs, disc_neighbors, S[k], n_bit=n_bit)
@@ -294,7 +305,15 @@ def maamp_mdl(
 
 
 def _maamp_multi_distance_profile(
-    query_idx, T_A, T_B, m, excl_zone, T_B_subseq_isfinite, include=None, discords=False
+    query_idx,
+    T_A,
+    T_B,
+    m,
+    excl_zone,
+    T_B_subseq_isfinite,
+    p=2.0,
+    include=None,
+    discords=False,
 ):
     """
     Multi-dimensional wrapper to compute the multi-dimensional non-normalized (i.e.,
@@ -324,6 +343,9 @@ def _maamp_multi_distance_profile(
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
+    p : float
+        The p-norm to apply for computing the Minkowski distance.
+
     include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
@@ -351,6 +373,7 @@ def _maamp_multi_distance_profile(
         m,
         T_B_subseq_isfinite[:, query_idx],
         T_B_subseq_isfinite,
+        p,
     )
 
     if include is not None:
@@ -372,7 +395,7 @@ def _maamp_multi_distance_profile(
     return D
 
 
-def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False):
+def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False, p=2.0):
     """
     Multi-dimensional wrapper to compute the multi-dimensional non-normalized (i.e.,
     without z-normalization) distance profile for a given query window within the
@@ -402,6 +425,9 @@ def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False):
         When set to `True`, this reverses the distance profile to favor discords rather
         than motifs. Note that indices in `include` are still maintained and respected.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     D : numpy.ndarray
@@ -424,14 +450,22 @@ def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False):
     )  # See Definition 3 and Figure 3
 
     D = _maamp_multi_distance_profile(
-        query_idx, T, T, m, excl_zone, T_subseq_isfinite, include, discords
+        query_idx, T, T, m, excl_zone, T_subseq_isfinite, p, include, discords
     )
 
     return D
 
 
 def _get_first_maamp_profile(
-    start, T_A, T_B, m, excl_zone, T_B_subseq_isfinite, include=None, discords=False
+    start,
+    T_A,
+    T_B,
+    m,
+    excl_zone,
+    T_B_subseq_isfinite,
+    p=2.0,
+    include=None,
+    discords=False,
 ):
     """
     Multi-dimensional wrapper to compute the non-normalized (i.e., without
@@ -466,6 +500,9 @@ def _get_first_maamp_profile(
         A boolean array that indicates whether a subsequence in `Q` contains a
         `np.nan`/`np.inf` value (False)
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
@@ -489,7 +526,7 @@ def _get_first_maamp_profile(
         equal to `start`
     """
     D = _maamp_multi_distance_profile(
-        start, T_A, T_B, m, excl_zone, T_B_subseq_isfinite, include, discords
+        start, T_A, T_B, m, excl_zone, T_B_subseq_isfinite, p, include, discords
     )
 
     d = T_A.shape[0]
@@ -506,27 +543,66 @@ def _get_first_maamp_profile(
     return P, I
 
 
+def _get_multi_p_norm(start, T, m, p=2.0):
+    """
+    Multi-dimensional wrapper to compute the p-norm between the
+    query, `T[:, start:start+m])` and the time series, `T`. Additionally, compute
+    p-norm for the first window.
+
+    Parameters
+    ----------
+    start : int
+        The window index for T_B from which to calculate the QT dot product
+
+    T : numpy.ndarray
+        The time series or sequence for which to compute the dot product
+
+    m : int
+        Window size
+
+    p : float
+        The p-norm to apply for computing the Minkowski distance.
+
+    Returns
+    -------
+    p_norm : numpy.ndarray
+        Given `start`, return the corresponding multi-dimensional p-norm
+
+    p_norm_first : numpy.ndarray
+        Multi-dimensional p-norm for the first window
+    """
+    d = T.shape[0]
+    k = T.shape[1] - m + 1
+
+    p_norm = np.empty((d, k), dtype=np.float64)
+    p_norm_first = np.empty((d, k), dtype=np.float64)
+    for i in range(d):
+        p_norm[i] = np.power(core.mass_absolute(T[i, start : start + m], T[i], p=p), p)
+        p_norm_first[i] = np.power(core.mass_absolute(T[i, :m], T[i], p=p), p)
+
+    return p_norm, p_norm_first
+
+
 @njit(
-    # "(i8, i8, i8, f8[:, :], f8[:, :], i8, i8, b1[:, :], b1[:, :], f8[:, :],"
-    # "f8[:, :], f8[:, :], f8[:, :], f8[:, :])",
+    # "(i8, i8, i8, f8[:, :], f8[:, :], i8, i8, b1[:, :], b1[:, :], f8,"
+    # "f8[:, :], f8[:, :], f8[:, :])",
     parallel=True,
     fastmath=True,
 )
-def _compute_multi_D(
+def _compute_multi_p_norm(
     d,
     k,
     idx,
-    D,
+    p_norm,
     T,
     m,
     excl_zone,
     T_A_subseq_isfinite,
     T_B_subseq_isfinite,
-    T_A_subseq_squared,
-    T_B_subseq_squared,
-    QT_even,
-    QT_odd,
-    QT_first,
+    p,
+    p_norm_even,
+    p_norm_odd,
+    p_norm_first,
 ):
     """
     A Numba JIT-compiled version of non-normalized (i.e., without z-normalization)
@@ -543,8 +619,8 @@ def _compute_multi_D(
     idx : int
         The row index in `T`
 
-    D : numpy.ndarray
-        The output distance profile
+    p_norm : numpy.ndarray
+        The output p_norm
 
     T : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
@@ -564,20 +640,19 @@ def _compute_multi_D(
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_A_subseq_squared : numpy.ndarray
-        The rolling sum for `T_A * T_A`
+    p : float
+        The p-norm to apply for computing the Minkowski distance.
 
-    T_B_subseq_squared : numpy.ndarray
-        The rolling sum for `T_B * T_B`
+    p_norm_even : numpy.ndarray
+        The even input p-norm array between some query sequence,`Q`, and
+        time series, `T`
 
-    QT_even : numpy.ndarray
-        Dot product between some query sequence,`Q`, and time series, `T`
+    p_norm_odd : numpy.ndarray
+        The odd input p-norm array between some query sequence,`Q`, and
+        time series, `T`
 
-    QT_odd : numpy.ndarray
-        Dot product between some query sequence,`Q`, and time series, `T`
-
-    QT_first : numpy.ndarray
-        QT for the first window relative to the current sliding window
+    p_norm_first : numpy.ndarray
+        The p-norm between the first query sequence,`Q`, and time series, `T`
 
     Notes
     -----
@@ -596,42 +671,36 @@ def _compute_multi_D(
             # See Figure 5
             if idx % 2 == 0:
                 # Even
-                QT_even[i, j] = (
-                    QT_odd[i, j - 1]
-                    - T[i, idx - 1] * T[i, j - 1]
-                    + T[i, idx + m - 1] * T[i, j + m - 1]
+                p_norm_even[i, j] = (
+                    p_norm_odd[i, j - 1]
+                    - abs(T[i, idx - 1] - T[i, j - 1]) ** p
+                    + abs(T[i, idx + m - 1] - T[i, j + m - 1]) ** p
                 )
             else:
                 # Odd
-                QT_odd[i, j] = (
-                    QT_even[i, j - 1]
-                    - T[i, idx - 1] * T[i, j - 1]
-                    + T[i, idx + m - 1] * T[i, j + m - 1]
+                p_norm_odd[i, j] = (
+                    p_norm_even[i, j - 1]
+                    - abs(T[i, idx - 1] - T[i, j - 1]) ** p
+                    + abs(T[i, idx + m - 1] - T[i, j + m - 1]) ** p
                 )
 
         if idx % 2 == 0:
-            QT_even[i, 0] = QT_first[i, idx]
+            p_norm_even[i, 0] = p_norm_first[i, idx]
             if not T_B_subseq_isfinite[i, idx]:
-                D[i] = np.inf
+                p_norm[i] = np.inf
             else:
-                D[i] = (
-                    T_B_subseq_squared[i, idx]
-                    + T_A_subseq_squared[i]
-                    - 2.0 * QT_even[i]
-                )
+                p_norm[i] = p_norm_even[i]
         else:
-            QT_odd[i, 0] = QT_first[i, idx]
+            p_norm_odd[i, 0] = p_norm_first[i, idx]
             if not T_B_subseq_isfinite[i, idx]:
-                D[i] = np.inf
+                p_norm[i] = np.inf
             else:
-                D[i] = (
-                    T_B_subseq_squared[i, idx] + T_A_subseq_squared[i] - 2.0 * QT_odd[i]
-                )
+                p_norm[i] = p_norm_odd[i]
 
-        D[i][~(T_A_subseq_isfinite[i])] = np.inf
-        D[i][D[i] < config.STUMPY_D_SQUARED_THRESHOLD] = 0
+        p_norm[i][~(T_A_subseq_isfinite[i])] = np.inf
+        p_norm[i][p_norm[i] < config.STUMPY_P_NORM_THRESHOLD] = 0
 
-    core._apply_exclusion_zone(D, idx, excl_zone, np.inf)
+    core._apply_exclusion_zone(p_norm, idx, excl_zone, np.inf)
 
 
 def _maamp(
@@ -641,10 +710,9 @@ def _maamp(
     excl_zone,
     T_A_subseq_isfinite,
     T_B_subseq_isfinite,
-    T_A_subseq_squared,
-    T_B_subseq_squared,
-    QT,
-    QT_first,
+    p,
+    p_norm,
+    p_norm_first,
     k,
     range_start=1,
     include=None,
@@ -682,17 +750,14 @@ def _maamp(
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_A_subseq_squared : numpy.ndarray
-        The rolling sum for `T_A * T_A`
+    p : float
+        The p-norm to apply for computing the Minkowski distance.
 
-    T_B_subseq_squared : numpy.ndarray
-        The rolling sum for `T_B * T_B`
+    p_norm : numpy.ndarray
+        The input p-norm array between some query sequence,`Q`, and time series, `T`
 
-    QT : numpy.ndarray
-        Dot product between some query sequence,`Q`, and time series, `T`
-
-    QT_first : numpy.ndarray
-        QT for the first window relative to the current sliding window
+    p_norm_first : numpy.ndarray
+        The p-norm between the first query sequence,`Q`, and time series, `T`
 
     k : int
         The total number of sliding windows to iterate over
@@ -731,14 +796,14 @@ def _maamp(
 
     See mSTAMP Algorithm
     """
-    QT_odd = QT.copy()
-    QT_even = QT.copy()
+    p_norm_odd = p_norm.copy()
+    p_norm_even = p_norm.copy()
     d = T.shape[0]
 
     P = np.empty((d, range_stop - range_start), dtype=np.float64)
     I = np.empty((d, range_stop - range_start), dtype=np.int64)
-    D = np.empty((d, k), dtype=np.float64)
-    D_prime = np.empty(k, dtype=np.float64)
+    p_norm = np.empty((d, k), dtype=np.float64)
+    p_norm_prime = np.empty(k, dtype=np.float64)
     start_row_idx = 0
 
     if include is not None:
@@ -749,27 +814,26 @@ def _maamp(
         mask[restricted_indices] = False
 
     for idx in range(range_start, range_stop):
-        _compute_multi_D(
+        _compute_multi_p_norm(
             d,
             k,
             idx,
-            D,
+            p_norm,
             T,
             m,
             excl_zone,
             T_A_subseq_isfinite,
             T_B_subseq_isfinite,
-            T_A_subseq_squared,
-            T_B_subseq_squared,
-            QT_even,
-            QT_odd,
-            QT_first,
+            p,
+            p_norm_even,
+            p_norm_odd,
+            p_norm_first,
         )
 
         # `include` processing must occur here since we are dealing with distances
         if include is not None:
             mstump._apply_include(
-                D,
+                p_norm,
                 include,
                 restricted_indices,
                 unrestricted_indices,
@@ -779,16 +843,16 @@ def _maamp(
             start_row_idx = include.shape[0]
 
         if discords:
-            D[start_row_idx:][::-1].sort(axis=0)
+            p_norm[start_row_idx:][::-1].sort(axis=0)
         else:
-            D[start_row_idx:].sort(axis=0)
+            p_norm[start_row_idx:].sort(axis=0)
 
-        mstump._compute_PI(d, idx, D, D_prime, range_start, P, I)
+        mstump._compute_PI(d, idx, p_norm, p_norm_prime, range_start, P, I, p)
 
     return P, I
 
 
-def maamp(T, m, include=None, discords=False):
+def maamp(T, m, include=None, discords=False, p=2.0):
     """
     Compute the multi-dimensional non-normalized (i.e., without z-normalization) matrix
     profile
@@ -823,6 +887,9 @@ def maamp(T, m, include=None, discords=False):
         (i.e., discords) rather than smaller values (i.e., motifs). Note that indices
         in `include` are still maintained and respected.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     P : numpy.ndarray
@@ -846,8 +913,6 @@ def maamp(T, m, include=None, discords=False):
 
     T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
     T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
-    T_A_subseq_squared = np.sum(core.rolling_window(T_A * T_A, m), axis=2)
-    T_B_subseq_squared = np.sum(core.rolling_window(T_B * T_B, m), axis=2)
 
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
@@ -877,11 +942,12 @@ def maamp(T, m, include=None, discords=False):
         m,
         excl_zone,
         T_B_subseq_isfinite,
+        p,
         include,
         discords,
     )
 
-    QT, QT_first = mstump._get_multi_QT(start, T_A, m)
+    p_norm, p_norm_first = _get_multi_p_norm(start, T_A, m, p=p)
 
     P[:, start + 1 : stop], I[:, start + 1 : stop] = _maamp(
         T_A,
@@ -890,10 +956,9 @@ def maamp(T, m, include=None, discords=False):
         excl_zone,
         T_A_subseq_isfinite,
         T_B_subseq_isfinite,
-        T_A_subseq_squared,
-        T_B_subseq_squared,
-        QT,
-        QT_first,
+        p,
+        p_norm,
+        p_norm_first,
         k,
         start + 1,
         include,

@@ -135,37 +135,37 @@ def _compute_and_update_PI_kernel(
 
             QT_out[0] = QT_first[i]
         if math.isinf(M_T[j]) or math.isinf(μ_Q[i]):
-            D = np.inf
+            p_norm = np.inf
         else:
             if (
                 σ_Q[i] < config.STUMPY_STDDEV_THRESHOLD
                 or Σ_T[j] < config.STUMPY_STDDEV_THRESHOLD
             ):
-                D = m
+                p_norm = m
             else:
                 denom = m * σ_Q[i] * Σ_T[j]
                 if math.fabs(denom) < config.STUMPY_DENOM_THRESHOLD:  # pragma nocover
                     denom = config.STUMPY_DENOM_THRESHOLD
-                D = abs(2 * m * (1.0 - (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom))
+                p_norm = abs(2 * m * (1.0 - (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom))
 
             if (
                 σ_Q[i] < config.STUMPY_STDDEV_THRESHOLD
                 and Σ_T[j] < config.STUMPY_STDDEV_THRESHOLD
-            ) or D < config.STUMPY_D_SQUARED_THRESHOLD:
-                D = 0
+            ) or p_norm < config.STUMPY_P_NORM_THRESHOLD:
+                p_norm = 0
 
         if ignore_trivial:
             if i <= zone_stop and i >= zone_start:
-                D = np.inf
-            if D < profile[j, 1] and i < j:
-                profile[j, 1] = D
+                p_norm = np.inf
+            if p_norm < profile[j, 1] and i < j:
+                profile[j, 1] = p_norm
                 indices[j, 1] = i
-            if D < profile[j, 2] and i > j:
-                profile[j, 2] = D
+            if p_norm < profile[j, 2] and i > j:
+                profile[j, 2] = p_norm
                 indices[j, 2] = i
 
-        if D < profile[j, 0]:
-            profile[j, 0] = D
+        if p_norm < profile[j, 0]:
+            profile[j, 0] = p_norm
             indices[j, 0] = i
 
 
@@ -373,7 +373,9 @@ def _gpu_stump(
 
 
 @core.non_normalized(gpu_aamp)
-def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True):
+def gpu_stump(
+    T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True, p=2.0
+):
     """
     Compute the z-normalized matrix profile with one or more GPU devices
 
@@ -407,6 +409,10 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Returns
     -------
@@ -531,7 +537,7 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True
     # Start process pool for multi-GPU request
     if len(device_ids) > 1:  # pragma: no cover
         mp.set_start_method("spawn", force=True)
-        p = mp.Pool(processes=len(device_ids))
+        pool = mp.Pool(processes=len(device_ids))
         results = [None] * len(device_ids)
 
     QT_fnames = []
@@ -548,7 +554,7 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True
 
         if len(device_ids) > 1 and idx < len(device_ids) - 1:  # pragma: no cover
             # Spawn and execute in child process for multi-GPU request
-            results[idx] = p.apply_async(
+            results[idx] = pool.apply_async(
                 _gpu_stump,
                 (
                     T_A_fname,
@@ -591,8 +597,8 @@ def gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True
 
     # Clean up process pool for multi-GPU request
     if len(device_ids) > 1:  # pragma: no cover
-        p.close()
-        p.join()
+        pool.close()
+        pool.join()
 
         # Collect results from spawned child processes if they exist
         for idx, result in enumerate(results):

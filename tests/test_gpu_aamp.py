@@ -44,15 +44,16 @@ def test_gpu_aamp_int_input():
 def test_gpu_aamp_self_join(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
-    ref_mp = naive.aamp(T_B, m, exclusion_zone=zone)
-    comp_mp = gpu_aamp(T_B, m, ignore_trivial=True)
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp, comp_mp)
+    for p in [1.0, 2.0, 3.0]:
+        ref_mp = naive.aamp(T_B, m, exclusion_zone=zone, p=p)
+        comp_mp = gpu_aamp(T_B, m, ignore_trivial=True, p=p)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
-    comp_mp = gpu_aamp(pd.Series(T_B), m, ignore_trivial=True)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp, comp_mp)
+        comp_mp = gpu_aamp(pd.Series(T_B), m, ignore_trivial=True, p=p)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
@@ -81,15 +82,18 @@ def test_gpu_aamp_self_join_larger_window(T_A, T_B, m):
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_gpu_aamp_A_B_join(T_A, T_B):
     m = 3
-    ref_mp = naive.aamp(T_B, m, T_B=T_A)
-    comp_mp = gpu_aamp(T_B, m, T_A, ignore_trivial=False)
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp, comp_mp)
+    for p in [1.0, 2.0, 3.0]:
+        ref_mp = naive.aamp(T_B, m, T_B=T_A, p=p)
+        comp_mp = gpu_aamp(T_B, m, T_A, ignore_trivial=False, p=p)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
-    # comp_mp = gpu_aamp(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
-    # naive.replace_inf(comp_mp)
-    # npt.assert_almost_equal(ref_mp, comp_mp)
+        # comp_mp = gpu_aamp(
+        #     pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False, p=p
+        # )
+        # naive.replace_inf(comp_mp)
+        # npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)

@@ -216,6 +216,7 @@ def subspace(
     discretize_func=None,
     n_bit=8,
     normalize=True,
+    p=2.0,
 ):
     """
     Compute the k-dimensional matrix profile subspace for a given subsequence index and
@@ -273,6 +274,10 @@ def subspace(
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Returns
     -------
@@ -421,6 +426,7 @@ def mdl(
     discretize_func=None,
     n_bit=8,
     normalize=True,
+    p=2.0,
 ):
     """
     Compute the multi-dimensional number of bits needed to compress one
@@ -475,6 +481,10 @@ def mdl(
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Returns
     -------
@@ -628,7 +638,7 @@ def _multi_distance_profile(
 
 @core.non_normalized(maamp_multi_distance_profile)
 def multi_distance_profile(
-    query_idx, T, m, include=None, discords=False, normalize=True
+    query_idx, T, m, include=None, discords=False, normalize=True, p=2.0
 ):
     """
     Multi-dimensional wrapper to compute the multi-dimensional distance profile for a
@@ -663,6 +673,10 @@ def multi_distance_profile(
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Returns
     -------
@@ -917,11 +931,11 @@ def _compute_multi_D(
 
 
 @njit(
-    # "(i8, i8, f8[:, :], f8[:], i8, f8[:, :], i8[:, :])",
+    # "(i8, i8, f8[:, :], f8[:], i8, f8[:, :], i8[:, :], f8)",
     parallel=True,
     fastmath=True,
 )
-def _compute_PI(d, idx, D, D_prime, range_start, P, I):
+def _compute_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
     """
     A Numba JIT-compiled version of mSTOMP for updating the matrix profile and matrix
     profile indices
@@ -949,10 +963,13 @@ def _compute_PI(d, idx, D, D_prime, range_start, P, I):
 
     I : numpy.ndarray
         The matrix profile indices
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
     """
     D_prime[:] = 0.0
     for i in range(d):
-        D_prime = D_prime + np.sqrt(D[i])
+        D_prime = D_prime + np.power(D[i], 1.0 / p)
 
         min_index = np.argmin(D_prime)
         pos = idx - range_start
@@ -1097,7 +1114,7 @@ def _mstump(
 
 
 @core.non_normalized(maamp)
-def mstump(T, m, include=None, discords=False, normalize=True):
+def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
     """
     Compute the multi-dimensional z-normalized matrix profile
 
@@ -1135,6 +1152,10 @@ def mstump(T, m, include=None, discords=False, normalize=True):
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Returns
     -------

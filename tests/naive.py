@@ -1,4 +1,5 @@
 import math
+import functools
 import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.stats import norm
@@ -12,8 +13,8 @@ def z_norm(a, axis=0, threshold=1e-7):
     return (a - np.mean(a, axis, keepdims=True)) / std
 
 
-def distance(a, b, axis=0):
-    return np.linalg.norm(a - b, axis=axis)
+def distance(a, b, axis=0, p=2.0):
+    return np.linalg.norm(a - b, axis=axis, ord=p)
 
 
 def apply_exclusion_zone(a, trivial_idx, excl_zone, val):
@@ -39,7 +40,7 @@ def distance_profile(Q, T, m):
     return D
 
 
-def aamp_distance_profile(Q, T, m):
+def aamp_distance_profile(Q, T, m, p=2.0):
     T_inf = np.isinf(T)
     if np.any(T_inf):
         T = T.copy()
@@ -50,7 +51,7 @@ def aamp_distance_profile(Q, T, m):
         Q = Q.copy()
         Q[Q_inf] = np.nan
 
-    D = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1)
+    D = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1, ord=p)
 
     return D
 
@@ -63,14 +64,14 @@ def distance_matrix(T_A, T_B, m):
     return distance_matrix
 
 
-def aamp_distance_matrix(T_A, T_B, m):
+def aamp_distance_matrix(T_A, T_B, m, p):
     T_A[np.isinf(T_A)] = np.nan
     T_B[np.isinf(T_B)] = np.nan
 
     rolling_T_A = core.rolling_window(T_A, m)
     rolling_T_B = core.rolling_window(T_B, m)
 
-    distance_matrix = cdist(rolling_T_A, rolling_T_B)
+    distance_matrix = cdist(rolling_T_A, rolling_T_B, metric="minkowski", p=p)
 
     return distance_matrix
 
@@ -205,7 +206,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None):
     return result
 
 
-def aamp(T_A, m, T_B=None, exclusion_zone=None, p=2):
+def aamp(T_A, m, T_B=None, exclusion_zone=None, p=2.0):
     T_A = np.asarray(T_A)
     T_A = T_A.copy()
 
@@ -229,7 +230,7 @@ def aamp(T_A, m, T_B=None, exclusion_zone=None, p=2):
     if exclusion_zone is None:
         exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    distance_matrix = cdist(rolling_T_A, rolling_T_B, "minkowski", p=p)
+    distance_matrix = cdist(rolling_T_A, rolling_T_B, metric="minkowski", p=p)
 
     if ignore_trivial:
         diags = np.arange(exclusion_zone + 1, n_A - m + 1)
@@ -302,7 +303,7 @@ def multi_mass(Q, T, m, include=None, discords=False):
     return D
 
 
-def multi_mass_absolute(Q, T, m, include=None, discords=False):
+def multi_mass_absolute(Q, T, m, include=None, discords=False, p=2.0):
     T_inf = np.isinf(T)
     if np.any(T_inf):
         T = T.copy()
@@ -317,7 +318,7 @@ def multi_mass_absolute(Q, T, m, include=None, discords=False):
 
     D = np.empty((d, n - m + 1))
     for i in range(d):
-        D[i] = aamp_distance_profile(Q[i], T[i], m)
+        D[i] = aamp_distance_profile(Q[i], T[i], m, p=p)
 
     D[np.isnan(D)] = np.inf
 
@@ -406,11 +407,11 @@ def mstump(T, m, excl_zone, include=None, discords=False):
     return P, I
 
 
-def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False):
+def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False, p=2.0):
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     d, n = T.shape
     Q = T[:, query_idx : query_idx + m]
-    D = multi_mass_absolute(Q, T, m, include, discords)
+    D = multi_mass_absolute(Q, T, m, include, discords, p=p)
 
     start_row_idx = 0
     if include is not None:
@@ -433,7 +434,7 @@ def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False):
     return D_prime_prime
 
 
-def maamp(T, m, excl_zone, include=None, discords=False):
+def maamp(T, m, excl_zone, include=None, discords=False, p=2.0):
     T = T.copy()
 
     d, n = T.shape
@@ -443,7 +444,7 @@ def maamp(T, m, excl_zone, include=None, discords=False):
     I = np.ones((d, k), dtype="int64") * -1
 
     for i in range(k):
-        D = maamp_multi_distance_profile(i, T, m, include, discords)
+        D = maamp_multi_distance_profile(i, T, m, include, discords, p=p)
         P_i, I_i = PI(D, i, excl_zone)
 
         for dim in range(T.shape[0]):
@@ -495,7 +496,7 @@ def subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
     return S
 
 
-def maamp_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
+def maamp_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False, p=2.0):
     n_bit = 8
     T_isfinite = np.isfinite(T)
     T_min = T[T_isfinite].min()
@@ -521,6 +522,7 @@ def maamp_subspace(T, m, subseq_idx, nn_idx, k, include=None, discords=False):
         disc_subseqs,
         disc_neighbors,
         axis=1,
+        p=p,
     )
 
     if discords:
@@ -588,6 +590,7 @@ def maamp_mdl(
     discords=False,
     discretize_func=None,
     n_bit=8,
+    p=2.0,
 ):
     T_isfinite = np.isfinite(T)
     T_min = T[T_isfinite].min()
@@ -612,7 +615,7 @@ def maamp_mdl(
             + 1
         )
 
-        S[k] = maamp_subspace(T, m, subseq_idx[k], nn_idx[k], k, include, discords)
+        S[k] = maamp_subspace(T, m, subseq_idx[k], nn_idx[k], k, include, discords, p=p)
         sub_dims = len(S[k])
         n_val = len(set((disc_subseqs[S[k]] - disc_neighbors[S[k]]).flatten()))
         bit_sizes[k] = n_bit * (2 * ndim * m - sub_dims * m)
@@ -649,26 +652,26 @@ def get_array_ranges(a, n_chunks, truncate):
 
 
 class aampi_egress(object):
-    def __init__(self, T, m, excl_zone=None):
+    def __init__(self, T, m, excl_zone=None, p=2.0):
         self._T = np.asarray(T)
         self._T = self._T.copy()
         self._T_isfinite = np.isfinite(self._T)
         self._m = m
+        self._p = p
         if excl_zone is None:
             self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
-        mp = aamp(T, m)
+        mp = aamp(T, m, p=p)
         self.P_ = mp[:, 0]
         self.I_ = mp[:, 1].astype(np.int64)
         self.left_P_ = np.full(self.P_.shape, np.inf)
         self.left_I_ = mp[:, 2].astype(np.int64)
         for i, j in enumerate(self.left_I_):
             if j >= 0:
-                D = core.mass_absolute(
-                    self._T[i : i + self._m], self._T[j : j + self._m]
+                self.left_P_[i] = np.linalg.norm(
+                    self._T[i : i + self._m] - self._T[j : j + self._m], ord=self._p
                 )
-                self.left_P_[i] = D[0]
 
         self._n_appended = 0
 
@@ -689,6 +692,12 @@ class aampi_egress(object):
         self.left_I_[:] = np.roll(self.left_I_, -1)
 
         D = core.mass_absolute(self._T[-self._m :], self._T)
+        D = cdist(
+            core.rolling_window(self._T[-self._m :], self._m),
+            core.rolling_window(self._T, self._m),
+            metric="minkowski",
+            p=self._p,
+        )[0]
         T_subseq_isfinite = np.all(
             core.rolling_window(self._T_isfinite, self._m), axis=1
         )
@@ -921,7 +930,7 @@ def ostinato(Ts, m):
     return radius, Ts_idx, subseq_idx
 
 
-def aamp_across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m):
+def aamp_across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, p=2.0):
     """
     For multiple time series find, per individual time series, the subsequences closest
     to a query.
@@ -943,6 +952,9 @@ def aamp_across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m):
     m : int
         Subsequence window size
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     nns_radii : ndarray
@@ -959,14 +971,14 @@ def aamp_across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m):
     nns_subseq_idx = np.zeros(k, dtype=np.int64)
 
     for i in range(k):
-        dist_profile = aamp_distance_profile(Q, Ts[i], len(Q))
+        dist_profile = aamp_distance_profile(Q, Ts[i], len(Q), p=p)
         nns_subseq_idx[i] = np.argmin(dist_profile)
         nns_radii[i] = dist_profile[nns_subseq_idx[i]]
 
     return nns_radii, nns_subseq_idx
 
 
-def get_aamp_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m):
+def get_aamp_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, p=2.0):
     """
     Compare subsequences with the same radius and return the most central motif
 
@@ -987,6 +999,9 @@ def get_aamp_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m):
     m : int
         Window size
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     bsf_radius : float
@@ -1000,7 +1015,7 @@ def get_aamp_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m):
         series `bsf_Ts_idx` that contains it
     """
     bsf_nns_radii, bsf_nns_subseq_idx = aamp_across_series_nearest_neighbors(
-        Ts, bsf_Ts_idx, bsf_subseq_idx, m
+        Ts, bsf_Ts_idx, bsf_subseq_idx, m, p=p
     )
     bsf_nns_mean_radii = bsf_nns_radii.mean()
 
@@ -1009,7 +1024,7 @@ def get_aamp_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m):
 
     for Ts_idx, subseq_idx in zip(candidate_nns_Ts_idx, candidate_nns_subseq_idx):
         candidate_nns_radii, _ = aamp_across_series_nearest_neighbors(
-            Ts, Ts_idx, subseq_idx, m
+            Ts, Ts_idx, subseq_idx, m, p=p
         )
         if (
             np.isclose(candidate_nns_radii.max(), bsf_radius)
@@ -1022,7 +1037,7 @@ def get_aamp_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m):
     return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
 
 
-def aamp_consensus_search(Ts, m):
+def aamp_consensus_search(Ts, m, p=2.0):
     """
     Brute force consensus motif from
     <https://www.cs.ucr.edu/~eamonn/consensus_Motif_ICDM_Long_version.pdf>
@@ -1042,7 +1057,7 @@ def aamp_consensus_search(Ts, m):
         radii = np.zeros(len(Ts[j]) - m + 1)
         for i in range(k):
             if i != j:
-                mp = aamp(Ts[j], m, Ts[i])
+                mp = aamp(Ts[j], m, Ts[i], p=p)
                 radii = np.maximum(radii, mp[:, 0])
         min_radius_idx = np.argmin(radii)
         min_radius = radii[min_radius_idx]
@@ -1054,10 +1069,10 @@ def aamp_consensus_search(Ts, m):
     return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
 
 
-def aamp_ostinato(Ts, m):
-    bsf_radius, bsf_Ts_idx, bsf_subseq_idx = aamp_consensus_search(Ts, m)
+def aamp_ostinato(Ts, m, p=2.0):
+    bsf_radius, bsf_Ts_idx, bsf_subseq_idx = aamp_consensus_search(Ts, m, p=p)
     radius, Ts_idx, subseq_idx = get_aamp_central_motif(
-        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m
+        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, p=p
     )
     return radius, Ts_idx, subseq_idx
 
@@ -1085,7 +1100,7 @@ def mpdist_vect(T_A, T_B, m, percentage=0.05, k=None):
     return MPdist_vect
 
 
-def aampdist_vect(T_A, T_B, m, percentage=0.05, k=None):
+def aampdist_vect(T_A, T_B, m, percentage=0.05, k=None, p=2.0):
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     j = n_A - m + 1  # `k` is reserved for `P_ABBA` selection
@@ -1100,8 +1115,8 @@ def aampdist_vect(T_A, T_B, m, percentage=0.05, k=None):
     k = min(int(k), P_ABBA.shape[0] - 1)
 
     for i in range(n_B - n_A + 1):
-        P_ABBA[:j] = aamp(T_A, m, T_B[i : i + n_A])[:, 0]
-        P_ABBA[j:] = aamp(T_B[i : i + n_A], m, T_A)[:, 0]
+        P_ABBA[:j] = aamp(T_A, m, T_B[i : i + n_A], p=p)[:, 0]
+        P_ABBA[j:] = aamp(T_B[i : i + n_A], m, T_A, p=p)[:, 0]
         P_ABBA.sort()
         aaMPdist_vect[i] = P_ABBA[k]
 
@@ -1131,7 +1146,7 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None):
     return MPdist
 
 
-def aampdist(T_A, T_B, m, percentage=0.05, k=None):
+def aampdist(T_A, T_B, m, percentage=0.05, k=None, p=2.0):
     percentage = min(percentage, 1.0)
     percentage = max(percentage, 0.0)
     n_A = T_A.shape[0]
@@ -1142,8 +1157,8 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None):
     else:
         k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
 
-    P_ABBA[: n_A - m + 1] = aamp(T_A, m, T_B)[:, 0]
-    P_ABBA[n_A - m + 1 :] = aamp(T_B, m, T_A)[:, 0]
+    P_ABBA[: n_A - m + 1] = aamp(T_A, m, T_B, p=p)[:, 0]
+    P_ABBA[n_A - m + 1 :] = aamp(T_B, m, T_A, p=p)[:, 0]
 
     P_ABBA.sort()
     MPdist = P_ABBA[k]
@@ -1291,8 +1306,9 @@ def aampdist_snippets(
     s=None,
     mpdist_percentage=0.05,
     mpdist_k=None,
+    p=2.0,
 ):
-
+    partial_mpdist_vect_func = functools.partial(aampdist_vect, p=p)
     D = get_all_mpdist_profiles(
         T,
         m,
@@ -1300,7 +1316,7 @@ def aampdist_snippets(
         s,
         mpdist_percentage,
         mpdist_k,
-        aampdist_vect,
+        partial_mpdist_vect_func,
     )
 
     pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))

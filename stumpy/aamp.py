@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 @njit(
-    # "(f8[:], f8[:], i8, b1[:], b1[:], i8[:], i8, i8, i8, f8[:, :, :], i8[:, :, :],"
-    # "b1)",
+    # "(f8[:], f8[:], i8, b1[:], b1[:], f8, i8[:], i8, i8, i8, f8[:, :, :],"
+    # "i8[:, :, :], b1)",
     fastmath=True,
 )
 def _compute_diagonal(
@@ -24,6 +24,7 @@ def _compute_diagonal(
     m,
     T_A_subseq_isfinite,
     T_B_subseq_isfinite,
+    p,
     diags,
     diags_start_idx,
     diags_stop_idx,
@@ -31,7 +32,6 @@ def _compute_diagonal(
     P,
     I,
     ignore_trivial,
-    p=2,
 ):
     """
     Compute (Numba JIT-compiled) and update P, I along a single diagonal using a single
@@ -63,6 +63,9 @@ def _compute_diagonal(
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
+    p : float
+        The p-norm to apply for computing the Minkowski distance.
+
     diags : numpy.ndarray
         The diag of diagonals to process and compute
 
@@ -78,9 +81,6 @@ def _compute_diagonal(
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
-
-    p : int, default 2
-        p value for p-norm distance
 
     Returns
     -------
@@ -99,39 +99,39 @@ def _compute_diagonal(
 
         for i in iter_range:
             if i == 0 or (k < 0 and i == -k):
-                D_squared = (
+                p_norm = (
                     np.linalg.norm(T_B[i + k : i + k + m] - T_A[i : i + m], ord=p) ** p
                 )
             else:
-                D_squared = np.abs(
-                    D_squared
+                p_norm = np.abs(
+                    p_norm
                     - np.absolute(T_B[i + k - 1] - T_A[i - 1]) ** p
                     + np.absolute(T_B[i + k + m - 1] - T_A[i + m - 1]) ** p
                 )
 
-            if D_squared < config.STUMPY_D_SQUARED_THRESHOLD:
-                D_squared = 0.0
+            if p_norm < config.STUMPY_P_NORM_THRESHOLD:
+                p_norm = 0.0
 
             if T_A_subseq_isfinite[i] and T_B_subseq_isfinite[i + k]:
                 # Neither subsequence contains NaNs
-                if D_squared < P[thread_idx, i, 0]:
-                    P[thread_idx, i, 0] = D_squared
+                if p_norm < P[thread_idx, i, 0]:
+                    P[thread_idx, i, 0] = p_norm
                     I[thread_idx, i, 0] = i + k
 
                 if ignore_trivial:
-                    if D_squared < P[thread_idx, i + k, 0]:
-                        P[thread_idx, i + k, 0] = D_squared
+                    if p_norm < P[thread_idx, i + k, 0]:
+                        P[thread_idx, i + k, 0] = p_norm
                         I[thread_idx, i + k, 0] = i
 
                     if i < i + k:
                         # left matrix profile and left matrix profile index
-                        if D_squared < P[thread_idx, i + k, 1]:
-                            P[thread_idx, i + k, 1] = D_squared
+                        if p_norm < P[thread_idx, i + k, 1]:
+                            P[thread_idx, i + k, 1] = p_norm
                             I[thread_idx, i + k, 1] = i
 
                         # right matrix profile and right matrix profile index
-                        if D_squared < P[thread_idx, i, 2]:
-                            P[thread_idx, i, 2] = D_squared
+                        if p_norm < P[thread_idx, i, 2]:
+                            P[thread_idx, i, 2] = p_norm
                             I[thread_idx, i, 2] = i + k
 
     return
@@ -143,14 +143,7 @@ def _compute_diagonal(
     fastmath=True,
 )
 def _aamp(
-    T_A,
-    T_B,
-    m,
-    T_A_subseq_isfinite,
-    T_B_subseq_isfinite,
-    diags,
-    ignore_trivial,
-    p=2,
+    T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, p, diags, ignore_trivial
 ):
     """
     A Numba JIT-compiled version of AAMP for parallel computation of the matrix
@@ -176,15 +169,15 @@ def _aamp(
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
+    p : float
+        The p-norm to apply for computing the Minkowski distance.
+
     diags : numpy.ndarray
         The diag of diagonals to process and compute
 
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
-
-    p : int, default 2
-        p value for p-norm distance
 
     Returns
     -------
@@ -219,6 +212,7 @@ def _aamp(
             m,
             T_A_subseq_isfinite,
             T_B_subseq_isfinite,
+            p,
             diags,
             diags_ranges[thread_idx, 0],
             diags_ranges[thread_idx, 1],
@@ -226,7 +220,6 @@ def _aamp(
             P,
             I,
             ignore_trivial,
-            p,
         )
 
     # Reduction of results from all threads
@@ -243,13 +236,11 @@ def _aamp(
             if P[0, i, 2] > P[thread_idx, i, 2]:
                 P[0, i, 2] = P[thread_idx, i, 2]
                 I[0, i, 2] = I[thread_idx, i, 2]
-    if p == 2:
-        return np.sqrt(P[0, :, :]), I[0, :, :]
-    else:
-        return np.power(P[0, :, :], 1 / (p)), I[0, :, :]
+
+    return np.power(P[0, :, :], 1.0 / p), I[0, :, :]
 
 
-def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2):
+def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2.0):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile
 
@@ -273,8 +264,8 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2):
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
         to `False`. Default is `True`.
 
-    p : int, default 2
-        p value for p-norm distance
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
 
     Returns
     -------
@@ -327,14 +318,7 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2):
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
     P, I = _aamp(
-        T_A,
-        T_B,
-        m,
-        T_A_subseq_isfinite,
-        T_B_subseq_isfinite,
-        diags,
-        ignore_trivial,
-        p,
+        T_A, T_B, m, T_A_subseq_isfinite, T_B_subseq_isfinite, p, diags, ignore_trivial
     )
 
     out[:, 0] = P[:, 0]

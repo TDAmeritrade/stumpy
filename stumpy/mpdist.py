@@ -286,7 +286,7 @@ def _mpdist_vect(
 
 
 @core.non_normalized(aampdist)
-def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True):
+def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True, p=2.0):
     """
     Compute the z-normalized matrix profile distance (MPdist) measure between any two
     time series
@@ -322,6 +322,10 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True):
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
+
     Returns
     -------
     MPdist : float
@@ -355,7 +359,7 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True):
 
 
 @core.non_normalized(aampdisted)
-def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, normalize=True):
+def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, normalize=True, p=2.0):
     """
     Compute the z-normalized matrix profile distance (MPdist) measure between any two
     time series with a distributed dask cluster
@@ -396,6 +400,10 @@ def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, normalize=True):
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Returns
     -------

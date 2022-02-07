@@ -419,21 +419,21 @@ def _stump(
                 I[0, i, 2] = I[thread_idx, i, 2]
 
     # Convert pearson correlations to distances
-    D = np.abs(2 * m * (1 - ρ[0, :, :]))
-    for i in prange(D.shape[0]):
-        if D[i, 0] < config.STUMPY_D_SQUARED_THRESHOLD:
-            D[i, 0] = 0.0
-        if D[i, 1] < config.STUMPY_D_SQUARED_THRESHOLD:
-            D[i, 1] = 0.0
-        if D[i, 2] < config.STUMPY_D_SQUARED_THRESHOLD:
-            D[i, 2] = 0.0
-    P = np.sqrt(D)
+    p_norm = np.abs(2 * m * (1 - ρ[0, :, :]))
+    for i in prange(p_norm.shape[0]):
+        if p_norm[i, 0] < config.STUMPY_P_NORM_THRESHOLD:
+            p_norm[i, 0] = 0.0
+        if p_norm[i, 1] < config.STUMPY_P_NORM_THRESHOLD:
+            p_norm[i, 1] = 0.0
+        if p_norm[i, 2] < config.STUMPY_P_NORM_THRESHOLD:
+            p_norm[i, 2] = 0.0
+    P = np.sqrt(p_norm)
 
     return P[:, :], I[0, :, :]
 
 
-@core.non_normalized(aamp, exclude=["normalize", "p"])
-def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True):
+@core.non_normalized(aamp)
+def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
     """
     Compute the z-normalized matrix profile
 
@@ -462,6 +462,10 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True):
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Returns
     -------

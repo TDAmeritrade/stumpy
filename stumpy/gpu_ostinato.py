@@ -8,7 +8,7 @@ from .gpu_aamp_ostinato import gpu_aamp_ostinato
 
 
 @core.non_normalized(gpu_aamp_ostinato)
-def gpu_ostinato(Ts, m, device_id=0, normalize=True):
+def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0):
     """
     Find the z-normalized consensus motif of multiple time series with one or more GPU
     devices
@@ -35,6 +35,10 @@ def gpu_ostinato(Ts, m, device_id=0, normalize=True):
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Returns
     -------

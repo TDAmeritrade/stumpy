@@ -12,7 +12,7 @@ from .aamp import _aamp
 logger = logging.getLogger(__name__)
 
 
-def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2):
+def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2.0):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile
 
@@ -43,9 +43,8 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2):
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
         to `False`. Default is `True`.
 
-
-    p : int, default 2
-        p value for p-norm distance
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
 
     Returns
     -------
@@ -133,9 +132,9 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2):
                 m,
                 T_A_subseq_isfinite_future,
                 T_B_subseq_isfinite_future,
+                p,
                 diags_futures[i],
                 ignore_trivial,
-                p,
             )
         )
 

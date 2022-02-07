@@ -11,6 +11,7 @@ from numba import njit, prange
 from scipy.signal import convolve
 from scipy.ndimage.filters import maximum_filter1d, minimum_filter1d
 from scipy import linalg
+from scipy.spatial.distance import cdist
 import tempfile
 import math
 
@@ -117,7 +118,7 @@ def non_normalized(non_norm, exclude=None, replace=None):
         The desired z-normalized/non-normalized function (or class)
     """
     if exclude is None:
-        exclude = ["normalize"]
+        exclude = ["normalize", "p"]
 
     @functools.wraps(non_norm)
     def outer_wrapper(norm):
@@ -893,7 +894,7 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
         if (
             σ_Q < config.STUMPY_STDDEV_THRESHOLD
             and Σ_T < config.STUMPY_STDDEV_THRESHOLD
-        ) or D_squared < config.STUMPY_D_SQUARED_THRESHOLD:
+        ) or D_squared < config.STUMPY_P_NORM_THRESHOLD:
             D_squared = 0
 
     return D_squared
@@ -995,49 +996,34 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return np.sqrt(D_squared)
 
 
-@njit(
-    # "f8[:](f8, f8[:], f8[:])",
-    fastmath=True
-)
-def _mass_absolute(Q_squared, T_squared, QT):
+def _mass_absolute(Q, T, p=2.0):
     """
-    A Numba JIT compiled algorithm for computing the non-normalized distance profile
-    using the MASS absolute algorithm.
-
-    This private function assumes only finite numbers in your inputs and it is the
-    responsibility of the user to pre-process and post-process their results if the
-    original time series contains `np.nan`/`np.inf` values. Failure to do so will
-    result in incorrect outputs. See `core.mass_absolute` for common pre-processing
-    and post-processing procedures.
+    A wrapper around `cdist` for computing the non-normalized distance profile
 
     Parameters
     ----------
-    Q_squared : float
-        Squared query array or subsequence
+    Q : numpy.ndarray
+        Query array or subsequence
 
-    T_squared : numpy.ndarray
-        Squared time series or sequence
+    T : numpy.ndarray
+        Time series or sequence
 
-    QT : numpy.ndarray
-        Sliding window dot product of `Q` and `T`
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
 
     Returns
     -------
     output : numpy.ndarray
-        Unnormalized distance profile
-
-    Notes
-    -----
-    `See Mueen's Absolute Algorithm for Similarity Search \
-    <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
+        Non-normalized distance profile
     """
-    D = Q_squared + T_squared - 2 * QT
-    D[D < config.STUMPY_D_SQUARED_THRESHOLD] = 0.0
+    m = Q.shape[0]
 
-    return np.sqrt(D)
+    return cdist(
+        rolling_window(Q, m), rolling_window(T, m), metric="minkowski", p=p
+    ).flatten()
 
 
-def mass_absolute(Q, T, T_subseq_isfinite=None, T_squared=None):
+def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
     """
     Compute the non-normalized distance profile (i.e., without z-normalization) using
     the "MASS absolute" algorithm. This is a convenience wrapper around the Numba JIT
@@ -1055,8 +1041,8 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, T_squared=None):
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_squared : numpy.ndarray, default None
-        Squared time series or sequence
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
 
     Returns
     -------
@@ -1102,17 +1088,13 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, T_squared=None):
     else:
         if T_subseq_isfinite is None:
             T, T_subseq_isfinite = preprocess_non_normalized(T, m)
-        QT = sliding_dot_product(Q, T)
-        Q_squared = np.sum(Q * Q)
-        if T_squared is None:
-            T_squared = np.sum(rolling_window(T * T, m), axis=-1)
-        distance_profile[:] = _mass_absolute(Q_squared, T_squared, QT)
+        distance_profile[:] = _mass_absolute(Q, T, p)
         distance_profile[~T_subseq_isfinite] = np.inf
 
     return distance_profile
 
 
-def _mass_absolute_distance_matrix(Q, T, m, distance_matrix):
+def _mass_absolute_distance_matrix(Q, T, m, distance_matrix, p=2.0):
     """
     Compute the full non-normalized (i.e., without z-normalization) distance matrix
     between all of the subsequences of `Q` and `T` using the MASS absolute algorithm
@@ -1131,14 +1113,20 @@ def _mass_absolute_distance_matrix(Q, T, m, distance_matrix):
     distance_matrix : numpy.ndarray
         The full output distance matrix. This is mandatory since it may be reused.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     None
     """
-    k, l = distance_matrix.shape
-
-    for i in range(k):
-        distance_matrix[i, :] = mass_absolute(Q[i : i + m], T)
+    cdist(
+        rolling_window(Q, m),
+        rolling_window(T, m),
+        out=distance_matrix,
+        metric="minkowski",
+        p=p,
+    )
 
 
 def mueen_calculate_distance_profile(Q, T):
@@ -1271,10 +1259,10 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
 
 @non_normalized(
     mass_absolute,
-    exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "T_squared"],
-    replace={"M_T": "T_subseq_isfinite", "Σ_T": "T_squared"},
+    exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "p"],
+    replace={"M_T": "T_subseq_isfinite", "Σ_T": None},
 )
-def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
+def mass(Q, T, M_T=None, Σ_T=None, normalize=True, p=2.0):
     """
     Compute the distance profile using the MASS algorithm
 
@@ -1298,6 +1286,10 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True):
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Returns
     -------

@@ -25,6 +25,9 @@ class aampi:
         If set to `True`, the oldest data point in the time series is removed and
         the time series length remains constant rather than forever increasing
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Attributes
     ----------
     P_ : numpy.ndarray
@@ -59,7 +62,7 @@ class aampi:
     Note that we have extended this algorithm for AB-joins as well.
     """
 
-    def __init__(self, T, m, egress=True):
+    def __init__(self, T, m, egress=True, p=2.0):
         """
         Initialize the `stumpi` object
 
@@ -75,6 +78,9 @@ class aampi:
         egress : bool, default True
             If set to `True`, the oldest data point in the time series is removed and
             the time series length remains constant rather than forever increasing
+
+        p : float, default 2.0
+            The p-norm to apply for computing the Minkowski distance.
         """
         self._T = T.copy()
         self._T = np.asarray(self._T)
@@ -83,8 +89,9 @@ class aampi:
         self._n = self._T.shape[0]
         self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
         self._egress = egress
+        self._p = p
 
-        mp = aamp(self._T, self._m)
+        mp = aamp(self._T, self._m, p=self._p)
         self._P = mp[:, 0].astype(np.float64)
         self._I = mp[:, 1].astype(np.int64)
         self._left_I = mp[:, 2].astype(np.int64)
@@ -95,22 +102,18 @@ class aampi:
         self._T, self._T_subseq_isfinite = core.preprocess_non_normalized(
             self._T, self._m
         )
-        self._T_squared = np.sum(
-            core.rolling_window(self._T * self._T, self._m), axis=1
-        )
 
         # Retrieve the left matrix profile values
         for i, j in enumerate(self._left_I):
             if j >= 0:
-                D = core.mass_absolute(
-                    self._T[i : i + self._m], self._T[j : j + self._m]
+                self._left_P[i] = np.linalg.norm(
+                    self._T[i : i + self._m] - self._T[j : j + self._m], ord=self._p
                 )
-                self._left_P[i] = D[0]
 
         Q = self._T[-m:]
-        self._QT = core.sliding_dot_product(Q, self._T)
+        self._p_norm = core.mass_absolute(Q, self._T, p=self._p) ** self._p
         if self._egress:
-            self._QT_new = np.empty(self._QT.shape[0], dtype=np.float64)
+            self._p_norm_new = np.empty(self._p_norm.shape[0], dtype=np.float64)
             self._n_appended = 0
 
     def update(self, t):
@@ -148,12 +151,11 @@ class aampi:
         self._T[:-1] = self._T[1:]
         self._T[-1] = t
         self._n_appended += 1
-        self._QT[:-1] = self._QT[1:]
+        self._p_norm[:-1] = self._p_norm[1:]
         S = self._T[l:]
         t_drop = self._T[l - 1]
         self._T_isfinite[:-1] = self._T_isfinite[1:]
         self._T_subseq_isfinite[:-1] = self._T_subseq_isfinite[1:]
-        self._T_squared[:-1] = self._T_squared[1:]
 
         self._I[:-1] = self._I[1:]
         self._P[:-1] = self._P[1:]
@@ -170,12 +172,16 @@ class aampi:
 
         self._T_subseq_isfinite[-1] = np.all(self._T_isfinite[-self._m :])
 
-        self._QT_new[1:] = self._QT[:l] - self._T[:l] * t_drop + self._T[self._m :] * t
-        self._QT_new[0] = np.sum(self._T[: self._m] * S[: self._m])
+        self._p_norm_new[1:] = (
+            self._p_norm[:l]
+            - np.power(abs(self._T[:l] - t_drop), self._p)
+            + np.power(abs(self._T[self._m :] - t), self._p)
+        )
+        self._p_norm_new[0] = (
+            np.linalg.norm(self._T[: self._m] - S[: self._m], ord=self._p) ** self._p
+        )
 
-        Q_squared = np.sum(S * S)
-        self._T_squared[-1] = np.sum(self._T[-self._m :] * self._T[-self._m :])
-        D = core._mass_absolute(Q_squared, self._T_squared, self._QT_new)
+        D = np.power(self._p_norm_new, 1.0 / self._p)
         D[~self._T_subseq_isfinite] = np.inf
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
@@ -198,7 +204,7 @@ class aampi:
         self._left_I[-1] = I_last + self._n_appended
         self._left_P[-1] = D[I_last]
 
-        self._QT[:] = self._QT_new
+        self._p_norm[:] = self._p_norm_new
 
     def _update(self, t):
         """
@@ -208,7 +214,7 @@ class aampi:
         self._n = self._T.shape[0]
         l = self._n - self._m + 1
         T_new = np.append(self._T, t)
-        QT_new = np.empty(self._QT.shape[0] + 1, dtype=np.float64)
+        p_norm_new = np.empty(self._p_norm.shape[0] + 1, dtype=np.float64)
         S = T_new[l:]
         t_drop = T_new[l - 1]
 
@@ -224,14 +230,16 @@ class aampi:
             self._T_subseq_isfinite, np.all(self._T_isfinite[-self._m :])
         )
 
-        QT_new[1:] = self._QT[:l] - T_new[:l] * t_drop + T_new[self._m :] * t
-        QT_new[0] = np.sum(T_new[: self._m] * S[: self._m])
-
-        Q_squared = np.sum(S * S)
-        self._T_squared = np.append(
-            self._T_squared, np.sum(T_new[-self._m :] * T_new[-self._m :])
+        p_norm_new[1:] = (
+            self._p_norm[:l]
+            - np.power(abs(T_new[:l] - t_drop), self._p)
+            + np.power(abs(T_new[self._m :] - t), self._p)
         )
-        D = core._mass_absolute(Q_squared, self._T_squared, QT_new)
+        p_norm_new[0] = (
+            np.linalg.norm(T_new[: self._m] - S[: self._m], ord=self._p) ** self._p
+        )
+
+        D = np.power(p_norm_new, 1.0 / self._p)
         D[~self._T_subseq_isfinite] = np.inf
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
@@ -257,7 +265,7 @@ class aampi:
         self._I = I_new
         self._left_I = left_I_new
         self._left_P = left_P_new
-        self._QT = QT_new
+        self._p_norm = p_norm_new
 
     @property
     def P_(self):

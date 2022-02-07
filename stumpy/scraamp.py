@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 @njit(
-    # "(f8[:], f8[:], i8, b1[:], b1[:], f8[:], f8[:], f8[:], i8, i8, f8[:], f8[:],"
+    # "(f8[:], f8[:], i8, b1[:], b1[:], f8, i8, i8, f8[:], f8[:],"
     # "i8[:], optional(i8))",
     parallel=True,
     fastmath=True,
@@ -26,13 +26,11 @@ def _prescraamp(
     m,
     T_A_subseq_isfinite,
     T_B_subseq_isfinite,
-    T_A_squared,
-    T_B_squared,
-    QT,
+    p,
     i,
     s,
-    squared_distance_profile,
-    P_squared,
+    p_norm_profile,
+    P,
     I,
     excl_zone=None,
 ):
@@ -60,14 +58,8 @@ def _prescraamp(
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_A_squared : numpy.ndarray
-        Rolling window `T_A_squared`
-
-    T_B_squared : numpy.ndarray
-        Rolling window `T_B_squared`
-
-    QT : numpy.ndarray
-        Sliding dot product between `Q` in `T_B` and `T_A`
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
 
     i : int
         The subsequence index in `T_B` that corresponds to `Q`
@@ -76,10 +68,10 @@ def _prescraamp(
         The sampling interval that defaults to
         `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
 
-    squared_distance_profile : numpy.ndarray
-        A reusable array to store the computed squared distance profile
+    p_norm_profile : numpy.ndarray
+        A reusable array to store the computed p-norm distance profile
 
-    P_squared : numpy.ndarray
+    P : numpy.ndarray
         The squared matrix profile
 
     I : numpy.ndarray
@@ -95,74 +87,67 @@ def _prescraamp(
 
     See Algorithm 2
     """
-    l = QT.shape[0]
+    l = p_norm_profile.shape[0]
     # Update P[i] relative to all T[j : j + m]
-    if not T_A_subseq_isfinite[i]:  # pragma: no cover
-        squared_distance_profile[:] = np.inf
-    else:
-        squared_distance_profile[:] = core._mass_absolute(
-            T_A_squared[i], T_B_squared, QT
-        )
-        squared_distance_profile[:] = np.square(squared_distance_profile)
-        squared_distance_profile[
-            squared_distance_profile < config.STUMPY_D_SQUARED_THRESHOLD
-        ] = 0.0
-        squared_distance_profile[~T_B_subseq_isfinite] = np.inf
     if excl_zone is not None:
         zone_start = max(0, i - excl_zone)
         zone_stop = min(l, i + excl_zone)
-        squared_distance_profile[zone_start : zone_stop + 1] = np.inf
-    I[i] = np.argmin(squared_distance_profile)
-    P_squared[i] = squared_distance_profile[I[i]]
-    if P_squared[i] == np.inf:  # pragma: no cover
+        p_norm_profile[zone_start : zone_stop + 1] = np.inf
+    I[i] = np.argmin(p_norm_profile)
+    P[i] = p_norm_profile[I[i]]
+    if P[i] == np.inf:  # pragma: no cover
         I[i] = -1
     else:
         j = I[i]
         # Given the squared distance, work backwards and compute QT
-        QT_j = (P_squared[i] - T_A_squared[i] - T_B_squared[j]) / -2.0
-        QT_j_prime = QT_j
+        p_norm_j = P[i]
+        p_norm_j_prime = p_norm_j
         for k in range(1, min(s, l - max(i, j))):
-            QT_j = (
-                QT_j
-                - T_B[i + k - 1] * T_A[j + k - 1]
-                + T_B[i + k + m - 1] * T_A[j + k + m - 1]
+            p_norm_j = (
+                p_norm_j
+                - abs(T_B[i + k - 1] - T_A[j + k - 1]) ** p
+                + abs(T_B[i + k + m - 1] - T_A[j + k + m - 1]) ** p
             )
             if (
                 not T_A_subseq_isfinite[i + k] or not T_B_subseq_isfinite[j + k]
             ):  # pragma: no cover
-                D_squared = np.inf
+                p_norm = np.inf
             else:
-                D_squared = T_A_squared[i + k] + T_B_squared[j + k] - 2 * QT_j
-                if D_squared < config.STUMPY_D_SQUARED_THRESHOLD:  # pragma: no cover
-                    D_squared = 0.0
-            if D_squared < P_squared[i + k]:
-                P_squared[i + k] = D_squared
+                p_norm = p_norm_j
+                if p_norm < config.STUMPY_P_NORM_THRESHOLD:  # pragma: no cover
+                    p_norm = 0.0
+            if p_norm < P[i + k]:
+                P[i + k] = p_norm
                 I[i + k] = j + k
-            if D_squared < P_squared[j + k]:
-                P_squared[j + k] = D_squared
+            if p_norm < P[j + k]:
+                P[j + k] = p_norm
                 I[j + k] = i + k
-        QT_j = QT_j_prime
+        p_norm_j = p_norm_j_prime
         for k in range(1, min(s, i + 1, j + 1)):
-            QT_j = QT_j - T_B[i - k + m] * T_A[j - k + m] + T_B[i - k] * T_A[j - k]
+            p_norm_j = (
+                p_norm_j
+                - abs(T_B[i - k + m] - T_A[j - k + m]) ** p
+                + abs(T_B[i - k] - T_A[j - k]) ** p
+            )
             if (
                 not T_A_subseq_isfinite[i - k] or not T_B_subseq_isfinite[j - k]
             ):  # pragma: no cover
-                D_squared = np.inf
+                p_norm = np.inf
             else:
-                D_squared = T_A_squared[i - k] + T_B_squared[j - k] - 2 * QT_j
-                if D_squared < config.STUMPY_D_SQUARED_THRESHOLD:  # pragma: no cover
-                    D_squared = 0.0
-            if D_squared < P_squared[i - k]:
-                P_squared[i - k] = D_squared
+                p_norm = p_norm_j
+                if p_norm < config.STUMPY_P_NORM_THRESHOLD:  # pragma: no cover
+                    p_norm = 0.0
+            if p_norm < P[i - k]:
+                P[i - k] = p_norm
                 I[i - k] = j - k
-            if D_squared < P_squared[j - k]:
-                P_squared[j - k] = D_squared
+            if p_norm < P[j - k]:
+                P[j - k] = p_norm
                 I[j - k] = i - k
 
     return
 
 
-def prescraamp(T_A, m, T_B=None, s=None):
+def prescraamp(T_A, m, T_B=None, s=None, p=2.0):
     """
     A convenience wrapper around the Numba JIT-compiled parallelized `_prescraamp`
     function which computes the approximate matrix profile according to the
@@ -183,6 +168,9 @@ def prescraamp(T_A, m, T_B=None, s=None):
     s : int, default None
         The sampling interval that defaults to
         `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
 
     Returns
     -------
@@ -223,35 +211,39 @@ def prescraamp(T_A, m, T_B=None, s=None):
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_A - m + 1
-    P_squared = np.full(l, np.inf)
+    P = np.full(l, np.inf)
     I = np.full(l, -1, dtype=np.int64)
-    squared_distance_profile = np.empty(n_B - m + 1, dtype=np.float64)
-    T_A_squared = np.sum(core.rolling_window(T_A * T_A, m), axis=1)
-    T_B_squared = np.sum(core.rolling_window(T_B * T_B, m), axis=1)
+    p_norm_profile = np.empty(n_B - m + 1, dtype=np.float64)
 
     if s is None:  # pragma: no cover
         s = excl_zone
 
     for i in np.random.permutation(range(0, l, s)).astype(np.int64):
-        QT = core.sliding_dot_product(T_A[i : i + m], T_B)
+        if not T_A_subseq_isfinite[i]:  # pragma: no cover
+            p_norm_profile[:] = np.inf
+        else:
+            p_norm_profile[:] = np.power(
+                core.mass_absolute(T_A[i : i + m], T_B, p=p), p
+            )
+            p_norm_profile[p_norm_profile < config.STUMPY_P_NORM_THRESHOLD] = 0.0
+            p_norm_profile[~T_B_subseq_isfinite] = np.inf
+
         _prescraamp(
             T_A,
             T_B,
             m,
             T_A_subseq_isfinite,
             T_B_subseq_isfinite,
-            T_A_squared,
-            T_B_squared,
-            QT,
+            p,
             i,
             s,
-            squared_distance_profile,
-            P_squared,
+            p_norm_profile,
+            P,
             I,
             excl_zone,
         )
 
-    P = np.sqrt(P_squared)
+    P = np.power(P, 1.0 / p)
 
     return P, I
 
@@ -294,6 +286,9 @@ class scraamp:
         `s=int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`, the size of the exclusion
         zone.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Attributes
     ----------
     P_ : numpy.ndarray
@@ -326,6 +321,7 @@ class scraamp:
         percentage=0.01,
         pre_scraamp=False,
         s=None,
+        p=2.0,
     ):
         """
         Initialize the `scraamp` object
@@ -359,8 +355,12 @@ class scraamp:
             `s=None`, then `s` will automatically be set to
             `s=int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`, the
             size of the exclusion zone.
+
+        p : float, default 2.0
+            The p-norm to apply for computing the Minkowski distance.
         """
         self._ignore_trivial = ignore_trivial
+        self._p = p
 
         if T_B is None:
             T_B = T_A
@@ -418,9 +418,9 @@ class scraamp:
 
         if pre_scraamp:
             if self._ignore_trivial:
-                P, I = prescraamp(T_A, m, s=s)
+                P, I = prescraamp(T_A, m, s=s, p=p)
             else:
-                P, I = prescraamp(T_A, m, T_B=T_B, s=s)
+                P, I = prescraamp(T_A, m, T_B=T_B, s=s, p=p)
             for i in range(P.shape[0]):
                 if self._P[i, 0] > P[i]:
                     self._P[i, 0] = P[i]
@@ -468,6 +468,7 @@ class scraamp:
                 self._m,
                 self._T_A_subseq_isfinite,
                 self._T_B_subseq_isfinite,
+                self._p,
                 self._diags[start_idx:stop_idx],
                 self._ignore_trivial,
             )

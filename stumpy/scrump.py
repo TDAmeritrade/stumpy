@@ -153,7 +153,7 @@ def _prescrump(
 
 
 @core.non_normalized(scraamp.prescraamp)
-def prescrump(T_A, m, T_B=None, s=None, normalize=True):
+def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
     """
     A convenience wrapper around the Numba JIT-compiled parallelized `_prescrump`
     function which computes the approximate matrix profile according to the preSCRIMP
@@ -179,6 +179,10 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Returns
     -------
@@ -255,7 +259,7 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
 
 @core.non_normalized(
     scraamp.scraamp,
-    exclude=["normalize", "pre_scrump", "pre_scraamp"],
+    exclude=["normalize", "pre_scrump", "pre_scraamp", "p"],
     replace={"pre_scrump": "pre_scraamp"},
 )
 class scrump:
@@ -299,6 +303,10 @@ class scrump:
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this class gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` class decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Attributes
     ----------
@@ -360,6 +368,7 @@ class scrump:
         pre_scrump=False,
         s=None,
         normalize=True,
+        p=2.0,
     ):
         """
         Initialize the `scrump` object
@@ -398,6 +407,10 @@ class scrump:
             When set to `True`, this z-normalizes subsequences prior to computing
             distances. Otherwise, this class gets re-routed to its complementary
             non-normalized equivalent set in the `@core.non_normalized` class decorator.
+
+        p : float, default 2.0
+            The p-norm to apply for computing the Minkowski distance. This parameter is
+            ignored when `normalize == False`.
         """
         self._ignore_trivial = ignore_trivial
 

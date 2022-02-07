@@ -151,6 +151,7 @@ def motifs(
     max_motifs=1,
     atol=1e-8,
     normalize=True,
+    p=2.0,
 ):
     """
     Discover the top motifs for time series `T`
@@ -220,6 +221,10 @@ def motifs(
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Return
     ------
@@ -298,8 +303,8 @@ def motifs(
 
 @core.non_normalized(
     aamp_match,
-    exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "T_squared"],
-    replace={"M_T": "T_subseq_isfinite", "Σ_T": "T_squared"},
+    exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "p"],
+    replace={"M_T": "T_subseq_isfinite", "Σ_T": None},
 )
 def match(
     Q,
@@ -310,6 +315,7 @@ def match(
     max_matches=None,
     atol=1e-8,
     normalize=True,
+    p=2.0,
 ):
     """
     Find all matches of a query `Q` in a time series `T`
@@ -355,6 +361,10 @@ def match(
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Returns
     -------
@@ -405,9 +415,11 @@ def match(
     if M_T is None or Σ_T is None:  # pragma: no cover
         T, M_T, Σ_T = core.preprocess(T, m)
 
-    D = [core.mass(Q[i], T[i], M_T[i], Σ_T[i]) for i in range(d)]
+    D = np.empty((d, n - m + 1))
+    for i in range(d):
+        D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
 
-    D = np.sum(D, axis=0) / d
+    D = np.mean(D, axis=0)
     if not isinstance(max_distance, float):
         max_distance = max_distance(D)
 
@@ -423,6 +435,4 @@ def match(
         core.apply_exclusion_zone(D, candidate_idx, excl_zone, np.inf)
         candidate_idx = np.argmin(D)
 
-    out = np.array(matches, dtype=object)
-
-    return out
+    return np.array(matches, dtype=object)

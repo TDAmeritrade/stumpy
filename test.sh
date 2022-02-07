@@ -132,6 +132,7 @@ test_unit()
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aampdist_snippets.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_non_normalized_decorator.py
+    check_errs $?
 }
 
 test_coverage()

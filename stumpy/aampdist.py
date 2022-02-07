@@ -2,6 +2,8 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
+import functools
+
 from . import aamp, aamped, mpdist
 from .core import _mass_absolute_distance_matrix
 
@@ -13,6 +15,7 @@ def _aampdist_vect(
     percentage=0.05,
     k=None,
     custom_func=None,
+    p=2.0,
 ):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile distance
@@ -45,7 +48,13 @@ def _aampdist_vect(
         and should take `P_ABBA` as its only input parameter and return a single
         `MPdist` value. The `percentage` and `k` parameters are ignored when
         `custom_func` is not None.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
     """
+    partial_distance_matrix_func = functools.partial(
+        _mass_absolute_distance_matrix, p=p
+    )
     return mpdist._mpdist_vect(
         Q,
         T,
@@ -53,11 +62,11 @@ def _aampdist_vect(
         percentage=percentage,
         k=k,
         custom_func=custom_func,
-        distance_matrix_func=_mass_absolute_distance_matrix,
+        distance_matrix_func=partial_distance_matrix_func,
     )
 
 
-def aampdist(T_A, T_B, m, percentage=0.05, k=None):
+def aampdist(T_A, T_B, m, percentage=0.05, k=None, p=2.0):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile distance
     (MPdist) measure between any two time series with `stumpy.aamp`.
@@ -88,6 +97,9 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None):
         Specify the `k`th value in the concatenated matrix profiles to return. When `k`
         is not `None`, then the `percentage` parameter is ignored.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     MPdist : float
@@ -100,10 +112,11 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None):
 
     See Section III
     """
-    return mpdist._mpdist(T_A, T_B, m, percentage, k, mp_func=aamp)
+    partial_mp_func = functools.partial(aamp, p=p)
+    return mpdist._mpdist(T_A, T_B, m, percentage, k, mp_func=partial_mp_func)
 
 
-def aampdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None):
+def aampdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, p=2.0):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile distance
     (MPdist) measure between any two time series with a distributed dask cluster and
@@ -141,6 +154,9 @@ def aampdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None):
         Specify the `k`th value in the concatenated matrix profiles to return. When `k`
         is not `None`, then the `percentage` parameter is ignored.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     MPdist : float
@@ -153,6 +169,7 @@ def aampdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None):
 
     See Section III
     """
+    partial_mp_func = functools.partial(aamped, p=p)
     return mpdist._mpdist(
-        T_A, T_B, m, percentage, k, dask_client=dask_client, mp_func=aamped
+        T_A, T_B, m, percentage, k, dask_client=dask_client, mp_func=partial_mp_func
     )

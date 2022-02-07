@@ -245,7 +245,7 @@ def _ostinato(Ts, m, M_Ts, Σ_Ts, dask_client=None, device_id=None, mp_func=stum
 
 
 @core.non_normalized(aamp_ostinato)
-def ostinato(Ts, m, normalize=True):
+def ostinato(Ts, m, normalize=True, p=2.0):
     """
     Find the z-normalized consensus motif of multiple time series
 
@@ -265,6 +265,10 @@ def ostinato(Ts, m, normalize=True):
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Returns
     -------
@@ -331,7 +335,7 @@ def ostinato(Ts, m, normalize=True):
 
 
 @core.non_normalized(aamp_ostinatoed)
-def ostinatoed(dask_client, Ts, m, normalize=True):
+def ostinatoed(dask_client, Ts, m, normalize=True, p=2.0):
     """
     Find the z-normalized consensus motif of multiple time series with a distributed
     dask cluster
@@ -358,6 +362,10 @@ def ostinatoed(dask_client, Ts, m, normalize=True):
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Returns
     -------
