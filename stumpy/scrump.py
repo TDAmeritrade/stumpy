@@ -199,9 +199,8 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
 
     See Algorithm 2
     """
-    T_A = T_A.copy()
-    T_A = np.asarray(T_A)
-    core.check_dtype(T_A)
+    T_A = core._preprocess(T_A)
+    core.check_window_size(m, max_size=T_A.shape[-1])
     T_A[np.isinf(T_A)] = np.nan
 
     if T_B is None:
@@ -210,9 +209,8 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
     else:
         excl_zone = None
 
-    T_B = T_B.copy()
-    T_B = np.asarray(T_B)
-    core.check_dtype(T_B)
+    T_B = core._preprocess(T_B)
+    core.check_window_size(m, max_size=T_B.shape[-1])
     T_B[np.isinf(T_B)] = np.nan
 
     core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))

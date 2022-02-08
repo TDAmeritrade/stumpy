@@ -137,10 +137,7 @@ def maamp_subspace(
         subsequence with index equal to `subseq_idx`. Note that `k+1` rows will be
         returned.
     """
-    T = T.copy()
-    T = core.transpose_dataframe(T)
-    T = np.asarray(T)
-    core.check_dtype(T)
+    T = core._preprocess(T)
     core.check_window_size(m, max_size=T.shape[-1])
 
     subseqs, _ = core.preprocess_non_normalized(T[:, subseq_idx : subseq_idx + m], m)
@@ -269,10 +266,7 @@ def maamp_mdl(
     S : list
         A list of numpy.ndarrays that contains the `k`th-dimensional subspaces
     """
-    T = T.copy()
-    T = core.transpose_dataframe(T)
-    T = np.asarray(T)
-    core.check_dtype(T)
+    T = core._preprocess(T)
     core.check_window_size(m, max_size=T.shape[-1])
 
     if discretize_func is None:

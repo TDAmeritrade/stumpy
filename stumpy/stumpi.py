@@ -107,9 +107,8 @@ class stumpi:
             The p-norm to apply for computing the Minkowski distance. This parameter is
             ignored when `normalize == False`.
         """
-        self._T = T.copy()
-        self._T = np.asarray(self._T)
-        core.check_dtype(self._T)
+        self._T = core._preprocess(T)
+        core.check_window_size(m, max_size=self._T.shape[-1])
         self._m = m
         self._n = self._T.shape[0]
         self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))

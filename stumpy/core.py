@@ -1054,10 +1054,9 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
     `See Mueen's Absolute Algorithm for Similarity Search \
     <https://www.cs.unm.edu/~mueen/MASS_absolute.m>`__
     """
-    Q = Q.copy()
-    Q = np.asarray(Q)
-    check_dtype(Q)
+    Q = _preprocess(Q)
     m = Q.shape[0]
+    check_window_size(m, max_size=Q.shape[-1])
 
     if Q.ndim == 2 and Q.shape[1] == 1:  # pragma: no cover
         Q = Q.flatten()
@@ -1065,9 +1064,7 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
 
-    T = T.copy()
-    T = np.asarray(T)
-    check_dtype(T)
+    T = _preprocess(T)
     n = T.shape[0]
 
     if T.ndim == 2 and T.shape[1] == 1:  # pragma: no cover
@@ -1320,10 +1317,9 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True, p=2.0):
     ...     np.array([584., -11., 23., 79., 1001., 0., -19.]))
     array([3.18792463e+00, 1.11297393e-03, 3.23874018e+00, 3.34470195e+00])
     """
-    Q = Q.copy()
-    Q = np.asarray(Q)
-    check_dtype(Q)
+    Q = _preprocess(Q)
     m = Q.shape[0]
+    check_window_size(m, max_size=Q.shape[-1])
 
     if Q.ndim == 2 and Q.shape[1] == 1:  # pragma: no cover
         Q = Q.flatten()
@@ -1331,9 +1327,7 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True, p=2.0):
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
 
-    T = T.copy()
-    T = np.asarray(T)
-    check_dtype(T)
+    T = _preprocess(T)
     n = T.shape[0]
 
     if T.ndim == 2 and T.shape[1] == 1:  # pragma: no cover
@@ -1487,6 +1481,29 @@ def apply_exclusion_zone(a, idx, excl_zone, val):
     _apply_exclusion_zone(a, idx, excl_zone, val)
 
 
+def _preprocess(T):
+    """
+    Creates a copy of the time series, transposes all dataframes, converts to
+    `numpy.ndarray`, and checks the `dtype`
+
+    Parameters
+    ----------
+    T : numpy.ndarray
+        Time series or sequence
+
+    Returns
+    -------
+    T : numpy.ndarray
+        Modified time series
+    """
+    T = T.copy()
+    T = transpose_dataframe(T)
+    T = np.asarray(T)
+    check_dtype(T)
+
+    return T
+
+
 def preprocess(T, m):
     """
     Creates a copy of the time series where all NaN and inf values
@@ -1513,12 +1530,8 @@ def preprocess(T, m):
     Σ_T : numpy.ndarray
         Rolling standard deviation
     """
-    T = T.copy()
-    T = transpose_dataframe(T)
-    T = np.asarray(T)
-    check_dtype(T)
+    T = _preprocess(T)
     check_window_size(m, max_size=T.shape[-1])
-
     T[np.isinf(T)] = np.nan
     M_T, Σ_T = compute_mean_std(T, m)
     T[np.isnan(T)] = 0
@@ -1553,12 +1566,8 @@ def preprocess_non_normalized(T, m):
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
     """
-    T = T.copy()
-    T = transpose_dataframe(T)
-    T = np.asarray(T)
-    check_dtype(T)
+    T = _preprocess(T)
     check_window_size(m, max_size=T.shape[-1])
-
     T_subseq_isfinite = rolling_isfinite(T, m)
     T[~np.isfinite(T)] = 0.0
 

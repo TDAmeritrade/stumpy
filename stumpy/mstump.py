@@ -310,10 +310,7 @@ def subspace(
     ...     k=1)
     array([0, 1])
     """
-    T = T.copy()
-    T = core.transpose_dataframe(T)
-    T = np.asarray(T)
-    core.check_dtype(T)
+    T = core._preprocess(T)
     core.check_window_size(m, max_size=T.shape[-1])
 
     if discretize_func is None:
@@ -518,10 +515,7 @@ def mdl(
     ...     nn_idx=indices[np.arange(motifs_idx.shape[0]), motifs_idx])
     (array([ 80.      , 111.509775]), [array([1]), array([0, 1])])
     """
-    T = T.copy()
-    T = core.transpose_dataframe(T)
-    T = np.asarray(T)
-    core.check_dtype(T)
+    T = core._preprocess(T)
     core.check_window_size(m, max_size=T.shape[-1])
 
     if discretize_func is None:

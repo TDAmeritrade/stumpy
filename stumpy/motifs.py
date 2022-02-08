@@ -251,6 +251,8 @@ def motifs(
     ...     max_distance=2.0)
     (array([[0.        , 0.11633857]]), array([[0, 4]]))
     """
+    T = core._preprocess(T)
+
     if max_motifs < 1:  # pragma: no cover
         logger.warn(
             "The maximum number of motifs, `max_motifs`, "
@@ -385,8 +387,8 @@ def match(
     ...     )
     array([[0.0011129739290248121, 1]], dtype=object)
     """
-    Q = np.asarray(Q)
-    T = np.asarray(T)
+    Q = core._preprocess(Q)
+    T = core._preprocess(T)
 
     if len(Q.shape) == 1:
         Q = Q[np.newaxis, :]
