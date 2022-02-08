@@ -75,8 +75,8 @@ clean_up()
 #   Main  #
 ###########
 
-conda update -y conda
-conda update -y --all
+conda update -c conda-forge -y conda
+conda update -c conda-forge -y --all
 conda install -y -c conda-forge mamba
 
 if [[ `uname` == "Linux" && `which nvcc | wc -l` -lt "1" ]]; then
@@ -105,6 +105,7 @@ elif [[ $install_mode == "numba" ]]; then
     mamba env update --name $conda_env --file environment.numba.yml || conda env update --name $conda_env --file environment.numba.yml
 else
     mamba env update --name $conda_env --file environment.yml || conda env update --name $conda_env --file environment.yml
+    conda update -c conda-forge -y numpy scipy numba
 fi
 
 fix_libopenblas
