@@ -35,12 +35,13 @@ def test_deterministic_ostinato(seed):
     np.random.seed(seed)
     Ts = [np.random.rand(n) for n in [64, 128, 256]]
 
-    ref_radius, ref_Ts_idx, ref_subseq_idx = naive.aamp_ostinato(Ts, m)
-    comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.aamp_ostinato(Ts, m)
+    for p in [1.0, 2.0, 3.0]:
+        ref_radius, ref_Ts_idx, ref_subseq_idx = naive.aamp_ostinato(Ts, m, p=p)
+        comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.aamp_ostinato(Ts, m, p=p)
 
-    npt.assert_almost_equal(ref_radius, comp_radius)
-    npt.assert_almost_equal(ref_Ts_idx, comp_Ts_idx)
-    npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)
+        npt.assert_almost_equal(ref_radius, comp_radius)
+        npt.assert_almost_equal(ref_Ts_idx, comp_Ts_idx)
+        npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)
 
 
 @pytest.mark.parametrize(
@@ -69,11 +70,12 @@ def test_deterministic_ostinatoed(seed, dask_cluster):
         np.random.seed(seed)
         Ts = [np.random.rand(n) for n in [64, 128, 256]]
 
-        ref_radius, ref_Ts_idx, ref_subseq_idx = naive.aamp_ostinato(Ts, m)
-        comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.aamp_ostinatoed(
-            dask_client, Ts, m
-        )
+        for p in [1.0, 2.0, 3.0]:
+            ref_radius, ref_Ts_idx, ref_subseq_idx = naive.aamp_ostinato(Ts, m, p=p)
+            comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.aamp_ostinatoed(
+                dask_client, Ts, m, p=p
+            )
 
-        npt.assert_almost_equal(ref_radius, comp_radius)
-        npt.assert_almost_equal(ref_Ts_idx, comp_Ts_idx)
-        npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)
+            npt.assert_almost_equal(ref_radius, comp_radius)
+            npt.assert_almost_equal(ref_Ts_idx, comp_Ts_idx)
+            npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)

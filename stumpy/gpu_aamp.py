@@ -15,27 +15,26 @@ logger = logging.getLogger(__name__)
 
 
 @cuda.jit(
-    "(i8, f8[:], f8[:], i8, f8[:], f8[:], f8[:], b1[:], b1[:],"
-    "f8[:], f8[:], i8, b1, i8, f8[:, :], i8[:, :], b1)"
+    "(i8, f8[:], f8[:], i8, f8, f8[:], f8[:], f8[:], b1[:], b1[:],"
+    "i8, b1, i8, f8[:, :], i8[:, :], b1)"
 )
 def _compute_and_update_PI_kernel(
     i,
     T_A,
     T_B,
     m,
-    QT_even,
-    QT_odd,
-    QT_first,
+    p,
+    p_norm_even,
+    p_norm_odd,
+    p_norm_first,
     T_A_subseq_isfinite,
     T_B_subseq_isfinite,
-    T_A_subseq_squared,
-    T_B_subseq_squared,
     k,
     ignore_trivial,
     excl_zone,
     profile,
     indices,
-    compute_QT,
+    compute_p_norm,
 ):
     """
     A Numba CUDA kernel to update the non-normalized (i.e., without z-normalization)
@@ -56,16 +55,17 @@ def _compute_and_update_PI_kernel(
     m : int
         Window size
 
-    QT_even : numpy.ndarray
-        The input QT array (dot product between the query sequence,`Q`, and
-        time series, `T`) to use when `i` is even
+    p : float
+        The p-norm to apply for computing the Minkowski distance.
 
-    QT_odd : numpy.ndarray
-        The input QT array (dot product between the query sequence,`Q`, and
-        time series, `T`) to use when `i` is odd
+    p_norm_even : numpy.ndarray
+        The input p-norm array to use when `i` is even
 
-    QT_first : numpy.ndarray
-        Dot product between the first query sequence,`Q`, and time series, `T`
+    p_norm_odd : numpy.ndarray
+        The input p-norm array to use when `i` is odd
+
+    p_norm_first : numpy.ndarray
+        The p-norm between the first query sequence,`Q`, and time series, `T`
 
     T_A_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
@@ -74,12 +74,6 @@ def _compute_and_update_PI_kernel(
     T_B_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
-
-    T_A_subseq_squared : numpy.ndarray
-        The squared subsequences of `T_A`
-
-    T_B_subseq_squared : numpy.ndarray
-        The squared subsequences of `T_B`
 
     k : int
         The total number of sliding windows to iterate over
@@ -102,8 +96,8 @@ def _compute_and_update_PI_kernel(
         column consists of the left matrix profile indices, and the third
         column consists of the right matrix profile indices.
 
-    compute_QT : bool
-        A boolean flag for whether or not to compute QT
+    compute_p_norm : bool
+        A boolean flag for whether or not to compute the p-norm
 
     Returns
     -------
@@ -127,43 +121,43 @@ def _compute_and_update_PI_kernel(
     stride = cuda.gridsize(1)
 
     if i % 2 == 0:
-        QT_out = QT_even
-        QT_in = QT_odd
+        p_norm_out = p_norm_even
+        p_norm_in = p_norm_odd
     else:
-        QT_out = QT_odd
-        QT_in = QT_even
+        p_norm_out = p_norm_odd
+        p_norm_in = p_norm_even
 
-    for j in range(start, QT_out.shape[0], stride):
+    for j in range(start, p_norm_out.shape[0], stride):
         zone_start = max(0, j - excl_zone)
         zone_stop = min(k, j + excl_zone)
 
-        if compute_QT:
-            QT_out[j] = (
-                QT_in[j - 1] - T_B[i - 1] * T_A[j - 1] + T_B[i + m - 1] * T_A[j + m - 1]
+        if compute_p_norm:
+            p_norm_out[j] = (
+                p_norm_in[j - 1]
+                - abs(T_B[i - 1] - T_A[j - 1]) ** p
+                + abs(T_B[i + m - 1] - T_A[j + m - 1]) ** p
             )
-
-            QT_out[0] = QT_first[i]
-
+            p_norm_out[0] = p_norm_first[i]
         if not T_B_subseq_isfinite[i] or not T_A_subseq_isfinite[j]:
-            D = np.inf
+            p_norm = np.inf
         else:
-            D = T_B_subseq_squared[i] + T_A_subseq_squared[j] - 2.0 * QT_out[j]
+            p_norm = p_norm_out[j]
 
-        if D < config.STUMPY_D_SQUARED_THRESHOLD:
-            D = 0
+        if p_norm < config.STUMPY_P_NORM_THRESHOLD:
+            p_norm = 0
 
         if ignore_trivial:
             if i <= zone_stop and i >= zone_start:
-                D = np.inf
-            if D < profile[j, 1] and i < j:
-                profile[j, 1] = D
+                p_norm = np.inf
+            if p_norm < profile[j, 1] and i < j:
+                profile[j, 1] = p_norm
                 indices[j, 1] = i
-            if D < profile[j, 2] and i > j:
-                profile[j, 2] = D
+            if p_norm < profile[j, 2] and i > j:
+                profile[j, 2] = p_norm
                 indices[j, 2] = i
 
-        if D < profile[j, 0]:
-            profile[j, 0] = D
+        if p_norm < profile[j, 0]:
+            profile[j, 0] = p_norm
             indices[j, 0] = i
 
 
@@ -175,10 +169,9 @@ def _gpu_aamp(
     excl_zone,
     T_A_subseq_isfinite_fname,
     T_B_subseq_isfinite_fname,
-    T_A_subseq_squared_fname,
-    T_B_subseq_squared_fname,
-    QT_fname,
-    QT_first_fname,
+    p,
+    p_norm_fname,
+    p_norm_first_fname,
     k,
     ignore_trivial=True,
     range_start=1,
@@ -219,18 +212,15 @@ def _gpu_aamp(
         The file name for the boolean array that indicates whether a subsequence in
         `T_B` contains a `np.nan`/`np.inf` value (False)
 
-    T_A_subseq_squared_fname : str
-        The file name for the squared subsequences of `T_A`
+    p : float
+        The p-norm to apply for computing the Minkowski distance.
 
-    T_B_subseq_squared_fname : str
-        The file name for the squared subsequences of `T_B`
-
-    QT_fname : str
-        The file name for the dot product between some query sequence,`Q`,
+    p_norm_fname : str
+        The file name for the p-norm between some query sequence,`Q`,
         and time series, `T`
 
-    QT_first_fname : str
-        The file name for the QT for the first window relative to the current
+    p_norm_first_fname : str
+        The file name for the p-norm for the first window relative to the current
         sliding window
 
     k : int
@@ -277,28 +267,23 @@ def _gpu_aamp(
 
     T_A = np.load(T_A_fname, allow_pickle=False)
     T_B = np.load(T_B_fname, allow_pickle=False)
-    QT = np.load(QT_fname, allow_pickle=False)
-    QT_first = np.load(QT_first_fname, allow_pickle=False)
+    p_norm = np.load(p_norm_fname, allow_pickle=False)
+    p_norm_first = np.load(p_norm_first_fname, allow_pickle=False)
     T_A_subseq_isfinite = np.load(T_A_subseq_isfinite_fname, allow_pickle=False)
     T_B_subseq_isfinite = np.load(T_B_subseq_isfinite_fname, allow_pickle=False)
-    T_A_subseq_squared = np.load(T_A_subseq_squared_fname, allow_pickle=False)
-    T_B_subseq_squared = np.load(T_B_subseq_squared_fname, allow_pickle=False)
 
     with cuda.gpus[device_id]:
         device_T_A = cuda.to_device(T_A)
         device_T_A_subseq_isfinite = cuda.to_device(T_A_subseq_isfinite)
-        device_T_A_subseq_squared = cuda.to_device(T_A_subseq_squared)
-        device_QT_odd = cuda.to_device(QT)
-        device_QT_even = cuda.to_device(QT)
-        device_QT_first = cuda.to_device(QT_first)
+        device_p_norm_odd = cuda.to_device(p_norm)
+        device_p_norm_even = cuda.to_device(p_norm)
+        device_p_norm_first = cuda.to_device(p_norm_first)
         if ignore_trivial:
             device_T_B = device_T_A
             device_T_B_subseq_isfinite = device_T_A_subseq_isfinite
-            device_T_B_subseq_squared = device_T_A_subseq_squared
         else:
             device_T_B = cuda.to_device(T_B)
             device_T_B_subseq_isfinite = cuda.to_device(T_B_subseq_isfinite)
-            device_T_B_subseq_squared = cuda.to_device(T_B_subseq_squared)
 
         profile = np.full((k, 3), np.inf, dtype=np.float64)
         indices = np.full((k, 3), -1, dtype=np.int64)
@@ -310,13 +295,12 @@ def _gpu_aamp(
             device_T_A,
             device_T_B,
             m,
-            device_QT_even,
-            device_QT_odd,
-            device_QT_first,
+            p,
+            device_p_norm_even,
+            device_p_norm_odd,
+            device_p_norm_first,
             device_T_A_subseq_isfinite,
             device_T_B_subseq_isfinite,
-            device_T_A_subseq_squared,
-            device_T_B_subseq_squared,
             k,
             ignore_trivial,
             excl_zone,
@@ -331,13 +315,12 @@ def _gpu_aamp(
                 device_T_A,
                 device_T_B,
                 m,
-                device_QT_even,
-                device_QT_odd,
-                device_QT_first,
+                p,
+                device_p_norm_even,
+                device_p_norm_odd,
+                device_p_norm_first,
                 device_T_A_subseq_isfinite,
                 device_T_B_subseq_isfinite,
-                device_T_A_subseq_squared,
-                device_T_B_subseq_squared,
                 k,
                 ignore_trivial,
                 excl_zone,
@@ -348,7 +331,7 @@ def _gpu_aamp(
 
         profile = device_profile.copy_to_host()
         indices = device_indices.copy_to_host()
-        profile = np.sqrt(profile)
+        profile = np.power(profile, 1.0 / p)
 
         profile_fname = core.array_to_temp_file(profile)
         indices_fname = core.array_to_temp_file(indices)
@@ -356,7 +339,7 @@ def _gpu_aamp(
     return profile_fname, indices_fname
 
 
-def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
+def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile with one
     or more GPU devices
@@ -387,6 +370,9 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     out : numpy.ndarray
@@ -415,9 +401,6 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
 
     T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
     T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
-
-    T_A_subseq_squared = np.sum(core.rolling_window(T_A * T_A, m), axis=1)
-    T_B_subseq_squared = np.sum(core.rolling_window(T_B * T_B, m), axis=1)
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
@@ -452,8 +435,6 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     T_B_fname = core.array_to_temp_file(T_B)
     T_A_subseq_isfinite_fname = core.array_to_temp_file(T_A_subseq_isfinite)
     T_B_subseq_isfinite_fname = core.array_to_temp_file(T_B_subseq_isfinite)
-    T_A_subseq_squared_fname = core.array_to_temp_file(T_A_subseq_squared)
-    T_B_subseq_squared_fname = core.array_to_temp_file(T_B_subseq_squared)
 
     out = np.empty((k, 4), dtype=object)
 
@@ -477,24 +458,26 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     # Start process pool for multi-GPU request
     if len(device_ids) > 1:  # pragma: no cover
         mp.set_start_method("spawn", force=True)
-        p = mp.Pool(processes=len(device_ids))
+        pool = mp.Pool(processes=len(device_ids))
         results = [None] * len(device_ids)
 
-    QT_fnames = []
-    QT_first_fnames = []
+    p_norm_fnames = []
+    p_norm_first_fnames = []
 
     for idx, start in enumerate(range(0, l, step)):
         stop = min(l, start + step)
 
-        QT, QT_first = core._get_QT(start, T_A, T_B, m)
-        QT_fname = core.array_to_temp_file(QT)
-        QT_first_fname = core.array_to_temp_file(QT_first)
-        QT_fnames.append(QT_fname)
-        QT_first_fnames.append(QT_first_fname)
+        p_norm = np.power(core.mass_absolute(T_B[start : start + m], T_A, p=p), p)
+        p_norm_first = np.power(core.mass_absolute(T_A[:m], T_B, p=p), p)
+
+        p_norm_fname = core.array_to_temp_file(p_norm)
+        p_norm_first_fname = core.array_to_temp_file(p_norm_first)
+        p_norm_fnames.append(p_norm_fname)
+        p_norm_first_fnames.append(p_norm_first_fname)
 
         if len(device_ids) > 1 and idx < len(device_ids) - 1:  # pragma: no cover
             # Spawn and execute in child process for multi-GPU request
-            results[idx] = p.apply_async(
+            results[idx] = pool.apply_async(
                 _gpu_aamp,
                 (
                     T_A_fname,
@@ -504,10 +487,9 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
                     excl_zone,
                     T_A_subseq_isfinite_fname,
                     T_B_subseq_isfinite_fname,
-                    T_A_subseq_squared_fname,
-                    T_B_subseq_squared_fname,
-                    QT_fname,
-                    QT_first_fname,
+                    p,
+                    p_norm_fname,
+                    p_norm_first_fname,
                     k,
                     ignore_trivial,
                     start + 1,
@@ -525,10 +507,9 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
                 excl_zone,
                 T_A_subseq_isfinite_fname,
                 T_B_subseq_isfinite_fname,
-                T_A_subseq_squared_fname,
-                T_B_subseq_squared_fname,
-                QT_fname,
-                QT_first_fname,
+                p,
+                p_norm_fname,
+                p_norm_first_fname,
                 k,
                 ignore_trivial,
                 start + 1,
@@ -537,8 +518,8 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
 
     # Clean up process pool for multi-GPU request
     if len(device_ids) > 1:  # pragma: no cover
-        p.close()
-        p.join()
+        pool.close()
+        pool.join()
 
         # Collect results from spawned child processes if they exist
         for idx, result in enumerate(results):
@@ -549,12 +530,10 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0):
     os.remove(T_B_fname)
     os.remove(T_A_subseq_isfinite_fname)
     os.remove(T_B_subseq_isfinite_fname)
-    os.remove(T_A_subseq_squared_fname)
-    os.remove(T_B_subseq_squared_fname)
-    for QT_fname in QT_fnames:
-        os.remove(QT_fname)
-    for QT_first_fname in QT_first_fnames:
-        os.remove(QT_first_fname)
+    for p_norm_fname in p_norm_fnames:
+        os.remove(p_norm_fname)
+    for p_norm_first_fname in p_norm_first_fnames:
+        os.remove(p_norm_first_fname)
 
     for idx in range(len(device_ids)):
         profile_fname = profile[idx]

@@ -75,14 +75,15 @@ clean_up()
 #   Main  #
 ###########
 
-conda update -y conda
-conda update -y --all
+conda update -c conda-forge -y conda
+conda update -c conda-forge -y --all
 conda install -y -c conda-forge mamba
 
 if [[ `uname` == "Linux" && `which nvcc | wc -l` -lt "1" ]]; then
+    rm -rf /tmp/cuda-installer.log
     # conda install -y -c conda-forge cudatoolkit-dev'<11.4'
-    # conda install -y -c conda-forge cudatoolkit-dev
-    mamba install -y -c conda-forge cudatoolkit-dev
+    conda install -y -c conda-forge cudatoolkit-dev
+    # mamba install -y -c conda-forge cudatoolkit-dev
     echo "Please reboot the server to resolve any CUDA driver/library version mismatches"
 fi
 
@@ -104,6 +105,7 @@ elif [[ $install_mode == "numba" ]]; then
     mamba env update --name $conda_env --file environment.numba.yml || conda env update --name $conda_env --file environment.numba.yml
 else
     mamba env update --name $conda_env --file environment.yml || conda env update --name $conda_env --file environment.yml
+    conda update -c conda-forge -y numpy scipy numba black twine
 fi
 
 fix_libopenblas

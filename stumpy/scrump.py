@@ -153,7 +153,7 @@ def _prescrump(
 
 
 @core.non_normalized(scraamp.prescraamp)
-def prescrump(T_A, m, T_B=None, s=None, normalize=True):
+def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
     """
     A convenience wrapper around the Numba JIT-compiled parallelized `_prescrump`
     function which computes the approximate matrix profile according to the preSCRIMP
@@ -180,6 +180,10 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
+
     Returns
     -------
     P : numpy.ndarray
@@ -195,9 +199,8 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
 
     See Algorithm 2
     """
-    T_A = T_A.copy()
-    T_A = np.asarray(T_A)
-    core.check_dtype(T_A)
+    T_A = core._preprocess(T_A)
+    core.check_window_size(m, max_size=T_A.shape[-1])
     T_A[np.isinf(T_A)] = np.nan
 
     if T_B is None:
@@ -206,9 +209,8 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
     else:
         excl_zone = None
 
-    T_B = T_B.copy()
-    T_B = np.asarray(T_B)
-    core.check_dtype(T_B)
+    T_B = core._preprocess(T_B)
+    core.check_window_size(m, max_size=T_B.shape[-1])
     T_B[np.isinf(T_B)] = np.nan
 
     core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
@@ -255,7 +257,7 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True):
 
 @core.non_normalized(
     scraamp.scraamp,
-    exclude=["normalize", "pre_scrump", "pre_scraamp"],
+    exclude=["normalize", "pre_scrump", "pre_scraamp", "p"],
     replace={"pre_scrump": "pre_scraamp"},
 )
 class scrump:
@@ -299,6 +301,10 @@ class scrump:
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this class gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` class decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Attributes
     ----------
@@ -360,6 +366,7 @@ class scrump:
         pre_scrump=False,
         s=None,
         normalize=True,
+        p=2.0,
     ):
         """
         Initialize the `scrump` object
@@ -398,6 +405,10 @@ class scrump:
             When set to `True`, this z-normalizes subsequences prior to computing
             distances. Otherwise, this class gets re-routed to its complementary
             non-normalized equivalent set in the `@core.non_normalized` class decorator.
+
+        p : float, default 2.0
+            The p-norm to apply for computing the Minkowski distance. This parameter is
+            ignored when `normalize == False`.
         """
         self._ignore_trivial = ignore_trivial
 

@@ -17,39 +17,40 @@ k = [1, 2, 3]
 @pytest.mark.parametrize("m", m)
 @pytest.mark.parametrize("k", k)
 def test_aampdist_snippets(T, m, k):
-    (
-        ref_snippets,
-        ref_indices,
-        ref_profiles,
-        ref_fractions,
-        ref_areas,
-        ref_regimes,
-    ) = naive.aampdist_snippets(T, m, k)
-    (
-        cmp_snippets,
-        cmp_indices,
-        cmp_profiles,
-        cmp_fractions,
-        cmp_areas,
-        cmp_regimes,
-    ) = aampdist_snippets(T, m, k)
+    for p in [1.0, 2.0, 3.0]:
+        (
+            ref_snippets,
+            ref_indices,
+            ref_profiles,
+            ref_fractions,
+            ref_areas,
+            ref_regimes,
+        ) = naive.aampdist_snippets(T, m, k, p=p)
+        (
+            cmp_snippets,
+            cmp_indices,
+            cmp_profiles,
+            cmp_fractions,
+            cmp_areas,
+            cmp_regimes,
+        ) = aampdist_snippets(T, m, k, p=p)
 
-    npt.assert_almost_equal(
-        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
-    )
-    npt.assert_almost_equal(
-        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
-    )
-    # npt.assert_almost_equal(
-    #     ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
-    # )
-    npt.assert_almost_equal(
-        ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
-    )
-    # npt.assert_almost_equal(
-    #     ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION
-    # )
-    npt.assert_almost_equal(ref_regimes, cmp_regimes)
+        npt.assert_almost_equal(
+            ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
+        )
+        npt.assert_almost_equal(
+            ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
+        )
+        # npt.assert_almost_equal(
+        #     ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
+        # )
+        npt.assert_almost_equal(
+            ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
+        )
+        # npt.assert_almost_equal(
+        #     ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION
+        # )
+        npt.assert_almost_equal(ref_regimes, cmp_regimes)
 
 
 @pytest.mark.parametrize("T", test_data)
@@ -96,7 +97,7 @@ def test_mpdist_snippets_percentage(T, m, k, percentage):
 @pytest.mark.parametrize("m", m)
 @pytest.mark.parametrize("k", k)
 @pytest.mark.parametrize("s", s)
-def test_mpdist_snippets_s(T, m, k, s):
+def test_aampdist_snippets_s(T, m, k, s):
     (
         ref_snippets,
         ref_indices,
