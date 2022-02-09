@@ -1,11 +1,12 @@
 import numpy as np
 import logging, stumpy
+import matplotlib.pyplot as plt
 from . import core, config
-from stumpy.mstump import _apply_include, _multi_mass, _multi_distance_profile
+from stumpy.core import _preprocess
 logger = logging.getLogger(__name__)
 
 
-def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, max_motifs: int = 1):
+def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, max_motifs: int = 1, visualize_mdl: bool = False):
     """
     Discover the top k multidimensional motifs for the time series T
 
@@ -21,17 +22,21 @@ def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, 
         Matrix Profile indices
 
     max_matches: int, default 10
-        The maximum amount of similar matches (nearest neighbors) of a motif representative to be returned
+        The maximum amount of similar matches (nearest neighbors) of a motif representative to be returned.
+        The first match is always the self-match for each motif.
 
     max_motifs: int, default 1
         The maximum number of motifs to return
 
+    visualize_mdl: boolean, default 'False'
+        Visualize MDL results
+
     Returns
     -------
-    motif_neighbors_distances: numpy.ndarray
+    motif_matches_distances: numpy.ndarray
         The distances corresponding to a set of subsequence matches for each motif.
 
-    motif_neighbors_indices: numpy.ndarray
+    motif_matches_indices: numpy.ndarray
         The indices corresponding to a set of subsequences matches for each motif.
 
     subspace: list
@@ -47,10 +52,7 @@ def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, 
         max_motifs = 1
 
     # Calculate subsequence length
-    T = T.copy()
-    T = core.transpose_dataframe(T)
-    T = np.asarray(T)
-    core.check_dtype(T)
+    T = _preprocess(T)  # convert dataframe to array if necessary
     m = T.shape[-1] - P.shape[-1] + 1 
     
     # Calculate exclusion zone
@@ -61,51 +63,126 @@ def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, 
     if max_matches is None:
         max_matches = np.inf
 
+    motif_matches_distances = []
+    motif_matches_indices = []
+    subspace = []
+
     # Identify the first multidimensional motif as candidate motif and get its nearest neighbor
     candidate_idx = np.argsort(P, axis=1)[:, 0]
     nn_idx = I[np.arange(len(candidate_idx)), candidate_idx]
 
     # Iterate over each motif
-    for motif_number in range(max_motifs):
+    while len(motif_matches_distances) < max_motifs:
 
         # Choose dimension k using MDL and compute subspace
         mdl, subspaces = stumpy.mdl(T, m, candidate_idx, nn_idx)
         k = np.argmin(mdl)
-        subspace = subspaces[k]
-        #sub = [T.columns.values[s] for s in subspace]  # DOESN'T WORK IF T IS ARRAY AND NOT DATAFRAME --> CORRECT!
-        #sub_dims = T[sub].copy()
-    
+        subspace.append(subspaces[k])
+
+        if visualize_mdl:
+            # Visualize MDL results:
+            plt.plot(np.arange(len(mdl)), mdl, linewidth='4')
+            plt.title('MDL results', fontsize='30')
+            plt.xlabel('k (zero-based)', fontsize='20')
+            plt.ylabel('Bit Size', fontsize='20')
+            plt.show()
+     
+        sub_dims = T[subspaces[k]]    
 
         # Get k-dimensional motif
         motif_idx = candidate_idx[k]
 
-        # Get multidimensional Distance Profile
-        T, mean_T, sigma_T = core.preprocess(subspace, m)
-
-        D = _multi_distance_profile(
-            motif_idx, T, T, m, excl_zone, mean_T, sigma_T, mean_T, sigma_T
+        # Get multidimensional Distance Profile to find the max_matches nearest neighbors
+        T, mean_T, sigma_T = core.preprocess(sub_dims, m)      
+        
+        Q = sub_dims[:, motif_idx: motif_idx + m]
+        query_matches = Mmatch(
+            Q=Q,
+            T_sub=sub_dims,
+            mean_T=mean_T,
+            sigma_T=sigma_T,
+            max_matches=max_matches
         )
+        motif_matches_distances.append(query_matches[:, 0])
+        motif_matches_indices.append(query_matches[:, 1])
 
-        # Find the max_matches nearest neighbors 
-        motif_neighbors_distances = []
-        motif_neighbors_distances.append(0)
-        motif_neighbors_indices = []
-        motif_neighbors_indices.append(motif_idx)
-        nearest_neighbor_idx = np.argmin(D[k, :])
-        while len(motif_neighbors_distances) < max_matches:
-            motif_neighbors_distances.append(D[k, :][nearest_neighbor_idx])
-            motif_neighbors_indices.append(nearest_neighbor_idx)
-            core.apply_exclusion_zone(D[k, :], nearest_neighbor_idx, excl_zone, np.inf)
-            # Find the next nerarest neighbor index after setting the exclusion zone
-            nearest_neighbor_idx = np.argmin(D[k, :])
-
-        # Set exclusion zone and find new candidate_idx for the next motif
-        core.apply_exclusion_zone(P, motif_idx, excl_zone, np.inf)
+        # Set exclusion zones and find new candidate_idx an nn_idx for the next motif
+        for idx in query_matches[:, 1]:
+            core.apply_exclusion_zone(P, idx, excl_zone, np.inf)
         candidate_idx = np.argsort(P, axis=1)[:, 0]
         nn_idx = I[np.arange(len(candidate_idx)), candidate_idx]
 
+        motif_matches_distances = core._jagged_list_to_array(
+            motif_matches_distances, fill_value=np.nan, dtype=np.float64
+        )
+        motif_matches_indices = core._jagged_list_to_array(
+            motif_matches_indices, fill_value=-1, dtype=np.int64
+        )
 
-    return motif_neighbors_distances, motif_neighbors_indices, subspace
+    return motif_matches_distances, motif_matches_indices, np.array(subspace, dtype=object)
 
 
+def Mmatch(Q: np.ndarray, T_sub: np.ndarray, mean_T: np.ndarray = None, sigma_T: np.ndarray = None, max_matches: int = None):
+    """
+    Discover the 'max_matches' nearest neighbors of a multidimensional query Q in a time series T
 
+    Parameters
+    ----------
+    Q: numpy.ndarray
+        The multidimensional query sequence
+
+    T_sub: numpy.ndarray
+        The relevant dimensions of the multidimensional time series (the dimensions where the query Q is represented).
+        If Q is a k-dimensional motif, then T_sub corresponds to the k subspace dimensions in which the motif is represented.
+
+    mean_T: numpy.ndarray, default None
+        Sliding mean of the time series T
+
+    sigma_T: numpy.ndarray, default None
+        Sliding standard deviation of time series T
+
+    max_matches: int, default None
+        The maximum amount of similar matches (nearest neighbors) of a motif representative to be returned
+
+    Returns
+    -------
+    matches: numpy.ndarray
+        The first column consists of sorted distances (lowest to highest) of subsequences of `T_sub`.
+        The second column consists of the corresponding indices in `T`.
+    """
+    Q = _preprocess(Q)  # convert dataframe to array if necessary
+    T = _preprocess(T_sub)
+
+    d, n = T.shape
+    m = Q.shape[1]
+
+    # Calculate exclusion zone
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    if max_matches is None:
+        max_matches = np.inf
+
+    if np.any(np.isnan(Q)) or np.any(np.isinf(Q)):
+        raise ValueError("Q contains illegal values (NaN or inf)")
+
+    # Compute sliding mean and standard deviation
+    if mean_T is None or sigma_T is None:
+        T, mean_T, sigma_T = core.preprocess(T, m)
+
+    # Compute multidimensional Distance Profile (the k subspace dimensions are used only) and its mean
+    D = np.empty((d, n - m + 1))
+    for i in range(d):
+        # Compute the 1D Distance Profile of each dimension
+        D[i, :] = core.mass(Q[i], T[i], mean_T[i], sigma_T[i])
+    D = np.mean(D, axis=0)
+
+    matches = []
+
+    nearest_neighbor_idx = np.argmin(D)
+    while len(matches) < max_matches:
+        matches.append([D[nearest_neighbor_idx], nearest_neighbor_idx])
+        core.apply_exclusion_zone(D, nearest_neighbor_idx, excl_zone, np.inf)
+        # Find the next nerarest neighbor index after setting the exclusion zone
+        nearest_neighbor_idx = np.argmin(D)
+    
+    # return matches as array
+    return np.array(matches, dtype=object)
