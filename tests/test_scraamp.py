@@ -6,8 +6,8 @@ import pytest
 import naive
 
 
-def naive_prescraamp(T_A, m, T_B, s, exclusion_zone=None):
-    distance_matrix = naive.aamp_distance_matrix(T_A, T_B, m)
+def naive_prescraamp(T_A, m, T_B, s, exclusion_zone=None, p=2.0):
+    distance_matrix = naive.aamp_distance_matrix(T_A, T_B, m, p)
 
     n_A = T_A.shape[0]
     l = n_A - m + 1
@@ -48,8 +48,8 @@ def naive_prescraamp(T_A, m, T_B, s, exclusion_zone=None):
     return P, I
 
 
-def naive_scraamp(T_A, m, T_B, percentage, exclusion_zone, pre_scraamp, s):
-    distance_matrix = naive.aamp_distance_matrix(T_A, T_B, m)
+def naive_scraamp(T_A, m, T_B, percentage, exclusion_zone, pre_scraamp, s, p=2.0):
+    distance_matrix = naive.aamp_distance_matrix(T_A, T_B, m, p)
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
@@ -133,36 +133,38 @@ percentages = [(0.01, 0.1, 1.0)]
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_prescraamp_self_join(T_A, T_B):
-    m = 3
-    zone = int(np.ceil(m / 4))
-    for s in range(1, zone + 1):
-        seed = np.random.randint(100000)
+    for p in [1.0, 2.0, 3.0]:
+        m = 3
+        zone = int(np.ceil(m / 4))
+        for s in range(1, zone + 1):
+            seed = np.random.randint(100000)
 
-        np.random.seed(seed)
-        ref_P, ref_I = naive_prescraamp(T_B, m, T_B, s=s, exclusion_zone=zone)
+            np.random.seed(seed)
+            ref_P, ref_I = naive_prescraamp(T_B, m, T_B, s=s, exclusion_zone=zone, p=p)
 
-        np.random.seed(seed)
-        comp_P, comp_I = prescraamp(T_B, m, s=s)
+            np.random.seed(seed)
+            comp_P, comp_I = prescraamp(T_B, m, s=s, p=p)
 
-        npt.assert_almost_equal(ref_P, comp_P)
-        npt.assert_almost_equal(ref_I, comp_I)
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_prescraamp_A_B_join(T_A, T_B):
-    m = 3
-    zone = int(np.ceil(m / 4))
-    for s in range(1, zone + 1):
-        seed = np.random.randint(100000)
+    for p in [1.0, 2.0, 3.0]:
+        m = 3
+        zone = int(np.ceil(m / 4))
+        for s in range(1, zone + 1):
+            seed = np.random.randint(100000)
 
-        np.random.seed(seed)
-        ref_P, ref_I = naive_prescraamp(T_A, m, T_B, s=s)
+            np.random.seed(seed)
+            ref_P, ref_I = naive_prescraamp(T_A, m, T_B, s=s, p=p)
 
-        np.random.seed(seed)
-        comp_P, comp_I = prescraamp(T_A, m, T_B=T_B, s=s)
+            np.random.seed(seed)
+            comp_P, comp_I = prescraamp(T_A, m, T_B=T_B, s=s, p=p)
 
-        npt.assert_almost_equal(ref_P, comp_P)
-        npt.assert_almost_equal(ref_I, comp_I)
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -213,32 +215,38 @@ def test_scraamp_self_join(T_A, T_B, percentages):
     m = 3
     zone = int(np.ceil(m / 4))
 
-    for percentage in percentages:
-        seed = np.random.randint(100000)
+    for p in [1.0, 2.0, 3.0]:
+        for percentage in percentages:
+            seed = np.random.randint(100000)
 
-        np.random.seed(seed)
-        ref_mp = naive_scraamp(T_B, m, T_B, percentage, zone, False, None)
-        ref_P = ref_mp[:, 0]
-        ref_I = ref_mp[:, 1]
-        ref_left_I = ref_mp[:, 2]
-        ref_right_I = ref_mp[:, 3]
+            np.random.seed(seed)
+            ref_mp = naive_scraamp(T_B, m, T_B, percentage, zone, False, None, p=p)
+            ref_P = ref_mp[:, 0]
+            ref_I = ref_mp[:, 1]
+            ref_left_I = ref_mp[:, 2]
+            ref_right_I = ref_mp[:, 3]
 
-        np.random.seed(seed)
-        approx = scraamp(
-            T_B, m, ignore_trivial=True, percentage=percentage, pre_scraamp=False
-        )
-        approx.update()
-        comp_P = approx.P_
-        comp_I = approx.I_
-        comp_left_I = approx.left_I_
-        comp_right_I = approx.right_I_
+            np.random.seed(seed)
+            approx = scraamp(
+                T_B,
+                m,
+                ignore_trivial=True,
+                percentage=percentage,
+                pre_scraamp=False,
+                p=p,
+            )
+            approx.update()
+            comp_P = approx.P_
+            comp_I = approx.I_
+            comp_left_I = approx.left_I_
+            comp_right_I = approx.right_I_
 
-        naive.replace_inf(ref_P)
-        naive.replace_inf(comp_P)
-        npt.assert_almost_equal(ref_P, comp_P)
-        npt.assert_almost_equal(ref_I, comp_I)
-        npt.assert_almost_equal(ref_left_I, comp_left_I)
-        npt.assert_almost_equal(ref_right_I, comp_right_I)
+            naive.replace_inf(ref_P)
+            naive.replace_inf(comp_P)
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
+            npt.assert_almost_equal(ref_left_I, comp_left_I)
+            npt.assert_almost_equal(ref_right_I, comp_right_I)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -246,33 +254,40 @@ def test_scraamp_self_join(T_A, T_B, percentages):
 def test_scraamp_A_B_join(T_A, T_B, percentages):
     m = 3
 
-    for percentage in percentages:
-        seed = np.random.randint(100000)
+    for p in [1.0, 2.0, 3.0]:
+        for percentage in percentages:
+            seed = np.random.randint(100000)
 
-        np.random.seed(seed)
-        ref_mp = naive_scraamp(T_A, m, T_B, percentage, None, False, None)
-        ref_P = ref_mp[:, 0]
-        ref_I = ref_mp[:, 1]
-        ref_left_I = ref_mp[:, 2]
-        ref_right_I = ref_mp[:, 3]
+            np.random.seed(seed)
+            ref_mp = naive_scraamp(T_A, m, T_B, percentage, None, False, None, p=p)
+            ref_P = ref_mp[:, 0]
+            ref_I = ref_mp[:, 1]
+            ref_left_I = ref_mp[:, 2]
+            ref_right_I = ref_mp[:, 3]
 
-        np.random.seed(seed)
-        approx = scraamp(
-            T_A, m, T_B, ignore_trivial=False, percentage=percentage, pre_scraamp=False
-        )
-        approx.update()
-        comp_P = approx.P_
-        comp_I = approx.I_
-        comp_left_I = approx.left_I_
-        comp_right_I = approx.right_I_
+            np.random.seed(seed)
+            approx = scraamp(
+                T_A,
+                m,
+                T_B,
+                ignore_trivial=False,
+                percentage=percentage,
+                pre_scraamp=False,
+                p=p,
+            )
+            approx.update()
+            comp_P = approx.P_
+            comp_I = approx.I_
+            comp_left_I = approx.left_I_
+            comp_right_I = approx.right_I_
 
-        naive.replace_inf(ref_P)
-        naive.replace_inf(comp_P)
+            naive.replace_inf(ref_P)
+            naive.replace_inf(comp_P)
 
-        npt.assert_almost_equal(ref_P, comp_P)
-        npt.assert_almost_equal(ref_I, comp_I)
-        npt.assert_almost_equal(ref_left_I, comp_left_I)
-        npt.assert_almost_equal(ref_right_I, comp_right_I)
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
+            npt.assert_almost_equal(ref_left_I, comp_left_I)
+            npt.assert_almost_equal(ref_right_I, comp_right_I)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -486,44 +501,48 @@ def test_scraamp_plus_plus_self_join(T_A, T_B, percentages):
     m = 3
     zone = int(np.ceil(m / 4))
 
-    for s in range(1, zone + 1):
-        for percentage in percentages:
-            seed = np.random.randint(100000)
+    for p in [1.0, 2.0, 3.0]:
+        for s in range(1, zone + 1):
+            for percentage in percentages:
+                seed = np.random.randint(100000)
 
-            np.random.seed(seed)
-            ref_P, ref_I = naive_prescraamp(T_B, m, T_B, s=s, exclusion_zone=zone)
-            ref_mp = naive_scraamp(T_B, m, T_B, percentage, zone, True, s)
-            for i in range(ref_mp.shape[0]):
-                if ref_P[i] < ref_mp[i, 0]:
-                    ref_mp[i, 0] = ref_P[i]
-                    ref_mp[i, 1] = ref_I[i]
-            ref_P = ref_mp[:, 0]
-            ref_I = ref_mp[:, 1]
-            # ref_left_I = ref_mp[:, 2]
-            # ref_right_I = ref_mp[:, 3]
+                np.random.seed(seed)
+                ref_P, ref_I = naive_prescraamp(
+                    T_B, m, T_B, s=s, exclusion_zone=zone, p=p
+                )
+                ref_mp = naive_scraamp(T_B, m, T_B, percentage, zone, True, s, p=p)
+                for i in range(ref_mp.shape[0]):
+                    if ref_P[i] < ref_mp[i, 0]:
+                        ref_mp[i, 0] = ref_P[i]
+                        ref_mp[i, 1] = ref_I[i]
+                ref_P = ref_mp[:, 0]
+                ref_I = ref_mp[:, 1]
+                # ref_left_I = ref_mp[:, 2]
+                # ref_right_I = ref_mp[:, 3]
 
-            np.random.seed(seed)
-            approx = scraamp(
-                T_B,
-                m,
-                ignore_trivial=True,
-                percentage=percentage,
-                pre_scraamp=True,
-                s=s,
-            )
-            approx.update()
-            comp_P = approx.P_
-            comp_I = approx.I_
-            # comp_left_I = approx.left_I_
-            # comp_right_I = approx.right_I_
+                np.random.seed(seed)
+                approx = scraamp(
+                    T_B,
+                    m,
+                    ignore_trivial=True,
+                    percentage=percentage,
+                    pre_scraamp=True,
+                    s=s,
+                    p=p,
+                )
+                approx.update()
+                comp_P = approx.P_
+                comp_I = approx.I_
+                # comp_left_I = approx.left_I_
+                # comp_right_I = approx.right_I_
 
-            naive.replace_inf(ref_P)
-            naive.replace_inf(comp_I)
+                naive.replace_inf(ref_P)
+                naive.replace_inf(comp_I)
 
-            npt.assert_almost_equal(ref_P, comp_P)
-            npt.assert_almost_equal(ref_I, comp_I)
-            # npt.assert_almost_equal(ref_left_I, comp_left_I)
-            # npt.assert_almost_equal(ref_right_I, comp_right_I)
+                npt.assert_almost_equal(ref_P, comp_P)
+                npt.assert_almost_equal(ref_I, comp_I)
+                # npt.assert_almost_equal(ref_left_I, comp_left_I)
+                # npt.assert_almost_equal(ref_right_I, comp_right_I)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -532,44 +551,46 @@ def test_scraamp_plus_plus_A_B_join(T_A, T_B, percentages):
     m = 3
     zone = int(np.ceil(m / 4))
 
-    for s in range(1, zone + 1):
-        for percentage in percentages:
-            seed = np.random.randint(100000)
+    for p in [1.0, 2.0, 3.0]:
+        for s in range(1, zone + 1):
+            for percentage in percentages:
+                seed = np.random.randint(100000)
 
-            np.random.seed(seed)
-            ref_P, ref_I = naive_prescraamp(T_A, m, T_B, s=s)
-            ref_mp = naive_scraamp(T_A, m, T_B, percentage, None, False, None)
-            for i in range(ref_mp.shape[0]):
-                if ref_P[i] < ref_mp[i, 0]:
-                    ref_mp[i, 0] = ref_P[i]
-                    ref_mp[i, 1] = ref_I[i]
-            ref_P = ref_mp[:, 0]
-            ref_I = ref_mp[:, 1]
-            ref_left_I = ref_mp[:, 2]
-            ref_right_I = ref_mp[:, 3]
+                np.random.seed(seed)
+                ref_P, ref_I = naive_prescraamp(T_A, m, T_B, s=s, p=p)
+                ref_mp = naive_scraamp(T_A, m, T_B, percentage, None, False, None, p=p)
+                for i in range(ref_mp.shape[0]):
+                    if ref_P[i] < ref_mp[i, 0]:
+                        ref_mp[i, 0] = ref_P[i]
+                        ref_mp[i, 1] = ref_I[i]
+                ref_P = ref_mp[:, 0]
+                ref_I = ref_mp[:, 1]
+                ref_left_I = ref_mp[:, 2]
+                ref_right_I = ref_mp[:, 3]
 
-            approx = scraamp(
-                T_A,
-                m,
-                T_B,
-                ignore_trivial=False,
-                percentage=percentage,
-                pre_scraamp=True,
-                s=s,
-            )
-            approx.update()
-            comp_P = approx.P_
-            comp_I = approx.I_
-            comp_left_I = approx.left_I_
-            comp_right_I = approx.right_I_
+                approx = scraamp(
+                    T_A,
+                    m,
+                    T_B,
+                    ignore_trivial=False,
+                    percentage=percentage,
+                    pre_scraamp=True,
+                    s=s,
+                    p=p,
+                )
+                approx.update()
+                comp_P = approx.P_
+                comp_I = approx.I_
+                comp_left_I = approx.left_I_
+                comp_right_I = approx.right_I_
 
-            naive.replace_inf(ref_P)
-            naive.replace_inf(comp_P)
+                naive.replace_inf(ref_P)
+                naive.replace_inf(comp_P)
 
-            npt.assert_almost_equal(ref_P, comp_P)
-            npt.assert_almost_equal(ref_I, comp_I)
-            npt.assert_almost_equal(ref_left_I, comp_left_I)
-            npt.assert_almost_equal(ref_right_I, comp_right_I)
+                npt.assert_almost_equal(ref_P, comp_P)
+                npt.assert_almost_equal(ref_I, comp_I)
+                npt.assert_almost_equal(ref_left_I, comp_left_I)
+                npt.assert_almost_equal(ref_right_I, comp_right_I)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)

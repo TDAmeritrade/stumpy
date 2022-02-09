@@ -15,7 +15,7 @@ def _aamp_motifs(
     T,
     P,
     T_subseq_isfinite,
-    T_squared,
+    p,
     excl_zone,
     min_neighbors,
     max_distance,
@@ -44,8 +44,8 @@ def _aamp_motifs(
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_squared : numpy.ndarray
-        Squared time series or sequence
+    p : float
+        The p-norm to apply for computing the Minkowski distance.
 
     excl_zone : int
         Size of the exclusion zone
@@ -118,6 +118,7 @@ def _aamp_motifs(
             max_matches=None,
             max_distance=max_distance,
             atol=atol,
+            p=p,
         )
 
         if len(query_matches) > min_neighbors:
@@ -148,6 +149,7 @@ def aamp_motifs(
     max_matches=10,
     max_motifs=1,
     atol=1e-8,
+    p=2.0,
 ):
     """
     Discover the top non-normalized motifs (i.e., without z-normalization) for time
@@ -219,6 +221,9 @@ def aamp_motifs(
         The absolute tolerance parameter. This value will be added to `max_distance`
         when comparing distances between subsequences.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Return
     ------
     motif_distances : numpy.ndarray
@@ -264,14 +269,13 @@ def aamp_motifs(
         )
 
     T, T_subseq_isfinite = core.preprocess_non_normalized(T[np.newaxis, :], m)
-    T_squared = np.sum(core.rolling_window(T * T, m), axis=-1)
     P = P[np.newaxis, :].astype(np.float64)
 
     motif_distances, motif_indices = _aamp_motifs(
         T,
         P,
         T_subseq_isfinite,
-        T_squared,
+        p,
         excl_zone,
         min_neighbors,
         max_distance,
@@ -288,10 +292,10 @@ def aamp_match(
     Q,
     T,
     T_subseq_isfinite=None,
-    T_squared=None,
     max_distance=None,
     max_matches=None,
     atol=1e-8,
+    p=2.0,
 ):
     """
     Find all matches of a query `Q` in a time series `T`, i.e. the indices
@@ -312,9 +316,6 @@ def aamp_match(
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_squared : numpy.ndarray, default None
-        Squared time series or sequence
-
     max_distance : float or function, default None
         Maximum distance between `Q` and a subsequence `S` for `S` to be considered a
         match. If a function, then it has to be a function of one argument `D`, which
@@ -332,6 +333,9 @@ def aamp_match(
     atol : float, default 1e-8
         The absolute tolerance parameter. This value will be added to `max_distance`
         when comparing distances between subsequences.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
 
     Returns
     -------
@@ -364,16 +368,14 @@ def aamp_match(
                 [np.nanmean(D_copy) - 2.0 * np.nanstd(D_copy), np.nanmin(D_copy)]
             )
 
-    if T_subseq_isfinite is None or T_squared is None:
+    if T_subseq_isfinite is None:
         T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
-        T_squared = np.sum(core.rolling_window(T * T, m), axis=-1)
 
-    D = [
-        core.mass_absolute(Q[i], T[i], T_subseq_isfinite[i], T_squared[i])
-        for i in range(d)
-    ]
+    D = np.empty((d, n - m + 1))
+    for i in range(d):
+        D[i, :] = core.mass_absolute(Q[i], T[i], T_subseq_isfinite[i], p=p)
 
-    D = np.sum(D, axis=0) / d
+    D = np.mean(D, axis=0)
     if not isinstance(max_distance, float):
         max_distance = max_distance(D)
 

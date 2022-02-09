@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 @core.non_normalized(aamped)
-def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
+def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
     """
     Compute the z-normalized matrix profile with a distributed dask cluster
 
@@ -49,6 +49,10 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True):
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
 
     Returns
     -------

@@ -2,14 +2,13 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-# import numpy as np
-# import math
+import functools
 
 from . import gpu_aamp
 from .mpdist import _mpdist
 
 
-def gpu_aampdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0):
+def gpu_aampdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0, p=2.0):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile distance
     (MPdist) measure between any two time series with one or more GPU devices and
@@ -47,6 +46,9 @@ def gpu_aampdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0):
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     MPdist : float
@@ -59,4 +61,7 @@ def gpu_aampdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0):
 
     See Section III
     """
-    return _mpdist(T_A, T_B, m, percentage, k, device_id=device_id, mp_func=gpu_aamp)
+    partial_mp_func = functools.partial(gpu_aamp, p=p)
+    return _mpdist(
+        T_A, T_B, m, percentage, k, device_id=device_id, mp_func=partial_mp_func
+    )
