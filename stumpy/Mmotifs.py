@@ -6,7 +6,8 @@ from stumpy.core import _preprocess
 logger = logging.getLogger(__name__)
 
 
-def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, max_motifs: int = 1, visualize_mdl: bool = False):
+def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, max_motifs: int = 1, visualize_mdl: bool = False,
+            max_distance: float = None):
     """
     Discover the top k multidimensional motifs for the time series T
 
@@ -25,6 +26,10 @@ def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, 
         The maximum amount of similar matches (nearest neighbors) of a motif representative to be returned.
         The first match is always the self-match for each motif.
 
+    max_distance: flaot, default None
+        Maximal distance that is allowed between a query subsequence (a candidate motif) and all subsequences in T to be 
+        considered as a match.
+
     max_motifs: int, default 1
         The maximum number of motifs to return
 
@@ -39,8 +44,8 @@ def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, 
     motif_matches_indices: numpy.ndarray
         The indices corresponding to a set of subsequences matches for each motif.
 
-    subspace: list
-        A list of numpy.ndarrays that contain the `k`th-dimensional subspaces
+    subspace: numpy.ndarray
+        A numpy.ndarray consisting of arrays that contain the `k`-dimensional subspace for each motif.
     """
 
     if max_motifs < 1:  # pragma: no cover
