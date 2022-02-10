@@ -112,12 +112,12 @@ def Mmotifs(T: np.ndarray, P: np.ndarray, I: np.ndarray, max_matches: int = 10, 
         candidate_idx = np.argsort(P, axis=1)[:, 0]
         nn_idx = I[np.arange(len(candidate_idx)), candidate_idx]
 
-        motif_matches_distances = core._jagged_list_to_array(
-            motif_matches_distances, fill_value=np.nan, dtype=np.float64
-        )
-        motif_matches_indices = core._jagged_list_to_array(
-            motif_matches_indices, fill_value=-1, dtype=np.int64
-        )
+    motif_matches_distances = core._jagged_list_to_array(
+        motif_matches_distances, fill_value=np.nan, dtype=np.float64
+    )
+    motif_matches_indices = core._jagged_list_to_array(
+        motif_matches_indices, fill_value=-1, dtype=np.int64
+    )
 
     return motif_matches_distances, motif_matches_indices, np.array(subspace, dtype=object)
 
