@@ -23,7 +23,7 @@ def naive_prescraamp(T_A, m, T_B, s, exclusion_zone=None, p=2.0):
             naive.apply_exclusion_zone(distance_profile, i, exclusion_zone, np.inf)
         I[i] = np.argmin(distance_profile)
         P[i] = distance_profile[I[i]]
-        if P[i] == np.inf:
+        if P[i] == np.inf:  # pragma: no cover
             I[i] = -1
         else:
             j = I[i]

@@ -101,7 +101,7 @@ def mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
             if D[i] < PL:
                 IL = i
                 PL = D[i]
-        if start <= IL < stop:
+        if start <= IL < stop:  # pragma: no cover
             IL = -1
     else:
         IL = -1
@@ -113,7 +113,7 @@ def mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
             if D[i] < PR:
                 IR = i
                 PR = D[i]
-        if start <= IR < stop:
+        if start <= IR < stop:  # pragma: no cover
             IR = -1
     else:
         IR = -1
@@ -1139,7 +1139,7 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None):
 
     P_ABBA.sort()
     MPdist = P_ABBA[k]
-    if ~np.isfinite(MPdist):
+    if ~np.isfinite(MPdist):  # pragma: no cover
         k = np.isfinite(P_ABBA[:k]).sum() - 1
         MPdist = P_ABBA[k]
 
@@ -1162,7 +1162,7 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None, p=2.0):
 
     P_ABBA.sort()
     MPdist = P_ABBA[k]
-    if ~np.isfinite(MPdist):
+    if ~np.isfinite(MPdist):  # pragma: no cover
         k = np.isfinite(P_ABBA[:k]).sum() - 1
         MPdist = P_ABBA[k]
 

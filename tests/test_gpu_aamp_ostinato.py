@@ -13,7 +13,7 @@ import pytest
 
 config.THREADS_PER_BLOCK = 10
 
-if not cuda.is_available():
+if not cuda.is_available():  # pragma: no cover
     pytest.skip("Skipping Tests No GPUs Available", allow_module_level=True)
 
 
