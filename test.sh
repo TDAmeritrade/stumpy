@@ -146,9 +146,10 @@ test_coverage()
     # check_errs $?
 
     echo "Testing Code Coverage"
-    coverage run --source stumpy -m pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning
+    # coverage run --source stumpy -m pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning
+    coverage run -m pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning
     check_errs $?
-    coverage report -m
+    coverage report -m --skip-covered
 }
 
 clean_up()

@@ -143,7 +143,7 @@ def test_stumped(T, m, dask_cluster):
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T, m", test_data)
 def test_gpu_stump(T, m):
-    if not cuda.is_available():
+    if not cuda.is_available():  # pragma: no cover
         pytest.skip("Skipping Tests No GPUs Available")
 
     if T.ndim > 1:
@@ -202,7 +202,7 @@ def test_ostinatoed(dask_cluster):
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 def test_gpu_ostinato():
-    if not cuda.is_available():
+    if not cuda.is_available():  # pragma: no cover
         pytest.skip("Skipping Tests No GPUs Available")
 
     m = 50
@@ -241,7 +241,7 @@ def test_mpdisted(dask_cluster):
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 def test_gpu_mpdist():
-    if not cuda.is_available():
+    if not cuda.is_available():  # pragma: no cover
         pytest.skip("Skipping Tests No GPUs Available")
 
     T_A = np.random.uniform(-1000, 1000, [8]).astype(np.float64)

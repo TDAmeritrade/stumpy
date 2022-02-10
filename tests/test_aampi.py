@@ -220,7 +220,7 @@ def test_aampi_init_nan_inf_self_join(substitute, substitution_locations):
         n = 30
         T = np.random.rand(n)
 
-        if substitution_location == -1:
+        if substitution_location == -1:  # pragma: no cover
             substitution_location = T.shape[0] - 1
         T[substitution_location] = substitute
         T = pd.Series(T)
@@ -391,7 +391,7 @@ def test_aampi_stream_nan_inf_self_join(substitute, substitution_locations):
         T = np.random.rand(64)
 
         stream = aampi(pd.Series(T[:n]), m, egress=False)
-        if substitution_location == -1:
+        if substitution_location == -1:  # pragma: no cover
             substitution_location = T[n:].shape[0] - 1
         T[n:][substitution_location] = substitute
         for t in T[n:]:
@@ -493,7 +493,7 @@ def test_aampi_stream_nan_inf_self_join_egress(substitute, substitution_location
         npt.assert_almost_equal(ref_I, comp_I)
         npt.assert_almost_equal(ref_left_P, comp_left_P)
         npt.assert_almost_equal(ref_left_I, comp_left_I)
-        if substitution_location == -1:
+        if substitution_location == -1:  # pragma: no cover
             substitution_location = T[n:].shape[0] - 1
         T[n:][substitution_location] = substitute
         for t in T[n:]:
