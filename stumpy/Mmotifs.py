@@ -155,7 +155,7 @@ def Mmotifs(
 
         # Get multidimensional Distance Profile to find the max_matches
         # nearest neighbors
-        T, mean_T, sigma_T = core.preprocess(sub_dims, m)
+        T_sub, mean_T, sigma_T = core.preprocess(sub_dims, m)
 
         Q = sub_dims[:, motif_idx : motif_idx + m]
         query_matches = Mmatch(
@@ -245,9 +245,9 @@ def Mmatch(
         The second column consists of the corresponding indices in `T`.
     """
     Q = _preprocess(Q)  # convert dataframe to array if necessary
-    T = _preprocess(T_sub)
+    T_sub = _preprocess(T_sub)
 
-    d, n = T.shape
+    d, n = T_sub.shape
     m = Q.shape[1]
 
     # Calculate exclusion zone
@@ -269,14 +269,14 @@ def Mmatch(
 
     # Compute sliding mean and standard deviation
     if mean_T is None or sigma_T is None:
-        T, mean_T, sigma_T = core.preprocess(T, m)
+        T_sub, mean_T, sigma_T = core.preprocess(T_sub, m)
 
     # Compute multidimensional Distance Profile (the k subspace dimensions are used
     # only) and its mean
     D = np.empty((d, n - m + 1))
     for i in range(d):
         # Compute the 1D Distance Profile of each dimension
-        D[i, :] = core.mass(Q[i], T[i], mean_T[i], sigma_T[i])
+        D[i, :] = core.mass(Q[i], T_sub[i], mean_T[i], sigma_T[i])
     D = np.mean(D, axis=0)
     if not isinstance(max_distance, float):
         max_distance = max_distance(D)
