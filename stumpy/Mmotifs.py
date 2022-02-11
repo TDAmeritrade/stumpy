@@ -18,7 +18,8 @@ def Mmotifs(
     cutoff: np.ndarray = None,
     visualize_mdl: bool = False,
     max_distance: float = None,
-    atol: float = 1e-8,
+    min_neighbors: int = 1,
+    atol: float = 1e-8
 ):
     """
     Discover the top k multidimensional motifs for the time series T
@@ -39,11 +40,6 @@ def Mmotifs(
         representative to be returned.
         The first match is always the self-match for each motif.
 
-    cutoff: numpy.ndarray, default None
-        The largest matrix profile value (distance) for each dimension of the
-        multidimensional matrix profile that a multidimenisonal candidate motif is
-        allowed to have. 
-
     max_distance: flaot, default None
         Maximal distance that is allowed between a query subsequence
         (a candidate motif) and all subsequences in T to be considered as a match.
@@ -51,12 +47,22 @@ def Mmotifs(
         `np.nanmax([np.nanmean(D) - 2 * np.nanstd(D), np.nanmin(D)])`
         (i.e. at least the closest match will be returned).
 
+    min_neighbors : int, default 1
+        The minimum number of similar matches a subsequence needs to have in order
+        to be considered a motif. This defaults to `1`, which means that a subsequence
+        must have at least one similar match in order to be considered a motif.    
+
     atol : float, default 1e-8
         The absolute tolerance parameter. This value will be added to `max_distance`
         when comparing distances between subsequences.
 
     max_motifs: int, default 1
         The maximum number of motifs to return
+
+    cutoff: numpy.ndarray, default None
+    The largest matrix profile value (distance) for each dimension of the
+    multidimensional matrix profile that a multidimenisonal candidate motif is
+    allowed to have. 
 
     visualize_mdl: boolean, default 'False'
         Visualize MDL results
@@ -157,8 +163,9 @@ def Mmotifs(
             max_distance=max_distance,
             atol=atol,
         )
-        motif_matches_distances.append(query_matches[:, 0])
-        motif_matches_indices.append(query_matches[:, 1])
+        if len(query_matches) > min_neighbors:
+            motif_matches_distances.append(query_matches[:, 0])
+            motif_matches_indices.append(query_matches[:, 1])
 
         # Set exclusion zones and find new candidate_idx an nn_idx for
         # the next motif
