@@ -80,7 +80,6 @@ def Mmotifs(
         A numpy.ndarray consisting of arrays that contain the `k`-dimensional
         subspace for each motif.
     """
-
     if max_motifs < 1:  # pragma: no cover
         logger.warning(
             "The maximum number of motifs, `max_motifs`, "
