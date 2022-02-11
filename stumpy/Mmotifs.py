@@ -19,7 +19,7 @@ def Mmotifs(
     visualize_mdl: bool = False,
     max_distance: float = None,
     min_neighbors: int = 1,
-    atol: float = 1e-8
+    atol: float = 1e-8,
 ):
     """
     Discover the top k multidimensional motifs for the time series T
