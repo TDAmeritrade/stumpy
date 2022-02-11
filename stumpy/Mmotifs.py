@@ -50,7 +50,7 @@ def Mmotifs(
     min_neighbors : int, default 1
         The minimum number of similar matches a subsequence needs to have in order
         to be considered a motif. This defaults to `1`, which means that a subsequence
-        must have at least one similar match in order to be considered a motif.    
+        must have at least one similar match in order to be considered a motif.
 
     atol : float, default 1e-8
         The absolute tolerance parameter. This value will be added to `max_distance`
@@ -59,10 +59,11 @@ def Mmotifs(
     max_motifs: int, default 1
         The maximum number of motifs to return
 
-    cutoff: numpy.ndarray, default None
+    cutoff: numpy.ndarray or float, default None
     The largest matrix profile value (distance) for each dimension of the
     multidimensional matrix profile that a multidimenisonal candidate motif is
-    allowed to have. 
+    allowed to have.
+    If cutoff is only one value, these value will be applied to every dimension.
 
     visualize_mdl: boolean, default 'False'
         Visualize MDL results
@@ -124,7 +125,16 @@ def Mmotifs(
             )
             cutoff = None
         else:
-            cutoff_var = cutoff[k]
+            if isinstance(cutoff, np.ndarray) or isinstance(cutoff, list):
+                cutoff_var = cutoff[k]
+            else:
+                cutoff_var = cutoff
+
+        # Get k-dimensional motif
+        motif_idx = candidate_idx[k]
+        motif_value = P[k, motif_idx]
+        if motif_value > cutoff_var or not np.isfinite(motif_value):
+            break
 
         if visualize_mdl:
             # Visualize MDL results:
@@ -133,12 +143,6 @@ def Mmotifs(
             plt.xlabel("k (zero-based)", fontsize="20")
             plt.ylabel("Bit Size", fontsize="20")
             plt.show()
-
-        # Get k-dimensional motif
-        motif_idx = candidate_idx[k]
-        motif_value = P[k, motif_idx]
-        if motif_value > cutoff_var or not np.isfinite(motif_value):
-            break
 
         # Compute subspace and find related dimensions
         subspace.append(subspaces[k])
