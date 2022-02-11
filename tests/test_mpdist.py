@@ -20,7 +20,7 @@ def some_func(P_ABBA, m, percentage, n_A, n_B):
     k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
     P_ABBA.sort()
     MPdist = P_ABBA[k]
-    if ~np.isfinite(MPdist):
+    if ~np.isfinite(MPdist):  # pragma: no cover
         k = np.count_nonzero(np.isfinite(P_ABBA[:k])) - 1
         MPdist = P_ABBA[k]
 

@@ -12,7 +12,7 @@ import naive
 
 config.THREADS_PER_BLOCK = 10
 
-if not cuda.is_available():
+if not cuda.is_available():  # pragma: no cover
     pytest.skip("Skipping Tests No GPUs Available", allow_module_level=True)
 
 
@@ -32,7 +32,8 @@ test_data = [
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_gpu_aampdist(T_A, T_B):
     m = 3
-    ref_mpdist = naive.aampdist(T_A, T_B, m)
-    comp_mpdist = gpu_aampdist(T_A, T_B, m)
+    for p in [1.0, 2.0, 3.0]:
+        ref_mpdist = naive.aampdist(T_A, T_B, m, p=p)
+        comp_mpdist = gpu_aampdist(T_A, T_B, m, p=p)
 
-    npt.assert_almost_equal(ref_mpdist, comp_mpdist)
+        npt.assert_almost_equal(ref_mpdist, comp_mpdist)

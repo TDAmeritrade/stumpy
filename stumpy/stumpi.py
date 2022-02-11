@@ -32,6 +32,10 @@ class stumpi:
         Otherwise, this class gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` class decorator.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
+
     Attributes
     ----------
     P_ : numpy.ndarray
@@ -77,7 +81,7 @@ class stumpi:
     array([-1,  0,  1,  2])
     """
 
-    def __init__(self, T, m, egress=True, normalize=True):
+    def __init__(self, T, m, egress=True, normalize=True, p=2.0):
         """
         Initialize the `stumpi` object
 
@@ -98,10 +102,13 @@ class stumpi:
             When set to `True`, this z-normalizes subsequences prior to computing
             distances. Otherwise, this class gets re-routed to its complementary
             non-normalized equivalent set in the `@core.non_normalized` class decorator.
+
+        p : float, default 2.0
+            The p-norm to apply for computing the Minkowski distance. This parameter is
+            ignored when `normalize == False`.
         """
-        self._T = T.copy()
-        self._T = np.asarray(self._T)
-        core.check_dtype(self._T)
+        self._T = core._preprocess(T)
+        core.check_window_size(m, max_size=self._T.shape[-1])
         self._m = m
         self._n = self._T.shape[0]
         self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))

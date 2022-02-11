@@ -17,111 +17,88 @@ def test_aampi_int_input():
 def test_aampi_self_join():
     m = 3
 
-    seed = np.random.randint(100000)
-    np.random.seed(seed)
+    for p in [1.0, 2.0, 3.0]:
+        seed = np.random.randint(100000)
+        np.random.seed(seed)
 
-    n = 30
-    T = np.random.rand(n)
-    stream = aampi(T, m, egress=False)
-    for i in range(34):
-        t = np.random.rand()
-        stream.update(t)
+        n = 30
+        T = np.random.rand(n)
+        stream = aampi(T, m, egress=False, p=p)
+        for i in range(34):
+            t = np.random.rand()
+            stream.update(t)
 
-    comp_P = stream.P_
-    comp_I = stream.I_
-    comp_left_P = stream.left_P_
-    comp_left_I = stream.left_I_
+        comp_P = stream.P_
+        comp_I = stream.I_
+        comp_left_P = stream.left_P_
+        comp_left_I = stream.left_I_
 
-    ref_mp = naive.aamp(stream.T_, m)
-    ref_P = ref_mp[:, 0]
-    ref_I = ref_mp[:, 1]
-    ref_left_P = np.full(ref_P.shape, np.inf)
-    ref_left_I = ref_mp[:, 2]
-    for i, j in enumerate(ref_left_I):
-        if j >= 0:
-            D = core.mass_absolute(stream.T_[i : i + m], stream.T_[j : j + m])
-            ref_left_P[i] = D[0]
+        ref_mp = naive.aamp(stream.T_, m, p=p)
+        ref_P = ref_mp[:, 0]
+        ref_I = ref_mp[:, 1]
+        ref_left_P = np.full(ref_P.shape, np.inf)
+        ref_left_I = ref_mp[:, 2]
+        for i, j in enumerate(ref_left_I):
+            if j >= 0:
+                ref_left_P[i] = np.linalg.norm(
+                    stream.T_[i : i + m] - stream.T_[j : j + m], ord=p
+                )
 
-    naive.replace_inf(ref_P)
-    naive.replace_inf(ref_left_P)
-    naive.replace_inf(comp_P)
-    naive.replace_inf(comp_left_P)
+        naive.replace_inf(ref_P)
+        naive.replace_inf(ref_left_P)
+        naive.replace_inf(comp_P)
+        naive.replace_inf(comp_left_P)
 
-    npt.assert_almost_equal(ref_P, comp_P)
-    npt.assert_almost_equal(ref_I, comp_I)
-    npt.assert_almost_equal(ref_left_P, comp_left_P)
-    npt.assert_almost_equal(ref_left_I, comp_left_I)
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_left_P, comp_left_P)
+        npt.assert_almost_equal(ref_left_I, comp_left_I)
 
-    np.random.seed(seed)
-    n = 30
-    T = np.random.rand(n)
-    T = pd.Series(T)
-    stream = aampi(T, m, egress=False)
-    for i in range(34):
-        t = np.random.rand()
-        stream.update(t)
+        np.random.seed(seed)
+        n = 30
+        T = np.random.rand(n)
+        T = pd.Series(T)
+        stream = aampi(T, m, egress=False, p=p)
+        for i in range(34):
+            t = np.random.rand()
+            stream.update(t)
 
-    comp_P = stream.P_
-    comp_I = stream.I_
-    comp_left_P = stream.left_P_
-    comp_left_I = stream.left_I_
+        comp_P = stream.P_
+        comp_I = stream.I_
+        comp_left_P = stream.left_P_
+        comp_left_I = stream.left_I_
 
-    naive.replace_inf(comp_P)
-    naive.replace_inf(comp_left_P)
+        naive.replace_inf(comp_P)
+        naive.replace_inf(comp_left_P)
 
-    npt.assert_almost_equal(ref_P, comp_P)
-    npt.assert_almost_equal(ref_I, comp_I)
-    npt.assert_almost_equal(ref_left_P, comp_left_P)
-    npt.assert_almost_equal(ref_left_I, comp_left_I)
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_left_P, comp_left_P)
+        npt.assert_almost_equal(ref_left_I, comp_left_I)
 
 
 def test_aampi_self_join_egress():
     m = 3
 
-    seed = np.random.randint(100000)
-    np.random.seed(seed)
+    for p in [1.0, 2.0, 3.0]:
+        seed = np.random.randint(100000)
+        np.random.seed(seed)
 
-    n = 30
-    T = np.random.rand(n)
+        n = 30
+        T = np.random.rand(n)
 
-    ref_mp = naive.aampi_egress(T, m)
-    ref_P = ref_mp.P_.copy()
-    ref_I = ref_mp.I_
-    ref_left_P = ref_mp.left_P_.copy()
-    ref_left_I = ref_mp.left_I_
+        ref_mp = naive.aampi_egress(T, m, p=p)
+        ref_P = ref_mp.P_.copy()
+        ref_I = ref_mp.I_
+        ref_left_P = ref_mp.left_P_.copy()
+        ref_left_I = ref_mp.left_I_
 
-    stream = aampi(T, m, egress=True)
-
-    comp_P = stream.P_.copy()
-    comp_I = stream.I_
-    comp_left_P = stream.left_P_.copy()
-    comp_left_I = stream.left_I_
-
-    naive.replace_inf(ref_P)
-    naive.replace_inf(ref_left_P)
-    naive.replace_inf(comp_P)
-    naive.replace_inf(comp_left_P)
-
-    npt.assert_almost_equal(ref_P, comp_P)
-    npt.assert_almost_equal(ref_I, comp_I)
-    npt.assert_almost_equal(ref_left_P, comp_left_P)
-    npt.assert_almost_equal(ref_left_I, comp_left_I)
-
-    for i in range(34):
-        t = np.random.rand()
-
-        ref_mp.update(t)
-        stream.update(t)
+        stream = aampi(T, m, egress=True, p=p)
 
         comp_P = stream.P_.copy()
         comp_I = stream.I_
         comp_left_P = stream.left_P_.copy()
         comp_left_I = stream.left_I_
-
-        ref_P = ref_mp.P_.copy()
-        ref_I = ref_mp.I_
-        ref_left_P = ref_mp.left_P_.copy()
-        ref_left_I = ref_mp.left_I_
 
         naive.replace_inf(ref_P)
         naive.replace_inf(ref_left_P)
@@ -133,50 +110,76 @@ def test_aampi_self_join_egress():
         npt.assert_almost_equal(ref_left_P, comp_left_P)
         npt.assert_almost_equal(ref_left_I, comp_left_I)
 
-    np.random.seed(seed)
-    T = np.random.rand(n)
-    T = pd.Series(T)
+        for i in range(34):
+            t = np.random.rand()
 
-    ref_mp = naive.aampi_egress(T, m)
-    ref_P = ref_mp.P_.copy()
-    ref_I = ref_mp.I_
+            ref_mp.update(t)
+            stream.update(t)
 
-    stream = aampi(T, m, egress=True)
+            comp_P = stream.P_.copy()
+            comp_I = stream.I_
+            comp_left_P = stream.left_P_.copy()
+            comp_left_I = stream.left_I_
 
-    comp_P = stream.P_.copy()
-    comp_I = stream.I_
+            ref_P = ref_mp.P_.copy()
+            ref_I = ref_mp.I_
+            ref_left_P = ref_mp.left_P_.copy()
+            ref_left_I = ref_mp.left_I_
 
-    naive.replace_inf(ref_P)
-    naive.replace_inf(comp_P)
+            naive.replace_inf(ref_P)
+            naive.replace_inf(ref_left_P)
+            naive.replace_inf(comp_P)
+            naive.replace_inf(comp_left_P)
 
-    npt.assert_almost_equal(ref_P, comp_P)
-    npt.assert_almost_equal(ref_I, comp_I)
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
+            npt.assert_almost_equal(ref_left_P, comp_left_P)
+            npt.assert_almost_equal(ref_left_I, comp_left_I)
 
-    for i in range(34):
-        t = np.random.rand()
+        np.random.seed(seed)
+        T = np.random.rand(n)
+        T = pd.Series(T)
 
-        ref_mp.update(t)
-        stream.update(t)
+        ref_mp = naive.aampi_egress(T, m, p=p)
+        ref_P = ref_mp.P_.copy()
+        ref_I = ref_mp.I_
+
+        stream = aampi(T, m, egress=True, p=p)
 
         comp_P = stream.P_.copy()
         comp_I = stream.I_
-        comp_left_P = stream.left_P_.copy()
-        comp_left_I = stream.left_I_
-
-        ref_P = ref_mp.P_.copy()
-        ref_I = ref_mp.I_
-        ref_left_P = ref_mp.left_P_.copy()
-        ref_left_I = ref_mp.left_I_
 
         naive.replace_inf(ref_P)
-        naive.replace_inf(ref_left_P)
         naive.replace_inf(comp_P)
-        naive.replace_inf(comp_left_P)
 
         npt.assert_almost_equal(ref_P, comp_P)
         npt.assert_almost_equal(ref_I, comp_I)
-        npt.assert_almost_equal(ref_left_P, comp_left_P)
-        npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+        for i in range(34):
+            t = np.random.rand()
+
+            ref_mp.update(t)
+            stream.update(t)
+
+            comp_P = stream.P_.copy()
+            comp_I = stream.I_
+            comp_left_P = stream.left_P_.copy()
+            comp_left_I = stream.left_I_
+
+            ref_P = ref_mp.P_.copy()
+            ref_I = ref_mp.I_
+            ref_left_P = ref_mp.left_P_.copy()
+            ref_left_I = ref_mp.left_I_
+
+            naive.replace_inf(ref_P)
+            naive.replace_inf(ref_left_P)
+            naive.replace_inf(comp_P)
+            naive.replace_inf(comp_left_P)
+
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
+            npt.assert_almost_equal(ref_left_P, comp_left_P)
+            npt.assert_almost_equal(ref_left_I, comp_left_I)
 
 
 @pytest.mark.parametrize("substitute", substitution_values)
@@ -217,7 +220,7 @@ def test_aampi_init_nan_inf_self_join(substitute, substitution_locations):
         n = 30
         T = np.random.rand(n)
 
-        if substitution_location == -1:
+        if substitution_location == -1:  # pragma: no cover
             substitution_location = T.shape[0] - 1
         T[substitution_location] = substitute
         T = pd.Series(T)
@@ -388,7 +391,7 @@ def test_aampi_stream_nan_inf_self_join(substitute, substitution_locations):
         T = np.random.rand(64)
 
         stream = aampi(pd.Series(T[:n]), m, egress=False)
-        if substitution_location == -1:
+        if substitution_location == -1:  # pragma: no cover
             substitution_location = T[n:].shape[0] - 1
         T[n:][substitution_location] = substitute
         for t in T[n:]:
@@ -490,7 +493,7 @@ def test_aampi_stream_nan_inf_self_join_egress(substitute, substitution_location
         npt.assert_almost_equal(ref_I, comp_I)
         npt.assert_almost_equal(ref_left_P, comp_left_P)
         npt.assert_almost_equal(ref_left_I, comp_left_I)
-        if substitution_location == -1:
+        if substitution_location == -1:  # pragma: no cover
             substitution_location = T[n:].shape[0] - 1
         T[n:][substitution_location] = substitute
         for t in T[n:]:

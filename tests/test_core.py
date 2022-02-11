@@ -464,9 +464,10 @@ def test_mass_asbolute(Q, T):
     Q = Q.copy()
     T = T.copy()
     m = Q.shape[0]
-    ref = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1)
-    comp = core.mass_absolute(Q, T)
-    npt.assert_almost_equal(ref, comp)
+    for p in [1.0, 2.0, 3.0]:
+        ref = np.linalg.norm(core.rolling_window(T, m) - Q, axis=1, ord=p)
+        comp = core.mass_absolute(Q, T, p=p)
+        npt.assert_almost_equal(ref, comp)
 
 
 @pytest.mark.parametrize("Q, T", test_data)

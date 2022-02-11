@@ -32,10 +32,11 @@ k = [0, 1, 2, 3, 4]
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_aampdist_vect(T_A, T_B):
     m = 3
-    ref_aampdist_vect = naive.aampdist_vect(T_A, T_B, m)
-    comp_aampdist_vect = _aampdist_vect(T_A, T_B, m)
+    for p in [1.0, 2.0, 3.0]:
+        ref_aampdist_vect = naive.aampdist_vect(T_A, T_B, m, p=p)
+        comp_aampdist_vect = _aampdist_vect(T_A, T_B, m, p=p)
 
-    npt.assert_almost_equal(ref_aampdist_vect, comp_aampdist_vect)
+        npt.assert_almost_equal(ref_aampdist_vect, comp_aampdist_vect)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -61,10 +62,11 @@ def test_aampdist_vect_k(T_A, T_B, k):
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_aampdist(T_A, T_B):
     m = 3
-    ref_mpdist = naive.aampdist(T_A, T_B, m)
-    comp_mpdist = aampdist(T_A, T_B, m)
+    for p in [1.0, 2.0, 3.0]:
+        ref_mpdist = naive.aampdist(T_A, T_B, m, p=p)
+        comp_mpdist = aampdist(T_A, T_B, m, p=p)
 
-    npt.assert_almost_equal(ref_mpdist, comp_mpdist)
+        npt.assert_almost_equal(ref_mpdist, comp_mpdist)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -95,7 +97,8 @@ def test_aampdist_k(T_A, T_B, k):
 def test_aampdisted(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 3
-        ref_mpdist = naive.aampdist(T_A, T_B, m)
-        comp_mpdist = aampdisted(dask_client, T_A, T_B, m)
+        for p in [1.0, 2.0, 3.0]:
+            ref_mpdist = naive.aampdist(T_A, T_B, m, p=p)
+            comp_mpdist = aampdisted(dask_client, T_A, T_B, m, p=p)
 
-        npt.assert_almost_equal(ref_mpdist, comp_mpdist)
+            npt.assert_almost_equal(ref_mpdist, comp_mpdist)
