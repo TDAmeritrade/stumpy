@@ -15,6 +15,7 @@ def Mmotifs(
     I: np.ndarray,
     max_matches: int = 10,
     max_motifs: int = 1,
+    cutoff: np.ndarray = None,
     visualize_mdl: bool = False,
     max_distance: float = None,
     atol: float = 1e-8,
@@ -37,6 +38,11 @@ def Mmotifs(
         The maximum amount of similar matches (nearest neighbors) of a motif
         representative to be returned.
         The first match is always the self-match for each motif.
+
+    cutoff: numpy.ndarray, default None
+        The largest matrix profile value (distance) for each dimension of the
+        multidimensional matrix profile that a multidimenisonal candidate motif is
+        allowed to have. 
 
     max_distance: flaot, default None
         Maximal distance that is allowed between a query subsequence
@@ -98,10 +104,21 @@ def Mmotifs(
     # Iterate over each motif
     while len(motif_matches_distances) < max_motifs:
 
-        # Choose dimension k using MDL and compute subspace
+        # Choose dimension k using MDL
         mdl, subspaces = stumpy.mdl(T, m, candidate_idx, nn_idx)
         k = np.argmin(mdl)
-        subspace.append(subspaces[k])
+
+        # Calculate default cutoff value
+        if cutoff is None:
+            P_copy = P.copy().astype(np.float64)
+            P_copy[np.isinf(P_copy)] = np.nan
+            P_copy = P_copy[k, :]
+            cutoff_var = np.nanmax(
+                [np.nanmean(P_copy - 2.0 * np.nanstd(P_copy)), np.nanmin(P_copy)]
+            )
+            cutoff = None
+        else:
+            cutoff_var = cutoff[k]
 
         if visualize_mdl:
             # Visualize MDL results:
@@ -111,14 +128,19 @@ def Mmotifs(
             plt.ylabel("Bit Size", fontsize="20")
             plt.show()
 
-        sub_dims = T[subspaces[k]]
-
         # Get k-dimensional motif
         motif_idx = candidate_idx[k]
+        motif_value = P[k, motif_idx]
+        if motif_value > cutoff_var or not np.isfinite(motif_value):
+            break
+
+        # Compute subspace and find related dimensions
+        subspace.append(subspaces[k])
+        sub_dims = T[subspaces[k]]
 
         # Stop iteration if max_distance is a constant and the k-dim.
         # matrix profile value is larger than the maximum distance.
-        if isinstance(max_distance, float) and P[k, motif_idx] > max_distance:
+        if isinstance(max_distance, float) and motif_value > max_distance:
             break
 
         # Get multidimensional Distance Profile to find the max_matches
