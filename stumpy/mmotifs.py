@@ -92,7 +92,7 @@ def mmotifs(
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
     # Precompute rolling means and standard deviations
-    # T, mean_T, sigma_T = core.preprocess(T, m)
+    T, mean_T, sigma_T = core.preprocess(T, m)
 
     if max_matches is None:
         max_matches = np.inf
@@ -147,14 +147,15 @@ def mmotifs(
 
         # Get multidimensional Distance Profile to find the max_matches
         # nearest neighbors
-        T_sub, mean_T, sigma_T = core.preprocess(sub_dims, m)
+        mean_T_sub = mean_T[subspaces[k]]
+        sigma_T_sub = sigma_T[subspaces[k]]
 
         Q = sub_dims[:, motif_idx : motif_idx + m]
         query_matches = match(
             Q=Q,
             T=sub_dims,
-            M_T=mean_T,
-            Σ_T=sigma_T,
+            M_T=mean_T_sub,
+            Σ_T=sigma_T_sub,
             max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,
