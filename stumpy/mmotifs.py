@@ -111,7 +111,7 @@ def mmotifs(
     if max_matches is None:
         max_matches = np.inf
 
-    # Calculate default cutoff value
+    # Calculate default cutoff values
     if cutoffs is None:
         cutoffs = []
         P_copy = P.copy().astype(np.float64)
@@ -162,9 +162,8 @@ def mmotifs(
         if motif_value > cutoff or not np.isfinite(motif_value):
             break
 
-        # Compute subspace and find related dimensions
+        # Get corresponding subspace and save it in motif_subspaces
         motif_subspaces.append(subspaces[k])
-        sub_dims = T[subspaces[k]]
 
         # Stop iteration if max_distance is a constant and the k-dim.
         # matrix profile value is larger than the maximum distance.
@@ -173,15 +172,11 @@ def mmotifs(
 
         # Get multidimensional Distance Profile to find the max_matches
         # nearest neighbors
-        M_T_sub = M_T[subspaces[k]]
-        Σ_T_sub = Σ_T[subspaces[k]]
-
-        Q = sub_dims[:, motif_idx : motif_idx + m]
         query_matches = match(
-            Q=Q,
-            T=sub_dims,
-            M_T=M_T_sub,
-            Σ_T=Σ_T_sub,
+            Q=T[subspaces[k], motif_idx : motif_idx + m],
+            T=T[subspaces[k]],
+            M_T=M_T[subspaces[k]],
+            Σ_T=Σ_T[subspaces[k]],
             max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,
