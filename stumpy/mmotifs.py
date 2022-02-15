@@ -9,11 +9,11 @@ def mmotifs(
     T: np.ndarray,
     P: np.ndarray,
     I: np.ndarray,
+    min_neighbors: int = 1,
+    max_distance: float = None,
+    cutoff: np.ndarray = None,
     max_matches: int = 10,
     max_motifs: int = 1,
-    cutoff: np.ndarray = None,
-    max_distance: float = None,
-    min_neighbors: int = 1,
     atol: float = 1e-8,
 ):
     """
@@ -62,10 +62,10 @@ def mmotifs(
 
     Returns
     -------
-    motif_matches_distances: numpy.ndarray
+    motif_distances: numpy.ndarray
         The distances corresponding to a set of subsequence matches for each motif.
 
-    motif_matches_indices: numpy.ndarray
+    motif_indices: numpy.ndarray
         The indices corresponding to a set of subsequences matches for each motif.
 
     motif_subspaces: numpy.ndarray
@@ -92,23 +92,23 @@ def mmotifs(
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
     # Precompute rolling means and standard deviations
-    T, mean_T, sigma_T = core.preprocess(T, m)
+    T, M_T, Σ_T = core.preprocess(T, m)
 
     if max_matches is None:
         max_matches = np.inf
 
-    motif_matches_distances = []
-    motif_matches_indices = []
+    motif_distances = []
+    motif_indices = []
     motif_subspaces = []
     motif_mdls = []
 
     # Identify the first multidimensional motif as candidate motif and get its
     # nearest neighbor
-    candidate_idx = np.argsort(P, axis=1)[:, 0]
+    candidate_idx = np.argmin(P, axis=1)
     nn_idx = I[np.arange(len(candidate_idx)), candidate_idx]
 
     # Iterate over each motif
-    while len(motif_matches_distances) < max_motifs:
+    while len(motif_distances) < max_motifs:
 
         # Choose dimension k using MDL
         mdls, subspaces = mdl(T, m, candidate_idx, nn_idx)
@@ -147,41 +147,41 @@ def mmotifs(
 
         # Get multidimensional Distance Profile to find the max_matches
         # nearest neighbors
-        mean_T_sub = mean_T[subspaces[k]]
-        sigma_T_sub = sigma_T[subspaces[k]]
+        M_T_sub = M_T[subspaces[k]]
+        Σ_T_sub = Σ_T[subspaces[k]]
 
         Q = sub_dims[:, motif_idx : motif_idx + m]
         query_matches = match(
             Q=Q,
             T=sub_dims,
-            M_T=mean_T_sub,
-            Σ_T=sigma_T_sub,
+            M_T=M_T_sub,
+            Σ_T=Σ_T_sub,
             max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,
         )
 
         if len(query_matches) > min_neighbors:
-            motif_matches_distances.append(query_matches[:, 0])
-            motif_matches_indices.append(query_matches[:, 1])
+            motif_distances.append(query_matches[:, 0])
+            motif_indices.append(query_matches[:, 1])
 
         # Set exclusion zones and find new candidate_idx an nn_idx for
         # the next motif
         for idx in query_matches[:, 1]:
             core.apply_exclusion_zone(P, idx, excl_zone, np.inf)
-        candidate_idx = np.argsort(P, axis=1)[:, 0]
+        candidate_idx = np.argmin(P, axis=1)
         nn_idx = I[np.arange(len(candidate_idx)), candidate_idx]
 
-    motif_matches_distances = core._jagged_list_to_array(
-        motif_matches_distances, fill_value=np.nan, dtype=np.float64
+    motif_distances = core._jagged_list_to_array(
+        motif_distances, fill_value=np.nan, dtype=np.float64
     )
-    motif_matches_indices = core._jagged_list_to_array(
-        motif_matches_indices, fill_value=-1, dtype=np.int64
+    motif_indices = core._jagged_list_to_array(
+        motif_indices, fill_value=-1, dtype=np.int64
     )
 
     return (
-        motif_matches_distances,
-        motif_matches_indices,
+        motif_distances,
+        motif_indices,
         np.array(motif_subspaces, dtype=object),
         np.array(motif_mdls, dtype=object),
     )
