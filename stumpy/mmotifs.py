@@ -14,7 +14,7 @@ def mmotifs(
     I: np.ndarray,
     min_neighbors: int = 1,
     max_distance: float = None,
-    cutoff: np.ndarray = None,
+    cutoffs: np.ndarray = None,
     max_matches: int = 10,
     max_motifs: int = 1,
     atol: float = 1e-8,
@@ -47,11 +47,11 @@ def mmotifs(
         `np.nanmax([np.nanmean(D) - 2 * np.nanstd(D), np.nanmin(D)])`
         (i.e. at least the closest match will be returned).
 
-    cutoff: numpy.ndarray or float, default None
+    cutoffs: numpy.ndarray or float, default None
         The largest matrix profile value (distance) for each dimension of the
         multidimensional matrix profile that a multidimenisonal candidate motif is
         allowed to have.
-        If cutoff is only one value, these value will be applied to every dimension.
+        If cutoffs is only one value, these value will be applied to every dimension.
 
     max_matches: int, default 10
         The maximum amount of similar matches (nearest neighbors) of a motif
@@ -107,8 +107,29 @@ def mmotifs(
     # Calculate exclusion zone
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
+    # Set default max_matches value
     if max_matches is None:
         max_matches = np.inf
+
+    # Calculate default cutoff value
+    if cutoffs is None:
+        cutoffs = []
+        P_copy = P.copy().astype(np.float64)
+        P_copy[np.isinf(P_copy)] = np.nan
+        for i in range(P_copy.shape[0]):
+            cutoffs.append(
+                np.nanmax(
+                    [
+                        np.nanmean(P_copy[i, :] - 2.0 * np.nanstd(P_copy[i, :])),
+                        np.nanmin(P_copy[i, :]),
+                    ]
+                )
+            )
+    elif isinstance(cutoffs, int) or isinstance(cutoffs, float):
+        # cutoffs is a single value -> apply value to each MP dimension
+        cutoffs_tmp = cutoffs
+        cutoffs = []
+        cutoffs.extend(cutoffs_tmp for _ in range(T.shape[0]))
 
     # Precompute rolling means and standard deviations
     T, M_T, Σ_T = core.preprocess(T, m)
@@ -132,25 +153,13 @@ def mmotifs(
         k = np.argmin(mdls)
         motif_mdls.append(mdls)
 
-        # Calculate default cutoff value
-        if cutoff is None:
-            P_copy = P.copy().astype(np.float64)
-            P_copy[np.isinf(P_copy)] = np.nan
-            P_copy = P_copy[k, :]
-            cutoff_var = np.nanmax(
-                [np.nanmean(P_copy - 2.0 * np.nanstd(P_copy)), np.nanmin(P_copy)]
-            )
-            cutoff = None
-        else:
-            if isinstance(cutoff, np.ndarray) or isinstance(cutoff, list):
-                cutoff_var = cutoff[k]
-            else:
-                cutoff_var = cutoff
+        # Choose cutoff value for the `k`-th dimension
+        cutoff = cutoffs[k]
 
         # Get k-dimensional motif
         motif_idx = candidate_idx[k]
         motif_value = P[k, motif_idx]
-        if motif_value > cutoff_var or not np.isfinite(motif_value):
+        if motif_value > cutoff or not np.isfinite(motif_value):
             break
 
         # Compute subspace and find related dimensions
