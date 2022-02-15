@@ -1,10 +1,13 @@
 import numpy as np
 import logging
+
+# from .aamp_motifs import aamp_motifs
 from . import core, config, mdl, match
 
 logger = logging.getLogger(__name__)
 
 
+# @core.non_normalized(aamp_motifs)
 def mmotifs(
     T: np.ndarray,
     P: np.ndarray,
@@ -15,6 +18,8 @@ def mmotifs(
     max_matches: int = 10,
     max_motifs: int = 1,
     atol: float = 1e-8,
+    # normalize: bool = True,
+    # p: float = 2.0
 ):
     """
     Discover the top motifs for the multi-dimensional time series `T`
@@ -60,6 +65,15 @@ def mmotifs(
         The absolute tolerance parameter. This value will be added to `max_distance`
         when comparing distances between subsequences.
 
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == False`.
+
     Returns
     -------
     motif_distances: numpy.ndarray
@@ -76,6 +90,9 @@ def mmotifs(
         A numpy.ndarray consisting of arrays that contain the mdl results for
         finding the dimension of each motif
     """
+    # Convert dataframe to array if necessary
+    T = core._preprocess(T)
+
     if max_motifs < 1:  # pragma: no cover
         logger.warning(
             "The maximum number of motifs, `max_motifs`, "
@@ -85,18 +102,18 @@ def mmotifs(
         max_motifs = 1
 
     # Calculate subsequence length
-    T = core._preprocess(T)  # convert dataframe to array if necessary
     m = T.shape[-1] - P.shape[-1] + 1
 
     # Calculate exclusion zone
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    # Precompute rolling means and standard deviations
-    T, M_T, Σ_T = core.preprocess(T, m)
-
     if max_matches is None:
         max_matches = np.inf
 
+    # Precompute rolling means and standard deviations
+    T, M_T, Σ_T = core.preprocess(T, m)
+
+    # Allocate memory for returns
     motif_distances = []
     motif_indices = []
     motif_subspaces = []
@@ -159,6 +176,8 @@ def mmotifs(
             max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,
+            # normalize=normalize,
+            # p=p
         )
 
         if len(query_matches) > min_neighbors:
