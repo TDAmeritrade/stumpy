@@ -82,12 +82,12 @@ def mmotifs(
     motif_indices: numpy.ndarray
         The indices corresponding to a set of subsequences matches for each motif.
 
-    motif_subspaces: numpy.ndarray
-        A numpy.ndarray consisting of arrays that contain the `k`-dimensional
+    motif_subspaces: list
+        A list consisting of arrays that contain the `k`-dimensional
         subspace for each motif.
 
-    motif_mdls: numpy.ndarray
-        A numpy.ndarray consisting of arrays that contain the mdl results for
+    motif_mdls: list
+        A list consisting of arrays that contain the mdl results for
         finding the dimension of each motif
     """
     T = core._preprocess(T)
@@ -118,8 +118,8 @@ def mmotifs(
             ],
             axis=0,
         )
-    elif isinstance(cutoffs, int) or isinstance(cutoffs, float):
-        cutoffs = np.full(T.shape[0], cutoffs)
+    if np.isscalar(cutoffs):
+        cutoffs = np.full(P.shape[0], cutoffs)
 
     motif_distances = []
     motif_indices = []
@@ -145,9 +145,6 @@ def mmotifs(
             break
 
         motif_subspaces.append(subspaces[k])
-
-        # if isinstance(max_distance, float) and motif_value > max_distance:
-        #     break
 
         query_matches = match(
             Q=T[subspaces[k], motif_idx : motif_idx + m],
@@ -177,9 +174,4 @@ def mmotifs(
         motif_indices, fill_value=-1, dtype=np.int64
     )
 
-    return (
-        motif_distances,
-        motif_indices,
-        np.array(motif_subspaces, dtype=object),
-        np.array(motif_mdls, dtype=object),
-    )
+    return (motif_distances, motif_indices, motif_subspaces, motif_mdls)
