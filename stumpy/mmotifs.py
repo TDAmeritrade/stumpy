@@ -91,7 +91,6 @@ def mmotifs(
         finding the dimension of each motif
     """
     T = core._preprocess(T)
-
     m = T.shape[-1] - P.shape[-1] + 1
 
     if max_motifs < 1:  # pragma: no cover
@@ -114,7 +113,7 @@ def mmotifs(
         P_copy[np.isinf(P_copy)] = np.nan
         cutoffs = np.nanmax(
             [
-                np.nanmean(P_copy - 2.0 * np.nanstd(P_copy, axis=0), axis=1),
+                np.nanmean(P_copy, axis=1) - 2.0 * np.nanstd(P_copy, axis=1),
                 np.nanmin(P_copy, axis=1),
             ],
             axis=0,
