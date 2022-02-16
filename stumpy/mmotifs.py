@@ -9,17 +9,17 @@ logger = logging.getLogger(__name__)
 
 # @core.non_normalized(aamp_motifs)
 def mmotifs(
-    T: np.ndarray,
-    P: np.ndarray,
-    I: np.ndarray,
-    min_neighbors: int = 1,
-    max_distance: float = None,
-    cutoffs: np.ndarray = None,
-    max_matches: int = 10,
-    max_motifs: int = 1,
-    atol: float = 1e-8,
-    # normalize: bool = True,
-    # p: float = 2.0
+    T,
+    P,
+    I,
+    min_neighbors=1,
+    max_distance=None,
+    cutoffs=None,
+    max_matches=10,
+    max_motifs=1,
+    atol=1e-8,
+    # normalize = True,
+    # p = 2.0
 ):
     """
     Discover the top motifs for the multi-dimensional time series `T`
@@ -90,8 +90,9 @@ def mmotifs(
         A numpy.ndarray consisting of arrays that contain the mdl results for
         finding the dimension of each motif
     """
-    # Convert dataframe to array if necessary
     T = core._preprocess(T)
+
+    m = T.shape[-1] - P.shape[-1] + 1
 
     if max_motifs < 1:  # pragma: no cover
         logger.warning(
@@ -101,77 +102,54 @@ def mmotifs(
         logger.warning("`max_motifs` has been set to `1`")
         max_motifs = 1
 
-    # Calculate subsequence length
-    m = T.shape[-1] - P.shape[-1] + 1
+    T, M_T, Σ_T = core.preprocess(T, m)
 
-    # Calculate exclusion zone
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    # Set default max_matches value
     if max_matches is None:
         max_matches = np.inf
 
-    # Calculate default cutoff values
     if cutoffs is None:
-        cutoffs = []
         P_copy = P.copy().astype(np.float64)
         P_copy[np.isinf(P_copy)] = np.nan
-        for i in range(P_copy.shape[0]):
-            cutoffs.append(
-                np.nanmax(
-                    [
-                        np.nanmean(P_copy[i, :] - 2.0 * np.nanstd(P_copy[i, :])),
-                        np.nanmin(P_copy[i, :]),
-                    ]
-                )
-            )
+        cutoffs = np.nanmax(
+            [
+                np.nanmean(P_copy - 2.0 * np.nanstd(P_copy, axis=0), axis=1),
+                np.nanmin(P_copy, axis=1),
+            ],
+            axis=0,
+        )
     elif isinstance(cutoffs, int) or isinstance(cutoffs, float):
-        # cutoffs is a single value -> apply value to each MP dimension
-        cutoffs_tmp = cutoffs
-        cutoffs = []
-        cutoffs.extend(cutoffs_tmp for _ in range(T.shape[0]))
+        cutoffs = np.full(T.shape[0], cutoffs)
 
-    # Precompute rolling means and standard deviations
-    T, M_T, Σ_T = core.preprocess(T, m)
-
-    # Allocate memory for returns
     motif_distances = []
     motif_indices = []
     motif_subspaces = []
     motif_mdls = []
 
-    # Identify the first multidimensional motif as candidate motif and get its
-    # nearest neighbor
     candidate_idx = np.argmin(P, axis=1)
     nn_idx = I[np.arange(len(candidate_idx)), candidate_idx]
 
-    # Iterate over each motif
     while len(motif_distances) < max_motifs:
-
-        # Choose dimension k using MDL
         mdls, subspaces = mdl(T, m, candidate_idx, nn_idx)
         k = np.argmin(mdls)
         motif_mdls.append(mdls)
 
-        # Choose cutoff value for the `k`-th dimension
-        cutoff = cutoffs[k]
-
-        # Get k-dimensional motif
         motif_idx = candidate_idx[k]
         motif_value = P[k, motif_idx]
-        if motif_value > cutoff or not np.isfinite(motif_value):
+
+        if (
+            motif_value > cutoffs[k]
+            or not np.isfinite(motif_value)
+            or (isinstance(max_distance, float) and motif_value > max_distance)
+        ):
             break
 
-        # Get corresponding subspace and save it in motif_subspaces
         motif_subspaces.append(subspaces[k])
 
-        # Stop iteration if max_distance is a constant and the k-dim.
-        # matrix profile value is larger than the maximum distance.
-        if isinstance(max_distance, float) and motif_value > max_distance:
-            break
+        # if isinstance(max_distance, float) and motif_value > max_distance:
+        #     break
 
-        # Get multidimensional Distance Profile to find the max_matches
-        # nearest neighbors
         query_matches = match(
             Q=T[subspaces[k], motif_idx : motif_idx + m],
             T=T[subspaces[k]],
@@ -188,8 +166,6 @@ def mmotifs(
             motif_distances.append(query_matches[:, 0])
             motif_indices.append(query_matches[:, 1])
 
-        # Set exclusion zones and find new candidate_idx an nn_idx for
-        # the next motif
         for idx in query_matches[:, 1]:
             core.apply_exclusion_zone(P, idx, excl_zone, np.inf)
         candidate_idx = np.argmin(P, axis=1)
