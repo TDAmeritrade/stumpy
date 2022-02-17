@@ -143,9 +143,6 @@ def mmotifs(
         ):
             break
 
-        motif_mdls.append(mdls)
-        motif_subspaces.append(subspaces[k])
-
         query_matches = match(
             Q=T[subspaces[k], motif_idx : motif_idx + m],
             T=T[subspaces[k]],
@@ -161,6 +158,8 @@ def mmotifs(
         if len(query_matches) > min_neighbors:
             motif_distances.append(query_matches[:, 0])
             motif_indices.append(query_matches[:, 1])
+            motif_mdls.append(mdls)
+            motif_subspaces.append(subspaces[k])
 
         for idx in query_matches[:, 1]:
             core.apply_exclusion_zone(P, idx, excl_zone, np.inf)
