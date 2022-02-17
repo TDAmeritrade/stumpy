@@ -132,7 +132,6 @@ def mmotifs(
     while len(motif_distances) < max_motifs:
         mdls, subspaces = mdl(T, m, candidate_idx, nn_idx)
         k = np.argmin(mdls)
-        motif_mdls.append(mdls)
 
         motif_idx = candidate_idx[k]
         motif_value = P[k, motif_idx]
@@ -144,6 +143,7 @@ def mmotifs(
         ):
             break
 
+        motif_mdls.append(mdls)
         motif_subspaces.append(subspaces[k])
 
         query_matches = match(
@@ -174,4 +174,4 @@ def mmotifs(
         motif_indices, fill_value=-1, dtype=np.int64
     )
 
-    return (motif_distances, motif_indices, motif_subspaces, motif_mdls)
+    return motif_distances, motif_indices, motif_subspaces, motif_mdls
