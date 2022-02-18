@@ -187,21 +187,11 @@ def prescraamp(T_A, m, T_B=None, s=None, p=2.0):
 
     See Algorithm 2
     """
-    T_A = core._preprocess(T_A)
-    core.check_window_size(m, max_size=T_A.shape[-1])
-    T_A[np.isinf(T_A)] = np.nan
-
     if T_B is None:
         T_B = T_A
         excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     else:
         excl_zone = None
-
-    T_B = core._preprocess(T_B)
-    core.check_window_size(m, max_size=T_B.shape[-1])
-    T_B[np.isinf(T_B)] = np.nan
-
-    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
     T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
     T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
