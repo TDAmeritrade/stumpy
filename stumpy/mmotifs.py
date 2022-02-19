@@ -1,13 +1,13 @@
 import numpy as np
 import logging
 
-# from .aamp_motifs import aamp_motifs
+from .aamp_mmotifs import aamp_mmotifs
 from . import core, config, mdl, match
 
 logger = logging.getLogger(__name__)
 
 
-# @core.non_normalized(aamp_motifs)
+@core.non_normalized(aamp_mmotifs)
 def mmotifs(
     T,
     P,
@@ -18,8 +18,8 @@ def mmotifs(
     max_matches=10,
     max_motifs=1,
     atol=1e-8,
-    # normalize = True,
-    # p = 2.0
+    normalize=True,
+    p=2.0,
 ):
     """
     Discover the top motifs for the multi-dimensional time series `T`
@@ -151,8 +151,8 @@ def mmotifs(
             max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,
-            # normalize=normalize,
-            # p=p
+            normalize=normalize,
+            p=p,
         )
 
         if len(query_matches) > min_neighbors:
