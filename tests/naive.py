@@ -1493,7 +1493,7 @@ def normalize_pan(pan, ms, bfs_indices, n_processed):
     idx = bfs_indices[:n_processed]
     for i in range(n_processed):
         norm = 1.0 / (2.0 * np.sqrt(ms[i]))
-        pan[idx] = np.minimum(1.0, pan[idx] * norm)
+        pan[idx[i]] = np.minimum(1.0, pan[idx[i]] * norm)
 
 
 def contrast_pan(pan, threshold, bfs_indices, n_processed):
@@ -1521,6 +1521,7 @@ def binarize_pan(pan, threshold, bfs_indices, n_processed):
 
 
 def transform_pan(pan, ms, threshold, bfs_indices, n_processed):
+    pan = pan.copy()
     idx = bfs_indices[:n_processed]
     sorted_idx = np.sort(idx)
     pan[pan == np.inf] = np.nan
