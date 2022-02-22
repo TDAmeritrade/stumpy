@@ -152,7 +152,7 @@ def mmotifs(
 
     while len(motif_distances) < max_motifs:
         if k_s is None:
-            mdls, subspaces = mdl(T, m, candidate_idx, nn_idx)
+            mdls, subspaces = mdl(T, m, candidate_idx, nn_idx, include)
             k = np.argmin(mdls)
             sub = subspaces[k]
         if np.isscalar(k_s):
@@ -162,7 +162,7 @@ def mmotifs(
         motif_value = P[k, motif_idx]
 
         if np.isscalar(k_s):
-            sub = subspace(T, m, motif_idx, nn_idx[k], k)
+            sub = subspace(T, m, motif_idx, nn_idx[k], k, include)
 
         if (
             motif_value > cutoffs[k]
