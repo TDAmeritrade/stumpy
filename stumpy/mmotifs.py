@@ -81,6 +81,7 @@ def mmotifs(
     discords: bool, default False
         When set to True, this reverses the distance profile to favor discords rather
         than motifs. Note that indices in 'include' are still maintained and respected.
+        The return parameters will then contain discords rather than motifs.
 
     atol : float, default 1e-8
         The absolute tolerance parameter. This value will be added to `max_distance`
@@ -147,12 +148,15 @@ def mmotifs(
     motif_subspaces = []
     motif_mdls = []
 
-    candidate_idx = np.argmin(P, axis=1)
+    if discords:
+        candidate_idx = np.argmin(-P, axis=1)
+    else:
+        candidate_idx = np.argmin(P, axis=1)
     nn_idx = I[np.arange(len(candidate_idx)), candidate_idx]
 
     while len(motif_distances) < max_motifs:
         if k_s is None:
-            mdls, subspaces = mdl(T, m, candidate_idx, nn_idx, include)
+            mdls, subspaces = mdl(T, m, candidate_idx, nn_idx, include, discords)
             k = np.argmin(mdls)
             sub = subspaces[k]
         if np.isscalar(k_s):
@@ -162,7 +166,7 @@ def mmotifs(
         motif_value = P[k, motif_idx]
 
         if np.isscalar(k_s):
-            sub = subspace(T, m, motif_idx, nn_idx[k], k, include)
+            sub = subspace(T, m, motif_idx, nn_idx[k], k, include, discords)
 
         if (
             motif_value > cutoffs[k]
@@ -194,7 +198,10 @@ def mmotifs(
 
         for idx in query_matches[:, 1]:
             core.apply_exclusion_zone(P, idx, excl_zone, np.inf)
-        candidate_idx = np.argmin(P, axis=1)
+        if discords:
+            candidate_idx = np.argmin(-P, axis=1)
+        else:
+            candidate_idx = np.argmin(P, axis=1)
         nn_idx = I[np.arange(len(candidate_idx)), candidate_idx]
 
     motif_distances = core._jagged_list_to_array(
