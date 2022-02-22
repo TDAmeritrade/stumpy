@@ -2,7 +2,7 @@ import numpy as np
 import logging
 
 from .aamp_mmotifs import aamp_mmotifs
-from . import core, config, mdl, match, subspace
+from . import core, config, mdl, match
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +17,9 @@ def mmotifs(
     cutoffs=None,
     max_matches=10,
     max_motifs=1,
-    k_s=None,
-    include=None,
     atol=1e-8,
+    k=None,
+    include=None,
     normalize=True,
     p=2.0,
 ):
@@ -63,12 +63,16 @@ def mmotifs(
     max_motifs: int, default 1
         The maximum number of motifs to return
 
-    k_s: int, default None
+    atol : float, default 1e-8
+        The absolute tolerance parameter. This value will be added to `max_distance`
+        when comparing distances between subsequences.
+
+    k: int, default None
         The number of dimensions in which a motif is present.
         This value is available for doing guided search or - together with 'include' -
         for constrained search.
         The value will be applied to the discovery of all motifs.
-        If k_s is None, the value will automatically be computed for each motif using
+        If k is None, the value will automatically be computed for each motif using
         MDL (unconstrained search).
         For more informatioin on search types, see DOI: 10.1109/ICDM.2017.66s
 
@@ -76,10 +80,6 @@ def mmotifs(
         A list of (zero based) indices corresponding to the dimensions in T that must be
         included in the constrained multidimensional motif search. For more information,
         see Section IV D in: DOI: 10.1109/ICDM.2017.66
-
-    atol : float, default 1e-8
-        The absolute tolerance parameter. This value will be added to `max_distance`
-        when comparing distances between subsequences.
 
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
@@ -146,31 +146,28 @@ def mmotifs(
     nn_idx = I[np.arange(len(candidate_idx)), candidate_idx]
 
     while len(motif_distances) < max_motifs:
-        if k_s is None:
-            mdls, subspaces = mdl(T, m, candidate_idx, nn_idx, include)
-            k = np.argmin(mdls)
-            sub = subspaces[k]
-        if np.isscalar(k_s):
-            k = k_s
+        mdls, subspaces = mdl(T, m, candidate_idx, nn_idx, include)
+        if k is None:
+            k_motif = np.argmin(mdls)
+        else:
+            k_motif = k
+        subspace_k = subspaces[k_motif]
 
-        motif_idx = candidate_idx[k]
-        motif_value = P[k, motif_idx]
-
-        if np.isscalar(k_s):
-            sub = subspace(T, m, motif_idx, nn_idx[k], k, include)
+        motif_idx = candidate_idx[k_motif]
+        motif_value = P[k_motif, motif_idx]
 
         if (
-            motif_value > cutoffs[k]
+            motif_value > cutoffs[k_motif]
             or not np.isfinite(motif_value)
             or (isinstance(max_distance, float) and motif_value > max_distance)
         ):
             break
 
         query_matches = match(
-            Q=T[sub, motif_idx : motif_idx + m],
-            T=T[sub],
-            M_T=M_T[sub],
-            Σ_T=Σ_T[sub],
+            Q=T[subspace_k, motif_idx : motif_idx + m],
+            T=T[subspace_k],
+            M_T=M_T[subspace_k],
+            Σ_T=Σ_T[subspace_k],
             max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,
@@ -181,11 +178,8 @@ def mmotifs(
         if len(query_matches) > min_neighbors:
             motif_distances.append(query_matches[:, 0])
             motif_indices.append(query_matches[:, 1])
-            if k_s is None:
-                motif_mdls.append(mdls)
-            else:
-                motif_mdls = None
-            motif_subspaces.append(sub)
+            motif_mdls.append(mdls)
+            motif_subspaces.append(subspace_k)
 
         for idx in query_matches[:, 1]:
             core.apply_exclusion_zone(P, idx, excl_zone, np.inf)
