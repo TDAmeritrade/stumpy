@@ -108,6 +108,7 @@ def mmotifs(
     """
     T = core._preprocess(T)
     m = T.shape[-1] - P.shape[-1] + 1
+    reset_k = False
 
     if max_motifs < 1:  # pragma: no cover
         logger.warning(
@@ -148,16 +149,15 @@ def mmotifs(
     while len(motif_distances) < max_motifs:
         mdls, subspaces = mdl(T, m, candidate_idx, nn_idx, include)
         if k is None:
-            k_motif = np.argmin(mdls)
-        else:
-            k_motif = k
-        subspace_k = subspaces[k_motif]
+            k = np.argmin(mdls)
+            reset_k = True
+        subspace_k = subspaces[k]
 
-        motif_idx = candidate_idx[k_motif]
-        motif_value = P[k_motif, motif_idx]
+        motif_idx = candidate_idx[k]
+        motif_value = P[k, motif_idx]
 
         if (
-            motif_value > cutoffs[k_motif]
+            motif_value > cutoffs[k]
             or not np.isfinite(motif_value)
             or (isinstance(max_distance, float) and motif_value > max_distance)
         ):
@@ -185,6 +185,8 @@ def mmotifs(
             core.apply_exclusion_zone(P, idx, excl_zone, np.inf)
         candidate_idx = np.argmin(P, axis=1)
         nn_idx = I[np.arange(len(candidate_idx)), candidate_idx]
+        if reset_k:
+            k = None
 
     motif_distances = core._jagged_list_to_array(
         motif_distances, fill_value=np.nan, dtype=np.float64
