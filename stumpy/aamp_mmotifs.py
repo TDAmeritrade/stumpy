@@ -18,6 +18,8 @@ def aamp_mmotifs(
     max_matches=10,
     max_motifs=1,
     atol=1e-8,
+    k=None,
+    include=None,
     p=2.0,
 ):
     """
@@ -61,11 +63,25 @@ def aamp_mmotifs(
     max_motifs: int, default 1
         The maximum number of motifs to return
 
-    atol : float, default 1e-8
+    atol: float, default 1e-8
         The absolute tolerance parameter. This value will be added to `max_distance`
         when comparing distances between subsequences.
 
-    p : float, default 2.0
+    k: int, default None
+        The number of dimensions (k + 1) in which a motif is present.
+        This value is available for doing guided search or - together with 'include' -
+        for constrained search.
+        The value will be applied to the discovery of all motifs.
+        If k is None, the value will automatically be computed for each motif using
+        MDL (unconstrained search).
+        For more informatioin on search types, see DOI: 10.1109/ICDM.2017.66s
+
+    include: numpy.ndarray, default None
+        A list of (zero based) indices corresponding to the dimensions in T that must be
+        included in the constrained multidimensional motif search. For more information,
+        see Section IV D in: DOI: 10.1109/ICDM.2017.66
+
+    p: float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
 
     Returns
@@ -86,6 +102,7 @@ def aamp_mmotifs(
     """
     T = core._preprocess(T)
     m = T.shape[-1] - P.shape[-1] + 1
+    reset_k = False
 
     if max_motifs < 1:  # pragma: no cover
         logger.warning(
@@ -124,8 +141,11 @@ def aamp_mmotifs(
     nn_idx = I[np.arange(len(candidate_idx)), candidate_idx]
 
     while len(motif_distances) < max_motifs:
-        mdls, subspaces = maamp_mdl(T, m, candidate_idx, nn_idx)
-        k = np.argmin(mdls)
+        mdls, subspaces = maamp_mdl(T, m, candidate_idx, nn_idx, include)
+        if k is None:
+            k = np.argmin(mdls)
+            reset_k = True
+        subspace_k = subspaces[k]
 
         motif_idx = candidate_idx[k]
         motif_value = P[k, motif_idx]
@@ -138,8 +158,8 @@ def aamp_mmotifs(
             break
 
         query_matches = aamp_match(
-            Q=T[subspaces[k], motif_idx : motif_idx + m],
-            T=T[subspaces[k]],
+            Q=T[subspace_k, motif_idx : motif_idx + m],
+            T=T[subspace_k],
             T_subseq_isfinite=T_subseq_isfinite,
             max_matches=max_matches,
             max_distance=max_distance,
@@ -150,13 +170,15 @@ def aamp_mmotifs(
         if len(query_matches) > min_neighbors:
             motif_distances.append(query_matches[:, 0])
             motif_indices.append(query_matches[:, 1])
+            motif_subspaces.append(subspace_k)
             motif_mdls.append(mdls)
-            motif_subspaces.append(subspaces[k])
 
         for idx in query_matches[:, 1]:
             core.apply_exclusion_zone(P, idx, excl_zone, np.inf)
         candidate_idx = np.argmin(P, axis=1)
         nn_idx = I[np.arange(len(candidate_idx)), candidate_idx]
+        if reset_k:
+            k = None
 
     motif_distances = core._jagged_list_to_array(
         motif_distances, fill_value=np.nan, dtype=np.float64
