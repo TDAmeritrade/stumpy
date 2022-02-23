@@ -68,7 +68,7 @@ def mmotifs(
         when comparing distances between subsequences.
 
     k: int, default None
-        The number of dimensions in which a motif is present.
+        The number of dimensions (k + 1) in which a motif is present.
         This value is available for doing guided search or - together with 'include' -
         for constrained search.
         The value will be applied to the discovery of all motifs.
@@ -178,8 +178,8 @@ def mmotifs(
         if len(query_matches) > min_neighbors:
             motif_distances.append(query_matches[:, 0])
             motif_indices.append(query_matches[:, 1])
-            motif_mdls.append(mdls)
             motif_subspaces.append(subspace_k)
+            motif_mdls.append(mdls)
 
         for idx in query_matches[:, 1]:
             core.apply_exclusion_zone(P, idx, excl_zone, np.inf)
