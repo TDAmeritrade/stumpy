@@ -924,3 +924,25 @@ def test_idx_to_mp():
     ref_mp = naive_idx_to_mp(I, T, m, normalize=False)
     cmp_mp = core._idx_to_mp(I, T, m, normalize=False)
     npt.assert_almost_equal(ref_mp, cmp_mp)
+
+
+def test_total_diagonal_ndists():
+    tile_height = 9
+    tile_width = 11
+    for tile_lower_diag in range(-tile_height - 2, tile_width + 2):
+        for tile_upper_diag in range(tile_lower_diag, tile_width + 2):
+            assert naive._total_diagonal_ndists(
+                tile_lower_diag, tile_upper_diag, tile_height, tile_width
+            ) == core._total_diagonal_ndists(
+                tile_lower_diag, tile_upper_diag, tile_height, tile_width
+            )
+
+    tile_height = 11
+    tile_width = 9
+    for tile_lower_diag in range(-tile_height - 2, tile_width + 2):
+        for tile_upper_diag in range(tile_lower_diag, tile_width + 2):
+            assert naive._total_diagonal_ndists(
+                tile_lower_diag, tile_upper_diag, tile_height, tile_width
+            ) == core._total_diagonal_ndists(
+                tile_lower_diag, tile_upper_diag, tile_height, tile_width
+            )

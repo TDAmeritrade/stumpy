@@ -1971,3 +1971,148 @@ def _idx_to_mp(I, T, m, normalize=True):
     P[I < 0] = np.inf
 
     return P
+
+
+@njit(fastmath=True)
+def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_width):
+    """
+    Count the total number of distances covered by a range of diagonals
+
+    Parameters
+    ----------
+    tile_lower_diag : int
+        The (inclusive) lower diagonal index
+
+    tile_upper_diag : int
+        The (exclusive) upper diagonal index
+
+    tile_height : int
+        The height of the tile
+
+    tile_width : int
+        The width of the tile
+
+    Returns
+    -------
+    out : int
+        The total number of distances
+    """
+    if tile_width < tile_height:
+        # Transpose inputs, adjust for inclusive/exclusive diags
+        tile_width, tile_height = tile_height, tile_width
+        tile_lower_diag, tile_upper_diag = 1 - tile_upper_diag, 1 - tile_lower_diag
+
+    if tile_lower_diag > tile_upper_diag:  # pragma: no cover
+        # Swap diags
+        tile_lower_diag, tile_upper_diag = tile_upper_diag, tile_lower_diag
+
+    min_tile_diag = 1 - tile_height
+    max_tile_diag = tile_width  # Exclusive
+
+    if (
+        tile_lower_diag < min_tile_diag
+        or tile_upper_diag < min_tile_diag
+        or tile_lower_diag > max_tile_diag
+        or tile_upper_diag > max_tile_diag
+    ):
+
+        return 0
+
+    if tile_lower_diag == min_tile_diag and tile_upper_diag == max_tile_diag:
+        return tile_height * tile_width
+
+    if tile_lower_diag <= 0 and tile_upper_diag <= 0:
+        # lower trapezoid/triangle
+        lower_ndists = tile_height + tile_lower_diag
+        upper_ndists = tile_height + tile_upper_diag
+        vertices = np.array(
+            [
+                [tile_lower_diag, 0],
+                [tile_upper_diag, 0],
+                [-tile_height, upper_ndists],
+                [-tile_height, lower_ndists],
+            ]
+        )
+    elif tile_lower_diag <= 0 and 0 < tile_upper_diag <= tile_width - tile_height:
+        # irregular hexagon/diamond
+        lower_ndists = tile_height + tile_lower_diag
+        upper_ndists = min(tile_height, tile_width - tile_upper_diag)
+        vertices = np.array(
+            [
+                [tile_lower_diag, 0],
+                [0, 0],
+                [0, tile_upper_diag],
+                [-upper_ndists, tile_upper_diag + upper_ndists],
+                [-tile_height, lower_ndists],
+            ]
+        )
+    elif tile_lower_diag <= 0 and tile_upper_diag >= tile_width - tile_height:
+        # irregular hexagon/diamond
+        lower_ndists = tile_height + tile_lower_diag
+        upper_ndists = min(tile_height, tile_width - tile_upper_diag)
+        vertices = np.array(
+            [
+                [tile_lower_diag, 0],
+                [0, 0],
+                [0, tile_upper_diag],
+                [-upper_ndists, tile_upper_diag + upper_ndists],
+                [-tile_height, tile_width],
+                [-tile_height, lower_ndists],
+            ]
+        )
+    elif (
+        0 < tile_lower_diag <= tile_width - tile_height
+        and 0 < tile_upper_diag <= tile_width - tile_height
+    ):
+        # parallelogram
+        lower_ndists = min(tile_height, tile_width - tile_lower_diag)
+        upper_ndists = min(tile_height, tile_width - tile_upper_diag)
+        vertices = np.array(
+            [
+                [0, tile_lower_diag],
+                [0, tile_upper_diag],
+                [-upper_ndists, tile_upper_diag + upper_ndists],
+                [-tile_height, tile_lower_diag + lower_ndists],
+            ]
+        )
+    elif (
+        0 < tile_lower_diag <= tile_width - tile_height
+        and tile_upper_diag > tile_width - tile_height
+    ):
+        # upper diamond
+        lower_ndists = min(tile_height, tile_width - tile_lower_diag)
+        upper_ndists = tile_width - tile_upper_diag
+        vertices = np.array(
+            [
+                [0, tile_lower_diag],
+                [0, tile_upper_diag],
+                [-upper_ndists, tile_upper_diag + upper_ndists],
+                [-tile_height, tile_width],
+                [-tile_height, tile_lower_diag + lower_ndists],
+            ]
+        )
+    else:
+        # tile_lower_diag > tile_width - tile_height and
+        # tile_upper_diag > tile_width - tile_height
+        # upper trapezoid
+        lower_ndists = tile_width - tile_lower_diag
+        upper_ndists = tile_width - tile_upper_diag
+        vertices = np.array(
+            [
+                [0, tile_lower_diag],
+                [0, tile_upper_diag],
+                [-upper_ndists, tile_upper_diag + upper_ndists],
+                [-lower_ndists, tile_width],
+            ]
+        )
+
+    i = np.arange(vertices.shape[0])
+    total_diagonal_ndists = np.abs(
+        np.sum(
+            vertices[i, 0] * vertices[i - 1, 1] - vertices[i, 1] * vertices[i - 1, 0]
+        )
+        / 2
+    )
+    total_diagonal_ndists += lower_ndists / 2 - upper_ndists / 2
+
+    return int(total_diagonal_ndists)
