@@ -1996,6 +1996,12 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
     -------
     out : int
         The total number of distances
+
+    Notes
+    -----
+    This function essentially uses the "shoelace formula" to determine the area
+    of a simple polygon whose vertices are described by their Cartesian coordinates
+    in a plane.
     """
     if tile_width < tile_height:
         # Transpose inputs, adjust for inclusive/exclusive diags
@@ -2021,6 +2027,7 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
     if tile_lower_diag == min_tile_diag and tile_upper_diag == max_tile_diag:
         return tile_height * tile_width
 
+    # Determine polygon shape and establish vertices
     if tile_lower_diag <= 0 and tile_upper_diag <= 0:
         # lower trapezoid/triangle
         lower_ndists = tile_height + tile_lower_diag
@@ -2106,6 +2113,7 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
             ]
         )
 
+    # Shoelace formula
     i = np.arange(vertices.shape[0])
     total_diagonal_ndists = np.abs(
         np.sum(
@@ -2113,6 +2121,7 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
         )
         / 2
     )
+    # Account for over/under-counting due to jagged upper/lower diagonal shapes
     total_diagonal_ndists += lower_ndists / 2 - upper_ndists / 2
 
     return int(total_diagonal_ndists)
