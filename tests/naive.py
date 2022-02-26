@@ -3,6 +3,7 @@ import functools
 import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.stats import norm
+from numba import njit
 from stumpy import core, config
 
 
@@ -1493,7 +1494,7 @@ def normalize_pan(pan, ms, bfs_indices, n_processed):
     idx = bfs_indices[:n_processed]
     for i in range(n_processed):
         norm = 1.0 / (2.0 * np.sqrt(ms[i]))
-        pan[idx] = np.minimum(1.0, pan[idx] * norm)
+        pan[idx[i]] = np.minimum(1.0, pan[idx[i]] * norm)
 
 
 def contrast_pan(pan, threshold, bfs_indices, n_processed):
@@ -1521,6 +1522,7 @@ def binarize_pan(pan, threshold, bfs_indices, n_processed):
 
 
 def transform_pan(pan, ms, threshold, bfs_indices, n_processed):
+    pan = pan.copy()
     idx = bfs_indices[:n_processed]
     sorted_idx = np.sort(idx)
     pan[pan == np.inf] = np.nan
@@ -1551,3 +1553,83 @@ def _get_mask_slices(mask):
         idx.append(len(mask))
 
     return np.array(idx).reshape(len(idx) // 2, 2)
+
+
+@njit(fastmath=True)
+def _total_trapezoid_ndists(a, b, h):
+    return (a + b) * h // 2
+
+
+@njit(fastmath=True)
+def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_width):
+    total_ndists = 0
+
+    if tile_width < tile_height:
+        # Transpose inputs, adjust for inclusive/exclusive diags
+        tile_width, tile_height = tile_height, tile_width
+        tile_lower_diag, tile_upper_diag = 1 - tile_upper_diag, 1 - tile_lower_diag
+
+    if tile_lower_diag > tile_upper_diag:  # pragma: no cover
+        # Swap diags
+        tile_lower_diag, tile_upper_diag = tile_upper_diag, tile_lower_diag
+
+    min_tile_diag = 1 - tile_height
+    max_tile_diag = tile_width  # Exclusive
+
+    if (
+        tile_lower_diag < min_tile_diag
+        or tile_upper_diag < min_tile_diag
+        or tile_lower_diag > max_tile_diag
+        or tile_upper_diag > max_tile_diag
+    ):
+
+        return total_ndists
+
+    if tile_lower_diag == min_tile_diag and tile_upper_diag == max_tile_diag:
+        total_ndists = tile_height * tile_width
+    elif min_tile_diag <= tile_lower_diag < 0:
+        lower_ndists = tile_height + tile_lower_diag
+        if min_tile_diag <= tile_upper_diag <= 0:
+            upper_ndists = tile_height + (tile_upper_diag - 1)
+            total_ndists = _total_trapezoid_ndists(
+                upper_ndists, lower_ndists, tile_upper_diag - tile_lower_diag
+            )
+        elif 0 < tile_upper_diag <= tile_width - tile_height + 1:
+            total_ndists = _total_trapezoid_ndists(
+                tile_height, lower_ndists, 1 - tile_lower_diag
+            )
+            total_ndists += (tile_upper_diag - 1) * tile_height
+        else:  # tile_upper_diag > tile_width - tile_height + 1
+            upper_ndists = tile_width - (tile_upper_diag - 1)
+            total_ndists = _total_trapezoid_ndists(
+                tile_height, lower_ndists, 1 - tile_lower_diag
+            )
+            total_ndists += (tile_width - tile_height) * tile_height
+            total_ndists += _total_trapezoid_ndists(
+                tile_height - 1,
+                upper_ndists,
+                tile_upper_diag - (tile_width - tile_height + 1),
+            )
+    elif 0 <= tile_lower_diag <= tile_width - tile_height:
+        if tile_upper_diag == 0:
+            total_ndists = 0
+        elif 0 < tile_upper_diag <= tile_width - tile_height + 1:
+            total_ndists = (tile_upper_diag - tile_lower_diag) * tile_height
+        else:  # tile_upper_diag > tile_width - tile_height + 1
+            upper_ndists = tile_width - (tile_upper_diag - 1)
+            total_ndists = (
+                tile_width - tile_height - tile_lower_diag + 1
+            ) * tile_height
+            total_ndists += _total_trapezoid_ndists(
+                tile_height - 1,
+                upper_ndists,
+                tile_upper_diag - (tile_width - tile_height + 1),
+            )
+    else:  # tile_lower_diag > tile_width - tile_height
+        lower_ndists = tile_width - tile_lower_diag
+        upper_ndists = tile_width - (tile_upper_diag - 1)
+        total_ndists = _total_trapezoid_ndists(
+            upper_ndists, lower_ndists, tile_upper_diag - tile_lower_diag
+        )
+
+    return total_ndists

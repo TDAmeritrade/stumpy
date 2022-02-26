@@ -199,27 +199,14 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
 
     See Algorithm 2
     """
-    T_A = core._preprocess(T_A)
-    core.check_window_size(m, max_size=T_A.shape[-1])
-    T_A[np.isinf(T_A)] = np.nan
-
     if T_B is None:
         T_B = T_A
         excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     else:
         excl_zone = None
 
-    T_B = core._preprocess(T_B)
-    core.check_window_size(m, max_size=T_B.shape[-1])
-    T_B[np.isinf(T_B)] = np.nan
-
-    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
-
-    μ_Q, σ_Q = core.compute_mean_std(T_A, m)
-    M_T, Σ_T = core.compute_mean_std(T_B, m)
-
-    T_A[np.isnan(T_A)] = 0
-    T_B[np.isnan(T_B)] = 0
+    T_A, μ_Q, σ_Q = core.preprocess(T_A, m)
+    T_B, M_T, Σ_T = core.preprocess(T_B, m)
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
