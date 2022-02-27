@@ -235,4 +235,3 @@ def test_match(Q, T):
     )
 
     npt.assert_almost_equal(left, right)
-
