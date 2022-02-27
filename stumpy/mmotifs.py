@@ -1,5 +1,10 @@
-import numpy as np
+# STUMPY
+# Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
+# STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
+
 import logging
+
+import numpy as np
 
 from .aamp_mmotifs import aamp_mmotifs
 from . import core, config, mdl, match
