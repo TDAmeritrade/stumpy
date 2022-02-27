@@ -465,14 +465,19 @@ def _sliding_dot_product(Q, T, n_threads=1):
         Time series or sequence
 
     n_thrads : int, default 1
-        The number of threads to use
+        The number of threads to use. `n_threads` must be between 1 and
+        `numba.config.NUMBA_NUM_THREADS`. Otherwise all threads will be used
+        (i.e., `n_threads = numba.config.NUMBA_NUM_THREADS`).
 
     Returns
     -------
     out : numpy.ndarray
         Sliding dot product between `Q` and `T`.
     """
-    numba.set_num_threads(n_threads)
+    if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:
+        n_threads = numba.config.NUMBA_NUM_THREADS
+    else:
+        numba.set_num_threads(n_threads)
     m = Q.shape[0]
     k = T.shape[0] - m + 1
     out = np.empty(k)

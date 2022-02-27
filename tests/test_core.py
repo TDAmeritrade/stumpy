@@ -129,7 +129,7 @@ def test_check_max_window_size():
 @pytest.mark.parametrize("Q, T", test_data)
 def test_njit_sliding_dot_product(Q, T):
     ref_mp = naive_rolling_window_dot_product(Q, T)
-    for n_threads in [1, 2]:
+    for n_threads in [1, 2, 3]:
         comp_mp = core._sliding_dot_product(Q, T, n_threads)
         npt.assert_almost_equal(ref_mp, comp_mp)
 
