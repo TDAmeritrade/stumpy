@@ -110,6 +110,19 @@ def mmotifs(
     motif_mdls: list
         A list consisting of arrays that contain the mdl results for
         finding the dimension of each motif
+
+    See Also
+    --------
+    stumpy.motifs : Find the top motifs for time series `T`
+    stumpy.match : Find all matches of a query `Q` in a time series `T`
+    stumpy.mstump : Compute the multi-dimensional z-normalized matrix profile
+    stumpy.mstumped : Compute the multi-dimensional z-normalized matrix profile with
+        a distributed dask cluster
+    stumpy.subspace : Compute the k-dimensional matrix profile subspace for a given
+        subsequence index and its nearest neighbor index
+    stumpy.mdl : Compute the number of bits needed to compress one array with another
+        using the minimum description length (MDL)
+
     """
     T = core._preprocess(T)
     m = T.shape[-1] - P.shape[-1] + 1

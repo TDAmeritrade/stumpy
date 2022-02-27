@@ -240,7 +240,8 @@ def motifs(
 
     See Also
     --------
-    stumpy.match : Find all matches of a query Q in a time series T
+    stumpy.match : Find all matches of a query `Q` in a time series `T`
+    stumpy.mmotifs : Discover the top motifs for the multi-dimensional time series `T`
 
     Examples
     --------
