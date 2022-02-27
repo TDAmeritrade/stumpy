@@ -8,6 +8,7 @@ import inspect
 
 import numpy as np
 from numba import njit, prange
+import numba
 from scipy.signal import convolve
 from scipy.ndimage import maximum_filter1d, minimum_filter1d
 from scipy import linalg
@@ -448,6 +449,37 @@ def check_window_size(m, max_size=None):
 
     if max_size is not None and m > max_size:
         raise ValueError(f"The window size must be less than or equal to {max_size}")
+
+
+@njit(fastmath=True, parallel=True)
+def _sliding_dot_product(Q, T, n_threads=1):
+    """
+    A Numba JIT-compiled parallelized implementation of the sliding window dot product.
+
+    Parameters
+    ----------
+    Q : numpy.ndarray
+        Query array or subsequence
+
+    T : numpy.ndarray
+        Time series or sequence
+
+    n_thrads : int, default 1
+        The number of threads to use
+
+    Returns
+    -------
+    out : numpy.ndarray
+        Sliding dot product between `Q` and `T`.
+    """
+    numba.set_num_threads(n_threads)
+    m = Q.shape[0]
+    k = T.shape[0] - m + 1
+    out = np.empty(k)
+    for i in prange(k):
+        out[i] = np.dot(Q, T[i : i + m])
+
+    return out
 
 
 def sliding_dot_product(Q, T):
