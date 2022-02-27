@@ -3,7 +3,7 @@ import numpy as np
 # import numpy.testing as npt
 # import pytest
 
-from stumpy import mmotifs
+from stumpy import mmotifs, config
 
 
 import naive
@@ -55,7 +55,9 @@ def test_motifs_multidimensional_one_motif_all_dimensions():
     )
     m = 3
 
-    P, I = naive.mstump(T, m)
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+    P, I = naive.mstump(T, m, excl_zone)
     motif_distances, motif_indices, motif_subspaces, motif_mdls = mmotifs(
         T, P, I, max_motifs=1
     )
