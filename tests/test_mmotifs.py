@@ -66,10 +66,10 @@ def test_motifs_multidimensional_one_motif_all_dimensions():
     )
 
     # Assert
-    npt.assert_array_equal(motif_distances_expected, motif_distances)
-    npt.assert_array_equal(motif_indices_expected, motif_indices)
-    npt.assert_array_equal(motif_subspaces_expected, motif_subspaces)
-    npt.assert_array_equal(motif_mdls_expected, motif_mdls)
+    npt.assert_array_almost_equal(motif_distances_expected, motif_distances)
+    npt.assert_array_almost_equal(motif_indices_expected, motif_indices)
+    npt.assert_array_almost_equal(motif_subspaces_expected, motif_subspaces)
+    npt.assert_array_almost_equal(motif_mdls_expected, motif_mdls)
 
 
 # def test_motifs_multidimensional_two_motifs_all_dimensions():
