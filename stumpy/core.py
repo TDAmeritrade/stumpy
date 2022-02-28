@@ -474,7 +474,7 @@ def _sliding_dot_product(Q, T, n_threads=1):
     out : numpy.ndarray
         Sliding dot product between `Q` and `T`.
     """
-    if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:
+    if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:  # pragma: nocover
         n_threads = numba.config.NUMBA_NUM_THREADS
     else:
         numba.set_num_threads(n_threads)
@@ -1797,6 +1797,58 @@ def _get_array_ranges(a, n_chunks, truncate):
             array_ranges[row_truncation_idx - 1 :, 1] = a.shape[0]
             if truncate:
                 array_ranges = array_ranges[:row_truncation_idx]
+
+    return array_ranges
+
+
+@njit(
+    # "i8[:, :](i8, i8, b1)"
+)
+def _get_ranges(size, n_chunks, truncate):
+    """
+    Given a single input integer value, split an array of that length `size` evenly into
+    `n_chunks`.
+
+    This function is different from `_get_array_ranges` in that it does not take into
+    account the contents of the array and, instead, assumes that we are chunking up
+    `np.ones(size, dtype=np.int64)`. Additionally, the non-truncated sections may not
+    all appear at the end of the returned away (i.e., they may be scattered throughout
+    different rows of the array) but may be identified as having the same start and
+    stop indices.
+
+    Parameters
+    ----------
+    size : int
+        The size or length of an array to chunk
+
+    n_chunks : int
+        Number of chunks to split the array into
+
+    truncate : bool
+        If `truncate=True`, truncate the rows of `array_ranges` if there are not enough
+        elements in `a` to be chunked up into `n_chunks`.  Otherwise, if
+        `truncate=False`, all extra chunks will have their start and stop indices set
+        to `a.shape[0]`.
+
+    Returns
+    -------
+    array_ranges : numpy.ndarray
+        A two column array where each row consists of a start and (exclusive) stop index
+        pair. The first column contains the start indices and the second column
+        contains the stop indices.
+    """
+    a = np.ones(size, dtype=np.int64)
+    array_ranges = np.zeros((n_chunks, 2), dtype=np.int64)
+    if a.shape[0] > 0 and n_chunks > 0:
+        cumsum = a.cumsum()
+        insert = np.linspace(0, a.sum(), n_chunks + 1)[1:-1]
+        idx = 1 + np.searchsorted(cumsum, insert)
+        array_ranges[1:, 0] = idx  # Fill the first column with start indices
+        array_ranges[:-1, 1] = idx  # Fill the second column with exclusive stop indices
+        array_ranges[-1, 1] = a.shape[0]  # Handle the stop index for the final chunk
+
+    if truncate:
+        array_ranges = array_ranges[array_ranges[:, 0] != array_ranges[:, 1]]
 
     return array_ranges
 
