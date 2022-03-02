@@ -476,8 +476,7 @@ def _sliding_dot_product(Q, T, n_threads=1):
     """
     if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:  # pragma: nocover
         n_threads = numba.config.NUMBA_NUM_THREADS
-    else:
-        numba.set_num_threads(n_threads)
+    numba.set_num_threads(n_threads)
     m = Q.shape[0]
     k = T.shape[0] - m + 1
     out = np.empty(k)
@@ -1062,8 +1061,7 @@ def _p_norm_distance_profile(Q, T, p=2.0, n_threads=1):
     """
     if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:  # pragma: nocover
         n_threads = numba.config.NUMBA_NUM_THREADS
-    else:
-        numba.set_num_threads(n_threads)
+    numba.set_num_threads(n_threads)
 
     m = Q.shape[0]
     k = T.shape[0] - m + 1
