@@ -118,6 +118,7 @@ def aamp_mmotifs(
         max_motifs = 1
 
     T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
+    P = P.copy()
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
