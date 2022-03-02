@@ -471,6 +471,7 @@ def test_mass_T_inf(Q, T):
 def test_p_norm_distance_profile(Q, T):
     Q = Q.copy()
     T = T.copy()
+    print(Q.dtype, T.dtype)
     m = Q.shape[0]
     for p in [1.0, 2.0, 3.0]:
         ref = cdist(
@@ -479,6 +480,12 @@ def test_p_norm_distance_profile(Q, T):
             metric="minkowski",
             p=p,
         ).flatten()
+        cmp = core._p_norm_distance_profile(Q, T, p, n_threads=1)
+        npt.assert_almost_equal(ref, cmp)
+        cmp = core._p_norm_distance_profile(Q, T, p, n_threads=2)
+        npt.assert_almost_equal(ref, cmp)
+        cmp = core._p_norm_distance_profile(Q, T, p, n_threads=3)
+        npt.assert_almost_equal(ref, cmp)
         for n_threads in [1, 2, 3]:
             cmp = core._p_norm_distance_profile(Q, T, p, n_threads)
             npt.assert_almost_equal(ref, cmp)
