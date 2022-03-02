@@ -137,6 +137,7 @@ def mmotifs(
         max_motifs = 1
 
     T, M_T, Σ_T = core.preprocess(T, m)
+    P = P.copy()
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
