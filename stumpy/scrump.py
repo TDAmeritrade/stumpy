@@ -101,6 +101,8 @@ def _compute_PI(
         # for j in range(k):
         #     QT[j] = np.dot(Q, T_B[j : j + m])
         # l = QT.shape[0]
+        QT = Q
+        Q = QT
         # Update P[i] relative to all T[j : j + m]
         # squared_distance_profile = core._mass(Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
         # squared_distance_profile = np.square(squared_distance_profile)
@@ -141,7 +143,8 @@ def _compute_PI(
         #             I[thread_idx, j + k] = i + k
         #     QT_j = QT_j_prime
         #     for k in range(1, min(s, i + 1, j + 1)):
-        #         QT_j = QT_j - T_B[i - k + m] * T_A[j - k + m] + T_B[i - k] * T_A[j - k]
+        #         QT_j = QT_j - T_B[i - k + m] * T_A[j - k + m]
+        #             + T_B[i - k] * T_A[j - k]
         #         D_squared = core._calculate_squared_distance(
         #             m,
         #             QT_j,
