@@ -8,7 +8,6 @@ import inspect
 
 import numpy as np
 from numba import njit, prange
-import numba
 from scipy.signal import convolve
 from scipy.ndimage import maximum_filter1d, minimum_filter1d
 from scipy import linalg
