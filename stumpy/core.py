@@ -452,7 +452,7 @@ def check_window_size(m, max_size=None):
 
 
 @njit(fastmath=True, parallel=True)
-def _sliding_dot_product(Q, T, n_threads=1):
+def _sliding_dot_product(Q, T):
     """
     A Numba JIT-compiled parallelized implementation of the sliding window dot product.
 
@@ -464,19 +464,11 @@ def _sliding_dot_product(Q, T, n_threads=1):
     T : numpy.ndarray
         Time series or sequence
 
-    n_thrads : int, default 1
-        The number of threads to use. `n_threads` must be between 1 and
-        `numba.config.NUMBA_NUM_THREADS`. Otherwise all threads will be used
-        (i.e., `n_threads = numba.config.NUMBA_NUM_THREADS`).
-
     Returns
     -------
     out : numpy.ndarray
         Sliding dot product between `Q` and `T`.
     """
-    if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:  # pragma: nocover
-        n_threads = numba.config.NUMBA_NUM_THREADS
-    numba.set_num_threads(n_threads)
     m = Q.shape[0]
     k = T.shape[0] - m + 1
     out = np.empty(k)
@@ -1033,7 +1025,7 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
 
 # @njit(fastmath=True, parallel=True)
-# def _p_norm_distance_profile(Q, T, p=2.0, n_threads=1):
+# def _p_norm_distance_profile(Q, T, p=2.0):
 #     """
 #     A Numba JIT-compiled and parallelized function for computing the p-normalized
 #     distance profile
@@ -1049,20 +1041,12 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 #     p : float, default 2.0
 #         The p-norm to apply for computing the Minkowski distance.
 
-#     n_threads : int, default 1
-#         The number of threads to use. `n_threads` must be between 1 and
-#         `numba.config.NUMBA_NUM_THREADS`. Otherwise all threads will be used
-#         (i.e., `n_threads = numba.config.NUMBA_NUM_THREADS`).
-
 #     Returns
 #     -------
 #     output : numpy.ndarray
 #         p-normalized distance profile between `Q` and `T`
 #     """
-#     if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:  # pragma: nocover
-#         n_threads = numba.config.NUMBA_NUM_THREADS
-#     numba.set_num_threads(n_threads)
-
+#     n_threads = numba.config.NUMBA_NUM_THREADS
 #     m = Q.shape[0]
 #     k = T.shape[0] - m + 1
 #     p_norm_profile = np.empty(k, dtype=np.float64)
