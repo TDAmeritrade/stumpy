@@ -170,8 +170,6 @@ def _prescrump(
     σ_Q,
     indices,
     s,
-    P_squared,
-    I,
     excl_zone=None,
 ):
     """
@@ -230,6 +228,10 @@ def _prescrump(
     See Algorithm 2
     """
     n_threads = numba.config.NUMBA_NUM_THREADS
+    l = T_A.shape[0] - m + 1
+    P_squared = np.full((n_threads, l), np.inf, dtype=np.float64)
+    I = np.full((n_threads, l), -1, dtype=np.int64)
+
     idx_ranges = core._get_ranges(len(indices), n_threads, truncate=False)
     for thread_idx in prange(n_threads):
         _compute_PI(
@@ -249,6 +251,14 @@ def _prescrump(
             I,
             excl_zone,
         )
+
+    for thread_idx in range(1, n_threads):
+        for i in range(l):
+            if P_squared[thread_idx, i] < P_squared[0, i]:
+                P_squared[0, i] = P_squared[thread_idx, i]
+                I[0, i] = I[thread_idx, i]
+
+    return np.sqrt(P_squared[0]), I[0]
 
 
 @core.non_normalized(scraamp.prescraamp)
@@ -309,15 +319,12 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
 
     n_A = T_A.shape[0]
     l = n_A - m + 1
-    n_threads = numba.config.NUMBA_NUM_THREADS
-    P_squared = np.full((n_threads, l), np.inf, dtype=np.float64)
-    I = np.full((n_threads, l), -1, dtype=np.int64)
 
     if s is None:  # pragma: no cover
         s = excl_zone
 
     indices = np.random.permutation(range(0, l, s)).astype(np.int64)
-    _prescrump(
+    P, I = _prescrump(
         T_A,
         T_B,
         m,
@@ -327,20 +334,10 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
         σ_Q,
         indices,
         s,
-        P_squared,
-        I,
         excl_zone,
     )
 
-    for thread_idx in range(1, n_threads):
-        for i in range(l):
-            if P_squared[thread_idx, i] < P_squared[0, i]:
-                P_squared[0, i] = P_squared[thread_idx, i]
-                I[0, i] = I[thread_idx, i]
-
-    P = np.sqrt(P_squared)
-
-    return P[0], I[0]
+    return P, I
 
 
 @core.non_normalized(
