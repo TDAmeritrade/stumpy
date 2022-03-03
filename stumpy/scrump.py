@@ -94,10 +94,14 @@ def _compute_PI(
     See Algorithm 2
     """
     for i in indices[start:stop]:
-        QT = core._sliding_dot_product(T_A[i : i + m], T_B)
+        Q = T_A[i : i + m]
+        # QT = core._sliding_dot_product(Q, T_B)
+        k = T_B.shape[0] - m + 1
+        QT = np.empty(k, dtype=np.float64)
+        for j in range(k):
+            QT[j] = np.dot(Q, T_B[j : j + m])
         l = QT.shape[0]
         # Update P[i] relative to all T[j : j + m]
-        Q = T_A[i : i + m]
         squared_distance_profile = core._mass(Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
         squared_distance_profile = np.square(squared_distance_profile)
         if excl_zone is not None:

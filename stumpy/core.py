@@ -471,7 +471,7 @@ def _sliding_dot_product(Q, T):
     m = Q.shape[0]
     k = T.shape[0] - m + 1
     out = np.empty(k)
-    for i in prange(k):
+    for i in range(k):
         out[i] = np.dot(Q, T[i : i + m])
 
     return out
