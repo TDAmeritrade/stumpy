@@ -93,7 +93,6 @@ def _compute_PI(
 
     See Algorithm 2
     """
-    return
     for i in indices[start:stop]:
         Q = T_A[i : i + m]
         # QT = core._sliding_dot_product(Q, T_B)
@@ -103,60 +102,60 @@ def _compute_PI(
             QT[j] = np.dot(Q, T_B[j : j + m])
         l = QT.shape[0]
         # Update P[i] relative to all T[j : j + m]
-        squared_distance_profile = core._mass(Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
-        squared_distance_profile = np.square(squared_distance_profile)
-        if excl_zone is not None:
-            zone_start = max(0, i - excl_zone)
-            zone_stop = min(l, i + excl_zone)
-            squared_distance_profile[zone_start : zone_stop + 1] = np.inf
-        I[thread_idx, i] = np.argmin(squared_distance_profile)
-        P_squared[thread_idx, i] = squared_distance_profile[I[thread_idx, i]]
-        if P_squared[thread_idx, i] == np.inf:  # pragma: no cover
-            I[thread_idx, i] = -1
-        else:
-            j = I[thread_idx, i]
-            # Given the squared distance, work backwards and compute QT
-            QT_j = (m - P_squared[thread_idx, i] / 2.0) * (Σ_T[j] * σ_Q[i]) + (
-                m * M_T[j] * μ_Q[i]
-            )
-            QT_j_prime = QT_j
-            for k in range(1, min(s, l - max(i, j))):
-                QT_j = (
-                    QT_j
-                    - T_B[i + k - 1] * T_A[j + k - 1]
-                    + T_B[i + k + m - 1] * T_A[j + k + m - 1]
-                )
-                D_squared = core._calculate_squared_distance(
-                    m,
-                    QT_j,
-                    M_T[i + k],
-                    Σ_T[i + k],
-                    μ_Q[j + k],
-                    σ_Q[j + k],
-                )
-                if D_squared < P_squared[thread_idx, i + k]:
-                    P_squared[thread_idx, i + k] = D_squared
-                    I[thread_idx, i + k] = j + k
-                if D_squared < P_squared[thread_idx, j + k]:
-                    P_squared[thread_idx, j + k] = D_squared
-                    I[thread_idx, j + k] = i + k
-            QT_j = QT_j_prime
-            for k in range(1, min(s, i + 1, j + 1)):
-                QT_j = QT_j - T_B[i - k + m] * T_A[j - k + m] + T_B[i - k] * T_A[j - k]
-                D_squared = core._calculate_squared_distance(
-                    m,
-                    QT_j,
-                    M_T[i - k],
-                    Σ_T[i - k],
-                    μ_Q[j - k],
-                    σ_Q[j - k],
-                )
-                if D_squared < P_squared[thread_idx, i - k]:
-                    P_squared[thread_idx, i - k] = D_squared
-                    I[thread_idx, i - k] = j - k
-                if D_squared < P_squared[thread_idx, j - k]:
-                    P_squared[thread_idx, j - k] = D_squared
-                    I[thread_idx, j - k] = i - k
+        # squared_distance_profile = core._mass(Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
+        # squared_distance_profile = np.square(squared_distance_profile)
+        # if excl_zone is not None:
+        #     zone_start = max(0, i - excl_zone)
+        #     zone_stop = min(l, i + excl_zone)
+        #     squared_distance_profile[zone_start : zone_stop + 1] = np.inf
+        # I[thread_idx, i] = np.argmin(squared_distance_profile)
+        # P_squared[thread_idx, i] = squared_distance_profile[I[thread_idx, i]]
+        # if P_squared[thread_idx, i] == np.inf:  # pragma: no cover
+        #     I[thread_idx, i] = -1
+        # else:
+        #     j = I[thread_idx, i]
+        #     # Given the squared distance, work backwards and compute QT
+        #     QT_j = (m - P_squared[thread_idx, i] / 2.0) * (Σ_T[j] * σ_Q[i]) + (
+        #         m * M_T[j] * μ_Q[i]
+        #     )
+        #     QT_j_prime = QT_j
+        #     for k in range(1, min(s, l - max(i, j))):
+        #         QT_j = (
+        #             QT_j
+        #             - T_B[i + k - 1] * T_A[j + k - 1]
+        #             + T_B[i + k + m - 1] * T_A[j + k + m - 1]
+        #         )
+        #         D_squared = core._calculate_squared_distance(
+        #             m,
+        #             QT_j,
+        #             M_T[i + k],
+        #             Σ_T[i + k],
+        #             μ_Q[j + k],
+        #             σ_Q[j + k],
+        #         )
+        #         if D_squared < P_squared[thread_idx, i + k]:
+        #             P_squared[thread_idx, i + k] = D_squared
+        #             I[thread_idx, i + k] = j + k
+        #         if D_squared < P_squared[thread_idx, j + k]:
+        #             P_squared[thread_idx, j + k] = D_squared
+        #             I[thread_idx, j + k] = i + k
+        #     QT_j = QT_j_prime
+        #     for k in range(1, min(s, i + 1, j + 1)):
+        #         QT_j = QT_j - T_B[i - k + m] * T_A[j - k + m] + T_B[i - k] * T_A[j - k]
+        #         D_squared = core._calculate_squared_distance(
+        #             m,
+        #             QT_j,
+        #             M_T[i - k],
+        #             Σ_T[i - k],
+        #             μ_Q[j - k],
+        #             σ_Q[j - k],
+        #         )
+        #         if D_squared < P_squared[thread_idx, i - k]:
+        #             P_squared[thread_idx, i - k] = D_squared
+        #             I[thread_idx, i - k] = j - k
+        #         if D_squared < P_squared[thread_idx, j - k]:
+        #             P_squared[thread_idx, j - k] = D_squared
+        #             I[thread_idx, j - k] = i - k
 
 
 @njit(
