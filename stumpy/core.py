@@ -1032,57 +1032,57 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return np.sqrt(D_squared)
 
 
-@njit(fastmath=True, parallel=True)
-def _p_norm_distance_profile(Q, T, p=2.0, n_threads=1):
-    """
-    A Numba JIT-compiled and parallelized function for computing the p-normalized
-    distance profile
+# @njit(fastmath=True, parallel=True)
+# def _p_norm_distance_profile(Q, T, p=2.0, n_threads=1):
+#     """
+#     A Numba JIT-compiled and parallelized function for computing the p-normalized
+#     distance profile
 
-    Parameters
-    ----------
-    Q : numpy.ndarray
-        Query array or subsequence
+#     Parameters
+#     ----------
+#     Q : numpy.ndarray
+#         Query array or subsequence
 
-    T : numpy.ndarray
-        Time series or sequence
+#     T : numpy.ndarray
+#         Time series or sequence
 
-    p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+#     p : float, default 2.0
+#         The p-norm to apply for computing the Minkowski distance.
 
-    n_threads : int, default 1
-        The number of threads to use. `n_threads` must be between 1 and
-        `numba.config.NUMBA_NUM_THREADS`. Otherwise all threads will be used
-        (i.e., `n_threads = numba.config.NUMBA_NUM_THREADS`).
+#     n_threads : int, default 1
+#         The number of threads to use. `n_threads` must be between 1 and
+#         `numba.config.NUMBA_NUM_THREADS`. Otherwise all threads will be used
+#         (i.e., `n_threads = numba.config.NUMBA_NUM_THREADS`).
 
-    Returns
-    -------
-    output : numpy.ndarray
-        p-normalized distance profile between `Q` and `T`
-    """
-    if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:  # pragma: nocover
-        n_threads = numba.config.NUMBA_NUM_THREADS
-    numba.set_num_threads(n_threads)
+#     Returns
+#     -------
+#     output : numpy.ndarray
+#         p-normalized distance profile between `Q` and `T`
+#     """
+#     if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:  # pragma: nocover
+#         n_threads = numba.config.NUMBA_NUM_THREADS
+#     numba.set_num_threads(n_threads)
 
-    m = Q.shape[0]
-    k = T.shape[0] - m + 1
-    p_norm_profile = np.empty(k, dtype=np.float64)
+#     m = Q.shape[0]
+#     k = T.shape[0] - m + 1
+#     p_norm_profile = np.empty(k, dtype=np.float64)
 
-    if p == 2.0:
-        Q_squared = np.sum(Q * Q)
-        T_squared = np.empty(k, dtype=np.float64)
-        T_squared[0] = np.sum(T[:m] * T[:m])
-        for i in range(1, k):
-            T_squared[i] = (
-                T_squared[i - 1] - T[i - 1] * T[i - 1] + T[i + m - 1] * T[i + m - 1]
-            )
-        QT = _sliding_dot_product(Q, T, n_threads)
-        for i in prange(k):
-            p_norm_profile[i] = Q_squared + T_squared[i] - 2.0 * QT[i]
-    else:
-        for i in prange(k):
-            p_norm_profile[i] = np.sum(np.power(np.abs(Q - T[i : i + m]), p))
+#     if p == 2.0:
+#         Q_squared = np.sum(Q * Q)
+#         T_squared = np.empty(k, dtype=np.float64)
+#         T_squared[0] = np.sum(T[:m] * T[:m])
+#         for i in range(1, k):
+#             T_squared[i] = (
+#                 T_squared[i - 1] - T[i - 1] * T[i - 1] + T[i + m - 1] * T[i + m - 1]
+#             )
+#         QT = _sliding_dot_product(Q, T, n_threads)
+#         for i in prange(k):
+#             p_norm_profile[i] = Q_squared + T_squared[i] - 2.0 * QT[i]
+#     else:
+#         for i in prange(k):
+#             p_norm_profile[i] = np.sum(np.power(np.abs(Q - T[i : i + m]), p))
 
-    return np.power(np.abs(p_norm_profile), 1.0 / p)
+#     return np.power(np.abs(p_norm_profile), 1.0 / p)
 
 
 def _mass_absolute(Q, T, p=2.0):
