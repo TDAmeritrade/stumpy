@@ -1080,11 +1080,7 @@ def _p_norm_distance_profile(Q, T, p=2.0, n_threads=1):
             p_norm_profile[i] = Q_squared + T_squared[i] - 2.0 * QT[i]
     else:
         for i in prange(k):
-            tmp = Q - T[i : i + m]
-            tmp2 = np.abs(tmp)
-            tmp3 = np.power(tmp2, p)
-            p_norm_profile[i] = np.sum(tmp3)
-            # p_norm_profile[i] = np.sum(np.power(np.abs(Q - T[i : i + m]), p))
+            p_norm_profile[i] = np.sum(np.power(np.abs(Q - T[i : i + m]), p))
 
     return np.power(np.abs(p_norm_profile), 1.0 / p)
 
