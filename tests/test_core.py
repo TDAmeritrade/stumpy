@@ -130,14 +130,14 @@ def test_check_max_window_size():
 @pytest.mark.parametrize("Q, T", test_data)
 def test_njit_sliding_dot_product(Q, T):
     ref_mp = naive_rolling_window_dot_product(Q, T)
-    for n_threads in [1, 2, 3]:
-        if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:
-            numba.set_num_threads(numba.config.NUMBA_NUM_THREADS)
-        else:
-            numba.set_num_threads(n_threads)
-        comp_mp = core._sliding_dot_product(Q, T)
-        npt.assert_almost_equal(ref_mp, comp_mp)
-    numba.set_num_threads(numba.config.NUMBA_NUM_THREADS)
+    # for n_threads in [1, 2, 3]:
+    #     if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:
+    #         numba.set_num_threads(numba.config.NUMBA_NUM_THREADS)
+    #     else:
+    #         numba.set_num_threads(n_threads)
+    comp_mp = core._sliding_dot_product(Q, T)
+    npt.assert_almost_equal(ref_mp, comp_mp)
+    # numba.set_num_threads(numba.config.NUMBA_NUM_THREADS)
 
 
 @pytest.mark.parametrize("Q, T", test_data)
