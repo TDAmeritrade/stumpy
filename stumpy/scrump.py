@@ -93,6 +93,7 @@ def _compute_PI(
 
     See Algorithm 2
     """
+    return
     for i in indices[start:stop]:
         Q = T_A[i : i + m]
         # QT = core._sliding_dot_product(Q, T_B)
