@@ -102,7 +102,8 @@ def _compute_PI(
             QT[j] = np.dot(Q, T_B[j : j + m])
         l = QT.shape[0]
         # Update P[i] relative to all T[j : j + m]
-        squared_distance_profile = core._mass(Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
+        # squared_distance_profile = core._mass(Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
+        squared_distance_profile = np.empty(l)
         squared_distance_profile = np.square(squared_distance_profile)
         if excl_zone is not None:
             zone_start = max(0, i - excl_zone)
