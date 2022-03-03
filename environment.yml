@@ -2,7 +2,7 @@ channels:
   - conda-forge
 dependencies:
   - python>=3.7
-  - numpy>=1.15
+  - numpy>=1.18
   - scipy>=1.5
   - numba>=0.55
   - pandas>=0.20.0
