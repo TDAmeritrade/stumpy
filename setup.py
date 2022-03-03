@@ -29,7 +29,7 @@ def get_extras_require():
 configuration = {
     "name": "stumpy",
     "version": "1.10.2",
-    "python_requires=": ">=3.6",
+    "python_requires=": ">=3.7",
     "author": "Sean M. Law",
     "author_email": "seanmylaw@gmail.com",
     "description": (
@@ -50,7 +50,7 @@ configuration = {
         "Operating System :: POSIX",
         "Operating System :: Unix",
         "Operating System :: MacOS",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
     ],
     "keywords": "time series matrix profile motif discord",
     "url": "https://github.com/TDAmeritrade/stumpy",
