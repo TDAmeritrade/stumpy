@@ -1,7 +1,6 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-import numba
 from scipy.spatial.distance import cdist
 from stumpy import core, config
 import pytest
