@@ -98,7 +98,7 @@ def _prescrump(
     for thread_idx in prange(n_threads):
         start, stop = idx_ranges[thread_idx]
         for i in indices[start:stop]:
-            QT = core._sliding_dot_product(T_A[i : i + m], T_B, n_threads=1)
+            QT = core._sliding_dot_product(T_A[i : i + m], T_B)
             l = QT.shape[0]
             # Update P[i] relative to all T[j : j + m]
             Q = T_A[i : i + m]
