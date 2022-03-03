@@ -467,21 +467,21 @@ def test_mass_T_inf(Q, T):
     T[1] = 1e10
 
 
-@pytest.mark.parametrize("Q, T", test_data)
-def test_p_norm_distance_profile(Q, T):
-    Q = Q.copy()
-    T = T.copy()
-    m = Q.shape[0]
-    for p in [1.0, 2.0, 3.0]:
-        ref = cdist(
-            core.rolling_window(Q, m),
-            core.rolling_window(T, m),
-            metric="minkowski",
-            p=p,
-        ).flatten()
-        for n_threads in [1, 2, 3]:
-            cmp = core._p_norm_distance_profile(Q, T, p, n_threads)
-            npt.assert_almost_equal(ref, cmp)
+# @pytest.mark.parametrize("Q, T", test_data)
+# def test_p_norm_distance_profile(Q, T):
+#     Q = Q.copy()
+#     T = T.copy()
+#     m = Q.shape[0]
+#     for p in [1.0, 2.0, 3.0]:
+#         ref = cdist(
+#             core.rolling_window(Q, m),
+#             core.rolling_window(T, m),
+#             metric="minkowski",
+#             p=p,
+#         ).flatten()
+#         for n_threads in [1, 2, 3]:
+#             cmp = core._p_norm_distance_profile(Q, T, p, n_threads)
+#             npt.assert_almost_equal(ref, cmp)
 
 
 @pytest.mark.parametrize("Q, T", test_data)
