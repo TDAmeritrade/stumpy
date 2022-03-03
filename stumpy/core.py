@@ -450,10 +450,10 @@ def check_window_size(m, max_size=None):
         raise ValueError(f"The window size must be less than or equal to {max_size}")
 
 
-@njit(fastmath=True, parallel=True)
+@njit(fastmath=True)
 def _sliding_dot_product(Q, T):
     """
-    A Numba JIT-compiled parallelized implementation of the sliding window dot product.
+    A Numba JIT-compiled implementation of the sliding window dot product.
 
     Parameters
     ----------
