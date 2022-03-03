@@ -28,7 +28,6 @@ def _compute_PI(
     stop,
     thread_idx,
     s,
-    squared_distance_profile,
     P_squared,
     I,
     excl_zone=None,
@@ -78,9 +77,6 @@ def _compute_PI(
         The sampling interval that defaults to
         `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
 
-    squared_distance_profile : numpy.ndarray
-        A reusable array to store the computed squared distance profile
-
     P_squared : numpy.ndarray
         The squared matrix profile
 
@@ -102,20 +98,14 @@ def _compute_PI(
         l = QT.shape[0]
         # Update P[i] relative to all T[j : j + m]
         Q = T_A[i : i + m]
-        squared_distance_profile[thread_idx] = core._mass(
-            Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T
-        )
-        squared_distance_profile[thread_idx] = np.square(
-            squared_distance_profile[thread_idx]
-        )
+        squared_distance_profile = core._mass(Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
+        squared_distance_profile = np.square(squared_distance_profile)
         if excl_zone is not None:
             zone_start = max(0, i - excl_zone)
             zone_stop = min(l, i + excl_zone)
-            squared_distance_profile[thread_idx, zone_start : zone_stop + 1] = np.inf
-        I[thread_idx, i] = np.argmin(squared_distance_profile[thread_idx])
-        P_squared[thread_idx, i] = squared_distance_profile[
-            thread_idx, I[thread_idx, i]
-        ]
+            squared_distance_profile[zone_start : zone_stop + 1] = np.inf
+        I[thread_idx, i] = np.argmin(squared_distance_profile)
+        P_squared[thread_idx, i] = squared_distance_profile[I[thread_idx, i]]
         if P_squared[thread_idx, i] == np.inf:  # pragma: no cover
             I[thread_idx, i] = -1
         else:
@@ -180,7 +170,6 @@ def _prescrump(
     σ_Q,
     indices,
     s,
-    squared_distance_profile,
     P_squared,
     I,
     excl_zone=None,
@@ -224,9 +213,6 @@ def _prescrump(
         The sampling interval that defaults to
         `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
 
-    squared_distance_profile : numpy.ndarray
-        A reusable array to store the computed squared distance profile
-
     P_squared : numpy.ndarray
         The squared matrix profile
 
@@ -259,7 +245,6 @@ def _prescrump(
             idx_ranges[thread_idx, 1],
             thread_idx,
             s,
-            squared_distance_profile,
             P_squared,
             I,
             excl_zone,
@@ -323,12 +308,10 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
     T_B, M_T, Σ_T = core.preprocess(T_B, m)
 
     n_A = T_A.shape[0]
-    n_B = T_B.shape[0]
     l = n_A - m + 1
     n_threads = numba.config.NUMBA_NUM_THREADS
     P_squared = np.full((n_threads, l), np.inf, dtype=np.float64)
     I = np.full((n_threads, l), -1, dtype=np.int64)
-    squared_distance_profile = np.empty((n_threads, n_B - m + 1), dtype=np.float64)
 
     if s is None:  # pragma: no cover
         s = excl_zone
@@ -344,7 +327,6 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
         σ_Q,
         indices,
         s,
-        squared_distance_profile,
         P_squared,
         I,
         excl_zone,
