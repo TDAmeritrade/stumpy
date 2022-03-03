@@ -929,7 +929,6 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    parallel=True,
     fastmath=True,
 )
 def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
@@ -979,7 +978,6 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    parallel=True,
     fastmath=True,
 )
 def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
