@@ -137,3 +137,77 @@ def test_motifs_multidimensional_with_default_parameters_and_max_distance():
     npt.assert_array_almost_equal(motif_indices_expected, motif_indices)
     npt.assert_array_almost_equal(motif_subspaces_expected, motif_subspaces)
     npt.assert_array_almost_equal(motif_mdls_expected, motif_mdls)
+
+
+def test_motifs_multidimensional_two_motifs_all_dimensions():
+    # Find the best two motif pairs
+
+    # Arrange
+    motif_distances_expected = np.array([[0.0, 1.0], [0.0, 1.0]])
+    motif_indices_expected = np.array([[0, 5], [2, 7]])
+    motif_subspaces_expected = [np.array([1]), np.array([1])]
+    motif_mdls_expected = [
+        np.array([187.0, 188.0, 191.26466251, 196.0]),
+        np.array([187.0, 188.0, 201.2661943, 196.0]),
+    ]
+
+    # Act
+    T = np.array(
+        [
+            [5.0, 0.0, 3.0, 3.0, 7.0, 9.0, 3.0, 5.0, 2.0, 4.0, 7.0, 6.0, 8.0, 8.0, 1.0],
+            [
+                7.0,
+                3.0,
+                5.0,
+                9.0,
+                8.0,
+                7.0,
+                4.0,
+                5.0,
+                10.0,
+                8.0,
+                4.0,
+                3.0,
+                2.0,
+                0.0,
+                1.0,
+            ],
+            [6.0, 7.0, 7.0, 8.0, 1.0, 5.0, 9.0, 8.0, 9.0, 4.0, 3.0, 0.0, 3.0, 5.0, 0.0],
+            [
+                0.0,
+                1.0,
+                3.0,
+                2.0,
+                6.0,
+                1.0,
+                9.0,
+                10.0,
+                1.0,
+                2.0,
+                2.0,
+                5.0,
+                1.0,
+                0.0,
+                4.0,
+            ],
+        ]
+    )
+    m = 3
+
+    P, I = mstump(T, m, normalize=False)
+    motif_distances, motif_indices, motif_subspaces, motif_mdls = mmotifs(
+        T,
+        P,
+        I,
+        max_distance=np.inf,
+        cutoffs=np.inf,
+        max_matches=2,
+        max_motifs=2,
+        normalize=False,
+    )
+
+    # Assert
+    npt.assert_array_almost_equal(motif_distances_expected, motif_distances)
+    npt.assert_array_almost_equal(motif_indices_expected, motif_indices)
+    npt.assert_array_almost_equal(motif_subspaces_expected, motif_subspaces)
+    npt.assert_array_almost_equal(motif_mdls_expected, motif_mdls)
