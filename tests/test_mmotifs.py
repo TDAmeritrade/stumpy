@@ -140,7 +140,7 @@ def test_motifs_multidimensional_two_motifs_all_dimensions():
     # Arrange
     motif_distances_expected = np.array([[0.0, 0.0], [0.0, 0.0]])
     motif_indices_expected = np.array([[2, 12], [8, 11]])
-    motif_subspaces_expected = [np.array([1])]
+    motif_subspaces_expected = [np.array([3]), np.array([1])]
     motif_mdls_expected = [
         np.array([176.0, 177.509775, 191.26466251, 235.01955001]),
         np.array([176.0, 177.509775, 191.26466251, 235.01955001]),
