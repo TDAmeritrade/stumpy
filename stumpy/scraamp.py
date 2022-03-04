@@ -5,13 +5,96 @@
 import logging
 
 import numpy as np
-from numba import njit
+from numba import njit, prange
 import numba
 
 from . import core, config
 from .aamp import _aamp
 
 logger = logging.getLogger(__name__)
+
+
+@njit(fastmath=True)
+def _compute_PI(
+    T_A,
+    T_B,
+    m,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
+    p,
+    indices,
+    start,
+    stop,
+    thread_idx,
+    s,
+    P_NORM,
+    I,
+    excl_zone,
+):
+    l = T_B.shape[0] - m + 1
+    p_norm_profile = np.empty(l)
+    for i in indices[start:stop]:
+        if not T_A_subseq_isfinite[i]:  # pragma: no cover
+            p_norm_profile[:] = np.inf
+        else:
+            p_norm_profile[:] = core._p_norm_distance_profile(T_A[i : i + m], T_B, p=p)
+            p_norm_profile[p_norm_profile < config.STUMPY_P_NORM_THRESHOLD] = 0.0
+            p_norm_profile[~T_B_subseq_isfinite] = np.inf
+        # Update P[i] relative to all T[j : j + m]
+        if excl_zone is not None:
+            zone_start = max(0, i - excl_zone)
+            zone_stop = min(l, i + excl_zone)
+            p_norm_profile[zone_start : zone_stop + 1] = np.inf
+        I[thread_idx, i] = np.argmin(p_norm_profile)
+        P_NORM[thread_idx, i] = p_norm_profile[I[thread_idx, i]]
+        if P_NORM[thread_idx, i] == np.inf:  # pragma: no cover
+            I[thread_idx, i] = -1
+        else:
+            j = I[thread_idx, i]
+            # Given the squared distance, work backwards and compute QT
+            p_norm_j = P_NORM[thread_idx, i]
+            p_norm_j_prime = p_norm_j
+            for k in range(1, min(s, l - max(i, j))):
+                p_norm_j = (
+                    p_norm_j
+                    - abs(T_B[i + k - 1] - T_A[j + k - 1]) ** p
+                    + abs(T_B[i + k + m - 1] - T_A[j + k + m - 1]) ** p
+                )
+                if (
+                    not T_A_subseq_isfinite[i + k] or not T_B_subseq_isfinite[j + k]
+                ):  # pragma: no cover
+                    p_norm = np.inf
+                else:
+                    p_norm = p_norm_j
+                    if p_norm < config.STUMPY_P_NORM_THRESHOLD:  # pragma: no cover
+                        p_norm = 0.0
+                if p_norm < P_NORM[thread_idx, i + k]:
+                    P_NORM[thread_idx, i + k] = p_norm
+                    I[thread_idx, i + k] = j + k
+                if p_norm < P_NORM[thread_idx, j + k]:
+                    P_NORM[thread_idx, j + k] = p_norm
+                    I[thread_idx, j + k] = i + k
+            p_norm_j = p_norm_j_prime
+            for k in range(1, min(s, i + 1, j + 1)):
+                p_norm_j = (
+                    p_norm_j
+                    - abs(T_B[i - k + m] - T_A[j - k + m]) ** p
+                    + abs(T_B[i - k] - T_A[j - k]) ** p
+                )
+                if (
+                    not T_A_subseq_isfinite[i - k] or not T_B_subseq_isfinite[j - k]
+                ):  # pragma: no cover
+                    p_norm = np.inf
+                else:
+                    p_norm = p_norm_j
+                    if p_norm < config.STUMPY_P_NORM_THRESHOLD:  # pragma: no cover
+                        p_norm = 0.0
+                if p_norm < P_NORM[thread_idx, i - k]:
+                    P_NORM[thread_idx, i - k] = p_norm
+                    I[thread_idx, i - k] = j - k
+                if p_norm < P_NORM[thread_idx, j - k]:
+                    P_NORM[thread_idx, j - k] = p_norm
+                    I[thread_idx, j - k] = i - k
 
 
 @njit(
@@ -27,11 +110,8 @@ def _prescraamp(
     T_A_subseq_isfinite,
     T_B_subseq_isfinite,
     p,
-    i,
+    indices,
     s,
-    p_norm_profile,
-    P,
-    I,
     excl_zone=None,
 ):
     """
@@ -87,64 +167,37 @@ def _prescraamp(
 
     See Algorithm 2
     """
-    l = p_norm_profile.shape[0]
-    # Update P[i] relative to all T[j : j + m]
-    if excl_zone is not None:
-        zone_start = max(0, i - excl_zone)
-        zone_stop = min(l, i + excl_zone)
-        p_norm_profile[zone_start : zone_stop + 1] = np.inf
-    I[i] = np.argmin(p_norm_profile)
-    P[i] = p_norm_profile[I[i]]
-    if P[i] == np.inf:  # pragma: no cover
-        I[i] = -1
-    else:
-        j = I[i]
-        # Given the squared distance, work backwards and compute QT
-        p_norm_j = P[i]
-        p_norm_j_prime = p_norm_j
-        for k in range(1, min(s, l - max(i, j))):
-            p_norm_j = (
-                p_norm_j
-                - abs(T_B[i + k - 1] - T_A[j + k - 1]) ** p
-                + abs(T_B[i + k + m - 1] - T_A[j + k + m - 1]) ** p
-            )
-            if (
-                not T_A_subseq_isfinite[i + k] or not T_B_subseq_isfinite[j + k]
-            ):  # pragma: no cover
-                p_norm = np.inf
-            else:
-                p_norm = p_norm_j
-                if p_norm < config.STUMPY_P_NORM_THRESHOLD:  # pragma: no cover
-                    p_norm = 0.0
-            if p_norm < P[i + k]:
-                P[i + k] = p_norm
-                I[i + k] = j + k
-            if p_norm < P[j + k]:
-                P[j + k] = p_norm
-                I[j + k] = i + k
-        p_norm_j = p_norm_j_prime
-        for k in range(1, min(s, i + 1, j + 1)):
-            p_norm_j = (
-                p_norm_j
-                - abs(T_B[i - k + m] - T_A[j - k + m]) ** p
-                + abs(T_B[i - k] - T_A[j - k]) ** p
-            )
-            if (
-                not T_A_subseq_isfinite[i - k] or not T_B_subseq_isfinite[j - k]
-            ):  # pragma: no cover
-                p_norm = np.inf
-            else:
-                p_norm = p_norm_j
-                if p_norm < config.STUMPY_P_NORM_THRESHOLD:  # pragma: no cover
-                    p_norm = 0.0
-            if p_norm < P[i - k]:
-                P[i - k] = p_norm
-                I[i - k] = j - k
-            if p_norm < P[j - k]:
-                P[j - k] = p_norm
-                I[j - k] = i - k
+    n_threads = numba.config.NUMBA_NUM_THREADS
+    l = T_A.shape[0] - m + 1
+    P_NORM = np.full((n_threads, l), np.inf, dtype=np.float64)
+    I = np.full((n_threads, l), -1, dtype=np.int64)
 
-    return
+    idx_ranges = core._get_ranges(len(indices), n_threads, truncate=False)
+    for thread_idx in prange(n_threads):
+        _compute_PI(
+            T_A,
+            T_B,
+            m,
+            T_A_subseq_isfinite,
+            T_B_subseq_isfinite,
+            p,
+            indices,
+            idx_ranges[thread_idx, 0],
+            idx_ranges[thread_idx, 1],
+            thread_idx,
+            s,
+            P_NORM,
+            I,
+            excl_zone,
+        )
+
+    for thread_idx in range(1, n_threads):
+        for i in range(l):
+            if P_NORM[thread_idx, i] < P_NORM[0, i]:
+                P_NORM[0, i] = P_NORM[thread_idx, i]
+                I[0, i] = I[thread_idx, i]
+
+    return np.power(P_NORM[0], 1.0 / p), I[0]
 
 
 def prescraamp(T_A, m, T_B=None, s=None, p=2.0):
@@ -197,41 +250,23 @@ def prescraamp(T_A, m, T_B=None, s=None, p=2.0):
     T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
 
     n_A = T_A.shape[0]
-    n_B = T_B.shape[0]
     l = n_A - m + 1
-    P = np.full(l, np.inf)
-    I = np.full(l, -1, dtype=np.int64)
-    p_norm_profile = np.empty(n_B - m + 1, dtype=np.float64)
 
     if s is None:  # pragma: no cover
         s = excl_zone
 
-    for i in np.random.permutation(range(0, l, s)).astype(np.int64):
-        if not T_A_subseq_isfinite[i]:  # pragma: no cover
-            p_norm_profile[:] = np.inf
-        else:
-            p_norm_profile[:] = np.power(
-                core.mass_absolute(T_A[i : i + m], T_B, p=p), p
-            )
-            p_norm_profile[p_norm_profile < config.STUMPY_P_NORM_THRESHOLD] = 0.0
-            p_norm_profile[~T_B_subseq_isfinite] = np.inf
-
-        _prescraamp(
-            T_A,
-            T_B,
-            m,
-            T_A_subseq_isfinite,
-            T_B_subseq_isfinite,
-            p,
-            i,
-            s,
-            p_norm_profile,
-            P,
-            I,
-            excl_zone,
-        )
-
-    P = np.power(P, 1.0 / p)
+    indices = np.random.permutation(range(0, l, s)).astype(np.int64)
+    P, I = _prescraamp(
+        T_A,
+        T_B,
+        m,
+        T_A_subseq_isfinite,
+        T_B_subseq_isfinite,
+        p,
+        indices,
+        s,
+        excl_zone,
+    )
 
     return P, I
 

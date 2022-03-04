@@ -471,13 +471,14 @@ def test_p_norm_distance_profile(Q, T):
     Q = Q.copy()
     T = T.copy()
     m = Q.shape[0]
-    for p in [1.0, 2.0, 3.0]:
+    for p in [1.0, 1.5, 2.0]:
         ref = cdist(
             core.rolling_window(Q, m),
             core.rolling_window(T, m),
             metric="minkowski",
             p=p,
         ).flatten()
+        ref = np.power(ref, p)
         cmp = core._p_norm_distance_profile(Q, T, p)
         npt.assert_almost_equal(ref, cmp)
 

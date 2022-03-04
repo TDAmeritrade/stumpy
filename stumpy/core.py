@@ -1062,7 +1062,7 @@ def _p_norm_distance_profile(Q, T, p=2.0):
         for i in range(k):
             p_norm_profile[i] = np.sum(np.power(np.abs(Q - T[i : i + m]), p))
 
-    return np.power(np.abs(p_norm_profile), 1.0 / p)
+    return p_norm_profile
 
 
 def _mass_absolute(Q, T, p=2.0):
