@@ -108,12 +108,6 @@ html_theme_options = {
             "url": "https://twitter.com/stumpy_dev",
             "icon": "fab fa-twitter-square",
         },
-        {
-            "name": "Help",
-            "url": "https://github.com/TDAmeritrade/stumpy/discussions",
-            "icon": "fa fas fa-circle-question",
-            "type": "fontawesome",
-        },
     ],
 }
 
