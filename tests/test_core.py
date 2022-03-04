@@ -129,9 +129,8 @@ def test_check_max_window_size():
 @pytest.mark.parametrize("Q, T", test_data)
 def test_njit_sliding_dot_product(Q, T):
     ref_mp = naive_rolling_window_dot_product(Q, T)
-    for n_threads in [1, 2, 3]:
-        comp_mp = core._sliding_dot_product(Q, T, n_threads)
-        npt.assert_almost_equal(ref_mp, comp_mp)
+    comp_mp = core._sliding_dot_product(Q, T)
+    npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("Q, T", test_data)
@@ -467,21 +466,21 @@ def test_mass_T_inf(Q, T):
     T[1] = 1e10
 
 
-# @pytest.mark.parametrize("Q, T", test_data)
-# def test_p_norm_distance_profile(Q, T):
-#     Q = Q.copy()
-#     T = T.copy()
-#     m = Q.shape[0]
-#     for p in [1.0, 2.0, 3.0]:
-#         ref = cdist(
-#             core.rolling_window(Q, m),
-#             core.rolling_window(T, m),
-#             metric="minkowski",
-#             p=p,
-#         ).flatten()
-#         for n_threads in [1, 2, 3]:
-#             cmp = core._p_norm_distance_profile(Q, T, p, n_threads)
-#             npt.assert_almost_equal(ref, cmp)
+@pytest.mark.parametrize("Q, T", test_data)
+def test_p_norm_distance_profile(Q, T):
+    Q = Q.copy()
+    T = T.copy()
+    m = Q.shape[0]
+    for p in [1.0, 1.5, 2.0]:
+        ref = cdist(
+            core.rolling_window(Q, m),
+            core.rolling_window(T, m),
+            metric="minkowski",
+            p=p,
+        ).flatten()
+        ref = np.power(ref, p)
+        cmp = core._p_norm_distance_profile(Q, T, p)
+        npt.assert_almost_equal(ref, cmp)
 
 
 @pytest.mark.parametrize("Q, T", test_data)

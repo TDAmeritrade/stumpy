@@ -7,8 +7,7 @@ import functools
 import inspect
 
 import numpy as np
-from numba import njit, prange
-import numba
+from numba import njit
 from scipy.signal import convolve
 from scipy.ndimage import maximum_filter1d, minimum_filter1d
 from scipy import linalg
@@ -451,10 +450,10 @@ def check_window_size(m, max_size=None):
         raise ValueError(f"The window size must be less than or equal to {max_size}")
 
 
-@njit(fastmath=True, parallel=True)
-def _sliding_dot_product(Q, T, n_threads=1):
+@njit(fastmath=True)
+def _sliding_dot_product(Q, T):
     """
-    A Numba JIT-compiled parallelized implementation of the sliding window dot product.
+    A Numba JIT-compiled implementation of the sliding window dot product.
 
     Parameters
     ----------
@@ -464,23 +463,15 @@ def _sliding_dot_product(Q, T, n_threads=1):
     T : numpy.ndarray
         Time series or sequence
 
-    n_thrads : int, default 1
-        The number of threads to use. `n_threads` must be between 1 and
-        `numba.config.NUMBA_NUM_THREADS`. Otherwise all threads will be used
-        (i.e., `n_threads = numba.config.NUMBA_NUM_THREADS`).
-
     Returns
     -------
     out : numpy.ndarray
         Sliding dot product between `Q` and `T`.
     """
-    if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:  # pragma: nocover
-        n_threads = numba.config.NUMBA_NUM_THREADS
-    numba.set_num_threads(n_threads)
     m = Q.shape[0]
     k = T.shape[0] - m + 1
     out = np.empty(k)
-    for i in prange(k):
+    for i in range(k):
         out[i] = np.dot(Q, T[i : i + m])
 
     return out
@@ -938,7 +929,6 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    parallel=True,
     fastmath=True,
 )
 def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
@@ -980,7 +970,7 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     k = M_T.shape[0]
     D_squared = np.empty(k, dtype=np.float64)
 
-    for i in prange(k):
+    for i in range(k):
         D_squared[i] = _calculate_squared_distance(m, QT[i], μ_Q, σ_Q, M_T[i], Σ_T[i])
 
     return D_squared
@@ -988,7 +978,6 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    parallel=True,
     fastmath=True,
 )
 def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
@@ -1032,57 +1021,48 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return np.sqrt(D_squared)
 
 
-# @njit(fastmath=True, parallel=True)
-# def _p_norm_distance_profile(Q, T, p=2.0, n_threads=1):
-#     """
-#     A Numba JIT-compiled and parallelized function for computing the p-normalized
-#     distance profile
+@njit(fastmath=True)
+def _p_norm_distance_profile(Q, T, p=2.0):
+    """
+    A Numba JIT-compiled and parallelized function for computing the p-normalized
+    distance profile
 
-#     Parameters
-#     ----------
-#     Q : numpy.ndarray
-#         Query array or subsequence
+    Parameters
+    ----------
+    Q : numpy.ndarray
+        Query array or subsequence
 
-#     T : numpy.ndarray
-#         Time series or sequence
+    T : numpy.ndarray
+        Time series or sequence
 
-#     p : float, default 2.0
-#         The p-norm to apply for computing the Minkowski distance.
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
 
-#     n_threads : int, default 1
-#         The number of threads to use. `n_threads` must be between 1 and
-#         `numba.config.NUMBA_NUM_THREADS`. Otherwise all threads will be used
-#         (i.e., `n_threads = numba.config.NUMBA_NUM_THREADS`).
+    Returns
+    -------
+    output : numpy.ndarray
+        p-normalized distance profile between `Q` and `T`
+    """
+    m = Q.shape[0]
+    k = T.shape[0] - m + 1
+    p_norm_profile = np.empty(k, dtype=np.float64)
 
-#     Returns
-#     -------
-#     output : numpy.ndarray
-#         p-normalized distance profile between `Q` and `T`
-#     """
-#     if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:  # pragma: nocover
-#         n_threads = numba.config.NUMBA_NUM_THREADS
-#     numba.set_num_threads(n_threads)
+    if p == 2.0:
+        Q_squared = np.sum(Q * Q)
+        T_squared = np.empty(k, dtype=np.float64)
+        T_squared[0] = np.sum(T[:m] * T[:m])
+        for i in range(1, k):
+            T_squared[i] = (
+                T_squared[i - 1] - T[i - 1] * T[i - 1] + T[i + m - 1] * T[i + m - 1]
+            )
+        QT = _sliding_dot_product(Q, T)
+        for i in range(k):
+            p_norm_profile[i] = Q_squared + T_squared[i] - 2.0 * QT[i]
+    else:
+        for i in range(k):
+            p_norm_profile[i] = np.sum(np.power(np.abs(Q - T[i : i + m]), p))
 
-#     m = Q.shape[0]
-#     k = T.shape[0] - m + 1
-#     p_norm_profile = np.empty(k, dtype=np.float64)
-
-#     if p == 2.0:
-#         Q_squared = np.sum(Q * Q)
-#         T_squared = np.empty(k, dtype=np.float64)
-#         T_squared[0] = np.sum(T[:m] * T[:m])
-#         for i in range(1, k):
-#             T_squared[i] = (
-#                 T_squared[i - 1] - T[i - 1] * T[i - 1] + T[i + m - 1] * T[i + m - 1]
-#             )
-#         QT = _sliding_dot_product(Q, T, n_threads)
-#         for i in prange(k):
-#             p_norm_profile[i] = Q_squared + T_squared[i] - 2.0 * QT[i]
-#     else:
-#         for i in prange(k):
-#             p_norm_profile[i] = np.sum(np.power(np.abs(Q - T[i : i + m]), p))
-
-#     return np.power(np.abs(p_norm_profile), 1.0 / p)
+    return p_norm_profile
 
 
 def _mass_absolute(Q, T, p=2.0):
@@ -1767,7 +1747,6 @@ def array_to_temp_file(a):
 
 @njit(
     # "i8[:](i8[:], i8, i8, i8)",
-    parallel=True,
     fastmath=True,
 )
 def _count_diagonal_ndist(diags, m, n_A, n_B):
@@ -1795,7 +1774,7 @@ def _count_diagonal_ndist(diags, m, n_A, n_B):
         Counts of distances computed along each diagonal of interest
     """
     diag_ndist_counts = np.zeros(diags.shape[0], dtype=np.int64)
-    for diag_idx in prange(diags.shape[0]):
+    for diag_idx in range(diags.shape[0]):
         k = diags[diag_idx]
         if k >= 0:
             diag_ndist_counts[diag_idx] = min(n_B - m + 1 - k, n_A - m + 1)
