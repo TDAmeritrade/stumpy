@@ -7,7 +7,7 @@ import functools
 import inspect
 
 import numpy as np
-from numba import njit, prange
+from numba import njit
 from scipy.signal import convolve
 from scipy.ndimage import maximum_filter1d, minimum_filter1d
 from scipy import linalg
@@ -970,7 +970,7 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     k = M_T.shape[0]
     D_squared = np.empty(k, dtype=np.float64)
 
-    for i in prange(k):
+    for i in range(k):
         D_squared[i] = _calculate_squared_distance(m, QT[i], μ_Q, σ_Q, M_T[i], Σ_T[i])
 
     return D_squared
@@ -1021,49 +1021,48 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     return np.sqrt(D_squared)
 
 
-# @njit(fastmath=True, parallel=True)
-# def _p_norm_distance_profile(Q, T, p=2.0):
-#     """
-#     A Numba JIT-compiled and parallelized function for computing the p-normalized
-#     distance profile
+@njit(fastmath=True)
+def _p_norm_distance_profile(Q, T, p=2.0):
+    """
+    A Numba JIT-compiled and parallelized function for computing the p-normalized
+    distance profile
 
-#     Parameters
-#     ----------
-#     Q : numpy.ndarray
-#         Query array or subsequence
+    Parameters
+    ----------
+    Q : numpy.ndarray
+        Query array or subsequence
 
-#     T : numpy.ndarray
-#         Time series or sequence
+    T : numpy.ndarray
+        Time series or sequence
 
-#     p : float, default 2.0
-#         The p-norm to apply for computing the Minkowski distance.
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
 
-#     Returns
-#     -------
-#     output : numpy.ndarray
-#         p-normalized distance profile between `Q` and `T`
-#     """
-#     n_threads = numba.config.NUMBA_NUM_THREADS
-#     m = Q.shape[0]
-#     k = T.shape[0] - m + 1
-#     p_norm_profile = np.empty(k, dtype=np.float64)
+    Returns
+    -------
+    output : numpy.ndarray
+        p-normalized distance profile between `Q` and `T`
+    """
+    m = Q.shape[0]
+    k = T.shape[0] - m + 1
+    p_norm_profile = np.empty(k, dtype=np.float64)
 
-#     if p == 2.0:
-#         Q_squared = np.sum(Q * Q)
-#         T_squared = np.empty(k, dtype=np.float64)
-#         T_squared[0] = np.sum(T[:m] * T[:m])
-#         for i in range(1, k):
-#             T_squared[i] = (
-#                 T_squared[i - 1] - T[i - 1] * T[i - 1] + T[i + m - 1] * T[i + m - 1]
-#             )
-#         QT = _sliding_dot_product(Q, T, n_threads)
-#         for i in prange(k):
-#             p_norm_profile[i] = Q_squared + T_squared[i] - 2.0 * QT[i]
-#     else:
-#         for i in prange(k):
-#             p_norm_profile[i] = np.sum(np.power(np.abs(Q - T[i : i + m]), p))
+    if p == 2.0:
+        Q_squared = np.sum(Q * Q)
+        T_squared = np.empty(k, dtype=np.float64)
+        T_squared[0] = np.sum(T[:m] * T[:m])
+        for i in range(1, k):
+            T_squared[i] = (
+                T_squared[i - 1] - T[i - 1] * T[i - 1] + T[i + m - 1] * T[i + m - 1]
+            )
+        QT = _sliding_dot_product(Q, T)
+        for i in range(k):
+            p_norm_profile[i] = Q_squared + T_squared[i] - 2.0 * QT[i]
+    else:
+        for i in range(k):
+            p_norm_profile[i] = np.sum(np.power(np.abs(Q - T[i : i + m]), p))
 
-#     return np.power(np.abs(p_norm_profile), 1.0 / p)
+    return np.power(np.abs(p_norm_profile), 1.0 / p)
 
 
 def _mass_absolute(Q, T, p=2.0):
@@ -1748,7 +1747,6 @@ def array_to_temp_file(a):
 
 @njit(
     # "i8[:](i8[:], i8, i8, i8)",
-    parallel=True,
     fastmath=True,
 )
 def _count_diagonal_ndist(diags, m, n_A, n_B):
@@ -1776,7 +1774,7 @@ def _count_diagonal_ndist(diags, m, n_A, n_B):
         Counts of distances computed along each diagonal of interest
     """
     diag_ndist_counts = np.zeros(diags.shape[0], dtype=np.int64)
-    for diag_idx in prange(diags.shape[0]):
+    for diag_idx in range(diags.shape[0]):
         k = diags[diag_idx]
         if k >= 0:
             diag_ndist_counts[diag_idx] = min(n_B - m + 1 - k, n_A - m + 1)

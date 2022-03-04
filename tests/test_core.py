@@ -129,14 +129,8 @@ def test_check_max_window_size():
 @pytest.mark.parametrize("Q, T", test_data)
 def test_njit_sliding_dot_product(Q, T):
     ref_mp = naive_rolling_window_dot_product(Q, T)
-    # for n_threads in [1, 2, 3]:
-    #     if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:
-    #         numba.set_num_threads(numba.config.NUMBA_NUM_THREADS)
-    #     else:
-    #         numba.set_num_threads(n_threads)
     comp_mp = core._sliding_dot_product(Q, T)
     npt.assert_almost_equal(ref_mp, comp_mp)
-    # numba.set_num_threads(numba.config.NUMBA_NUM_THREADS)
 
 
 @pytest.mark.parametrize("Q, T", test_data)
@@ -472,26 +466,20 @@ def test_mass_T_inf(Q, T):
     T[1] = 1e10
 
 
-# @pytest.mark.parametrize("Q, T", test_data)
-# def test_p_norm_distance_profile(Q, T):
-#     Q = Q.copy()
-#     T = T.copy()
-#     m = Q.shape[0]
-#     for p in [1.0, 2.0, 3.0]:
-#         ref = cdist(
-#             core.rolling_window(Q, m),
-#             core.rolling_window(T, m),
-#             metric="minkowski",
-#             p=p,
-#         ).flatten()
-#         for n_threads in [1, 2, 3]:
-#             if n_threads < 1 or n_threads > numba.config.NUMBA_NUM_THREADS:
-#                 numba.set_num_threads(numba.config.NUMBA_NUM_THREADS)
-#             else:
-#                 numba.set_num_threads(n_threads)
-#             cmp = core._p_norm_distance_profile(Q, T, p)
-#             npt.assert_almost_equal(ref, cmp)
-#     numba.set_num_threads(numba.config.NUMBA_NUM_THREADS)
+@pytest.mark.parametrize("Q, T", test_data)
+def test_p_norm_distance_profile(Q, T):
+    Q = Q.copy()
+    T = T.copy()
+    m = Q.shape[0]
+    for p in [1.0, 2.0, 3.0]:
+        ref = cdist(
+            core.rolling_window(Q, m),
+            core.rolling_window(T, m),
+            metric="minkowski",
+            p=p,
+        ).flatten()
+        cmp = core._p_norm_distance_profile(Q, T, p)
+        npt.assert_almost_equal(ref, cmp)
 
 
 @pytest.mark.parametrize("Q, T", test_data)
