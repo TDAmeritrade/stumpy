@@ -5,8 +5,8 @@
 import logging
 
 import numpy as np
-from .aamp_motifs import aamp_motifs, aamp_match
 
+from .aamp_motifs import aamp_motifs, aamp_match
 from . import core, config
 
 logger = logging.getLogger(__name__)
@@ -240,7 +240,8 @@ def motifs(
 
     See Also
     --------
-    stumpy.match : Find all matches of a query Q in a time series T
+    stumpy.match : Find all matches of a query `Q` in a time series `T`
+    stumpy.mmotifs : Discover the top motifs for the multi-dimensional time series `T`
 
     Examples
     --------

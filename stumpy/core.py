@@ -7,7 +7,7 @@ import functools
 import inspect
 
 import numpy as np
-from numba import njit, prange
+from numba import njit
 from scipy.signal import convolve
 from scipy.ndimage import maximum_filter1d, minimum_filter1d
 from scipy import linalg
@@ -448,6 +448,33 @@ def check_window_size(m, max_size=None):
 
     if max_size is not None and m > max_size:
         raise ValueError(f"The window size must be less than or equal to {max_size}")
+
+
+@njit(fastmath=True)
+def _sliding_dot_product(Q, T):
+    """
+    A Numba JIT-compiled implementation of the sliding window dot product.
+
+    Parameters
+    ----------
+    Q : numpy.ndarray
+        Query array or subsequence
+
+    T : numpy.ndarray
+        Time series or sequence
+
+    Returns
+    -------
+    out : numpy.ndarray
+        Sliding dot product between `Q` and `T`.
+    """
+    m = Q.shape[0]
+    k = T.shape[0] - m + 1
+    out = np.empty(k)
+    for i in range(k):
+        out[i] = np.dot(Q, T[i : i + m])
+
+    return out
 
 
 def sliding_dot_product(Q, T):
@@ -902,7 +929,6 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    parallel=True,
     fastmath=True,
 )
 def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
@@ -944,7 +970,7 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     k = M_T.shape[0]
     D_squared = np.empty(k, dtype=np.float64)
 
-    for i in prange(k):
+    for i in range(k):
         D_squared[i] = _calculate_squared_distance(m, QT[i], μ_Q, σ_Q, M_T[i], Σ_T[i])
 
     return D_squared
@@ -952,7 +978,6 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    parallel=True,
     fastmath=True,
 )
 def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
@@ -994,6 +1019,50 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     D_squared = _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
 
     return np.sqrt(D_squared)
+
+
+@njit(fastmath=True)
+def _p_norm_distance_profile(Q, T, p=2.0):
+    """
+    A Numba JIT-compiled and parallelized function for computing the p-normalized
+    distance profile
+
+    Parameters
+    ----------
+    Q : numpy.ndarray
+        Query array or subsequence
+
+    T : numpy.ndarray
+        Time series or sequence
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
+    Returns
+    -------
+    output : numpy.ndarray
+        p-normalized distance profile between `Q` and `T`
+    """
+    m = Q.shape[0]
+    k = T.shape[0] - m + 1
+    p_norm_profile = np.empty(k, dtype=np.float64)
+
+    if p == 2.0:
+        Q_squared = np.sum(Q * Q)
+        T_squared = np.empty(k, dtype=np.float64)
+        T_squared[0] = np.sum(T[:m] * T[:m])
+        for i in range(1, k):
+            T_squared[i] = (
+                T_squared[i - 1] - T[i - 1] * T[i - 1] + T[i + m - 1] * T[i + m - 1]
+            )
+        QT = _sliding_dot_product(Q, T)
+        for i in range(k):
+            p_norm_profile[i] = Q_squared + T_squared[i] - 2.0 * QT[i]
+    else:
+        for i in range(k):
+            p_norm_profile[i] = np.sum(np.power(np.abs(Q - T[i : i + m]), p))
+
+    return p_norm_profile
 
 
 def _mass_absolute(Q, T, p=2.0):
@@ -1678,7 +1747,6 @@ def array_to_temp_file(a):
 
 @njit(
     # "i8[:](i8[:], i8, i8, i8)",
-    parallel=True,
     fastmath=True,
 )
 def _count_diagonal_ndist(diags, m, n_A, n_B):
@@ -1706,7 +1774,7 @@ def _count_diagonal_ndist(diags, m, n_A, n_B):
         Counts of distances computed along each diagonal of interest
     """
     diag_ndist_counts = np.zeros(diags.shape[0], dtype=np.int64)
-    for diag_idx in prange(diags.shape[0]):
+    for diag_idx in range(diags.shape[0]):
         k = diags[diag_idx]
         if k >= 0:
             diag_ndist_counts[diag_idx] = min(n_B - m + 1 - k, n_A - m + 1)
@@ -1760,6 +1828,58 @@ def _get_array_ranges(a, n_chunks, truncate):
             array_ranges[row_truncation_idx - 1 :, 1] = a.shape[0]
             if truncate:
                 array_ranges = array_ranges[:row_truncation_idx]
+
+    return array_ranges
+
+
+@njit(
+    # "i8[:, :](i8, i8, b1)"
+)
+def _get_ranges(size, n_chunks, truncate):
+    """
+    Given a single input integer value, split an array of that length `size` evenly into
+    `n_chunks`.
+
+    This function is different from `_get_array_ranges` in that it does not take into
+    account the contents of the array and, instead, assumes that we are chunking up
+    `np.ones(size, dtype=np.int64)`. Additionally, the non-truncated sections may not
+    all appear at the end of the returned away (i.e., they may be scattered throughout
+    different rows of the array) but may be identified as having the same start and
+    stop indices.
+
+    Parameters
+    ----------
+    size : int
+        The size or length of an array to chunk
+
+    n_chunks : int
+        Number of chunks to split the array into
+
+    truncate : bool
+        If `truncate=True`, truncate the rows of `array_ranges` if there are not enough
+        elements in `a` to be chunked up into `n_chunks`.  Otherwise, if
+        `truncate=False`, all extra chunks will have their start and stop indices set
+        to `a.shape[0]`.
+
+    Returns
+    -------
+    array_ranges : numpy.ndarray
+        A two column array where each row consists of a start and (exclusive) stop index
+        pair. The first column contains the start indices and the second column
+        contains the stop indices.
+    """
+    a = np.ones(size, dtype=np.int64)
+    array_ranges = np.zeros((n_chunks, 2), dtype=np.int64)
+    if a.shape[0] > 0 and n_chunks > 0:
+        cumsum = a.cumsum()
+        insert = np.linspace(0, a.sum(), n_chunks + 1)[1:-1]
+        idx = 1 + np.searchsorted(cumsum, insert)
+        array_ranges[1:, 0] = idx  # Fill the first column with start indices
+        array_ranges[:-1, 1] = idx  # Fill the second column with exclusive stop indices
+        array_ranges[-1, 1] = a.shape[0]  # Handle the stop index for the final chunk
+
+    if truncate:
+        array_ranges = array_ranges[array_ranges[:, 0] != array_ranges[:, 1]]
 
     return array_ranges
 

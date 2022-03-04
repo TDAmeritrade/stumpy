@@ -94,7 +94,9 @@ test_unit()
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_config.py
     check_errs $?
-    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump.py tests/test_mstump.py tests/test_scrump.py tests/test_stumpi.py
+    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump.py tests/test_mstump.py tests/test_stumpi.py
+    check_errs $?
+    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_scrump.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped.py
     check_errs $?
@@ -116,6 +118,8 @@ test_unit()
     # aamp
     pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp.py
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp.py tests/test_maamp.py tests/test_scraamp.py tests/test_aampi.py
+    check_errs $?
+    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_scraamp.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped.py
     check_errs $?
@@ -146,10 +150,9 @@ test_coverage()
     # check_errs $?
 
     echo "Testing Code Coverage"
-    # coverage run --source stumpy -m pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning
-    coverage run -m pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning
+    coverage run --source=. -m pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning
     check_errs $?
-    coverage report -m --skip-covered
+    coverage report -m --skip-covered --omit=setup.py
 }
 
 clean_up()

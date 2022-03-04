@@ -127,6 +127,13 @@ def test_check_max_window_size():
 
 
 @pytest.mark.parametrize("Q, T", test_data)
+def test_njit_sliding_dot_product(Q, T):
+    ref_mp = naive_rolling_window_dot_product(Q, T)
+    comp_mp = core._sliding_dot_product(Q, T)
+    npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
 def test_sliding_dot_product(Q, T):
     ref_mp = naive_rolling_window_dot_product(Q, T)
     comp_mp = core.sliding_dot_product(Q, T)
@@ -457,6 +464,23 @@ def test_mass_T_inf(Q, T):
     comp = core.mass(Q, T)
     npt.assert_almost_equal(ref, comp)
     T[1] = 1e10
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_p_norm_distance_profile(Q, T):
+    Q = Q.copy()
+    T = T.copy()
+    m = Q.shape[0]
+    for p in [1.0, 1.5, 2.0]:
+        ref = cdist(
+            core.rolling_window(Q, m),
+            core.rolling_window(T, m),
+            metric="minkowski",
+            p=p,
+        ).flatten()
+        ref = np.power(ref, p)
+        cmp = core._p_norm_distance_profile(Q, T, p)
+        npt.assert_almost_equal(ref, cmp)
 
 
 @pytest.mark.parametrize("Q, T", test_data)
@@ -811,8 +835,8 @@ def test_get_array_ranges():
     for n_chunks in range(2, 5):
         ref = naive.get_array_ranges(x, n_chunks, False)
 
-        comp = core._get_array_ranges(x, n_chunks, False)
-        npt.assert_almost_equal(ref, comp)
+        cmp = core._get_array_ranges(x, n_chunks, False)
+        npt.assert_almost_equal(ref, cmp)
 
 
 def test_get_array_ranges_exhausted():
@@ -821,8 +845,8 @@ def test_get_array_ranges_exhausted():
 
     ref = naive.get_array_ranges(x, n_chunks, False)
 
-    comp = core._get_array_ranges(x, n_chunks, False)
-    npt.assert_almost_equal(ref, comp)
+    cmp = core._get_array_ranges(x, n_chunks, False)
+    npt.assert_almost_equal(ref, cmp)
 
 
 def test_get_array_ranges_exhausted_truncated():
@@ -831,8 +855,8 @@ def test_get_array_ranges_exhausted_truncated():
 
     ref = naive.get_array_ranges(x, n_chunks, True)
 
-    comp = core._get_array_ranges(x, n_chunks, True)
-    npt.assert_almost_equal(ref, comp)
+    cmp = core._get_array_ranges(x, n_chunks, True)
+    npt.assert_almost_equal(ref, cmp)
 
 
 def test_get_array_ranges_empty_array():
@@ -841,8 +865,40 @@ def test_get_array_ranges_empty_array():
 
     ref = naive.get_array_ranges(x, n_chunks, False)
 
-    comp = core._get_array_ranges(x, n_chunks, False)
-    npt.assert_almost_equal(ref, comp)
+    cmp = core._get_array_ranges(x, n_chunks, False)
+    npt.assert_almost_equal(ref, cmp)
+
+
+def test_get_ranges():
+    ref = np.array([[0, 3], [3, 6]])
+    size = 6
+    n_chunks = 2
+    cmp = core._get_ranges(size, n_chunks, False)
+    npt.assert_almost_equal(ref, cmp)
+
+
+def test_get_ranges_exhausted():
+    ref = np.array([[0, 1], [1, 2], [2, 3], [3, 3], [3, 4], [4, 5], [5, 6], [6, 6]])
+    size = 6
+    n_chunks = 8
+    cmp = core._get_ranges(size, n_chunks, False)
+    npt.assert_almost_equal(ref, cmp)
+
+
+def test_get_ranges_exhausted_truncated():
+    ref = np.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6]])
+    size = 6
+    n_chunks = 8
+    cmp = core._get_ranges(size, n_chunks, True)
+    npt.assert_almost_equal(ref, cmp)
+
+
+def test_get_ranges_zero_size():
+    ref = np.empty((0, 2))
+    size = 0
+    n_chunks = 8
+    cmp = core._get_ranges(size, n_chunks, True)
+    npt.assert_almost_equal(ref, cmp)
 
 
 def test_rolling_isfinite():
