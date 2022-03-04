@@ -112,6 +112,7 @@ html_theme_options = {
             "name": "Help",
             "url": "https://github.com/TDAmeritrade/stumpy/discussions",
             "icon": "fa-solid fa-circle-question",
+            "type": "fontawesome",
         },
     ],
 }
