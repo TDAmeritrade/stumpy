@@ -110,8 +110,8 @@ html_theme_options = {
         },
         {
             "name": "Help",
-            "url": "ihttps://github.com/TDAmeritrade/stumpy/discussions",
-            "icon": "fa-solid fa-circle-question",
+            "url": "https://github.com/TDAmeritrade/stumpy/discussions",
+            "icon": "fab fa-circle-question",
         },
     ],
 }
