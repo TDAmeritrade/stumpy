@@ -303,6 +303,7 @@ def motifs(
         cutoff,
         max_matches,
         max_motifs,
+        atol=atol,
     )
 
     return motif_distances, motif_indices
