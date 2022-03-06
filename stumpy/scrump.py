@@ -293,7 +293,7 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == False`.
+        ignored when `normalize == True`.
 
     Returns
     -------
@@ -391,7 +391,7 @@ class scrump:
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == False`.
+        ignored when `normalize == True`.
 
     Attributes
     ----------
@@ -495,7 +495,7 @@ class scrump:
 
         p : float, default 2.0
             The p-norm to apply for computing the Minkowski distance. This parameter is
-            ignored when `normalize == False`.
+            ignored when `normalize == True`.
         """
         self._ignore_trivial = ignore_trivial
 
