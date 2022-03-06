@@ -465,7 +465,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == False`.
+        ignored when `normalize == True`.
 
     Returns
     -------

@@ -93,7 +93,7 @@ def mmotifs(
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == False`.
+        ignored when `normalize == True`.
 
     Returns
     -------
