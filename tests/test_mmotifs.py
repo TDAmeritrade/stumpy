@@ -1,8 +1,9 @@
 import numpy as np
 import numpy.testing as npt
+import naive
 
 from stumpy.mmotifs import mmotifs
-from stumpy.mstump import mstump
+from stumpy import config
 
 
 # These are tests for multidimensional motif discovery
@@ -60,7 +61,8 @@ def test_motifs_multidimensional_one_motif_all_dimensions():
     )
     m = 3
 
-    P, I = mstump(T, m)
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    P, I = naive.mstump(T, m, excl_zone)
     motif_distances, motif_indices, motif_subspaces, motif_mdls = mmotifs(
         T, P, I, max_distance=np.inf, max_matches=2, k=1
     )
@@ -124,7 +126,8 @@ def test_motifs_multidimensional_with_deafault_parameters():
     )
     m = 3
 
-    P, I = mstump(T, m)
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    P, I = naive.mstump(T, m, excl_zone)
     motif_distances, motif_indices, motif_subspaces, motif_mdls = mmotifs(T, P, I)
 
     # Assert
@@ -189,7 +192,8 @@ def test_motifs_multidimensional_two_motifs_all_dimensions():
     )
     m = 3
 
-    P, I = mstump(T, m)
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    P, I = naive.mstump(T, m, excl_zone)
     motif_distances, motif_indices, motif_subspaces, motif_mdls = mmotifs(
         T, P, I, cutoffs=np.inf, max_motifs=2
     )
