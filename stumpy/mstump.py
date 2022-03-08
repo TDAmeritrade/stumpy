@@ -543,7 +543,17 @@ def mdl(
 
 
 def _multi_distance_profile(
-    query_idx, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include=None, discords=False
+    query_idx,
+    T_A,
+    T_B,
+    m,
+    M_T,
+    Σ_T,
+    μ_Q,
+    σ_Q,
+    include=None,
+    discords=False,
+    excl_zone=None,
 ):
     """
     Multi-dimensional wrapper to compute the multi-dimensional distance profile for a
@@ -564,9 +574,6 @@ def _multi_distance_profile(
 
     m : int
         Window size
-
-    excl_zone : int
-        The half width for the exclusion zone relative to the `query_idx`.
 
     M_T : numpy.ndarray
         Sliding mean for `T_A`
@@ -591,6 +598,9 @@ def _multi_distance_profile(
     discords : bool, default False
         When set to `True`, this reverses the distance profile to favor discords rather
         than motifs. Note that indices in `include` are still maintained and respected.
+
+    excl_zone : int, default None
+        The half width for the exclusion zone relative to the `query_idx`.
 
     Returns
     -------
@@ -625,7 +635,8 @@ def _multi_distance_profile(
         D_prime[:] = D_prime + D[i]
         D[i, :] = D_prime / (i + 1)
 
-    core.apply_exclusion_zone(D, query_idx, excl_zone, np.inf)
+    if excl_zone is not None:
+        core.apply_exclusion_zone(D, query_idx, excl_zone, np.inf)
 
     return D
 
@@ -694,7 +705,7 @@ def multi_distance_profile(
     )  # See Definition 3 and Figure 3
 
     D = _multi_distance_profile(
-        query_idx, T, T, m, excl_zone, M_T, Σ_T, M_T, Σ_T, include, discords
+        query_idx, T, T, m, M_T, Σ_T, M_T, Σ_T, include, discords, excl_zone
     )
 
     return D
@@ -766,7 +777,7 @@ def _get_first_mstump_profile(
         equal to `start`
     """
     D = _multi_distance_profile(
-        start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
+        start, T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, include, discords, excl_zone
     )
 
     d = T_A.shape[0]

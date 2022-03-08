@@ -3,7 +3,6 @@ import functools
 import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.stats import norm
-from numba import njit
 from stumpy import core, config
 
 
@@ -1555,12 +1554,10 @@ def _get_mask_slices(mask):
     return np.array(idx).reshape(len(idx) // 2, 2)
 
 
-@njit(fastmath=True)
 def _total_trapezoid_ndists(a, b, h):
     return (a + b) * h // 2
 
 
-@njit(fastmath=True)
 def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_width):
     total_ndists = 0
 

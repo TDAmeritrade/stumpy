@@ -303,11 +303,11 @@ def _maamp_multi_distance_profile(
     T_A,
     T_B,
     m,
-    excl_zone,
     T_B_subseq_isfinite,
     p=2.0,
     include=None,
     discords=False,
+    excl_zone=None,
 ):
     """
     Multi-dimensional wrapper to compute the multi-dimensional non-normalized (i.e.,
@@ -330,9 +330,6 @@ def _maamp_multi_distance_profile(
     m : int
         Window size
 
-    excl_zone : int
-        The half width for the exclusion zone relative to the `query_idx`.
-
     T_B_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
@@ -351,6 +348,9 @@ def _maamp_multi_distance_profile(
     discords : bool, default False
         When set to `True`, this reverses the distance profile to favor discords rather
         than motifs. Note that indices in `include` are still maintained and respected.
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the `query_idx`.
 
     Returns
     -------
@@ -384,7 +384,8 @@ def _maamp_multi_distance_profile(
         D_prime[:] = D_prime + D[i]
         D[i, :] = D_prime / (i + 1)
 
-    core.apply_exclusion_zone(D, query_idx, excl_zone, np.inf)
+    if excl_zone is not None:
+        core.apply_exclusion_zone(D, query_idx, excl_zone, np.inf)
 
     return D
 
@@ -444,7 +445,7 @@ def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False, 
     )  # See Definition 3 and Figure 3
 
     D = _maamp_multi_distance_profile(
-        query_idx, T, T, m, excl_zone, T_subseq_isfinite, p, include, discords
+        query_idx, T, T, m, T_subseq_isfinite, p, include, discords, excl_zone
     )
 
     return D
@@ -520,7 +521,7 @@ def _get_first_maamp_profile(
         equal to `start`
     """
     D = _maamp_multi_distance_profile(
-        start, T_A, T_B, m, excl_zone, T_B_subseq_isfinite, p, include, discords
+        start, T_A, T_B, m, T_B_subseq_isfinite, p, include, discords, excl_zone
     )
 
     d = T_A.shape[0]
