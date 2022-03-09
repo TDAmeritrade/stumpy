@@ -367,9 +367,12 @@ def match(
         when comparing distances between subsequences.
 
     query_idx : int, default None
-        This parameter is used when the matrix profile is a self-join.
-        If a specific integer value is set, the parameter will ensure that the
-        self-match will be returned first.
+        This is the index position along the time series, `T`, where the query
+        subsequence, `Q`, is located.
+        `query_idx` should only be used when the matrix profile is a self-join and
+        should be set to `None` for matrix profiles computed from AB-joins.
+        If `query_idx` is set to a specific integer value, then this will help ensure
+        that the self-match will be returned first.
 
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
