@@ -277,7 +277,7 @@ def subspace(
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == False`.
+        ignored when `normalize == True`.
 
     Returns
     -------
@@ -481,7 +481,7 @@ def mdl(
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == False`.
+        ignored when `normalize == True`.
 
     Returns
     -------
@@ -670,7 +670,7 @@ def multi_distance_profile(
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == False`.
+        ignored when `normalize == True`.
 
     Returns
     -------
@@ -1149,7 +1149,7 @@ def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == False`.
+        ignored when `normalize == True`.
 
     Returns
     -------

@@ -34,7 +34,7 @@ class stumpi:
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == False`.
+        ignored when `normalize == True`.
 
     Attributes
     ----------
@@ -105,7 +105,7 @@ class stumpi:
 
         p : float, default 2.0
             The p-norm to apply for computing the Minkowski distance. This parameter is
-            ignored when `normalize == False`.
+            ignored when `normalize == True`.
         """
         self._T = core._preprocess(T)
         core.check_window_size(m, max_size=self._T.shape[-1])
