@@ -1,68 +1,70 @@
 import numpy as np
 import numpy.testing as npt
+import naive
 
-from stumpy.mmotifs import mmotifs
-from stumpy.mstump import mstump
+from stumpy.aamp_mmotifs import aamp_mmotifs
+from stumpy import config
 
 
 # These are tests for non-normalized multidimensional motif discovery
 
 
 def test_motifs_multidimensional_one_motif_all_dimensions():
-    # Find the two dimensional motif pair
+    # Find the two-dimensional motif pair
 
     # Arrange
-    motif_distances_expected = np.array([[0.0, 1.72474487]])
+    motif_distances_expected = np.array([[0.0, 2.87778559]])
     motif_indices_expected = np.array([[0, 5]])
-    motif_subspaces_expected = [np.array([1, 2])]
-    motif_mdls_expected = [np.array([187.0, 188.0, 191.26466251, 196.0])]
+    motif_subspaces_expected = [np.array([2, 1])]
+    motif_mdls_expected = [np.array([244.0, 260.67970001, 279.86313714, 281.35940001])]
 
     # Act
     T = np.array(
         [
-            [5.0, 0.0, 3.0, 3.0, 7.0, 9.0, 3.0, 5.0, 2.0, 4.0, 7.0, 6.0, 8.0, 8.0, 1.0],
+            [5.2, 0.1, 3.5, 3.4, 7.1, 9.8, 3.7, 5.0, 2.1, 4.3, 7.5, 6.8, 8.0, 8.1, 1.2],
             [
-                7.0,
-                3.0,
+                7.3,
+                3.2,
                 5.0,
-                9.0,
-                8.0,
-                7.0,
-                4.0,
-                5.0,
+                9.1,
+                8.2,
+                7.3,
+                4.8,
+                8.2,
                 10.0,
-                8.0,
-                4.0,
-                3.0,
-                2.0,
                 0.0,
-                1.0,
+                4.1,
+                3.2,
+                2.3,
+                0.1,
+                1.4,
             ],
-            [6.0, 7.0, 7.0, 8.0, 1.0, 5.0, 9.0, 8.0, 9.0, 4.0, 3.0, 0.0, 3.0, 5.0, 0.0],
+            [6.2, 7.6, 7.6, 8.4, 1.1, 5.9, 9.2, 8.5, 9.3, 4.6, 3.5, 0.0, 3.1, 5.3, 0.9],
             [
-                0.0,
-                1.0,
+                0.1,
+                1.3,
                 3.0,
-                2.0,
-                6.0,
-                1.0,
-                9.0,
+                2.1,
+                6.2,
+                1.3,
+                9.5,
                 10.0,
-                1.0,
+                1.8,
                 2.0,
-                2.0,
-                5.0,
-                1.0,
-                0.0,
-                4.0,
+                2.1,
+                5.2,
+                1.3,
+                0.5,
+                4.3,
             ],
         ]
     )
-    m = 3
+    m = 4
 
-    P, I = mstump(T, m, normalize=False)
-    motif_distances, motif_indices, motif_subspaces, motif_mdls = mmotifs(
-        T, P, I, max_distance=np.inf, max_matches=2, k=1, normalize=False
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    P, I = naive.maamp(T, m, excl_zone)
+    motif_distances, motif_indices, motif_subspaces, motif_mdls = aamp_mmotifs(
+        T, P, I, max_distance=np.inf, max_matches=2, k=1
     )
 
     # Assert
@@ -78,58 +80,59 @@ def test_motifs_multidimensional_with_default_parameters_and_max_distance():
 
     # Arrange
     motif_distances_expected = np.array(
-        [[0.0, 1.0, 2.44948974, 5.74456265, 6.4807407, 7.87400787]]
+        [[0.0, 1.41421356, 4.46430286, 6.85346628, 8.207923, 8.50529247]]
     )
-    motif_indices_expected = np.array([[0, 5, 9, 3, 11, 7]])
-    motif_subspaces_expected = [np.array([1])]
-    motif_mdls_expected = [np.array([187.0, 188.0, 191.26466251, 196.0])]
+    motif_indices_expected = np.array([[2, 9, 0, 11, 7, 5]])
+    motif_subspaces_expected = [np.array([3])]
+    motif_mdls_expected = [np.array([244.0, 260.67970001, 279.86313714, 281.35940001])]
 
     # Act
     T = np.array(
         [
-            [5.0, 0.0, 3.0, 3.0, 7.0, 9.0, 3.0, 5.0, 2.0, 4.0, 7.0, 6.0, 8.0, 8.0, 1.0],
+            [5.2, 0.1, 3.5, 3.4, 7.1, 9.8, 3.7, 5.0, 2.1, 4.3, 7.5, 6.8, 8.0, 8.1, 1.2],
             [
-                7.0,
-                3.0,
+                7.3,
+                3.2,
                 5.0,
-                9.0,
-                8.0,
-                7.0,
-                4.0,
-                5.0,
+                9.1,
+                8.2,
+                7.3,
+                4.8,
+                8.2,
                 10.0,
-                8.0,
-                4.0,
-                3.0,
-                2.0,
                 0.0,
-                1.0,
+                4.1,
+                3.2,
+                2.3,
+                0.1,
+                1.4,
             ],
-            [6.0, 7.0, 7.0, 8.0, 1.0, 5.0, 9.0, 8.0, 9.0, 4.0, 3.0, 0.0, 3.0, 5.0, 0.0],
+            [6.2, 7.6, 7.6, 8.4, 1.1, 5.9, 9.2, 8.5, 9.3, 4.6, 3.5, 0.0, 3.1, 5.3, 0.9],
             [
-                0.0,
-                1.0,
+                0.1,
+                1.3,
                 3.0,
-                2.0,
-                6.0,
-                1.0,
-                9.0,
+                2.1,
+                6.2,
+                1.3,
+                9.5,
                 10.0,
-                1.0,
+                1.8,
                 2.0,
-                2.0,
-                5.0,
-                1.0,
-                0.0,
-                4.0,
+                2.1,
+                5.2,
+                1.3,
+                0.5,
+                4.3,
             ],
         ]
     )
-    m = 3
+    m = 4
 
-    P, I = mstump(T, m, normalize=False)
-    motif_distances, motif_indices, motif_subspaces, motif_mdls = mmotifs(
-        T, P, I, max_distance=np.inf, normalize=False
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    P, I = naive.maamp(T, m, excl_zone)
+    motif_distances, motif_indices, motif_subspaces, motif_mdls = aamp_mmotifs(
+        T, P, I, max_distance=np.inf
     )
 
     # Assert
@@ -143,59 +146,60 @@ def test_motifs_multidimensional_two_motifs_all_dimensions():
     # Find the best two motif pairs
 
     # Arrange
-    motif_distances_expected = np.array([[0.0, 1.0], [0.0, 1.0]])
-    motif_indices_expected = np.array([[0, 5], [2, 7]])
-    motif_subspaces_expected = [np.array([1]), np.array([1])]
+    motif_distances_expected = np.array([[0.0, 1.41421356], [0.0, 2.06639783]])
+    motif_indices_expected = np.array([[2, 9], [0, 5]])
+    motif_subspaces_expected = [np.array([3]), np.array([2])]
     motif_mdls_expected = [
-        np.array([187.0, 188.0, 191.26466251, 196.0]),
-        np.array([187.0, 188.0, 201.2661943, 196.0]),
+        np.array([244.0, 260.67970001, 279.86313714, 281.35940001]),
+        np.array([254.33985, 260.67970001, 279.86313714, 291.20703549]),
     ]
 
     # Act
     T = np.array(
         [
-            [5.0, 0.0, 3.0, 3.0, 7.0, 9.0, 3.0, 5.0, 2.0, 4.0, 7.0, 6.0, 8.0, 8.0, 1.0],
+            [5.2, 0.1, 3.5, 3.4, 7.1, 9.8, 3.7, 5.0, 2.1, 4.3, 7.5, 6.8, 8.0, 8.1, 1.2],
             [
-                7.0,
-                3.0,
+                7.3,
+                3.2,
                 5.0,
-                9.0,
-                8.0,
-                7.0,
-                4.0,
-                5.0,
+                9.1,
+                8.2,
+                7.3,
+                4.8,
+                8.2,
                 10.0,
-                8.0,
-                4.0,
-                3.0,
-                2.0,
                 0.0,
-                1.0,
+                4.1,
+                3.2,
+                2.3,
+                0.1,
+                1.4,
             ],
-            [6.0, 7.0, 7.0, 8.0, 1.0, 5.0, 9.0, 8.0, 9.0, 4.0, 3.0, 0.0, 3.0, 5.0, 0.0],
+            [6.2, 7.6, 7.6, 8.4, 1.1, 5.9, 9.2, 8.5, 9.3, 4.6, 3.5, 0.0, 3.1, 5.3, 0.9],
             [
-                0.0,
-                1.0,
+                0.1,
+                1.3,
                 3.0,
-                2.0,
-                6.0,
-                1.0,
-                9.0,
+                2.1,
+                6.2,
+                1.3,
+                9.5,
                 10.0,
-                1.0,
+                1.8,
                 2.0,
-                2.0,
-                5.0,
-                1.0,
-                0.0,
-                4.0,
+                2.1,
+                5.2,
+                1.3,
+                0.5,
+                4.3,
             ],
         ]
     )
-    m = 3
+    m = 4
 
-    P, I = mstump(T, m, normalize=False)
-    motif_distances, motif_indices, motif_subspaces, motif_mdls = mmotifs(
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    P, I = naive.maamp(T, m, excl_zone)
+    motif_distances, motif_indices, motif_subspaces, motif_mdls = aamp_mmotifs(
         T,
         P,
         I,
@@ -203,7 +207,6 @@ def test_motifs_multidimensional_two_motifs_all_dimensions():
         cutoffs=np.inf,
         max_matches=2,
         max_motifs=2,
-        normalize=False,
     )
 
     # Assert
