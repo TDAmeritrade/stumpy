@@ -322,7 +322,7 @@ def match(
     max_distance=None,
     max_matches=None,
     atol=1e-8,
-    query_idx = None,
+    query_idx=None,
     normalize=True,
     p=2.0,
 ):
