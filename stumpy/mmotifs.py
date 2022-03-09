@@ -190,6 +190,7 @@ def mmotifs(
             max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,
+            query_idx=motif_idx,
             normalize=normalize,
             p=p,
         )

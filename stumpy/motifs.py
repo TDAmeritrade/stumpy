@@ -317,6 +317,7 @@ def match(
     max_distance=None,
     max_matches=None,
     atol=1e-8,
+    query_idx = None,
     normalize=True,
     p=2.0,
 ):
@@ -428,7 +429,11 @@ def match(
 
     matches = []
 
-    candidate_idx = np.argmin(D)
+    if query_idx is not None:
+        candidate_idx = query_idx
+    else:
+        candidate_idx = np.argmin(D)
+
     while (
         D[candidate_idx] <= atol + max_distance
         and np.isfinite(D[candidate_idx])
