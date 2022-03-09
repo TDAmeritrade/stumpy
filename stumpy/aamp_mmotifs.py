@@ -170,6 +170,7 @@ def aamp_mmotifs(
             max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,
+            query_idx=motif_idx,
             p=p,
         )
 
