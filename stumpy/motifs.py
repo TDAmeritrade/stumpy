@@ -217,6 +217,10 @@ def motifs(
     max_motifs : int, default 1
         The maximum number of motifs to return
 
+    atol : float, default 1e-8
+        The absolute tolerance parameter. This value will be added to `max_distance`
+        when comparing distances between subsequences.
+
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
@@ -224,7 +228,7 @@ def motifs(
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == False`.
+        ignored when `normalize == True`.
 
     Return
     ------
@@ -299,6 +303,7 @@ def motifs(
         cutoff,
         max_matches,
         max_motifs,
+        atol=atol,
     )
 
     return motif_distances, motif_indices
@@ -367,7 +372,7 @@ def match(
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == False`.
+        ignored when `normalize == True`.
 
     Returns
     -------
