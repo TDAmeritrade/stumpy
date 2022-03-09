@@ -368,7 +368,8 @@ def match(
 
     query_idx : int, default None
         This parameter is used when the matrix profile is a self-join.
-        If a specific integer value is set, the parameter will ensure that the self-match will be returned first.
+        If a specific integer value is set, the parameter will ensure that the
+        self-match will be returned first.
 
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
