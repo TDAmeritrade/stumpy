@@ -118,6 +118,7 @@ def _aamp_motifs(
             max_matches=None,
             max_distance=max_distance,
             atol=atol,
+            query_idx=candidate_idx,
             p=p,
         )
 

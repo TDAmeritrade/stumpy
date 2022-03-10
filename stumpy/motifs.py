@@ -119,6 +119,7 @@ def _motifs(
             max_matches=None,
             max_distance=max_distance,
             atol=atol,
+            query_idx=candidate_idx,
         )
 
         if len(query_matches) > min_neighbors:
