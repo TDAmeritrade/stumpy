@@ -204,6 +204,7 @@ def test_motifs_multidimensional_one_motif_max_matches_none():
 
 def test_motifs_multidimensional_more_motifs_when_cutoffs_is_set():
     # Find the best multidimensional motif pairs if cutoffs is set
+    # Only one pair here since 'max_motifs' is set per default
 
     # Arrange
     motif_distances_expected = np.array([[0.0000000e00, 1.1151008e-07]])
