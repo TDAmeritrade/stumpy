@@ -282,7 +282,14 @@ class _aamp_stimp:
         PAN[PAN == np.inf] = np.nan
 
         if normalize:
-            _normalize_pan(PAN, self._M, self._bfs_indices, self._n_processed, self._T_min, self._T_max)
+            _normalize_pan(
+                PAN,
+                self._M,
+                self._bfs_indices,
+                self._n_processed,
+                self._T_min,
+                self._T_max,
+            )
         if contrast:
             _contrast_pan(PAN, threshold, self._bfs_indices, self._n_processed)
         if binary:
