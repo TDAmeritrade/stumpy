@@ -202,8 +202,8 @@ def test_motifs_multidimensional_one_motif_max_matches_none():
     npt.assert_array_almost_equal(motif_mdls_expected, motif_mdls)
 
 
-def test_motifs_multidimensional_more_motifs_cutoff():
-    # Find the best multidimensional motifs if cutoff is set
+def test_motifs_multidimensional_more_motifs_when_cutoffs_is_set():
+    # Find the best multidimensional motif pairs if cutoffs is set
 
     # Arrange
     motif_distances_expected = np.array([[0.0000000e00, 1.1151008e-07]])
@@ -257,7 +257,7 @@ def test_motifs_multidimensional_more_motifs_cutoff():
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     P, I = naive.mstump(T, m, excl_zone)
     motif_distances, motif_indices, motif_subspaces, motif_mdls = mmotifs(
-        T, P, I, max_distance=None
+        T, P, I, cutoffs=3, max_motifs=10
     )
 
     # Assert
