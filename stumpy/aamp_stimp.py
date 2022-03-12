@@ -8,7 +8,7 @@ from .aamp import aamp, scraamp, aamped
 from .stimp import _bfs_indices, _contrast_pan, _binarize_pan
 
 
-def _normalize_pan(pan, ms, bfs_indices, n_processed, T_min, T_max):
+def _normalize_pan(pan, ms, bfs_indices, n_processed, T_min, T_max, p=2.0):
     """
     Normalize the pan matrix profile nearest neighbor distances (inplace) relative
     to the corresponding subsequence length from which they were computed
@@ -34,12 +34,15 @@ def _normalize_pan(pan, ms, bfs_indices, n_processed, T_min, T_max):
     T_max : float
         The max value in `T`
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     None
     """
     idx = bfs_indices[:n_processed]
-    norm = 1.0 / (np.abs(T_max - T_min) * np.sqrt(ms[:n_processed]))
+    norm = 1.0 / (np.abs(T_max - T_min) * np.pow(ms[:n_processed]), 1.0 / p)
     pan[idx] = np.minimum(1.0, pan[idx] * norm[:, np.newaxis])
 
 
@@ -68,7 +71,7 @@ class _aamp_stimp:
 
     percentage : float, default 0.01
         The percentage of the full matrix profile to compute for each subsequence
-        window size. When `percentage < 1.0`, then the `scrump` algorithm is used.
+        window size. When `percentage < 1.0`, then the `scraamp` algorithm is used.
         Otherwise, the `stump` algorithm is used when the exact matrix profile is
         requested.
 
@@ -91,6 +94,9 @@ class _aamp_stimp:
 
     mp_func : object, default stump
         The matrix profile function to use when `percentage = 1.0`
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
 
     Attributes
     ----------
@@ -127,6 +133,7 @@ class _aamp_stimp:
         dask_client=None,
         device_id=None,
         mp_func=aamp,
+        p=2.0,
     ):
         """
         Initialize the `stimp` object and compute the Pan Matrix Profile
@@ -150,7 +157,7 @@ class _aamp_stimp:
 
         percentage : float, default 0.01
             The percentage of the full matrix profile to compute for each subsequence
-            window size. When `percentage < 1.0`, then the `scrump` algorithm is used.
+            window size. When `percentage < 1.0`, then the `scraamp` algorithm is used.
             Otherwise, the `stump` algorithm is used when the exact matrix profile is
             requested.
 
@@ -173,10 +180,14 @@ class _aamp_stimp:
 
         mp_func : object, default stump
             The matrix profile function to use when `percentage = 1.0`
+
+        p : float, default 2.0
+            The p-norm to apply for computing the Minkowski distance.
         """
         self._T = T
         self._T_min = np.min(self._T[np.isfinite(self._T)])
         self._T_max = np.max(self._T[np.isfinite(self._T)])
+        self._p = p
         if max_m is None:
             max_m = max(min_m + 1, core.get_max_window_size(self._T.shape[0]))
             M = np.arange(min_m, max_m + 1, step).astype(np.int64)
@@ -192,7 +203,7 @@ class _aamp_stimp:
         self._n_processed = 0
         percentage = np.clip(percentage, 0.0, 1.0)
         self._percentage = percentage
-        self._pre_scrump = pre_scraamp
+        self._pre_scraamp = pre_scraamp
         partial_mp_func = core._get_partial_mp_func(
             mp_func, dask_client=dask_client, device_id=device_id
         )
@@ -222,7 +233,8 @@ class _aamp_stimp:
                     m,
                     ignore_trivial=True,
                     percentage=self._percentage,
-                    pre_scrump=self._pre_scrump,
+                    pre_scraamp=self._pre_scraamp,
+                    p=self._p
                 )
                 approx.update()
                 self._PAN[
@@ -233,7 +245,7 @@ class _aamp_stimp:
                     self._T,
                     m,
                     ignore_trivial=True,
-                    # normalize=self._normalize
+                    p=self._p
                 )
                 self._PAN[
                     self._bfs_indices[self._n_processed], : out[:, 0].shape[0]
@@ -289,6 +301,7 @@ class _aamp_stimp:
                 self._n_processed,
                 self._T_min,
                 self._T_max,
+                self._p
             )
         if contrast:
             _contrast_pan(PAN, threshold, self._bfs_indices, self._n_processed)
@@ -362,7 +375,7 @@ class aamp_stimp(_aamp_stimp):
 
     percentage : float, default 0.01
         The percentage of the full matrix profile to compute for each subsequence
-        window size. When `percentage < 1.0`, then the `scrump` algorithm is used.
+        window size. When `percentage < 1.0`, then the `scraamp` algorithm is used.
         Otherwise, the `stump` algorithm is used when the exact matrix profile is
         requested.
 
@@ -370,6 +383,9 @@ class aamp_stimp(_aamp_stimp):
         A flag for whether or not to perform the PreSCRIMP calculation prior to
         computing SCRIMP. If set to `True`, this is equivalent to computing
         SCRIMP++. This parameter is ignored when `percentage = 1.0`.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
 
     Attributes
     ----------
@@ -403,6 +419,7 @@ class aamp_stimp(_aamp_stimp):
         step=1,
         percentage=0.01,
         pre_scraamp=True,
+        p=2.0,
     ):
         """
         Initialize the `stimp` object and compute the Pan Matrix Profile
@@ -426,7 +443,7 @@ class aamp_stimp(_aamp_stimp):
 
         percentage : float, default 0.01
             The percentage of the full matrix profile to compute for each subsequence
-            window size. When `percentage < 1.0`, then the `scrump` algorithm is used.
+            window size. When `percentage < 1.0`, then the `scraamp` algorithm is used.
             Otherwise, the `stump` algorithm is used when the exact matrix profile is
             requested.
 
@@ -434,6 +451,9 @@ class aamp_stimp(_aamp_stimp):
             A flag for whether or not to perform the PreSCRIMP calculation prior to
             computing SCRIMP. If set to `True`, this is equivalent to computing
             SCRIMP++. This parameter is ignored when `percentage = 1.0`.
+
+        p : float, default 2.0
+            The p-norm to apply for computing the Minkowski distance.
         """
         super().__init__(
             T,
@@ -443,6 +463,7 @@ class aamp_stimp(_aamp_stimp):
             percentage=percentage,
             pre_scraamp=pre_scraamp,
             mp_func=aamp,
+            p=2.0,
         )
 
 
@@ -475,6 +496,9 @@ class aamp_stimped(_aamp_stimp):
     m_step : int, default 1
         The step between subsequence window sizes
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Attributes
     ----------
     PAN_ : numpy.ndarray
@@ -506,6 +530,7 @@ class aamp_stimped(_aamp_stimp):
         min_m=3,
         max_m=None,
         step=1,
+        p=2.0,
     ):
         """
         Initialize the `stimp` object and compute the Pan Matrix Profile
@@ -542,4 +567,5 @@ class aamp_stimped(_aamp_stimp):
             pre_scraamp=False,
             dask_client=dask_client,
             mp_func=aamped,
+            p=2.0,
         )

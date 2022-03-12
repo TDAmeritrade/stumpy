@@ -35,6 +35,9 @@ class gpu_aamp_stimp(_aamp_stimp):
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Attributes
     ----------
     PAN_ : numpy.ndarray
@@ -65,6 +68,7 @@ class gpu_aamp_stimp(_aamp_stimp):
         max_m=None,
         step=1,
         device_id=0,
+        p=2.0,
     ):
         """
         Initialize the `stimp` object and compute the Pan Matrix Profile
@@ -91,6 +95,9 @@ class gpu_aamp_stimp(_aamp_stimp):
             valid device ids (int) may also be provided for parallel GPU-STUMP
             computation. A list of all valid device ids can be obtained by
             executing `[device.id for device in numba.cuda.list_devices()]`.
+
+        p : float, default 2.0
+            The p-norm to apply for computing the Minkowski distance.
         """
         super().__init__(
             T,
@@ -98,7 +105,8 @@ class gpu_aamp_stimp(_aamp_stimp):
             max_m=max_m,
             step=step,
             percentage=1.0,
-            pre_scrump=False,
+            pre_scraamp=False,
             device_id=device_id,
             mp_func=gpu_aamp,
+            p=2.0,
         )
