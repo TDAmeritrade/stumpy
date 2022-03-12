@@ -8,7 +8,7 @@ from .aamp import aamp, scraamp, aamped
 from .stimp import _bfs_indices, _contrast_pan, _binarize_pan
 
 
-def _normalize_pan(pan, ms, bfs_indices, n_processed):
+def _normalize_pan(pan, ms, bfs_indices, n_processed, T_min, T_max):
     """
     Normalize the pan matrix profile nearest neighbor distances (inplace) relative
     to the corresponding subsequence length from which they were computed
@@ -28,12 +28,18 @@ def _normalize_pan(pan, ms, bfs_indices, n_processed):
         The number of subsequence window sizes and breadth-first-search indices to
         normalize
 
+    T_min : float
+        The min value in `T`
+
+    T_max : float
+        The max value in `T`
+
     Returns
     -------
     None
     """
     idx = bfs_indices[:n_processed]
-    norm = 1.0 / (2.0 * np.sqrt(ms[:n_processed]))
+    norm = 1.0 / (np.abs(T_max - T_min) * np.sqrt(ms[:n_processed]))
     pan[idx] = np.minimum(1.0, pan[idx] * norm[:, np.newaxis])
 
 
@@ -169,6 +175,8 @@ class _aamp_stimp:
             The matrix profile function to use when `percentage = 1.0`
         """
         self._T = T
+        self._T_min = np.min(self._T[np.isfinite(self._T)])
+        self._T_max = np.max(self._T[np.isfinite(self._T)])
         if max_m is None:
             max_m = max(min_m + 1, core.get_max_window_size(self._T.shape[0]))
             M = np.arange(min_m, max_m + 1, step).astype(np.int64)
@@ -274,7 +282,7 @@ class _aamp_stimp:
         PAN[PAN == np.inf] = np.nan
 
         if normalize:
-            _normalize_pan(PAN, self._M, self._bfs_indices, self._n_processed)
+            _normalize_pan(PAN, self._M, self._bfs_indices, self._n_processed, self._T_min, self._T_max)
         if contrast:
             _contrast_pan(PAN, threshold, self._bfs_indices, self._n_processed)
         if binary:
