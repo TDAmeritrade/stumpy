@@ -46,6 +46,7 @@ else:  # pragma: no cover
     from .core import _gpu_mpdist_driver_not_found as gpu_mpdist  # noqa: F401
     from .core import _gpu_aampdist_driver_not_found as gpu_aampdist  # noqa: F401
     from .core import _gpu_stimp_driver_not_found as gpu_stimp  # noqa: F401
+    from .core import _gpu_aamp_stimp_driver_not_found as gpu_aamp_stimp  # noqa: F401
     import ast
     import pathlib
 
