@@ -154,7 +154,7 @@ else:  # pragma: no cover
     for cd in class_definitions:
         if cd.name == "gpu_stimp":
             gpu_stimp.__doc__ = ast.get_docstring(cd)
-    
+
     # Fix GPU-AAMP-STIMP Docs
     # Note that this is a special case for class definitions.
     # See above for function definitions.
