@@ -3,11 +3,10 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from . import core, stump, scrump, stumped
-from .aamp_stimp import aamp_stimp, aamp_stimped
+from . import core, aamp, scraamp, aamped
 
 
-def _normalize_pan(pan, ms, bfs_indices, n_processed):
+def _normalize_pan(pan, ms, bfs_indices, n_processed, T_min, T_max, p=2.0):
     """
     Normalize the pan matrix profile nearest neighbor distances (inplace) relative
     to the corresponding subsequence length from which they were computed
@@ -27,16 +26,25 @@ def _normalize_pan(pan, ms, bfs_indices, n_processed):
         The number of subsequence window sizes and breadth-first-search indices to
         normalize
 
+    T_min : float
+        The min value in `T`
+
+    T_max : float
+        The max value in `T`
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
     Returns
     -------
     None
     """
     idx = bfs_indices[:n_processed]
-    norm = 1.0 / (2.0 * np.sqrt(ms[:n_processed]))
+    norm = 1.0 / (np.abs(T_max - T_min) * np.power(ms[:n_processed], 1.0 / p))
     pan[idx] = np.minimum(1.0, pan[idx] * norm[:, np.newaxis])
 
 
-class _stimp:
+class _aamp_stimp:
     """
     Compute the Pan Matrix Profile
 
@@ -61,11 +69,11 @@ class _stimp:
 
     percentage : float, default 0.01
         The percentage of the full matrix profile to compute for each subsequence
-        window size. When `percentage < 1.0`, then the `scrump` algorithm is used.
+        window size. When `percentage < 1.0`, then the `scraamp` algorithm is used.
         Otherwise, the `stump` algorithm is used when the exact matrix profile is
         requested.
 
-    pre_scrump : bool, default True
+    pre_scraamp : bool, default True
         A flag for whether or not to perform the PreSCRIMP calculation prior to
         computing SCRIMP. If set to `True`, this is equivalent to computing
         SCRIMP++. This parameter is ignored when `percentage = 1.0`.
@@ -84,6 +92,9 @@ class _stimp:
 
     mp_func : object, default stump
         The matrix profile function to use when `percentage = 1.0`
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
 
     Attributes
     ----------
@@ -116,10 +127,11 @@ class _stimp:
         max_m=None,
         step=1,
         percentage=0.01,
-        pre_scrump=True,
+        pre_scraamp=True,
         dask_client=None,
         device_id=None,
-        mp_func=stump,
+        mp_func=aamp,
+        p=2.0,
     ):
         """
         Initialize the `stimp` object and compute the Pan Matrix Profile
@@ -143,11 +155,11 @@ class _stimp:
 
         percentage : float, default 0.01
             The percentage of the full matrix profile to compute for each subsequence
-            window size. When `percentage < 1.0`, then the `scrump` algorithm is used.
+            window size. When `percentage < 1.0`, then the `scraamp` algorithm is used.
             Otherwise, the `stump` algorithm is used when the exact matrix profile is
             requested.
 
-        pre_scrump : bool, default True
+        pre_scraamp : bool, default True
             A flag for whether or not to perform the PreSCRIMP calculation prior to
             computing SCRIMP. If set to `True`, this is equivalent to computing
             SCRIMP++. This parameter is ignored when `percentage = 1.0`.
@@ -166,8 +178,14 @@ class _stimp:
 
         mp_func : object, default stump
             The matrix profile function to use when `percentage = 1.0`
+
+        p : float, default 2.0
+            The p-norm to apply for computing the Minkowski distance.
         """
         self._T = T
+        self._T_min = np.min(self._T[np.isfinite(self._T)])
+        self._T_max = np.max(self._T[np.isfinite(self._T)])
+        self._p = p
         if max_m is None:
             max_m = max(min_m + 1, core.get_max_window_size(self._T.shape[0]))
             M = np.arange(min_m, max_m + 1, step).astype(np.int64)
@@ -183,7 +201,7 @@ class _stimp:
         self._n_processed = 0
         percentage = np.clip(percentage, 0.0, 1.0)
         self._percentage = percentage
-        self._pre_scrump = pre_scrump
+        self._pre_scraamp = pre_scraamp
         partial_mp_func = core._get_partial_mp_func(
             mp_func, dask_client=dask_client, device_id=device_id
         )
@@ -208,23 +226,20 @@ class _stimp:
         if self._n_processed < self._M.shape[0]:
             m = self._M[self._n_processed]
             if self._percentage < 1.0:
-                approx = scrump(
+                approx = scraamp(
                     self._T,
                     m,
                     ignore_trivial=True,
                     percentage=self._percentage,
-                    pre_scrump=self._pre_scrump,
+                    pre_scraamp=self._pre_scraamp,
+                    p=self._p,
                 )
                 approx.update()
                 self._PAN[
                     self._bfs_indices[self._n_processed], : approx.P_.shape[0]
                 ] = approx.P_
             else:
-                out = self._mp_func(
-                    self._T,
-                    m,
-                    ignore_trivial=True,
-                )
+                out = self._mp_func(self._T, m, ignore_trivial=True, p=self._p)
                 self._PAN[
                     self._bfs_indices[self._n_processed], : out[:, 0].shape[0]
                 ] = out[:, 0]
@@ -272,7 +287,15 @@ class _stimp:
         PAN[PAN == np.inf] = np.nan
 
         if normalize:
-            _normalize_pan(PAN, self._M, self._bfs_indices, self._n_processed)
+            _normalize_pan(
+                PAN,
+                self._M,
+                self._bfs_indices,
+                self._n_processed,
+                self._T_min,
+                self._T_max,
+                self._p,
+            )
         if contrast:
             core._contrast_pan(PAN, threshold, self._bfs_indices, self._n_processed)
         if binary:
@@ -320,8 +343,7 @@ class _stimp:
     #     return self._n_processed
 
 
-@core.non_normalized(aamp_stimp)
-class stimp(_stimp):
+class aamp_stimp(_aamp_stimp):
     """
     Compute the Pan Matrix Profile
 
@@ -346,23 +368,17 @@ class stimp(_stimp):
 
     percentage : float, default 0.01
         The percentage of the full matrix profile to compute for each subsequence
-        window size. When `percentage < 1.0`, then the `scrump` algorithm is used.
+        window size. When `percentage < 1.0`, then the `scraamp` algorithm is used.
         Otherwise, the `stump` algorithm is used when the exact matrix profile is
         requested.
 
-    pre_scrump : bool, default True
+    pre_scraamp : bool, default True
         A flag for whether or not to perform the PreSCRIMP calculation prior to
         computing SCRIMP. If set to `True`, this is equivalent to computing
         SCRIMP++. This parameter is ignored when `percentage = 1.0`.
 
-    normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
-
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == True`.
+        The p-norm to apply for computing the Minkowski distance.
 
     Attributes
     ----------
@@ -380,25 +396,12 @@ class stimp(_stimp):
         Compute the next matrix profile using the next available (breadth-first-search
         (level) ordered) subsequence window size and update the pan matrix profile
 
-    See Also
-    --------
-    stumpy.stimped : Compute the Pan Matrix Profile with a distributed dask cluster
-    stumpy.gpu_stimp : Compute the Pan Matrix Profile with with one or more GPU devices
-
     Notes
     -----
     `DOI: 10.1109/ICBK.2019.00031 \
     <https://www.cs.ucr.edu/~eamonn/PAN_SKIMP%20%28Matrix%20Profile%20XX%29.pdf>`__
 
     See Table 2
-
-    Examples
-    --------
-    >>> pmp = stumpy.stimp(np.array([584., -11., 23., 79., 1001., 0., -19.]))
-    >>> pmp.update()
-    >>> pmp.PAN_
-    array([[0., 1., 1., 1., 1., 1., 1.],
-           [0., 1., 1., 1., 1., 1., 1.]])
     """
 
     def __init__(
@@ -408,8 +411,7 @@ class stimp(_stimp):
         max_m=None,
         step=1,
         percentage=0.01,
-        pre_scrump=True,
-        normalize=True,
+        pre_scraamp=True,
         p=2.0,
     ):
         """
@@ -434,24 +436,17 @@ class stimp(_stimp):
 
         percentage : float, default 0.01
             The percentage of the full matrix profile to compute for each subsequence
-            window size. When `percentage < 1.0`, then the `scrump` algorithm is used.
+            window size. When `percentage < 1.0`, then the `scraamp` algorithm is used.
             Otherwise, the `stump` algorithm is used when the exact matrix profile is
             requested.
 
-        pre_scrump : bool, default True
+        pre_scraamp : bool, default True
             A flag for whether or not to perform the PreSCRIMP calculation prior to
             computing SCRIMP. If set to `True`, this is equivalent to computing
             SCRIMP++. This parameter is ignored when `percentage = 1.0`.
 
-        normalize : bool, default True
-            When set to `True`, this z-normalizes subsequences prior to computing
-            distances. Otherwise, this function gets re-routed to its complementary
-            non-normalized equivalent set in the `@core.non_normalized` function
-            decorator.
-
         p : float, default 2.0
-            The p-norm to apply for computing the Minkowski distance. This parameter is
-            ignored when `normalize == True`.
+            The p-norm to apply for computing the Minkowski distance.
         """
         super().__init__(
             T,
@@ -459,13 +454,13 @@ class stimp(_stimp):
             max_m=max_m,
             step=step,
             percentage=percentage,
-            pre_scrump=pre_scrump,
-            mp_func=stump,
+            pre_scraamp=pre_scraamp,
+            mp_func=aamp,
+            p=2.0,
         )
 
 
-@core.non_normalized(aamp_stimped)
-class stimped(_stimp):
+class aamp_stimped(_aamp_stimp):
     """
     Compute the Pan Matrix Profile with a distributed dask cluster
 
@@ -494,14 +489,8 @@ class stimped(_stimp):
     m_step : int, default 1
         The step between subsequence window sizes
 
-    normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
-
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == True`.
+        The p-norm to apply for computing the Minkowski distance.
 
     Attributes
     ----------
@@ -519,30 +508,12 @@ class stimped(_stimp):
         Compute the next matrix profile using the next available (breadth-first-search
         (level) ordered) subsequence window size and update the pan matrix profile
 
-    See Also
-    --------
-    stumpy.stimp : Compute the Pan Matrix Profile
-    stumpy.gpu_stimp : Compute the Pan Matrix Profile with with one or more GPU devices
-
     Notes
     -----
     `DOI: 10.1109/ICBK.2019.00031 \
     <https://www.cs.ucr.edu/~eamonn/PAN_SKIMP%20%28Matrix%20Profile%20XX%29.pdf>`__
 
     See Table 2
-
-    Examples
-    --------
-    >>> from dask.distributed import Client
-    >>> if __name__ == "__main__":
-    ...     dask_client = Client()
-    ...     pmp = stumpy.stimped(
-    ...         dask_client,
-    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]))
-    ...     pmp.update()
-    ...     pmp.PAN_
-    array([[0., 1., 1., 1., 1., 1., 1.],
-           [0., 1., 1., 1., 1., 1., 1.]])
     """
 
     def __init__(
@@ -552,7 +523,6 @@ class stimped(_stimp):
         min_m=3,
         max_m=None,
         step=1,
-        normalize=True,
         p=2.0,
     ):
         """
@@ -580,16 +550,6 @@ class stimped(_stimp):
 
         step : int, default 1
             The step between subsequence window sizes
-
-        normalize : bool, default True
-            When set to `True`, this z-normalizes subsequences prior to computing
-            distances. Otherwise, this function gets re-routed to its complementary
-            non-normalized equivalent set in the `@core.non_normalized` function
-            decorator.
-
-        p : float, default 2.0
-            The p-norm to apply for computing the Minkowski distance. This parameter is
-            ignored when `normalize == True`.
         """
         super().__init__(
             T,
@@ -597,7 +557,8 @@ class stimped(_stimp):
             max_m=max_m,
             step=step,
             percentage=1.0,
-            pre_scrump=False,
+            pre_scraamp=False,
             dask_client=dask_client,
-            mp_func=stumped,
+            mp_func=aamped,
+            p=2.0,
         )

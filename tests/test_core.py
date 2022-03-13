@@ -78,6 +78,28 @@ def naive_idx_to_mp(I, T, m, normalize=True):
     return P
 
 
+def split(node, out):
+    mid = len(node) // 2
+    out.append(node[mid])
+    return node[:mid], node[mid + 1 :]
+
+
+def naive_bsf_indices(n):
+    a = np.arange(n)
+    nodes = [a.tolist()]
+    out = []
+
+    while nodes:
+        tmp = []
+        for node in nodes:
+            for n in split(node, out):
+                if n:
+                    tmp.append(n)
+        nodes = tmp
+
+    return np.array(out)
+
+
 test_data = [
     (np.array([-1, 1, 2], dtype=np.float64), np.array(range(5), dtype=np.float64)),
     (
@@ -86,6 +108,8 @@ test_data = [
     ),
     (np.random.uniform(-1000, 1000, [8]), np.random.uniform(-1000, 1000, [64])),
 ]
+
+n = [9, 10, 16]
 
 
 def test_check_bad_dtype():
@@ -1002,3 +1026,11 @@ def test_total_diagonal_ndists():
             ) == core._total_diagonal_ndists(
                 tile_lower_diag, tile_upper_diag, tile_height, tile_width
             )
+
+
+@pytest.mark.parametrize("n", n)
+def test_bsf_indices(n):
+    ref_bsf_indices = naive_bsf_indices(n)
+    cmp_bsf_indices = np.array(list(core._bfs_indices(n)))
+
+    npt.assert_almost_equal(ref_bsf_indices, cmp_bsf_indices)
