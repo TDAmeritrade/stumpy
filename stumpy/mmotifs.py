@@ -179,7 +179,7 @@ def mmotifs(
             motif_value > cutoffs[k]
             or not np.isfinite(motif_value)
             or (isinstance(max_distance, float) and motif_value > max_distance)
-        ):
+        ):  # pragma: no cover
             break
 
         query_matches = match(
