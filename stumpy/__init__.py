@@ -142,6 +142,7 @@ else:  # pragma: no cover
     # Fix GPU-STIMP Docs
     # Note that this is a special case for class definitions.
     # See above for function definitions.
+    # Also, please update docs/api.rst
     gpu_stimp.__doc__ = ""
     filepath = pathlib.Path(__file__).parent / "gpu_stimp.py"
 
@@ -153,6 +154,22 @@ else:  # pragma: no cover
     for cd in class_definitions:
         if cd.name == "gpu_stimp":
             gpu_stimp.__doc__ = ast.get_docstring(cd)
+    
+    # Fix GPU-AAMP-STIMP Docs
+    # Note that this is a special case for class definitions.
+    # See above for function definitions.
+    # Also, please update docs/api.rst
+    gpu_aamp_stimp.__doc__ = ""
+    filepath = pathlib.Path(__file__).parent / "gpu_aamp_stimp.py"
+
+    file_contents = ""
+    with open(filepath, encoding="utf8") as f:
+        file_contents = f.read()
+    module = ast.parse(file_contents)
+    class_definitions = [node for node in module.body if isinstance(node, ast.ClassDef)]
+    for cd in class_definitions:
+        if cd.name == "gpu_aamp_stimp":
+            gpu_aamp_stimp.__doc__ = ast.get_docstring(cd)
 
 try:
     _dist = get_distribution("stumpy")
