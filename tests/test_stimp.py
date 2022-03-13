@@ -2,26 +2,9 @@ import numpy as np
 import numpy.testing as npt
 from stumpy import stimp, stimped
 
-from stumpy.stimp import _bfs_indices
 from dask.distributed import Client, LocalCluster
 import pytest
 import naive
-
-
-def naive_bsf_indices(n):
-    a = np.arange(n)
-    nodes = [a.tolist()]
-    out = []
-
-    while nodes:
-        tmp = []
-        for node in nodes:
-            for n in split(node, out):
-                if n:
-                    tmp.append(n)
-        nodes = tmp
-
-    return np.array(out)
 
 
 T = [
@@ -29,28 +12,12 @@ T = [
     np.random.uniform(-1000, 1000, [64]).astype(np.float64),
 ]
 
-n = [9, 10, 16]
-
 
 @pytest.fixture(scope="module")
 def dask_cluster():
     cluster = LocalCluster(n_workers=2, threads_per_worker=2)
     yield cluster
     cluster.close()
-
-
-def split(node, out):
-    mid = len(node) // 2
-    out.append(node[mid])
-    return node[:mid], node[mid + 1 :]
-
-
-@pytest.mark.parametrize("n", n)
-def test_bsf_indices(n):
-    ref_bsf_indices = naive_bsf_indices(n)
-    cmp_bsf_indices = np.array(list(_bfs_indices(n)))
-
-    npt.assert_almost_equal(ref_bsf_indices, cmp_bsf_indices)
 
 
 @pytest.mark.parametrize("T", T)

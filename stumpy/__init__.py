@@ -24,6 +24,7 @@ from .aamp_motifs import aamp_motifs, aamp_match  # noqa: F401
 from .snippets import snippets  # noqa: F401
 from .aampdist_snippets import aampdist_snippets  # noqa: F401
 from .stimp import stimp, stimped  # noqa: F401
+from .aamp_stimp import aamp_stimp, aamp_stimped  # noqa: F401
 from numba import cuda
 
 if cuda.is_available():
@@ -34,6 +35,7 @@ if cuda.is_available():
     from .gpu_mpdist import gpu_mpdist  # noqa: F401
     from .gpu_aampdist import gpu_aampdist  # noqa: F401
     from .gpu_stimp import gpu_stimp  # noqa: F401
+    from .gpu_aamp_stimp import gpu_aamp_stimp  # noqa: F401
 else:  # pragma: no cover
     from .core import _gpu_stump_driver_not_found as gpu_stump  # noqa: F401
     from .core import _gpu_aamp_driver_not_found as gpu_aamp  # noqa: F401

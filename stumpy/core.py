@@ -2245,3 +2245,142 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
     total_diagonal_ndists += lower_ndists / 2 - upper_ndists / 2
 
     return int(total_diagonal_ndists)
+
+
+def _bfs_indices(n):
+    """
+    Generate the level order indices from the implicit construction of a binary
+    search tree followed by a breadth first (level order) search.
+
+    Example:
+
+    If `n = 10` then the corresponding (zero-based index) balanced binary tree is:
+
+                5
+               * *
+              *   *
+             *     *
+            *       *
+           *         *
+          2           8
+         * *         * *
+        *   *       *   *
+       *     *     *     *
+      1       4   7       9
+     * *     *
+    0   3   6
+
+    And if we traverse the nodes at each level from left to right then the breadth
+    first search indices would be `[5, 2, 8, 1, 4, 7, 9, 0, 3, 6]`. In this function,
+    we avoid/skip the explicit construction of the binary tree and directly output
+    the desired indices efficiently.
+
+    Parameters
+    ----------
+    n : int
+        The number indices to generate the ordered indices for
+
+    Returns
+    -------
+    level_idx : numpy.ndarray
+        The breadth first search (level order) indices
+    """
+    if n == 1:  # pragma: no cover
+        return np.array([0], dtype=np.int64)
+
+    nlevel = np.floor(np.log2(n) + 1).astype(np.int64)
+    nindices = np.power(2, np.arange(nlevel))
+    cumsum_nindices = np.cumsum(nindices)
+    nindices[-1] = n - cumsum_nindices[np.searchsorted(cumsum_nindices, n) - 1]
+
+    indices = np.empty((2, nindices.max()), dtype=np.int64)
+    indices[0, 0] = 0
+    indices[1, 0] = n
+    tmp_indices = np.empty((2, 2 * nindices.max()), dtype=np.int64)
+
+    out = np.empty(n, dtype=np.int64)
+    out_idx = 0
+
+    for nidx in nindices:
+        level_indices = (indices[0, :nidx] + indices[1, :nidx]) // 2
+
+        if out_idx + len(level_indices) < n:
+            tmp_indices[0, 0 : 2 * nidx : 2] = indices[0, :nidx]
+            tmp_indices[0, 1 : 2 * nidx : 2] = level_indices + 1
+            tmp_indices[1, 0 : 2 * nidx : 2] = level_indices
+            tmp_indices[1, 1 : 2 * nidx : 2] = indices[1, :nidx]
+
+            mask = tmp_indices[0, : 2 * nidx] < tmp_indices[1, : 2 * nidx]
+            mask_sum = np.count_nonzero(mask)
+            indices[0, :mask_sum] = tmp_indices[0, : 2 * nidx][mask]
+            indices[1, :mask_sum] = tmp_indices[1, : 2 * nidx][mask]
+
+        # for level_idx in level_indices:
+        #     yield level_idx
+
+        out[out_idx : out_idx + len(level_indices)] = level_indices
+        out_idx += len(level_indices)
+
+    return out
+
+
+def _contrast_pan(pan, threshold, bfs_indices, n_processed):
+    """
+    Center the pan matrix profile (inplace) around the desired distance threshold
+    in order to increase the contrast
+
+    Parameters
+    ----------
+    pan : numpy.ndarray
+        The pan matrix profile
+
+    threshold : float
+        The distance threshold value in which to center the pan matrix profile around
+
+    bfs_indices : numpy.ndarray
+        The breadth-first-search indices
+
+    n_processed : numpy.ndarray
+        The number of breadth-first-search indices to apply contrast to
+
+    Returns
+    -------
+    None
+    """
+    idx = bfs_indices[:n_processed]
+    l = n_processed * pan.shape[1]
+    tmp = pan[idx].argsort(kind="mergesort", axis=None)
+    ranks = np.empty(l, dtype=np.int64)
+    ranks[tmp] = np.arange(l).astype(np.int64)
+
+    percentile = np.full(ranks.shape, np.nan)
+    percentile[:l] = np.linspace(0, 1, l)
+    percentile = percentile[ranks].reshape(pan[idx].shape)
+    pan[idx] = 1.0 / (1.0 + np.exp(-10 * (percentile - threshold)))
+
+
+def _binarize_pan(pan, threshold, bfs_indices, n_processed):
+    """
+    Binarize the pan matrix profile (inplace) such all values below the `threshold`
+    are set to `0.0` and all values above the `threshold` are set to `1.0`.
+
+    Parameters
+    ----------
+    pan : numpy.ndarray
+        The pan matrix profile
+
+    threshold : float
+        The distance threshold value in which to center the pan matrix profile around
+
+    bfs_indices : numpy.ndarray
+        The breadth-first-search indices
+
+    n_processed : numpy.ndarray
+        The number of breadth-first-search indices to binarize
+
+    Returns
+    -------
+    None
+    """
+    idx = bfs_indices[:n_processed]
+    pan[idx] = np.where(pan[idx] <= threshold, 0.0, 1.0)

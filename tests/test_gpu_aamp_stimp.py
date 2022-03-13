@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.testing as npt
-from stumpy import gpu_stimp
+from stumpy import gpu_aamp_stimp
 from stumpy import config
 from numba import cuda
 
@@ -25,19 +25,12 @@ T = [
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T", T)
-def test_gpu_stimp(T):
+def test_gpu_aamp_stimp(T):
     threshold = 0.2
     min_m = 3
     n = T.shape[0] - min_m + 1
 
-    pan = gpu_stimp(
-        T,
-        min_m=min_m,
-        max_m=None,
-        step=1,
-        device_id=0
-        # normalize=True,
-    )
+    pan = gpu_aamp_stimp(T, min_m=min_m, max_m=None, step=1, device_id=0)
 
     for i in range(n):
         pan.update()
@@ -46,7 +39,7 @@ def test_gpu_stimp(T):
 
     for idx, m in enumerate(pan.M_[:n]):
         zone = int(np.ceil(m / 4))
-        ref_mp = naive.stump(T, m, T_B=None, exclusion_zone=zone)
+        ref_mp = naive.aamp(T, m, T_B=None, exclusion_zone=zone)
         ref_PAN[pan._bfs_indices[idx], : ref_mp.shape[0]] = ref_mp[:, 0]
 
     # Compare raw pan
@@ -60,7 +53,13 @@ def test_gpu_stimp(T):
     # Compare transformed pan
     cmp_pan = pan.PAN_
     ref_pan = naive.transform_pan(
-        pan._PAN, pan._M, threshold, pan._bfs_indices, pan._n_processed
+        pan._PAN,
+        pan._M,
+        threshold,
+        pan._bfs_indices,
+        pan._n_processed,
+        np.min(T),
+        np.max(T),
     )
 
     naive.replace_inf(ref_pan)

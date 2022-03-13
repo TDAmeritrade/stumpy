@@ -3,9 +3,7 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from . import core
-from .aamp import aamp, scraamp, aamped
-from .stimp import _bfs_indices, _contrast_pan, _binarize_pan
+from . import core, aamp, scraamp, aamped
 
 
 def _normalize_pan(pan, ms, bfs_indices, n_processed, T_min, T_max, p=2.0):
@@ -42,7 +40,7 @@ def _normalize_pan(pan, ms, bfs_indices, n_processed, T_min, T_max, p=2.0):
     None
     """
     idx = bfs_indices[:n_processed]
-    norm = 1.0 / (np.abs(T_max - T_min) * np.pow(ms[:n_processed]), 1.0 / p)
+    norm = 1.0 / (np.abs(T_max - T_min) * np.power(ms[:n_processed], 1.0 / p))
     pan[idx] = np.minimum(1.0, pan[idx] * norm[:, np.newaxis])
 
 
@@ -198,7 +196,7 @@ class _aamp_stimp:
                 min(core.get_max_window_size(self._T.shape[0]), max_m) + 1,
                 step,
             ).astype(np.int64)
-        self._bfs_indices = _bfs_indices(M.shape[0])
+        self._bfs_indices = core._bfs_indices(M.shape[0])
         self._M = M[self._bfs_indices]
         self._n_processed = 0
         percentage = np.clip(percentage, 0.0, 1.0)
@@ -234,19 +232,14 @@ class _aamp_stimp:
                     ignore_trivial=True,
                     percentage=self._percentage,
                     pre_scraamp=self._pre_scraamp,
-                    p=self._p
+                    p=self._p,
                 )
                 approx.update()
                 self._PAN[
                     self._bfs_indices[self._n_processed], : approx.P_.shape[0]
                 ] = approx.P_
             else:
-                out = self._mp_func(
-                    self._T,
-                    m,
-                    ignore_trivial=True,
-                    p=self._p
-                )
+                out = self._mp_func(self._T, m, ignore_trivial=True, p=self._p)
                 self._PAN[
                     self._bfs_indices[self._n_processed], : out[:, 0].shape[0]
                 ] = out[:, 0]
@@ -301,12 +294,12 @@ class _aamp_stimp:
                 self._n_processed,
                 self._T_min,
                 self._T_max,
-                self._p
+                self._p,
             )
         if contrast:
-            _contrast_pan(PAN, threshold, self._bfs_indices, self._n_processed)
+            core._contrast_pan(PAN, threshold, self._bfs_indices, self._n_processed)
         if binary:
-            _binarize_pan(PAN, threshold, self._bfs_indices, self._n_processed)
+            core._binarize_pan(PAN, threshold, self._bfs_indices, self._n_processed)
         if clip:
             PAN[idx] = np.clip(PAN[idx], 0.0, 1.0)
 

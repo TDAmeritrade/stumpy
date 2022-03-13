@@ -2,10 +2,12 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-from . import gpu_stump
+from . import core, gpu_stump
+from .gpu_aamp_stimp import gpu_aamp_stimp
 from .stimp import _stimp
 
 
+@core.non_normalized(gpu_aamp_stimp)
 class gpu_stimp(_stimp):
     """
     Compute the Pan Matrix Profile with with one or more GPU devices
@@ -34,6 +36,15 @@ class gpu_stimp(_stimp):
         valid device ids (int) may also be provided for parallel GPU-STUMP
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == True`.
 
     Attributes
     ----------
@@ -84,7 +95,8 @@ class gpu_stimp(_stimp):
         max_m=None,
         step=1,
         device_id=0,
-        # normalize=True,
+        normalize=True,
+        p=2.0,
     ):
         """
         Initialize the `stimp` object and compute the Pan Matrix Profile
@@ -111,6 +123,16 @@ class gpu_stimp(_stimp):
             valid device ids (int) may also be provided for parallel GPU-STUMP
             computation. A list of all valid device ids can be obtained by
             executing `[device.id for device in numba.cuda.list_devices()]`.
+
+        normalize : bool, default True
+            When set to `True`, this z-normalizes subsequences prior to computing
+            distances. Otherwise, this function gets re-routed to its complementary
+            non-normalized equivalent set in the `@core.non_normalized` function
+            decorator.
+
+        p : float, default 2.0
+            The p-norm to apply for computing the Minkowski distance. This parameter is
+            ignored when `normalize == True`.
         """
         super().__init__(
             T,

@@ -4,83 +4,7 @@
 
 import numpy as np
 from . import core, stump, scrump, stumped
-
-
-def _bfs_indices(n):
-    """
-    Generate the level order indices from the implicit construction of a binary
-    search tree followed by a breadth first (level order) search.
-
-    Example:
-
-    If `n = 10` then the corresponding (zero-based index) balanced binary tree is:
-
-                5
-               * *
-              *   *
-             *     *
-            *       *
-           *         *
-          2           8
-         * *         * *
-        *   *       *   *
-       *     *     *     *
-      1       4   7       9
-     * *     *
-    0   3   6
-
-    And if we traverse the nodes at each level from left to right then the breadth
-    first search indices would be `[5, 2, 8, 1, 4, 7, 9, 0, 3, 6]`. In this function,
-    we avoid/skip the explicit construction of the binary tree and directly output
-    the desired indices efficiently.
-
-    Parameters
-    ----------
-    n : int
-        The number indices to generate the ordered indices for
-
-    Returns
-    -------
-    level_idx : numpy.ndarray
-        The breadth first search (level order) indices
-    """
-    if n == 1:  # pragma: no cover
-        return np.array([0], dtype=np.int64)
-
-    nlevel = np.floor(np.log2(n) + 1).astype(np.int64)
-    nindices = np.power(2, np.arange(nlevel))
-    cumsum_nindices = np.cumsum(nindices)
-    nindices[-1] = n - cumsum_nindices[np.searchsorted(cumsum_nindices, n) - 1]
-
-    indices = np.empty((2, nindices.max()), dtype=np.int64)
-    indices[0, 0] = 0
-    indices[1, 0] = n
-    tmp_indices = np.empty((2, 2 * nindices.max()), dtype=np.int64)
-
-    out = np.empty(n, dtype=np.int64)
-    out_idx = 0
-
-    for nidx in nindices:
-        level_indices = (indices[0, :nidx] + indices[1, :nidx]) // 2
-
-        if out_idx + len(level_indices) < n:
-            tmp_indices[0, 0 : 2 * nidx : 2] = indices[0, :nidx]
-            tmp_indices[0, 1 : 2 * nidx : 2] = level_indices + 1
-            tmp_indices[1, 0 : 2 * nidx : 2] = level_indices
-            tmp_indices[1, 1 : 2 * nidx : 2] = indices[1, :nidx]
-
-            mask = tmp_indices[0, : 2 * nidx] < tmp_indices[1, : 2 * nidx]
-            mask_sum = np.count_nonzero(mask)
-            indices[0, :mask_sum] = tmp_indices[0, : 2 * nidx][mask]
-            indices[1, :mask_sum] = tmp_indices[1, : 2 * nidx][mask]
-
-        # for level_idx in level_indices:
-        #     yield level_idx
-
-        out[out_idx : out_idx + len(level_indices)] = level_indices
-        out_idx += len(level_indices)
-
-    return out
+from .aamp_stimp import aamp_stimp, aamp_stimped
 
 
 def _normalize_pan(pan, ms, bfs_indices, n_processed):
@@ -110,68 +34,6 @@ def _normalize_pan(pan, ms, bfs_indices, n_processed):
     idx = bfs_indices[:n_processed]
     norm = 1.0 / (2.0 * np.sqrt(ms[:n_processed]))
     pan[idx] = np.minimum(1.0, pan[idx] * norm[:, np.newaxis])
-
-
-def _contrast_pan(pan, threshold, bfs_indices, n_processed):
-    """
-    Center the pan matrix profile (inplace) around the desired distance threshold
-    in order to increase the contrast
-
-    Parameters
-    ----------
-    pan : numpy.ndarray
-        The pan matrix profile
-
-    threshold : float
-        The distance threshold value in which to center the pan matrix profile around
-
-    bfs_indices : numpy.ndarray
-        The breadth-first-search indices
-
-    n_processed : numpy.ndarray
-        The number of breadth-first-search indices to apply contrast to
-
-    Returns
-    -------
-    None
-    """
-    idx = bfs_indices[:n_processed]
-    l = n_processed * pan.shape[1]
-    tmp = pan[idx].argsort(kind="mergesort", axis=None)
-    ranks = np.empty(l, dtype=np.int64)
-    ranks[tmp] = np.arange(l).astype(np.int64)
-
-    percentile = np.full(ranks.shape, np.nan)
-    percentile[:l] = np.linspace(0, 1, l)
-    percentile = percentile[ranks].reshape(pan[idx].shape)
-    pan[idx] = 1.0 / (1.0 + np.exp(-10 * (percentile - threshold)))
-
-
-def _binarize_pan(pan, threshold, bfs_indices, n_processed):
-    """
-    Binarize the pan matrix profile (inplace) such all values below the `threshold`
-    are set to `0.0` and all values above the `threshold` are set to `1.0`.
-
-    Parameters
-    ----------
-    pan : numpy.ndarray
-        The pan matrix profile
-
-    threshold : float
-        The distance threshold value in which to center the pan matrix profile around
-
-    bfs_indices : numpy.ndarray
-        The breadth-first-search indices
-
-    n_processed : numpy.ndarray
-        The number of breadth-first-search indices to binarize
-
-    Returns
-    -------
-    None
-    """
-    idx = bfs_indices[:n_processed]
-    pan[idx] = np.where(pan[idx] <= threshold, 0.0, 1.0)
 
 
 class _stimp:
@@ -316,13 +178,12 @@ class _stimp:
                 min(core.get_max_window_size(self._T.shape[0]), max_m) + 1,
                 step,
             ).astype(np.int64)
-        self._bfs_indices = _bfs_indices(M.shape[0])
+        self._bfs_indices = core._bfs_indices(M.shape[0])
         self._M = M[self._bfs_indices]
         self._n_processed = 0
         percentage = np.clip(percentage, 0.0, 1.0)
         self._percentage = percentage
         self._pre_scrump = pre_scrump
-        # self._normalize = normalize
         partial_mp_func = core._get_partial_mp_func(
             mp_func, dask_client=dask_client, device_id=device_id
         )
@@ -353,7 +214,6 @@ class _stimp:
                     ignore_trivial=True,
                     percentage=self._percentage,
                     pre_scrump=self._pre_scrump,
-                    # normalize=self._normalize,
                 )
                 approx.update()
                 self._PAN[
@@ -364,7 +224,6 @@ class _stimp:
                     self._T,
                     m,
                     ignore_trivial=True,
-                    # normalize=self._normalize
                 )
                 self._PAN[
                     self._bfs_indices[self._n_processed], : out[:, 0].shape[0]
@@ -415,9 +274,9 @@ class _stimp:
         if normalize:
             _normalize_pan(PAN, self._M, self._bfs_indices, self._n_processed)
         if contrast:
-            _contrast_pan(PAN, threshold, self._bfs_indices, self._n_processed)
+            core._contrast_pan(PAN, threshold, self._bfs_indices, self._n_processed)
         if binary:
-            _binarize_pan(PAN, threshold, self._bfs_indices, self._n_processed)
+            core._binarize_pan(PAN, threshold, self._bfs_indices, self._n_processed)
         if clip:
             PAN[idx] = np.clip(PAN[idx], 0.0, 1.0)
 
@@ -461,6 +320,7 @@ class _stimp:
     #     return self._n_processed
 
 
+@core.non_normalized(aamp_stimp)
 class stimp(_stimp):
     """
     Compute the Pan Matrix Profile
@@ -494,6 +354,15 @@ class stimp(_stimp):
         A flag for whether or not to perform the PreSCRIMP calculation prior to
         computing SCRIMP. If set to `True`, this is equivalent to computing
         SCRIMP++. This parameter is ignored when `percentage = 1.0`.
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == True`.
 
     Attributes
     ----------
@@ -540,7 +409,8 @@ class stimp(_stimp):
         step=1,
         percentage=0.01,
         pre_scrump=True,
-        # normalize=True,
+        normalize=True,
+        p=2.0,
     ):
         """
         Initialize the `stimp` object and compute the Pan Matrix Profile
@@ -572,6 +442,16 @@ class stimp(_stimp):
             A flag for whether or not to perform the PreSCRIMP calculation prior to
             computing SCRIMP. If set to `True`, this is equivalent to computing
             SCRIMP++. This parameter is ignored when `percentage = 1.0`.
+
+        normalize : bool, default True
+            When set to `True`, this z-normalizes subsequences prior to computing
+            distances. Otherwise, this function gets re-routed to its complementary
+            non-normalized equivalent set in the `@core.non_normalized` function
+            decorator.
+
+        p : float, default 2.0
+            The p-norm to apply for computing the Minkowski distance. This parameter is
+            ignored when `normalize == True`.
         """
         super().__init__(
             T,
@@ -584,6 +464,7 @@ class stimp(_stimp):
         )
 
 
+@core.non_normalized(aamp_stimped)
 class stimped(_stimp):
     """
     Compute the Pan Matrix Profile with a distributed dask cluster
@@ -612,6 +493,15 @@ class stimped(_stimp):
 
     m_step : int, default 1
         The step between subsequence window sizes
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == True`.
 
     Attributes
     ----------
@@ -662,7 +552,8 @@ class stimped(_stimp):
         min_m=3,
         max_m=None,
         step=1,
-        # normalize=True,
+        normalize=True,
+        p=2.0,
     ):
         """
         Initialize the `stimp` object and compute the Pan Matrix Profile
@@ -689,6 +580,16 @@ class stimped(_stimp):
 
         step : int, default 1
             The step between subsequence window sizes
+
+        normalize : bool, default True
+            When set to `True`, this z-normalizes subsequences prior to computing
+            distances. Otherwise, this function gets re-routed to its complementary
+            non-normalized equivalent set in the `@core.non_normalized` function
+            decorator.
+
+        p : float, default 2.0
+            The p-norm to apply for computing the Minkowski distance. This parameter is
+            ignored when `normalize == True`.
         """
         super().__init__(
             T,
