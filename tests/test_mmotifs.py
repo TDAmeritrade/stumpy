@@ -202,7 +202,7 @@ def test_mmotifs_one_motif_k_chosen():
 
 
 def test_mmotifs_more_motifs_when_cutoffs_is_set():
-    # Find the best multidimensional motif pairs if cutoffs is set
+    # Find the best multidimensional motifs if cutoffs is set
     # Only one pair here since 'max_distance' is set per default
 
     motif_distances_ref = np.array([[0.0000000e00, 1.1151008e-07]])
@@ -260,6 +260,73 @@ def test_mmotifs_more_motifs_when_cutoffs_is_set():
         motif_subspaces_cmp,
         motif_mdls_cmp,
     ) = mmotifs(T, P, I, cutoffs=3, max_motifs=10)
+
+    npt.assert_array_almost_equal(motif_distances_ref, motif_distances_cmp)
+    npt.assert_array_almost_equal(motif_indices_ref, motif_indices_cmp)
+    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces_cmp)
+    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
+
+
+def test_mmotifs_more_motifs_cutoffs_is_list():
+    # Find the best multidimensional motifs if cutoffs is set
+    # Only one pair here since 'max_distance' is set per default
+
+    motif_distances_ref = np.array([[0.0000000e00, 1.1151008e-07]])
+    motif_indices_ref = np.array([[2, 9]])
+    motif_subspaces_ref = [np.array([1])]
+    motif_mdls_ref = [np.array([232.0, 250.57542476, 260.0, 271.3509059])]
+
+    T = np.array(
+        [
+            [5.2, 0.1, 3.5, 3.4, 7.1, 9.8, 3.7, 5.0, 2.1, 4.3, 7.5, 6.8, 8.0, 8.1, 1.2],
+            [
+                7.3,
+                3.2,
+                5.0,
+                9.1,
+                8.2,
+                7.3,
+                4.8,
+                8.2,
+                10.0,
+                0.0,
+                4.1,
+                3.2,
+                2.3,
+                0.1,
+                1.4,
+            ],
+            [6.2, 7.6, 7.6, 8.4, 1.1, 5.9, 9.2, 8.5, 9.3, 4.6, 3.5, 0.0, 3.1, 5.3, 0.9],
+            [
+                0.1,
+                1.3,
+                3.0,
+                2.1,
+                6.2,
+                1.3,
+                9.5,
+                10.0,
+                1.8,
+                2.0,
+                2.1,
+                5.2,
+                1.3,
+                0.5,
+                4.3,
+            ],
+        ]
+    )
+    m = 4
+
+    cutoffs = [2, 3, 4, 5]
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    P, I = naive.mstump(T, m, excl_zone)
+    (
+        motif_distances_cmp,
+        motif_indices_cmp,
+        motif_subspaces_cmp,
+        motif_mdls_cmp,
+    ) = mmotifs(T, P, I, cutoffs=cutoffs, max_motifs=10)
 
     npt.assert_array_almost_equal(motif_distances_ref, motif_distances_cmp)
     npt.assert_array_almost_equal(motif_indices_ref, motif_indices_cmp)
