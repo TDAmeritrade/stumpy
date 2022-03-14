@@ -2,13 +2,11 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-from . import core, gpu_stump
-from .gpu_aamp_stimp import gpu_aamp_stimp
-from .stimp import _stimp
+from . import gpu_aamp
+from .aamp_stimp import _aamp_stimp
 
 
-@core.non_normalized(gpu_aamp_stimp)
-class gpu_stimp(_stimp):
+class gpu_aamp_stimp(_aamp_stimp):
     """
     Compute the Pan Matrix Profile with with one or more GPU devices
 
@@ -37,14 +35,8 @@ class gpu_stimp(_stimp):
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
-    normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
-
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == True`.
+        The p-norm to apply for computing the Minkowski distance.
 
     Attributes
     ----------
@@ -62,30 +54,11 @@ class gpu_stimp(_stimp):
         Compute the next matrix profile using the next available (breadth-first-search
         (level) ordered) subsequence window size and update the pan matrix profile
 
-    See Also
-    --------
-    stumpy.stimp : Compute the Pan Matrix Profile
-    stumpy.stimped : Compute the Pan Matrix Profile with a distributed dask cluster
-
-    Notes
     -----
     `DOI: 10.1109/ICBK.2019.00031 \
     <https://www.cs.ucr.edu/~eamonn/PAN_SKIMP%20%28Matrix%20Profile%20XX%29.pdf>`__
 
     See Table 2
-
-    Examples
-    --------
-    >>> from numba import cuda
-    >>> if __name__ == "__main__":
-    ...     all_gpu_devices = [device.id for device in cuda.list_devices()]
-    ...     pmp = stumpy.gpu_stimp(
-    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]),
-    ...         device_id=all_gpu_devices)
-    ...     pmp.update()
-    ...     pmp.PAN_
-    array([[0., 1., 1., 1., 1., 1., 1.],
-           [0., 1., 1., 1., 1., 1., 1.]])
     """
 
     def __init__(
@@ -95,7 +68,6 @@ class gpu_stimp(_stimp):
         max_m=None,
         step=1,
         device_id=0,
-        normalize=True,
         p=2.0,
     ):
         """
@@ -124,15 +96,8 @@ class gpu_stimp(_stimp):
             computation. A list of all valid device ids can be obtained by
             executing `[device.id for device in numba.cuda.list_devices()]`.
 
-        normalize : bool, default True
-            When set to `True`, this z-normalizes subsequences prior to computing
-            distances. Otherwise, this function gets re-routed to its complementary
-            non-normalized equivalent set in the `@core.non_normalized` function
-            decorator.
-
         p : float, default 2.0
-            The p-norm to apply for computing the Minkowski distance. This parameter is
-            ignored when `normalize == True`.
+            The p-norm to apply for computing the Minkowski distance.
         """
         super().__init__(
             T,
@@ -140,7 +105,8 @@ class gpu_stimp(_stimp):
             max_m=max_m,
             step=step,
             percentage=1.0,
-            pre_scrump=False,
+            pre_scraamp=False,
             device_id=device_id,
-            mp_func=gpu_stump,
+            mp_func=gpu_aamp,
+            p=2.0,
         )

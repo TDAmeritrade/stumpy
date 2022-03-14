@@ -228,6 +228,7 @@ def test_mpdist():
     npt.assert_almost_equal(ref, comp)
 
 
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 def test_mpdisted(dask_cluster):
     T_A = np.random.uniform(-1000, 1000, [8]).astype(np.float64)
     T_B = np.random.uniform(-1000, 1000, [64]).astype(np.float64)
@@ -347,3 +348,30 @@ def test_snippets():
         cmp_regimes,
     ) = stumpy.snippets(T, m, k, normalize=False)
     npt.assert_almost_equal(ref_snippets, cmp_snippets)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_stimp(T, m):
+    ref = stumpy.aamp_stimp(T, m)
+    comp = stumpy.stimp(T, m, normalize=False)
+    npt.assert_almost_equal(ref.PAN_, comp.PAN_)
+
+
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.parametrize("T, m", test_data)
+def test_stimped(T, m, dask_cluster):
+    with Client(dask_cluster) as dask_client:
+        ref = stumpy.aamp_stimped(dask_client, T, m)
+        comp = stumpy.stimped(dask_client, T, m, normalize=False)
+        npt.assert_almost_equal(ref.PAN_, comp.PAN_)
+
+
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@pytest.mark.parametrize("T, m", test_data)
+def test_gpu_stimp(T, m):
+    if not cuda.is_available():  # pragma: no cover
+        pytest.skip("Skipping Tests No GPUs Available")
+
+    ref = stumpy.gpu_aamp_stimp(T, m)
+    comp = stumpy.gpu_stimp(T, m, normalize=False)
+    npt.assert_almost_equal(ref.PAN_, comp.PAN_)

@@ -47,7 +47,7 @@ stumped
 gpu_stump
 =========
 
-.. autofunction:: stumpy.gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True)
+.. autofunction:: stumpy.gpu_stump(T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True, p=2.0)
 
 mass
 ====
@@ -115,7 +115,7 @@ ostinatoed
 gpu_ostinato
 ============
 
-.. autofunction:: stumpy.gpu_ostinato(Ts, m, device_id=0, normalize=True)
+.. autofunction:: stumpy.gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0)
 
 mpdist
 ======
@@ -130,7 +130,7 @@ mpdisted
 gpu_mpdist
 ==========
 
-.. autofunction:: stumpy.gpu_mpdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0, normalize=True)
+.. autofunction:: stumpy.gpu_mpdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0, normalize=True, p=2.0)
 
 motifs
 ======
@@ -160,5 +160,5 @@ stimped
 gpu_stimp
 =========
 
-.. autofunction:: stumpy.gpu_stimp(T, min_m=3, max_m=None, step=1, device_id=0)
+.. autofunction:: stumpy.gpu_stimp(T, min_m=3, max_m=None, step=1, device_id=0, normalize=True, p=2.0)
 

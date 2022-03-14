@@ -3,7 +3,6 @@ import functools
 import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.stats import norm
-from numba import njit
 from stumpy import core, config
 
 
@@ -980,41 +979,6 @@ def aamp_across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, p=2.0):
 
 
 def get_aamp_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, p=2.0):
-    """
-    Compare subsequences with the same radius and return the most central motif
-
-    Parameters
-    ----------
-    Ts : list
-        List of time series for which to find the most central motif
-
-    bsf_radius : float
-        Best radius found by a consensus search algorithm
-
-    bsf_Ts_idx : int
-        Index of time series in which `radius` was first found
-
-    bsf_subseq_idx : int
-        Start index of the subsequence in `Ts[Ts_idx]` that has radius `radius`
-
-    m : int
-        Window size
-
-    p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
-
-    Returns
-    -------
-    bsf_radius : float
-        The updated radius of the most central consensus motif
-
-    bsf_Ts_idx : int
-        The updated index of time series which contains the most central consensus motif
-
-    bsf_subseq_idx : int
-        The update subsequence index of most central consensus motif within the time
-        series `bsf_Ts_idx` that contains it
-    """
     bsf_nns_radii, bsf_nns_subseq_idx = aamp_across_series_nearest_neighbors(
         Ts, bsf_Ts_idx, bsf_subseq_idx, m, p=p
     )
@@ -1039,15 +1003,6 @@ def get_aamp_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, p=2.0)
 
 
 def aamp_consensus_search(Ts, m, p=2.0):
-    """
-    Brute force consensus motif from
-    <https://www.cs.ucr.edu/~eamonn/consensus_Motif_ICDM_Long_version.pdf>
-
-    See Table 1
-
-    Note that there is a bug in the pseudocode at line 8 where `i` should be `j`.
-    This implementation fixes it.
-    """
     k = len(Ts)
 
     bsf_radius = np.inf
@@ -1490,10 +1445,120 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
     return out
 
 
-def normalize_pan(pan, ms, bfs_indices, n_processed):
+def prescraamp(T_A, m, T_B, s, exclusion_zone=None, p=2.0):
+    distance_matrix = aamp_distance_matrix(T_A, T_B, m, p)
+
+    n_A = T_A.shape[0]
+    l = n_A - m + 1
+
+    P = np.empty(l)
+    I = np.empty(l, dtype=np.int64)
+    P[:] = np.inf
+    I[:] = -1
+
+    for i in np.random.permutation(range(0, l, s)):
+        distance_profile = distance_matrix[i]
+        if exclusion_zone is not None:
+            apply_exclusion_zone(distance_profile, i, exclusion_zone, np.inf)
+        I[i] = np.argmin(distance_profile)
+        P[i] = distance_profile[I[i]]
+        if P[i] == np.inf:  # pragma: no cover
+            I[i] = -1
+        else:
+            j = I[i]
+            for k in range(1, min(s, l - max(i, j))):
+                d = distance_matrix[i + k, j + k]
+                if d < P[i + k]:
+                    P[i + k] = d
+                    I[i + k] = j + k
+                if d < P[j + k]:
+                    P[j + k] = d
+                    I[j + k] = i + k
+
+            for k in range(1, min(s, i + 1, j + 1)):
+                d = distance_matrix[i - k, j - k]
+                if d < P[i - k]:
+                    P[i - k] = d
+                    I[i - k] = j - k
+                if d < P[j - k]:
+                    P[j - k] = d
+                    I[j - k] = i - k
+
+    return P, I
+
+
+def scraamp(T_A, m, T_B, percentage, exclusion_zone, pre_scraamp, s, p=2.0):
+    distance_matrix = aamp_distance_matrix(T_A, T_B, m, p)
+
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_A - m + 1
+
+    if exclusion_zone is not None:
+        diags = np.random.permutation(range(exclusion_zone + 1, n_A - m + 1)).astype(
+            np.int64
+        )
+    else:
+        diags = np.random.permutation(range(-(n_A - m + 1) + 1, n_B - m + 1)).astype(
+            np.int64
+        )
+
+    n_chunks = int(np.ceil(1.0 / percentage))
+    ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
+    diags_ranges = core._get_array_ranges(ndist_counts, n_chunks, False)
+    diags_ranges_start = diags_ranges[0, 0]
+    diags_ranges_stop = diags_ranges[0, 1]
+
+    out = np.full((l, 4), np.inf, dtype=object)
+    out[:, 1:] = -1
+    left_P = np.full(l, np.inf, dtype=np.float64)
+    right_P = np.full(l, np.inf, dtype=np.float64)
+
+    for diag_idx in range(diags_ranges_start, diags_ranges_stop):
+        k = diags[diag_idx]
+
+        for i in range(n_A - m + 1):
+            for j in range(n_B - m + 1):
+                if j - i == k:
+                    if distance_matrix[i, j] < out[i, 0]:
+                        out[i, 0] = distance_matrix[i, j]
+                        out[i, 1] = i + k
+
+                    if (
+                        exclusion_zone is not None
+                        and distance_matrix[i, j] < out[i + k, 0]
+                    ):
+                        out[i + k, 0] = distance_matrix[i, j]
+                        out[i + k, 1] = i
+
+                    # left matrix profile and left matrix profile indices
+                    if (
+                        exclusion_zone is not None
+                        and i < i + k
+                        and distance_matrix[i, j] < left_P[i + k]
+                    ):
+                        left_P[i + k] = distance_matrix[i, j]
+                        out[i + k, 2] = i
+
+                    # right matrix profile and right matrix profile indices
+                    if (
+                        exclusion_zone is not None
+                        and i + k > i
+                        and distance_matrix[i, j] < right_P[i]
+                    ):
+                        right_P[i] = distance_matrix[i, j]
+                        out[i, 3] = i + k
+
+    return out
+
+
+def normalize_pan(pan, ms, bfs_indices, n_processed, T_min=None, T_max=None, p=2.0):
     idx = bfs_indices[:n_processed]
     for i in range(n_processed):
-        norm = 1.0 / (2.0 * np.sqrt(ms[i]))
+        if T_min is not None and T_max is not None:
+            norm = 1.0 / (np.abs(T_max - T_min) * np.power(ms[i], 1.0 / p))
+        else:
+            norm = 1.0 / (2.0 * np.sqrt(ms[i]))
         pan[idx[i]] = np.minimum(1.0, pan[idx[i]] * norm)
 
 
@@ -1521,12 +1586,14 @@ def binarize_pan(pan, threshold, bfs_indices, n_processed):
         pan[idx[i], mask] = 1.0
 
 
-def transform_pan(pan, ms, threshold, bfs_indices, n_processed):
+def transform_pan(
+    pan, ms, threshold, bfs_indices, n_processed, T_min=None, T_max=None, p=2.0
+):
     pan = pan.copy()
     idx = bfs_indices[:n_processed]
     sorted_idx = np.sort(idx)
     pan[pan == np.inf] = np.nan
-    normalize_pan(pan, ms, bfs_indices, n_processed)
+    normalize_pan(pan, ms, bfs_indices, n_processed, T_min, T_max, p)
     contrast_pan(pan, threshold, bfs_indices, n_processed)
     binarize_pan(pan, threshold, bfs_indices, n_processed)
 
@@ -1555,12 +1622,10 @@ def _get_mask_slices(mask):
     return np.array(idx).reshape(len(idx) // 2, 2)
 
 
-@njit(fastmath=True)
 def _total_trapezoid_ndists(a, b, h):
     return (a + b) * h // 2
 
 
-@njit(fastmath=True)
 def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_width):
     total_ndists = 0
 

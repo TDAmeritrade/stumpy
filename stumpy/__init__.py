@@ -24,6 +24,7 @@ from .aamp_motifs import aamp_motifs, aamp_match  # noqa: F401
 from .snippets import snippets  # noqa: F401
 from .aampdist_snippets import aampdist_snippets  # noqa: F401
 from .stimp import stimp, stimped  # noqa: F401
+from .aamp_stimp import aamp_stimp, aamp_stimped  # noqa: F401
 from numba import cuda
 
 if cuda.is_available():
@@ -34,6 +35,7 @@ if cuda.is_available():
     from .gpu_mpdist import gpu_mpdist  # noqa: F401
     from .gpu_aampdist import gpu_aampdist  # noqa: F401
     from .gpu_stimp import gpu_stimp  # noqa: F401
+    from .gpu_aamp_stimp import gpu_aamp_stimp  # noqa: F401
 else:  # pragma: no cover
     from .core import _gpu_stump_driver_not_found as gpu_stump  # noqa: F401
     from .core import _gpu_aamp_driver_not_found as gpu_aamp  # noqa: F401
@@ -44,6 +46,7 @@ else:  # pragma: no cover
     from .core import _gpu_mpdist_driver_not_found as gpu_mpdist  # noqa: F401
     from .core import _gpu_aampdist_driver_not_found as gpu_aampdist  # noqa: F401
     from .core import _gpu_stimp_driver_not_found as gpu_stimp  # noqa: F401
+    from .core import _gpu_aamp_stimp_driver_not_found as gpu_aamp_stimp  # noqa: F401
     import ast
     import pathlib
 
@@ -140,6 +143,7 @@ else:  # pragma: no cover
     # Fix GPU-STIMP Docs
     # Note that this is a special case for class definitions.
     # See above for function definitions.
+    # Also, please update docs/api.rst
     gpu_stimp.__doc__ = ""
     filepath = pathlib.Path(__file__).parent / "gpu_stimp.py"
 
@@ -151,6 +155,22 @@ else:  # pragma: no cover
     for cd in class_definitions:
         if cd.name == "gpu_stimp":
             gpu_stimp.__doc__ = ast.get_docstring(cd)
+
+    # Fix GPU-AAMP-STIMP Docs
+    # Note that this is a special case for class definitions.
+    # See above for function definitions.
+    # Also, please update docs/api.rst
+    gpu_aamp_stimp.__doc__ = ""
+    filepath = pathlib.Path(__file__).parent / "gpu_aamp_stimp.py"
+
+    file_contents = ""
+    with open(filepath, encoding="utf8") as f:
+        file_contents = f.read()
+    module = ast.parse(file_contents)
+    class_definitions = [node for node in module.body if isinstance(node, ast.ClassDef)]
+    for cd in class_definitions:
+        if cd.name == "gpu_aamp_stimp":
+            gpu_aamp_stimp.__doc__ = ast.get_docstring(cd)
 
 try:
     _dist = get_distribution("stumpy")
