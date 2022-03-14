@@ -6,9 +6,6 @@ from stumpy.aamp_mmotifs import aamp_mmotifs
 from stumpy import config
 
 
-# These are tests for non-normalized multidimensional motif discovery
-
-
 def test_motifs_multidimensional_one_motif_all_dimensions():
     # Find the two-dimensional motif pair
 
