@@ -58,12 +58,17 @@ def test_motifs_multidimensional_with_deafault_parameters():
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     P, I = naive.mstump(T, m, excl_zone)
-    motif_distances, motif_indices, motif_subspaces, motif_mdls = mmotifs(T, P, I)
+    (
+        motif_distances_cmp,
+        motif_indices_cmp,
+        motif_subspaces_cmp,
+        motif_mdls_cmp,
+    ) = mmotifs(T, P, I)
 
-    npt.assert_array_almost_equal(motif_distances_ref, motif_distances)
-    npt.assert_array_almost_equal(motif_indices_ref, motif_indices)
-    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces)
-    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls)
+    npt.assert_array_almost_equal(motif_distances_ref, motif_distances_cmp)
+    npt.assert_array_almost_equal(motif_indices_ref, motif_indices_cmp)
+    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces_cmp)
+    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
 
 
 def test_motifs_multidimensional_one_motif_max_matches_none():
@@ -118,14 +123,17 @@ def test_motifs_multidimensional_one_motif_max_matches_none():
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     P, I = naive.mstump(T, m, excl_zone)
-    motif_distances, motif_indices, motif_subspaces, motif_mdls = mmotifs(
-        T, P, I, max_matches=None
-    )
+    (
+        motif_distances_cmp,
+        motif_indices_cmp,
+        motif_subspaces_cmp,
+        motif_mdls_cmp,
+    ) = mmotifs(T, P, I, max_matches=None)
 
-    npt.assert_array_almost_equal(motif_distances_ref, motif_distances)
-    npt.assert_array_almost_equal(motif_indices_ref, motif_indices)
-    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces)
-    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls)
+    npt.assert_array_almost_equal(motif_distances_ref, motif_distances_cmp)
+    npt.assert_array_almost_equal(motif_indices_ref, motif_indices_cmp)
+    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces_cmp)
+    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
 
 
 def test_motifs_multidimensional_one_motif_all_dimensions():
@@ -180,14 +188,17 @@ def test_motifs_multidimensional_one_motif_all_dimensions():
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     P, I = naive.mstump(T, m, excl_zone)
-    motif_distances, motif_indices, motif_subspaces, motif_mdls = mmotifs(
-        T, P, I, max_distance=np.inf, max_matches=2, k=1
-    )
+    (
+        motif_distances_cmp,
+        motif_indices_cmp,
+        motif_subspaces_cmp,
+        motif_mdls_cmp,
+    ) = mmotifs(T, P, I, max_distance=np.inf, max_matches=2, k=1)
 
-    npt.assert_array_almost_equal(motif_distances_ref, motif_distances)
-    npt.assert_array_almost_equal(motif_indices_ref, motif_indices)
-    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces)
-    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls)
+    npt.assert_array_almost_equal(motif_distances_ref, motif_distances_cmp)
+    npt.assert_array_almost_equal(motif_indices_ref, motif_indices_cmp)
+    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces_cmp)
+    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
 
 
 def test_motifs_multidimensional_more_motifs_when_cutoffs_is_set():
@@ -243,14 +254,17 @@ def test_motifs_multidimensional_more_motifs_when_cutoffs_is_set():
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     P, I = naive.mstump(T, m, excl_zone)
-    motif_distances, motif_indices, motif_subspaces, motif_mdls = mmotifs(
-        T, P, I, cutoffs=3, max_motifs=10
-    )
+    (
+        motif_distances_cmp,
+        motif_indices_cmp,
+        motif_subspaces_cmp,
+        motif_mdls_cmp,
+    ) = mmotifs(T, P, I, cutoffs=3, max_motifs=10)
 
-    npt.assert_array_almost_equal(motif_distances_ref, motif_distances)
-    npt.assert_array_almost_equal(motif_indices_ref, motif_indices)
-    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces)
-    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls)
+    npt.assert_array_almost_equal(motif_distances_ref, motif_distances_cmp)
+    npt.assert_array_almost_equal(motif_indices_ref, motif_indices_cmp)
+    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces_cmp)
+    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
 
 
 def test_motifs_multidimensional_two_motifs_all_dimensions():
@@ -310,11 +324,16 @@ def test_motifs_multidimensional_two_motifs_all_dimensions():
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     P, I = naive.mstump(T, m, excl_zone)
-    motif_distances, motif_indices, motif_subspaces, motif_mdls = mmotifs(
+    (
+        motif_distances_cmp,
+        motif_indices_cmp,
+        motif_subspaces_cmp,
+        motif_mdls_cmp,
+    ) = mmotifs(
         T, P, I, cutoffs=np.inf, max_motifs=2, max_distance=np.inf, max_matches=2
     )
 
-    npt.assert_array_almost_equal(motif_distances_ref, motif_distances)
-    npt.assert_array_almost_equal(motif_indices_ref, motif_indices)
-    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces)
-    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls)
+    npt.assert_array_almost_equal(motif_distances_ref, motif_distances_cmp)
+    npt.assert_array_almost_equal(motif_indices_ref, motif_indices_cmp)
+    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces_cmp)
+    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
