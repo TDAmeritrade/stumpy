@@ -6,7 +6,7 @@ from stumpy.aamp_mmotifs import aamp_mmotifs
 from stumpy import config
 
 
-def test_motifs_multidimensional_with_default_parameters_and_max_distance():
+def test_aamp_mmotifs_max_distance():
     # Find the motif pair while only setting the default parameters and
     # max_distance
 
@@ -74,7 +74,7 @@ def test_motifs_multidimensional_with_default_parameters_and_max_distance():
     npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
 
 
-def test_motifs_multidimensional_with_one_motif_max_matches_none():
+def test_aamp_motifs_max_distance_max_matches_none():
     # Find the motif pair while setting 'max_matches=None'
 
     motif_distances_ref = np.array(
@@ -141,7 +141,7 @@ def test_motifs_multidimensional_with_one_motif_max_matches_none():
     npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
 
 
-def test_motifs_multidimensional_one_motif_all_dimensions():
+def test_aamp_mmotifs_one_motif_k_chosen():
     # Find the two-dimensional motif pair
 
     motif_distances_ref = np.array([[0.0, 2.87778559]])
@@ -206,7 +206,7 @@ def test_motifs_multidimensional_one_motif_all_dimensions():
     npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
 
 
-def test_motifs_multidimensional_more_motifs_when_cutoffs_is_set():
+def test_aamp_mmotifs_more_motifs_when_cutoffs_is_set():
     # Find the best multidimensional motif pairs if cutoffs is set
 
     motif_distances_ref = np.array([[0.0, 1.41421356], [0.0, 2.06639783]])
@@ -276,7 +276,7 @@ def test_motifs_multidimensional_more_motifs_when_cutoffs_is_set():
     npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
 
 
-def test_motifs_multidimensional_two_motifs_all_dimensions():
+def test_aamp_mmotifs_two_motif_pairs():
     # Find the best two motif pairs
 
     motif_distances_ref = np.array([[0.0, 1.41421356], [0.0, 2.06639783]])
