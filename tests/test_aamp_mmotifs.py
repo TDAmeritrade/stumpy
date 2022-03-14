@@ -10,12 +10,12 @@ def test_motifs_multidimensional_with_default_parameters_and_max_distance():
     # Find the motif pair while only setting the default parameters and
     # max_distance
 
-    motif_distances_expected = np.array(
+    motif_distances_ref = np.array(
         [[0.0, 1.41421356, 4.46430286, 6.85346628, 8.207923, 8.50529247]]
     )
-    motif_indices_expected = np.array([[2, 9, 0, 11, 7, 5]])
-    motif_subspaces_expected = [np.array([3])]
-    motif_mdls_expected = [np.array([244.0, 260.67970001, 279.86313714, 281.35940001])]
+    motif_indices_ref = np.array([[2, 9, 0, 11, 7, 5]])
+    motif_subspaces_ref = [np.array([3])]
+    motif_mdls_ref = [np.array([244.0, 260.67970001, 279.86313714, 281.35940001])]
 
     T = np.array(
         [
@@ -65,21 +65,21 @@ def test_motifs_multidimensional_with_default_parameters_and_max_distance():
         T, P, I, max_distance=np.inf
     )
 
-    npt.assert_array_almost_equal(motif_distances_expected, motif_distances)
-    npt.assert_array_almost_equal(motif_indices_expected, motif_indices)
-    npt.assert_array_almost_equal(motif_subspaces_expected, motif_subspaces)
-    npt.assert_array_almost_equal(motif_mdls_expected, motif_mdls)
+    npt.assert_array_almost_equal(motif_distances_ref, motif_distances)
+    npt.assert_array_almost_equal(motif_indices_ref, motif_indices)
+    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces)
+    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls)
 
 
 def test_motifs_multidimensional_with_one_motif_max_matches_none():
     # Find the motif pair while setting 'max_matches=None'
 
-    motif_distances_expected = np.array(
+    motif_distances_ref = np.array(
         [[0.0, 1.41421356, 4.46430286, 6.85346628, 8.207923, 8.50529247]]
     )
-    motif_indices_expected = np.array([[2, 9, 0, 11, 7, 5]])
-    motif_subspaces_expected = [np.array([3])]
-    motif_mdls_expected = [np.array([244.0, 260.67970001, 279.86313714, 281.35940001])]
+    motif_indices_ref = np.array([[2, 9, 0, 11, 7, 5]])
+    motif_subspaces_ref = [np.array([3])]
+    motif_mdls_ref = [np.array([244.0, 260.67970001, 279.86313714, 281.35940001])]
 
     T = np.array(
         [
@@ -129,19 +129,19 @@ def test_motifs_multidimensional_with_one_motif_max_matches_none():
         T, P, I, max_distance=np.inf, max_matches=None
     )
 
-    npt.assert_array_almost_equal(motif_distances_expected, motif_distances)
-    npt.assert_array_almost_equal(motif_indices_expected, motif_indices)
-    npt.assert_array_almost_equal(motif_subspaces_expected, motif_subspaces)
-    npt.assert_array_almost_equal(motif_mdls_expected, motif_mdls)
+    npt.assert_array_almost_equal(motif_distances_ref, motif_distances)
+    npt.assert_array_almost_equal(motif_indices_ref, motif_indices)
+    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces)
+    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls)
 
 
 def test_motifs_multidimensional_one_motif_all_dimensions():
     # Find the two-dimensional motif pair
 
-    motif_distances_expected = np.array([[0.0, 2.87778559]])
-    motif_indices_expected = np.array([[0, 5]])
-    motif_subspaces_expected = [np.array([2, 1])]
-    motif_mdls_expected = [np.array([244.0, 260.67970001, 279.86313714, 281.35940001])]
+    motif_distances_ref = np.array([[0.0, 2.87778559]])
+    motif_indices_ref = np.array([[0, 5]])
+    motif_subspaces_ref = [np.array([2, 1])]
+    motif_mdls_ref = [np.array([244.0, 260.67970001, 279.86313714, 281.35940001])]
 
     T = np.array(
         [
@@ -191,19 +191,19 @@ def test_motifs_multidimensional_one_motif_all_dimensions():
         T, P, I, max_distance=np.inf, max_matches=2, k=1
     )
 
-    npt.assert_array_almost_equal(motif_distances_expected, motif_distances)
-    npt.assert_array_almost_equal(motif_indices_expected, motif_indices)
-    npt.assert_array_almost_equal(motif_subspaces_expected, motif_subspaces)
-    npt.assert_array_almost_equal(motif_mdls_expected, motif_mdls)
+    npt.assert_array_almost_equal(motif_distances_ref, motif_distances)
+    npt.assert_array_almost_equal(motif_indices_ref, motif_indices)
+    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces)
+    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls)
 
 
 def test_motifs_multidimensional_more_motifs_when_cutoffs_is_set():
     # Find the best multidimensional motif pairs if cutoffs is set
 
-    motif_distances_expected = np.array([[0.0, 1.41421356], [0.0, 2.06639783]])
-    motif_indices_expected = np.array([[2, 9], [0, 5]])
-    motif_subspaces_expected = [np.array([3]), np.array([2])]
-    motif_mdls_expected = [
+    motif_distances_ref = np.array([[0.0, 1.41421356], [0.0, 2.06639783]])
+    motif_indices_ref = np.array([[2, 9], [0, 5]])
+    motif_subspaces_ref = [np.array([3]), np.array([2])]
+    motif_mdls_ref = [
         np.array([244.0, 260.67970001, 279.86313714, 281.35940001]),
         np.array([254.33985, 260.67970001, 279.86313714, 291.20703549]),
     ]
@@ -256,19 +256,19 @@ def test_motifs_multidimensional_more_motifs_when_cutoffs_is_set():
         T, P, I, max_distance=np.inf, cutoffs=3, max_matches=2, max_motifs=10
     )
 
-    npt.assert_array_almost_equal(motif_distances_expected, motif_distances)
-    npt.assert_array_almost_equal(motif_indices_expected, motif_indices)
-    npt.assert_array_almost_equal(motif_subspaces_expected, motif_subspaces)
-    npt.assert_array_almost_equal(motif_mdls_expected, motif_mdls)
+    npt.assert_array_almost_equal(motif_distances_ref, motif_distances)
+    npt.assert_array_almost_equal(motif_indices_ref, motif_indices)
+    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces)
+    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls)
 
 
 def test_motifs_multidimensional_two_motifs_all_dimensions():
     # Find the best two motif pairs
 
-    motif_distances_expected = np.array([[0.0, 1.41421356], [0.0, 2.06639783]])
-    motif_indices_expected = np.array([[2, 9], [0, 5]])
-    motif_subspaces_expected = [np.array([3]), np.array([2])]
-    motif_mdls_expected = [
+    motif_distances_ref = np.array([[0.0, 1.41421356], [0.0, 2.06639783]])
+    motif_indices_ref = np.array([[2, 9], [0, 5]])
+    motif_subspaces_ref = [np.array([3]), np.array([2])]
+    motif_mdls_ref = [
         np.array([244.0, 260.67970001, 279.86313714, 281.35940001]),
         np.array([254.33985, 260.67970001, 279.86313714, 291.20703549]),
     ]
@@ -327,7 +327,7 @@ def test_motifs_multidimensional_two_motifs_all_dimensions():
         max_motifs=2,
     )
 
-    npt.assert_array_almost_equal(motif_distances_expected, motif_distances)
-    npt.assert_array_almost_equal(motif_indices_expected, motif_indices)
-    npt.assert_array_almost_equal(motif_subspaces_expected, motif_subspaces)
-    npt.assert_array_almost_equal(motif_mdls_expected, motif_mdls)
+    npt.assert_array_almost_equal(motif_distances_ref, motif_distances)
+    npt.assert_array_almost_equal(motif_indices_ref, motif_indices)
+    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces)
+    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls)
