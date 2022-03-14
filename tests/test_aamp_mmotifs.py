@@ -1,23 +1,14 @@
 import numpy as np
 import numpy.testing as npt
 import naive
+import pytest
 
 from stumpy.aamp_mmotifs import aamp_mmotifs
 from stumpy import config
 
 
-def test_aamp_mmotifs_max_distance():
-    # Find the motif pair while only setting the default parameters and
-    # max_distance
-
-    motif_distances_ref = np.array(
-        [[0.0, 1.41421356, 4.46430286, 6.85346628, 8.207923, 8.50529247]]
-    )
-    motif_indices_ref = np.array([[2, 9, 0, 11, 7, 5]])
-    motif_subspaces_ref = [np.array([3])]
-    motif_mdls_ref = [np.array([244.0, 260.67970001, 279.86313714, 281.35940001])]
-
-    T = np.array(
+test_data = [
+    np.array(
         [
             [5.2, 0.1, 3.5, 3.4, 7.1, 9.8, 3.7, 5.0, 2.1, 4.3, 7.5, 6.8, 8.0, 8.1, 1.2],
             [
@@ -57,8 +48,22 @@ def test_aamp_mmotifs_max_distance():
             ],
         ]
     )
-    m = 4
+]
 
+
+@pytest.mark.parametrize("T", test_data)
+def test_aamp_mmotifs_max_distance(T):
+    # Find the motif pair while only setting the default parameters and
+    # max_distance
+
+    motif_distances_ref = np.array(
+        [[0.0, 1.41421356, 4.46430286, 6.85346628, 8.207923, 8.50529247]]
+    )
+    motif_indices_ref = np.array([[2, 9, 0, 11, 7, 5]])
+    motif_subspaces_ref = [np.array([3])]
+    motif_mdls_ref = [np.array([244.0, 260.67970001, 279.86313714, 281.35940001])]
+
+    m = 4
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     P, I = naive.maamp(T, m, excl_zone)
     (
@@ -74,7 +79,8 @@ def test_aamp_mmotifs_max_distance():
     npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
 
 
-def test_aamp_motifs_max_distance_max_matches_none():
+@pytest.mark.parametrize("T", test_data)
+def test_aamp_motifs_max_distance_max_matches_none(T):
     # Find the motif pair while setting 'max_matches=None'
 
     motif_distances_ref = np.array(
@@ -84,48 +90,7 @@ def test_aamp_motifs_max_distance_max_matches_none():
     motif_subspaces_ref = [np.array([3])]
     motif_mdls_ref = [np.array([244.0, 260.67970001, 279.86313714, 281.35940001])]
 
-    T = np.array(
-        [
-            [5.2, 0.1, 3.5, 3.4, 7.1, 9.8, 3.7, 5.0, 2.1, 4.3, 7.5, 6.8, 8.0, 8.1, 1.2],
-            [
-                7.3,
-                3.2,
-                5.0,
-                9.1,
-                8.2,
-                7.3,
-                4.8,
-                8.2,
-                10.0,
-                0.0,
-                4.1,
-                3.2,
-                2.3,
-                0.1,
-                1.4,
-            ],
-            [6.2, 7.6, 7.6, 8.4, 1.1, 5.9, 9.2, 8.5, 9.3, 4.6, 3.5, 0.0, 3.1, 5.3, 0.9],
-            [
-                0.1,
-                1.3,
-                3.0,
-                2.1,
-                6.2,
-                1.3,
-                9.5,
-                10.0,
-                1.8,
-                2.0,
-                2.1,
-                5.2,
-                1.3,
-                0.5,
-                4.3,
-            ],
-        ]
-    )
     m = 4
-
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     P, I = naive.maamp(T, m, excl_zone)
     (
@@ -141,7 +106,8 @@ def test_aamp_motifs_max_distance_max_matches_none():
     npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
 
 
-def test_aamp_mmotifs_one_motif_k_chosen():
+@pytest.mark.parametrize("T", test_data)
+def test_aamp_mmotifs_one_motif_k_chosen(T):
     # Find the two-dimensional motif pair
 
     motif_distances_ref = np.array([[0.0, 2.87778559]])
@@ -149,48 +115,7 @@ def test_aamp_mmotifs_one_motif_k_chosen():
     motif_subspaces_ref = [np.array([2, 1])]
     motif_mdls_ref = [np.array([244.0, 260.67970001, 279.86313714, 281.35940001])]
 
-    T = np.array(
-        [
-            [5.2, 0.1, 3.5, 3.4, 7.1, 9.8, 3.7, 5.0, 2.1, 4.3, 7.5, 6.8, 8.0, 8.1, 1.2],
-            [
-                7.3,
-                3.2,
-                5.0,
-                9.1,
-                8.2,
-                7.3,
-                4.8,
-                8.2,
-                10.0,
-                0.0,
-                4.1,
-                3.2,
-                2.3,
-                0.1,
-                1.4,
-            ],
-            [6.2, 7.6, 7.6, 8.4, 1.1, 5.9, 9.2, 8.5, 9.3, 4.6, 3.5, 0.0, 3.1, 5.3, 0.9],
-            [
-                0.1,
-                1.3,
-                3.0,
-                2.1,
-                6.2,
-                1.3,
-                9.5,
-                10.0,
-                1.8,
-                2.0,
-                2.1,
-                5.2,
-                1.3,
-                0.5,
-                4.3,
-            ],
-        ]
-    )
     m = 4
-
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     P, I = naive.maamp(T, m, excl_zone)
     (
@@ -206,7 +131,8 @@ def test_aamp_mmotifs_one_motif_k_chosen():
     npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
 
 
-def test_aamp_mmotifs_more_motifs_when_cutoffs_is_set():
+@pytest.mark.parametrize("T", test_data)
+def test_aamp_mmotifs_more_motifs_when_cutoffs_is_set(T):
     # Find the best multidimensional motif pairs if cutoffs is set
 
     motif_distances_ref = np.array([[0.0, 1.41421356], [0.0, 2.06639783]])
@@ -217,48 +143,7 @@ def test_aamp_mmotifs_more_motifs_when_cutoffs_is_set():
         np.array([254.33985, 260.67970001, 279.86313714, 291.20703549]),
     ]
 
-    T = np.array(
-        [
-            [5.2, 0.1, 3.5, 3.4, 7.1, 9.8, 3.7, 5.0, 2.1, 4.3, 7.5, 6.8, 8.0, 8.1, 1.2],
-            [
-                7.3,
-                3.2,
-                5.0,
-                9.1,
-                8.2,
-                7.3,
-                4.8,
-                8.2,
-                10.0,
-                0.0,
-                4.1,
-                3.2,
-                2.3,
-                0.1,
-                1.4,
-            ],
-            [6.2, 7.6, 7.6, 8.4, 1.1, 5.9, 9.2, 8.5, 9.3, 4.6, 3.5, 0.0, 3.1, 5.3, 0.9],
-            [
-                0.1,
-                1.3,
-                3.0,
-                2.1,
-                6.2,
-                1.3,
-                9.5,
-                10.0,
-                1.8,
-                2.0,
-                2.1,
-                5.2,
-                1.3,
-                0.5,
-                4.3,
-            ],
-        ]
-    )
     m = 4
-
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     P, I = naive.maamp(T, m, excl_zone)
     (
@@ -276,7 +161,8 @@ def test_aamp_mmotifs_more_motifs_when_cutoffs_is_set():
     npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
 
 
-def test_aamp_mmotifs_more_motifs_cutoffs_as_list():
+@pytest.mark.parametrize("T", test_data)
+def test_aamp_mmotifs_more_motifs_cutoffs_as_list(T):
     # Find the best multidimensional motif pairs if cutoffs is a list
 
     motif_distances_ref = np.array([[0.0, 1.41421356]])
@@ -284,48 +170,7 @@ def test_aamp_mmotifs_more_motifs_cutoffs_as_list():
     motif_subspaces_ref = [np.array([3])]
     motif_mdls_ref = [np.array([244.0, 260.67970001, 279.86313714, 281.35940001])]
 
-    T = np.array(
-        [
-            [5.2, 0.1, 3.5, 3.4, 7.1, 9.8, 3.7, 5.0, 2.1, 4.3, 7.5, 6.8, 8.0, 8.1, 1.2],
-            [
-                7.3,
-                3.2,
-                5.0,
-                9.1,
-                8.2,
-                7.3,
-                4.8,
-                8.2,
-                10.0,
-                0.0,
-                4.1,
-                3.2,
-                2.3,
-                0.1,
-                1.4,
-            ],
-            [6.2, 7.6, 7.6, 8.4, 1.1, 5.9, 9.2, 8.5, 9.3, 4.6, 3.5, 0.0, 3.1, 5.3, 0.9],
-            [
-                0.1,
-                1.3,
-                3.0,
-                2.1,
-                6.2,
-                1.3,
-                9.5,
-                10.0,
-                1.8,
-                2.0,
-                2.1,
-                5.2,
-                1.3,
-                0.5,
-                4.3,
-            ],
-        ]
-    )
     m = 4
-
     cutoffs = [2, 3, 4, 5]
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     P, I = naive.maamp(T, m, excl_zone)
@@ -344,7 +189,8 @@ def test_aamp_mmotifs_more_motifs_cutoffs_as_list():
     npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
 
 
-def test_aamp_mmotifs_two_motif_pairs():
+@pytest.mark.parametrize("T", test_data)
+def test_aamp_mmotifs_two_motif_pairs(T):
     # Find the best two motif pairs
 
     motif_distances_ref = np.array([[0.0, 1.41421356], [0.0, 2.06639783]])
@@ -355,48 +201,7 @@ def test_aamp_mmotifs_two_motif_pairs():
         np.array([254.33985, 260.67970001, 279.86313714, 291.20703549]),
     ]
 
-    T = np.array(
-        [
-            [5.2, 0.1, 3.5, 3.4, 7.1, 9.8, 3.7, 5.0, 2.1, 4.3, 7.5, 6.8, 8.0, 8.1, 1.2],
-            [
-                7.3,
-                3.2,
-                5.0,
-                9.1,
-                8.2,
-                7.3,
-                4.8,
-                8.2,
-                10.0,
-                0.0,
-                4.1,
-                3.2,
-                2.3,
-                0.1,
-                1.4,
-            ],
-            [6.2, 7.6, 7.6, 8.4, 1.1, 5.9, 9.2, 8.5, 9.3, 4.6, 3.5, 0.0, 3.1, 5.3, 0.9],
-            [
-                0.1,
-                1.3,
-                3.0,
-                2.1,
-                6.2,
-                1.3,
-                9.5,
-                10.0,
-                1.8,
-                2.0,
-                2.1,
-                5.2,
-                1.3,
-                0.5,
-                4.3,
-            ],
-        ]
-    )
     m = 4
-
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     P, I = naive.maamp(T, m, excl_zone)
     (
