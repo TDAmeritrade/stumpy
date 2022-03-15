@@ -53,8 +53,6 @@ test_data = [
 
 @pytest.mark.parametrize("T", test_data)
 def test_aamp_mmotifs_max_distance(T):
-    # Find the motif pair while only setting the default parameters and
-    # max_distance
 
     motif_distances_ref = np.array(
         [[0.0, 1.41421356, 4.46430286, 6.85346628, 8.207923, 8.50529247]]
@@ -81,7 +79,6 @@ def test_aamp_mmotifs_max_distance(T):
 
 @pytest.mark.parametrize("T", test_data)
 def test_aamp_motifs_max_distance_max_matches_none(T):
-    # Find the motif pair while setting 'max_matches=None'
 
     motif_distances_ref = np.array(
         [[0.0, 1.41421356, 4.46430286, 6.85346628, 8.207923, 8.50529247]]
@@ -107,8 +104,7 @@ def test_aamp_motifs_max_distance_max_matches_none(T):
 
 
 @pytest.mark.parametrize("T", test_data)
-def test_aamp_mmotifs_one_motif_k_chosen(T):
-    # Find the two-dimensional motif pair
+def test_aamp_mmotifs_exactly_one_motif_pair_k_chosen(T):
 
     motif_distances_ref = np.array([[0.0, 2.87778559]])
     motif_indices_ref = np.array([[0, 5]])
@@ -132,8 +128,7 @@ def test_aamp_mmotifs_one_motif_k_chosen(T):
 
 
 @pytest.mark.parametrize("T", test_data)
-def test_aamp_mmotifs_more_motifs_when_cutoffs_is_set(T):
-    # Find the best multidimensional motif pairs if cutoffs is set
+def test_aamp_mmotifs_more_motif_pairs_when_cutoffs_is_set(T):
 
     motif_distances_ref = np.array([[0.0, 1.41421356], [0.0, 2.06639783]])
     motif_indices_ref = np.array([[2, 9], [0, 5]])
@@ -162,8 +157,7 @@ def test_aamp_mmotifs_more_motifs_when_cutoffs_is_set(T):
 
 
 @pytest.mark.parametrize("T", test_data)
-def test_aamp_mmotifs_more_motifs_cutoffs_as_list(T):
-    # Find the best multidimensional motif pairs if cutoffs is a list
+def test_aamp_mmotifs_more_motif_pairs_cutoffs_as_list(T):
 
     motif_distances_ref = np.array([[0.0, 1.41421356]])
     motif_indices_ref = np.array([[2, 9]])
@@ -190,8 +184,7 @@ def test_aamp_mmotifs_more_motifs_cutoffs_as_list(T):
 
 
 @pytest.mark.parametrize("T", test_data)
-def test_aamp_mmotifs_two_motif_pairs(T):
-    # Find the best two motif pairs
+def test_aamp_mmotifs_exactly_two_motif_pairs(T):
 
     motif_distances_ref = np.array([[0.0, 1.41421356], [0.0, 2.06639783]])
     motif_indices_ref = np.array([[2, 9], [0, 5]])
