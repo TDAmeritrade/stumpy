@@ -52,7 +52,7 @@ test_data = [
 
 
 @pytest.mark.parametrize("T", test_data)
-def test_mmotifs_with_deafault_parameters(T):
+def test_mmotifs_with_default_parameters(T):
 
     motif_distances_ref = np.array([[0.0000000e00, 1.1151008e-07]])
     motif_indices_ref = np.array([[2, 9]])
@@ -100,7 +100,7 @@ def test_mmotifs_max_matches_none(T):
 
 
 @pytest.mark.parametrize("T", test_data)
-def test_mmotifs_more_motifs_when_cutoffs_is_set(T):
+def test_mmotifs_more_motifs_when_cutoffs_3(T):
 
     motif_distances_ref = np.array([[0.0000000e00, 1.1151008e-07]])
     motif_indices_ref = np.array([[2, 9]])
@@ -149,7 +149,7 @@ def test_mmotifs_more_motifs_cutoffs_is_list(T):
 
 
 @pytest.mark.parametrize("T", test_data)
-def test_mmotifs_one_motif_pair_k_chosen(T):
+def test_mmotifs_max_matches_2_k_1(T):
 
     motif_distances_ref = np.array([[0.0, 0.20948156]])
     motif_indices_ref = np.array([[2, 9]])
@@ -173,7 +173,7 @@ def test_mmotifs_one_motif_pair_k_chosen(T):
 
 
 @pytest.mark.parametrize("T", test_data)
-def test_mmotifs_exactly_two_motif_pairs(T):
+def test_mmotifs_two_motif_pairs_max_motifs_2(T):
 
     motif_distances_ref = np.array(
         [[0.00000000e00, 1.11510080e-07], [1.68587394e-07, 2.58694429e-01]]
