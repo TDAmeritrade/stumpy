@@ -118,6 +118,7 @@ def _aamp_motifs(
             max_matches=None,
             max_distance=max_distance,
             atol=atol,
+            query_idx=candidate_idx,
             p=p,
         )
 
@@ -295,6 +296,7 @@ def aamp_match(
     max_distance=None,
     max_matches=None,
     atol=1e-8,
+    query_idx=None,
     p=2.0,
 ):
     """
@@ -333,6 +335,14 @@ def aamp_match(
     atol : float, default 1e-8
         The absolute tolerance parameter. This value will be added to `max_distance`
         when comparing distances between subsequences.
+
+    query_idx : int, default None
+        This is the index position along the time series, `T`, where the query
+        subsequence, `Q`, is located.
+        `query_idx` should only be used when the matrix profile is a self-join and
+        should be set to `None` for matrix profiles computed from AB-joins.
+        If `query_idx` is set to a specific integer value, then this will help ensure
+        that the self-match will be returned first.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
@@ -381,7 +391,11 @@ def aamp_match(
 
     matches = []
 
-    candidate_idx = np.argmin(D)
+    if query_idx is not None:
+        candidate_idx = query_idx
+    else:
+        candidate_idx = np.argmin(D)
+
     while (
         D[candidate_idx] <= atol + max_distance
         and np.isfinite(D[candidate_idx])

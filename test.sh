@@ -109,6 +109,8 @@ test_unit()
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_motifs.py
     check_errs $?
+    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mmotifs.py
+    check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_mpdist.py
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_snippets.py
     check_errs $?
@@ -131,6 +133,8 @@ test_unit()
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aampdist.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_motifs.py
+    check_errs $?
+    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_mmotifs.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aampdist.py
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aampdist_snippets.py

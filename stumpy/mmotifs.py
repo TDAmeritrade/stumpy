@@ -137,6 +137,7 @@ def mmotifs(
         max_motifs = 1
 
     T, M_T, Σ_T = core.preprocess(T, m)
+    P = P.copy()
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
@@ -178,7 +179,7 @@ def mmotifs(
             motif_value > cutoffs[k]
             or not np.isfinite(motif_value)
             or (isinstance(max_distance, float) and motif_value > max_distance)
-        ):
+        ):  # pragma: no cover
             break
 
         query_matches = match(
@@ -189,6 +190,7 @@ def mmotifs(
             max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,
+            query_idx=motif_idx,
             normalize=normalize,
             p=p,
         )
