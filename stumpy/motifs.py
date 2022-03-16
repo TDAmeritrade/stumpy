@@ -119,6 +119,7 @@ def _motifs(
             max_matches=None,
             max_distance=max_distance,
             atol=atol,
+            query_idx=candidate_idx,
         )
 
         if len(query_matches) > min_neighbors:
@@ -322,6 +323,7 @@ def match(
     max_distance=None,
     max_matches=None,
     atol=1e-8,
+    query_idx=None,
     normalize=True,
     p=2.0,
 ):
@@ -364,6 +366,14 @@ def match(
     atol : float, default 1e-8
         The absolute tolerance parameter. This value will be added to `max_distance`
         when comparing distances between subsequences.
+
+    query_idx : int, default None
+        This is the index position along the time series, `T`, where the query
+        subsequence, `Q`, is located.
+        `query_idx` should only be used when the matrix profile is a self-join and
+        should be set to `None` for matrix profiles computed from AB-joins.
+        If `query_idx` is set to a specific integer value, then this will help ensure
+        that the self-match will be returned first.
 
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
@@ -433,7 +443,11 @@ def match(
 
     matches = []
 
-    candidate_idx = np.argmin(D)
+    if query_idx is not None:
+        candidate_idx = query_idx
+    else:
+        candidate_idx = np.argmin(D)
+
     while (
         D[candidate_idx] <= atol + max_distance
         and np.isfinite(D[candidate_idx])

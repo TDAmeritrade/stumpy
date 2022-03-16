@@ -118,6 +118,7 @@ def aamp_mmotifs(
         max_motifs = 1
 
     T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
+    P = P.copy()
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
@@ -159,7 +160,7 @@ def aamp_mmotifs(
             motif_value > cutoffs[k]
             or not np.isfinite(motif_value)
             or (isinstance(max_distance, float) and motif_value > max_distance)
-        ):
+        ):  # pragma: no cover
             break
 
         query_matches = aamp_match(
@@ -169,6 +170,7 @@ def aamp_mmotifs(
             max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,
+            query_idx=motif_idx,
             p=p,
         )
 
