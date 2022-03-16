@@ -7,7 +7,11 @@ from .gpu_aamp_stimp import gpu_aamp_stimp
 from .stimp import _stimp
 
 
-@core.non_normalized(gpu_aamp_stimp)
+@core.non_normalized(
+    gpu_aamp_stimp,
+    exclude=["pre_scrump", "normalize", "p", "pre_scraamp"],
+    replace={"pre_scrump": "pre_scraamp"},
+)
 class gpu_stimp(_stimp):
     """
     Compute the Pan Matrix Profile with with one or more GPU devices

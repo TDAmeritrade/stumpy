@@ -81,17 +81,17 @@ def non_normalized(non_norm, exclude=None, replace=None):
     parameters when necessary.
 
     ```
-    def non_norm_func(Q, T, A):
+    def non_norm_func(Q, T, A_non_norm):
         ...
         return
 
 
     @non_normalized(
         non_norm_func,
-        exclude=["normalize", "A", "B"],
-        replace={"A": None},
+        exclude=["normalize", "p", "A", "B"],
+        replace={"A_norm": "A_non_norm", "other_norm": None},
     )
-    def norm_func(Q, T, B=None, normalize=True):
+    def norm_func(Q, T, A_norm=None, other_norm=None, normalize=True, p=2.0):
         ...
         return
     ```
@@ -104,13 +104,16 @@ def non_normalized(non_norm, exclude=None, replace=None):
 
     exclude : list, default None
         A list of function (or class) parameter names to exclude when comparing the
-        function (or class) signatures
+        function (or class) signatures. When `exlcude is None`, this parameter is
+        automatically set to `exclude = ["normalize", "p"]` by default.
 
     replace : dict, default None
         A dictionary of function (or class) parameter key-value pairs. Each key that
         is found as a parameter name in the `norm` function (or class) will be replaced
         by its corresponding or complementary parameter name in the `non_norm` function
-        (or class).
+        (or class) (e.g., {"norm_param": "non_norm_param"}). To remove any parameter in
+        the `norm` function (or class) that does not exist in the `non_norm` function,
+        simply set the value to `None` (i.e., {"norm_param": None}).
 
     Returns
     -------
