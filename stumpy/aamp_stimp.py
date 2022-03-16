@@ -182,7 +182,7 @@ class _aamp_stimp:
         p : float, default 2.0
             The p-norm to apply for computing the Minkowski distance.
         """
-        self._T = T
+        self._T = T.copy()
         self._T_min = np.min(self._T[np.isfinite(self._T)])
         self._T_max = np.max(self._T[np.isfinite(self._T)])
         self._p = p

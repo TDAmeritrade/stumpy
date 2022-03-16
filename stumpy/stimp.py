@@ -167,7 +167,7 @@ class _stimp:
         mp_func : object, default stump
             The matrix profile function to use when `percentage = 1.0`
         """
-        self._T = T
+        self._T = T.copy()
         if max_m is None:
             max_m = max(min_m + 1, core.get_max_window_size(self._T.shape[0]))
             M = np.arange(min_m, max_m + 1, step).astype(np.int64)
@@ -320,7 +320,11 @@ class _stimp:
     #     return self._n_processed
 
 
-@core.non_normalized(aamp_stimp)
+@core.non_normalized(
+    aamp_stimp,
+    exclude=["pre_scrump", "normalize", "p", "pre_scraamp"],
+    replace={"pre_scrump": "pre_scraamp"},
+)
 class stimp(_stimp):
     """
     Compute the Pan Matrix Profile
@@ -464,7 +468,11 @@ class stimp(_stimp):
         )
 
 
-@core.non_normalized(aamp_stimped)
+@core.non_normalized(
+    aamp_stimped,
+    exclude=["pre_scrump", "normalize", "p", "pre_scraamp"],
+    replace={"pre_scrump": "pre_scraamp"},
+)
 class stimped(_stimp):
     """
     Compute the Pan Matrix Profile with a distributed dask cluster
