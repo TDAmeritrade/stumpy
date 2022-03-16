@@ -79,7 +79,7 @@ test_custom()
     # Test one or more user-defined functions repeatedly
     for VARIABLE in {1..10}
     do
-        pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_.py
+        pytest -x -W ignore::DeprecationWarning tests/test_.py
         check_errs $?
     done
     clean_up
@@ -138,7 +138,7 @@ test_unit()
     pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp_stimp.py
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_stimp.py
     check_errs $?
-    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_non_normalized_decorator.py
+    pytest -x -W ignore::DeprecationWarning tests/test_non_normalized_decorator.py
     check_errs $?
 }
 
