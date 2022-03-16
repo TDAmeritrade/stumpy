@@ -88,7 +88,7 @@ def non_normalized(non_norm, exclude=None, replace=None):
 
     @non_normalized(
         non_norm_func,
-        exclude=["normalize", "p", "A", "B"],
+        exclude=["normalize", "p", "A_norm", "A_non_norm"],
         replace={"A_norm": "A_non_norm", "other_norm": None},
     )
     def norm_func(Q, T, A_norm=None, other_norm=None, normalize=True, p=2.0):
