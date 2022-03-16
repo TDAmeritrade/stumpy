@@ -335,7 +335,7 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True, p=2.0):
     --------
     mpdisted : Compute the z-normalized matrix profile distance (MPdist) measure
         between any two time series with a distributed dask cluster
-    gpu_mpdisted : Compute the z-normalized matrix profile distance (MPdist) measure
+    gpu_mpdist : Compute the z-normalized matrix profile distance (MPdist) measure
         between any two time series with one or more GPU devices
 
     Notes
@@ -414,7 +414,7 @@ def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, normalize=True, 
     --------
     mpdist : Compute the z-normalized matrix profile distance (MPdist) measure
         between any two time series
-    gpu_mpdisted : Compute the z-normalized matrix profile distance (MPdist) measure
+    gpu_mpdist : Compute the z-normalized matrix profile distance (MPdist) measure
         between any two time series with one or more GPU devices
 
     Notes
