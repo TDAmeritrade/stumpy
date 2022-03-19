@@ -57,13 +57,12 @@ def aamp_mmotifs(
     cutoffs: numpy.ndarray or float, default None
         The largest matrix profile value (distance) for each dimension of the
         multidimensional matrix profile that a multidimenisonal candidate motif is
-        allowed to have.
-        If cutoffs is only one value, these value will be applied to every dimension.
+        allowed to have. If `cutoffs` is a scalar value, then this value will be
+        applied to every dimension.
 
     max_matches: int, default 10
-        The maximum amount of similar matches (nearest neighbors) of a motif
-        representative to be returned.
-        The first match is always the self-match for each motif.
+        The maximum number of similar matches (nearest neighbors) to return for each
+        motif. The first match is always the self/trivial-match for each motif.
 
     max_motifs: int, default 1
         The maximum number of motifs to return
@@ -73,18 +72,14 @@ def aamp_mmotifs(
         when comparing distances between subsequences.
 
     k: int, default None
-        The number of dimensions (k + 1) in which a motif is present.
-        This value is available for doing guided search or - together with 'include' -
-        for constrained search.
-        The value will be applied to the discovery of all motifs.
-        If k is None, the value will automatically be computed for each motif using
-        MDL (unconstrained search).
-        For more informatioin on search types, see DOI: 10.1109/ICDM.2017.66s
+        The number of dimensions (`k + 1`) required for discovering all motifs. This
+        value is available for doing guided search or, together with `include`, for
+        constrained search. If `k is None`, then this will be automatically be computed
+        for each motif using MDL (unconstrained search).
 
     include: numpy.ndarray, default None
         A list of (zero based) indices corresponding to the dimensions in T that must be
-        included in the constrained multidimensional motif search. For more information,
-        see Section IV D in: DOI: 10.1109/ICDM.2017.66
+        included in the constrained multidimensional motif search.
 
     p: float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
@@ -104,6 +99,13 @@ def aamp_mmotifs(
     motif_mdls: list
         A list consisting of arrays that contain the mdl results for
         finding the dimension of each motif
+
+    Notes
+    -----
+    `DOI: 10.1109/ICDM.2017.66 \
+    <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    For more information on `include` and search types, see Section IV D and IV E
     """
     T = core._preprocess(T)
     m = T.shape[-1] - P.shape[-1] + 1
