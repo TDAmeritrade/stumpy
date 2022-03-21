@@ -1,3 +1,48 @@
+# 2022-03-21    [ 1.11.0 ]:
+---------------------------
+* bugfixes
+  - Fixed #576 Incorrect stimp, stimped, gpu_stimp normalize rerouting
+  - Fixed bad index in `naive.stimp` normalization method
+  - Fixed unit tests
+  - Fixed `cutoff=np.inf` edge case in `_motifs` function
+* features
+  - Added `mmotifs` and `aamp_mmotifs` functions for multi-dimensional motif discovery and unit tests
+  - Added all AAMP/p-norm `stimp` implementations
+  - Added `atol` parameter to `motifs` function
+  - Added parallelized `prescraamp`
+  - Added parallelized `prescrump`
+  - Added `_get_ranges` function
+  - Added `shoelace` formula for computing total diagonal ndists
+  - Added `p_norm` support
+  - Added `_preprocess` function
+  - Added minimum description length function, `mdl`
+  - Added Python 3.10 support
+  - Added AAMP/p-norm support for pan matrix profiles
+* tasks
+  - Fixed typos
+  - Added `gpu_aamp_stimp` driver error
+  - Increased minimum dependencies
+  - Updated coverage testings to include all unit tests and additional modules
+  - Added `pip.sh` script for setting dev environment
+  - Replaced `argsort` with `argmin`/`argmax`
+  - Refactored redundant preprocessing steps
+  - Replaced deprecated `scipy.ndimage.filters` module
+  - Updated conda environment installation steps in `conda.sh` script
+  - Updated `subspace` vs `subspaces` definition
+  - Replaced `py.test` with `pytest`
+  - Updated minimum `black` version to 22.1.0
+  - Replaced elbow method with `mdl` in multi-dimensional motif tutorial 
+  - Converted `float`/`int` type to `np.float64`/`np.int64`
+  - Added `dtype` check and fill value to `apply_excl_zone` function
+  - Added note on anti-correlated subsequences
+* documentation
+  - Updated README and various docstrings
+  - Added MPdist tutorial draft
+  - Added annotation vector tutorial
+  - Added geometric time series chains tutorial draft
+  - Added top-K motif section to motif discovery tutorial
+
+
 # 2021-12-15    [ 1.10.2 ]:
 ---------------------------
 * bugfixes
@@ -9,7 +54,7 @@
   - Removed conda download badge, updated PyPI download badge
   - Added removal __pycache__ in test clean up phase
 * documentation
-  - Update pan matrix profile tutorial
+  - Updated pan matrix profile tutorial
   - Updated docstring for match and motifs functions
 
 
