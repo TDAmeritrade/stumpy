@@ -29,6 +29,7 @@ STUMPY API
     stumpy.gpu_mpdist
     stumpy.motifs
     stumpy.match
+    stumpy.mmotifs
     stumpy.snippets
     stumpy.stimp
     stumpy.stimped
@@ -141,6 +142,11 @@ match
 =====
 
 .. autofunction:: stumpy.match
+
+mmotifs
+=======
+
+.. autofunction:: stumpy.mmotifs
 
 snippets
 ========

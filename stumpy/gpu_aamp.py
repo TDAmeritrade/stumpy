@@ -346,7 +346,9 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0):
 
     This is a convenience wrapper around the Numba `cuda.jit` `_gpu_aamp` function
     which computes the non-normalized matrix profile according to modified version
-    GPU-STOMP.
+    GPU-STOMP. The default number of threads-per-block is set to `512` and may be
+    changed by setting the global parameter `config.STUMPY_THREADS_PER_BLOCK` to an
+    appropriate number based on your GPU hardware.
 
     Parameters
     ----------

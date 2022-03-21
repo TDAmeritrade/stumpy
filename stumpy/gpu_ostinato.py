@@ -83,7 +83,7 @@ def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0):
     >>> from numba import cuda
     >>> if __name__ == "__main__":
     ...     all_gpu_devices = [device.id for device in cuda.list_devices()]
-    ...     stumpy.gpu_ostinatoe(
+    ...     stumpy.gpu_ostinato(
     ...         [np.array([584., -11., 23., 79., 1001., 0., 19.]),
     ...          np.array([600., -10., 23., 17.]),
     ...          np.array([  1.,   9.,  6.,  0.])],

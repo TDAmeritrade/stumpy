@@ -247,6 +247,12 @@ def motifs(
     --------
     stumpy.match : Find all matches of a query `Q` in a time series `T`
     stumpy.mmotifs : Discover the top motifs for the multi-dimensional time series `T`
+    stumpy.stump : Compute the z-normalized matrix profile
+    stumpy.stumped : Compute the z-normalized matrix profile with a distributed dask
+        cluster
+    stumpy.gpu_stump : Compute the z-normalized matrix profile with one or more GPU
+        devices
+    stumpy.scrump : Compute an approximate z-normalized matrix profile
 
     Examples
     --------
@@ -393,7 +399,14 @@ def match(
 
     See Also
     --------
-    stumpy.motifs : Discover the top motifs for time series T
+    stumpy.motifs : Discover the top motifs for time series `T`
+    stumpy.mmotifs : Discover the top motifs for the multi-dimensional time series `T`
+    stumpy.stump : Compute the z-normalized matrix profile
+    stumpy.stumped : Compute the z-normalized matrix profile with a distributed dask
+        cluster
+    stumpy.gpu_stump : Compute the z-normalized matrix profile with one or more GPU
+        devices
+    stumpy.scrump : Compute an approximate z-normalized matrix profile
 
     Examples
     --------
