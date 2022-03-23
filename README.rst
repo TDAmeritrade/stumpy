@@ -212,12 +212,7 @@ To install stumpy from source, see the instructions in the `documentation <https
 Documentation
 -------------
 
-In order to fully understand and appreciate the underlying algorithms and applications, it is imperative that you read the original publications_. For a more detailed example of how to use STUMPY please consult the latest `documentation <https://stumpy.readthedocs.io/en/latest/>`__ or explore the following tutorials:
-
-1. `The Matrix Profile <https://stumpy.readthedocs.io/en/latest/Tutorial_The_Matrix_Profile.html>`__
-2. `STUMPY Basics <https://stumpy.readthedocs.io/en/latest/Tutorial_STUMPY_Basics.html>`__
-3. `Time Series Chains <https://stumpy.readthedocs.io/en/latest/Tutorial_Time_Series_Chains.html>`__
-4. `Semantic Segmentation <https://stumpy.readthedocs.io/en/latest/Tutorial_Semantic_Segmentation.html>`__
+In order to fully understand and appreciate the underlying algorithms and applications, it is imperative that you read the original publications_. For a more detailed example of how to use STUMPY please consult the latest `documentation <https://stumpy.readthedocs.io/en/latest/>`__ or explore our `hands-on tutorials <https://stumpy.readthedocs.io/en/latest/tutorials.html>`__.
 
 -----------
 Performance

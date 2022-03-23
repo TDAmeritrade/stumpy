@@ -28,7 +28,7 @@ def get_extras_require():
 
 configuration = {
     "name": "stumpy",
-    "version": "1.10.2",
+    "version": "1.11.0",
     "python_requires=": ">=3.7",
     "author": "Sean M. Law",
     "author_email": "seanmylaw@gmail.com",
