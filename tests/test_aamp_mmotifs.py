@@ -3,8 +3,7 @@ import numpy.testing as npt
 import naive
 import pytest
 
-from stumpy.aamp_mmotifs import aamp_mmotifs
-from stumpy import config
+from stumpy import config, aamp_mmotifs
 
 
 test_data = [
