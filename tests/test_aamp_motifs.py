@@ -2,7 +2,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from stumpy import aamp_motifs, aamp_match
+from stumpy import core, aamp_motifs, aamp_match
 
 import naive
 
@@ -205,6 +205,34 @@ def test_aamp_match(Q, T):
         right = aamp_match(
             Q,
             T,
+            p=p,
+            max_matches=None,
+            max_distance=max_distance,
+        )
+
+        npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_aamp_match_T_subseq_isfinite(Q, T):
+    m = Q.shape[0]
+    excl_zone = int(np.ceil(m / 4))
+    max_distance = 0.3
+    T, T_subseq_isfinite = core.preprocess_non_normalized(T, len(Q))
+
+    for p in [1.0, 2.0, 3.0]:
+        left = naive_aamp_match(
+            Q,
+            T,
+            p=p,
+            excl_zone=excl_zone,
+            max_distance=max_distance,
+        )
+
+        right = aamp_match(
+            Q,
+            T,
+            T_subseq_isfinite,
             p=p,
             max_matches=None,
             max_distance=max_distance,

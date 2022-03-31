@@ -445,6 +445,10 @@ def match(
 
     if M_T is None or Σ_T is None:  # pragma: no cover
         T, M_T, Σ_T = core.preprocess(T, m)
+    if len(M_T.shape) == 1:
+        M_T = M_T[np.newaxis, :]
+    if len(Σ_T.shape) == 1:
+        Σ_T = Σ_T[np.newaxis, :]
 
     D = np.empty((d, n - m + 1))
     for i in range(d):
