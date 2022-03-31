@@ -235,3 +235,30 @@ def test_match(Q, T):
     )
 
     npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_match_mean_stddev(Q, T):
+    m = Q.shape[0]
+    excl_zone = int(np.ceil(m / 4))
+    max_distance = 0.3
+
+    left = naive_match(
+        Q,
+        T,
+        excl_zone,
+        max_distance=max_distance,
+    )
+
+    M_T, Σ_T = core.compute_mean_std(T, len(Q))
+
+    right = match(
+        Q,
+        T,
+        M_T,
+        Σ_T,
+        max_matches=None,
+        max_distance=lambda D: max_distance,  # also test lambda functionality
+    )
+
+    npt.assert_almost_equal(left, right)
