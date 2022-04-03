@@ -380,6 +380,8 @@ def aamp_match(
 
     if T_subseq_isfinite is None:
         T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
+    if len(T_subseq_isfinite.shape) == 1:
+        T_subseq_isfinite = T_subseq_isfinite[np.newaxis, :]
 
     D = np.empty((d, n - m + 1))
     for i in range(d):

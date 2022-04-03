@@ -21,6 +21,8 @@ from .mpdist import mpdist, mpdisted  # noqa: F401
 from .aampdist import aampdist, aampdisted  # noqa: F401
 from .motifs import motifs, match  # noqa: F401
 from .aamp_motifs import aamp_motifs, aamp_match  # noqa: F401
+from .mmotifs import mmotifs  # noqa: F401
+from .aamp_mmotifs import aamp_mmotifs  # noqa: F401
 from .snippets import snippets  # noqa: F401
 from .aampdist_snippets import aampdist_snippets  # noqa: F401
 from .stimp import stimp, stimped  # noqa: F401

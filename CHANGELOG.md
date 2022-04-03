@@ -1,3 +1,15 @@
+# 2022-03-31    [ 1.11.1 ]:
+---------------------------
+* bugfixes
+  - Fixed #582 Allow 1D mean/stddev inputs for `stumpy.match`
+* features
+  - N/A
+* tasks
+  - Added mmotifs and aamp_mmotifs to __init__.py
+* documentation
+  - Added mmotifs docstring in RTD API
+
+
 # 2022-03-21    [ 1.11.0 ]:
 ---------------------------
 * bugfixes

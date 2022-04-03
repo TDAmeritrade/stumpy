@@ -328,6 +328,18 @@ def test_match(T, m):
     npt.assert_almost_equal(ref, comp)
 
 
+@pytest.mark.parametrize("T, m", test_data)
+def test_mmotifs(T, m):
+    mps, indices = stumpy.maamp(T, m)
+    ref_distances, ref_indices, ref_subspaces, ref_mdls = stumpy.aamp_mmotifs(
+        T, mps, indices
+    )
+    cmp_distances, cmp_indices, cmp_subspaces, cmp_mdls = stumpy.mmotifs(
+        T, mps, indices, normalize=False
+    )
+    npt.assert_almost_equal(ref_distances, cmp_distances)
+
+
 def test_snippets():
     T = np.random.rand(64)
     m = 10
