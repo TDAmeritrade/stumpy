@@ -1437,7 +1437,7 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True, p=2.0):
     return distance_profile
 
 
-def _mass_distance_matrix(Q, T, m, distance_matrix):
+def _mass_distance_matrix(Q, T, m, distance_matrix, μ_Q, σ_Q, M_T, Σ_T):
     """
     Compute the full distance matrix between all of the subsequences of `Q` and `T`
     using the MASS algorithm
@@ -1456,15 +1456,67 @@ def _mass_distance_matrix(Q, T, m, distance_matrix):
     distance_matrix : numpy.ndarray
         The full output distance matrix. This is mandatory since it may be reused.
 
+    μ_Q : float
+        Mean of `Q`
+
+    σ_Q : float
+        Standard deviation of `Q`
+
+    M_T : numpy.ndarray
+        Sliding mean of `T`
+
+    Σ_T : numpy.ndarray
+        Sliding standard deviation of `T`
+
     Returns
     -------
         None
     """
-    k, l = distance_matrix.shape
-    T, M_T, Σ_T = preprocess(T, m)
+    for i in range(distance_matrix.shape[0]):
+        if np.any(~np.isfinite(Q[i : i + m])):  # pragma: no cover
+            distance_matrix[i, :] = np.inf
+        else:
+            QT = _sliding_dot_product(Q[i : i + m], T)
+            distance_matrix[i, :] = _mass(Q[i : i + m], T, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
 
-    for i in range(k):
-        distance_matrix[i, :] = mass(Q[i : i + m], T, M_T, Σ_T)
+
+def mass_distance_matrix(Q, T, m, distance_matrix, M_T=None, Σ_T=None):
+    """
+    Compute the full distance matrix between all of the subsequences of `Q` and `T`
+    using the MASS algorithm
+
+    Parameters
+    ----------
+    Q : numpy.ndarray
+        Query array
+
+    T : numpy.ndarray
+        Time series or sequence
+
+    m : int
+        Window size
+
+    distance_matrix : numpy.ndarray
+        The full output distance matrix. This is mandatory since it may be reused.
+
+    M_T : numpy.ndarray, default None
+        Sliding mean of `T`
+
+    Σ_T : numpy.ndarray, default None
+        Sliding standard deviation of `T`
+
+    Returns
+    -------
+        None
+    """
+    Q, μ_Q, σ_Q = preprocess(Q, m)
+
+    if M_T is None or Σ_T is None:
+        T, M_T, Σ_T = preprocess(T, m)
+
+    check_window_size(m, max_size=min(Q.shape[-1], T.shape[-1]))
+
+    return _mass_distance_matrix(Q, T, m, distance_matrix, μ_Q, σ_Q, M_T, Σ_T)
 
 
 def _get_QT(start, T_A, T_B, m):
@@ -2394,3 +2446,51 @@ def _binarize_pan(pan, threshold, bfs_indices, n_processed):
     """
     idx = bfs_indices[:n_processed]
     pan[idx] = np.where(pan[idx] <= threshold, 0.0, 1.0)
+
+
+def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
+    """
+    A convenience function for returning the `k`th smallest value from the `P_ABBA`
+    array or use a custom function to specify what `P_ABBA` value to return.
+
+    The MPdist distance measure considers two time series to be similar if they share
+    many subsequences, regardless of the order of matching subsequences. MPdist
+    concatenates the output of an AB-join and a BA-join and returns the `k`th smallest
+    value as the reported distance. Note that MPdist is a measure and not a metric.
+    Therefore, it does not obey the triangular inequality but the method is highly
+    scalable.
+
+    Parameters
+    ----------
+    P_ABBA : numpy.ndarray
+        An unsorted array resulting from the concatenation of the outputs from an
+        AB-joinand BA-join for two time series, `T_A` and `T_B`
+
+    k : int
+        Specify the `k`th value in the concatenated matrix profiles to return. This
+        parameter is ignored when `k_func` is not None.
+
+    custom_func : object, default None
+        A custom user defined function for selecting the desired value from the
+        unsorted `P_ABBA` array. This function may need to leverage `functools.partial`
+        and should take `P_ABBA` as its only input parameter and return a single
+        `MPdist` value. The `percentage` and `k` parameters are ignored when
+        `custom_func` is not None.
+
+    Returns
+    -------
+    MPdist : float
+        The matrix profile distance
+    """
+    k = min(int(k), P_ABBA.shape[0] - 1)
+    if custom_func is not None:
+        MPdist = custom_func(P_ABBA)
+    else:
+        partition = np.partition(P_ABBA, k)
+        MPdist = partition[k]
+        if ~np.isfinite(MPdist):
+            partition[:k].sort()
+            k = max(0, np.count_nonzero(np.isfinite(partition[:k])) - 1)
+            MPdist = partition[k]
+
+    return MPdist

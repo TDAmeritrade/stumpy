@@ -17,6 +17,24 @@ def distance(a, b, axis=0, p=2.0):
     return np.linalg.norm(a - b, axis=axis, ord=p)
 
 
+def compute_mean_std(T, m):
+    n = T.shape[0]
+
+    M_T = np.zeros(n - m + 1, dtype=float)
+    Σ_T = np.zeros(n - m + 1, dtype=float)
+
+    for i in range(n - m + 1):
+        Q = T[i : i + m].copy()
+        Q[np.isinf(Q)] = np.nan
+
+        M_T[i] = np.mean(Q)
+        Σ_T[i] = np.nanstd(Q)
+
+    M_T[np.isnan(M_T)] = np.inf
+    Σ_T[np.isnan(Σ_T)] = 0
+    return M_T, Σ_T
+
+
 def apply_exclusion_zone(a, trivial_idx, excl_zone, val):
     start = max(0, trivial_idx - excl_zone)
     stop = min(a.shape[-1], trivial_idx + excl_zone + 1)

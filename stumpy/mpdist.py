@@ -5,8 +5,7 @@
 import numpy as np
 import math
 
-from . import stump, stumped, core
-from .core import _mass_distance_matrix
+from . import core, stump, stumped
 from .aampdist import aampdist, aampdisted
 
 
@@ -72,54 +71,6 @@ def _compute_P_ABBA(
 
     P_ABBA[: n_A - m + 1] = partial_mp_func(T_A, m, T_B, ignore_trivial=False)[:, 0]
     P_ABBA[n_A - m + 1 :] = partial_mp_func(T_B, m, T_A, ignore_trivial=False)[:, 0]
-
-
-def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
-    """
-    A convenience function for returning the `k`th smallest value from the `P_ABBA`
-    array or use a custom function to specify what `P_ABBA` value to return.
-
-    The MPdist distance measure considers two time series to be similar if they share
-    many subsequences, regardless of the order of matching subsequences. MPdist
-    concatenates the output of an AB-join and a BA-join and returns the `k`th smallest
-    value as the reported distance. Note that MPdist is a measure and not a metric.
-    Therefore, it does not obey the triangular inequality but the method is highly
-    scalable.
-
-    Parameters
-    ----------
-    P_ABBA : numpy.ndarray
-        An unsorted array resulting from the concatenation of the outputs from an
-        AB-joinand BA-join for two time series, `T_A` and `T_B`
-
-    k : int
-        Specify the `k`th value in the concatenated matrix profiles to return. This
-        parameter is ignored when `k_func` is not None.
-
-    custom_func : object, default None
-        A custom user defined function for selecting the desired value from the
-        unsorted `P_ABBA` array. This function may need to leverage `functools.partial`
-        and should take `P_ABBA` as its only input parameter and return a single
-        `MPdist` value. The `percentage` and `k` parameters are ignored when
-        `custom_func` is not None.
-
-    Returns
-    -------
-    MPdist : float
-        The matrix profile distance
-    """
-    k = min(int(k), P_ABBA.shape[0] - 1)
-    if custom_func is not None:
-        MPdist = custom_func(P_ABBA)
-    else:
-        partition = np.partition(P_ABBA, k)
-        MPdist = partition[k]
-        if ~np.isfinite(MPdist):
-            partition[:k].sort()
-            k = max(0, np.count_nonzero(np.isfinite(partition[:k])) - 1)
-            MPdist = partition[k]
-
-    return MPdist
 
 
 def _mpdist(
@@ -211,7 +162,7 @@ def _mpdist(
         percentage = np.clip(percentage, 0.0, 1.0)
         k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
 
-    MPdist = _select_P_ABBA_value(P_ABBA, k, custom_func)
+    MPdist = core._select_P_ABBA_value(P_ABBA, k, custom_func)
 
     return MPdist
 
@@ -220,10 +171,13 @@ def _mpdist_vect(
     Q,
     T,
     m,
+    μ_Q,
+    σ_Q,
+    M_T,
+    Σ_T,
     percentage=0.05,
     k=None,
     custom_func=None,
-    distance_matrix_func=_mass_distance_matrix,
 ):
     """
     Compute the matrix profile distance measure vector between `Q` and each subsequence,
@@ -239,6 +193,18 @@ def _mpdist_vect(
 
     m : int
         Window size
+
+    μ_Q : float
+        Mean of `Q`
+
+    σ_Q : float
+        Standard deviation of `Q`
+
+    M_T : numpy.ndarray
+        Sliding mean of `T`
+
+    Σ_T : numpy.ndarray
+        Sliding standard deviation of `T`
 
     percentage : float, 0.05
         The percentage of distances that will be used to report `mpdist`. The value
@@ -256,9 +222,6 @@ def _mpdist_vect(
         and should take `P_ABBA` as its only input parameter and return a single
         `MPdist` value. The `percentage` and `k` parameters are ignored when
         `custom_func` is not None.
-
-    distance_matrix_func : object, default _mass_distance_matrix
-        The function to use to compute the distance matrix between `Q` and `T`
     """
     j = Q.shape[0] - m + 1  # `k` is reserved for `P_ABBA` selection
     l = T.shape[0] - m + 1
@@ -272,7 +235,7 @@ def _mpdist_vect(
 
     k = min(int(k), P_ABBA.shape[0] - 1)
 
-    distance_matrix_func(Q, T, m, distance_matrix)
+    core._mass_distance_matrix(Q, T, m, distance_matrix, μ_Q, σ_Q, M_T, Σ_T)
 
     rolling_row_min = core.rolling_nanmin(distance_matrix, j)
     col_min = np.nanmin(distance_matrix, axis=0)
@@ -280,7 +243,7 @@ def _mpdist_vect(
     for i in range(MPdist_vect.shape[0]):
         P_ABBA[:j] = rolling_row_min[:, i]
         P_ABBA[j:] = col_min[i : i + j]
-        MPdist_vect[i] = _select_P_ABBA_value(P_ABBA, k, custom_func)
+        MPdist_vect[i] = core._select_P_ABBA_value(P_ABBA, k, custom_func)
 
     return MPdist_vect
 
