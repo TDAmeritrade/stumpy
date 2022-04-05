@@ -18,24 +18,6 @@ def naive_rolling_window_dot_product(Q, T):
     return result
 
 
-def naive_compute_mean_std(T, m):
-    n = T.shape[0]
-
-    M_T = np.zeros(n - m + 1, dtype=float)
-    Σ_T = np.zeros(n - m + 1, dtype=float)
-
-    for i in range(n - m + 1):
-        Q = T[i : i + m].copy()
-        Q[np.isinf(Q)] = np.nan
-
-        M_T[i] = np.mean(Q)
-        Σ_T[i] = np.nanstd(Q)
-
-    M_T[np.isnan(M_T)] = np.inf
-    Σ_T[np.isnan(Σ_T)] = 0
-    return M_T, Σ_T
-
-
 def naive_compute_mean_std_multidimensional(T, m):
     n = T.shape[1]
     nrows, ncols = T.shape
@@ -268,8 +250,8 @@ def test_rolling_nanmax():
 def test_compute_mean_std(Q, T):
     m = Q.shape[0]
 
-    ref_μ_Q, ref_σ_Q = naive_compute_mean_std(Q, m)
-    ref_M_T, ref_Σ_T = naive_compute_mean_std(T, m)
+    ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
+    ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
     comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
     comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
 
@@ -284,8 +266,8 @@ def test_compute_mean_std_chunked(Q, T):
     m = Q.shape[0]
 
     config.STUMPY_MEAN_STD_NUM_CHUNKS = 2
-    ref_μ_Q, ref_σ_Q = naive_compute_mean_std(Q, m)
-    ref_M_T, ref_Σ_T = naive_compute_mean_std(T, m)
+    ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
+    ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
     comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
     comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
     config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
@@ -301,8 +283,8 @@ def test_compute_mean_std_chunked_many(Q, T):
     m = Q.shape[0]
 
     config.STUMPY_MEAN_STD_NUM_CHUNKS = 128
-    ref_μ_Q, ref_σ_Q = naive_compute_mean_std(Q, m)
-    ref_M_T, ref_Σ_T = naive_compute_mean_std(T, m)
+    ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
+    ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
     comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
     comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
     config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
@@ -642,7 +624,7 @@ def test_mass_distance_matrix(T_A, T_B):
     k = T_A.shape[0] - m + 1
     l = T_B.shape[0] - m + 1
     comp_distance_matrix = np.full((k, l), np.inf)
-    core._mass_distance_matrix(T_A, T_B, m, comp_distance_matrix)
+    core.mass_distance_matrix(T_A, T_B, m, comp_distance_matrix)
 
     npt.assert_almost_equal(ref_distance_matrix, comp_distance_matrix)
 
@@ -742,7 +724,7 @@ def test_preprocess():
     m = 3
 
     ref_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
-    ref_M, ref_Σ = naive_compute_mean_std(T, m)
+    ref_M, ref_Σ = naive.compute_mean_std(T, m)
 
     comp_T, comp_M, comp_Σ = core.preprocess(T, m)
 
@@ -786,9 +768,9 @@ def test_preprocess_diagonal():
     m = 3
 
     ref_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
-    ref_M, ref_Σ = naive_compute_mean_std(ref_T, m)
+    ref_M, ref_Σ = naive.compute_mean_std(ref_T, m)
     ref_Σ_inverse = 1.0 / ref_Σ
-    ref_M_m_1, _ = naive_compute_mean_std(ref_T, m - 1)
+    ref_M_m_1, _ = naive.compute_mean_std(ref_T, m - 1)
 
     (
         comp_T,
@@ -1034,3 +1016,15 @@ def test_bsf_indices(n):
     cmp_bsf_indices = np.array(list(core._bfs_indices(n)))
 
     npt.assert_almost_equal(ref_bsf_indices, cmp_bsf_indices)
+
+
+def test_select_P_ABBA_val_inf():
+    P_ABBA = np.random.rand(10)
+    k = 2
+    P_ABBA[k:] = np.inf
+    p_abba = P_ABBA.copy()
+
+    comp = core._select_P_ABBA_value(P_ABBA, k=k)
+    p_abba.sort()
+    ref = p_abba[k - 1]
+    npt.assert_almost_equal(ref, comp)
