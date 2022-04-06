@@ -96,6 +96,8 @@ def _get_all_profiles(
         percentage = np.clip(percentage, 0.0, 1.0)
         s = min(math.ceil(percentage * m), m)
 
+    M_T, Σ_T = core.compute_mean_std(T, s)
+
     # Iterate over non-overlapping subsequences, see Definition 3
     for i in range((n_padded // m) - 1):
         start = i * m
@@ -105,6 +107,10 @@ def _get_all_profiles(
             S_i,
             T,
             s,
+            M_T[start : start + s],
+            Σ_T[start : start + s],
+            M_T,
+            Σ_T,
             percentage=mpdist_percentage,
             k=mpdist_k,
             custom_func=mpdist_custom_func,
@@ -144,10 +150,12 @@ def snippets(
 
     percentage : float, default 1.0
         With the length of each non-overlapping subsequence, `S[i]`, set to `m`, this
-        is the percentage of `S[i]` (i.e., `percentage * m`) to set the `s` to. When
-        `percentage == 1.0`, then the full length of `S[i]` is used to compute the
-        `mpdist_vect`. When `percentage < 1.0`, then shorter subsequences from `S[i]`
-        is used to compute `mpdist_vect`.
+        is the percentage of `S[i]` (i.e., `percentage * m`) to set `s` (the
+        sub-subsequence length) to. When `percentage == 1.0`, then the full length of
+        `S[i]` is used to compute the `mpdist_vect`. When `percentage < 1.0`, then
+        a shorter sub-subsequence length of `s = min(math.ceil(percentage * m), m)`
+        from each `S[i]` is used to compute `mpdist_vect`. When `s` is not `None`, then
+        the `percentage` parameter is ignored.
 
     s : int, default None
         With the length of each non-overlapping subsequence, `S[i]`, set to `m`, this
@@ -221,6 +229,8 @@ def snippets(
            [1, 1, 2],
            [1, 3, 4]]))
     """
+    T = core._preprocess(T)
+
     if m > T.shape[0] // 2:  # pragma: no cover
         raise ValueError(
             f"The snippet window size of {m} is too large for a time series with "

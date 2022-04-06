@@ -380,7 +380,10 @@ def gpu_stump(
     Compute the z-normalized matrix profile with one or more GPU devices
 
     This is a convenience wrapper around the Numba `cuda.jit` `_gpu_stump` function
-    which computes the matrix profile according to GPU-STOMP.
+    which computes the matrix profile according to GPU-STOMP. The default number of
+    threads-per-block is set to `512` and may be changed by setting the global parameter
+    `config.STUMPY_THREADS_PER_BLOCK` to an appropriate number based on your GPU
+    hardware.
 
     Parameters
     ----------

@@ -6,6 +6,8 @@ from stumpy.maamp import maamp_multi_distance_profile
 from dask.distributed import Client, LocalCluster
 from numba import cuda
 
+import naive
+
 try:
     from numba.errors import NumbaPerformanceWarning
 except ModuleNotFoundError:
@@ -228,6 +230,7 @@ def test_mpdist():
     npt.assert_almost_equal(ref, comp)
 
 
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 def test_mpdisted(dask_cluster):
     T_A = np.random.uniform(-1000, 1000, [8]).astype(np.float64)
     T_B = np.random.uniform(-1000, 1000, [64]).astype(np.float64)
@@ -325,6 +328,18 @@ def test_match(T, m):
     npt.assert_almost_equal(ref, comp)
 
 
+@pytest.mark.parametrize("T, m", test_data)
+def test_mmotifs(T, m):
+    mps, indices = stumpy.maamp(T, m)
+    ref_distances, ref_indices, ref_subspaces, ref_mdls = stumpy.aamp_mmotifs(
+        T, mps, indices
+    )
+    cmp_distances, cmp_indices, cmp_subspaces, cmp_mdls = stumpy.mmotifs(
+        T, mps, indices, normalize=False
+    )
+    npt.assert_almost_equal(ref_distances, cmp_distances)
+
+
 def test_snippets():
     T = np.random.rand(64)
     m = 10
@@ -347,3 +362,101 @@ def test_snippets():
         cmp_regimes,
     ) = stumpy.snippets(T, m, k, normalize=False)
     npt.assert_almost_equal(ref_snippets, cmp_snippets)
+
+
+@pytest.mark.parametrize("T, m", test_data)
+def test_stimp(T, m):
+    if T.ndim > 1:
+        T = T.copy()
+        T = T[0]
+    n = 3
+    seed = np.random.randint(100000)
+
+    np.random.seed(seed)
+    ref = stumpy.aamp_stimp(T, m)
+    for i in range(n):
+        ref.update()
+
+    np.random.seed(seed)
+    cmp = stumpy.stimp(T, m, normalize=False)
+    for i in range(n):
+        cmp.update()
+
+    # Compare raw pan
+    ref_PAN = ref._PAN
+    cmp_PAN = cmp._PAN
+
+    naive.replace_inf(ref_PAN)
+    naive.replace_inf(cmp_PAN)
+
+    npt.assert_almost_equal(ref_PAN, cmp_PAN)
+
+    # Compare transformed pan
+    npt.assert_almost_equal(ref.PAN_, cmp.PAN_)
+
+
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.parametrize("T, m", test_data)
+def test_stimped(T, m, dask_cluster):
+    if T.ndim > 1:
+        T = T.copy()
+        T = T[0]
+    n = 3
+    seed = np.random.randint(100000)
+    with Client(dask_cluster) as dask_client:
+        np.random.seed(seed)
+        ref = stumpy.aamp_stimped(dask_client, T, m)
+        for i in range(n):
+            ref.update()
+
+        np.random.seed(seed)
+        cmp = stumpy.stimped(dask_client, T, m, normalize=False)
+        for i in range(n):
+            cmp.update()
+
+        # Compare raw pan
+        ref_PAN = ref._PAN
+        cmp_PAN = cmp._PAN
+
+        naive.replace_inf(ref_PAN)
+        naive.replace_inf(cmp_PAN)
+
+        npt.assert_almost_equal(ref_PAN, cmp_PAN)
+
+        # Compare transformed pan
+        npt.assert_almost_equal(ref.PAN_, cmp.PAN_)
+
+
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@pytest.mark.parametrize("T, m", test_data)
+def test_gpu_stimp(T, m):
+    if not cuda.is_available():  # pragma: no cover
+        pytest.skip("Skipping Tests No GPUs Available")
+
+    if T.ndim > 1:
+        T = T.copy()
+        T = T[0]
+    n = 3
+    seed = np.random.randint(100000)
+
+    np.random.seed(seed)
+    ref = stumpy.gpu_aamp_stimp(T, m)
+    for i in range(n):
+        ref.update()
+
+    np.random.seed(seed)
+    cmp = stumpy.gpu_stimp(T, m, normalize=False)
+    for i in range(n):
+        cmp.update()
+
+    # Compare raw pan
+    ref_PAN = ref._PAN
+    cmp_PAN = cmp._PAN
+
+    naive.replace_inf(ref_PAN)
+    naive.replace_inf(cmp_PAN)
+
+    npt.assert_almost_equal(ref_PAN, cmp_PAN)
+
+    # Compare transformed pan
+    npt.assert_almost_equal(ref.PAN_, cmp.PAN_)

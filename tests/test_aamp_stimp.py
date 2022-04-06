@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.testing as npt
-from stumpy import stimp, stimped
+from stumpy import aamp_stimp, aamp_stimped
 
 from dask.distributed import Client, LocalCluster
 import pytest
@@ -12,6 +12,8 @@ T = [
     np.random.uniform(-1000, 1000, [64]).astype(np.float64),
 ]
 
+n = [9, 10, 16]
+
 
 @pytest.fixture(scope="module")
 def dask_cluster():
@@ -21,7 +23,7 @@ def dask_cluster():
 
 
 @pytest.mark.parametrize("T", T)
-def test_stimp_1_percent(T):
+def test_aamp_stimp_1_percent(T):
     threshold = 0.2
     percentage = 0.01
     min_m = 3
@@ -30,14 +32,13 @@ def test_stimp_1_percent(T):
     seed = np.random.randint(100000)
 
     np.random.seed(seed)
-    pan = stimp(
+    pan = aamp_stimp(
         T,
         min_m=min_m,
         max_m=None,
         step=1,
         percentage=percentage,
-        pre_scrump=True,
-        # normalize=True,
+        pre_scraamp=True,
     )
 
     for i in range(n):
@@ -49,8 +50,8 @@ def test_stimp_1_percent(T):
     for idx, m in enumerate(pan.M_[:n]):
         zone = int(np.ceil(m / 4))
         s = zone
-        tmp_P, tmp_I = naive.prescrump(T, m, T, s=s, exclusion_zone=zone)
-        ref_mp = naive.scrump(T, m, T, percentage, zone, True, s)
+        tmp_P, tmp_I = naive.prescraamp(T, m, T, s=s, exclusion_zone=zone)
+        ref_mp = naive.scraamp(T, m, T, percentage, zone, True, s)
         for i in range(ref_mp.shape[0]):
             if tmp_P[i] < ref_mp[i, 0]:
                 ref_mp[i, 0] = tmp_P[i]
@@ -68,7 +69,13 @@ def test_stimp_1_percent(T):
     # Compare transformed pan
     cmp_pan = pan.PAN_
     ref_pan = naive.transform_pan(
-        pan._PAN, pan._M, threshold, pan._bfs_indices, pan._n_processed
+        pan._PAN,
+        pan._M,
+        threshold,
+        pan._bfs_indices,
+        pan._n_processed,
+        np.min(T),
+        np.max(T),
     )
 
     naive.replace_inf(ref_pan)
@@ -78,7 +85,7 @@ def test_stimp_1_percent(T):
 
 
 @pytest.mark.parametrize("T", T)
-def test_stimp_max_m(T):
+def test_aamp_stimp_max_m(T):
     threshold = 0.2
     percentage = 0.01
     min_m = 3
@@ -88,14 +95,13 @@ def test_stimp_max_m(T):
     seed = np.random.randint(100000)
 
     np.random.seed(seed)
-    pan = stimp(
+    pan = aamp_stimp(
         T,
         min_m=min_m,
         max_m=max_m,
         step=1,
         percentage=percentage,
-        pre_scrump=True,
-        # normalize=True,
+        pre_scraamp=True,
     )
 
     for i in range(n):
@@ -107,8 +113,8 @@ def test_stimp_max_m(T):
     for idx, m in enumerate(pan.M_[:n]):
         zone = int(np.ceil(m / 4))
         s = zone
-        tmp_P, tmp_I = naive.prescrump(T, m, T, s=s, exclusion_zone=zone)
-        ref_mp = naive.scrump(T, m, T, percentage, zone, True, s)
+        tmp_P, tmp_I = naive.prescraamp(T, m, T, s=s, exclusion_zone=zone)
+        ref_mp = naive.scraamp(T, m, T, percentage, zone, True, s)
         for i in range(ref_mp.shape[0]):
             if tmp_P[i] < ref_mp[i, 0]:
                 ref_mp[i, 0] = tmp_P[i]
@@ -126,7 +132,13 @@ def test_stimp_max_m(T):
     # Compare transformed pan
     cmp_pan = pan.PAN_
     ref_pan = naive.transform_pan(
-        pan._PAN, pan._M, threshold, pan._bfs_indices, pan._n_processed
+        pan._PAN,
+        pan._M,
+        threshold,
+        pan._bfs_indices,
+        pan._n_processed,
+        np.min(T),
+        np.max(T),
     )
 
     naive.replace_inf(ref_pan)
@@ -136,20 +148,19 @@ def test_stimp_max_m(T):
 
 
 @pytest.mark.parametrize("T", T)
-def test_stimp_100_percent(T):
+def test_aamp_stimp_100_percent(T):
     threshold = 0.2
     percentage = 1.0
     min_m = 3
     n = T.shape[0] - min_m + 1
 
-    pan = stimp(
+    pan = aamp_stimp(
         T,
         min_m=min_m,
         max_m=None,
         step=1,
         percentage=percentage,
-        pre_scrump=True,
-        # normalize=True,
+        pre_scraamp=True,
     )
 
     for i in range(n):
@@ -159,7 +170,7 @@ def test_stimp_100_percent(T):
 
     for idx, m in enumerate(pan.M_[:n]):
         zone = int(np.ceil(m / 4))
-        ref_mp = naive.stump(T, m, T_B=None, exclusion_zone=zone)
+        ref_mp = naive.aamp(T, m, T_B=None, exclusion_zone=zone)
         ref_PAN[pan._bfs_indices[idx], : ref_mp.shape[0]] = ref_mp[:, 0]
 
     # Compare raw pan
@@ -173,7 +184,13 @@ def test_stimp_100_percent(T):
     # Compare transformed pan
     cmp_pan = pan.PAN_
     ref_pan = naive.transform_pan(
-        pan._PAN, pan._M, threshold, pan._bfs_indices, pan._n_processed
+        pan._PAN,
+        pan._M,
+        threshold,
+        pan._bfs_indices,
+        pan._n_processed,
+        np.min(T),
+        np.max(T),
     )
 
     naive.replace_inf(ref_pan)
@@ -187,19 +204,18 @@ def test_stimp_100_percent(T):
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T", T)
-def test_stimped(T, dask_cluster):
+def test_aamp_stimped(T, dask_cluster):
     with Client(dask_cluster) as dask_client:
         threshold = 0.2
         min_m = 3
         n = T.shape[0] - min_m + 1
 
-        pan = stimped(
+        pan = aamp_stimped(
             dask_client,
             T,
             min_m=min_m,
             max_m=None,
             step=1,
-            # normalize=True,
         )
 
         for i in range(n):
@@ -209,7 +225,7 @@ def test_stimped(T, dask_cluster):
 
         for idx, m in enumerate(pan.M_[:n]):
             zone = int(np.ceil(m / 4))
-            ref_mp = naive.stump(T, m, T_B=None, exclusion_zone=zone)
+            ref_mp = naive.aamp(T, m, T_B=None, exclusion_zone=zone)
             ref_PAN[pan._bfs_indices[idx], : ref_mp.shape[0]] = ref_mp[:, 0]
 
         # Compare raw pan
@@ -223,7 +239,13 @@ def test_stimped(T, dask_cluster):
         # Compare transformed pan
         cmp_pan = pan.PAN_
         ref_pan = naive.transform_pan(
-            pan._PAN, pan._M, threshold, pan._bfs_indices, pan._n_processed
+            pan._PAN,
+            pan._M,
+            threshold,
+            pan._bfs_indices,
+            pan._n_processed,
+            np.min(T),
+            np.max(T),
         )
 
         naive.replace_inf(ref_pan)

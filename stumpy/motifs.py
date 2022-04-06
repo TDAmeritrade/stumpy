@@ -119,6 +119,7 @@ def _motifs(
             max_matches=None,
             max_distance=max_distance,
             atol=atol,
+            query_idx=candidate_idx,
         )
 
         if len(query_matches) > min_neighbors:
@@ -246,6 +247,12 @@ def motifs(
     --------
     stumpy.match : Find all matches of a query `Q` in a time series `T`
     stumpy.mmotifs : Discover the top motifs for the multi-dimensional time series `T`
+    stumpy.stump : Compute the z-normalized matrix profile
+    stumpy.stumped : Compute the z-normalized matrix profile with a distributed dask
+        cluster
+    stumpy.gpu_stump : Compute the z-normalized matrix profile with one or more GPU
+        devices
+    stumpy.scrump : Compute an approximate z-normalized matrix profile
 
     Examples
     --------
@@ -322,6 +329,7 @@ def match(
     max_distance=None,
     max_matches=None,
     atol=1e-8,
+    query_idx=None,
     normalize=True,
     p=2.0,
 ):
@@ -365,6 +373,14 @@ def match(
         The absolute tolerance parameter. This value will be added to `max_distance`
         when comparing distances between subsequences.
 
+    query_idx : int, default None
+        This is the index position along the time series, `T`, where the query
+        subsequence, `Q`, is located.
+        `query_idx` should only be used when the matrix profile is a self-join and
+        should be set to `None` for matrix profiles computed from AB-joins.
+        If `query_idx` is set to a specific integer value, then this will help ensure
+        that the self-match will be returned first.
+
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
@@ -383,7 +399,14 @@ def match(
 
     See Also
     --------
-    stumpy.motifs : Discover the top motifs for time series T
+    stumpy.motifs : Discover the top motifs for time series `T`
+    stumpy.mmotifs : Discover the top motifs for the multi-dimensional time series `T`
+    stumpy.stump : Compute the z-normalized matrix profile
+    stumpy.stumped : Compute the z-normalized matrix profile with a distributed dask
+        cluster
+    stumpy.gpu_stump : Compute the z-normalized matrix profile with one or more GPU
+        devices
+    stumpy.scrump : Compute an approximate z-normalized matrix profile
 
     Examples
     --------
@@ -422,6 +445,10 @@ def match(
 
     if M_T is None or Σ_T is None:  # pragma: no cover
         T, M_T, Σ_T = core.preprocess(T, m)
+    if len(M_T.shape) == 1:
+        M_T = M_T[np.newaxis, :]
+    if len(Σ_T.shape) == 1:
+        Σ_T = Σ_T[np.newaxis, :]
 
     D = np.empty((d, n - m + 1))
     for i in range(d):
@@ -433,7 +460,11 @@ def match(
 
     matches = []
 
-    candidate_idx = np.argmin(D)
+    if query_idx is not None:
+        candidate_idx = query_idx
+    else:
+        candidate_idx = np.argmin(D)
+
     while (
         D[candidate_idx] <= atol + max_distance
         and np.isfinite(D[candidate_idx])

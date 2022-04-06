@@ -6,7 +6,6 @@ from stumpy import mpdist, mpdisted
 from stumpy.mpdist import (
     _mpdist,
     _compute_P_ABBA,
-    _select_P_ABBA_value,
     _mpdist_vect,
 )
 from dask.distributed import Client, LocalCluster
@@ -68,7 +67,9 @@ def test_compute_P_ABBA(T_A, T_B):
 def test_mpdist_vect(T_A, T_B):
     m = 3
     ref_mpdist_vect = naive.mpdist_vect(T_A, T_B, m)
-    comp_mpdist_vect = _mpdist_vect(T_A, T_B, m)
+    μ_Q, σ_Q = naive.compute_mean_std(T_A, m)
+    M_T, Σ_T = naive.compute_mean_std(T_B, m)
+    comp_mpdist_vect = _mpdist_vect(T_A, T_B, m, μ_Q, σ_Q, M_T, Σ_T)
 
     npt.assert_almost_equal(ref_mpdist_vect, comp_mpdist_vect)
 
@@ -78,7 +79,11 @@ def test_mpdist_vect(T_A, T_B):
 def test_mpdist_vect_percentage(T_A, T_B, percentage):
     m = 3
     ref_mpdist_vect = naive.mpdist_vect(T_A, T_B, m, percentage=percentage)
-    comp_mpdist_vect = _mpdist_vect(T_A, T_B, m, percentage=percentage)
+    μ_Q, σ_Q = naive.compute_mean_std(T_A, m)
+    M_T, Σ_T = naive.compute_mean_std(T_B, m)
+    comp_mpdist_vect = _mpdist_vect(
+        T_A, T_B, m, μ_Q, σ_Q, M_T, Σ_T, percentage=percentage
+    )
 
     npt.assert_almost_equal(ref_mpdist_vect, comp_mpdist_vect)
 
@@ -88,7 +93,9 @@ def test_mpdist_vect_percentage(T_A, T_B, percentage):
 def test_mpdist_vect_k(T_A, T_B, k):
     m = 3
     ref_mpdist_vect = naive.mpdist_vect(T_A, T_B, m, k=k)
-    comp_mpdist_vect = _mpdist_vect(T_A, T_B, m, k=k)
+    μ_Q, σ_Q = naive.compute_mean_std(T_A, m)
+    M_T, Σ_T = naive.compute_mean_std(T_B, m)
+    comp_mpdist_vect = _mpdist_vect(T_A, T_B, m, μ_Q, σ_Q, M_T, Σ_T, k=k)
 
     npt.assert_almost_equal(ref_mpdist_vect, comp_mpdist_vect)
 
@@ -120,18 +127,6 @@ def test_mpdist_k(T_A, T_B, k):
     comp_mpdist = mpdist(T_A, T_B, m, k=k)
 
     npt.assert_almost_equal(ref_mpdist, comp_mpdist)
-
-
-def test_select_P_ABBA_val_inf():
-    P_ABBA = np.random.rand(10)
-    k = 2
-    P_ABBA[k:] = np.inf
-    p_abba = P_ABBA.copy()
-
-    comp = _select_P_ABBA_value(P_ABBA, k=k)
-    p_abba.sort()
-    ref = p_abba[k - 1]
-    npt.assert_almost_equal(ref, comp)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)

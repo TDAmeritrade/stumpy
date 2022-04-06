@@ -2,10 +2,11 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
+import numpy as np
+import math
 import functools
 
-from . import aamp, aamped, mpdist
-from .core import _mass_absolute_distance_matrix
+from . import core, aamp, aamped, mpdist
 
 
 def _aampdist_vect(
@@ -52,18 +53,29 @@ def _aampdist_vect(
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
     """
-    partial_distance_matrix_func = functools.partial(
-        _mass_absolute_distance_matrix, p=p
-    )
-    return mpdist._mpdist_vect(
-        Q,
-        T,
-        m,
-        percentage=percentage,
-        k=k,
-        custom_func=custom_func,
-        distance_matrix_func=partial_distance_matrix_func,
-    )
+    j = Q.shape[0] - m + 1  # `k` is reserved for `P_ABBA` selection
+    l = T.shape[0] - m + 1
+    MPdist_vect = np.empty(T.shape[0] - Q.shape[0] + 1, dtype=np.float64)
+    distance_matrix = np.full((j, l), np.inf, dtype=np.float64)
+    P_ABBA = np.empty(2 * j, dtype=np.float64)
+
+    if k is None:
+        percentage = np.clip(percentage, 0.0, 1.0)
+        k = min(math.ceil(percentage * (2 * Q.shape[0])), 2 * j - 1)
+
+    k = min(int(k), P_ABBA.shape[0] - 1)
+
+    core._mass_absolute_distance_matrix(Q, T, m, distance_matrix, p=p)
+
+    rolling_row_min = core.rolling_nanmin(distance_matrix, j)
+    col_min = np.nanmin(distance_matrix, axis=0)
+
+    for i in range(MPdist_vect.shape[0]):
+        P_ABBA[:j] = rolling_row_min[:, i]
+        P_ABBA[j:] = col_min[i : i + j]
+        MPdist_vect[i] = core._select_P_ABBA_value(P_ABBA, k, custom_func)
+
+    return MPdist_vect
 
 
 def aampdist(T_A, T_B, m, percentage=0.05, k=None, p=2.0):
