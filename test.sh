@@ -79,7 +79,7 @@ test_custom()
     # Test one or more user-defined functions repeatedly
     for VARIABLE in {1..10}
     do
-        pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_.py
+        pytest -x -W ignore::DeprecationWarning tests/test_.py
         check_errs $?
     done
     clean_up
@@ -94,7 +94,9 @@ test_unit()
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_config.py
     check_errs $?
-    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump.py tests/test_mstump.py tests/test_scrump.py tests/test_stumpi.py
+    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump.py tests/test_mstump.py tests/test_stumpi.py
+    check_errs $?
+    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_scrump.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped.py
     check_errs $?
@@ -107,6 +109,8 @@ test_unit()
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_motifs.py
     check_errs $?
+    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mmotifs.py
+    check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_mpdist.py
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_snippets.py
     check_errs $?
@@ -116,6 +120,8 @@ test_unit()
     # aamp
     pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp.py
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp.py tests/test_maamp.py tests/test_scraamp.py tests/test_aampi.py
+    check_errs $?
+    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_scraamp.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamped.py
     check_errs $?
@@ -128,10 +134,15 @@ test_unit()
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_motifs.py
     check_errs $?
+    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_mmotifs.py
+    check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aampdist.py
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aampdist_snippets.py
     check_errs $?
-    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_non_normalized_decorator.py
+    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp_stimp.py
+    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_stimp.py
+    check_errs $?
+    pytest -x -W ignore::DeprecationWarning tests/test_non_normalized_decorator.py
     check_errs $?
 }
 
@@ -146,9 +157,9 @@ test_coverage()
     # check_errs $?
 
     echo "Testing Code Coverage"
-    coverage run --source stumpy -m pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning
+    coverage run --source=. -m pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning
     check_errs $?
-    coverage report -m
+    coverage report -m --skip-covered --omit=setup.py
 }
 
 clean_up()

@@ -5,13 +5,155 @@
 import logging
 
 import numpy as np
-from numba import njit
+from numba import njit, prange
 import numba
 
 from . import core, scraamp, config
 from .stump import _stump
 
 logger = logging.getLogger(__name__)
+
+
+@njit(fastmath=True)
+def _compute_PI(
+    T_A,
+    T_B,
+    m,
+    M_T,
+    Σ_T,
+    μ_Q,
+    σ_Q,
+    indices,
+    start,
+    stop,
+    thread_idx,
+    s,
+    P_squared,
+    I,
+    excl_zone=None,
+):
+    """
+    Compute (Numba JIT-compiled) and update the squared matrix profile distance
+    and matrix profile indces according to the preSCRIMP algorithm
+
+    Parameters
+    ----------
+    T_A : numpy.ndarray
+        The time series or sequence for which to compute the matrix profile
+
+    T_B : numpy.ndarray
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
+
+    m : int
+        Window size
+
+    M_T : numpy.ndarray
+        Sliding window mean for T_A
+
+    Σ_T : numpy.ndarray
+        Sliding window standard deviation for T_A
+
+    μ_Q : numpy.ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window in `T_B`
+
+    σ_Q : numpy.ndarray
+        Standard deviation of the query sequence, `Q`, relative to the current
+        sliding window in `T_B`
+
+    indices : numpy.ndarray
+        The subsequence indices to compute `prescrump` for
+
+    start : int
+        The (inclusive) start index for `indices`
+
+    stop : int
+        The (exclusive) stop index for `indices`
+
+    thread_idx : int
+        The thread index
+
+    s : int
+        The sampling interval that defaults to
+        `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
+
+    P_squared : numpy.ndarray
+        The squared matrix profile
+
+    I : numpy.ndarray
+        The matrix profile indices
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the `i`.
+
+    Notes
+    -----
+    `DOI: 10.1109/ICDM.2018.00099 \
+    <https://www.cs.ucr.edu/~eamonn/SCRIMP_ICDM_camera_ready_updated.pdf>`__
+
+    See Algorithm 2
+    """
+    l = T_B.shape[0] - m + 1
+    squared_distance_profile = np.empty(l)
+    QT = np.empty(l, dtype=np.float64)
+    for i in indices[start:stop]:
+        Q = T_A[i : i + m]
+        QT[:] = core._sliding_dot_product(Q, T_B)
+        # Update P[i] relative to all T[j : j + m]
+        squared_distance_profile[:] = core._mass(Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
+        squared_distance_profile[:] = np.square(squared_distance_profile)
+        if excl_zone is not None:
+            zone_start = max(0, i - excl_zone)
+            zone_stop = min(l, i + excl_zone)
+            squared_distance_profile[zone_start : zone_stop + 1] = np.inf
+        I[thread_idx, i] = np.argmin(squared_distance_profile)
+        P_squared[thread_idx, i] = squared_distance_profile[I[thread_idx, i]]
+        if P_squared[thread_idx, i] == np.inf:  # pragma: no cover
+            I[thread_idx, i] = -1
+        else:
+            j = I[thread_idx, i]
+            # Given the squared distance, work backwards and compute QT
+            QT_j = (m - P_squared[thread_idx, i] / 2.0) * (Σ_T[j] * σ_Q[i]) + (
+                m * M_T[j] * μ_Q[i]
+            )
+            QT_j_prime = QT_j
+            for k in range(1, min(s, l - max(i, j))):
+                QT_j = (
+                    QT_j
+                    - T_B[i + k - 1] * T_A[j + k - 1]
+                    + T_B[i + k + m - 1] * T_A[j + k + m - 1]
+                )
+                D_squared = core._calculate_squared_distance(
+                    m,
+                    QT_j,
+                    M_T[i + k],
+                    Σ_T[i + k],
+                    μ_Q[j + k],
+                    σ_Q[j + k],
+                )
+                if D_squared < P_squared[thread_idx, i + k]:
+                    P_squared[thread_idx, i + k] = D_squared
+                    I[thread_idx, i + k] = j + k
+                if D_squared < P_squared[thread_idx, j + k]:
+                    P_squared[thread_idx, j + k] = D_squared
+                    I[thread_idx, j + k] = i + k
+            QT_j = QT_j_prime
+            for k in range(1, min(s, i + 1, j + 1)):
+                QT_j = QT_j - T_B[i - k + m] * T_A[j - k + m] + T_B[i - k] * T_A[j - k]
+                D_squared = core._calculate_squared_distance(
+                    m,
+                    QT_j,
+                    M_T[i - k],
+                    Σ_T[i - k],
+                    μ_Q[j - k],
+                    σ_Q[j - k],
+                )
+                if D_squared < P_squared[thread_idx, i - k]:
+                    P_squared[thread_idx, i - k] = D_squared
+                    I[thread_idx, i - k] = j - k
+                if D_squared < P_squared[thread_idx, j - k]:
+                    P_squared[thread_idx, j - k] = D_squared
+                    I[thread_idx, j - k] = i - k
 
 
 @njit(
@@ -28,12 +170,8 @@ def _prescrump(
     Σ_T,
     μ_Q,
     σ_Q,
-    QT,
-    i,
+    indices,
     s,
-    squared_distance_profile,
-    P_squared,
-    I,
     excl_zone=None,
 ):
     """
@@ -64,18 +202,16 @@ def _prescrump(
         Standard deviation of the query sequence, `Q`, relative to the current
         sliding window in `T_B`
 
-    QT : numpy.ndarray
-        Sliding dot product between `Q` in `T_B` and `T_A`
+    indices : numpy.ndarray
+        The subsequence indices to compute `prescrump` for
 
-    i : int
-        The subsequence index in `T_B` that corresponds to `Q`
+    idx_ranges : numpy.ndarray
+        The (inclusive) start indices and (exclusive) stop indices referenced
+        in the `indices` array
 
     s : int
         The sampling interval that defaults to
         `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
-
-    squared_distance_profile : numpy.ndarray
-        A reusable array to store the computed squared distance profile
 
     P_squared : numpy.ndarray
         The squared matrix profile
@@ -93,63 +229,38 @@ def _prescrump(
 
     See Algorithm 2
     """
-    l = QT.shape[0]
-    # Update P[i] relative to all T[j : j + m]
-    Q = T_A[i : i + m]
-    squared_distance_profile[:] = core._mass(Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
-    squared_distance_profile[:] = np.square(squared_distance_profile)
-    if excl_zone is not None:
-        zone_start = max(0, i - excl_zone)
-        zone_stop = min(l, i + excl_zone)
-        squared_distance_profile[zone_start : zone_stop + 1] = np.inf
-    I[i] = np.argmin(squared_distance_profile)
-    P_squared[i] = squared_distance_profile[I[i]]
-    if P_squared[i] == np.inf:  # pragma: no cover
-        I[i] = -1
-    else:
-        j = I[i]
-        # Given the squared distance, work backwards and compute QT
-        QT_j = (m - P_squared[i] / 2.0) * (Σ_T[j] * σ_Q[i]) + (m * M_T[j] * μ_Q[i])
-        QT_j_prime = QT_j
-        for k in range(1, min(s, l - max(i, j))):
-            QT_j = (
-                QT_j
-                - T_B[i + k - 1] * T_A[j + k - 1]
-                + T_B[i + k + m - 1] * T_A[j + k + m - 1]
-            )
-            D_squared = core._calculate_squared_distance(
-                m,
-                QT_j,
-                M_T[i + k],
-                Σ_T[i + k],
-                μ_Q[j + k],
-                σ_Q[j + k],
-            )
-            if D_squared < P_squared[i + k]:
-                P_squared[i + k] = D_squared
-                I[i + k] = j + k
-            if D_squared < P_squared[j + k]:
-                P_squared[j + k] = D_squared
-                I[j + k] = i + k
-        QT_j = QT_j_prime
-        for k in range(1, min(s, i + 1, j + 1)):
-            QT_j = QT_j - T_B[i - k + m] * T_A[j - k + m] + T_B[i - k] * T_A[j - k]
-            D_squared = core._calculate_squared_distance(
-                m,
-                QT_j,
-                M_T[i - k],
-                Σ_T[i - k],
-                μ_Q[j - k],
-                σ_Q[j - k],
-            )
-            if D_squared < P_squared[i - k]:
-                P_squared[i - k] = D_squared
-                I[i - k] = j - k
-            if D_squared < P_squared[j - k]:
-                P_squared[j - k] = D_squared
-                I[j - k] = i - k
+    n_threads = numba.config.NUMBA_NUM_THREADS
+    l = T_A.shape[0] - m + 1
+    P_squared = np.full((n_threads, l), np.inf, dtype=np.float64)
+    I = np.full((n_threads, l), -1, dtype=np.int64)
 
-    return
+    idx_ranges = core._get_ranges(len(indices), n_threads, truncate=False)
+    for thread_idx in prange(n_threads):
+        _compute_PI(
+            T_A,
+            T_B,
+            m,
+            M_T,
+            Σ_T,
+            μ_Q,
+            σ_Q,
+            indices,
+            idx_ranges[thread_idx, 0],
+            idx_ranges[thread_idx, 1],
+            thread_idx,
+            s,
+            P_squared,
+            I,
+            excl_zone,
+        )
+
+    for thread_idx in range(1, n_threads):
+        for i in range(l):
+            if P_squared[thread_idx, i] < P_squared[0, i]:
+                P_squared[0, i] = P_squared[thread_idx, i]
+                I[0, i] = I[thread_idx, i]
+
+    return np.sqrt(P_squared[0]), I[0]
 
 
 @core.non_normalized(scraamp.prescraamp)
@@ -182,7 +293,7 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == False`.
+        ignored when `normalize == True`.
 
     Returns
     -------
@@ -199,58 +310,34 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
 
     See Algorithm 2
     """
-    T_A = core._preprocess(T_A)
-    core.check_window_size(m, max_size=T_A.shape[-1])
-    T_A[np.isinf(T_A)] = np.nan
-
     if T_B is None:
         T_B = T_A
         excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     else:
         excl_zone = None
 
-    T_B = core._preprocess(T_B)
-    core.check_window_size(m, max_size=T_B.shape[-1])
-    T_B[np.isinf(T_B)] = np.nan
-
-    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
-
-    μ_Q, σ_Q = core.compute_mean_std(T_A, m)
-    M_T, Σ_T = core.compute_mean_std(T_B, m)
-
-    T_A[np.isnan(T_A)] = 0
-    T_B[np.isnan(T_B)] = 0
+    T_A, μ_Q, σ_Q = core.preprocess(T_A, m)
+    T_B, M_T, Σ_T = core.preprocess(T_B, m)
 
     n_A = T_A.shape[0]
-    n_B = T_B.shape[0]
     l = n_A - m + 1
-    P_squared = np.full(l, np.inf, dtype=np.float64)
-    I = np.full(l, -1, dtype=np.int64)
-    squared_distance_profile = np.empty(n_B - m + 1, dtype=np.float64)
 
     if s is None:  # pragma: no cover
         s = excl_zone
 
-    for i in np.random.permutation(range(0, l, s)).astype(np.int64):
-        QT = core.sliding_dot_product(T_A[i : i + m], T_B)
-        _prescrump(
-            T_A,
-            T_B,
-            m,
-            M_T,
-            Σ_T,
-            μ_Q,
-            σ_Q,
-            QT,
-            i,
-            s,
-            squared_distance_profile,
-            P_squared,
-            I,
-            excl_zone,
-        )
-
-    P = np.sqrt(P_squared)
+    indices = np.random.permutation(range(0, l, s)).astype(np.int64)
+    P, I = _prescrump(
+        T_A,
+        T_B,
+        m,
+        M_T,
+        Σ_T,
+        μ_Q,
+        σ_Q,
+        indices,
+        s,
+        excl_zone,
+    )
 
     return P, I
 
@@ -304,7 +391,7 @@ class scrump:
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == False`.
+        ignored when `normalize == True`.
 
     Attributes
     ----------
@@ -408,7 +495,7 @@ class scrump:
 
         p : float, default 2.0
             The p-norm to apply for computing the Minkowski distance. This parameter is
-            ignored when `normalize == False`.
+            ignored when `normalize == True`.
         """
         self._ignore_trivial = ignore_trivial
 

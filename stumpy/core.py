@@ -7,9 +7,9 @@ import functools
 import inspect
 
 import numpy as np
-from numba import njit, prange
+from numba import njit
 from scipy.signal import convolve
-from scipy.ndimage.filters import maximum_filter1d, minimum_filter1d
+from scipy.ndimage import maximum_filter1d, minimum_filter1d
 from scipy import linalg
 from scipy.spatial.distance import cdist
 import tempfile
@@ -81,17 +81,17 @@ def non_normalized(non_norm, exclude=None, replace=None):
     parameters when necessary.
 
     ```
-    def non_norm_func(Q, T, A):
+    def non_norm_func(Q, T, A_non_norm):
         ...
         return
 
 
     @non_normalized(
         non_norm_func,
-        exclude=["normalize", "A", "B"],
-        replace={"A": None},
+        exclude=["normalize", "p", "A_norm", "A_non_norm"],
+        replace={"A_norm": "A_non_norm", "other_norm": None},
     )
-    def norm_func(Q, T, B=None, normalize=True):
+    def norm_func(Q, T, A_norm=None, other_norm=None, normalize=True, p=2.0):
         ...
         return
     ```
@@ -104,13 +104,16 @@ def non_normalized(non_norm, exclude=None, replace=None):
 
     exclude : list, default None
         A list of function (or class) parameter names to exclude when comparing the
-        function (or class) signatures
+        function (or class) signatures. When `exlcude is None`, this parameter is
+        automatically set to `exclude = ["normalize", "p"]` by default.
 
     replace : dict, default None
         A dictionary of function (or class) parameter key-value pairs. Each key that
         is found as a parameter name in the `norm` function (or class) will be replaced
         by its corresponding or complementary parameter name in the `non_norm` function
-        (or class).
+        (or class) (e.g., {"norm_param": "non_norm_param"}). To remove any parameter in
+        the `norm` function (or class) that does not exist in the `non_norm` function,
+        simply set the value to `None` (i.e., {"norm_param": None}).
 
     Returns
     -------
@@ -193,6 +196,13 @@ def _gpu_aampdist_driver_not_found(*args, **kwargs):  # pragma: no cover
 
 
 def _gpu_stimp_driver_not_found(*args, **kwargs):  # pragma: no cover
+    """
+    Dummy function to raise CudaSupportError driver not found error.
+    """
+    driver_not_found()
+
+
+def _gpu_aamp_stimp_driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Dummy function to raise CudaSupportError driver not found error.
     """
@@ -448,6 +458,33 @@ def check_window_size(m, max_size=None):
 
     if max_size is not None and m > max_size:
         raise ValueError(f"The window size must be less than or equal to {max_size}")
+
+
+@njit(fastmath=True)
+def _sliding_dot_product(Q, T):
+    """
+    A Numba JIT-compiled implementation of the sliding window dot product.
+
+    Parameters
+    ----------
+    Q : numpy.ndarray
+        Query array or subsequence
+
+    T : numpy.ndarray
+        Time series or sequence
+
+    Returns
+    -------
+    out : numpy.ndarray
+        Sliding dot product between `Q` and `T`.
+    """
+    m = Q.shape[0]
+    k = T.shape[0] - m + 1
+    out = np.empty(k)
+    for i in range(k):
+        out[i] = np.dot(Q, T[i : i + m])
+
+    return out
 
 
 def sliding_dot_product(Q, T):
@@ -902,7 +939,6 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    parallel=True,
     fastmath=True,
 )
 def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
@@ -944,7 +980,7 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     k = M_T.shape[0]
     D_squared = np.empty(k, dtype=np.float64)
 
-    for i in prange(k):
+    for i in range(k):
         D_squared[i] = _calculate_squared_distance(m, QT[i], μ_Q, σ_Q, M_T[i], Σ_T[i])
 
     return D_squared
@@ -952,7 +988,6 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    parallel=True,
     fastmath=True,
 )
 def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
@@ -994,6 +1029,50 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     D_squared = _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
 
     return np.sqrt(D_squared)
+
+
+@njit(fastmath=True)
+def _p_norm_distance_profile(Q, T, p=2.0):
+    """
+    A Numba JIT-compiled and parallelized function for computing the p-normalized
+    distance profile
+
+    Parameters
+    ----------
+    Q : numpy.ndarray
+        Query array or subsequence
+
+    T : numpy.ndarray
+        Time series or sequence
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
+    Returns
+    -------
+    output : numpy.ndarray
+        p-normalized distance profile between `Q` and `T`
+    """
+    m = Q.shape[0]
+    k = T.shape[0] - m + 1
+    p_norm_profile = np.empty(k, dtype=np.float64)
+
+    if p == 2.0:
+        Q_squared = np.sum(Q * Q)
+        T_squared = np.empty(k, dtype=np.float64)
+        T_squared[0] = np.sum(T[:m] * T[:m])
+        for i in range(1, k):
+            T_squared[i] = (
+                T_squared[i - 1] - T[i - 1] * T[i - 1] + T[i + m - 1] * T[i + m - 1]
+            )
+        QT = _sliding_dot_product(Q, T)
+        for i in range(k):
+            p_norm_profile[i] = Q_squared + T_squared[i] - 2.0 * QT[i]
+    else:
+        for i in range(k):
+            p_norm_profile[i] = np.sum(np.power(np.abs(Q - T[i : i + m]), p))
+
+    return p_norm_profile
 
 
 def _mass_absolute(Q, T, p=2.0):
@@ -1286,7 +1365,7 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True, p=2.0):
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == False`.
+        ignored when `normalize == True`.
 
     Returns
     -------
@@ -1358,7 +1437,7 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True, p=2.0):
     return distance_profile
 
 
-def _mass_distance_matrix(Q, T, m, distance_matrix):
+def _mass_distance_matrix(Q, T, m, distance_matrix, μ_Q, σ_Q, M_T, Σ_T):
     """
     Compute the full distance matrix between all of the subsequences of `Q` and `T`
     using the MASS algorithm
@@ -1377,15 +1456,67 @@ def _mass_distance_matrix(Q, T, m, distance_matrix):
     distance_matrix : numpy.ndarray
         The full output distance matrix. This is mandatory since it may be reused.
 
+    μ_Q : float
+        Mean of `Q`
+
+    σ_Q : float
+        Standard deviation of `Q`
+
+    M_T : numpy.ndarray
+        Sliding mean of `T`
+
+    Σ_T : numpy.ndarray
+        Sliding standard deviation of `T`
+
     Returns
     -------
         None
     """
-    k, l = distance_matrix.shape
-    T, M_T, Σ_T = preprocess(T, m)
+    for i in range(distance_matrix.shape[0]):
+        if np.any(~np.isfinite(Q[i : i + m])):  # pragma: no cover
+            distance_matrix[i, :] = np.inf
+        else:
+            QT = _sliding_dot_product(Q[i : i + m], T)
+            distance_matrix[i, :] = _mass(Q[i : i + m], T, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
 
-    for i in range(k):
-        distance_matrix[i, :] = mass(Q[i : i + m], T, M_T, Σ_T)
+
+def mass_distance_matrix(Q, T, m, distance_matrix, M_T=None, Σ_T=None):
+    """
+    Compute the full distance matrix between all of the subsequences of `Q` and `T`
+    using the MASS algorithm
+
+    Parameters
+    ----------
+    Q : numpy.ndarray
+        Query array
+
+    T : numpy.ndarray
+        Time series or sequence
+
+    m : int
+        Window size
+
+    distance_matrix : numpy.ndarray
+        The full output distance matrix. This is mandatory since it may be reused.
+
+    M_T : numpy.ndarray, default None
+        Sliding mean of `T`
+
+    Σ_T : numpy.ndarray, default None
+        Sliding standard deviation of `T`
+
+    Returns
+    -------
+        None
+    """
+    Q, μ_Q, σ_Q = preprocess(Q, m)
+
+    if M_T is None or Σ_T is None:
+        T, M_T, Σ_T = preprocess(T, m)
+
+    check_window_size(m, max_size=min(Q.shape[-1], T.shape[-1]))
+
+    return _mass_distance_matrix(Q, T, m, distance_matrix, μ_Q, σ_Q, M_T, Σ_T)
 
 
 def _get_QT(start, T_A, T_B, m):
@@ -1678,7 +1809,6 @@ def array_to_temp_file(a):
 
 @njit(
     # "i8[:](i8[:], i8, i8, i8)",
-    parallel=True,
     fastmath=True,
 )
 def _count_diagonal_ndist(diags, m, n_A, n_B):
@@ -1706,7 +1836,7 @@ def _count_diagonal_ndist(diags, m, n_A, n_B):
         Counts of distances computed along each diagonal of interest
     """
     diag_ndist_counts = np.zeros(diags.shape[0], dtype=np.int64)
-    for diag_idx in prange(diags.shape[0]):
+    for diag_idx in range(diags.shape[0]):
         k = diags[diag_idx]
         if k >= 0:
             diag_ndist_counts[diag_idx] = min(n_B - m + 1 - k, n_A - m + 1)
@@ -1760,6 +1890,58 @@ def _get_array_ranges(a, n_chunks, truncate):
             array_ranges[row_truncation_idx - 1 :, 1] = a.shape[0]
             if truncate:
                 array_ranges = array_ranges[:row_truncation_idx]
+
+    return array_ranges
+
+
+@njit(
+    # "i8[:, :](i8, i8, b1)"
+)
+def _get_ranges(size, n_chunks, truncate):
+    """
+    Given a single input integer value, split an array of that length `size` evenly into
+    `n_chunks`.
+
+    This function is different from `_get_array_ranges` in that it does not take into
+    account the contents of the array and, instead, assumes that we are chunking up
+    `np.ones(size, dtype=np.int64)`. Additionally, the non-truncated sections may not
+    all appear at the end of the returned away (i.e., they may be scattered throughout
+    different rows of the array) but may be identified as having the same start and
+    stop indices.
+
+    Parameters
+    ----------
+    size : int
+        The size or length of an array to chunk
+
+    n_chunks : int
+        Number of chunks to split the array into
+
+    truncate : bool
+        If `truncate=True`, truncate the rows of `array_ranges` if there are not enough
+        elements in `a` to be chunked up into `n_chunks`.  Otherwise, if
+        `truncate=False`, all extra chunks will have their start and stop indices set
+        to `a.shape[0]`.
+
+    Returns
+    -------
+    array_ranges : numpy.ndarray
+        A two column array where each row consists of a start and (exclusive) stop index
+        pair. The first column contains the start indices and the second column
+        contains the stop indices.
+    """
+    a = np.ones(size, dtype=np.int64)
+    array_ranges = np.zeros((n_chunks, 2), dtype=np.int64)
+    if a.shape[0] > 0 and n_chunks > 0:
+        cumsum = a.cumsum()
+        insert = np.linspace(0, a.sum(), n_chunks + 1)[1:-1]
+        idx = 1 + np.searchsorted(cumsum, insert)
+        array_ranges[1:, 0] = idx  # Fill the first column with start indices
+        array_ranges[:-1, 1] = idx  # Fill the second column with exclusive stop indices
+        array_ranges[-1, 1] = a.shape[0]  # Handle the stop index for the final chunk
+
+    if truncate:
+        array_ranges = array_ranges[array_ranges[:, 0] != array_ranges[:, 1]]
 
     return array_ranges
 
@@ -1971,3 +2153,344 @@ def _idx_to_mp(I, T, m, normalize=True):
     P[I < 0] = np.inf
 
     return P
+
+
+@njit(fastmath=True)
+def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_width):
+    """
+    Count the total number of distances covered by a range of diagonals
+
+    Parameters
+    ----------
+    tile_lower_diag : int
+        The (inclusive) lower diagonal index
+
+    tile_upper_diag : int
+        The (exclusive) upper diagonal index
+
+    tile_height : int
+        The height of the tile
+
+    tile_width : int
+        The width of the tile
+
+    Returns
+    -------
+    out : int
+        The total number of distances
+
+    Notes
+    -----
+    This function essentially uses the "shoelace formula" to determine the area
+    of a simple polygon whose vertices are described by their Cartesian coordinates
+    in a plane.
+    """
+    if tile_width < tile_height:
+        # Transpose inputs, adjust for inclusive/exclusive diags
+        tile_width, tile_height = tile_height, tile_width
+        tile_lower_diag, tile_upper_diag = 1 - tile_upper_diag, 1 - tile_lower_diag
+
+    if tile_lower_diag > tile_upper_diag:  # pragma: no cover
+        # Swap diags
+        tile_lower_diag, tile_upper_diag = tile_upper_diag, tile_lower_diag
+
+    min_tile_diag = 1 - tile_height
+    max_tile_diag = tile_width  # Exclusive
+
+    if (
+        tile_lower_diag < min_tile_diag
+        or tile_upper_diag < min_tile_diag
+        or tile_lower_diag > max_tile_diag
+        or tile_upper_diag > max_tile_diag
+    ):
+
+        return 0
+
+    if tile_lower_diag == min_tile_diag and tile_upper_diag == max_tile_diag:
+        return tile_height * tile_width
+
+    # Determine polygon shape and establish vertices
+    if tile_lower_diag <= 0 and tile_upper_diag <= 0:
+        # lower trapezoid/triangle
+        lower_ndists = tile_height + tile_lower_diag
+        upper_ndists = tile_height + tile_upper_diag
+        vertices = np.array(
+            [
+                [tile_lower_diag, 0],
+                [tile_upper_diag, 0],
+                [-tile_height, upper_ndists],
+                [-tile_height, lower_ndists],
+            ]
+        )
+    elif tile_lower_diag <= 0 and 0 < tile_upper_diag <= tile_width - tile_height:
+        # irregular hexagon/diamond
+        lower_ndists = tile_height + tile_lower_diag
+        upper_ndists = min(tile_height, tile_width - tile_upper_diag)
+        vertices = np.array(
+            [
+                [tile_lower_diag, 0],
+                [0, 0],
+                [0, tile_upper_diag],
+                [-upper_ndists, tile_upper_diag + upper_ndists],
+                [-tile_height, lower_ndists],
+            ]
+        )
+    elif tile_lower_diag <= 0 and tile_upper_diag >= tile_width - tile_height:
+        # irregular hexagon/diamond
+        lower_ndists = tile_height + tile_lower_diag
+        upper_ndists = min(tile_height, tile_width - tile_upper_diag)
+        vertices = np.array(
+            [
+                [tile_lower_diag, 0],
+                [0, 0],
+                [0, tile_upper_diag],
+                [-upper_ndists, tile_upper_diag + upper_ndists],
+                [-tile_height, tile_width],
+                [-tile_height, lower_ndists],
+            ]
+        )
+    elif (
+        0 < tile_lower_diag <= tile_width - tile_height
+        and 0 < tile_upper_diag <= tile_width - tile_height
+    ):
+        # parallelogram
+        lower_ndists = min(tile_height, tile_width - tile_lower_diag)
+        upper_ndists = min(tile_height, tile_width - tile_upper_diag)
+        vertices = np.array(
+            [
+                [0, tile_lower_diag],
+                [0, tile_upper_diag],
+                [-upper_ndists, tile_upper_diag + upper_ndists],
+                [-tile_height, tile_lower_diag + lower_ndists],
+            ]
+        )
+    elif (
+        0 < tile_lower_diag <= tile_width - tile_height
+        and tile_upper_diag > tile_width - tile_height
+    ):
+        # upper diamond
+        lower_ndists = min(tile_height, tile_width - tile_lower_diag)
+        upper_ndists = tile_width - tile_upper_diag
+        vertices = np.array(
+            [
+                [0, tile_lower_diag],
+                [0, tile_upper_diag],
+                [-upper_ndists, tile_upper_diag + upper_ndists],
+                [-tile_height, tile_width],
+                [-tile_height, tile_lower_diag + lower_ndists],
+            ]
+        )
+    else:
+        # tile_lower_diag > tile_width - tile_height and
+        # tile_upper_diag > tile_width - tile_height
+        # upper trapezoid
+        lower_ndists = tile_width - tile_lower_diag
+        upper_ndists = tile_width - tile_upper_diag
+        vertices = np.array(
+            [
+                [0, tile_lower_diag],
+                [0, tile_upper_diag],
+                [-upper_ndists, tile_upper_diag + upper_ndists],
+                [-lower_ndists, tile_width],
+            ]
+        )
+
+    # Shoelace formula
+    i = np.arange(vertices.shape[0])
+    total_diagonal_ndists = np.abs(
+        np.sum(
+            vertices[i, 0] * vertices[i - 1, 1] - vertices[i, 1] * vertices[i - 1, 0]
+        )
+        / 2
+    )
+    # Account for over/under-counting due to jagged upper/lower diagonal shapes
+    total_diagonal_ndists += lower_ndists / 2 - upper_ndists / 2
+
+    return int(total_diagonal_ndists)
+
+
+def _bfs_indices(n):
+    """
+    Generate the level order indices from the implicit construction of a binary
+    search tree followed by a breadth first (level order) search.
+
+    Example:
+
+    If `n = 10` then the corresponding (zero-based index) balanced binary tree is:
+
+                5
+               * *
+              *   *
+             *     *
+            *       *
+           *         *
+          2           8
+         * *         * *
+        *   *       *   *
+       *     *     *     *
+      1       4   7       9
+     * *     *
+    0   3   6
+
+    And if we traverse the nodes at each level from left to right then the breadth
+    first search indices would be `[5, 2, 8, 1, 4, 7, 9, 0, 3, 6]`. In this function,
+    we avoid/skip the explicit construction of the binary tree and directly output
+    the desired indices efficiently.
+
+    Parameters
+    ----------
+    n : int
+        The number indices to generate the ordered indices for
+
+    Returns
+    -------
+    level_idx : numpy.ndarray
+        The breadth first search (level order) indices
+    """
+    if n == 1:  # pragma: no cover
+        return np.array([0], dtype=np.int64)
+
+    nlevel = np.floor(np.log2(n) + 1).astype(np.int64)
+    nindices = np.power(2, np.arange(nlevel))
+    cumsum_nindices = np.cumsum(nindices)
+    nindices[-1] = n - cumsum_nindices[np.searchsorted(cumsum_nindices, n) - 1]
+
+    indices = np.empty((2, nindices.max()), dtype=np.int64)
+    indices[0, 0] = 0
+    indices[1, 0] = n
+    tmp_indices = np.empty((2, 2 * nindices.max()), dtype=np.int64)
+
+    out = np.empty(n, dtype=np.int64)
+    out_idx = 0
+
+    for nidx in nindices:
+        level_indices = (indices[0, :nidx] + indices[1, :nidx]) // 2
+
+        if out_idx + len(level_indices) < n:
+            tmp_indices[0, 0 : 2 * nidx : 2] = indices[0, :nidx]
+            tmp_indices[0, 1 : 2 * nidx : 2] = level_indices + 1
+            tmp_indices[1, 0 : 2 * nidx : 2] = level_indices
+            tmp_indices[1, 1 : 2 * nidx : 2] = indices[1, :nidx]
+
+            mask = tmp_indices[0, : 2 * nidx] < tmp_indices[1, : 2 * nidx]
+            mask_sum = np.count_nonzero(mask)
+            indices[0, :mask_sum] = tmp_indices[0, : 2 * nidx][mask]
+            indices[1, :mask_sum] = tmp_indices[1, : 2 * nidx][mask]
+
+        # for level_idx in level_indices:
+        #     yield level_idx
+
+        out[out_idx : out_idx + len(level_indices)] = level_indices
+        out_idx += len(level_indices)
+
+    return out
+
+
+def _contrast_pan(pan, threshold, bfs_indices, n_processed):
+    """
+    Center the pan matrix profile (inplace) around the desired distance threshold
+    in order to increase the contrast
+
+    Parameters
+    ----------
+    pan : numpy.ndarray
+        The pan matrix profile
+
+    threshold : float
+        The distance threshold value in which to center the pan matrix profile around
+
+    bfs_indices : numpy.ndarray
+        The breadth-first-search indices
+
+    n_processed : numpy.ndarray
+        The number of breadth-first-search indices to apply contrast to
+
+    Returns
+    -------
+    None
+    """
+    idx = bfs_indices[:n_processed]
+    l = n_processed * pan.shape[1]
+    tmp = pan[idx].argsort(kind="mergesort", axis=None)
+    ranks = np.empty(l, dtype=np.int64)
+    ranks[tmp] = np.arange(l).astype(np.int64)
+
+    percentile = np.full(ranks.shape, np.nan)
+    percentile[:l] = np.linspace(0, 1, l)
+    percentile = percentile[ranks].reshape(pan[idx].shape)
+    pan[idx] = 1.0 / (1.0 + np.exp(-10 * (percentile - threshold)))
+
+
+def _binarize_pan(pan, threshold, bfs_indices, n_processed):
+    """
+    Binarize the pan matrix profile (inplace) such all values below the `threshold`
+    are set to `0.0` and all values above the `threshold` are set to `1.0`.
+
+    Parameters
+    ----------
+    pan : numpy.ndarray
+        The pan matrix profile
+
+    threshold : float
+        The distance threshold value in which to center the pan matrix profile around
+
+    bfs_indices : numpy.ndarray
+        The breadth-first-search indices
+
+    n_processed : numpy.ndarray
+        The number of breadth-first-search indices to binarize
+
+    Returns
+    -------
+    None
+    """
+    idx = bfs_indices[:n_processed]
+    pan[idx] = np.where(pan[idx] <= threshold, 0.0, 1.0)
+
+
+def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
+    """
+    A convenience function for returning the `k`th smallest value from the `P_ABBA`
+    array or use a custom function to specify what `P_ABBA` value to return.
+
+    The MPdist distance measure considers two time series to be similar if they share
+    many subsequences, regardless of the order of matching subsequences. MPdist
+    concatenates the output of an AB-join and a BA-join and returns the `k`th smallest
+    value as the reported distance. Note that MPdist is a measure and not a metric.
+    Therefore, it does not obey the triangular inequality but the method is highly
+    scalable.
+
+    Parameters
+    ----------
+    P_ABBA : numpy.ndarray
+        An unsorted array resulting from the concatenation of the outputs from an
+        AB-joinand BA-join for two time series, `T_A` and `T_B`
+
+    k : int
+        Specify the `k`th value in the concatenated matrix profiles to return. This
+        parameter is ignored when `k_func` is not None.
+
+    custom_func : object, default None
+        A custom user defined function for selecting the desired value from the
+        unsorted `P_ABBA` array. This function may need to leverage `functools.partial`
+        and should take `P_ABBA` as its only input parameter and return a single
+        `MPdist` value. The `percentage` and `k` parameters are ignored when
+        `custom_func` is not None.
+
+    Returns
+    -------
+    MPdist : float
+        The matrix profile distance
+    """
+    k = min(int(k), P_ABBA.shape[0] - 1)
+    if custom_func is not None:
+        MPdist = custom_func(P_ABBA)
+    else:
+        partition = np.partition(P_ABBA, k)
+        MPdist = partition[k]
+        if ~np.isfinite(MPdist):
+            partition[:k].sort()
+            k = max(0, np.count_nonzero(np.isfinite(partition[:k])) - 1)
+            MPdist = partition[k]
+
+    return MPdist

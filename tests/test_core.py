@@ -18,24 +18,6 @@ def naive_rolling_window_dot_product(Q, T):
     return result
 
 
-def naive_compute_mean_std(T, m):
-    n = T.shape[0]
-
-    M_T = np.zeros(n - m + 1, dtype=float)
-    Σ_T = np.zeros(n - m + 1, dtype=float)
-
-    for i in range(n - m + 1):
-        Q = T[i : i + m].copy()
-        Q[np.isinf(Q)] = np.nan
-
-        M_T[i] = np.mean(Q)
-        Σ_T[i] = np.nanstd(Q)
-
-    M_T[np.isnan(M_T)] = np.inf
-    Σ_T[np.isnan(Σ_T)] = 0
-    return M_T, Σ_T
-
-
 def naive_compute_mean_std_multidimensional(T, m):
     n = T.shape[1]
     nrows, ncols = T.shape
@@ -78,6 +60,28 @@ def naive_idx_to_mp(I, T, m, normalize=True):
     return P
 
 
+def split(node, out):
+    mid = len(node) // 2
+    out.append(node[mid])
+    return node[:mid], node[mid + 1 :]
+
+
+def naive_bsf_indices(n):
+    a = np.arange(n)
+    nodes = [a.tolist()]
+    out = []
+
+    while nodes:
+        tmp = []
+        for node in nodes:
+            for n in split(node, out):
+                if n:
+                    tmp.append(n)
+        nodes = tmp
+
+    return np.array(out)
+
+
 test_data = [
     (np.array([-1, 1, 2], dtype=np.float64), np.array(range(5), dtype=np.float64)),
     (
@@ -86,6 +90,8 @@ test_data = [
     ),
     (np.random.uniform(-1000, 1000, [8]), np.random.uniform(-1000, 1000, [64])),
 ]
+
+n = [9, 10, 16]
 
 
 def test_check_bad_dtype():
@@ -124,6 +130,13 @@ def test_check_max_window_size():
     for m in range(4, 7):
         with pytest.raises(ValueError):
             core.check_window_size(m, max_size=3)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_njit_sliding_dot_product(Q, T):
+    ref_mp = naive_rolling_window_dot_product(Q, T)
+    comp_mp = core._sliding_dot_product(Q, T)
+    npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("Q, T", test_data)
@@ -237,8 +250,8 @@ def test_rolling_nanmax():
 def test_compute_mean_std(Q, T):
     m = Q.shape[0]
 
-    ref_μ_Q, ref_σ_Q = naive_compute_mean_std(Q, m)
-    ref_M_T, ref_Σ_T = naive_compute_mean_std(T, m)
+    ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
+    ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
     comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
     comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
 
@@ -253,8 +266,8 @@ def test_compute_mean_std_chunked(Q, T):
     m = Q.shape[0]
 
     config.STUMPY_MEAN_STD_NUM_CHUNKS = 2
-    ref_μ_Q, ref_σ_Q = naive_compute_mean_std(Q, m)
-    ref_M_T, ref_Σ_T = naive_compute_mean_std(T, m)
+    ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
+    ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
     comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
     comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
     config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
@@ -270,8 +283,8 @@ def test_compute_mean_std_chunked_many(Q, T):
     m = Q.shape[0]
 
     config.STUMPY_MEAN_STD_NUM_CHUNKS = 128
-    ref_μ_Q, ref_σ_Q = naive_compute_mean_std(Q, m)
-    ref_M_T, ref_Σ_T = naive_compute_mean_std(T, m)
+    ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
+    ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
     comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
     comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
     config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
@@ -460,6 +473,23 @@ def test_mass_T_inf(Q, T):
 
 
 @pytest.mark.parametrize("Q, T", test_data)
+def test_p_norm_distance_profile(Q, T):
+    Q = Q.copy()
+    T = T.copy()
+    m = Q.shape[0]
+    for p in [1.0, 1.5, 2.0]:
+        ref = cdist(
+            core.rolling_window(Q, m),
+            core.rolling_window(T, m),
+            metric="minkowski",
+            p=p,
+        ).flatten()
+        ref = np.power(ref, p)
+        cmp = core._p_norm_distance_profile(Q, T, p)
+        npt.assert_almost_equal(ref, cmp)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
 def test_mass_asbolute(Q, T):
     Q = Q.copy()
     T = T.copy()
@@ -594,7 +624,7 @@ def test_mass_distance_matrix(T_A, T_B):
     k = T_A.shape[0] - m + 1
     l = T_B.shape[0] - m + 1
     comp_distance_matrix = np.full((k, l), np.inf)
-    core._mass_distance_matrix(T_A, T_B, m, comp_distance_matrix)
+    core.mass_distance_matrix(T_A, T_B, m, comp_distance_matrix)
 
     npt.assert_almost_equal(ref_distance_matrix, comp_distance_matrix)
 
@@ -694,7 +724,7 @@ def test_preprocess():
     m = 3
 
     ref_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
-    ref_M, ref_Σ = naive_compute_mean_std(T, m)
+    ref_M, ref_Σ = naive.compute_mean_std(T, m)
 
     comp_T, comp_M, comp_Σ = core.preprocess(T, m)
 
@@ -738,9 +768,9 @@ def test_preprocess_diagonal():
     m = 3
 
     ref_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
-    ref_M, ref_Σ = naive_compute_mean_std(ref_T, m)
+    ref_M, ref_Σ = naive.compute_mean_std(ref_T, m)
     ref_Σ_inverse = 1.0 / ref_Σ
-    ref_M_m_1, _ = naive_compute_mean_std(ref_T, m - 1)
+    ref_M_m_1, _ = naive.compute_mean_std(ref_T, m - 1)
 
     (
         comp_T,
@@ -811,8 +841,8 @@ def test_get_array_ranges():
     for n_chunks in range(2, 5):
         ref = naive.get_array_ranges(x, n_chunks, False)
 
-        comp = core._get_array_ranges(x, n_chunks, False)
-        npt.assert_almost_equal(ref, comp)
+        cmp = core._get_array_ranges(x, n_chunks, False)
+        npt.assert_almost_equal(ref, cmp)
 
 
 def test_get_array_ranges_exhausted():
@@ -821,8 +851,8 @@ def test_get_array_ranges_exhausted():
 
     ref = naive.get_array_ranges(x, n_chunks, False)
 
-    comp = core._get_array_ranges(x, n_chunks, False)
-    npt.assert_almost_equal(ref, comp)
+    cmp = core._get_array_ranges(x, n_chunks, False)
+    npt.assert_almost_equal(ref, cmp)
 
 
 def test_get_array_ranges_exhausted_truncated():
@@ -831,8 +861,8 @@ def test_get_array_ranges_exhausted_truncated():
 
     ref = naive.get_array_ranges(x, n_chunks, True)
 
-    comp = core._get_array_ranges(x, n_chunks, True)
-    npt.assert_almost_equal(ref, comp)
+    cmp = core._get_array_ranges(x, n_chunks, True)
+    npt.assert_almost_equal(ref, cmp)
 
 
 def test_get_array_ranges_empty_array():
@@ -841,8 +871,40 @@ def test_get_array_ranges_empty_array():
 
     ref = naive.get_array_ranges(x, n_chunks, False)
 
-    comp = core._get_array_ranges(x, n_chunks, False)
-    npt.assert_almost_equal(ref, comp)
+    cmp = core._get_array_ranges(x, n_chunks, False)
+    npt.assert_almost_equal(ref, cmp)
+
+
+def test_get_ranges():
+    ref = np.array([[0, 3], [3, 6]])
+    size = 6
+    n_chunks = 2
+    cmp = core._get_ranges(size, n_chunks, False)
+    npt.assert_almost_equal(ref, cmp)
+
+
+def test_get_ranges_exhausted():
+    ref = np.array([[0, 1], [1, 2], [2, 3], [3, 3], [3, 4], [4, 5], [5, 6], [6, 6]])
+    size = 6
+    n_chunks = 8
+    cmp = core._get_ranges(size, n_chunks, False)
+    npt.assert_almost_equal(ref, cmp)
+
+
+def test_get_ranges_exhausted_truncated():
+    ref = np.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6]])
+    size = 6
+    n_chunks = 8
+    cmp = core._get_ranges(size, n_chunks, True)
+    npt.assert_almost_equal(ref, cmp)
+
+
+def test_get_ranges_zero_size():
+    ref = np.empty((0, 2))
+    size = 0
+    n_chunks = 8
+    cmp = core._get_ranges(size, n_chunks, True)
+    npt.assert_almost_equal(ref, cmp)
 
 
 def test_rolling_isfinite():
@@ -924,3 +986,45 @@ def test_idx_to_mp():
     ref_mp = naive_idx_to_mp(I, T, m, normalize=False)
     cmp_mp = core._idx_to_mp(I, T, m, normalize=False)
     npt.assert_almost_equal(ref_mp, cmp_mp)
+
+
+def test_total_diagonal_ndists():
+    tile_height = 9
+    tile_width = 11
+    for tile_lower_diag in range(-tile_height - 2, tile_width + 2):
+        for tile_upper_diag in range(tile_lower_diag, tile_width + 2):
+            assert naive._total_diagonal_ndists(
+                tile_lower_diag, tile_upper_diag, tile_height, tile_width
+            ) == core._total_diagonal_ndists(
+                tile_lower_diag, tile_upper_diag, tile_height, tile_width
+            )
+
+    tile_height = 11
+    tile_width = 9
+    for tile_lower_diag in range(-tile_height - 2, tile_width + 2):
+        for tile_upper_diag in range(tile_lower_diag, tile_width + 2):
+            assert naive._total_diagonal_ndists(
+                tile_lower_diag, tile_upper_diag, tile_height, tile_width
+            ) == core._total_diagonal_ndists(
+                tile_lower_diag, tile_upper_diag, tile_height, tile_width
+            )
+
+
+@pytest.mark.parametrize("n", n)
+def test_bsf_indices(n):
+    ref_bsf_indices = naive_bsf_indices(n)
+    cmp_bsf_indices = np.array(list(core._bfs_indices(n)))
+
+    npt.assert_almost_equal(ref_bsf_indices, cmp_bsf_indices)
+
+
+def test_select_P_ABBA_val_inf():
+    P_ABBA = np.random.rand(10)
+    k = 2
+    P_ABBA[k:] = np.inf
+    p_abba = P_ABBA.copy()
+
+    comp = core._select_P_ABBA_value(P_ABBA, k=k)
+    p_abba.sort()
+    ref = p_abba[k - 1]
+    npt.assert_almost_equal(ref, comp)
