@@ -179,6 +179,8 @@ def mmotifs(
         if (
             motif_value > cutoffs[k]
             or not np.isfinite(motif_value)
+            or motif_idx < 0
+            or nn_idx[k] < 0
             or (isinstance(max_distance, float) and motif_value > max_distance)
         ):  # pragma: no cover
             break
