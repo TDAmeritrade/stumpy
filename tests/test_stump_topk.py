@@ -28,9 +28,10 @@ def test_stump_int_input():
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_self_join(T_A, T_B):
+    k = 3
     m = 3
     zone = int(np.ceil(m / 4))
-    ref_mp = naive.stump(T_B, m, exclusion_zone=zone)
+    ref_mp = naive.stump_topk(T_B, m, exclusion_zone=zone, k=k)
     comp_mp = stump(T_B, m, ignore_trivial=True)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -43,8 +44,9 @@ def test_stump_self_join(T_A, T_B):
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_A_B_join(T_A, T_B):
+    k = 3
     m = 3
-    ref_mp = naive.stump(T_A, m, T_B=T_B)
+    ref_mp = naive.stump_topk(T_A, m, T_B=T_B, k=k)
     comp_mp = stump(T_A, m, T_B, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -57,9 +59,10 @@ def test_stump_A_B_join(T_A, T_B):
 
 def test_stump_constant_subsequence_self_join():
     T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
+    k = 3
     m = 3
     zone = int(np.ceil(m / 4))
-    ref_mp = naive.stump(T_A, m, exclusion_zone=zone)
+    ref_mp = naive.stump_topk(T_A, m, exclusion_zone=zone, k=k)
     comp_mp = stump(T_A, m, ignore_trivial=True)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
