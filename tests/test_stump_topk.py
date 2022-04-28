@@ -28,10 +28,9 @@ def test_stump_int_input():
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_self_join_1NN(T_A, T_B):
-    k = 1
     m = 3
     zone = int(np.ceil(m / 4))
-    ref_mp = naive.stump_topk(T_B, m, exclusion_zone=zone, k=k)
+    ref_mp = naive.stump_topk(T_B, m, exclusion_zone=zone, k=1)
     comp_mp = stump(T_B, m, ignore_trivial=True)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
