@@ -1716,3 +1716,74 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
         )
 
     return total_ndists
+
+
+def stump_topk(T_A, m, T_B=None, exclusion_zone=None, k=1):
+    """
+    Traverse distance matrix along the diagonals and update the top-k
+    nearest neigbors matrix profile and matrix profile indices
+    """
+    if T_B is None:  # self-join:
+        ignore_trivial = True
+        distance_matrix = np.array(
+            [distance_profile(Q, T_A, m) for Q in core.rolling_window(T_A, m)]
+        )
+        T_B = T_A.copy()
+    else:
+        ignore_trivial = False
+        distance_matrix = np.array(
+            [distance_profile(Q, T_B, m) for Q in core.rolling_window(T_A, m)]
+        )
+
+    distance_matrix[np.isnan(distance_matrix)] = np.inf
+
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_A - m + 1
+    if exclusion_zone is None:
+        exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+    if ignore_trivial:
+        diags = np.arange(exclusion_zone + 1, n_A - m + 1)
+    else:
+        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
+
+    # the last two columns in P and I are to keep track of right and left mp for 1NN
+    P = np.full((l, k + 2), np.inf)
+    I = np.full((l, k + 2), -1, dtype=np.int64)
+
+    for g in diags:
+        if g >= 0:
+            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - g))
+        else:
+            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - g))
+
+        for i in iter_range:
+            D = distance_matrix[i, i + g]
+            if D < P[i, k - 1]:
+                idx = np.searchsorted(P[i, :k], D, side='right')
+                P[i, :k] = np.insert(P[i, :k], idx, D)[:-1]
+                I[i, :k] = np.insert(I[i, :k], idx, i + g)[:-1]
+
+            if ignore_trivial:  # Self-joins only
+                if D < P[i + g, k - 1]:
+                    idx = np.searchsorted(P[i + g, :k], D, side='right')
+                    P[i + g, :k] = np.insert(P[i + g, :k], idx, D)[:-1]
+                    I[i + g, :k] = np.insert(I[i + g, :k], idx, i)[:-1]
+
+                if i < i + g:
+                    # Left matrix profile and left matrix profile index
+                    if D < P[i + g, k]:
+                        P[i + g, k] = D
+                        I[i + g, k] = i
+
+                    if D < P[i, k + 1]:
+                        # right matrix profile and right matrix profile index
+                        P[i, k + 1] = D
+                        I[i, k + 1] = i + g
+
+    result = np.empty((l, 2 * k + 2), dtype=object)
+    result[:, :k] = P[:, :k]
+    result[:, k:] = I[:, :]
+
+    return result
