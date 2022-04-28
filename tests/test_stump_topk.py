@@ -41,6 +41,7 @@ def test_stump_self_join_1NN(T_A, T_B):
     npt.assert_almost_equal(ref_mp, comp_mp)
 
 
+@pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_self_join_KNN(T_A, T_B):
     k = 3
     m = 3
