@@ -1756,11 +1756,11 @@ def stump_topk(T_A, m, T_B=None, exclusion_zone=None, k=1):
         if g >= 0:
             iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - g))
         else:
-            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - g))
+            iter_range = range(-g, min(n_A - m + 1, n_B - m + 1 - g))
 
         for i in iter_range:
             D = distance_matrix[i, i + g]
-            if D < P[i, k - 1]:
+            if D < P[i, k - 1]: #less than k-th smallest value of T[i:i+m]
                 idx = np.searchsorted(P[i, :k], D, side='right')
                 P[i, :k] = np.insert(P[i, :k], idx, D)[:-1]
                 I[i, :k] = np.insert(I[i, :k], idx, i + g)[:-1]
