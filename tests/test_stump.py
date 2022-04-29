@@ -240,3 +240,19 @@ def test_stump_nan_zero_mean_self_join():
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
     npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stump_self_join_KNN(T_A, T_B):
+    k = 2
+    m = 3
+    zone = int(np.ceil(m / 4))
+    ref_mp = naive.stump(T_B, m, exclusion_zone=zone, k=k)
+    comp_mp = stump(T_B, m, ignore_trivial=True)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
+
+    comp_mp = stump(pd.Series(T_B), m, ignore_trivial=True)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
