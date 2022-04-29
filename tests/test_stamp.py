@@ -26,7 +26,7 @@ def test_stamp_mass_PI(T_A, T_B):
     zone = int(np.ceil(m / 2))
     Q = T_B[trivial_idx : trivial_idx + m]
     M_T, Σ_T = core.compute_mean_std(T_B, m)
-    ref_P, ref_I, ref_left_I, ref_right_I = naive.mass(
+    ref_P, ref_I, ref_left_I, ref_right_I = naive.mass_PI(
         Q, T_B, m, trivial_idx=trivial_idx, excl_zone=zone, ignore_trivial=True
     )
     comp_P, comp_I = stamp._mass_PI(
