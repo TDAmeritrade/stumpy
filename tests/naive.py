@@ -156,7 +156,7 @@ def stamp(T_A, m, T_B=None, exclusion_zone=None):
     return result
 
 
-def stump(T_A, m, T_B=None, exclusion_zone=None):
+def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
     """
     Traverse distance matrix along the diagonals and update the matrix profile and
     matrix profile indices
@@ -181,45 +181,35 @@ def stump(T_A, m, T_B=None, exclusion_zone=None):
     if exclusion_zone is None:
         exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
+    is_included = np.ones_like(distance_matrix, dtype=bool)
     if ignore_trivial:
-        diags = np.arange(exclusion_zone + 1, n_A - m + 1)
-    else:
-        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
+        for i in range(l):
+            apply_exclusion_zone(is_included[i], i, exclusion_zone, False)
 
-    P = np.full((l, 3), np.inf)
-    I = np.full((l, 3), -1, dtype=np.int64)
+    P = np.full((l, k), np.inf)
+    I = np.full((l, k + 2), -1, dtype=np.int64)
 
-    for k in diags:
-        if k >= 0:
-            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - k))
-        else:
-            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
+    for i in range(l):
+        mask = is_included[i]
+        IDX = np.argsort(distance_matrix[i][mask])
+        nn_indices_sorted = np.flatnonzero(mask)[IDX]
 
-        for i in iter_range:
-            D = distance_matrix[i, i + k]
-            if D < P[i, 0]:
-                P[i, 0] = D
-                I[i, 0] = i + k
+        topk_indices = nn_indices_sorted[:k]
+        P[i, :k] = distance_matrix[i][topk_indices]
+        I[i, :k] = topk_indices
 
-            if ignore_trivial:  # Self-joins only
-                if D < P[i + k, 0]:
-                    P[i + k, 0] = D
-                    I[i + k, 0] = i
+        if ignore_trivial:
+            left_indices = nn_indices_sorted[nn_indices_sorted < i]
+            if len(left_indices) > 0:
+                I[i, k] = left_indices[0]
 
-                if i < i + k:
-                    # Left matrix profile and left matrix profile index
-                    if D < P[i + k, 1]:
-                        P[i + k, 1] = D
-                        I[i + k, 1] = i
+            right_indices = nn_indices_sorted[nn_indices_sorted > i]
+            if len(right_indices) > 0:
+                I[i, k + 1] = right_indices[0]
 
-                    if D < P[i, 2]:
-                        # right matrix profile and right matrix profile index
-                        P[i, 2] = D
-                        I[i, 2] = i + k
-
-    result = np.empty((l, 4), dtype=object)
-    result[:, 0] = P[:, 0]
-    result[:, 1:4] = I[:, :]
+    result = np.empty((l, 2 * k + 2), dtype=object)
+    result[:, :k] = P[:, :]
+    result[:, k:] = I[:, :]
 
     return result
 
