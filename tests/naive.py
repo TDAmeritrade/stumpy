@@ -94,7 +94,7 @@ def aamp_distance_matrix(T_A, T_B, m, p):
     return distance_matrix
 
 
-def mass(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
+def mass_PI(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     Q = np.asarray(Q)
     T = np.asarray(T)
 
@@ -143,14 +143,14 @@ def stamp(T_A, m, T_B=None, exclusion_zone=None):
     if T_B is None:  # self-join
         result = np.array(
             [
-                mass(Q, T_A, m, i, exclusion_zone, True)
+                mass_PI(Q, T_A, m, i, exclusion_zone, True)
                 for i, Q in enumerate(core.rolling_window(T_A, m))
             ],
             dtype=object,
         )
     else:
         result = np.array(
-            [mass(Q, T_B, m) for Q in core.rolling_window(T_A, m)],
+            [mass_PI(Q, T_B, m) for Q in core.rolling_window(T_A, m)],
             dtype=object,
         )
     return result
