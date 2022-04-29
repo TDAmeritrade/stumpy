@@ -185,9 +185,13 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
     if ignore_trivial:
         for i in range(l):
             apply_exclusion_zone(is_included[i], i, exclusion_zone, False)
+            # replacing values of distanc matrix to np.inf in excluion zone
+            # can cause problem later if there is nan/np.inf in data. So,
+            # it is better to use mask.
 
     P = np.full((l, k), np.inf)
-    I = np.full((l, k + 2), -1, dtype=np.int64)
+    I = np.full((l, k + 2), -1, dtype=np.int64) # two more columns in I are
+    # to store left and right matrix profile indices.
 
     for i in range(l):
         mask = is_included[i]
