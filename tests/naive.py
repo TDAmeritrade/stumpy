@@ -164,7 +164,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
     if exclusion_zone is None:
         exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    if T_B is None: # self-join:
+    if T_B is None:  # self-join:
         ignore_trivial = True
         distance_matrix = np.array(
             [distance_profile(Q, T_A, m) for Q in core.rolling_window(T_A, m)]
