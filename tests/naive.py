@@ -161,7 +161,10 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
     Traverse distance matrix in a row-wise manner and store topk nearest neighbor
     matrix profile and matrix profile indices
     """
-    if T_B is None:  # self-join:
+    if exclusion_zone is None:
+        exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+    if T_B is None: # self-join:
         ignore_trivial = True
         distance_matrix = np.array(
             [distance_profile(Q, T_A, m) for Q in core.rolling_window(T_A, m)]
@@ -175,12 +178,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
 
     distance_matrix[np.isnan(distance_matrix)] = np.inf
 
-    n_A = T_A.shape[0]
-    n_B = T_B.shape[0]
-    l = n_A - m + 1
-    if exclusion_zone is None:
-        exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-
+    l = T_A.shape[0] - m + 1
     if ignore_trivial:
         for i in range(l):
             apply_exclusion_zone(distance_matrix[i], i, exclusion_zone, np.inf)
