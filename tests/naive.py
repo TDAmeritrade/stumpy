@@ -193,7 +193,9 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
         indices = np.argsort(distance_matrix[i])
         topk_indices = indices[:k]
         P[i, :k] = distance_matrix[i][topk_indices]
-        I[i, :k] = np.where(distance_matrix[i][topk_indices] != np.inf, topk_indices, -1)
+        I[i, :k] = np.where(
+            distance_matrix[i][topk_indices] != np.inf, topk_indices, -1
+        )
 
         if ignore_trivial:
             IL = -1
