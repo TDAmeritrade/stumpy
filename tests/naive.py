@@ -158,8 +158,8 @@ def stamp(T_A, m, T_B=None, exclusion_zone=None):
 
 def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
     """
-    Traverse distance matrix along the diagonals and update the matrix profile and
-    matrix profile indices
+    Traverse distance matrix in a row-wise manner and store topk nearest neighbor
+    matrix profile and matrix profile indices
     """
     if T_B is None:  # self-join:
         ignore_trivial = True
@@ -181,35 +181,36 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
     if exclusion_zone is None:
         exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    is_included = np.ones_like(distance_matrix, dtype=bool)
     if ignore_trivial:
         for i in range(l):
-            apply_exclusion_zone(is_included[i], i, exclusion_zone, False)
-            # replacing values of distanc matrix to np.inf in excluion zone
-            # can cause problem later if there is nan/np.inf in data. So,
-            # it is better to use mask.
+            apply_exclusion_zone(distance_matrix[i], i, exclusion_zone, np.inf)
 
     P = np.full((l, k), np.inf)
-    I = np.full((l, k + 2), -1, dtype=np.int64) # two more columns in I are
+    I = np.full((l, k + 2), -1, dtype=np.int64)  # two more columns in I are
     # to store left and right matrix profile indices.
 
     for i in range(l):
-        mask = is_included[i]
-        IDX = np.argsort(distance_matrix[i][mask])
-        nn_indices_sorted = np.flatnonzero(mask)[IDX]
-
-        topk_indices = nn_indices_sorted[:k]
+        indices = np.argsort(distance_matrix[i])
+        topk_indices = indices[:k]
         P[i, :k] = distance_matrix[i][topk_indices]
-        I[i, :k] = topk_indices
+        I[i, :k] = np.where(distance_matrix[i][topk_indices] != np.inf, topk_indices, -1)
 
         if ignore_trivial:
-            left_indices = nn_indices_sorted[nn_indices_sorted < i]
+            IL = -1
+            left_indices = indices[indices < i]
             if len(left_indices) > 0:
-                I[i, k] = left_indices[0]
+                IL = left_indices[0]
+            if distance_matrix[i][IL] == np.inf:
+                IL = -1
+            I[i, k] = IL
 
-            right_indices = nn_indices_sorted[nn_indices_sorted > i]
+            IR = -1
+            right_indices = indices[indices > i]
             if len(right_indices) > 0:
-                I[i, k + 1] = right_indices[0]
+                IR = right_indices[0]
+            if distance_matrix[i][IR] == np.inf:
+                IR = -1
+            I[i, k + 1] = IR
 
     result = np.empty((l, 2 * k + 2), dtype=object)
     result[:, :k] = P[:, :]
