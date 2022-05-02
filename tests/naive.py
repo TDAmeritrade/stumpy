@@ -156,6 +156,14 @@ def stamp(T_A, m, T_B=None, exclusion_zone=None):
     return result
 
 
+def searchsorted(a, v):
+    indices = np.flatnonzero(v < a)
+    if len(indices):
+        return indices.min()
+    else:
+        return len(a)
+
+
 def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
     """
     Traverse distance matrix along the diagonals and update the top-k nearest
