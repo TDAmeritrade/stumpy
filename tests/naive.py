@@ -223,7 +223,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
                         P[i, k + 1] = D
                         I[i, k + 1] = i + g
 
-    result = np.empty((2 * k + 2, 4), dtype=object)
+    result = np.empty((l, 2 * k + 2), dtype=object)
     result[:, :k] = P[:, :k]
     result[:, k:] = I[:, :]
 
