@@ -200,7 +200,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
 
     P = np.full((l, k + 2), np.inf)
-    I = np.full((l, k + 2), -1, dtype=np.int64) # two more columns are to store
+    I = np.full((l, k + 2), -1, dtype=np.int64)  # two more columns are to store
     # ... left and right top-1 matrix profile indices.
 
     for g in diags:
@@ -211,14 +211,14 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
 
         for i in iter_range:
             D = distance_matrix[i, i + g]
-            if D < P[i, k-1]:
+            if D < P[i, k - 1]:
                 idx = searchsorted(P[i, :k], D)
                 # to keep the top-k, we need to the get rid of the last element.
                 P[i, :k] = np.insert(P[i, :k], idx, D)[:-1]
                 I[i, :k] = np.insert(I[i, :k], idx, i + g)[:-1]
 
             if ignore_trivial:  # Self-joins only
-                if D < P[i + g, k-1]:
+                if D < P[i + g, k - 1]:
                     idx = searchsorted(P[i + g, :k], D)
                     P[i + g, :k] = np.insert(P[i + g, :k], idx, D)[:-1]
                     I[i + g, :k] = np.insert(I[i + g, :k], idx, i)[:-1]
