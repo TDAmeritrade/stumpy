@@ -158,12 +158,11 @@ def stamp(T_A, m, T_B=None, exclusion_zone=None):
 
 def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
     """
-    Traverse distance matrix in a row-wise manner and store topk nearest neighbor
-    matrix profile and matrix profile indices
-    """
-    if exclusion_zone is None:
-        exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    Traverse distance matrix along the diagonals and update the top-k nearest
+    neighbor  matrix profile and matrix profile indices
 
+    NOTE: For row-wise traversal, please use function `stamp`
+    """
     if T_B is None:  # self-join:
         ignore_trivial = True
         distance_matrix = np.array(
@@ -178,42 +177,54 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
 
     distance_matrix[np.isnan(distance_matrix)] = np.inf
 
-    l = T_A.shape[0] - m + 1
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_A - m + 1
+    if exclusion_zone is None:
+        exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
     if ignore_trivial:
-        for i in range(l):
-            apply_exclusion_zone(distance_matrix[i], i, exclusion_zone, np.inf)
+        diags = np.arange(exclusion_zone + 1, n_A - m + 1)
+    else:
+        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
 
-    P = np.full((l, k), np.inf)
-    I = np.full((l, k + 2), -1, dtype=np.int64)  # two more columns in I are
-    # to store left and right matrix profile indices.
+    P = np.full((l, k + 2), np.inf)
+    I = np.full((l, k + 2), -1, dtype=np.int64) # two more columns are to store
+    # ... left and right top-1 matrix profile indices.
 
-    for i in range(l):
-        indices = np.argsort(distance_matrix[i])
-        topk_indices = indices[:k]
-        P[i, :k] = distance_matrix[i][topk_indices]
-        I[i, :k] = np.where(
-            distance_matrix[i][topk_indices] != np.inf, topk_indices, -1
-        )
+    for g in diags:
+        if g >= 0:
+            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - g))
+        else:
+            iter_range = range(-g, min(n_A - m + 1, n_B - m + 1 - g))
 
-        if ignore_trivial:
-            IL = -1
-            left_indices = indices[indices < i]
-            if len(left_indices) > 0:
-                IL = left_indices[0]
-            if distance_matrix[i][IL] == np.inf:
-                IL = -1
-            I[i, k] = IL
+        for i in iter_range:
+            D = distance_matrix[i, i + g]
+            if D < P[i, k-1]:
+                idx = np.searchsorted(P[i, :k], D, side='right')
+                # to keep the top-k, we need to the get rid of the last element.
+                P[i, :k] = np.insert(P[i, :k], idx, D)[:-1]
+                I[i, :k] = np.insert(I[i, :k], idx, i + g)[:-1]
 
-            IR = -1
-            right_indices = indices[indices > i]
-            if len(right_indices) > 0:
-                IR = right_indices[0]
-            if distance_matrix[i][IR] == np.inf:
-                IR = -1
-            I[i, k + 1] = IR
+            if ignore_trivial:  # Self-joins only
+                if D < P[i + g, k-1]:
+                    idx = np.searchsorted(P[i + g, :k], D, side='right')
+                    P[i + g, :k] = np.insert(P[i + g, :k], idx, D)[:-1]
+                    I[i + g, :k] = np.insert(I[i + g, :k], idx, i)[:-1]
 
-    result = np.empty((l, 2 * k + 2), dtype=object)
-    result[:, :k] = P[:, :]
+                if i < i + g:
+                    # Left matrix profile and left matrix profile index
+                    if D < P[i + g, k]:
+                        P[i + g, k] = D
+                        I[i + g, k] = i
+
+                    if D < P[i, k + 1]:
+                        # right matrix profile and right matrix profile index
+                        P[i, k + 1] = D
+                        I[i, k + 1] = i + g
+
+    result = np.empty((2 * k + 2, 4), dtype=object)
+    result[:, :k] = P[:, :k]
     result[:, k:] = I[:, :]
 
     return result
