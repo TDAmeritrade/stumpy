@@ -209,14 +209,14 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
         for i in iter_range:
             D = distance_matrix[i, i + g]
             if D < P[i, k-1]:
-                idx = np.searchsorted(P[i, :k], D, side='right')
+                idx = searchsorted(P[i, :k], D, side='right')
                 # to keep the top-k, we need to the get rid of the last element.
                 P[i, :k] = np.insert(P[i, :k], idx, D)[:-1]
                 I[i, :k] = np.insert(I[i, :k], idx, i + g)[:-1]
 
             if ignore_trivial:  # Self-joins only
                 if D < P[i + g, k-1]:
-                    idx = np.searchsorted(P[i + g, :k], D, side='right')
+                    idx = searchsorted(P[i + g, :k], D, side='right')
                     P[i + g, :k] = np.insert(P[i + g, :k], idx, D)[:-1]
                     I[i + g, :k] = np.insert(I[i + g, :k], idx, i)[:-1]
 
