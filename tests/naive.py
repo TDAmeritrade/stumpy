@@ -138,7 +138,7 @@ def mass_PI(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
 
     return P, I, IL, IR
 
-
+# just for reference
 def stamp(T_A, m, T_B=None, exclusion_zone=None):
     if T_B is None:  # self-join
         result = np.array(
@@ -156,7 +156,7 @@ def stamp(T_A, m, T_B=None, exclusion_zone=None):
     return result
 
 
-def stump(T_A, m, T_B=None, exclusion_zone=None, row_traversal=False):
+def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
     """
     Traverse distance matrix along the diagonals and update the matrix profile and
     matrix profile indices
@@ -182,7 +182,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_traversal=False):
         exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
 
-    if row_traversal:
+    if row_wise: #row-wise traversal in distance matrix
         if ignore_trivial:  # self-join
             result = np.array(
                 [
