@@ -205,14 +205,13 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
                 IL = np.argmin(D[:i])
                 if D[IL] == np.inf:
                     IL = -1
+                I[i, 1] = IL
 
             #self-join: right matrix profile
             if ignore_trivial and i < D.shape[0]:
                 IR = i + np.argmin(D[i:]) #shift argmin by `i` to get true index
                 if D[IR] == np.inf:
                     IR = -1
-
-                I[i, 1] = IL
                 I[i, 2] = IR
 
         result = np.empty((l, 4), dtype=object)
