@@ -32,7 +32,7 @@ def test_stumpi_self_join():
     comp_left_P = stream.left_P_
     comp_left_I = stream.left_I_
 
-    ref_mp = naive.stamp(stream.T_, m, exclusion_zone=zone)
+    ref_mp = naive.stump(stream.T_, m, exclusion_zone=zone, row_wise=True)
     ref_P = ref_mp[:, 0]
     ref_I = ref_mp[:, 1]
     ref_left_P = np.empty(ref_P.shape)
@@ -210,7 +210,7 @@ def test_stumpi_init_nan_inf_self_join(substitute, substitution_locations):
         comp_I = stream.I_
 
         stream.T_[substitution_location] = substitute
-        ref_mp = naive.stamp(stream.T_, m, exclusion_zone=zone)
+        ref_mp = naive.stump(stream.T_, m, exclusion_zone=zone, row_wise=True)
         ref_P = ref_mp[:, 0]
         ref_I = ref_mp[:, 1]
 
@@ -385,7 +385,7 @@ def test_stumpi_stream_nan_inf_self_join(substitute, substitution_locations):
         comp_I = stream.I_
 
         stream.T_[30:][substitution_location] = substitute
-        ref_mp = naive.stamp(stream.T_, m, exclusion_zone=zone)
+        ref_mp = naive.stump(stream.T_, m, exclusion_zone=zone, row_wise=True)
         ref_P = ref_mp[:, 0]
         ref_I = ref_mp[:, 1]
 
@@ -546,7 +546,7 @@ def test_stumpi_constant_subsequence_self_join():
     comp_P = stream.P_
     # comp_I = stream.I_
 
-    ref_mp = naive.stamp(stream.T_, m, exclusion_zone=zone)
+    ref_mp = naive.stump(stream.T_, m, exclusion_zone=zone, row_wise=True)
     ref_P = ref_mp[:, 0]
     # ref_I = ref_mp[:, 1]
 
@@ -701,7 +701,7 @@ def test_stumpi_identical_subsequence_self_join():
     comp_P = stream.P_
     # comp_I = stream.I_
 
-    ref_mp = naive.stamp(stream.T_, m, exclusion_zone=zone)
+    ref_mp = naive.stump(stream.T_, m, exclusion_zone=zone, row_wise=True)
     ref_P = ref_mp[:, 0]
     # ref_I = ref_mp[:, 1]
 
