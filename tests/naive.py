@@ -138,6 +138,7 @@ def mass_PI(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
 
     return P, I, IL, IR
 
+
 # just for reference
 def stamp(T_A, m, T_B=None, exclusion_zone=None):
     if T_B is None:  # self-join
@@ -181,8 +182,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
     if exclusion_zone is None:
         exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-
-    if row_wise: #row-wise traversal in distance matrix
+    if row_wise:  # row-wise traversal in distance matrix
         if ignore_trivial:  # self-join
             result = np.array(
                 [
@@ -198,7 +198,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
             )
         return result
 
-    else: #diagonal traversal
+    else:  # diagonal traversal
         if ignore_trivial:
             diags = np.arange(exclusion_zone + 1, n_A - m + 1)
         else:
