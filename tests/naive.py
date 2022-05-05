@@ -198,7 +198,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
                 idx = -1
             I[i, 0] = idx
 
-            #self-join: left matrix profile
+            # self-join: left matrix profile
             IL = -1
             IR = -1
             if ignore_trivial and i > 0:
@@ -207,9 +207,9 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
                     IL = -1
                 I[i, 1] = IL
 
-            #self-join: right matrix profile
+            # self-join: right matrix profile
             if ignore_trivial and i < D.shape[0]:
-                IR = i + np.argmin(D[i:]) #shift argmin by `i` to get true index
+                IR = i + np.argmin(D[i:])  # shift argmin by `i` to get true index
                 if D[IR] == np.inf:
                     IR = -1
                 I[i, 2] = IR
