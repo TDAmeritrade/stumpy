@@ -44,7 +44,7 @@ def test_gpu_stump_int_input():
 def test_gpu_stump_self_join(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
-    ref_mp = naive.stamp(T_B, m, exclusion_zone=zone)
+    ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True)
     comp_mp = gpu_stump(T_B, m, ignore_trivial=True)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -61,7 +61,7 @@ def test_gpu_stump_self_join(T_A, T_B):
 def test_gpu_stump_self_join_larger_window(T_A, T_B, m):
     if len(T_B) > m:
         zone = int(np.ceil(m / 4))
-        ref_mp = naive.stamp(T_B, m, exclusion_zone=zone)
+        ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True)
         comp_mp = gpu_stump(T_B, m, ignore_trivial=True)
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
@@ -81,7 +81,7 @@ def test_gpu_stump_self_join_larger_window(T_A, T_B, m):
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_gpu_stump_A_B_join(T_A, T_B):
     m = 3
-    ref_mp = naive.stamp(T_B, m, T_B=T_A)
+    ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
     comp_mp = gpu_stump(T_B, m, T_A, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -99,7 +99,7 @@ def test_parallel_gpu_stump_self_join(T_A, T_B):
     if len(T_B) > 10:
         m = 3
         zone = int(np.ceil(m / 4))
-        ref_mp = naive.stamp(T_B, m, exclusion_zone=zone)
+        ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True)
         comp_mp = gpu_stump(
             T_B,
             m,
@@ -126,7 +126,7 @@ def test_parallel_gpu_stump_A_B_join(T_A, T_B):
     device_ids = [device.id for device in cuda.list_devices()]
     if len(T_B) > 10:
         m = 3
-        ref_mp = naive.stamp(T_B, m, T_B=T_A)
+        ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
         comp_mp = gpu_stump(
             T_B,
             m,
@@ -154,7 +154,7 @@ def test_gpu_stump_constant_subsequence_self_join():
     T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
     zone = int(np.ceil(m / 4))
-    ref_mp = naive.stamp(T_A, m, exclusion_zone=zone)
+    ref_mp = naive.stump(T_A, m, exclusion_zone=zone, row_wise=True)
     comp_mp = gpu_stump(T_A, m, ignore_trivial=True)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -170,7 +170,7 @@ def test_gpu_stump_one_constant_subsequence_A_B_join():
     T_A = np.random.rand(20)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
-    ref_mp = naive.stamp(T_B, m, T_B=T_A)
+    ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
     comp_mp = gpu_stump(T_B, m, T_A, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -181,7 +181,7 @@ def test_gpu_stump_one_constant_subsequence_A_B_join():
     # npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
     # Swap inputs
-    ref_mp = naive.stamp(T_A, m, T_B=T_B)
+    ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
     comp_mp = gpu_stump(T_A, m, T_B, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -197,7 +197,7 @@ def test_gpu_stump_two_constant_subsequences_A_B_join():
     T_A = np.array([0, 0, 0, 0, 0, 1], dtype=np.float64)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
-    ref_mp = naive.stamp(T_B, m, T_B=T_A)
+    ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
     comp_mp = gpu_stump(T_B, m, T_A, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -208,7 +208,7 @@ def test_gpu_stump_two_constant_subsequences_A_B_join():
     # npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
     # Swap inputs
-    ref_mp = naive.stamp(T_A, m, T_B=T_B)
+    ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
     comp_mp = gpu_stump(T_A, m, T_B, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -227,7 +227,7 @@ def test_gpu_stump_identical_subsequence_self_join():
     T_A[11 : 11 + identical.shape[0]] = identical
     m = 3
     zone = int(np.ceil(m / 4))
-    ref_mp = naive.stamp(T_A, m, exclusion_zone=zone)
+    ref_mp = naive.stump(T_A, m, exclusion_zone=zone, row_wise=True)
     comp_mp = gpu_stump(T_A, m, ignore_trivial=True)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -250,7 +250,7 @@ def test_gpu_stump_identical_subsequence_A_B_join():
     T_A[1 : 1 + identical.shape[0]] = identical
     T_B[11 : 11 + identical.shape[0]] = identical
     m = 3
-    ref_mp = naive.stamp(T_B, m, T_B=T_A)
+    ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
     comp_mp = gpu_stump(T_B, m, T_A, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -265,7 +265,7 @@ def test_gpu_stump_identical_subsequence_A_B_join():
     # )  # ignore indices
 
     # Swap inputs
-    ref_mp = naive.stamp(T_A, m, T_B=T_B)
+    ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
     comp_mp = gpu_stump(T_A, m, T_B, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -294,7 +294,7 @@ def test_gpu_stump_nan_inf_self_join(T_A, T_B, substitute_B, substitution_locati
         T_B_sub[substitution_location_B] = substitute_B
 
         zone = int(np.ceil(m / 4))
-        ref_mp = naive.stamp(T_B_sub, m, exclusion_zone=zone)
+        ref_mp = naive.stump(T_B_sub, m, exclusion_zone=zone, row_wise=True)
         comp_mp = gpu_stump(T_B_sub, m, ignore_trivial=True)
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
@@ -325,7 +325,7 @@ def test_gpu_stump_nan_inf_A_B_join(
             T_A_sub[substitution_location_A] = substitute_A
             T_B_sub[substitution_location_B] = substitute_B
 
-            ref_mp = naive.stamp(T_B_sub, m, T_B=T_A_sub)
+            ref_mp = naive.stump(T_B_sub, m, T_B=T_A_sub, row_wise=True)
             comp_mp = gpu_stump(T_B_sub, m, T_A_sub, ignore_trivial=False)
             naive.replace_inf(ref_mp)
             naive.replace_inf(comp_mp)
@@ -344,7 +344,7 @@ def test_gpu_stump_nan_zero_mean_self_join():
     m = 3
 
     zone = int(np.ceil(m / 4))
-    ref_mp = naive.stamp(T, m, exclusion_zone=zone)
+    ref_mp = naive.stump(T, m, exclusion_zone=zone, row_wise=True)
     comp_mp = gpu_stump(T, m, ignore_trivial=True)
 
     naive.replace_inf(ref_mp)
