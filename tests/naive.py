@@ -121,7 +121,7 @@ def mass_PI(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
                 PL = D[i]
         if start <= IL < stop:  # pragma: no cover
             IL = -1
-    else:
+    else:  # pragma: no cover
         IL = -1
 
     if ignore_trivial and trivial_idx + 1 < D.shape[0]:
