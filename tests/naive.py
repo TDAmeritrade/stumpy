@@ -116,7 +116,7 @@ def mass_PI(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
         PL = np.inf
         IL = -1
         for i in range(trivial_idx):
-            if D[i] < PL:
+            if D[i] < PL:  # pragma: no cover
                 IL = i
                 PL = D[i]
         if start <= IL < stop:  # pragma: no cover
@@ -133,13 +133,13 @@ def mass_PI(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
                 PR = D[i]
         if start <= IR < stop:  # pragma: no cover
             IR = -1
-    else:
+    else:  # pragma: no cover
         IR = -1
 
     return P, I, IL, IR
 
 
-def stamp(T_A, m, T_B=None, exclusion_zone=None):
+def stamp(T_A, m, T_B=None, exclusion_zone=None):  # pragma: no cover
     if T_B is None:  # self-join
         result = np.array(
             [
