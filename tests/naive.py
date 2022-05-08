@@ -160,9 +160,9 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
     """
     Traverse distance matrix and update the matrix profile and
     matrix profile indices
-    
-    If `row_wise=False`, then it is a diagonal traversal.
-    If `row_wise=True`, then it is a row-wise traversal.
+
+    If the parameter `row_wise` is set to `False`, then it is a diagonal traversal.
+    If the parameter `row_wise` is set `True`, then it is a row-wise traversal.
     """
     if T_B is None:  # self-join:
         ignore_trivial = True
