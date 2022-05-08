@@ -201,8 +201,6 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
             I[i, 0] = idx
 
             # self-join: left matrix profile
-            IL = -1
-            IR = -1
             if ignore_trivial and i > 0:
                 IL = np.argmin(D[:i])
                 if D[IL] == np.inf:
