@@ -139,7 +139,6 @@ def mass_PI(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
     return P, I, IL, IR
 
 
-# just for reference
 def stamp(T_A, m, T_B=None, exclusion_zone=None):
     if T_B is None:  # self-join
         result = np.array(
