@@ -184,6 +184,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
     P = np.full((l, 3), np.inf)
     I = np.full((l, 3), -1, dtype=np.int64)
 
+    result = np.empty((l, 4), dtype=object)
     if row_wise:  # row-wise traversal in distance matrix
         if ignore_trivial:  # self-join
             for i in range(l):
@@ -213,11 +214,8 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
                     IR = -1
                 I[i, 2] = IR
 
-        result = np.empty((l, 4), dtype=object)
         result[:, 0] = P[:, 0]
         result[:, 1:4] = I[:, :]
-
-        return result
 
     else:  # diagonal traversal
         if ignore_trivial:
@@ -253,11 +251,10 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
                             P[i, 2] = D
                             I[i, 2] = i + k
 
-        result = np.empty((l, 4), dtype=object)
         result[:, 0] = P[:, 0]
         result[:, 1:4] = I[:, :]
 
-        return result
+    return result
 
 
 def aamp(T_A, m, T_B=None, exclusion_zone=None, p=2.0):
