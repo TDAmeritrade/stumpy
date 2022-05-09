@@ -158,7 +158,7 @@ def stamp(T_A, m, T_B=None, exclusion_zone=None):  # pragma: no cover
 
 def searchsorted(a, v):
     """
-    naive version of numpy.searchsorted(..., side='right')
+    Naive version of numpy.searchsorted(..., side='right')
     """
     indices = np.flatnonzero(v < a)
     if len(indices):
