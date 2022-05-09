@@ -240,7 +240,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
                 D = distance_matrix[i, i + g] # D: a single element
                 if D < P[i, k - 1]:
                     idx = searchsorted(P[i, :k], D)
-                    # to keep the top-k, we need to the get rid of the last element.
+                    # to keep the top-k, we must get rid of the last element.
                     P[i, :k] = np.insert(P[i, :k], idx, D)[:-1]
                     I[i, :k] = np.insert(I[i, :k], idx, i + g)[:-1]
 
