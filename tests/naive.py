@@ -203,11 +203,11 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
             for i in range(l):
                 apply_exclusion_zone(distance_matrix[i], i, exclusion_zone, np.inf)
 
-        for i, D in enumerate(distance_matrix): # D: distance profile
+        for i, D in enumerate(distance_matrix):  # D: distance profile
             # self-join / AB-join: matrix proifle and indices
             indices = np.argsort(D)[:k]
             P[i, :k] = D[indices]
-            indices[P[i,:k] == np.inf] = -1
+            indices[P[i, :k] == np.inf] = -1
             I[i, :k] = indices
 
             # self-join: left matrix profile index (top-1)
@@ -237,7 +237,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
                 iter_range = range(-g, min(n_A - m + 1, n_B - m + 1 - g))
 
             for i in iter_range:
-                D = distance_matrix[i, i + g] # D: a single element
+                D = distance_matrix[i, i + g]  # D: a single element
                 if D < P[i, k - 1]:
                     idx = searchsorted(P[i, :k], D)
                     # to keep the top-k, we must get rid of the last element.
