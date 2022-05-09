@@ -158,11 +158,9 @@ def stamp(T_A, m, T_B=None, exclusion_zone=None):  # pragma: no cover
 
 def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
     """
-    Traverse distance matrix and update the matrix profile and
-    matrix profile indices
-
-    If the parameter `row_wise` is set to `False`, then it is a diagonal traversal.
-    If the parameter `row_wise` is set `True`, then it is a row-wise traversal.
+    Traverse distance matrix diagonally and update the matrix profile and
+    matrix profile indices if the parameter `row_wise` is set to `False`.
+    If the parameter `row_wise` is set to `True`, it is a row-wise traversal.
     """
     if T_B is None:  # self-join:
         ignore_trivial = True
