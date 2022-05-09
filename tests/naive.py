@@ -116,12 +116,12 @@ def mass_PI(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
         PL = np.inf
         IL = -1
         for i in range(trivial_idx):
-            if D[i] < PL:
+            if D[i] < PL:  # pragma: no cover
                 IL = i
                 PL = D[i]
         if start <= IL < stop:  # pragma: no cover
             IL = -1
-    else:
+    else:  # pragma: no cover
         IL = -1
 
     if ignore_trivial and trivial_idx + 1 < D.shape[0]:
@@ -133,13 +133,13 @@ def mass_PI(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
                 PR = D[i]
         if start <= IR < stop:  # pragma: no cover
             IR = -1
-    else:
+    else:  # pragma: no cover
         IR = -1
 
     return P, I, IL, IR
 
 
-def stamp(T_A, m, T_B=None, exclusion_zone=None):
+def stamp(T_A, m, T_B=None, exclusion_zone=None):  # pragma: no cover
     if T_B is None:  # self-join
         result = np.array(
             [
@@ -167,12 +167,12 @@ def searchsorted(a, v):
         return len(a)
 
 
-def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
+def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
     """
-    Traverse distance matrix along the diagonals and update the top-k nearest
-    neighbor  matrix profile and matrix profile indices
-
-    NOTE: For row-wise traversal, please use function `stamp`
+    Traverse distance matrix diagonally and update the top-k nearest neighbor
+    matrix profile and matrix profile indices if the parameter `row_wise` is
+    set to `False`. If the parameter `row_wise` is set to `True`,
+    it is a row-wise traversal.
     """
     if T_B is None:  # self-join:
         ignore_trivial = True
@@ -194,45 +194,72 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, k=1):
     if exclusion_zone is None:
         exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    if ignore_trivial:
-        diags = np.arange(exclusion_zone + 1, n_A - m + 1)
-    else:
-        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
-
     P = np.full((l, k + 2), np.inf)
     I = np.full((l, k + 2), -1, dtype=np.int64)  # two more columns are to store
-    # ... left and right top-1 matrix profile indices.
+    # ... left and right top-1 matrix profile indices
 
-    for g in diags:
-        if g >= 0:
-            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - g))
+    if row_wise:  # row-wise traversal in distance matrix
+        if ignore_trivial:  # self-join
+            for i in range(l):
+                apply_exclusion_zone(distance_matrix[i], i, exclusion_zone, np.inf)
+
+        for i, D in enumerate(distance_matrix): # D: distance profile
+            # self-join / AB-join: matrix proifle and indices
+            indices = np.argsort(D)[:k]
+            P[i, :k] = D[indices]
+            indices[P[i,:k] == np.inf] = -1
+            I[i, :k] = indices
+
+            # self-join: left matrix profile index (top-1)
+            if ignore_trivial and i > 0:
+                IL = np.argmin(D[:i])
+                if D[IL] == np.inf:
+                    IL = -1
+                I[i, k] = IL
+
+            # self-join: right matrix profile index (top-1)
+            if ignore_trivial and i < D.shape[0]:
+                IR = i + np.argmin(D[i:])  # shift arg by `i` to get true index
+                if D[IR] == np.inf:
+                    IR = -1
+                I[i, k + 1] = IR
+
+    else:  # diagonal traversal
+        if ignore_trivial:
+            diags = np.arange(exclusion_zone + 1, n_A - m + 1)
         else:
-            iter_range = range(-g, min(n_A - m + 1, n_B - m + 1 - g))
+            diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
 
-        for i in iter_range:
-            D = distance_matrix[i, i + g]
-            if D < P[i, k - 1]:
-                idx = searchsorted(P[i, :k], D)
-                # to keep the top-k, we need to the get rid of the last element.
-                P[i, :k] = np.insert(P[i, :k], idx, D)[:-1]
-                I[i, :k] = np.insert(I[i, :k], idx, i + g)[:-1]
+        for g in diags:
+            if g >= 0:
+                iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - g))
+            else:
+                iter_range = range(-g, min(n_A - m + 1, n_B - m + 1 - g))
 
-            if ignore_trivial:  # Self-joins only
-                if D < P[i + g, k - 1]:
-                    idx = searchsorted(P[i + g, :k], D)
-                    P[i + g, :k] = np.insert(P[i + g, :k], idx, D)[:-1]
-                    I[i + g, :k] = np.insert(I[i + g, :k], idx, i)[:-1]
+            for i in iter_range:
+                D = distance_matrix[i, i + g] # D: a single element
+                if D < P[i, k - 1]:
+                    idx = searchsorted(P[i, :k], D)
+                    # to keep the top-k, we need to the get rid of the last element.
+                    P[i, :k] = np.insert(P[i, :k], idx, D)[:-1]
+                    I[i, :k] = np.insert(I[i, :k], idx, i + g)[:-1]
 
-                if i < i + g:
-                    # Left matrix profile and left matrix profile index
-                    if D < P[i + g, k]:
-                        P[i + g, k] = D
-                        I[i + g, k] = i
+                if ignore_trivial:  # Self-joins only
+                    if D < P[i + g, k - 1]:
+                        idx = searchsorted(P[i + g, :k], D)
+                        P[i + g, :k] = np.insert(P[i + g, :k], idx, D)[:-1]
+                        I[i + g, :k] = np.insert(I[i + g, :k], idx, i)[:-1]
 
-                    if D < P[i, k + 1]:
-                        # right matrix profile and right matrix profile index
-                        P[i, k + 1] = D
-                        I[i, k + 1] = i + g
+                    if i < i + g:
+                        # Left matrix profile and left matrix profile index
+                        if D < P[i + g, k]:
+                            P[i + g, k] = D
+                            I[i + g, k] = i
+
+                        if D < P[i, k + 1]:
+                            # right matrix profile and right matrix profile index
+                            P[i, k + 1] = D
+                            I[i, k + 1] = i + g
 
     result = np.empty((l, 2 * k + 2), dtype=object)
     result[:, :k] = P[:, :k]

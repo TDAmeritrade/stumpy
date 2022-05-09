@@ -74,7 +74,7 @@ def test_stump_one_constant_subsequence_A_B_join():
     T_A = np.random.rand(20)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
-    ref_mp = naive.stamp(T_A, m, T_B=T_B)
+    ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
     comp_mp = stump(T_A, m, T_B, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -85,7 +85,7 @@ def test_stump_one_constant_subsequence_A_B_join():
     npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
     # Swap inputs
-    ref_mp = naive.stamp(T_B, m, T_B=T_A)
+    ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
     comp_mp = stump(T_B, m, T_A, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -98,7 +98,7 @@ def test_stump_two_constant_subsequences_A_B_join():
     )
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
     m = 3
-    ref_mp = naive.stamp(T_A, m, T_B=T_B)
+    ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
     comp_mp = stump(T_A, m, T_B, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -109,7 +109,7 @@ def test_stump_two_constant_subsequences_A_B_join():
     npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
     # Swap inputs
-    ref_mp = naive.stamp(T_B, m, T_B=T_A)
+    ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
     comp_mp = stump(T_B, m, T_A, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -127,7 +127,7 @@ def test_stump_identical_subsequence_self_join():
     T_A[11 : 11 + identical.shape[0]] = identical
     m = 3
     zone = int(np.ceil(m / 4))
-    ref_mp = naive.stamp(T_A, m, exclusion_zone=zone)
+    ref_mp = naive.stump(T_A, m, exclusion_zone=zone, row_wise=True)
     comp_mp = stump(T_A, m, ignore_trivial=True)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -149,7 +149,7 @@ def test_stump_identical_subsequence_A_B_join():
     T_A[1 : 1 + identical.shape[0]] = identical
     T_B[11 : 11 + identical.shape[0]] = identical
     m = 3
-    ref_mp = naive.stamp(T_A, m, T_B=T_B)
+    ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
     comp_mp = stump(T_A, m, T_B, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -164,7 +164,7 @@ def test_stump_identical_subsequence_A_B_join():
     )  # ignore indices
 
     # Swap inputs
-    ref_mp = naive.stamp(T_B, m, T_B=T_A)
+    ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
     comp_mp = stump(T_B, m, T_A, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -186,7 +186,7 @@ def test_stump_nan_inf_self_join(T_A, T_B, substitute_B, substitution_locations)
         T_B_sub[substitution_location_B] = substitute_B
 
         zone = int(np.ceil(m / 4))
-        ref_mp = naive.stamp(T_B_sub, m, exclusion_zone=zone)
+        ref_mp = naive.stump(T_B_sub, m, exclusion_zone=zone, row_wise=True)
         comp_mp = stump(T_B_sub, m, ignore_trivial=True)
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
@@ -216,7 +216,7 @@ def test_stump_nan_inf_A_B_join(
             T_A_sub[substitution_location_A] = substitute_A
             T_B_sub[substitution_location_B] = substitute_B
 
-            ref_mp = naive.stamp(T_A_sub, m, T_B=T_B_sub)
+            ref_mp = naive.stump(T_A_sub, m, T_B=T_B_sub, row_wise=True)
             comp_mp = stump(T_A_sub, m, T_B_sub, ignore_trivial=False)
             naive.replace_inf(ref_mp)
             naive.replace_inf(comp_mp)
@@ -234,7 +234,7 @@ def test_stump_nan_zero_mean_self_join():
     m = 3
 
     zone = int(np.ceil(m / 4))
-    ref_mp = naive.stamp(T, m, exclusion_zone=zone)
+    ref_mp = naive.stump(T, m, exclusion_zone=zone, row_wise=True)
     comp_mp = stump(T, m, ignore_trivial=True)
 
     naive.replace_inf(ref_mp)
