@@ -197,7 +197,7 @@ def test_naive_mstump():
 
     zone = int(np.ceil(m / 4))
 
-    ref_mp = naive.stamp(T[0], m, exclusion_zone=zone)
+    ref_mp = naive.stump(T[0], m, exclusion_zone=zone, row_wise=True)
     ref_P = ref_mp[np.newaxis, :, 0]
     ref_I = ref_mp[np.newaxis, :, 1]
 
