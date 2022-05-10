@@ -235,6 +235,7 @@ def _stump(
     T_B_subseq_isconstant,
     diags,
     ignore_trivial,
+    k,
 ):
     """
     A Numba JIT-compiled version of STOMPopt with Pearson correlations for parallel
@@ -293,6 +294,10 @@ def _stump(
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
+
+    k : int
+        The number of smallest elements in distance profile that should be stored
+        for constructing top-k matrix profile.
 
     Returns
     -------
@@ -353,8 +358,8 @@ def _stump(
     n_B = T_B.shape[0]
     l = n_A - m + 1
     n_threads = numba.config.NUMBA_NUM_THREADS
-    ρ = np.full((n_threads, l, 3), -np.inf, dtype=np.float64)
-    I = np.full((n_threads, l, 3), -1, dtype=np.int64)
+    ρ = np.full((n_threads, l, k + 2), -np.inf, dtype=np.float64)
+    I = np.full((n_threads, l, k + 2), -1, dtype=np.int64)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, n_threads, False)
@@ -406,27 +411,18 @@ def _stump(
     # Reduction of results from all threads
     for thread_idx in range(1, n_threads):
         for i in prange(l):
-            if ρ[0, i, 0] < ρ[thread_idx, i, 0]:
-                ρ[0, i, 0] = ρ[thread_idx, i, 0]
-                I[0, i, 0] = I[thread_idx, i, 0]
-            # left pearson correlation and left matrix profile indices
-            if ρ[0, i, 1] < ρ[thread_idx, i, 1]:
-                ρ[0, i, 1] = ρ[thread_idx, i, 1]
-                I[0, i, 1] = I[thread_idx, i, 1]
-            # right pearson correlation and right matrix profile indices
-            if ρ[0, i, 2] < ρ[thread_idx, i, 2]:
-                ρ[0, i, 2] = ρ[thread_idx, i, 2]
-                I[0, i, 2] = I[thread_idx, i, 2]
+            for j in range(k + 2): # alternative: use mask
+                if ρ[0, i, j] < ρ[thread_idx, i, j]:
+                    ρ[0, i, j] = ρ[thread_idx, i, j]
+                    I[0, i, j] = I[thread_idx, i, j]
 
     # Convert pearson correlations to distances
     p_norm = np.abs(2 * m * (1 - ρ[0, :, :]))
     for i in prange(p_norm.shape[0]):
-        if p_norm[i, 0] < config.STUMPY_P_NORM_THRESHOLD:
-            p_norm[i, 0] = 0.0
-        if p_norm[i, 1] < config.STUMPY_P_NORM_THRESHOLD:
-            p_norm[i, 1] = 0.0
-        if p_norm[i, 2] < config.STUMPY_P_NORM_THRESHOLD:
-            p_norm[i, 2] = 0.0
+        for j in range(p_norm.shape[1]): # p_norm.shape[1] is `k + 2`
+            if p_norm[i, j] < config.STUMPY_P_NORM_THRESHOLD:
+                p_norm[i, j] = 0.0
+
     P = np.sqrt(p_norm)
 
     return P[:, :], I[0, :, :]
@@ -469,7 +465,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
 
     k : int, default 1
         The number of smallest elements in distance profile that should be stored
-        for constructing top-k matrix profile
+        for constructing top-k matrix profile.
 
     Returns
     -------
@@ -613,6 +609,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
         T_B_subseq_isconstant,
         diags,
         ignore_trivial,
+        k,
     )
 
     out = np.empty((l, 2 * k + 2), dtype=object)
