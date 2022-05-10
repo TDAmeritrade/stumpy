@@ -433,7 +433,7 @@ def _stump(
 
 
 @core.non_normalized(aamp)
-def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
+def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
     """
     Compute the z-normalized matrix profile
 
@@ -466,6 +466,10 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
+
+    k : int, default 1
+        The number of smallest elements in distance profile that should be stored
+        for constructing top-k matrix profile
 
     Returns
     -------
@@ -587,7 +591,6 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
     l = n_A - m + 1
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-    out = np.empty((l, 4), dtype=object)
 
     if ignore_trivial:
         diags = np.arange(excl_zone + 1, n_A - m + 1, dtype=np.int64)
@@ -612,8 +615,9 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
         ignore_trivial,
     )
 
-    out[:, 0] = P[:, 0]
-    out[:, 1:] = I
+    out = np.empty((l, 2 * k + 2), dtype=object)
+    out[:, :k] = P[:, :k]
+    out[:, k:] = I
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
