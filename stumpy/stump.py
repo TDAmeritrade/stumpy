@@ -411,15 +411,30 @@ def _stump(
     # Reduction of results from all threads
     for thread_idx in range(1, n_threads):
         for i in prange(l):
-            for j in range(k + 2): # alternative: use mask
-                if ρ[0, i, j] < ρ[thread_idx, i, j]:
-                    ρ[0, i, j] = ρ[thread_idx, i, j]
-                    I[0, i, j] = I[thread_idx, i, j]
+            # top-k
+            for j in range(k):
+                if ρ[0, i, k-1] < ρ[thread_idx, i, j]:
+                    idx = k - np.searchsorted(
+                    ρ[0, i, :k][::-1], ρ[thread_idx, i, j]
+                    )
+                    ρ[0, i, idx + 1 : k] = ρ[0, i, idx : k - 1]
+                    ρ[0, i, idx] = ρ[thread_idx, i, j]
+
+                    I[0, i, idx + 1 : k] = I[0, i, idx : k - 1]
+                    I[0, i, idx] = I[thread_idx, i, j]
+
+            if ρ[0, i, k] < ρ[thread_idx, i, k]:
+                ρ[0, i, k] = ρ[thread_idx, i, k]
+                I[0, i, k] = I[thread_idx, i, k]
+
+            if ρ[0, i, k + 1] < ρ[thread_idx, i, k + 1]:
+                ρ[0, i, k + 1] = ρ[thread_idx, i, k + 1]
+                I[0, i, k + 1] = I[thread_idx, i, k + 1]
 
     # Convert pearson correlations to distances
     p_norm = np.abs(2 * m * (1 - ρ[0, :, :]))
     for i in prange(p_norm.shape[0]):
-        for j in range(p_norm.shape[1]): # p_norm.shape[1] is `k + 2`
+        for j in prange(p_norm.shape[1]): # p_norm.shape[1] is `k + 2`
             if p_norm[i, j] < config.STUMPY_P_NORM_THRESHOLD:
                 p_norm[i, j] = 0.0
 
