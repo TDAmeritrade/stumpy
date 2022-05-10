@@ -42,6 +42,7 @@ def _compute_diagonal(
     ρ,
     I,
     ignore_trivial,
+    k
 ):
     """
     Compute (Numba JIT-compiled) and update the Pearson correlation, ρ, and I
