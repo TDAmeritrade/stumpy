@@ -248,7 +248,7 @@ def test_stump_self_join_KNN(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
     ref_mp = naive.stump(T_B, m, exclusion_zone=zone, k=k)
-    comp_mp = stump(T_B, m, ignore_trivial=True)
+    comp_mp = stump(T_B, m, ignore_trivial=True, k=k)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
     npt.assert_almost_equal(ref_mp, comp_mp)
