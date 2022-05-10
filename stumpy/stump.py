@@ -42,7 +42,7 @@ def _compute_diagonal(
     ρ,
     I,
     ignore_trivial,
-    k
+    k,
 ):
     """
     Compute (Numba JIT-compiled) and update the Pearson correlation, ρ, and I
@@ -646,13 +646,12 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
         k,
     )
 
-    out = np.empty((l, (2 * k) + 2), dtype=object)
-    print(out.shape)
+    out = np.empty((l, 2 * k + 2), dtype=object)
     out[:, :k] = P[:, :k]
-    out[:, k:] = I[:, :]
+    out[:, k:] = I
 
     threshold = 10e-6
-    if core.are_distances_too_small(out[:, :k].ravel(), threshold=threshold):  # pragma: no cover
+    if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
         logger.warning(f"A large number of values are smaller than {threshold}.")
         logger.warning("For a self-join, try setting `ignore_trivial = True`.")
 
