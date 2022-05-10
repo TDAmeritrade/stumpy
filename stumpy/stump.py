@@ -125,6 +125,10 @@ def _compute_diagonal(
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
 
+    k : int
+        The number of smallest elements in distance profile that should be stored
+        for constructing top-k matrix profile.
+
     Returns
     -------
     None
@@ -154,18 +158,18 @@ def _compute_diagonal(
     constant = (m - 1) * m_inverse * m_inverse  # (m - 1)/(m * m)
 
     for diag_idx in range(diags_start_idx, diags_stop_idx):
-        k = diags[diag_idx]
+        g = diags[diag_idx]
 
-        if k >= 0:
-            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - k))
+        if g >= 0:
+            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - g))
         else:
-            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
+            iter_range = range(-g, min(n_A - m + 1, n_B - m + 1 - g))
 
         for i in iter_range:
-            if i == 0 or (k < 0 and i == -k):
+            if i == 0 or (g < 0 and i == -g):
                 cov = (
                     np.dot(
-                        (T_B[i + k : i + k + m] - M_T[i + k]), (T_A[i : i + m] - μ_Q[i])
+                        (T_B[i + g : i + g + m] - M_T[i + g]), (T_A[i : i + m] - μ_Q[i])
                     )
                     * m_inverse
                 )
@@ -177,38 +181,51 @@ def _compute_diagonal(
                 #     - (T_B[i + k - 1] - M_T_m_1[i + k]) * (T_A[i - 1] - μ_Q_m_1[i])
                 # )
                 cov = cov + constant * (
-                    cov_a[i + k] * cov_b[i] - cov_c[i + k] * cov_d[i]
+                    cov_a[i + g] * cov_b[i] - cov_c[i + g] * cov_d[i]
                 )
 
-            if T_B_subseq_isfinite[i + k] and T_A_subseq_isfinite[i]:
+            if T_B_subseq_isfinite[i + g] and T_A_subseq_isfinite[i]:
                 # Neither subsequence contains NaNs
-                if T_B_subseq_isconstant[i + k] or T_A_subseq_isconstant[i]:
+                if T_B_subseq_isconstant[i + g] or T_A_subseq_isconstant[i]:
                     pearson = 0.5
                 else:
-                    pearson = cov * Σ_T_inverse[i + k] * σ_Q_inverse[i]
+                    pearson = cov * Σ_T_inverse[i + g] * σ_Q_inverse[i]
 
-                if T_B_subseq_isconstant[i + k] and T_A_subseq_isconstant[i]:
+                if T_B_subseq_isconstant[i + g] and T_A_subseq_isconstant[i]:
                     pearson = 1.0
 
-                if pearson > ρ[thread_idx, i, 0]:
-                    ρ[thread_idx, i, 0] = pearson
-                    I[thread_idx, i, 0] = i + k
+                if pearson > ρ[thread_idx, i, k - 1]:
+                    idx = k - np.searchsorted(
+                    ρ[thread_idx, i, :k][::-1], pearson
+                    )
+                    ρ[thread_idx, i, idx + 1 : k] = ρ[thread_idx, i, idx : k - 1]
+                    ρ[thread_idx, i, idx] = pearson
+                    I[thread_idx, i, idx + 1 : k] = I[thread_idx, i, idx : k - 1]
+                    I[thread_idx, i, idx] = i + g
 
                 if ignore_trivial:  # self-joins only
-                    if pearson > ρ[thread_idx, i + k, 0]:
-                        ρ[thread_idx, i + k, 0] = pearson
-                        I[thread_idx, i + k, 0] = i
+                    if pearson > ρ[thread_idx, i + g, k - 1]:
+                        idx = k - np.searchsorted(
+                        ρ[thread_idx, i + g, :k][::-1], pearson
+                        )
+                        ρ[thread_idx, i + g, idx + 1 : k] = ρ[thread_idx, i + g, idx : k - 1]
+                        ρ[thread_idx, i + g, idx] = pearson
+                        I[thread_idx, i + g, idx + 1 : k] = I[thread_idx, i + g, idx : k - 1]
+                        I[thread_idx, i + g, idx] = i
+                        # for top-1 case:
+                        #ρ[thread_idx, i + g, 0] = pearson
+                        #I[thread_idx, i + g, 0] = i
 
-                    if i < i + k:
+                    if i < i + g:
                         # left pearson correlation and left matrix profile index
-                        if pearson > ρ[thread_idx, i + k, 1]:
-                            ρ[thread_idx, i + k, 1] = pearson
-                            I[thread_idx, i + k, 1] = i
+                        if pearson > ρ[thread_idx, i + g, k]:
+                            ρ[thread_idx, i + g, k] = pearson
+                            I[thread_idx, i + g, k] = i
 
                         # right pearson correlation and right matrix profile index
-                        if pearson > ρ[thread_idx, i, 2]:
-                            ρ[thread_idx, i, 2] = pearson
-                            I[thread_idx, i, 2] = i + k
+                        if pearson > ρ[thread_idx, i, k + 1]:
+                            ρ[thread_idx, i, k + 1] = pearson
+                            I[thread_idx, i, k + 1] = i + g
 
     return
 
@@ -406,6 +423,7 @@ def _stump(
             ρ,
             I,
             ignore_trivial,
+            k,
         )
 
     # Reduction of results from all threads
