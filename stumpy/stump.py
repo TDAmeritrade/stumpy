@@ -196,9 +196,7 @@ def _compute_diagonal(
                     pearson = 1.0
 
                 if pearson > ρ[thread_idx, i, k - 1]:
-                    idx = k - np.searchsorted(
-                    ρ[thread_idx, i, :k][::-1], pearson
-                    )
+                    idx = k - np.searchsorted(ρ[thread_idx, i, :k][::-1], pearson)
                     ρ[thread_idx, i, idx + 1 : k] = ρ[thread_idx, i, idx : k - 1]
                     ρ[thread_idx, i, idx] = pearson
                     I[thread_idx, i, idx + 1 : k] = I[thread_idx, i, idx : k - 1]
@@ -207,15 +205,19 @@ def _compute_diagonal(
                 if ignore_trivial:  # self-joins only
                     if pearson > ρ[thread_idx, i + g, k - 1]:
                         idx = k - np.searchsorted(
-                        ρ[thread_idx, i + g, :k][::-1], pearson
+                            ρ[thread_idx, i + g, :k][::-1], pearson
                         )
-                        ρ[thread_idx, i + g, idx + 1 : k] = ρ[thread_idx, i + g, idx : k - 1]
+                        ρ[thread_idx, i + g, idx + 1 : k] = ρ[
+                            thread_idx, i + g, idx : k - 1
+                        ]
                         ρ[thread_idx, i + g, idx] = pearson
-                        I[thread_idx, i + g, idx + 1 : k] = I[thread_idx, i + g, idx : k - 1]
+                        I[thread_idx, i + g, idx + 1 : k] = I[
+                            thread_idx, i + g, idx : k - 1
+                        ]
                         I[thread_idx, i + g, idx] = i
                         # for top-1 case:
-                        #ρ[thread_idx, i + g, 0] = pearson
-                        #I[thread_idx, i + g, 0] = i
+                        # ρ[thread_idx, i + g, 0] = pearson
+                        # I[thread_idx, i + g, 0] = i
 
                     if i < i + g:
                         # left pearson correlation and left matrix profile index
@@ -432,10 +434,8 @@ def _stump(
         for i in prange(l):
             # top-k
             for j in range(k):
-                if ρ[0, i, k-1] < ρ[thread_idx, i, j]:
-                    idx = k - np.searchsorted(
-                    ρ[0, i, :k][::-1], ρ[thread_idx, i, j]
-                    )
+                if ρ[0, i, k - 1] < ρ[thread_idx, i, j]:
+                    idx = k - np.searchsorted(ρ[0, i, :k][::-1], ρ[thread_idx, i, j])
                     ρ[0, i, idx + 1 : k] = ρ[0, i, idx : k - 1]
                     ρ[0, i, idx] = ρ[thread_idx, i, j]
 
@@ -453,7 +453,7 @@ def _stump(
     # Convert pearson correlations to distances
     p_norm = np.abs(2 * m * (1 - ρ[0, :, :]))
     for i in prange(p_norm.shape[0]):
-        for j in prange(p_norm.shape[1]): # p_norm.shape[1] is `k + 2`
+        for j in prange(p_norm.shape[1]):  # p_norm.shape[1] is `k + 2`
             if p_norm[i, j] < config.STUMPY_P_NORM_THRESHOLD:
                 p_norm[i, j] = 0.0
 
