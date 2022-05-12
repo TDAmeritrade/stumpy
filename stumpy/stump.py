@@ -41,6 +41,10 @@ def _compute_diagonal(
     thread_idx,
     ρ,
     I,
+    ρL,
+    IL,
+    ρR,
+    IR,
     ignore_trivial,
     k,
 ):
@@ -221,14 +225,14 @@ def _compute_diagonal(
 
                     if i < i + g:
                         # left pearson correlation and left matrix profile index
-                        if pearson > ρ[thread_idx, i + g, k]:
-                            ρ[thread_idx, i + g, k] = pearson
-                            I[thread_idx, i + g, k] = i
+                        if pearson > ρL[thread_idx, i + g]:
+                            ρL[thread_idx, i + g] = pearson
+                            IL[thread_idx, i + g] = i
 
                         # right pearson correlation and right matrix profile index
-                        if pearson > ρ[thread_idx, i, k + 1]:
-                            ρ[thread_idx, i, k + 1] = pearson
-                            I[thread_idx, i, k + 1] = i + g
+                        if pearson > ρR[thread_idx, i]:
+                            ρR[thread_idx, i] = pearson
+                            IR[thread_idx, i] = i + g
 
     return
 
@@ -378,8 +382,15 @@ def _stump(
     n_B = T_B.shape[0]
     l = n_A - m + 1
     n_threads = numba.config.NUMBA_NUM_THREADS
-    ρ = np.full((n_threads, l, k + 2), -np.inf, dtype=np.float64)
-    I = np.full((n_threads, l, k + 2), -1, dtype=np.int64)
+
+    ρ = np.full((n_threads, l, k), -np.inf, dtype=np.float64)
+    I = np.full((n_threads, l, k), -1, dtype=np.int64)
+
+    ρL = np.full((n_threads, l), -np.inf, dtype=np.float64)
+    IL = np.full((n_threads, l), -1, dtype=np.float64)
+
+    ρR = np.full((n_threads, l), -np.inf, dtype=np.float64)
+    IR = np.full((n_threads, l), -1, dtype=np.float64)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, n_threads, False)
@@ -425,6 +436,10 @@ def _stump(
             thread_idx,
             ρ,
             I,
+            ρL,
+            IL,
+            ρR,
+            IR,
             ignore_trivial,
             k,
         )
@@ -434,7 +449,7 @@ def _stump(
         for i in prange(l):
             # top-k
             for j in range(k):
-                if ρ[0, i, k - 1] < ρ[thread_idx, i, j]:
+                if ρ[0, i, k-1] < ρ[thread_idx, i, j]:
                     idx = k - np.searchsorted(ρ[0, i, :k][::-1], ρ[thread_idx, i, j])
                     ρ[0, i, idx + 1 : k] = ρ[0, i, idx : k - 1]
                     ρ[0, i, idx] = ρ[thread_idx, i, j]
@@ -442,24 +457,24 @@ def _stump(
                     I[0, i, idx + 1 : k] = I[0, i, idx : k - 1]
                     I[0, i, idx] = I[thread_idx, i, j]
 
-            if ρ[0, i, k] < ρ[thread_idx, i, k]:
-                ρ[0, i, k] = ρ[thread_idx, i, k]
-                I[0, i, k] = I[thread_idx, i, k]
+            if ρL[0, i] < ρL[thread_idx, i]:
+                ρL[0, i] = ρL[thread_idx, i]
+                IL[0, i] = IL[thread_idx, i]
 
-            if ρ[0, i, k + 1] < ρ[thread_idx, i, k + 1]:
-                ρ[0, i, k + 1] = ρ[thread_idx, i, k + 1]
-                I[0, i, k + 1] = I[thread_idx, i, k + 1]
+            if ρR[0, i] < ρR[thread_idx, i]:
+                ρR[0, i] = ρR[thread_idx, i]
+                IR[0, i] = IR[thread_idx, i]
 
     # Convert pearson correlations to distances
     p_norm = np.abs(2 * m * (1 - ρ[0, :, :]))
     for i in prange(p_norm.shape[0]):
-        for j in prange(p_norm.shape[1]):  # p_norm.shape[1] is `k + 2`
+        for j in prange(p_norm.shape[1]):
             if p_norm[i, j] < config.STUMPY_P_NORM_THRESHOLD:
                 p_norm[i, j] = 0.0
 
     P = np.sqrt(p_norm)
 
-    return P[:, :], I[0, :, :]
+    return P, I[0, :, :], IL[0, :], IR[0, :]
 
 
 @core.non_normalized(aamp)
@@ -627,28 +642,28 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
     else:
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
-    P, I = _stump(
-        T_A,
-        T_B,
-        m,
-        M_T,
-        μ_Q,
-        Σ_T_inverse,
-        σ_Q_inverse,
-        M_T_m_1,
-        μ_Q_m_1,
-        T_A_subseq_isfinite,
-        T_B_subseq_isfinite,
-        T_A_subseq_isconstant,
-        T_B_subseq_isconstant,
-        diags,
-        ignore_trivial,
-        k,
+    P, I, IL, IR = _stump(
+    T_A,
+    T_B,
+    m,
+    M_T,
+    μ_Q,
+    Σ_T_inverse,
+    σ_Q_inverse,
+    M_T_m_1,
+    μ_Q_m_1,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
+    T_A_subseq_isconstant,
+    T_B_subseq_isconstant,
+    diags,
+    ignore_trivial,
+    k,
     )
 
     out = np.empty((l, 2 * k + 2), dtype=object)
-    out[:, :k] = P[:, :k]
-    out[:, k:] = I
+    out[:, :k] = P
+    out[:, k:] = np.c_[I, IL, IR]
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
