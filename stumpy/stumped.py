@@ -248,6 +248,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, 
                 T_B_subseq_isconstant_future,
                 diags_futures[i],
                 ignore_trivial,
+                1,
             )
         )
 
