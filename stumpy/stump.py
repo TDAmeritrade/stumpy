@@ -49,9 +49,9 @@ def _compute_diagonal(
     k,
 ):
     """
-    Compute (Numba JIT-compiled) and update the Pearson correlation, ρ, and I
-    sequentially along individual diagonals using a single thread and avoiding race
-    conditions
+    Compute (Numba JIT-compiled) and update the (top-k) Pearson correlation, ρ, and I,
+    and, the left ρ and the left I, the right ρ and the right I sequentially along
+    individual diagonals using a single thread and avoiding race conditions.
 
     Parameters
     ----------
@@ -121,10 +121,22 @@ def _compute_diagonal(
         The thread index
 
     ρ : numpy.ndarray
-        The Pearson correlations
+        The top-k Pearson correlations, sorted in ascending order per row
 
     I : numpy.ndarray
-        The matrix profile indices
+        The top-k matrix profile indices
+
+    ρL : numpy.ndarray
+        The top-1 left Pearson correlations
+
+    IL : numpy.ndarray
+        The top-1 left matrix profile indices
+
+    ρR : numpy.ndarray
+        The top-1 left Pearson correlations
+
+    IR : numpy.ndarray
+        The top-1 right matrix profile indices
 
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
@@ -263,8 +275,8 @@ def _stump(
 ):
     """
     A Numba JIT-compiled version of STOMPopt with Pearson correlations for parallel
-    computation of the matrix profile, matrix profile indices, left matrix profile
-    indices, and right matrix profile indices.
+    computation of the top-k matrix profile, top-k matrix profile indices, top-1
+    left matrix profile indices, and top-1 right matrix profile indices.
 
     Parameters
     ----------
@@ -326,16 +338,16 @@ def _stump(
     Returns
     -------
     profile : numpy.ndarray
-        Top-k Matrix profile
+        Top-k matrix profile
 
     indices : numpy.ndarray
-        The top-k matrix profile indices
+        Top-k matrix profile indices
 
     left indices : numpy.ndarray
-        The top-1 left matrix profile indices
+        Top-1 left matrix profile indices
 
     right indices : numpy.ndarray
-        The top-1 right matrix profile indices
+        Top-1 right matrix profile indices
 
     Notes
     -----
@@ -417,7 +429,8 @@ def _stump(
     cov_d[:] = cov_d - μ_Q_m_1
 
     for thread_idx in prange(n_threads):
-        # Compute and update cov, I within a single thread to avoiding race conditions
+        # Compute and update pearson correlations and matrix profile indices
+        # within a single thread to avoid race conditions
         _compute_diagonal(
             T_A,
             T_B,
