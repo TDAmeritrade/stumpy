@@ -199,26 +199,26 @@ def _compute_diagonal(
                 if T_B_subseq_isconstant[i + g] and T_A_subseq_isconstant[i]:
                     pearson = 1.0
 
-                if pearson > ρ[thread_idx, i, k - 1]:
-                    idx = k - np.searchsorted(ρ[thread_idx, i, :k][::-1], pearson)
-                    ρ[thread_idx, i, idx + 1 : k] = ρ[thread_idx, i, idx : k - 1]
-                    ρ[thread_idx, i, idx] = pearson
-                    I[thread_idx, i, idx + 1 : k] = I[thread_idx, i, idx : k - 1]
-                    I[thread_idx, i, idx] = i + g
+                if pearson > ρ[thread_idx, i, 0]:
+                    idx = np.searchsorted(ρ[thread_idx, i], pearson)
+                    ρ[thread_idx, i, : idx - 1] = ρ[thread_idx, i, 1 : idx]
+                    ρ[thread_idx, i, idx - 1] = pearson
+
+                    I[thread_idx, i, : idx - 1] = I[thread_idx, i, 1 : idx]
+                    I[thread_idx, i, idx - 1] = i + g
 
                 if ignore_trivial:  # self-joins only
-                    if pearson > ρ[thread_idx, i + g, k - 1]:
-                        idx = k - np.searchsorted(
-                            ρ[thread_idx, i + g, :k][::-1], pearson
-                        )
-                        ρ[thread_idx, i + g, idx + 1 : k] = ρ[
-                            thread_idx, i + g, idx : k - 1
+                    if pearson > ρ[thread_idx, i + g, 0]:
+                        idx = np.searchsorted(ρ[thread_idx, i + g], pearson)
+                        ρ[thread_idx, i + g, : idx - 1] = ρ[
+                            thread_idx, i + g, 1 : idx
                         ]
-                        ρ[thread_idx, i + g, idx] = pearson
-                        I[thread_idx, i + g, idx + 1 : k] = I[
-                            thread_idx, i + g, idx : k - 1
+                        ρ[thread_idx, i + g, idx - 1] = pearson
+
+                        I[thread_idx, i + g, : idx - 1] = I[
+                            thread_idx, i + g, 1 : idx
                         ]
-                        I[thread_idx, i + g, idx] = i
+                        I[thread_idx, i + g, idx - 1] = i
                         # for top-1 case:
                         # ρ[thread_idx, i + g, 0] = pearson
                         # I[thread_idx, i + g, 0] = i
@@ -449,13 +449,14 @@ def _stump(
         for i in prange(l):
             # top-k
             for j in range(k):
-                if ρ[0, i, k-1] < ρ[thread_idx, i, j]:
-                    idx = k - np.searchsorted(ρ[0, i, :k][::-1], ρ[thread_idx, i, j])
-                    ρ[0, i, idx + 1 : k] = ρ[0, i, idx : k - 1]
-                    ρ[0, i, idx] = ρ[thread_idx, i, j]
+                j = k - 1 - j
+                if ρ[0, i, 0] < ρ[thread_idx, i, j]:
+                    idx = np.searchsorted(ρ[0, i], ρ[thread_idx, i, j])
+                    ρ[0, i, : idx - 1] = ρ[0, i, 1 : idx]
+                    ρ[0, i, idx - 1] = ρ[thread_idx, i, j]
 
-                    I[0, i, idx + 1 : k] = I[0, i, idx : k - 1]
-                    I[0, i, idx] = I[thread_idx, i, j]
+                    I[0, i, : idx - 1] = I[0, i, 1 : idx]
+                    I[0, i, idx - 1] = I[thread_idx, i, j]
 
             if ρL[0, i] < ρL[thread_idx, i]:
                 ρL[0, i] = ρL[thread_idx, i]
@@ -474,7 +475,7 @@ def _stump(
 
     P = np.sqrt(p_norm)
 
-    return P, I[0, :, :], IL[0, :], IR[0, :]
+    return P[:, ::-1], I[0, :, ::-1], IL[0, :], IR[0, :]
 
 
 @core.non_normalized(aamp)
