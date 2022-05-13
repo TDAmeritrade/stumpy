@@ -253,7 +253,11 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, 
         )
 
     results = dask_client.gather(futures)
-    profile, indices = results[0]
+    profile, indices, profile_L, indices_L, profile_R, indices_R  = results[0]
+
+    profile = np.c_[profile, profile_L, profile_R]
+    indices = np.c_[indices, indices_L, indices_R]
+
     for i in range(1, len(hosts)):
         P, I = results[i]
         for col in range(P.shape[1]):  # pragma: no cover
