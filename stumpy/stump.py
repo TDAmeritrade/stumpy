@@ -406,10 +406,10 @@ def _stump(
     I = np.full((n_threads, l, k), -1, dtype=np.int64)
 
     ρL = np.full((n_threads, l), -np.inf, dtype=np.float64)
-    IL = np.full((n_threads, l), -1, dtype=np.float64)
+    IL = np.full((n_threads, l), -1, dtype=np.int64)
 
     ρR = np.full((n_threads, l), -np.inf, dtype=np.float64)
-    IR = np.full((n_threads, l), -1, dtype=np.float64)
+    IR = np.full((n_threads, l), -1, dtype=np.int64)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, n_threads, False)
