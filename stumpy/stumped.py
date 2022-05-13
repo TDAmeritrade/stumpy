@@ -259,7 +259,9 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, 
     indices = np.c_[indices, indices_L, indices_R]
 
     for i in range(1, len(hosts)):
-        P, I = results[i]
+        P, I, PL, IL, PR, IR = results[i]
+        P = np.c_[P, PL, PR]
+        I = np.c_[I, IL, IR]
         for col in range(P.shape[1]):  # pragma: no cover
             cond = P[:, col] < profile[:, col]
             profile[:, col] = np.where(cond, P[:, col], profile[:, col])
