@@ -675,25 +675,25 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
     P, I, PL, IL, PR, IR = _stump(
-                T_A,
-                T_B,
-                m,
-                M_T,
-                μ_Q,
-                Σ_T_inverse,
-                σ_Q_inverse,
-                M_T_m_1,
-                μ_Q_m_1,
-                T_A_subseq_isfinite,
-                T_B_subseq_isfinite,
-                T_A_subseq_isconstant,
-                T_B_subseq_isconstant,
-                diags,
-                ignore_trivial,
-                k,
+        T_A,
+        T_B,
+        m,
+        M_T,
+        μ_Q,
+        Σ_T_inverse,
+        σ_Q_inverse,
+        M_T_m_1,
+        μ_Q_m_1,
+        T_A_subseq_isfinite,
+        T_B_subseq_isfinite,
+        T_A_subseq_isconstant,
+        T_B_subseq_isconstant,
+        diags,
+        ignore_trivial,
+        k,
     )
 
-    out = np.empty((l, 2 * k + 2), dtype=object) # last two columns are to
+    out = np.empty((l, 2 * k + 2), dtype=object)  # last two columns are to
     # store left and right matrix profile indices
     out[:, :k] = P
     out[:, k:] = np.c_[I, IL, IR]
