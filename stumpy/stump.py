@@ -481,14 +481,26 @@ def _stump(
 
     # Convert pearson correlations to distances
     p_norm = np.abs(2 * m * (1 - ρ[0, :, :]))
+    p_norm_L = np.abs(2 * m * (1 - ρL[0, :]))
+    p_norm_R = np.abs(2 * m * (1 - ρR[0, :]))
+
     for i in prange(p_norm.shape[0]):
         for j in prange(p_norm.shape[1]):
             if p_norm[i, j] < config.STUMPY_P_NORM_THRESHOLD:
                 p_norm[i, j] = 0.0
 
-    P = np.sqrt(p_norm)
+        if p_norm_L[i] < config.STUMPY_P_NORM_THRESHOLD:
+            p_norm_L[i] = 0.0
 
-    return P[:, ::-1], I[0, :, ::-1], IL[0, :], IR[0, :]
+        if p_norm_R[i] < config.STUMPY_P_NORM_THRESHOLD:
+            p_norm_R[i] = 0.0
+
+    P = np.sqrt(p_norm)
+    PL = np.sqrt(p_norm_L)
+    PR = np.sqrt(p_norm_R)
+
+
+    return P[:, ::-1], I[0, :, ::-1], PL, IL[0, :], PR, IR[0, :]
 
 
 @core.non_normalized(aamp)
@@ -656,26 +668,27 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
     else:
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
-    P, I, IL, IR = _stump(
-        T_A,
-        T_B,
-        m,
-        M_T,
-        μ_Q,
-        Σ_T_inverse,
-        σ_Q_inverse,
-        M_T_m_1,
-        μ_Q_m_1,
-        T_A_subseq_isfinite,
-        T_B_subseq_isfinite,
-        T_A_subseq_isconstant,
-        T_B_subseq_isconstant,
-        diags,
-        ignore_trivial,
-        k,
+    P, I, PL, IL, PR, IR = _stump(
+                T_A,
+                T_B,
+                m,
+                M_T,
+                μ_Q,
+                Σ_T_inverse,
+                σ_Q_inverse,
+                M_T_m_1,
+                μ_Q_m_1,
+                T_A_subseq_isfinite,
+                T_B_subseq_isfinite,
+                T_A_subseq_isconstant,
+                T_B_subseq_isconstant,
+                diags,
+                ignore_trivial,
+                k,
     )
 
-    out = np.empty((l, 2 * k + 2), dtype=object)
+    out = np.empty((l, 2 * k + 2), dtype=object) # last two columns are to
+    # store left and right matrix profile indices
     out[:, :k] = P
     out[:, k:] = np.c_[I, IL, IR]
 
