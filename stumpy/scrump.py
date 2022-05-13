@@ -609,7 +609,7 @@ class scrump:
         if self._chunk_idx < self._n_chunks:
             start_idx, stop_idx = self._chunk_diags_ranges[self._chunk_idx]
 
-            P, I, IL, IR = _stump(
+            P, I, PL, IL, PR, IR = _stump(
                 self._T_A,
                 self._T_B,
                 self._m,
@@ -628,8 +628,9 @@ class scrump:
                 k=1,
             )
 
+            P = np.c_[P, PL, PR]
             I = np.c_[I, IL, IR]
-            
+
             # Update matrix profile and indices
             for i in range(self._P.shape[0]):
                 if self._P[i, 0] > P[i, 0]:
