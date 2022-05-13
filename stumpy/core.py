@@ -121,7 +121,8 @@ def non_normalized(non_norm, exclude=None, replace=None):
         The desired z-normalized/non-normalized function (or class)
     """
     if exclude is None:
-        exclude = ["normalize", "p"]
+        exclude = ["normalize", "p", "k"] # remove "k" after updating
+        # non-normalized function to accept "k" for top-k matrix profile 
 
     @functools.wraps(non_norm)
     def outer_wrapper(norm):
