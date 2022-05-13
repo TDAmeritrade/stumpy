@@ -133,7 +133,7 @@ def _compute_diagonal(
         The top-1 left matrix profile indices
 
     ρR : numpy.ndarray
-        The top-1 left Pearson correlations
+        The top-1 right Pearson correlations
 
     IR : numpy.ndarray
         The top-1 right matrix profile indices
@@ -272,7 +272,8 @@ def _stump(
     """
     A Numba JIT-compiled version of STOMPopt with Pearson correlations for parallel
     computation of the top-k matrix profile, top-k matrix profile indices, top-1
-    left matrix profile indices, and top-1 right matrix profile indices.
+    left matrix profile and matrix profile indices, and top-1 right matrix profile
+    and matrix profile indices.
 
     Parameters
     ----------
@@ -339,8 +340,14 @@ def _stump(
     indices : numpy.ndarray
         Top-k matrix profile indices
 
+    left profile : numpy.ndarray
+        Top-1 left matrix profile
+
     left indices : numpy.ndarray
         Top-1 left matrix profile indices
+
+    right profile : numpy.ndarray
+        Top-1 right matrix profile
 
     right indices : numpy.ndarray
         Top-1 right matrix profile indices
@@ -499,7 +506,6 @@ def _stump(
     PL = np.sqrt(p_norm_L)
     PR = np.sqrt(p_norm_R)
 
-
     return P[:, ::-1], I[0, :, ::-1], PL, IL[0, :], PR, IR[0, :]
 
 
@@ -546,9 +552,9 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
     -------
     out : numpy.ndarray
         The first k columns consists of the top-k matrix profile, the next k columns
-        consists of their corresponding matrix profile indices, the one before
-        last column consists of the top-1 left matrix profile indices, and the
-        last column consists of the top-1 right matrix profile indices.
+        consists of their corresponding matrix profile indices, the column at
+        numpy indexing 2k contains top-1 left matrix profile indices and the last
+        column, at numpy indexing 2k+1, contains top-1 right matrix profile indices.
 
     See Also
     --------
