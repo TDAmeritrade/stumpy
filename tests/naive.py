@@ -163,8 +163,8 @@ def searchsorted(a, v):
     indices = np.flatnonzero(v < a)
     if len(indices):
         return indices.min()
-    else:
-        return len(a)  # pragma: no cover
+    else:  # pragma: no cover
+        return len(a)
 
 
 def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
