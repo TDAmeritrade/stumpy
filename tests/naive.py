@@ -164,7 +164,7 @@ def searchsorted(a, v):
     if len(indices):
         return indices.min()
     else:
-        return len(a)
+        return len(a)  # pragma: no cover
 
 
 def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
