@@ -468,8 +468,7 @@ def _stump(
     for thread_idx in range(1, n_threads):
         for i in prange(l):
             # top-k
-            for j in range(k):
-                j = k - 1 - j
+            for j in range(k - 1, -1, -1):
                 if ρ[0, i, 0] < ρ[thread_idx, i, j]:
                     idx = np.searchsorted(ρ[0, i], ρ[thread_idx, i, j])
                     ρ[0, i, : idx - 1] = ρ[0, i, 1:idx]
