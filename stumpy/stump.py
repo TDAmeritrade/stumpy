@@ -357,6 +357,7 @@ def _stump(
     n_B = T_B.shape[0]
     l = n_A - m + 1
     n_threads = numba.config.NUMBA_NUM_THREADS
+
     ρ = np.full((n_threads, l), -np.inf, dtype=np.float64)
     I = np.full((n_threads, l), -1, dtype=np.int64)
 
@@ -450,7 +451,7 @@ def _stump(
     PR = np.sqrt(p_norm_R)
 
 
-    return P, I, PL, IL, PR, IR
+    return P, I[0, :], PL, IL[0, :], PR, IR[0, :]
 
 
 @core.non_normalized(aamp)
@@ -633,8 +634,10 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
         ignore_trivial,
     )
 
+
     out[:, 0] = P
     out[:, 1:] = np.c_[I, IL, IR]
+
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
