@@ -41,6 +41,10 @@ def _compute_diagonal(
     thread_idx,
     ρ,
     I,
+    ρL,
+    IL,
+    ρR,
+    IR,
     ignore_trivial,
 ):
     """
@@ -190,25 +194,25 @@ def _compute_diagonal(
                 if T_B_subseq_isconstant[i + k] and T_A_subseq_isconstant[i]:
                     pearson = 1.0
 
-                if pearson > ρ[thread_idx, i, 0]:
-                    ρ[thread_idx, i, 0] = pearson
-                    I[thread_idx, i, 0] = i + k
+                if pearson > ρ[thread_idx, i]:
+                    ρ[thread_idx, i] = pearson
+                    I[thread_idx, i] = i + k
 
                 if ignore_trivial:  # self-joins only
-                    if pearson > ρ[thread_idx, i + k, 0]:
-                        ρ[thread_idx, i + k, 0] = pearson
-                        I[thread_idx, i + k, 0] = i
+                    if pearson > ρ[thread_idx, i + k]:
+                        ρ[thread_idx, i + k] = pearson
+                        I[thread_idx, i + k] = i
 
                     if i < i + k:
                         # left pearson correlation and left matrix profile index
-                        if pearson > ρ[thread_idx, i + k, 1]:
-                            ρ[thread_idx, i + k, 1] = pearson
-                            I[thread_idx, i + k, 1] = i
+                        if pearson > ρL[thread_idx, i + k]:
+                            ρL[thread_idx, i + k] = pearson
+                            IL[thread_idx, i + k] = i
 
                         # right pearson correlation and right matrix profile index
-                        if pearson > ρ[thread_idx, i, 2]:
-                            ρ[thread_idx, i, 2] = pearson
-                            I[thread_idx, i, 2] = i + k
+                        if pearson > ρR[thread_idx, i]:
+                            ρR[thread_idx, i] = pearson
+                            IR[thread_idx, i] = i + k
 
     return
 
@@ -353,8 +357,14 @@ def _stump(
     n_B = T_B.shape[0]
     l = n_A - m + 1
     n_threads = numba.config.NUMBA_NUM_THREADS
-    ρ = np.full((n_threads, l, 3), -np.inf, dtype=np.float64)
-    I = np.full((n_threads, l, 3), -1, dtype=np.int64)
+    ρ = np.full((n_threads, l), -np.inf, dtype=np.float64)
+    I = np.full((n_threads, l), -1, dtype=np.int64)
+
+    ρL = np.full((n_threads, l), -np.inf, dtype=np.float64)
+    IL = np.full((n_threads, l), -1, dtype=np.int64)
+
+    ρR = np.full((n_threads, l), -np.inf, dtype=np.float64)
+    IR = np.full((n_threads, l), -1, dtype=np.int64)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, n_threads, False)
@@ -400,36 +410,47 @@ def _stump(
             thread_idx,
             ρ,
             I,
+            ρL,
+            IL,
+            ρR,
+            IR,
             ignore_trivial,
         )
 
     # Reduction of results from all threads
     for thread_idx in range(1, n_threads):
         for i in prange(l):
-            if ρ[0, i, 0] < ρ[thread_idx, i, 0]:
-                ρ[0, i, 0] = ρ[thread_idx, i, 0]
-                I[0, i, 0] = I[thread_idx, i, 0]
+            if ρ[0, i] < ρ[thread_idx, i]:
+                ρ[0, i] = ρ[thread_idx, i]
+                I[0, i] = I[thread_idx, i]
             # left pearson correlation and left matrix profile indices
-            if ρ[0, i, 1] < ρ[thread_idx, i, 1]:
-                ρ[0, i, 1] = ρ[thread_idx, i, 1]
-                I[0, i, 1] = I[thread_idx, i, 1]
+            if ρL[0, i] < ρL[thread_idx, i]:
+                ρL[0, i] = ρL[thread_idx, i]
+                IL[0, i] = IL[thread_idx, i]
             # right pearson correlation and right matrix profile indices
-            if ρ[0, i, 2] < ρ[thread_idx, i, 2]:
-                ρ[0, i, 2] = ρ[thread_idx, i, 2]
-                I[0, i, 2] = I[thread_idx, i, 2]
+            if ρR[0, i] < ρR[thread_idx, i]:
+                ρR[0, i] = ρR[thread_idx, i]
+                IR[0, i] = IR[thread_idx, i]
 
     # Convert pearson correlations to distances
-    p_norm = np.abs(2 * m * (1 - ρ[0, :, :]))
-    for i in prange(p_norm.shape[0]):
-        if p_norm[i, 0] < config.STUMPY_P_NORM_THRESHOLD:
-            p_norm[i, 0] = 0.0
-        if p_norm[i, 1] < config.STUMPY_P_NORM_THRESHOLD:
-            p_norm[i, 1] = 0.0
-        if p_norm[i, 2] < config.STUMPY_P_NORM_THRESHOLD:
-            p_norm[i, 2] = 0.0
-    P = np.sqrt(p_norm)
+    p_norm = np.abs(2 * m * (1 - ρ[0, :]))
+    p_norm_L = np.abs(2 * m * (1 - ρL[0, :]))
+    p_norm_R = np.abs(2 * m * (1 - ρR[0, :]))
 
-    return P[:, :], I[0, :, :]
+    for i in prange(p_norm.shape[0]):
+        if p_norm[i] < config.STUMPY_P_NORM_THRESHOLD:
+            p_norm[i] = 0.0
+        if p_norm_L[i] < config.STUMPY_P_NORM_THRESHOLD:
+            p_norm_L[i] = 0.0
+        if p_norm_R[i] < config.STUMPY_P_NORM_THRESHOLD:
+            p_norm_R[i] = 0.0
+
+    P = np.sqrt(p_norm)
+    PL = np.sqrt(p_norm_L)
+    PR = np.sqrt(p_norm_R)
+
+
+    return P, I, PL, IL, PR, IR
 
 
 @core.non_normalized(aamp)
@@ -594,7 +615,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
     else:
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
-    P, I = _stump(
+    P, I, PL, IL, PR, IR = _stump(
         T_A,
         T_B,
         m,
@@ -612,8 +633,8 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
         ignore_trivial,
     )
 
-    out[:, 0] = P[:, 0]
-    out[:, 1:] = I
+    out[:, 0] = P
+    out[:, 1:] = np.c_[I, IL, IR]
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
