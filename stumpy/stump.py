@@ -634,7 +634,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
     )
 
     out[:, 0] = P
-    out[:, 1:] = np.c_[I, IL, IR]
+    out[:, 1:] = np.column_stack((I, IL, IR))
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
