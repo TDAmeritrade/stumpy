@@ -18,10 +18,10 @@ def stumped(
     dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1
 ):
     """
-    Compute the z-normalized matrix profile with a distributed dask cluster
+    Compute the z-normalized (top-k) matrix profile with a distributed dask cluster
 
     This is a highly distributed implementation around the Numba JIT-compiled
-    parallelized `_stump` function which computes the matrix profile according
+    parallelized `_stump` function which computes the (top-k) matrix profile according
     to STOMPopt with Pearson correlations.
 
     Parameters
@@ -63,10 +63,10 @@ def stumped(
     Returns
     -------
     out : numpy.ndarray
-        The first column consists of the matrix profile, the second column
-        consists of the matrix profile indices, the third column consists of
-        the left matrix profile indices, and the fourth column consists of
-        the right matrix profile indices.
+        The first k columns consist of the top-k matrix profile, the next k columns
+        consist of their corresponding matrix profile indices, the column at
+        numpy indexing 2k contains the top-1 left matrix profile indices and the last
+        column, at numpy indexing 2k+1, contains the top-1 right matrix profile indices.
 
     See Also
     --------

@@ -269,8 +269,8 @@ def _stump(
     """
     A Numba JIT-compiled version of STOMPopt with Pearson correlations for parallel
     computation of the (top-k) matrix profile, the (top-k) matrix profile indices,
-    the top-1 left matrix profile and matrix profile indices, and the top-1 right
-    matrix profile and matrix profile indices.
+    the top-1 left matrix profile and its matrix profile index, and the top-1 right
+    matrix profile and its matrix profile index.
 
     Parameters
     ----------
@@ -327,7 +327,7 @@ def _stump(
 
     k : int
         The number of smallest elements in distance profile that should be stored
-        for constructing top-k matrix profile.
+        for constructing the top-k matrix profile.
 
     Returns
     -------
@@ -430,7 +430,7 @@ def _stump(
 
     for thread_idx in prange(n_threads):
         # Compute and update pearson correlations and matrix profile indices
-        # within a single thread to avoid race conditions
+        # within a single thread and avoiding race conditions
         _compute_diagonal(
             T_A,
             T_B,
@@ -484,12 +484,12 @@ def _stump(
                 ρR[0, i] = ρR[thread_idx, i]
                 IR[0, i] = IR[thread_idx, i]
 
-    # The arrays ρ (and so I) should be reversed since ρ is in ascending order.
-    ρ = ρ[0, :, ::-1]
+    # Convert top-k pearson correlations to distances. The arrays ρ (and so I) should
+    # be reversed since ρ is in ascending order.
+    p_norm = np.abs(2 * m * (1 - ρ[0, :, ::-1]))
     I = I[0, :, ::-1]
 
-    # Convert pearson correlations to distances.
-    p_norm = np.abs(2 * m * (1 - ρ))
+    # Convert top-1 left/right pearson correlations to distances.
     p_norm_L = np.abs(2 * m * (1 - ρL[0, :]))
     p_norm_R = np.abs(2 * m * (1 - ρR[0, :]))
 

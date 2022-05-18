@@ -244,7 +244,7 @@ def test_stump_nan_zero_mean_self_join():
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_self_join_KNN(T_A, T_B):
-    k = 2
+    k = 3
     m = 3
     zone = int(np.ceil(m / 4))
     ref_mp = naive.stump(T_B, m, exclusion_zone=zone, k=k)

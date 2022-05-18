@@ -454,6 +454,7 @@ class scrump:
         s=None,
         normalize=True,
         p=2.0,
+        k=1, # class needs to be revised to return (top-k) matrix profile
     ):
         """
         Initialize the `scrump` object
@@ -625,7 +626,6 @@ class scrump:
                 self._T_B_subseq_isconstant,
                 self._diags[start_idx:stop_idx],
                 self._ignore_trivial,
-                k=1,
             )
 
             P = np.column_stack((P, PL, PR))
