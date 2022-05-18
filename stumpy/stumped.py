@@ -255,13 +255,13 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, 
     results = dask_client.gather(futures)
     profile, indices, profile_L, indices_L, profile_R, indices_R = results[0]
 
-    profile = np.c_[profile, profile_L, profile_R]
-    indices = np.c_[indices, indices_L, indices_R]
+    profile = np.column_stack((profile, profile_L, profile_R))
+    indices = np.column_stack((indices, indices_L, indices_R))
 
     for i in range(1, len(hosts)):
         P, I, PL, IL, PR, IR = results[i]
-        P = np.c_[P, PL, PR]
-        I = np.c_[I, IL, IR]
+        P = np.column_stack((P, PL, PR))
+        I = np.column_stack((I, IL, IR))
         for col in range(P.shape[1]):  # pragma: no cover
             cond = P[:, col] < profile[:, col]
             profile[:, col] = np.where(cond, P[:, col], profile[:, col])

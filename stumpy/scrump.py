@@ -628,8 +628,8 @@ class scrump:
                 k=1,
             )
 
-            P = np.c_[P, PL, PR]
-            I = np.c_[I, IL, IR]
+            P = np.column_stack((P, PL, PR))
+            I = np.column_stack((I, IL, IR))
 
             # Update matrix profile and indices
             for i in range(self._P.shape[0]):

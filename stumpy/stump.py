@@ -695,7 +695,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
     out = np.empty((l, 2 * k + 2), dtype=object)  # last two columns are to
     # store left and right matrix profile indices
     out[:, :k] = P
-    out[:, k:] = np.c_[I, IL, IR]
+    out[:, k:] = np.column_stack((I, IL, IR))
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
