@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 @core.non_normalized(aamped)
 def stumped(
-    dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
+    dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
     """
     Compute the z-normalized matrix profile with a distributed dask cluster
 
@@ -54,6 +54,10 @@ def stumped(
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
+
+    k : int
+        The number of smallest elements in distance profile that should be stored
+        for constructing the top-k matrix profile.
 
     Returns
     -------
@@ -184,7 +188,6 @@ def stumped(
     l = n_A - m + 1
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-    out = np.empty((l, 4), dtype=object)
 
     hosts = list(dask_client.ncores().keys())
     nworkers = len(hosts)
@@ -249,27 +252,44 @@ def stumped(
                 T_B_subseq_isconstant_future,
                 diags_futures[i],
                 ignore_trivial,
-                1,
+                k,
             )
         )
 
     results = dask_client.gather(futures)
     profile, indices, profile_L, indices_L, profile_R, indices_R = results[0]
 
-    profile = np.column_stack((profile, profile_L, profile_R))
-    indices = np.column_stack((indices, indices_L, indices_R))
-
     for i in range(1, len(hosts)):
         P, I, PL, IL, PR, IR = results[i]
-        P = np.column_stack((P, PL, PR))
-        I = np.column_stack((I, IL, IR))
-        for col in range(P.shape[1]):  # pragma: no cover
-            cond = P[:, col] < profile[:, col]
-            profile[:, col] = np.where(cond, P[:, col], profile[:, col])
-            indices[:, col] = np.where(cond, I[:, col], indices[:, col])
+        # Update top-k matrix profile, alternative approach:
+        # np.argsort(np.concatenate(profile, P), kind='mergesort')
+        prof = profile.copy()
+        ind = indices.copy()
+        for j in range(l):
+            u, w = 0, 0
+            for idx in range(k):
+                if prof[j, u] <= P[j, w]:
+                    profile[j, idx] = prof[j, u]
+                    indices[j, idx] = ind[j, u]
+                    u += 1
+                else:
+                    profile[j, idx] = P[j, w]
+                    indices[j, idx] = I[j, w]
+                    w += 1
 
-    out[:, 0] = profile[:, 0]
-    out[:, 1:4] = indices
+        # Update top-1 left matrix profile and matrix profile index
+        cond = PL < profile_L
+        profile_L = np.where(cond, PL, profile_L)
+        indices_L = np.where(cond, IL, indices_L)
+
+        # Update top-1 right matrix profile and matrix profile index
+        cond = PR < profile_R
+        profile_R = np.where(cond, PR, profile_R)
+        indices_R = np.where(cond, IR, indices_R)
+
+    out = np.empty((l, 2 * k + 2), dtype=object)
+    out[:, :k] = profile
+    out[:, k:] = np.column_stack((indices, indices_L, indices_R))
 
     # Delete data from Dask cluster
     dask_client.cancel(T_A_future)
