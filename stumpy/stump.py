@@ -553,8 +553,8 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
     Returns
     -------
     out : numpy.ndarray
-        The first k columns contain the top-k matrix profile, the next k columns
-        contain their corresponding matrix profile indices, the column at
+        The first k columns consist of the top-k matrix profile, the next k columns
+        consist of their corresponding matrix profile indices, the column at
         numpy indexing 2k contains the top-1 left matrix profile indices and the last
         column, at numpy indexing 2k+1, contains the top-1 right matrix profile indices.
 
