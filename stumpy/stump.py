@@ -49,9 +49,9 @@ def _compute_diagonal(
     k,
 ):
     """
-    Compute (Numba JIT-compiled) and update the (top-k) Pearson correlation, ρ, and I,
-    and, the left ρ and the left I, the right ρ and the right I sequentially along
-    individual diagonals using a single thread and avoiding race conditions.
+    Compute (Numba JIT-compiled) and update the (top-k) Pearson correlation (ρ),
+    ρL, ρR, I, IL, and IR sequentially along individual diagonals using a single
+    thread and avoiding race conditions.
 
     Parameters
     ----------
@@ -121,10 +121,10 @@ def _compute_diagonal(
         The thread index
 
     ρ : numpy.ndarray
-        The top-k Pearson correlations, sorted in ascending order per row
+        The (top-k) Pearson correlations, sorted in ascending order per row
 
     I : numpy.ndarray
-        The top-k matrix profile indices
+        The (top-k) matrix profile indices
 
     ρL : numpy.ndarray
         The top-1 left Pearson correlations
@@ -144,7 +144,7 @@ def _compute_diagonal(
 
     k : int
         The number of smallest elements in distance profile that should be stored
-        for constructing top-k matrix profile.
+        for constructing the top-k matrix profile.
 
     Returns
     -------
@@ -227,9 +227,6 @@ def _compute_diagonal(
 
                         I[thread_idx, i + g, : idx - 1] = I[thread_idx, i + g, 1:idx]
                         I[thread_idx, i + g, idx - 1] = i
-                        # for top-1 case:
-                        # ρ[thread_idx, i + g, 0] = pearson
-                        # I[thread_idx, i + g, 0] = i
 
                     if i < i + g:
                         # left pearson correlation and left matrix profile index
@@ -271,9 +268,9 @@ def _stump(
 ):
     """
     A Numba JIT-compiled version of STOMPopt with Pearson correlations for parallel
-    computation of the top-k matrix profile, top-k matrix profile indices, top-1
-    left matrix profile and matrix profile indices, and top-1 right matrix profile
-    and matrix profile indices.
+    computation of the (top-k) matrix profile, the (top-k) matrix profile indices,
+    the top-1 left matrix profile and matrix profile indices, and the top-1 right
+    matrix profile and matrix profile indices.
 
     Parameters
     ----------
@@ -468,7 +465,7 @@ def _stump(
     for thread_idx in range(1, n_threads):
         for i in prange(l):
             # top-k
-            for j in range(k - 1, -1, -1):
+            for j in range(k - 1, -1, -1): # reverse iteration to preserve order in ties
                 if ρ[0, i, 0] < ρ[thread_idx, i, j]:
                     idx = np.searchsorted(ρ[0, i], ρ[thread_idx, i, j])
                     ρ[0, i, : idx - 1] = ρ[0, i, 1:idx]
@@ -485,8 +482,12 @@ def _stump(
                 ρR[0, i] = ρR[thread_idx, i]
                 IR[0, i] = IR[thread_idx, i]
 
-    # Convert pearson correlations to distances
-    p_norm = np.abs(2 * m * (1 - ρ[0, :, :]))
+    # The arrays ρ (and so I) should be reversed since ρ is in ascending order.
+    ρ = ρ[0, :, ::-1]
+    I = I[0, :, ::-1]
+
+    # Convert pearson correlations to distances.
+    p_norm = np.abs(2 * m * (1 -  ρ))
     p_norm_L = np.abs(2 * m * (1 - ρL[0, :]))
     p_norm_R = np.abs(2 * m * (1 - ρR[0, :]))
 
@@ -505,7 +506,7 @@ def _stump(
     PL = np.sqrt(p_norm_L)
     PR = np.sqrt(p_norm_R)
 
-    return P[:, ::-1], I[0, :, ::-1], PL, IL[0, :], PR, IR[0, :]
+    return P, I, PL, IL[0, :], PR, IR[0, :]
 
 
 @core.non_normalized(aamp)
@@ -514,8 +515,8 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
     Compute the z-normalized matrix profile
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
-    `_stump` function which computes the matrix profile according to STOMPopt with
-    Pearson correlations.
+    `_stump` function which computes the (top-k) matrix profile according to
+    STOMPopt with Pearson correlations.
 
     Parameters
     ----------
@@ -545,15 +546,15 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
 
     k : int, default 1
         The number of smallest elements in distance profile that should be stored
-        for constructing top-k matrix profile.
+        for constructing the top-k matrix profile.
 
     Returns
     -------
     out : numpy.ndarray
-        The first k columns consists of the top-k matrix profile, the next k columns
-        consists of their corresponding matrix profile indices, the column at
-        numpy indexing 2k contains top-1 left matrix profile indices and the last
-        column, at numpy indexing 2k+1, contains top-1 right matrix profile indices.
+        The first k columns contain the top-k matrix profile, the next k columns
+        contain their corresponding matrix profile indices, the column at
+        numpy indexing 2k contains the top-1 left matrix profile indices and the last
+        column, at numpy indexing 2k+1, contains the top-1 right matrix profile indices.
 
     See Also
     --------
