@@ -625,7 +625,7 @@ class scrump:
                 self._T_B_subseq_isconstant,
                 self._diags[start_idx:stop_idx],
                 self._ignore_trivial,
-                1 # revise module to accept parameter k for top-k matrix profile
+                1,  # revise module to accept parameter k for top-k matrix profile
             )
 
             P = np.column_stack((P, PL, PR))
