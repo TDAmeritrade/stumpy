@@ -318,6 +318,9 @@ def ostinato(Ts, m, normalize=True, p=2.0):
     ...     m=3)
     (1.2370237678153826, 0, 4)
     """
+    if not isinstance(Ts, list):  # pragma: no cover
+        raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
+
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
     for i, T in enumerate(Ts):
@@ -416,6 +419,9 @@ def ostinatoed(dask_client, Ts, m, normalize=True, p=2.0):
     ...         m=3)
     (1.2370237678153826, 0, 4)
     """
+    if not isinstance(Ts, list):  # pragma: no cover
+        raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
+
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
     for i, T in enumerate(Ts):
