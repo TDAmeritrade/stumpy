@@ -240,7 +240,7 @@ def _aamp(
     return np.power(P[0, :, :], 1.0 / p), I[0, :, :]
 
 
-def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1): # k=1 is temporary
+def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):  # k=1 is temporary
     # and this function needs to be changed to return top-k
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile

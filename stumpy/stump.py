@@ -465,7 +465,9 @@ def _stump(
     for thread_idx in range(1, n_threads):
         for i in prange(l):
             # top-k
-            for j in range(k - 1, -1, -1): # reverse iteration to preserve order in ties
+            for j in range(
+                k - 1, -1, -1
+            ):  # reverse iteration to preserve order in ties
                 if ρ[0, i, 0] < ρ[thread_idx, i, j]:
                     idx = np.searchsorted(ρ[0, i], ρ[thread_idx, i, j])
                     ρ[0, i, : idx - 1] = ρ[0, i, 1:idx]
@@ -487,7 +489,7 @@ def _stump(
     I = I[0, :, ::-1]
 
     # Convert pearson correlations to distances.
-    p_norm = np.abs(2 * m * (1 -  ρ))
+    p_norm = np.abs(2 * m * (1 - ρ))
     p_norm_L = np.abs(2 * m * (1 - ρL[0, :]))
     p_norm_R = np.abs(2 * m * (1 - ρR[0, :]))
 

@@ -123,7 +123,6 @@ def non_normalized(non_norm, exclude=None, replace=None):
     if exclude is None:
         exclude = ["normalize", "p"]
 
-    
     @functools.wraps(non_norm)
     def outer_wrapper(norm):
         @functools.wraps(norm)
