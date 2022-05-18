@@ -15,9 +15,7 @@ logger = logging.getLogger(__name__)
 
 @core.non_normalized(aamped)
 def stumped(
-    dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1
-):
-    # the function needs to be revisd to return top-k matrix profile
+    dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
     """
     Compute the z-normalized matrix profile with a distributed dask cluster
 

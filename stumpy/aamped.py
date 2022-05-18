@@ -12,8 +12,7 @@ from .aamp import _aamp
 logger = logging.getLogger(__name__)
 
 
-def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
-    # function needs to be revised to return top-k matix profile
+def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2.0):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile
 
