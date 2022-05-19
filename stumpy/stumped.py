@@ -262,21 +262,18 @@ def stumped(
 
     for i in range(1, len(hosts)):
         P, I, PL, IL, PR, IR = results[i]
-        # Update top-k matrix profile, alternative approach:
-        # np.argsort(np.concatenate(profile, P), kind='mergesort')
-        prof = profile.copy()
-        ind = indices.copy()
         for j in range(l):
-            u, w = 0, 0
-            for idx in range(k):
-                if prof[j, u] <= P[j, w]:
-                    profile[j, idx] = prof[j, u]
-                    indices[j, idx] = ind[j, u]
-                    u += 1
-                else:
-                    profile[j, idx] = P[j, w]
-                    indices[j, idx] = I[j, w]
-                    w += 1
+            # Uodate profie[j]
+            for D, ind in zip(P[j], I[j]):
+                if D >= profile[j, -1]:
+                    break  # no need to update profile[j] from this point.
+                idx = np.searchsorted(profile[j], D, side="right")  # might be optimized
+                # with help of checkpoint idx from previous iteration.
+                profile[j, idx + 1 :] = profile[j, idx : k - 1]
+                profile[j, idx] = D
+
+                indices[j, idx + 1 :] = indices[j, idx : k - 1]
+                indices[j, idx] = ind
 
         # Update top-1 left matrix profile and matrix profile index
         cond = PL < profile_L
