@@ -91,6 +91,9 @@ def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0):
     ...         device_id=all_gpu_devices)
     (1.2370237678153826, 0, 4)
     """
+    if not isinstance(Ts, list):  # pragma: no cover
+        raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
+
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
     for i, T in enumerate(Ts):

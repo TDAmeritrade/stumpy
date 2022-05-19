@@ -64,6 +64,9 @@ def gpu_aamp_ostinato(Ts, m, device_id=0, p=2.0):
     central motif it is necessary to search the subsequences with the
     best radius via `stumpy.ostinato._get_central_motif`
     """
+    if not isinstance(Ts, list):  # pragma: no cover
+        raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
+
     Ts_subseq_isfinite = [None] * len(Ts)
     for i, T in enumerate(Ts):
         Ts[i], Ts_subseq_isfinite[i] = core.preprocess_non_normalized(T, m)
