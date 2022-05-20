@@ -257,23 +257,27 @@ def stumped(
             )
         )
 
+    profile = np.empty((l, 2 * k))
+    indices = np.empty((l, 2 * k))
+
     results = dask_client.gather(futures)
-    profile, indices, profile_L, indices_L, profile_R, indices_R = results[0]
+    (
+        profile[:, :k],
+        indices[:, :k],
+        profile_L,
+        indices_L,
+        profile_R,
+        indices_R,
+    ) = results[0]
 
     for i in range(1, len(hosts)):
         P, I, PL, IL, PR, IR = results[i]
-        for j in range(l):
-            # Uodate profie[j]
-            for D, ind in zip(P[j], I[j]):
-                if D >= profile[j, -1]:
-                    break  # no need to update profile[j] from this point.
-                idx = np.searchsorted(profile[j], D, side="right")  # might be optimized
-                # with help of checkpoint idx from previous iteration.
-                profile[j, idx + 1 :] = profile[j, idx : k - 1]
-                profile[j, idx] = D
 
-                indices[j, idx + 1 :] = indices[j, idx : k - 1]
-                indices[j, idx] = ind
+        profile[:, k:] = P
+        indices[:, k:] = I
+        idx = np.argsort(profile, axis=1)
+        profile = np.take_along_axis(profile, idx, axis=1)
+        indices = np.take_along_axis(indices, idx, axis=1)
 
         # Update top-1 left matrix profile and matrix profile index
         cond = PL < profile_L
@@ -286,8 +290,8 @@ def stumped(
         indices_R = np.where(cond, IR, indices_R)
 
     out = np.empty((l, 2 * k + 2), dtype=object)
-    out[:, :k] = profile
-    out[:, k:] = np.column_stack((indices, indices_L, indices_R))
+    out[:, :k] = profile[:, :k]
+    out[:, k:] = np.column_stack((indices[:, :k], indices_L, indices_R))
 
     # Delete data from Dask cluster
     dask_client.cancel(T_A_future)
