@@ -37,9 +37,9 @@ def _merge_topk_profiles_indices(PA, PB, IA, IB):
             if PB[i, j] < PA[i, -1]:
                 idx = np.searchsorted(PA[i], PB[i, j], side="right")
 
-                PA[i, idx + 1 :] = PA[i, idx:-1]
+                PA[i, idx + 1 :] = PA[i, idx:-1].copy()
                 PA[i, idx] = PB[i, j]
-                IA[i, idx + 1 :] = IA[i, idx:-1]
+                IA[i, idx + 1 :] = IA[i, idx:-1].copy()
                 IA[i, idx] = IB[i, j]
 
 
