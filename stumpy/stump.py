@@ -40,10 +40,10 @@ def _compute_diagonal(
     diags_stop_idx,
     thread_idx,
     ρ,
-    I,
     ρL,
-    IL,
     ρR,
+    I,
+    IL,
     IR,
     ignore_trivial,
     k,
@@ -123,17 +123,17 @@ def _compute_diagonal(
     ρ : numpy.ndarray
         The (top-k) Pearson correlations, sorted in ascending order per row
 
-    I : numpy.ndarray
-        The (top-k) matrix profile indices
-
     ρL : numpy.ndarray
         The top-1 left Pearson correlations
 
-    IL : numpy.ndarray
-        The top-1 left matrix profile indices
-
     ρR : numpy.ndarray
         The top-1 right Pearson correlations
+
+    I : numpy.ndarray
+        The (top-k) matrix profile indices
+
+    IL : numpy.ndarray
+        The top-1 left matrix profile indices
 
     IR : numpy.ndarray
         The top-1 right matrix profile indices
@@ -452,10 +452,10 @@ def _stump(
             diags_ranges[thread_idx, 1],
             thread_idx,
             ρ,
-            I,
             ρL,
-            IL,
             ρR,
+            I,
+            IL,
             IR,
             ignore_trivial,
             k,
@@ -508,7 +508,7 @@ def _stump(
     PL = np.sqrt(p_norm_L)
     PR = np.sqrt(p_norm_R)
 
-    return P, I, PL, IL[0, :], PR, IR[0, :]
+    return P, PL, PR, I, IL[0, :], IR[0, :]
 
 
 @core.non_normalized(aamp)
@@ -676,7 +676,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
     else:
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
-    P, I, PL, IL, PR, IR = _stump(
+    P, PL, PR, I, IL, IR = _stump(
         T_A,
         T_B,
         m,
