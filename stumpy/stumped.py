@@ -268,15 +268,15 @@ def stumped(
     results = dask_client.gather(futures)
     (
         profile[:, :k],
-        indices[:, :k],
         profile_L,
-        indices_L,
         profile_R,
+        indices[:, :k],
+        indices_L,
         indices_R,
     ) = results[0]
 
     for i in range(1, len(hosts)):
-        P, I, PL, IL, PR, IR = results[i]
+        P, PL, PR, I, IL, IR = results[i]
 
         profile[:, k:] = P
         indices[:, k:] = I

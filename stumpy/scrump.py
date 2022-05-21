@@ -609,7 +609,7 @@ class scrump:
         if self._chunk_idx < self._n_chunks:
             start_idx, stop_idx = self._chunk_diags_ranges[self._chunk_idx]
 
-            P, I, PL, IL, PR, IR = _stump(
+            P, PL, PR, I, IL, IR = _stump(
                 self._T_A,
                 self._T_B,
                 self._m,
