@@ -56,17 +56,22 @@ def stumped(
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
 
-    k : int
-        The number of smallest elements in distance profile that should be stored
-        for constructing the top-k matrix profile.
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage when k > 1.
 
     Returns
     -------
     out : numpy.ndarray
-        The first k columns consist of the top-k matrix profile, the next k columns
-        consist of their corresponding matrix profile indices, the column at
-        numpy indexing 2k contains the top-1 left matrix profile indices and the last
-        column, at numpy indexing 2k+1, contains the top-1 right matrix profile indices.
+        When k = 1 (default), the first column consists of the matrix profile,
+        the second column consists of the matrix profile indices, the third column
+        consists of the left matrix profile indices, and the fourth column consists of
+        the right matrix profile indices. However, when k > 1, the output array will
+        contain exactly 2 * k + 2 columns. The first k columns (i.e., out[:, :k]) consists
+        of the top-k matrix profile, the next set of k columns (i.e., out[:, k:2k]) consists
+        of the corresponding top-k matrix profile indices, and the last two columns
+        (i.e., out[:, 2k] and out[:, 2k+1] or, equivalently, out[:, -2] and out[:, -1]) correspond to
+        the top-1 left matrix profile indices and the top-1 right matrix profile indices, respectively.
 
     See Also
     --------

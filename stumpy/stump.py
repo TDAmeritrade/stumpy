@@ -143,8 +143,8 @@ def _compute_diagonal(
         `False`. Default is `True`.
 
     k : int
-        The number of smallest elements in distance profile that should be stored
-        for constructing the top-k matrix profile.
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage when k > 1.
 
     Returns
     -------
@@ -326,28 +326,28 @@ def _stump(
         `False`. Default is `True`.
 
     k : int
-        The number of smallest elements in distance profile that should be stored
-        for constructing the top-k matrix profile.
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage when k > 1.
 
     Returns
     -------
     profile : numpy.ndarray
-        Top-k matrix profile
+        The (top-k) matrix profile
 
     indices : numpy.ndarray
-        Top-k matrix profile indices
+        The (top-k) matrix profile indices
 
     left profile : numpy.ndarray
-        Top-1 left matrix profile
+        The (top-1) left matrix profile
 
     left indices : numpy.ndarray
-        Top-1 left matrix profile indices
+        The (top-1) left matrix profile indices
 
     right profile : numpy.ndarray
-        Top-1 right matrix profile
+        The (top-1) right matrix profile
 
     right indices : numpy.ndarray
-        Top-1 right matrix profile indices
+        The (top-1) right matrix profile indices
 
     Notes
     -----
@@ -484,12 +484,11 @@ def _stump(
                 ρR[0, i] = ρR[thread_idx, i]
                 IR[0, i] = IR[thread_idx, i]
 
-    # Convert top-k pearson correlations to distances. The arrays ρ (and so I) should
-    # be reversed since ρ is in ascending order.
+    # Reverse top-k rho (and its associated I) to be in descending order and
+    # then convert from Pearson correlations to Euclidean distances (ascending order)
     p_norm = np.abs(2 * m * (1 - ρ[0, :, ::-1]))
     I = I[0, :, ::-1]
 
-    # Convert top-1 left/right pearson correlations to distances.
     p_norm_L = np.abs(2 * m * (1 - ρL[0, :]))
     p_norm_R = np.abs(2 * m * (1 - ρR[0, :]))
 
@@ -547,16 +546,21 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
         ignored when `normalize == True`.
 
     k : int, default 1
-        The number of smallest elements in distance profile that should be stored
-        for constructing the top-k matrix profile.
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage when k > 1.
 
     Returns
     -------
     out : numpy.ndarray
-        The first k columns consist of the top-k matrix profile, the next k columns
-        consist of their corresponding matrix profile indices, the column at
-        numpy indexing 2k contains the top-1 left matrix profile indices and the last
-        column, at numpy indexing 2k+1, contains the top-1 right matrix profile indices.
+        When k = 1 (default), the first column consists of the matrix profile,
+        the second column consists of the matrix profile indices, the third column
+        consists of the left matrix profile indices, and the fourth column consists of
+        the right matrix profile indices. However, when k > 1, the output array will
+        contain exactly 2 * k + 2 columns. The first k columns (i.e., out[:, :k]) consists
+        of the top-k matrix profile, the next set of k columns (i.e., out[:, k:2k]) consists
+        of the corresponding top-k matrix profile indices, and the last two columns
+        (i.e., out[:, 2k] and out[:, 2k+1] or, equivalently, out[:, -2] and out[:, -1]) correspond to
+        the top-1 left matrix profile indices and the top-1 right matrix profile indices, respectively.
 
     See Also
     --------
