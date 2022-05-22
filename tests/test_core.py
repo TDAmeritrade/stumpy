@@ -82,7 +82,7 @@ def naive_bsf_indices(n):
     return np.array(out)
 
 
-def naive_merge_topk_profiles_indices(PA, PB, IA, IB):
+def naive_merge_topk_PI(PA, PB, IA, IB):
     profile = np.column_stack((PA, PB))
     indices = np.column_stack((IA, IB))
 

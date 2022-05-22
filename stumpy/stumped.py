@@ -271,7 +271,7 @@ def stumped(
     for i in range(1, len(hosts)):
         P, PL, PR, I, IL, IR = results[i]
         # Update top-k matrix profile and matrix profile indices
-        core._merge_topk_profiles_indices(profile, P, indices, I)
+        core._merge_topk_PI(profile, P, indices, I)
 
         # Update top-1 left matrix profile and matrix profile index
         cond = PL < profile_L

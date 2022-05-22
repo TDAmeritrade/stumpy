@@ -2497,7 +2497,7 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
 
 
 @njit(parallel=True)
-def _merge_topk_profiles_indices(PA, PB, IA, IB):
+def _merge_topk_PI(PA, PB, IA, IB):
     """
     Merge two top-k matrix profiles PA and PB, and update PA (in place) while
     prioritizing values of PA in ties. Also, update IA accordingly.

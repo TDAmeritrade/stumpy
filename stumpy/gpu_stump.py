@@ -739,7 +739,7 @@ def gpu_stump(
 
     for i in range(1, len(device_ids)):
         # Update (top-k) matrix profile and matrix profile indices
-        core._merge_topk_profiles_indices(
+        core._merge_topk_PI(
             profile[0], profile[i], indices[0], indices[i]
         )
 
