@@ -12,6 +12,7 @@ from .aamped import aamped
 
 logger = logging.getLogger(__name__)
 
+
 @core.non_normalized(aamped)
 def stumped(
     dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1
@@ -283,8 +284,8 @@ def stumped(
         indices_R = np.where(cond, IR, indices_R)
 
     out = np.empty((l, 2 * k + 2), dtype=object)
-    out[:, :k] = profile[:, :k]
-    out[:, k:] = np.column_stack((indices[:, :k], indices_L, indices_R))
+    out[:, :k] = profile
+    out[:, k:] = np.column_stack((indices, indices_L, indices_R))
 
     # Delete data from Dask cluster
     dask_client.cancel(T_A_future)

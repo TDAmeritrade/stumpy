@@ -737,11 +737,11 @@ def gpu_stump(
         os.remove(indices_L_fname)
         os.remove(indices_R_fname)
 
-    profile_0 = profile[0].copy()
-    indices_0 = indices[0].copy()
     for i in range(1, len(device_ids)):
         # Update (top-k) matrix profile and matrix profile indices
-        core._merge_topk_profiles_indices(profile_0, profile[i], indices_0, indices[i])
+        core._merge_topk_profiles_indices(
+            profile[0], profile[i], indices[0], indices[i]
+        )
 
         # Update (top-1) left matrix profile and matrix profil indices
         cond = profile_L[0] < profile_L[i]
@@ -757,8 +757,8 @@ def gpu_stump(
         (profile_len, 2 * k + 2), dtype=object
     )  # last two columns are to store
     # (top-1) left/right matrix profile indices
-    out[:, :k] = profile_0
-    out[:, k:] = np.column_stack((indices_0, indices_L[0], indices_R[0]))
+    out[:, :k] = profile[0]
+    out[:, k:] = np.column_stack((indices[0], indices_L[0], indices_R[0]))
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
