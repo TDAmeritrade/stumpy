@@ -270,7 +270,8 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
 
     k : int, default 1
         The number of top `k` smallest distances used to construct the matrix profile.
-        Note that this will increase the total computational time and memory usage when k > 1.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
 
     Returns
     -------
