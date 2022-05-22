@@ -1039,3 +1039,51 @@ def test_select_P_ABBA_val_inf():
     p_abba.sort()
     ref = p_abba[k - 1]
     npt.assert_almost_equal(ref, comp)
+
+
+def test_merge_topk_PI():
+    PA = np.array([
+    [0.0, 0.0, 0.0, 0.0, 0.0],
+    [0.1, 0.2, 0.3, 0.4, 0.5],
+    [0.1, 0.2, 0.3, 0.4, 0.5],
+    [0.1, 0.2, 0.3, 0.4, 0.5],
+    [0.1, 0.2, 0.3, 0.4, 0.5],
+    [0.1, 0.2, 0.3, 0.4, 0.5],
+    [0.1, 0.1, 0.2, 0.3, 0.4],
+    [0.1, 0.2, np.inf, np.inf, np.inf],
+    [np.inf, np.inf, np.inf, np.inf, np.inf]
+    ])
+
+    PB = np.array([
+    [0.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.15, 0.25, 0.35, 0.45],
+    [0.15, 0.25, 0.35, 0.45, 0.55],
+    [0.01, 0.02, 0.03, 0.04, 0.05],
+    [0.6, 0.7, 0.8, 0.9, 1],
+    [0.1, 0.1, 0.2, 0.3, 0.4],
+    [0.1, 0.2, 0.3, 0.4, 0.5],
+    [0.0, 0.3, np.inf, np.inf, np.inf],
+    [np.inf, np.inf, np.inf, np.inf, np.inf],
+    ])
+
+    n, k = PA.shape
+
+    IA = np.arange(n * k).reshape(n, k)
+    IB = IA.copy() + n * k
+    IA[7, 2:] = -1
+    IA[8, :] = -1
+    IB[7, 2:] = -1
+    IB[8, :] = -1
+
+    ref_P = PA.copy()
+    ref_I = IA.copy()
+
+    comp_P = PA.copy()
+    comp_I = IA.copy()
+
+    naive_merge_topk_PI(ref_P, PB, ref_I, IB)
+    core._merge_topk_PI(comp_P, PB, comp_I, IB)
+
+    ref = np.column_stack((ref_P, ref_I))
+    comp = np.column_stack((comp_P, comp_I))
+    npt.assert_array_equal(ref, comp)
