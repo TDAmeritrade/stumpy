@@ -7,41 +7,12 @@ import multiprocessing as mp
 import os
 
 import numpy as np
-from numba import cuda, njit, prange
+from numba import cuda
 
 from . import core, config
 from .gpu_aamp import gpu_aamp
 
 logger = logging.getLogger(__name__)
-
-
-@njit(parallel=True)
-def _merge_topk_profiles_indices(PA, PB, IA, IB):
-    """
-    Merge two top-k matrix profiles while prioritizing values of PA in ties
-    and update PA (and so IA)
-
-    PA : numpy.ndarray
-        a (top-k) matrix profile
-
-    PB : numpy.ndarray
-        a (top-k) matrix profile
-
-    IA : numpy.ndarray
-        a (top-k) matrix profile indices, corresponding to PA
-
-    IB : numpy.ndarray
-        a (top-k) matrix profile indices, corresponding to PB
-    """
-    for i in range(PA.shape[0]):
-        for j in range(PA.shape[1]):
-            if PB[i, j] < PA[i, -1]:
-                idx = np.searchsorted(PA[i], PB[i, j], side="right")
-
-                PA[i, idx + 1 :] = PA[i, idx:-1].copy()
-                PA[i, idx] = PB[i, j]
-                IA[i, idx + 1 :] = IA[i, idx:-1].copy()
-                IA[i, idx] = IB[i, j]
 
 
 @cuda.jit(
@@ -209,7 +180,7 @@ def _compute_and_update_PI_kernel(
             if p_norm < profile_R[j] and i > j:
                 profile_R[j] = p_norm
                 indices_R[j] = i
-            
+
         for idx in range(k, -1, -1):
             if (p_norm < profile[j, idx - 1]) and (idx > 0):
                 profile[j, idx - 1] = profile[j, idx - 2]
@@ -766,9 +737,11 @@ def gpu_stump(
         os.remove(indices_L_fname)
         os.remove(indices_R_fname)
 
+    profile_0 = profile[0].copy()
+    indices_0 = indices[0].copy()
     for i in range(1, len(device_ids)):
         # Update (top-k) matrix profile and matrix profile indices
-        _merge_topk_profiles_indices(profile[0], profile[i], indices[0], indices[i])
+        core._merge_topk_profiles_indices(profile_0, profile[i], indices_0, indices[i])
 
         # Update (top-1) left matrix profile and matrix profil indices
         cond = profile_L[0] < profile_L[i]
@@ -784,8 +757,8 @@ def gpu_stump(
         (profile_len, 2 * k + 2), dtype=object
     )  # last two columns are to store
     # (top-1) left/right matrix profile indices
-    out[:, :k] = profile[0]
-    out[:, k:] = np.column_stack((indices[0], indices_L[0], indices_R[0]))
+    out[:, :k] = profile_0
+    out[:, k:] = np.column_stack((indices_0, indices_L[0], indices_R[0]))
 
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover

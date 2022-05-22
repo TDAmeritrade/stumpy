@@ -7,7 +7,7 @@ import functools
 import inspect
 
 import numpy as np
-from numba import njit
+from numba import njit, prange
 from scipy.signal import convolve
 from scipy.ndimage import maximum_filter1d, minimum_filter1d
 from scipy import linalg
@@ -2494,3 +2494,38 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
             MPdist = partition[k]
 
     return MPdist
+
+
+@njit(parallel=True)
+def _merge_topk_profiles_indices(PA, PB, IA, IB):
+    """
+    Merge two top-k matrix profiles PA and PB, and update PA (in place) while
+    prioritizing values of PA in ties. Also, update IA accordingly.
+
+    Parameters
+    ----------
+    PA : numpy.ndarray
+        a (top-k) matrix profile
+
+    PB : numpy.ndarray
+        a (top-k) matrix profile
+
+    IA : numpy.ndarray
+        a (top-k) matrix profile indices, corresponding to PA
+
+    IB : numpy.ndarray
+        a (top-k) matrix profile indices, corresponding to PB
+
+    Returns
+    -------
+    None
+    """
+    for i in prange(PA.shape[0]):
+        for j in range(PA.shape[1]):
+            if PB[i, j] < PA[i, -1]:
+                idx = np.searchsorted(PA[i], PB[i, j], side="right")
+
+                PA[i, idx + 1 :] = PA[i, idx:-1].copy()
+                PA[i, idx] = PB[i, j]
+                IA[i, idx + 1 :] = IA[i, idx:-1].copy()
+                IA[i, idx] = IB[i, j]

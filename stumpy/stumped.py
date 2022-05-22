@@ -5,43 +5,12 @@
 import logging
 
 import numpy as np
-from numba import njit, prange
 
 from . import core, config
 from .stump import _stump
 from .aamped import aamped
 
 logger = logging.getLogger(__name__)
-
-
-@njit(parallel=True)
-def _merge_topk_profiles_indices(PA, PB, IA, IB):
-    """
-    Merge two top-k matrix profiles while prioritizing values of PA in ties
-    and update PA (and so IA)
-
-    PA : numpy.ndarray
-        a (top-k) matrix profile
-
-    PB : numpy.ndarray
-        a (top-k) matrix profile
-
-    IA : numpy.ndarray
-        a (top-k) matrix profile indices, corresponding to PA
-
-    IB : numpy.ndarray
-        a (top-k) matrix profile indices, corresponding to PB
-    """
-    for i in prange(PA.shape[0]):
-        for j in range(PA.shape[1]):
-            if PB[i, j] < PA[i, -1]:
-                idx = np.searchsorted(PA[i], PB[i, j], side="right")
-
-                PA[i, idx + 1 :] = PA[i, idx:-1].copy()
-                PA[i, idx] = PB[i, j]
-                IA[i, idx + 1 :] = IA[i, idx:-1].copy()
-                IA[i, idx] = IB[i, j]
-
 
 @core.non_normalized(aamped)
 def stumped(
@@ -301,7 +270,7 @@ def stumped(
     for i in range(1, len(hosts)):
         P, PL, PR, I, IL, IR = results[i]
         # Update top-k matrix profile and matrix profile indices
-        _merge_topk_profiles_indices(profile, P, indices, I)
+        core._merge_topk_profiles_indices(profile, P, indices, I)
 
         # Update top-1 left matrix profile and matrix profile index
         cond = PL < profile_L
