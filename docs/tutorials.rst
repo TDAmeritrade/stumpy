@@ -21,3 +21,4 @@ Tutorials
     Tutorial_Consensus_Motif.ipynb
     Tutorial_Multidimensional_Motif_Discovery.ipynb
     Tutorial_Annotation_Vectors.ipynb
+    Tutorial_Shapelet_Discovery.ipynb
