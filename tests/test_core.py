@@ -87,9 +87,11 @@ def naive_merge_topk_PI(PA, PB, IA, IB):
     indices = np.column_stack((IA, IB))
 
     idx = np.argsort(profile, axis=1)
-    PA[:, :] = np.take_along_axis(profile, idx, axis=1)[:, : PA.shape[1]]
-    IA[:, :] = np.take_along_axis(indices, idx, axis=1)[:, : PA.shape[1]]
+    profile = np.take_along_axis(profile, idx, axis=1)
+    indices = np.take_along_axis(indices, idx, axis=1)
 
+    PA[:, :] = profile[:, : PA.shape[1]]
+    IA[:, :] = indices[:, : PA.shape[1]]
 
 test_data = [
     (np.array([-1, 1, 2], dtype=np.float64), np.array(range(5), dtype=np.float64)),
