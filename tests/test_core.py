@@ -82,6 +82,15 @@ def naive_bsf_indices(n):
     return np.array(out)
 
 
+def naive_merge_topk_profiles_indices(PA, PB, IA, IB):
+    profile = np.column_stack((PA, PB))
+    indices = np.column_stack((IA, IB))
+
+    idx = np.argsort(profile, axis=1)
+    PA[:, :] = np.take_along_axis(profile, idx, axis=1)[:, : PA.shape[1]]
+    IA[:, :] = np.take_along_axis(indices, idx, axis=1)[:, : PA.shape[1]]
+
+
 test_data = [
     (np.array([-1, 1, 2], dtype=np.float64), np.array(range(5), dtype=np.float64)),
     (
