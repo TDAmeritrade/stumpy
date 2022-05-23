@@ -1521,9 +1521,9 @@ def mass_distance_matrix(Q, T, m, distance_matrix, M_T=None, Σ_T=None):
 
 def _get_QT(start, T_A, T_B, m):
     """
-    Compute the sliding dot product between the query, `T_A`, (from
-    [start:start+m]) and the time series, `T_B`. Additionally, compute
-    QT for the first window.
+    Compute the sliding dot product between the query, `T_B`, (from
+    [start:start+m]) and the time series, `T_A`. Additionally, compute
+    QT for the first window `T_A[:m]` and `T_B`.
 
     Parameters
     ----------
