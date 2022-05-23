@@ -1041,7 +1041,7 @@ def test_merge_topk_PI():
     PB = np.sort(PB)
 
     IA = np.arange(n * k).reshape(n, k)
-    IB = IA.copy() + n * k
+    IB = IA + n * k
 
     ref_P = PA.copy()
     ref_I = IA.copy()
