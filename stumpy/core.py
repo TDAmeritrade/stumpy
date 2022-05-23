@@ -2525,6 +2525,8 @@ def _merge_topk_PI(PA, PB, IA, IB):
             if PB[i, j] < PA[i, -1]:
                 idx = np.searchsorted(PA[i], PB[i, j], side="right")
 
+                # .copy() operation is needed to resolve wrong result that is
+                # caused by "prange"
                 PA[i, idx + 1 :] = PA[i, idx:-1].copy()
                 PA[i, idx] = PB[i, j]
                 IA[i, idx + 1 :] = IA[i, idx:-1].copy()
