@@ -741,7 +741,7 @@ def gpu_stump(
         os.remove(indices_L_fname)
         os.remove(indices_R_fname)
 
-    for i in range(1, len(device_ids)):
+    for i in range(1, len(device_ids)):  # pragma: no cover
         # Update (top-k) matrix profile and matrix profile indices
         core._merge_topk_PI(profile[0], profile[i], indices[0], indices[i])
 
