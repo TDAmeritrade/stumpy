@@ -2329,8 +2329,8 @@ def _bfs_indices(n):
         *   *       *   *
        *     *     *     *
       1       4   7       9
-     * *     *
-    0   3   6
+     *       *   *
+    0       3   6
 
     And if we traverse the nodes at each level from left to right then the breadth
     first search indices would be `[5, 2, 8, 1, 4, 7, 9, 0, 3, 6]`. In this function,
