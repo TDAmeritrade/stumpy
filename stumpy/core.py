@@ -2505,10 +2505,12 @@ def _merge_topk_PI(PA, PB, IA, IB):
     Parameters
     ----------
     PA : numpy.ndarray
-        a (top-k) matrix profile
+        a (top-k) matrix profile, with ndim of 2, where values in each row are
+        sorted in ascending order. Also, it needs to be the same shape as PB.
 
     PB : numpy.ndarray
-        a (top-k) matrix profile
+        a (top-k) matrix profile, with ndim of 2, where values in each row are
+        sorted in ascending order. Also, it needs to be the same shape as PA.
 
     IA : numpy.ndarray
         a (top-k) matrix profile indices, corresponding to PA
@@ -2520,14 +2522,20 @@ def _merge_topk_PI(PA, PB, IA, IB):
     -------
     None
     """
-    for i in prange(PA.shape[0]):
-        for j in range(PA.shape[1]):
-            if PB[i, j] < PA[i, -1]:
-                idx = np.searchsorted(PA[i], PB[i, j], side="right")
+    for i in prange(PB.shape[0]):
+        start = 0
+        stop = np.searchsorted(PA[i], PB[i, -1], side="right")
 
-                # .copy() operation is needed to resolve wrong result that is
-                # caused by "prange"
-                PA[i, idx + 1 :] = PA[i, idx:-1].copy()
+        for j in range(PB.shape[1]):
+            if PB[i, j] < PA[i, -1]:
+                idx = np.searchsorted(PA[i, start:stop], PB[i, j], side="right") + start
+
+                for g in range(PB.shape[1] - 1, idx, -1):
+                    PA[i, g] = PA[i, g - 1]
+                    IA[i, g] = IA[i, g - 1]
+
                 PA[i, idx] = PB[i, j]
-                IA[i, idx + 1 :] = IA[i, idx:-1].copy()
                 IA[i, idx] = IB[i, j]
+
+                start = idx
+                stop += 1  # because of shifting elements to the right by one
