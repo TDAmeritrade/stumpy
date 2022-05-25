@@ -2309,7 +2309,7 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
     return int(total_diagonal_ndists)
 
 
-def _bfs_indices(n):
+def _bfs_indices(n, fill_value=None):
     """
     Generate the level order indices from the implicit construction of a binary
     search tree followed by a breadth first (level order) search.
@@ -2335,12 +2335,64 @@ def _bfs_indices(n):
     And if we traverse the nodes at each level from left to right then the breadth
     first search indices would be `[5, 2, 8, 1, 4, 7, 9, 0, 3, 6]`. In this function,
     we avoid/skip the explicit construction of the binary tree and directly output
-    the desired indices efficiently.
+    the desired indices efficiently. Note that it is not always possible to reconstruct
+    the position of the leaf nodes from the indices alone (i.e., a leaf node could be
+    attached to any parent node from a previous layer). For example, if `n = 9` then
+    the corresponding (zero-based index) balanced binary tree is:
+
+                   4
+                  * *
+                 *   *
+                *     *
+               *       *
+              *         *
+             *           *
+            *             *
+           *               *
+          2                 7
+         * *               * *
+        *   *             *   *
+       *     *           *     *
+      1       3         6       8
+     *                 *
+    0                 5
+
+    And if we traverse the nodes at each level from left to right then the breadth
+    first search indices would be `[4, 2, 7, 1, 3, 6, 8, 0, 5]`. Notice that the parent
+    of index `5` is not index `1` or index `3`. Instead, it is index `6`! So, given only
+    the indices, it is not possible to easily reconstruct the full tree (i.e., whether a
+    given leaf index is a left or right child or which parent node that it should be
+    attached to). Therefore, to reduce the abiguity, you can choose to fill in the
+    missing leaf nodes by specifying a `fill_value = -1`, which will produce a modified
+    set of indices, `[ 4,  2,  7,  1,  3,  6,  8,  0, -1, -1, -1,  5, -1, -1, -1]` and
+    represents the following fully populated tree:
+
+                   4
+                  * *
+                 *   *
+                *     *
+               *       *
+              *         *
+             *           *
+            *             *
+           *               *
+          2                 7
+         * *               * *
+        *   *             *   *
+       *     *           *     *
+      1       3         6       8
+     * *     * *       * *     * *
+    0  -1  -1  -1     5  -1  -1  -1
 
     Parameters
     ----------
     n : int
         The number indices to generate the ordered indices for
+
+    fill_value : int, default None
+        The integer value to use to fill in any missing leaf nodes. A negative integer
+        is recommended as the only allowable indices being returned will be positive
+        whole numbers.
 
     Returns
     -------
@@ -2382,6 +2434,19 @@ def _bfs_indices(n):
 
         out[out_idx : out_idx + len(level_indices)] = level_indices
         out_idx += len(level_indices)
+
+    if fill_value is not None and nindices[-1] < np.power(2, nlevel):
+        fill_value = int(fill_value)
+
+        out = out[: -nindices[-1]]
+        last_row = np.empty(np.power(2, nlevel - 1), dtype=np.int64)
+        last_row[0::2] = out[-nindices[-2] :] - 1
+        last_row[1::2] = out[-nindices[-2] :] + 1
+
+        mask = np.isin(last_row, out[: nindices[-2]])
+        last_row[mask] = fill_value
+        last_row[last_row >= n] = fill_value
+        out = np.concatenate([out, last_row])
 
     return out
 
