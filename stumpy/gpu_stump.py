@@ -319,7 +319,7 @@ def _gpu_stump(
     Note that left and right matrix profiles are only available for self-joins.
     """
     threads_per_block = config.STUMPY_THREADS_PER_BLOCK
-    blocks_per_grid = math.ceil(k / threads_per_block)
+    blocks_per_grid = math.ceil(profile_len / threads_per_block)
 
     T_A = np.load(T_A_fname, allow_pickle=False)
     T_B = np.load(T_B_fname, allow_pickle=False)
