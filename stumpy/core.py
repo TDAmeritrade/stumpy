@@ -2606,7 +2606,7 @@ def _merge_topk_PI(PA, PB, IA, IB):
                 stop += 1  # because of shifting elements to the right by one
 
 
-@cuda.jit("i8(f8[:], f8, i8[:], i8)", device=True)
+@cuda.jit(device=True)
 def _gpu_searchsorted_right(a, v, bfs, nlevel):
     """
     Device function to replace numpy.searchsorted(a, v, side='right')
