@@ -1086,3 +1086,37 @@ def test_merge_topk_PI():
     ref = np.column_stack((ref_P, ref_I))
     comp = np.column_stack((comp_P, comp_I))
     npt.assert_array_equal(ref, comp)
+
+
+def test_gpu_searchsorted():
+    # define a function the same as `core._gpu_searchsorted_right` but
+    # without cuda.jit decorator.
+    def gpu_searchsorted_right(a, v, bfs, nlevel):
+        n = a.shape[0]
+        idx = 0
+        for level in range(nlevel):
+            if v < a[bfs[idx]]:
+                next_idx = 2 * idx + 1
+            else:
+                next_idx = 2 * idx + 2
+
+            if level == nlevel-1 or bfs[next_idx]<0:
+                if v < a[bfs[idx]]:
+                    idx = max(bfs[idx], 0)
+                else:
+                    idx = min(bfs[idx] + 1, n)
+                break
+            idx = next_idx
+
+        return idx
+
+    for n in range(1, 100):
+        a = np.sort(np.random.rand(n))
+        bfs = core._bfs_indices(n, fill_value=-1)
+        nlevel = np.floor(np.log2(n) + 1).astype(np.int64)
+        for i in range(n):
+            v = a[i]
+            npt.assert_almost_equal(gpu_searchsorted_right(a, v, bfs, nlevel), np.searchsorted(a, v, side="right"))
+
+            v = a[i] + 0.001
+            npt.assert_almost_equal(gpu_searchsorted_right(a, v, bfs, nlevel), np.searchsorted(a, v, side="right"))
