@@ -2624,7 +2624,7 @@ def _gpu_searchsorted_right(a, v, bfs, nlevel):
         search tree followed by a breadth first (level order) search.
 
     nlevel : int
-        the number of levels in the binary search tree based from which the array
+        the number of levels in the binary search tree from which the array
         `bfs` is obtained.
 
     Returns
