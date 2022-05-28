@@ -2609,7 +2609,7 @@ def _merge_topk_PI(PA, PB, IA, IB):
 @cuda.jit("i8(f8[:], f8, i8[:], i8)", device=True)
 def _gpu_searchsorted_right(a, v, bfs, nlevel):
     """
-    a device function in replace of numpy.searchsorted(a, v, side='right')
+    Device function to replace numpy.searchsorted(a, v, side='right')
 
     Parameters
     ----------
