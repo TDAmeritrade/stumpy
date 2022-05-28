@@ -2640,7 +2640,7 @@ def _gpu_searchsorted_right(a, v, bfs, nlevel):
         else:
             next_idx = 2 * idx + 2
 
-        if level == nlevel-1 or bfs[next_idx]<0:
+        if level == nlevel - 1 or bfs[next_idx] < 0:
             if v < a[bfs[idx]]:
                 idx = max(bfs[idx], 0)
             else:

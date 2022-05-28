@@ -1100,7 +1100,7 @@ def test_gpu_searchsorted():
             else:
                 next_idx = 2 * idx + 2
 
-            if level == nlevel-1 or bfs[next_idx]<0:
+            if level == nlevel - 1 or bfs[next_idx] < 0:
                 if v < a[bfs[idx]]:
                     idx = max(bfs[idx], 0)
                 else:
@@ -1116,7 +1116,13 @@ def test_gpu_searchsorted():
         nlevel = np.floor(np.log2(n) + 1).astype(np.int64)
         for i in range(n):
             v = a[i]
-            npt.assert_almost_equal(gpu_searchsorted_right(a, v, bfs, nlevel), np.searchsorted(a, v, side="right"))
+            npt.assert_almost_equal(
+                gpu_searchsorted_right(a, v, bfs, nlevel),
+                np.searchsorted(a, v, side="right"),
+            )
 
             v = a[i] + 0.001
-            npt.assert_almost_equal(gpu_searchsorted_right(a, v, bfs, nlevel), np.searchsorted(a, v, side="right"))
+            npt.assert_almost_equal(
+                gpu_searchsorted_right(a, v, bfs, nlevel),
+                np.searchsorted(a, v, side="right"),
+            )
