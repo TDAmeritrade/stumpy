@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 @cuda.jit(
     "(i8, f8[:], f8[:], i8,  f8[:], f8[:], f8[:], f8[:], f8[:],"
-    "f8[:], f8[:], i8, b1, i8, f8[:, :], f8[:], f8[:], i8[:, :], i8[:], i8[:], b1, i2)"
+    "f8[:], f8[:], i8, b1, i8, f8[:, :], f8[:], f8[:], i8[:, :], i8[:], i8[:], b1, i8[:], i8, i2)"
 )
 def _compute_and_update_PI_kernel(
     i,
@@ -41,6 +41,8 @@ def _compute_and_update_PI_kernel(
     indices_L,
     indices_R,
     compute_QT,
+    bfs,
+    nlevel,
     k,
 ):
     """
@@ -116,6 +118,14 @@ def _compute_and_update_PI_kernel(
     compute_QT : bool
         A boolean flag for whether or not to compute QT
 
+    bfs : numpy.ndarray
+        the level order indices from the implicit construction of a binary
+        search tree followed by a breadth first (level order) search.
+
+    nlevel : int
+        the number of levels in the binary search tree from which the array
+        `bfs` is obtained.
+
     k : int
         The number of top `k` smallest distances used to construct the matrix profile.
         Note that this will increase the total computational time and memory usage
@@ -182,13 +192,12 @@ def _compute_and_update_PI_kernel(
                 profile_R[j] = p_norm
                 indices_R[j] = i
 
-        for idx in range(k, -1, -1):
-            if (p_norm < profile[j, idx - 1]) and (idx > 0):
-                profile[j, idx - 1] = profile[j, idx - 2]
-                indices[j, idx - 1] = indices[j, idx - 2]
-            else:
-                break
-        if idx < k:
+        if p_norm < profile[j, -1]:
+            idx = core._gpu_searchsorted_right(profile[j], p_norm, bfs, nlevel)
+            for g in range(k - 1, idx, -1):
+                profile[j, g] = profile[j, g - 1]
+                indices[j, g] = indices[j, g - 1]
+
             profile[j, idx] = p_norm
             indices[j, idx] = i
 
@@ -318,6 +327,10 @@ def _gpu_stump(
 
     Note that left and right matrix profiles are only available for self-joins.
     """
+    bfs = core._bfs_indices(k, fill_value=-1)
+    nlevel = np.floor(np.log2(k) + 1).astype(np.int64)  # number of levels in
+    # binary seearch tree from which `bfs` is constructed.
+
     threads_per_block = config.STUMPY_THREADS_PER_BLOCK
     blocks_per_grid = math.ceil(profile_len / threads_per_block)
 
@@ -384,6 +397,8 @@ def _gpu_stump(
             device_indices_L,
             device_indices_R,
             False,
+            bfs,
+            nlevel,
             k,
         )
 
@@ -410,6 +425,8 @@ def _gpu_stump(
                 device_indices_L,
                 device_indices_R,
                 True,
+                bfs,
+                nlevel,
                 k,
             )
 
