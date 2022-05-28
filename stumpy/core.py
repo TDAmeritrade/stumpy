@@ -2604,3 +2604,48 @@ def _merge_topk_PI(PA, PB, IA, IB):
 
                 start = idx
                 stop += 1  # because of shifting elements to the right by one
+
+
+@cuda.jit("i8(f8[:], f8, i8[:], i8)", device=True)
+def _gpu_searchsorted_right(a, v, bfs, nlevel):
+    """
+    a device function in replace of numpy.searchsorted(a, v, side='right')
+
+    Parameters
+    ----------
+    a : numpy.ndarray
+        1-dim array sorted in ascending order.
+
+    v : float
+        value to insert into array `a`
+
+    bfs : numpy.ndarray
+        the level order indices from the implicit construction of a binary
+        search tree followed by a breadth first (level order) search.
+
+    nlevel : int
+        the number of levels in the binary search tree based from which the array
+        `bfs` is obtained.
+
+    Returns
+    -------
+    idx : int
+        the index of the insertion point
+    """
+    n = a.shape[0]
+    idx = 0
+    for level in range(nlevel):
+        if v < a[bfs[idx]]:
+            next_idx = 2 * idx + 1
+        else:
+            next_idx = 2 * idx + 2
+
+        if level == nlevel-1 or bfs[next_idx]<0:
+            if v < a[bfs[idx]]:
+                idx = max(bfs[idx], 0)
+            else:
+                idx = min(bfs[idx] + 1, n)
+            break
+        idx = next_idx
+
+    return idx
