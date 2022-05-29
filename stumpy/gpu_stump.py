@@ -120,8 +120,8 @@ def _compute_and_update_PI_kernel(
         A boolean flag for whether or not to compute QT
 
     bfs : numpy.ndarray
-        the level order indices from the implicit construction of a binary
-        search tree followed by a breadth first (level order) search.
+        The breadth-first-search indices where the missing leaves of its corresponding
+        binary search tree are filled with -1.
 
     nlevel : int
         the number of levels in the binary search tree from which the array
