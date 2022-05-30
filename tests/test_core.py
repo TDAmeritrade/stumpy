@@ -1065,11 +1065,14 @@ def test_merge_topk_PI():
     n = 50
     k = 5
 
-    PA = np.random.randint(0, 5, size=(n, k))
-    PA = np.sort(PA)
+    PA = np.random.rand(n * k).reshape(n, k)
+    PA = np.sort(PA, axis=1)
 
-    PB = np.random.randint(0, 5, size=(n, k))
-    PB = np.sort(PB)
+    PB = np.random.rand(n * k).reshape(n, k)
+    col_idx = np.random.randint(0, k, size=n)
+    for i in range(n):
+        PB[i, col_idx[i]] = np.random.choice(PA[i], size=1, replace=False)
+    PB = np.sort(PB, axis=1)
 
     IA = np.arange(n * k).reshape(n, k)
     IB = IA + n * k
@@ -1083,9 +1086,8 @@ def test_merge_topk_PI():
     naive.merge_topk_PI(ref_P, PB, ref_I, IB)
     core._merge_topk_PI(comp_P, PB, comp_I, IB)
 
-    ref = np.column_stack((ref_P, ref_I))
-    comp = np.column_stack((comp_P, comp_I))
-    npt.assert_array_equal(ref, comp)
+    npt.assert_array_equal(ref_P, comp_P)
+    npt.assert_array_equal(ref_I, comp_I)
 
 
 def test_gpu_searchsorted():
