@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 @jit # equivalent to `__host__ __device__` in C++ CUDA
 def _gpu_searchsorted_left(a, v, bfs, nlevel):
     """
-    A function equivalent to numpy.searchsorted(a, v, side='left'), designed
+    Equivalent to numpy.searchsorted(a, v, side='left'), designed
     to be used mainly as device function
 
     Parameters
@@ -64,7 +64,8 @@ def _gpu_searchsorted_left(a, v, bfs, nlevel):
 @jit # equivalent to `__host__ __device__` in C++ CUDA
 def _gpu_searchsorted_right(a, v, bfs, nlevel):
     """
-    Device function to replace numpy.searchsorted(a, v, side='right')
+    Equivalent to numpy.searchsorted(a, v, side='left'), designed
+    to be used mainly as device function
 
     Parameters
     ----------
