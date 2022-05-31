@@ -15,6 +15,51 @@ from .gpu_aamp import gpu_aamp
 logger = logging.getLogger(__name__)
 
 
+@cuda.jit(device=True)
+def _gpu_searchsorted_right(a, v, bfs, nlevel):
+    """
+    Device function to replace numpy.searchsorted(a, v, side='right')
+
+    Parameters
+    ----------
+    a : numpy.ndarray
+        1-dim array sorted in ascending order.
+
+    v : float
+        value to insert into array `a`
+
+    bfs : numpy.ndarray
+        The breadth-first-search indices where the missing leaves of its corresponding
+        binary search tree are filled with -1.
+
+    nlevel : int
+        the number of levels in the binary search tree from which the array
+        `bfs` is obtained.
+
+    Returns
+    -------
+    idx : int
+        the index of the insertion point
+    """
+    n = a.shape[0]
+    idx = 0
+    for level in range(nlevel):
+        if v < a[bfs[idx]]:
+            next_idx = 2 * idx + 1
+        else:
+            next_idx = 2 * idx + 2
+
+        if level == nlevel - 1 or bfs[next_idx] < 0:
+            if v < a[bfs[idx]]:
+                idx = max(bfs[idx], 0)
+            else:
+                idx = min(bfs[idx] + 1, n)
+            break
+        idx = next_idx
+
+    return idx
+
+
 @cuda.jit(
     "(i8, f8[:], f8[:], i8,  f8[:], f8[:], f8[:], f8[:], f8[:],"
     "f8[:], f8[:], i8, b1, i8, f8[:, :], f8[:], f8[:], i8[:, :], i8[:], i8[:],"
