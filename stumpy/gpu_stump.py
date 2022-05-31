@@ -64,7 +64,7 @@ def _gpu_searchsorted_left(a, v, bfs, nlevel):
 @jit  # equivalent to `__host__ __device__` in C++ CUDA
 def _gpu_searchsorted_right(a, v, bfs, nlevel):
     """
-    Equivalent to numpy.searchsorted(a, v, side='left'), designed
+    Equivalent to numpy.searchsorted(a, v, side='right'), designed
     to be used mainly as device function
 
     Parameters
