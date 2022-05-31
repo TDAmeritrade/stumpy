@@ -124,7 +124,7 @@ def _compute_and_update_PI_kernel(
     Σ_T,
     μ_Q,
     σ_Q,
-    profile_len,
+    w,
     ignore_trivial,
     excl_zone,
     profile,
@@ -179,7 +179,7 @@ def _compute_and_update_PI_kernel(
     σ_Q : numpy.ndarray
         Standard deviation of the query sequence, `Q`
 
-    profile_len : int
+    w : int
         The total number of sliding windows to iterate over
 
     ignore_trivial : bool
@@ -247,7 +247,7 @@ def _compute_and_update_PI_kernel(
 
     for j in range(start, QT_out.shape[0], stride):
         zone_start = max(0, j - excl_zone)
-        zone_stop = min(profile_len, j + excl_zone)
+        zone_stop = min(w, j + excl_zone)
 
         if compute_QT:
             QT_out[j] = (
@@ -307,7 +307,7 @@ def _gpu_stump(
     QT_first_fname,
     μ_Q_fname,
     σ_Q_fname,
-    profile_len,
+    w,
     ignore_trivial=True,
     range_start=1,
     device_id=0,
@@ -362,7 +362,7 @@ def _gpu_stump(
         The file name for the standard deviation of the query sequence, `Q`,
         relative to the current sliding window
 
-    profile_len : int
+    w : int
         The total number of sliding windows to iterate over
 
     ignore_trivial : bool
@@ -421,7 +421,7 @@ def _gpu_stump(
     Note that left and right matrix profiles are only available for self-joins.
     """
     threads_per_block = config.STUMPY_THREADS_PER_BLOCK
-    blocks_per_grid = math.ceil(profile_len / threads_per_block)
+    blocks_per_grid = math.ceil(w / threads_per_block)
 
     T_A = np.load(T_A_fname, allow_pickle=False)
     T_B = np.load(T_B_fname, allow_pickle=False)
@@ -452,14 +452,14 @@ def _gpu_stump(
             device_M_T = cuda.to_device(M_T)
             device_Σ_T = cuda.to_device(Σ_T)
 
-        profile = np.full((profile_len, k), np.inf, dtype=np.float64)
-        indices = np.full((profile_len, k), -1, dtype=np.int64)
+        profile = np.full((w, k), np.inf, dtype=np.float64)
+        indices = np.full((w, k), -1, dtype=np.int64)
 
-        profile_L = np.full(profile_len, np.inf, dtype=np.float64)
-        indices_L = np.full(profile_len, -1, dtype=np.int64)
+        profile_L = np.full(w, np.inf, dtype=np.float64)
+        indices_L = np.full(w, -1, dtype=np.int64)
 
-        profile_R = np.full(profile_len, np.inf, dtype=np.float64)
-        indices_R = np.full(profile_len, -1, dtype=np.int64)
+        profile_R = np.full(w, np.inf, dtype=np.float64)
+        indices_R = np.full(w, -1, dtype=np.int64)
 
         device_profile = cuda.to_device(profile)
         device_profile_L = cuda.to_device(profile_L)
@@ -480,7 +480,7 @@ def _gpu_stump(
             device_Σ_T,
             device_μ_Q,
             device_σ_Q,
-            profile_len,
+            w,
             ignore_trivial,
             excl_zone,
             device_profile,
@@ -508,7 +508,7 @@ def _gpu_stump(
                 device_Σ_T,
                 device_μ_Q,
                 device_σ_Q,
-                profile_len,
+                w,
                 ignore_trivial,
                 excl_zone,
                 device_profile,
@@ -695,7 +695,7 @@ def gpu_stump(
         logger.warning("Try setting `ignore_trivial = False`.")
 
     n = T_B.shape[0]
-    profile_len = T_A.shape[0] - m + 1
+    w = T_A.shape[0] - m + 1
     l = n - m + 1
     excl_zone = int(
         np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
@@ -765,7 +765,7 @@ def gpu_stump(
                     QT_first_fname,
                     μ_Q_fname,
                     σ_Q_fname,
-                    profile_len,
+                    w,
                     ignore_trivial,
                     start + 1,
                     device_ids[idx],
@@ -794,7 +794,7 @@ def gpu_stump(
                 QT_first_fname,
                 μ_Q_fname,
                 σ_Q_fname,
-                profile_len,
+                w,
                 ignore_trivial,
                 start + 1,
                 device_ids[idx],
@@ -866,7 +866,7 @@ def gpu_stump(
         indices_R[0] = np.where(cond, indices_R[0], indices_R[i])
 
     out = np.empty(
-        (profile_len, 2 * k + 2), dtype=object
+        (w, 2 * k + 2), dtype=object
     )  # last two columns are to store
     # (top-1) left/right matrix profile indices
     out[:, :k] = profile[0]
