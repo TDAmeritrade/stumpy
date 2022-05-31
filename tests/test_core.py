@@ -1071,7 +1071,7 @@ def test_merge_topk_PI():
     PB = np.random.rand(n * k).reshape(n, k)
 
     col_idx = np.random.randint(0, k, size=n)
-    for i in range(n): # creating ties between values of PA and PB
+    for i in range(n):  # creating ties between values of PA and PB
         PB[i, col_idx[i]] = np.random.choice(PA[i], size=1, replace=False)
     PB = np.sort(PB, axis=1)
 

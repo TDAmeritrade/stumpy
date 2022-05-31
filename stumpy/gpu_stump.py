@@ -15,7 +15,7 @@ from .gpu_aamp import gpu_aamp
 logger = logging.getLogger(__name__)
 
 
-@jit # equivalent to `__host__ __device__` in C++ CUDA
+@jit  # equivalent to `__host__ __device__` in C++ CUDA
 def _gpu_searchsorted_left(a, v, bfs, nlevel):
     """
     Equivalent to numpy.searchsorted(a, v, side='left'), designed
@@ -61,7 +61,7 @@ def _gpu_searchsorted_left(a, v, bfs, nlevel):
     return idx
 
 
-@jit # equivalent to `__host__ __device__` in C++ CUDA
+@jit  # equivalent to `__host__ __device__` in C++ CUDA
 def _gpu_searchsorted_right(a, v, bfs, nlevel):
     """
     Equivalent to numpy.searchsorted(a, v, side='left'), designed
@@ -865,9 +865,7 @@ def gpu_stump(
         profile_R[0] = np.where(cond, profile_R[0], profile_R[i])
         indices_R[0] = np.where(cond, indices_R[0], indices_R[i])
 
-    out = np.empty(
-        (w, 2 * k + 2), dtype=object
-    )  # last two columns are to store
+    out = np.empty((w, 2 * k + 2), dtype=object)  # last two columns are to store
     # (top-1) left/right matrix profile indices
     out[:, :k] = profile[0]
     out[:, k:] = np.column_stack((indices[0], indices_L[0], indices_R[0]))
