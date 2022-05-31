@@ -430,7 +430,6 @@ def _gpu_stump(
     μ_Q = np.load(μ_Q_fname, allow_pickle=False)
     σ_Q = np.load(σ_Q_fname, allow_pickle=False)
 
-
     device_bfs = cuda.to_device(core._bfs_indices(k, fill_value=-1))
     nlevel = np.floor(np.log2(k) + 1).astype(np.int64)
     # number of levels in # binary seearch tree from which `bfs` is constructed.

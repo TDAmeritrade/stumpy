@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import gpu_stump
+from stumpy import core, gpu_stump
 from stumpy import config
 from numba import cuda
 
@@ -38,23 +38,42 @@ def test_gpu_stump_int_input():
     with pytest.raises(TypeError):
         gpu_stump(np.arange(10), 5, ignore_trivial=True)
 
+
 def test_gpu_searchsorted():
     for n in range(1, 100):
         a = np.sort(np.random.rand(n))
         bfs = core._bfs_indices(n, fill_value=-1)
         nlevel = np.floor(np.log2(n) + 1).astype(np.int64)
         for i in range(n):
-             v = a[i] - 0.001
-            npt.assert_almost_equal(gpu_stump._gpu_searchsorted_left(a, v, bfs, nlevel), np.searchsorted(a, v, side="left"))
-            npt.assert_almost_equal(gpu_stump._gpu_searchsorted_right(a, v, bfs, nlevel), np.searchsorted(a, v, side="right"))
+            v = a[i] - 0.001
+            npt.assert_almost_equal(
+                gpu_stump._gpu_searchsorted_left(a, v, bfs, nlevel),
+                np.searchsorted(a, v, side="left"),
+            )
+            npt.assert_almost_equal(
+                gpu_stump._gpu_searchsorted_right(a, v, bfs, nlevel),
+                np.searchsorted(a, v, side="right"),
+            )
 
             v = a[i]
-            npt.assert_almost_equal(gpu_stump._gpu_searchsorted_left(a, v, bfs, nlevel), np.searchsorted(a, v, side="left"))
-            npt.assert_almost_equal(gpu_stump._gpu_searchsorted_right(a, v, bfs, nlevel), np.searchsorted(a, v, side="right"))
+            npt.assert_almost_equal(
+                gpu_stump._gpu_searchsorted_left(a, v, bfs, nlevel),
+                np.searchsorted(a, v, side="left"),
+            )
+            npt.assert_almost_equal(
+                gpu_stump._gpu_searchsorted_right(a, v, bfs, nlevel),
+                np.searchsorted(a, v, side="right"),
+            )
 
             v = a[i] + 0.001
-            npt.assert_almost_equal(gpu_stump._gpu_searchsorted_left(a, v, bfs, nlevel), np.searchsorted(a, v, side="left"))
-            npt.assert_almost_equal(gpu_stump._gpu_searchsorted_right(a, v, bfs, nlevel), np.searchsorted(a, v, side="right"))
+            npt.assert_almost_equal(
+                gpu_stump._gpu_searchsorted_left(a, v, bfs, nlevel),
+                np.searchsorted(a, v, side="left"),
+            )
+            npt.assert_almost_equal(
+                gpu_stump._gpu_searchsorted_right(a, v, bfs, nlevel),
+                np.searchsorted(a, v, side="right"),
+            )
 
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
