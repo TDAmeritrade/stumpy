@@ -2,6 +2,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 from stumpy import core, gpu_stump
+from stumpy.gpu_stump import _gpu_searchsorted_left, _gpu_searchsorted_right
 from stumpy import config
 from numba import cuda
 
@@ -47,31 +48,31 @@ def test_gpu_searchsorted():
         for i in range(n):
             v = a[i] - 0.001
             npt.assert_almost_equal(
-                gpu_stump._gpu_searchsorted_left(a, v, bfs, nlevel),
+                _gpu_searchsorted_left(a, v, bfs, nlevel),
                 np.searchsorted(a, v, side="left"),
             )
             npt.assert_almost_equal(
-                gpu_stump._gpu_searchsorted_right(a, v, bfs, nlevel),
+                _gpu_searchsorted_right(a, v, bfs, nlevel),
                 np.searchsorted(a, v, side="right"),
             )
 
             v = a[i]
             npt.assert_almost_equal(
-                gpu_stump._gpu_searchsorted_left(a, v, bfs, nlevel),
+                _gpu_searchsorted_left(a, v, bfs, nlevel),
                 np.searchsorted(a, v, side="left"),
             )
             npt.assert_almost_equal(
-                gpu_stump._gpu_searchsorted_right(a, v, bfs, nlevel),
+                _gpu_searchsorted_right(a, v, bfs, nlevel),
                 np.searchsorted(a, v, side="right"),
             )
 
             v = a[i] + 0.001
             npt.assert_almost_equal(
-                gpu_stump._gpu_searchsorted_left(a, v, bfs, nlevel),
+                _gpu_searchsorted_left(a, v, bfs, nlevel),
                 np.searchsorted(a, v, side="left"),
             )
             npt.assert_almost_equal(
-                gpu_stump._gpu_searchsorted_right(a, v, bfs, nlevel),
+                _gpu_searchsorted_right(a, v, bfs, nlevel),
                 np.searchsorted(a, v, side="right"),
             )
 
