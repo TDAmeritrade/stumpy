@@ -87,7 +87,7 @@ def _compute_PI(
         The half width for the exclusion zone relative to the `i`.
 
     Returns
-    ----------
+    -------
     None
 
     Notes
@@ -113,7 +113,7 @@ def _compute_PI(
 
             # only for self-join
             mask = squared_distance_profile < P_squared[thread_idx]
-            P_squared[thread_idx][mask] =  squared_distance_profile[mask]
+            P_squared[thread_idx][mask] = squared_distance_profile[mask]
             I[thread_idx][mask] = i
 
         I[thread_idx, i] = np.argmin(squared_distance_profile)
