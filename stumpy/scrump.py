@@ -106,6 +106,12 @@ def _compute_PI(
             zone_start = max(0, i - excl_zone)
             zone_stop = min(l, i + excl_zone)
             squared_distance_profile[zone_start : zone_stop + 1] = np.inf
+
+            # only for self-join
+            mask = squared_distance_profile < P_squared[thread_idx]
+            P_squared[thread_idx][mask] =  squared_distance_profile[mask]
+            I[thread_idx][mask] = i
+
         I[thread_idx, i] = np.argmin(squared_distance_profile)
         P_squared[thread_idx, i] = squared_distance_profile[I[thread_idx, i]]
         if P_squared[thread_idx, i] == np.inf:  # pragma: no cover
