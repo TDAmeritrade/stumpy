@@ -86,6 +86,10 @@ def _compute_PI(
     excl_zone : int
         The half width for the exclusion zone relative to the `i`.
 
+    Returns
+    ----------
+    None
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2018.00099 \
@@ -227,6 +231,14 @@ def _prescrump(
 
     excl_zone : int
         The half width for the exclusion zone relative to the `i`.
+
+    Returns
+    -------
+    out1 : numpy.ndarray
+        Matrix profile
+
+    out2 : numpy.ndarray
+        Matrix profile indices
 
     Notes
     -----
@@ -412,7 +424,8 @@ class scrump:
     update()
         Update the matrix profile and the matrix profile indices by computing
         additional new distances (limited by `percentage`) that make up the full
-        distance matrix.
+        distance matrix. Each output contains three columns that are corresponding
+        to main, left and right profiles.
 
     See Also
     --------
