@@ -54,7 +54,7 @@ def _gpu_searchsorted_kernel(A, V, bfs, nlevel, is_left, IDX):
 
 def test_gpu_searchsorted():
     n = 5000
-    for k in range(1, 21):
+    for k in range(1, 100):
         bfs = core._bfs_indices(k, fill_value=-1)
         nlevel = np.floor(np.log2(k) + 1).astype(np.int64)
 
@@ -62,9 +62,8 @@ def test_gpu_searchsorted():
         V = np.empty(n)
         col_idx = np.random.randint(0, k, size=n)
         diff = [-0.001, 0, 0.001]
-        for i in range(n):  # creating ties between values of PA and PB
-            V[i] = np.random.choice(A[i, col_idx[i]], size=1, replace=False)
-            V[i] += diff[i % 3]
+        for i in range(n):
+            V[i] = A[i, col_idx[i]] + diff[i % 3]
 
         device_A = cuda.to_device(A)
         device_V = cuda.to_device(V)
