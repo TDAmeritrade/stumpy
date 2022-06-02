@@ -7,7 +7,7 @@ import multiprocessing as mp
 import os
 
 import numpy as np
-from numba import cuda, jit
+from numba import cuda
 
 from . import core, config
 from .gpu_aamp import gpu_aamp
@@ -15,11 +15,10 @@ from .gpu_aamp import gpu_aamp
 logger = logging.getLogger(__name__)
 
 
-@jit  # equivalent to `__host__ __device__` in C++ CUDA
+@cuda.jit(device=True)
 def _gpu_searchsorted_left(a, v, bfs, nlevel):
     """
-    Equivalent to numpy.searchsorted(a, v, side='left'), designed
-    to be used mainly as device function
+    A device function, equivalent to numpy.searchsorted(a, v, side='left')
 
     Parameters
     ----------
@@ -61,11 +60,10 @@ def _gpu_searchsorted_left(a, v, bfs, nlevel):
     return idx
 
 
-@jit  # equivalent to `__host__ __device__` in C++ CUDA
+@cuda.jit(device=True)
 def _gpu_searchsorted_right(a, v, bfs, nlevel):
     """
-    Equivalent to numpy.searchsorted(a, v, side='right'), designed
-    to be used mainly as device function
+    A device function, equivalent to numpy.searchsorted(a, v, side='right')
 
     Parameters
     ----------
