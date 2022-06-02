@@ -40,41 +40,55 @@ def test_gpu_stump_int_input():
         gpu_stump(np.arange(10), 5, ignore_trivial=True)
 
 
+@cuda.jit("(f8[:, :], f8[:], i8[:], i8, b1, i8[:])")
+def _gpu_searchsorted_kernel(A, V, bfs, nlevel, is_left, IDX):
+    # A wrapper kernel for calling device function _gpu_searchsorted_left/right.
+    i = cuda.grid(1)
+    if i < A.shape[0]:
+        if is_left:
+            IDX[i] = _gpu_searchsorted_left(A[i], V[i], bfs, nlevel)
+        else:
+            IDX[i] = _gpu_searchsorted_right(A[i], V[i], bfs, nlevel)
+
+
 def test_gpu_searchsorted():
-    for n in range(1, 100):
-        a = np.sort(np.random.rand(n))
-        bfs = core._bfs_indices(n, fill_value=-1)
-        nlevel = np.floor(np.log2(n) + 1).astype(np.int64)
-        for i in range(n):
-            v = a[i] - 0.001
-            npt.assert_almost_equal(
-                _gpu_searchsorted_left(a, v, bfs, nlevel),
-                np.searchsorted(a, v, side="left"),
-            )
-            npt.assert_almost_equal(
-                _gpu_searchsorted_right(a, v, bfs, nlevel),
-                np.searchsorted(a, v, side="right"),
-            )
+    n = 5000
+    for k in range(1, 21):
+        bfs = core._bfs_indices(k, fill_value=-1)
+        nlevel = np.floor(np.log2(k) + 1).astype(np.int64)
 
-            v = a[i]
-            npt.assert_almost_equal(
-                _gpu_searchsorted_left(a, v, bfs, nlevel),
-                np.searchsorted(a, v, side="left"),
-            )
-            npt.assert_almost_equal(
-                _gpu_searchsorted_right(a, v, bfs, nlevel),
-                np.searchsorted(a, v, side="right"),
-            )
+        A = np.sort(np.random.rand(n, k), axis=1)
+        V = np.empty(n)
+        col_idx = np.random.randint(0, k, size=n)
+        diff = [-0.001, 0, 0.001]
+        for i in range(n):  # creating ties between values of PA and PB
+            V[i] = np.random.choice(A[i, col_idx[i]], size=1, replace=False)
+            V[i] += diff[i % 3]
 
-            v = a[i] + 0.001
-            npt.assert_almost_equal(
-                _gpu_searchsorted_left(a, v, bfs, nlevel),
-                np.searchsorted(a, v, side="left"),
+        device_A = cuda.to_device(A)
+        device_V = cuda.to_device(V)
+        device_bfs = cuda.to_device(bfs)
+        for is_left in [True, False]:
+            if is_left:
+                side = 'left'
+            else:
+                side = 'right'
+
+            ref_IDX =  np.full(n, -1, dtype=np.int64)
+            for i in range(n):
+                ref_IDX[i] = np.searchsorted(A[i], V[i], side=side)
+
+            comp_IDX = np.full(n, -1, dtype=np.int64)
+            device_comp_IDX = cuda.to_device(comp_IDX)
+
+            threads_per_block = config.STUMPY_THREADS_PER_BLOCK
+            blocks_per_grid = math.ceil(n / threads_per_block)
+            _gpu_searchsorted_kernel[blocks_per_grid, threads_per_block](
+            device_A, device_V, device_bfs, nlevel, is_left, device_comp_IDX
             )
-            npt.assert_almost_equal(
-                _gpu_searchsorted_right(a, v, bfs, nlevel),
-                np.searchsorted(a, v, side="right"),
-            )
+            comp_IDX = device_comp_IDX.copy_to_host()
+
+            npt.assert_array_equal(ref_IDX, comp_IDX)
 
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
