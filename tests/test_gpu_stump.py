@@ -393,15 +393,15 @@ def test_gpu_stump_nan_zero_mean_self_join():
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_gpu_stump_self_join_KNN(T_A, T_B):
-    k = 3
     m = 3
-    zone = int(np.ceil(m / 4))
-    ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True, k=k)
-    comp_mp = gpu_stump(T_B, m, ignore_trivial=True, k=k)
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp, comp_mp)
+    for k in range(1, 4):
+        zone = int(np.ceil(m / 4))
+        ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True, k=k)
+        comp_mp = gpu_stump(T_B, m, ignore_trivial=True, k=k)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
-    comp_mp = gpu_stump(pd.Series(T_B), m, ignore_trivial=True, k=k)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp, comp_mp)
+        comp_mp = gpu_stump(pd.Series(T_B), m, ignore_trivial=True, k=k)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
