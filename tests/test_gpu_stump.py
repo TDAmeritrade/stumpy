@@ -54,41 +54,46 @@ def _gpu_searchsorted_kernel(A, V, bfs, nlevel, is_left, IDX):
 
 def test_gpu_searchsorted():
     n = 5000
-    for k in range(1, 100):
+    threads_per_block = config.STUMPY_THREADS_PER_BLOCK
+    blocks_per_grid = math.ceil(n / threads_per_block)
+
+    for k in range(1, 32):
         bfs = core._bfs_indices(k, fill_value=-1)
         nlevel = np.floor(np.log2(k) + 1).astype(np.int64)
 
         A = np.sort(np.random.rand(n, k), axis=1)
         V = np.empty(n)
-        col_idx = np.random.randint(0, k, size=n)
         diff = [-0.001, 0, 0.001]
         for i in range(n):
-            V[i] = A[i, col_idx[i]] + diff[i % 3]
+            V[i] = A[i, i % k] + diff[i % 3]
 
         device_A = cuda.to_device(A)
         device_V = cuda.to_device(V)
         device_bfs = cuda.to_device(bfs)
-        for is_left in [True, False]:
-            if is_left:
-                side = "left"
-            else:
-                side = "right"
 
-            ref_IDX = np.full(n, -1, dtype=np.int64)
-            for i in range(n):
-                ref_IDX[i] = np.searchsorted(A[i], V[i], side=side)
+        side = "left"  # is_left = True
+        ref_IDX = np.full(n, -1, dtype=np.int64)
+        for i in range(n):
+            ref_IDX[i] = np.searchsorted(A[i], V[i], side=side)
+        comp_IDX = np.full(n, -1, dtype=np.int64)
+        device_comp_IDX = cuda.to_device(comp_IDX)
+        _gpu_searchsorted_kernel[blocks_per_grid, threads_per_block](
+            device_A, device_V, device_bfs, nlevel, True, device_comp_IDX
+        )
+        comp_IDX = device_comp_IDX.copy_to_host()
+        npt.assert_array_equal(ref_IDX, comp_IDX)
 
-            comp_IDX = np.full(n, -1, dtype=np.int64)
-            device_comp_IDX = cuda.to_device(comp_IDX)
-
-            threads_per_block = config.STUMPY_THREADS_PER_BLOCK
-            blocks_per_grid = math.ceil(n / threads_per_block)
-            _gpu_searchsorted_kernel[blocks_per_grid, threads_per_block](
-                device_A, device_V, device_bfs, nlevel, is_left, device_comp_IDX
-            )
-            comp_IDX = device_comp_IDX.copy_to_host()
-
-            npt.assert_array_equal(ref_IDX, comp_IDX)
+        side = "right"  # is_left = False
+        ref_IDX = np.full(n, -1, dtype=np.int64)
+        for i in range(n):
+            ref_IDX[i] = np.searchsorted(A[i], V[i], side=side)
+        comp_IDX = np.full(n, -1, dtype=np.int64)
+        device_comp_IDX = cuda.to_device(comp_IDX)
+        _gpu_searchsorted_kernel[blocks_per_grid, threads_per_block](
+            device_A, device_V, device_bfs, nlevel, False, device_comp_IDX
+        )
+        comp_IDX = device_comp_IDX.copy_to_host()
+        npt.assert_array_equal(ref_IDX, comp_IDX)
 
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
