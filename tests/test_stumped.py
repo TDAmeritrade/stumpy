@@ -617,9 +617,9 @@ def test_stumped_two_subsequences_nan_inf_A_B_join_swap(
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stumped_self_join_KNN(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
+        m = 3
+        zone = int(np.ceil(m / 4))
         for k in range(1, 4):
-            m = 3
-            zone = int(np.ceil(m / 4))
             ref_mp = naive.stump(T_B, m, exclusion_zone=zone, k=k)
             comp_mp = stumped(dask_client, T_B, m, ignore_trivial=True, k=k)
             naive.replace_inf(ref_mp)
@@ -634,8 +634,8 @@ def test_stumped_self_join_KNN(T_A, T_B, dask_cluster):
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stumped_A_B_join_KNN(T_A, T_B, dask_cluster):
     with Client(dask_cluster) as dask_client:
+        m = 3
         for k in range(1, 4):
-            m = 3
             ref_mp = naive.stump(T_A, m, T_B=T_B, k=k)
             comp_mp = stumped(dask_client, T_A, m, T_B, ignore_trivial=False, k=k)
             naive.replace_inf(ref_mp)
