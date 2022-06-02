@@ -424,8 +424,9 @@ class scrump:
     update()
         Update the matrix profile and the matrix profile indices by computing
         additional new distances (limited by `percentage`) that make up the full
-        distance matrix. Each output contains three columns that are corresponding
-        to main, left and right profiles.
+        distance matrix. Each output contains three columns that correspond to
+        the matrix profile, the left matrix profile, and the right matrix profile,
+        respectively.
 
     See Also
     --------
