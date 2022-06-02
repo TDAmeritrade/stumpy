@@ -426,8 +426,8 @@ def test_gpu_stump_self_join_KNN(T_A, T_B):
 def test_gpu_stump_A_B_join_KNN(T_A, T_B):
     for k in range(1, 4):
         m = 3
-        ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True, k=k)
-        comp_mp = gpu_stump(T_B, m, T_A, ignore_trivial=False, k=k)
+        ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True, k=k)
+        comp_mp = gpu_stump(T_A, m, T_B, ignore_trivial=False, k=k)
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
         npt.assert_almost_equal(ref_mp, comp_mp)
