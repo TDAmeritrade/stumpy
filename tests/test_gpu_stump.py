@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
@@ -70,11 +71,11 @@ def test_gpu_searchsorted():
         device_bfs = cuda.to_device(bfs)
         for is_left in [True, False]:
             if is_left:
-                side = 'left'
+                side = "left"
             else:
-                side = 'right'
+                side = "right"
 
-            ref_IDX =  np.full(n, -1, dtype=np.int64)
+            ref_IDX = np.full(n, -1, dtype=np.int64)
             for i in range(n):
                 ref_IDX[i] = np.searchsorted(A[i], V[i], side=side)
 
@@ -84,7 +85,7 @@ def test_gpu_searchsorted():
             threads_per_block = config.STUMPY_THREADS_PER_BLOCK
             blocks_per_grid = math.ceil(n / threads_per_block)
             _gpu_searchsorted_kernel[blocks_per_grid, threads_per_block](
-            device_A, device_V, device_bfs, nlevel, is_left, device_comp_IDX
+                device_A, device_V, device_bfs, nlevel, is_left, device_comp_IDX
             )
             comp_IDX = device_comp_IDX.copy_to_host()
 
