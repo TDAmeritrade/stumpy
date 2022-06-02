@@ -31,6 +31,63 @@ def _compute_PI(
     I,
     excl_zone,
 ):
+    """
+    Compute (Numba JIT-compiled) and update the (elementwise) p-th power of
+    matrix profile, and matrix profile indces according to the non-normalized
+    (i.e., without z-normalization) preSCRIMP algorithm.
+
+    Parameters
+    ----------
+    T_A : numpy.ndarray
+        The time series or sequence for which to compute the matrix profile
+
+    T_B : numpy.ndarray
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
+
+    m : int
+        Window size
+
+    T_A_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_A` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_B_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_B` contains a
+        `np.nan`/`np.inf` value (False)
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
+    indices : numpy.ndarray
+        The subsequence indices to compute `prescrump` for
+
+    start : int
+        The (inclusive) start index for `indices`
+
+    stop : int
+        The (exclusive) stop index for `indices`
+
+    thread_idx : int
+        The thread index
+
+    s : int
+        The sampling interval that defaults to
+        `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
+
+    P_NORM : numpy.ndarray
+        The (elementwises) p-th power of matrix profile
+
+    I : numpy.ndarray
+        The matrix profile indices
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the `i`.
+
+    Returns
+    -------
+    None
+    """
     l = T_B.shape[0] - m + 1
     p_norm_profile = np.empty(l)
     for i in indices[start:stop]:
@@ -45,6 +102,12 @@ def _compute_PI(
             zone_start = max(0, i - excl_zone)
             zone_stop = min(l, i + excl_zone)
             p_norm_profile[zone_start : zone_stop + 1] = np.inf
+
+            # only for self-join
+            mask = p_norm_profile < P_NORM[thread_idx]
+            P_NORM[thread_idx][mask] = p_norm_profile[mask]
+            I[thread_idx][mask] = i
+
         I[thread_idx, i] = np.argmin(p_norm_profile)
         P_NORM[thread_idx, i] = p_norm_profile[I[thread_idx, i]]
         if P_NORM[thread_idx, i] == np.inf:  # pragma: no cover
@@ -160,6 +223,13 @@ def _prescraamp(
     excl_zone : int
         The half width for the exclusion zone relative to the `i`.
 
+    Returns
+    -------
+    out1 : numpy.ndarray
+        Matrix profile
+
+    out2 : numpy.ndarray
+        Matrix profile indices
     Notes
     -----
     `DOI: 10.1109/ICDM.2018.00099 \
@@ -325,7 +395,8 @@ class scraamp:
     update()
         Update the matrix profile and the matrix profile indices by computing
         additional new distances (limited by `percentage`) that make up the full
-        distance matrix.
+        distance matrix. Each output contains three columns that are corresponding
+        to main, left and right profiles.
 
     Notes
     -----

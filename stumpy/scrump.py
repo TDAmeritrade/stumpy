@@ -86,6 +86,10 @@ def _compute_PI(
     excl_zone : int
         The half width for the exclusion zone relative to the `i`.
 
+    Returns
+    -------
+    None
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2018.00099 \
@@ -106,6 +110,12 @@ def _compute_PI(
             zone_start = max(0, i - excl_zone)
             zone_stop = min(l, i + excl_zone)
             squared_distance_profile[zone_start : zone_stop + 1] = np.inf
+
+            # only for self-join
+            mask = squared_distance_profile < P_squared[thread_idx]
+            P_squared[thread_idx][mask] = squared_distance_profile[mask]
+            I[thread_idx][mask] = i
+
         I[thread_idx, i] = np.argmin(squared_distance_profile)
         P_squared[thread_idx, i] = squared_distance_profile[I[thread_idx, i]]
         if P_squared[thread_idx, i] == np.inf:  # pragma: no cover
@@ -221,6 +231,14 @@ def _prescrump(
 
     excl_zone : int
         The half width for the exclusion zone relative to the `i`.
+
+    Returns
+    -------
+    out1 : numpy.ndarray
+        Matrix profile
+
+    out2 : numpy.ndarray
+        Matrix profile indices
 
     Notes
     -----
@@ -406,7 +424,8 @@ class scrump:
     update()
         Update the matrix profile and the matrix profile indices by computing
         additional new distances (limited by `percentage`) that make up the full
-        distance matrix.
+        distance matrix. Each output contains three columns that are corresponding
+        to main, left and right profiles.
 
     See Also
     --------
