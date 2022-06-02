@@ -156,7 +156,7 @@ def stamp(T_A, m, T_B=None, exclusion_zone=None):  # pragma: no cover
     return result
 
 
-def searchsorted(a, v):
+def searchsorted_right(a, v):
     """
     Naive version of numpy.searchsorted(..., side='right')
     """
