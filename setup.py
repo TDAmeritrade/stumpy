@@ -10,7 +10,7 @@ def readme():
 def get_extras_require():
     extras = [
         "pandas >= 0.20.0",
-        "dask >= 1.2.2",
+        "dask >= 1.2.2, <= 2022.5.0",
         "distributed >= 1.28.1, <= 2022.5.0",
         "coverage >= 4.5.3",
         "flake8 >= 3.7.7",
