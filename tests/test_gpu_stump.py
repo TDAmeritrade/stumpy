@@ -1,7 +1,8 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import gpu_stump
+from stumpy import core, gpu_stump
+from stumpy.gpu_stump import _gpu_searchsorted_left, _gpu_searchsorted_right
 from stumpy import config
 from numba import cuda
 
@@ -37,6 +38,43 @@ substitution_values = [np.nan, np.inf]
 def test_gpu_stump_int_input():
     with pytest.raises(TypeError):
         gpu_stump(np.arange(10), 5, ignore_trivial=True)
+
+
+def test_gpu_searchsorted():
+    for n in range(1, 100):
+        a = np.sort(np.random.rand(n))
+        bfs = core._bfs_indices(n, fill_value=-1)
+        nlevel = np.floor(np.log2(n) + 1).astype(np.int64)
+        for i in range(n):
+            v = a[i] - 0.001
+            npt.assert_almost_equal(
+                _gpu_searchsorted_left(a, v, bfs, nlevel),
+                np.searchsorted(a, v, side="left"),
+            )
+            npt.assert_almost_equal(
+                _gpu_searchsorted_right(a, v, bfs, nlevel),
+                np.searchsorted(a, v, side="right"),
+            )
+
+            v = a[i]
+            npt.assert_almost_equal(
+                _gpu_searchsorted_left(a, v, bfs, nlevel),
+                np.searchsorted(a, v, side="left"),
+            )
+            npt.assert_almost_equal(
+                _gpu_searchsorted_right(a, v, bfs, nlevel),
+                np.searchsorted(a, v, side="right"),
+            )
+
+            v = a[i] + 0.001
+            npt.assert_almost_equal(
+                _gpu_searchsorted_left(a, v, bfs, nlevel),
+                np.searchsorted(a, v, side="left"),
+            )
+            npt.assert_almost_equal(
+                _gpu_searchsorted_right(a, v, bfs, nlevel),
+                np.searchsorted(a, v, side="right"),
+            )
 
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
@@ -348,5 +386,22 @@ def test_gpu_stump_nan_zero_mean_self_join():
     comp_mp = gpu_stump(T, m, ignore_trivial=True)
 
     naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_gpu_stump_self_join_KNN(T_A, T_B):
+    k = 3
+    m = 3
+    zone = int(np.ceil(m / 4))
+    ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True, k=k)
+    comp_mp = gpu_stump(T_B, m, ignore_trivial=True, k=k)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
+
+    comp_mp = gpu_stump(pd.Series(T_B), m, ignore_trivial=True, k=k)
     naive.replace_inf(comp_mp)
     npt.assert_almost_equal(ref_mp, comp_mp)

@@ -156,11 +156,23 @@ def stamp(T_A, m, T_B=None, exclusion_zone=None):  # pragma: no cover
     return result
 
 
-def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
+def searchsorted(a, v):
     """
-    Traverse distance matrix diagonally and update the matrix profile and
-    matrix profile indices if the parameter `row_wise` is set to `False`.
-    If the parameter `row_wise` is set to `True`, it is a row-wise traversal.
+    Naive version of numpy.searchsorted(..., side='right')
+    """
+    indices = np.flatnonzero(v < a)
+    if len(indices):
+        return indices.min()
+    else:  # pragma: no cover
+        return len(a)
+
+
+def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
+    """
+    Traverse distance matrix diagonally and update the top-k nearest neighbor
+    matrix profile and matrix profile indices if the parameter `row_wise` is
+    set to `False`. If the parameter `row_wise` is set to `True`,
+    it is a row-wise traversal.
     """
     if T_B is None:  # self-join:
         ignore_trivial = True
@@ -182,35 +194,35 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
     if exclusion_zone is None:
         exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    P = np.full((l, 3), np.inf)
-    I = np.full((l, 3), -1, dtype=np.int64)
+    P = np.full((l, k + 2), np.inf)
+    I = np.full((l, k + 2), -1, dtype=np.int64)  # two more columns are to store
+    # ... left and right top-1 matrix profile indices
 
     if row_wise:  # row-wise traversal in distance matrix
         if ignore_trivial:  # self-join
             for i in range(l):
                 apply_exclusion_zone(distance_matrix[i], i, exclusion_zone, np.inf)
 
-        for i, D in enumerate(distance_matrix):
+        for i, D in enumerate(distance_matrix):  # D: distance profile
             # self-join / AB-join: matrix proifle and indices
-            idx = np.argmin(D)
-            P[i, 0] = D[idx]
-            if P[i, 0] == np.inf:
-                idx = -1
-            I[i, 0] = idx
+            indices = np.argsort(D)[:k]
+            P[i, :k] = D[indices]
+            indices[P[i, :k] == np.inf] = -1
+            I[i, :k] = indices
 
-            # self-join: left matrix profile
+            # self-join: left matrix profile index (top-1)
             if ignore_trivial and i > 0:
                 IL = np.argmin(D[:i])
                 if D[IL] == np.inf:
                     IL = -1
-                I[i, 1] = IL
+                I[i, k] = IL
 
-            # self-join: right matrix profile
+            # self-join: right matrix profile index (top-1)
             if ignore_trivial and i < D.shape[0]:
-                IR = i + np.argmin(D[i:])  # shift argmin by `i` to get true index
+                IR = i + np.argmin(D[i:])  # shift arg by `i` to get true index
                 if D[IR] == np.inf:
                     IR = -1
-                I[i, 2] = IR
+                I[i, k + 1] = IR
 
     else:  # diagonal traversal
         if ignore_trivial:
@@ -218,37 +230,40 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False):
         else:
             diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
 
-        for k in diags:
-            if k >= 0:
-                iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - k))
+        for g in diags:
+            if g >= 0:
+                iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - g))
             else:
-                iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
+                iter_range = range(-g, min(n_A - m + 1, n_B - m + 1 - g))
 
             for i in iter_range:
-                D = distance_matrix[i, i + k]
-                if D < P[i, 0]:
-                    P[i, 0] = D
-                    I[i, 0] = i + k
+                D = distance_matrix[i, i + g]  # D: a single element
+                if D < P[i, k - 1]:
+                    idx = searchsorted(P[i], D)
+                    # to keep the top-k, we must get rid of the last element.
+                    P[i, :k] = np.insert(P[i, :k], idx, D)[:-1]
+                    I[i, :k] = np.insert(I[i, :k], idx, i + g)[:-1]
 
                 if ignore_trivial:  # Self-joins only
-                    if D < P[i + k, 0]:
-                        P[i + k, 0] = D
-                        I[i + k, 0] = i
+                    if D < P[i + g, k - 1]:
+                        idx = searchsorted(P[i + g], D)
+                        P[i + g, :k] = np.insert(P[i + g, :k], idx, D)[:-1]
+                        I[i + g, :k] = np.insert(I[i + g, :k], idx, i)[:-1]
 
-                    if i < i + k:
+                    if i < i + g:
                         # Left matrix profile and left matrix profile index
-                        if D < P[i + k, 1]:
-                            P[i + k, 1] = D
-                            I[i + k, 1] = i
+                        if D < P[i + g, k]:
+                            P[i + g, k] = D
+                            I[i + g, k] = i
 
-                        if D < P[i, 2]:
+                        if D < P[i, k + 1]:
                             # right matrix profile and right matrix profile index
-                            P[i, 2] = D
-                            I[i, 2] = i + k
+                            P[i, k + 1] = D
+                            I[i, k + 1] = i + g
 
-    result = np.empty((l, 4), dtype=object)
-    result[:, 0] = P[:, 0]
-    result[:, 1:4] = I[:, :]
+    result = np.empty((l, 2 * k + 2), dtype=object)
+    result[:, :k] = P[:, :k]
+    result[:, k:] = I[:, :]
 
     return result
 
@@ -1745,3 +1760,15 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
         )
 
     return total_ndists
+
+
+def merge_topk_PI(PA, PB, IA, IB):
+    profile = np.column_stack((PA, PB))
+    indices = np.column_stack((IA, IB))
+
+    idx = np.argsort(profile, axis=1)
+    profile = np.take_along_axis(profile, idx, axis=1)
+    indices = np.take_along_axis(indices, idx, axis=1)
+
+    PA[:, :] = profile[:, : PA.shape[1]]
+    IA[:, :] = indices[:, : PA.shape[1]]
