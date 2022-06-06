@@ -157,8 +157,12 @@ test_coverage()
     # check_errs $?
 
     echo "Testing Code Coverage"
-    coverage run --source=. -m pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning
-    check_errs $?
+    coverage erase
+    for testfile in tests/test_*.py
+    do
+        coverage run --append --source=. -m pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning $testfile
+        check_errs $?
+    done
     coverage report -m --skip-covered --omit=setup.py
 }
 
