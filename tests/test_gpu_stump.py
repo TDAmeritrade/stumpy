@@ -405,3 +405,15 @@ def test_gpu_stump_self_join_KNN(T_A, T_B):
         comp_mp = gpu_stump(pd.Series(T_B), m, ignore_trivial=True, k=k)
         naive.replace_inf(comp_mp)
         npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_gpu_stump_A_B_join_KNN(T_A, T_B):
+    m = 3
+    for k in range(1, 4):
+        ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True, k=k)
+        comp_mp = gpu_stump(T_B, m, T_A, ignore_trivial=False, k=k)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
