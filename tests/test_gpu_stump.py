@@ -91,7 +91,7 @@ def test_gpu_searchsorted():
         )
         comp_IDX = device_comp_IDX.copy_to_host()
         npt.assert_array_equal(ref_IDX, comp_IDX)
-        
+
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T_A, T_B", test_data)
