@@ -434,7 +434,7 @@ def _gpu_stump(
 
     device_bfs = cuda.to_device(core._bfs_indices(k, fill_value=-1))
     nlevel = np.floor(np.log2(k) + 1).astype(np.int64)
-    # number of levels in # binary seearch tree from which `bfs` is constructed.
+    # number of levels in binary seearch tree from which `bfs` is constructed.
 
     with cuda.gpus[device_id]:
         device_T_A = cuda.to_device(T_A)
@@ -855,12 +855,12 @@ def gpu_stump(
         # Update (top-k) matrix profile and matrix profile indices
         core._merge_topk_PI(profile[0], profile[i], indices[0], indices[i])
 
-        # Update (top-1) left matrix profile and matrix profil indices
+        # Update (top-1) left matrix profile and matrix profile indices
         cond = profile_L[0] < profile_L[i]
         profile_L[0] = np.where(cond, profile_L[0], profile_L[i])
         indices_L[0] = np.where(cond, indices_L[0], indices_L[i])
 
-        # Update (top-1) right matrix profile and matrix profil indices
+        # Update (top-1) right matrix profile and matrix profile indices
         cond = profile_R[0] < profile_R[i]
         profile_R[0] = np.where(cond, profile_R[0], profile_R[i])
         indices_R[0] = np.where(cond, indices_R[0], indices_R[i])
