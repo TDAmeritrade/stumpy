@@ -412,7 +412,7 @@ def test_gpu_stump_nan_zero_mean_self_join():
 def test_gpu_stump_self_join_KNN(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
-    for k in range(1, 4):
+    for k in range(2, 4):
         ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True, k=k)
         comp_mp = gpu_stump(T_B, m, ignore_trivial=True, k=k)
         naive.replace_inf(ref_mp)
@@ -428,7 +428,7 @@ def test_gpu_stump_self_join_KNN(T_A, T_B):
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_gpu_stump_A_B_join_KNN(T_A, T_B):
     m = 3
-    for k in range(1, 4):
+    for k in range(2, 4):
         ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True, k=k)
         comp_mp = gpu_stump(T_A, m, T_B, ignore_trivial=False, k=k)
         naive.replace_inf(ref_mp)
