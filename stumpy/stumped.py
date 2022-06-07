@@ -289,24 +289,6 @@ def stumped(
     out[:, :k] = profile
     out[:, k:] = np.column_stack((indices, indices_L, indices_R))
 
-    # Delete data from Dask cluster
-    dask_client.cancel(T_A_future)
-    dask_client.cancel(T_B_future)
-    dask_client.cancel(M_T_future)
-    dask_client.cancel(μ_Q_future)
-    dask_client.cancel(Σ_T_inverse_future)
-    dask_client.cancel(σ_Q_inverse_future)
-    dask_client.cancel(M_T_m_1_future)
-    dask_client.cancel(μ_Q_m_1_future)
-    dask_client.cancel(T_A_subseq_isfinite_future)
-    dask_client.cancel(T_B_subseq_isfinite_future)
-    dask_client.cancel(T_A_subseq_isconstant_future)
-    dask_client.cancel(T_B_subseq_isconstant_future)
-    for diags_future in diags_futures:
-        dask_client.cancel(diags_future)
-    for future in futures:
-        dask_client.cancel(future)
-
     threshold = 10e-6
     if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
         logger.warning(f"A large number of values are smaller than {threshold}.")

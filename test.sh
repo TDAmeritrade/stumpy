@@ -2,6 +2,8 @@
 
 test_mode="all"
 print_mode="verbose"
+custom_testfiles=()
+max_iter=10
 
 # Parse command line arguments
 for var in "$@"
@@ -14,6 +16,10 @@ do
         test_mode="custom"
     elif [[ $var == "silent" || $var == "print" ]]; then
         print_mode="silent"
+    elif [[ "$var" == *"test_"*".py"* ]]; then
+        custom_testfiles+=("$var")
+    elif [[ $var =~ ^[\-0-9]+$ ]]; then
+        max_iter=$var
     else
         echo "Using default test_mode=\"all\""
     fi
@@ -77,13 +83,30 @@ test_custom()
     # export NUMBA_DISABLE_JIT=1
     # export NUMBA_ENABLE_CUDASIM=1
     # Test one or more user-defined functions repeatedly
-    for VARIABLE in {1..10}
-    do
-        pytest -x -W ignore::DeprecationWarning tests/test_.py
-        check_errs $?
-    done
-    clean_up
-    exit 0
+    # 
+    # ./test.sh custom tests/test_stump.py
+    # ./test.sh custom 5 tests/test_stump.py
+    # ./test.sh custom 5 tests/test_stump.py::test_stump_self_join
+
+    if [[ ${#custom_testfiles[@]}  -eq "0" ]]; then
+        echo ""
+        echo "Error: Missing custom test file(s)"
+        echo "Please specify one or more custom test files"
+        echo "Example: ./test.sh custom tests/test_stump.py"
+        exit 1
+    else
+        for i in $(seq $max_iter)
+        do
+            echo "Custom Test: $i / $max_iter"
+            for testfile in "${custom_testfiles[@]}"
+            do
+                pytest -x -W ignore::DeprecationWarning $testfile
+                check_errs $?
+            done
+        done
+        clean_up
+        exit 0
+    fi
 }
 
 test_unit()
@@ -157,8 +180,12 @@ test_coverage()
     # check_errs $?
 
     echo "Testing Code Coverage"
-    coverage run --source=. -m pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning
-    check_errs $?
+    coverage erase
+    for testfile in tests/test_*.py
+    do
+        coverage run --append --source=. -m pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning $testfile
+        check_errs $?
+    done
     coverage report -m --skip-covered --omit=setup.py
 }
 
