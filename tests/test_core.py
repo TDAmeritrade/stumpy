@@ -1063,29 +1063,27 @@ def test_select_P_ABBA_val_inf():
 
 def test_merge_topk_PI():
     n = 50
-    k = 5
+    for k in range(1, 6):
+        PA = np.random.rand(n * k).reshape(n, k)
+        PA = np.sort(PA, axis=1)  # sorting each row separately
 
-    PA = np.random.rand(n * k).reshape(n, k)
-    PA = np.sort(PA, axis=1)  # sorting each row separately
+        PB = np.random.rand(n * k).reshape(n, k)
+        col_idx = np.random.randint(0, k, size=n)
+        for i in range(n):  # creating ties between values of PA and PB
+            PB[i, col_idx[i]] = np.random.choice(PA[i], size=1, replace=False)
+            PB = np.sort(PB, axis=1)
 
-    PB = np.random.rand(n * k).reshape(n, k)
+        IA = np.arange(n * k).reshape(n, k)
+        IB = IA + n * k
 
-    col_idx = np.random.randint(0, k, size=n)
-    for i in range(n):  # creating ties between values of PA and PB
-        PB[i, col_idx[i]] = np.random.choice(PA[i], size=1, replace=False)
-    PB = np.sort(PB, axis=1)
+        ref_P = PA.copy()
+        ref_I = IA.copy()
 
-    IA = np.arange(n * k).reshape(n, k)
-    IB = IA + n * k
+        comp_P = PA.copy()
+        comp_I = IA.copy()
 
-    ref_P = PA.copy()
-    ref_I = IA.copy()
+        naive.merge_topk_PI(ref_P, PB, ref_I, IB)
+        core._merge_topk_PI(comp_P, PB, comp_I, IB)
 
-    comp_P = PA.copy()
-    comp_I = IA.copy()
-
-    naive.merge_topk_PI(ref_P, PB, ref_I, IB)
-    core._merge_topk_PI(comp_P, PB, comp_I, IB)
-
-    npt.assert_array_equal(ref_P, comp_P)
-    npt.assert_array_equal(ref_I, comp_I)
+        npt.assert_array_equal(ref_P, comp_P)
+        npt.assert_array_equal(ref_I, comp_I)
