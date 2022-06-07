@@ -52,8 +52,10 @@ def _gpu_searchsorted_kernel(A, V, bfs, nlevel, is_left, IDX):
             IDX[i] = _gpu_searchsorted_right(A[i], V[i], bfs, nlevel)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 def test_gpu_searchsorted():
-    n = 5000
+    n = 3 * config.STUMPY_THREADS_PER_BLOCK + 1
+
     threads_per_block = config.STUMPY_THREADS_PER_BLOCK
     blocks_per_grid = math.ceil(n / threads_per_block)
 
