@@ -270,7 +270,8 @@ def _prescraamp(
     return np.power(P_NORM[0], 1.0 / p), I[0]
 
 
-def prescraamp(T_A, m, T_B=None, s=None, p=2.0):
+def prescraamp(T_A, m, T_B=None, s=None, p=2.0, k=1):
+    # this function should be modified so that it can return top-k matrix profile
     """
     A convenience wrapper around the Numba JIT-compiled parallelized `_prescraamp`
     function which computes the approximate matrix profile according to the
@@ -294,6 +295,11 @@ def prescraamp(T_A, m, T_B=None, s=None, p=2.0):
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
+
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
 
     Returns
     -------
