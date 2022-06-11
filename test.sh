@@ -87,6 +87,12 @@ test_custom()
     # ./test.sh custom tests/test_stump.py
     # ./test.sh custom 5 tests/test_stump.py
     # ./test.sh custom 5 tests/test_stump.py::test_stump_self_join
+    #
+    # You may mimic coverag testing conditions by disable `numba` JIT
+    # and enabling the `cuda` simulator by setting two environment
+    # variables prior to calling `test.sh`:
+    #
+    # NUMBA_DISABLE_JIT=1 NUMBA_ENABLE_CUDASIM=1 ./test.sh custom 5 tests/test_gpu_stump.py
 
     if [[ ${#custom_testfiles[@]}  -eq "0" ]]; then
         echo ""
