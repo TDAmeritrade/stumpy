@@ -14,6 +14,32 @@ from .stump import _stump
 logger = logging.getLogger(__name__)
 
 
+@njit
+def _insert(a, idx, v):
+    """
+    Insert value `v` into array `a` at index `idx` (in place) and throw away
+    the last element (i.e. not changing the length of original array)
+
+    Parameters
+    ----------
+    a: numpy.ndarray
+        a 1d array
+
+    idx: int
+        the index at which the value `v` should be inserted
+
+    v: float
+        the value that should be inserted into array `a` at index `idx`
+
+    Returns
+    -------
+    None
+    """
+    for i in range(a.shape[0] - 1, idx, -1):
+        a[i] = a[i - 1]
+    a[idx] = v
+
+
 @njit(fastmath=True)
 def _compute_PI(
     T_A,
@@ -128,22 +154,14 @@ def _compute_PI(
                     side="right",
                 )
                 # shifting to the right
-                for loc in range(k - 1, pos, -1):
-                    P_squared[thread_idx, idx, loc] = P_squared[
-                        thread_idx, idx, loc - 1
-                    ]
-                    I[thread_idx, idx, loc] = I[thread_idx, idx, loc - 1]
+                _insert(
+                    P_squared[thread_idx, idx, :], pos, squared_distance_profile[idx]
+                )
+                _insert(I[thread_idx, idx, :], pos, i)
 
-                P_squared[thread_idx, idx, pos] = squared_distance_profile[idx]
-                I[thread_idx, idx, pos] = i
-
-        # shifting to the right
-        for loc in range(k - 1, 0, -1):
-            P_squared[thread_idx, i, loc] = P_squared[thread_idx, i, loc - 1]
-            I[thread_idx, i, loc] = I[thread_idx, i, loc - 1]
-
-        I[thread_idx, i, 0] = np.argmin(squared_distance_profile)
-        P_squared[thread_idx, i, 0] = squared_distance_profile[I[thread_idx, i, 0]]
+        idx = np.argmin(squared_distance_profile)
+        _insert(P_squared[thread_idx, i, :], 0, squared_distance_profile[idx])
+        _insert(I[thread_idx, i, :], 0, idx)
 
         if P_squared[thread_idx, i, 0] == np.inf:  # pragma: no cover
             I[thread_idx, i, 0] = -1
@@ -172,28 +190,16 @@ def _compute_PI(
                     pos = np.searchsorted(
                         P_squared[thread_idx, i + g], D_squared, side="right"
                     )
-                    # shifting to the right
-                    for loc in range(k - 1, pos, -1):
-                        P_squared[thread_idx, i + g, loc] = P_squared[
-                            thread_idx, i + g, loc - 1
-                        ]
-                        I[thread_idx, i + g, loc] = I[thread_idx, i + g, loc - 1]
+                    _insert(P_squared[thread_idx, i + g, :], pos, D_squared)
+                    _insert(I[thread_idx, i + g, :], pos, j + g)
 
-                    P_squared[thread_idx, i + g, pos] = D_squared
-                    I[thread_idx, i + g, pos] = j + g
                 if D_squared < P_squared[thread_idx, j + g, -1]:
                     pos = np.searchsorted(
                         P_squared[thread_idx, j + g], D_squared, side="right"
                     )
-                    # shifting to the right
-                    for loc in range(k - 1, pos, -1):
-                        P_squared[thread_idx, j + g, loc] = P_squared[
-                            thread_idx, j + g, loc - 1
-                        ]
-                        I[thread_idx, j + g, loc] = I[thread_idx, j + g, loc - 1]
+                    _insert(P_squared[thread_idx, j + g, :], pos, D_squared)
+                    _insert(I[thread_idx, j + g, :], pos, i + g)
 
-                    P_squared[thread_idx, j + g, pos] = D_squared
-                    I[thread_idx, j + g, pos] = i + g
             QT_j = QT_j_prime
             for g in range(1, min(s, i + 1, j + 1)):
                 QT_j = QT_j - T_B[i - g + m] * T_A[j - g + m] + T_B[i - g] * T_A[j - g]
@@ -209,28 +215,15 @@ def _compute_PI(
                     pos = np.searchsorted(
                         P_squared[thread_idx, i - g], D_squared, side="right"
                     )
-                    # shifting to the right
-                    for loc in range(k - 1, pos, -1):
-                        P_squared[thread_idx, i - g, loc] = P_squared[
-                            thread_idx, i - g, loc - 1
-                        ]
-                        I[thread_idx, i - g, loc] = I[thread_idx, i - g, loc - 1]
+                    _insert(P_squared[thread_idx, i - g, :], pos, D_squared)
+                    _insert(I[thread_idx, i - g, :], pos, j - g)
 
-                    P_squared[thread_idx, i - g, pos] = D_squared
-                    I[thread_idx, i - g, pos] = j - g
                 if D_squared < P_squared[thread_idx, j - g, -1]:
                     pos = np.searchsorted(
                         P_squared[thread_idx, j - g], D_squared, side="right"
                     )
-                    # shifting to the right
-                    for loc in range(k - 1, pos, -1):
-                        P_squared[thread_idx, j - g, loc] = P_squared[
-                            thread_idx, j - g, loc - 1
-                        ]
-                        I[thread_idx, j - g, loc] = I[thread_idx, j - g, loc - 1]
-
-                    P_squared[thread_idx, j - g, pos] = D_squared
-                    I[thread_idx, j - g, pos] = i - g
+                    _insert(P_squared[thread_idx, j - g, :], pos, D_squared)
+                    _insert(I[thread_idx, j - g, :], pos, i - g)
 
 
 @njit(
