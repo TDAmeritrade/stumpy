@@ -1403,16 +1403,14 @@ def aampdist_snippets(
     )
 
 
-def prescrump(T_A, m, T_B, s, exclusion_zone=None):
+def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
     dist_matrix = distance_matrix(T_A, T_B, m)
 
     n_A = T_A.shape[0]
     l = n_A - m + 1
 
-    P = np.empty(l)
-    I = np.empty(l, dtype=np.int64)
-    P[:] = np.inf
-    I[:] = -1
+    P = np.full((l, k), np.inf, dtype=np.float64)
+    I = np.full((l, k), -1, dtype=np.int64)
 
     for i in np.random.permutation(range(0, l, s)):
         distance_profile = dist_matrix[i]
@@ -1420,33 +1418,44 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None):
             apply_exclusion_zone(distance_profile, i, exclusion_zone, np.inf)
 
             # only for self-join
-            mask = distance_profile < P
-            P[mask] = distance_profile[mask]
-            I[mask] = i
+            for idx in np.flatnonzero(distance_profile < P[:, -1]):
+                pos = np.searchsorted(P[idx], distance_profile[idx], side="right")
+                P[idx] = np.insert(P[idx], pos, distance_profile[idx])[:-1]
+                I[idx] = np.insert(I[idx], pos, i)[:-1]
 
-        I[i] = np.argmin(distance_profile)
-        P[i] = distance_profile[I[i]]
-        if P[i] == np.inf:
-            I[i] = -1
+        I[i, 1:] = I[i, :-1]
+        I[i, 0] = np.argmin(distance_profile)
+        P[i, 1:] = P[i, :-1]
+        P[i, 0] = distance_profile[I[i, 0]]
+        if P[i, 0] == np.inf:
+            I[i, 0] = -1
         else:
-            j = I[i]
-            for k in range(1, min(s, l - max(i, j))):
-                d = dist_matrix[i + k, j + k]
-                if d < P[i + k]:
-                    P[i + k] = d
-                    I[i + k] = j + k
-                if d < P[j + k]:
-                    P[j + k] = d
-                    I[j + k] = i + k
+            j = I[i, 0]  # index of 1st NN
+            for g in range(1, min(s, l - max(i, j))):
+                d = dist_matrix[i + g, j + g]
+                if d < P[i + g, -1]:
+                    pos = np.searchsorted(P[i + g], d, side="right")
+                    P[i + g] = np.insert(P[i + g], pos, d)[:-1]
+                    I[i + g] = np.insert(I[i + g], pos, j + g)[:-1]
+                if d < P[j + g]:
+                    pos = np.searchsorted(P[j + g], d, side="right")
+                    P[j + g] = np.insert(P[j + g], pos, d)[:-1]
+                    I[j + g] = np.insert(I[j + g], pos, i + g)[:-1]
 
-            for k in range(1, min(s, i + 1, j + 1)):
-                d = dist_matrix[i - k, j - k]
-                if d < P[i - k]:
-                    P[i - k] = d
-                    I[i - k] = j - k
-                if d < P[j - k]:
-                    P[j - k] = d
-                    I[j - k] = i - k
+            for g in range(1, min(s, i + 1, j + 1)):
+                d = dist_matrix[i - g, j - g]
+                if d < P[i - g, -1]:
+                    pos = np.searchsorted(P[i - g], d, side="right")
+                    P[i - g] = np.insert(P[i - g], pos, d)[:-1]
+                    I[i - g] = np.insert(I[i - g], pos, j - g)[:-1]
+                if d < P[j - g]:
+                    pos = np.searchsorted(P[j - g], d, side="right")
+                    P[j - g] = np.insert(P[j - g], pos, d)[:-1]
+                    I[j - g] = np.insert(I[j - g], pos, i - g)[:-1]
+
+    if k == 1:
+        P = P.ravel()
+        I = I.ravel()
 
     return P, I
 
