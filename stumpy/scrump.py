@@ -31,9 +31,10 @@ def _compute_PI(
     P_squared,
     I,
     excl_zone=None,
+    k=1,
 ):
     """
-    Compute (Numba JIT-compiled) and update the squared matrix profile distance
+    Compute (Numba JIT-compiled) and update the squared (top-k) matrix profile distance
     and matrix profile indces according to the preSCRIMP algorithm
 
     Parameters
@@ -78,13 +79,18 @@ def _compute_PI(
         `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
 
     P_squared : numpy.ndarray
-        The squared matrix profile
+        The squared (top-k) matrix profile
 
     I : numpy.ndarray
-        The matrix profile indices
+        The (top-k) matrix profile indices
 
     excl_zone : int
         The half width for the exclusion zone relative to the `i`.
+
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
 
     Returns
     -------
@@ -112,58 +118,119 @@ def _compute_PI(
             squared_distance_profile[zone_start : zone_stop + 1] = np.inf
 
             # only for self-join
-            mask = squared_distance_profile < P_squared[thread_idx]
-            P_squared[thread_idx][mask] = squared_distance_profile[mask]
-            I[thread_idx][mask] = i
+            IDX = np.flatnonzero(
+                squared_distance_profile < P_squared[thread_idx, :, -1]
+            )
+            for idx in IDX:
+                pos = np.searchsorted(
+                    P_squared[thread_idx, idx],
+                    squared_distance_profile[idx],
+                    side="right",
+                )
+                # shifting to the right
+                for loc in range(k - 1, pos, -1):
+                    P_squared[thread_idx, idx, loc] = P_squared[
+                        thread_idx, idx, loc - 1
+                    ]
+                    I[thread_idx, idx, loc] = I[thread_idx, idx, loc - 1]
 
-        I[thread_idx, i] = np.argmin(squared_distance_profile)
-        P_squared[thread_idx, i] = squared_distance_profile[I[thread_idx, i]]
-        if P_squared[thread_idx, i] == np.inf:  # pragma: no cover
-            I[thread_idx, i] = -1
+                P_squared[thread_idx, idx, pos] = squared_distance_profile[idx]
+                I[thread_idx, idx, pos] = i
+
+        # shifting to the right
+        for loc in range(k - 1, 0, -1):
+            P_squared[thread_idx, i, loc] = P_squared[thread_idx, i, loc - 1]
+            I[thread_idx, i, loc] = I[thread_idx, i, loc - 1]
+
+        I[thread_idx, i, 0] = np.argmin(squared_distance_profile)
+        P_squared[thread_idx, i, 0] = squared_distance_profile[I[thread_idx, i, 0]]
+
+        if P_squared[thread_idx, i, 0] == np.inf:  # pragma: no cover
+            I[thread_idx, i, 0] = -1
         else:
-            j = I[thread_idx, i]
+            j = I[thread_idx, i, 0]
             # Given the squared distance, work backwards and compute QT
-            QT_j = (m - P_squared[thread_idx, i] / 2.0) * (Σ_T[j] * σ_Q[i]) + (
+            QT_j = (m - P_squared[thread_idx, i, 0] / 2.0) * (Σ_T[j] * σ_Q[i]) + (
                 m * M_T[j] * μ_Q[i]
             )
             QT_j_prime = QT_j
-            for k in range(1, min(s, l - max(i, j))):
+            for g in range(1, min(s, l - max(i, j))):
                 QT_j = (
                     QT_j
-                    - T_B[i + k - 1] * T_A[j + k - 1]
-                    + T_B[i + k + m - 1] * T_A[j + k + m - 1]
+                    - T_B[i + g - 1] * T_A[j + g - 1]
+                    + T_B[i + g + m - 1] * T_A[j + g + m - 1]
                 )
                 D_squared = core._calculate_squared_distance(
                     m,
                     QT_j,
-                    M_T[i + k],
-                    Σ_T[i + k],
-                    μ_Q[j + k],
-                    σ_Q[j + k],
+                    M_T[i + g],
+                    Σ_T[i + g],
+                    μ_Q[j + g],
+                    σ_Q[j + g],
                 )
-                if D_squared < P_squared[thread_idx, i + k]:
-                    P_squared[thread_idx, i + k] = D_squared
-                    I[thread_idx, i + k] = j + k
-                if D_squared < P_squared[thread_idx, j + k]:
-                    P_squared[thread_idx, j + k] = D_squared
-                    I[thread_idx, j + k] = i + k
+                if D_squared < P_squared[thread_idx, i + g, -1]:
+                    pos = np.searchsorted(
+                        P_squared[thread_idx, i + g], D_squared, side="right"
+                    )
+                    # shifting to the right
+                    for loc in range(k - 1, pos, -1):
+                        P_squared[thread_idx, i + g, loc] = P_squared[
+                            thread_idx, i + g, loc - 1
+                        ]
+                        I[thread_idx, i + g, loc] = I[thread_idx, i + g, loc - 1]
+
+                    P_squared[thread_idx, i + g, pos] = D_squared
+                    I[thread_idx, i + g, pos] = j + g
+                if D_squared < P_squared[thread_idx, j + g, -1]:
+                    pos = np.searchsorted(
+                        P_squared[thread_idx, j + g], D_squared, side="right"
+                    )
+                    # shifting to the right
+                    for loc in range(k - 1, pos, -1):
+                        P_squared[thread_idx, j + g, loc] = P_squared[
+                            thread_idx, j + g, loc - 1
+                        ]
+                        I[thread_idx, j + g, loc] = I[thread_idx, j + g, loc - 1]
+
+                    P_squared[thread_idx, j + g, pos] = D_squared
+                    I[thread_idx, j + g, pos] = i + g
             QT_j = QT_j_prime
-            for k in range(1, min(s, i + 1, j + 1)):
-                QT_j = QT_j - T_B[i - k + m] * T_A[j - k + m] + T_B[i - k] * T_A[j - k]
+            for g in range(1, min(s, i + 1, j + 1)):
+                QT_j = QT_j - T_B[i - g + m] * T_A[j - g + m] + T_B[i - g] * T_A[j - g]
                 D_squared = core._calculate_squared_distance(
                     m,
                     QT_j,
-                    M_T[i - k],
-                    Σ_T[i - k],
-                    μ_Q[j - k],
-                    σ_Q[j - k],
+                    M_T[i - g],
+                    Σ_T[i - g],
+                    μ_Q[j - g],
+                    σ_Q[j - g],
                 )
-                if D_squared < P_squared[thread_idx, i - k]:
-                    P_squared[thread_idx, i - k] = D_squared
-                    I[thread_idx, i - k] = j - k
-                if D_squared < P_squared[thread_idx, j - k]:
-                    P_squared[thread_idx, j - k] = D_squared
-                    I[thread_idx, j - k] = i - k
+                if D_squared < P_squared[thread_idx, i - g, -1]:
+                    pos = np.searchsorted(
+                        P_squared[thread_idx, i - g], D_squared, side="right"
+                    )
+                    # shifting to the right
+                    for loc in range(k - 1, pos, -1):
+                        P_squared[thread_idx, i - g, loc] = P_squared[
+                            thread_idx, i - g, loc - 1
+                        ]
+                        I[thread_idx, i - g, loc] = I[thread_idx, i - g, loc - 1]
+
+                    P_squared[thread_idx, i - g, pos] = D_squared
+                    I[thread_idx, i - g, pos] = j - g
+                if D_squared < P_squared[thread_idx, j - g, -1]:
+                    pos = np.searchsorted(
+                        P_squared[thread_idx, j - g], D_squared, side="right"
+                    )
+                    # shifting to the right
+                    for loc in range(k - 1, pos, -1):
+                        P_squared[thread_idx, j - g, loc] = P_squared[
+                            thread_idx, j - g, loc - 1
+                        ]
+                        I[thread_idx, j - g, loc] = I[thread_idx, j - g, loc - 1]
+
+                    P_squared[thread_idx, j - g, pos] = D_squared
+                    I[thread_idx, j - g, pos] = i - g
 
 
 @njit(
@@ -183,6 +250,7 @@ def _prescrump(
     indices,
     s,
     excl_zone=None,
+    k=1,
 ):
     """
     A Numba JIT-compiled implementation of the preSCRIMP algorithm.
@@ -232,13 +300,22 @@ def _prescrump(
     excl_zone : int
         The half width for the exclusion zone relative to the `i`.
 
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
+
     Returns
     -------
     out1 : numpy.ndarray
-        Matrix profile
+        The (top-k) Matrix profile. When k = 1 (default), the first and only column
+        consists of the matrix profile. However, when k > 1, the output has exacly
+        k columns consist of the top-k matrix profile.
 
     out2 : numpy.ndarray
-        Matrix profile indices
+        The (top-k) Matrix profile. When k = 1 (default), the first and only column
+        consists of the matrix profile indices. However, when k > 1, the output has
+         exacly k columns consist of the top-k matrix profile indices.
 
     Notes
     -----
@@ -249,8 +326,8 @@ def _prescrump(
     """
     n_threads = numba.config.NUMBA_NUM_THREADS
     l = T_A.shape[0] - m + 1
-    P_squared = np.full((n_threads, l), np.inf, dtype=np.float64)
-    I = np.full((n_threads, l), -1, dtype=np.int64)
+    P_squared = np.full((n_threads, l, k), np.inf, dtype=np.float64)
+    I = np.full((n_threads, l, k), -1, dtype=np.int64)
 
     idx_ranges = core._get_ranges(len(indices), n_threads, truncate=False)
     for thread_idx in prange(n_threads):
@@ -270,23 +347,21 @@ def _prescrump(
             P_squared,
             I,
             excl_zone,
+            k,
         )
 
     for thread_idx in range(1, n_threads):
-        for i in range(l):
-            if P_squared[thread_idx, i] < P_squared[0, i]:
-                P_squared[0, i] = P_squared[thread_idx, i]
-                I[0, i] = I[thread_idx, i]
+        core._merge_topk_PI(P_squared[0], P_squared[thread_idx], I[0], I[thread_idx])
 
     return np.sqrt(P_squared[0]), I[0]
 
 
 @core.non_normalized(scraamp.prescraamp)
-def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
+def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
     """
     A convenience wrapper around the Numba JIT-compiled parallelized `_prescrump`
-    function which computes the approximate matrix profile according to the preSCRIMP
-    algorithm
+    function which computes the approximate (top-k) matrix profile according to
+    the preSCRIMP algorithm
 
     Parameters
     ----------
@@ -313,13 +388,22 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
 
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
+
     Returns
     -------
     P : numpy.ndarray
-        Matrix profile
+        The (top-k) Matrix profile. When k = 1 (default), it is a 1d array. However,
+        when k > 1, it is a 2d array with exacly `k` columns consist of the top-k
+        matrix profile.
 
     I : numpy.ndarray
-        Matrix profile indices
+        The (top-k) Matrix profile indices. When k = 1 (default), it is a 1d array.
+        However, when k > 1,  it is a 2d array with exacly `k` columns consist of
+        the top-k matrix profile indices.
 
     Notes
     -----
@@ -355,7 +439,12 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
         indices,
         s,
         excl_zone,
+        k,
     )
+
+    if k == 1:
+        P = P.ravel()
+        I = I.ravel()
 
     return P, I
 
