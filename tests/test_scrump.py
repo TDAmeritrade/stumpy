@@ -690,3 +690,21 @@ def test_scrump_nan_zero_mean_self_join(percentages):
         npt.assert_almost_equal(ref_I, comp_I)
         npt.assert_almost_equal(ref_left_I, comp_left_I)
         npt.assert_almost_equal(ref_right_I, comp_right_I)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_prescrump_self_join_KNN(T_A, T_B):
+    m = 3
+    zone = int(np.ceil(m / 4))
+    for k in range(2, 4):
+        for s in range(1, zone + 1):
+            seed = np.random.randint(100000)
+
+            np.random.seed(seed)
+            ref_P, ref_I = naive.prescrump(T_B, m, T_B, s=s, exclusion_zone=zone, k=k)
+
+            np.random.seed(seed)
+            comp_P, comp_I = prescrump(T_B, m, s=s, k=k)
+
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
