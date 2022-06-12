@@ -2618,7 +2618,8 @@ def _insert(a, idx, v):
         a 1d array
 
     idx: int
-        the index at which the value `v` should be inserted
+        the index at which the value `v` should be inserted. This can be any
+        integer number from `0` to `len(a) - 1`
 
     v: float
         the value that should be inserted into array `a` at index `idx`
