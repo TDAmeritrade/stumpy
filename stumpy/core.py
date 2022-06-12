@@ -2604,3 +2604,29 @@ def _merge_topk_PI(PA, PB, IA, IB):
 
                 start = idx
                 stop += 1  # because of shifting elements to the right by one
+
+
+@njit
+def _insert(a, idx, v):
+    """
+    Insert value `v` into array `a` at index `idx` (in place) and throw away
+    the last element (i.e. not changing the length of original array)
+
+    Parameters
+    ----------
+    a: numpy.ndarray
+        a 1d array
+
+    idx: int
+        the index at which the value `v` should be inserted
+
+    v: float
+        the value that should be inserted into array `a` at index `idx`
+
+    Returns
+    -------
+    None
+    """
+    for i in range(a.shape[0] - 1, idx, -1):
+        a[i] = a[i - 1]
+    a[idx] = v
