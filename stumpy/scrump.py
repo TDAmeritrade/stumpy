@@ -153,7 +153,6 @@ def _compute_PI(
                     squared_distance_profile[idx],
                     side="right",
                 )
-                # shifting to the right
                 _insert(
                     P_squared[thread_idx, idx, :], pos, squared_distance_profile[idx]
                 )
