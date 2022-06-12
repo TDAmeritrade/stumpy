@@ -2627,6 +2627,5 @@ def _insert(a, idx, v):
     -------
     None
     """
-    for i in range(a.shape[0] - 1, idx, -1):
-        a[i] = a[i - 1]
+    a[idx + 1 :] = a[idx:-1]
     a[idx] = v
