@@ -303,12 +303,12 @@ def _prescrump(
     -------
     out1 : numpy.ndarray
         The (top-k) Matrix profile. When k = 1 (default), the first and only column
-        consists of the matrix profile. When k > 1, the output has exacly k columns
+        consists of the matrix profile. When k > 1, the output has exactly k columns
         consist of the top-k matrix profile.
 
     out2 : numpy.ndarray
         The (top-k) Matrix profile. When k = 1 (default), the first and only column
-        consists of the matrix profile indices. When k > 1, the output has exacly
+        consists of the matrix profile indices. When k > 1, the output has exactly
         k columns consist of the top-k matrix profile indices.
 
     Notes
@@ -391,12 +391,12 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
     -------
     P : numpy.ndarray
         The (top-k) Matrix profile. When k = 1 (default), the first and only column
-        consists of the matrix profile. When k > 1, the output has exacly k columns
+        consists of the matrix profile. When k > 1, the output has exactly k columns
         consist of the top-k matrix profile.
 
     I : numpy.ndarray
         The (top-k) Matrix profile. When k = 1 (default), the first and only column
-        consists of the matrix profile indices. When k > 1, the output has exacly
+        consists of the matrix profile indices. When k > 1, the output has exactly
         k columns consist of the top-k matrix profile indices.
 
     Notes
