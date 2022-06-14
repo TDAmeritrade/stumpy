@@ -212,6 +212,12 @@ def _compute_diagonal(
                 if T_B_subseq_isconstant[i + g] and T_A_subseq_isconstant[i]:
                     pearson = 1.0
 
+                # ρ[thread_idx, i, :] is sorted ascendingly. To update
+                # it, Its first element (i.e. the smallest value
+                # of array ρ[thread_idx, i]) MUST be discarded. Therefore,
+                # if the insertion index of new value in `ρ[thread_idx, i]` is idx,
+                # then, it should be substracted by 1 since the left of idx is shifted
+                # to the left.
                 if pearson > ρ[thread_idx, i, 0]:
                     idx = np.searchsorted(ρ[thread_idx, i], pearson)
                     ρ[thread_idx, i, : idx - 1] = ρ[thread_idx, i, 1:idx]
