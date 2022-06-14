@@ -1456,7 +1456,7 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
     return P, I
 
 
-def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
+def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s, k=1):
     dist_matrix = distance_matrix(T_A, T_B, m)
 
     n_A = T_A.shape[0]
@@ -1478,42 +1478,40 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
     diags_ranges_start = diags_ranges[0, 0]
     diags_ranges_stop = diags_ranges[0, 1]
 
-    out = np.full((l, 4), np.inf, dtype=object)
-    out[:, 1:] = -1
-    left_P = np.full(l, np.inf, dtype=np.float64)
-    right_P = np.full(l, np.inf, dtype=np.float64)
+    P = np.full((l, k + 2), np.inf, dtype=np.float64)  # Topk + left/ right
+    I = np.full((l, k + 2), -1, dtype=np.int64)  # Topk + left/ right
 
     for diag_idx in range(diags_ranges_start, diags_ranges_stop):
-        k = diags[diag_idx]
+        g = diags[diag_idx]
 
         for i in range(n_A - m + 1):
             for j in range(n_B - m + 1):
-                if j - i == k:
-                    if dist_matrix[i, j] < out[i, 0]:
-                        out[i, 0] = dist_matrix[i, j]
-                        out[i, 1] = i + k
+                if j - i == g:
+                    d = dist_matrix[i, j]
+                    if d < P[i, k - 1]:
+                        # update TopK of P[i]
+                        idx = searchsorted_right(P[i], d)
+                        P[i, :k] = np.insert(P[i, :k], idx, d)[:-1]
+                        I[i, :k] = np.insert(I[i, :k], idx, i + g)[:-1]
 
-                    if exclusion_zone is not None and dist_matrix[i, j] < out[i + k, 0]:
-                        out[i + k, 0] = dist_matrix[i, j]
-                        out[i + k, 1] = i
+                    if exclusion_zone is not None and d < P[i + g, k - 1]:
+                        idx = searchsorted_right(P[i + g], d)
+                        P[i + g, :k] = np.insert(P[i + g, :k], idx, d)[:-1]
+                        I[i + g, :k] = np.insert(I[i + g, :k], idx, i)[:-1]
 
                     # left matrix profile and left matrix profile indices
-                    if (
-                        exclusion_zone is not None
-                        and i < i + k
-                        and dist_matrix[i, j] < left_P[i + k]
-                    ):
-                        left_P[i + k] = dist_matrix[i, j]
-                        out[i + k, 2] = i
+                    if exclusion_zone is not None and i < i + g and d < P[i + g, k]:
+                        P[i + g, k] = d
+                        I[i + g, k] = i
 
                     # right matrix profile and right matrix profile indices
-                    if (
-                        exclusion_zone is not None
-                        and i + k > i
-                        and dist_matrix[i, j] < right_P[i]
-                    ):
-                        right_P[i] = dist_matrix[i, j]
-                        out[i, 3] = i + k
+                    if exclusion_zone is not None and i + g > i and d < P[i, k + 1]:
+                        P[i, k + 1] = d
+                        I[i, k + 1] = i + g
+
+    out = np.empty((l, 2 * k + 2), dtype=object)
+    out[:, :k] = P[:, :k]
+    out[:, k:] = I
 
     return out
 
