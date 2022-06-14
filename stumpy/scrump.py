@@ -133,7 +133,7 @@ def _compute_PI(
             # `P_squared[thread_idx, idx, -1]`, then that means the so-far-discovered TopK
             # for `S_idx` (i.e. `P_squared[thread_idx, idx, :]`) MUST be updated!
 
-            # note: further explanation
+            # note: further explanation!
             # `squared_distance_profile` (of `S_i`) is actually the `i`-th row of
             # Squared-Distance-Matrix. Its idx-th element (which is in idx-th column),
             # is `d_squared = squared_distance_profile[idx]`. If `d_squared < P_squared[thread_idx, idx, -1]`,
@@ -142,23 +142,18 @@ def _compute_PI(
                 squared_distance_profile < P_squared[thread_idx, :, -1]
             )
             for idx in IDX:
-                pos = np.searchsorted(
-                    P_squared[thread_idx, idx],
-                    squared_distance_profile[idx],
-                    side="right",
-                )
-                core._shift_at_index_and_insert(
-                    P_squared[thread_idx, idx], pos, squared_distance_profile[idx]
-                )
+                d_squared = squared_distance_profile[idx]
+                pos = np.searchsorted(P_squared[thread_idx, idx], d_squared, side="right")
+                core._shift_at_index_and_insert(P_squared[thread_idx, idx], pos, d_squared)
                 core._shift_at_index_and_insert(I[thread_idx, idx], pos, i)
 
         # find EXACT (not approx.) value of `P_squared[thread_idx, i, 0]`
-        idx = np.argmin(squared_distance_profile)
+        nn_of_i = np.argmin(squared_distance_profile)
         core._shift_at_index_and_insert(
-            P_squared[thread_idx, i], 0, squared_distance_profile[idx]
+            P_squared[thread_idx, i], 0, squared_distance_profile[nn_of_i]
         )
-        core._shift_at_index_and_insert(I[thread_idx, i], 0, idx)
-        # [note] EXACT (not approx.) values of `P_squared[thread_idx, i, :]``
+        core._shift_at_index_and_insert(I[thread_idx, i], 0, nn_of_i)
+        # [note] EXACT (not approx.) values of `P_squared[thread_idx, i, :]`
         # (not just its 0-th element) can be found by doing something like
         # `np.sort(squared_distance_profile)[:k]`. However, it can increase the
         # computing time, and thus this is avoided here.
