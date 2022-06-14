@@ -2629,5 +2629,6 @@ def _shift_at_index_and_insert(a, idx, v):
     -------
     None
     """
-    a[idx + 1 :] = a[idx:-1]
-    a[idx] = v
+    if idx < len(a):
+        a[idx + 1 :] = a[idx:-1]
+        a[idx] = v
