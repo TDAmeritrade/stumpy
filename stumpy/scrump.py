@@ -289,13 +289,13 @@ def _prescrump(
     -------
     out1 : numpy.ndarray
         The (top-k) Matrix profile. When k = 1 (default), the first and only column
-        consists of the matrix profile. However, when k > 1, the output has exacly
-        k columns consist of the top-k matrix profile.
+        consists of the matrix profile. When k > 1, the output has exacly k columns
+        consist of the top-k matrix profile.
 
     out2 : numpy.ndarray
         The (top-k) Matrix profile. When k = 1 (default), the first and only column
-        consists of the matrix profile indices. However, when k > 1, the output has
-         exacly k columns consist of the top-k matrix profile indices.
+        consists of the matrix profile indices. When k > 1, the output has exacly
+        k columns consist of the top-k matrix profile indices.
 
     Notes
     -----
@@ -376,14 +376,14 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
     Returns
     -------
     P : numpy.ndarray
-        The (top-k) Matrix profile. When k = 1 (default), it is a 1d array. However,
-        when k > 1, it is a 2d array with exacly `k` columns consist of the top-k
-        matrix profile.
+        The (top-k) Matrix profile. When k = 1 (default), the first and only column
+        consists of the matrix profile. When k > 1, the output has exacly k columns
+        consist of the top-k matrix profile.
 
     I : numpy.ndarray
-        The (top-k) Matrix profile indices. When k = 1 (default), it is a 1d array.
-        However, when k > 1,  it is a 2d array with exacly `k` columns consist of
-        the top-k matrix profile indices.
+        The (top-k) Matrix profile. When k = 1 (default), the first and only column
+        consists of the matrix profile indices. When k > 1, the output has exacly
+        k columns consist of the top-k matrix profile indices.
 
     Notes
     -----
@@ -421,10 +421,6 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
         excl_zone,
         k,
     )
-
-    if k == 1:
-        P = P.ravel()
-        I = I.ravel()
 
     return P, I
 

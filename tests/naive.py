@@ -1453,10 +1453,6 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
                     P[j - g] = np.insert(P[j - g], pos, d)[:-1]
                     I[j - g] = np.insert(I[j - g], pos, i - g)[:-1]
 
-    if k == 1:
-        P = P.ravel()
-        I = I.ravel()
-
     return P, I
 
 
