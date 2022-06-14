@@ -237,28 +237,28 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
                 iter_range = range(-g, min(n_A - m + 1, n_B - m + 1 - g))
 
             for i in iter_range:
-                D = distance_matrix[i, i + g]  # D: a single element
-                if D < P[i, k - 1]:
-                    idx = searchsorted_right(P[i], D)
+                d = distance_matrix[i, i + g]
+                if d < P[i, k - 1]:
+                    idx = searchsorted_right(P[i], d)
                     # to keep the top-k, we must get rid of the last element.
-                    P[i, :k] = np.insert(P[i, :k], idx, D)[:-1]
+                    P[i, :k] = np.insert(P[i, :k], idx, d)[:-1]
                     I[i, :k] = np.insert(I[i, :k], idx, i + g)[:-1]
 
                 if ignore_trivial:  # Self-joins only
-                    if D < P[i + g, k - 1]:
-                        idx = searchsorted_right(P[i + g], D)
-                        P[i + g, :k] = np.insert(P[i + g, :k], idx, D)[:-1]
+                    if d < P[i + g, k - 1]:
+                        idx = searchsorted_right(P[i + g], d)
+                        P[i + g, :k] = np.insert(P[i + g, :k], idx, d)[:-1]
                         I[i + g, :k] = np.insert(I[i + g, :k], idx, i)[:-1]
 
                     if i < i + g:
                         # Left matrix profile and left matrix profile index
-                        if D < P[i + g, k]:
-                            P[i + g, k] = D
+                        if d < P[i + g, k]:
+                            P[i + g, k] = d
                             I[i + g, k] = i
 
-                        if D < P[i, k + 1]:
+                        if d < P[i, k + 1]:
                             # right matrix profile and right matrix profile index
-                            P[i, k + 1] = D
+                            P[i, k + 1] = d
                             I[i, k + 1] = i + g
 
     result = np.empty((l, 2 * k + 2), dtype=object)
