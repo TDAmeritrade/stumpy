@@ -2565,7 +2565,8 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
 def _merge_topk_PI(PA, PB, IA, IB):
     """
     Merge two top-k matrix profiles PA and PB, and update PA (in place) while
-    prioritizing values of PA in ties. Also, update IA accordingly.
+    always choosing values of PA over values of PB in case of ties. Also, update
+    IA accordingly.
 
     Parameters
     ----------
@@ -2609,8 +2610,8 @@ def _merge_topk_PI(PA, PB, IA, IB):
 @njit
 def _insert(a, idx, v):
     """
-    Insert value `v` into array `a` at index `idx` (in place) and throw away
-    the last element (i.e. not changing the length of original array)
+    Insert value `v` into array `a` at index `idx` (in place) and discard
+    the last element (i.e. without changing the length of `a`)
 
     Parameters
     ----------
