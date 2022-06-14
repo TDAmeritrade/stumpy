@@ -116,7 +116,7 @@ def _compute_PI(
             zone_stop = min(l, i + excl_zone)
             squared_distance_profile[zone_start : zone_stop + 1] = np.inf
 
-        if excl_zone is not None: # self-join
+        if excl_zone is not None:  # self-join
             # note: S_index = T[index: index + m]
             # `v = squared_distance_profile[idx]` is (the square of)
             # `dist(S_i, S_idx)`, which is the same as `dist(S_idx, S_i)`. So,
@@ -131,13 +131,17 @@ def _compute_PI(
             )
             for idx in IDX:
                 d_squared = squared_distance_profile[idx]
-                pos = np.searchsorted(P_squared[thread_idx, idx], d_squared, side="right")
+                pos = np.searchsorted(
+                    P_squared[thread_idx, idx], d_squared, side="right"
+                )
                 core._shift_insert_at_index(P_squared[thread_idx, idx], pos, d_squared)
                 core._shift_insert_at_index(I[thread_idx, idx], pos, i)
 
         # find EXACT (not approx.) value of `P_squared[thread_idx, i, 0]`
         nn_of_i = np.argmin(squared_distance_profile)
-        core._shift_insert_at_index(P_squared[thread_idx, i], 0, squared_distance_profile[nn_of_i])
+        core._shift_insert_at_index(
+            P_squared[thread_idx, i], 0, squared_distance_profile[nn_of_i]
+        )
         core._shift_insert_at_index(I[thread_idx, i], 0, nn_of_i)
 
         if P_squared[thread_idx, i, 0] == np.inf:  # pragma: no cover
@@ -169,14 +173,18 @@ def _compute_PI(
                     pos = np.searchsorted(
                         P_squared[thread_idx, i + g], d_squared, side="right"
                     )
-                    core._shift_insert_at_index(P_squared[thread_idx, i + g], pos, d_squared)
+                    core._shift_insert_at_index(
+                        P_squared[thread_idx, i + g], pos, d_squared
+                    )
                     core._shift_insert_at_index(I[thread_idx, i + g], pos, j + g)
 
                 if d_squared < P_squared[thread_idx, j + g, -1]:
                     pos = np.searchsorted(
                         P_squared[thread_idx, j + g], d_squared, side="right"
                     )
-                    core._shift_insert_at_index(P_squared[thread_idx, j + g], pos, d_squared)
+                    core._shift_insert_at_index(
+                        P_squared[thread_idx, j + g], pos, d_squared
+                    )
                     core._shift_insert_at_index(I[thread_idx, j + g], pos, i + g)
 
             QT_j = QT_j_prime
@@ -194,14 +202,18 @@ def _compute_PI(
                     pos = np.searchsorted(
                         P_squared[thread_idx, i - g], d_squared, side="right"
                     )
-                    core._shift_insert_at_index(P_squared[thread_idx, i - g], pos, d_squared)
+                    core._shift_insert_at_index(
+                        P_squared[thread_idx, i - g], pos, d_squared
+                    )
                     core._shift_insert_at_index(I[thread_idx, i - g], pos, j - g)
 
                 if d_squared < P_squared[thread_idx, j - g, -1]:
                     pos = np.searchsorted(
                         P_squared[thread_idx, j - g], d_squared, side="right"
                     )
-                    core._shift_insert_at_index(P_squared[thread_idx, j - g], pos, d_squared)
+                    core._shift_insert_at_index(
+                        P_squared[thread_idx, j - g], pos, d_squared
+                    )
                     core._shift_insert_at_index(I[thread_idx, j - g], pos, i - g)
 
 
