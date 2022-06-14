@@ -109,7 +109,6 @@ def _compute_PI(
     for i in indices[start:stop]:
         Q = T_A[i : i + m]
         QT[:] = core._sliding_dot_product(Q, T_B)
-        # Update P[i] relative to all T[j : j + m]
         squared_distance_profile[:] = core._mass(Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
         squared_distance_profile[:] = np.square(squared_distance_profile)
         if excl_zone is not None:
@@ -118,11 +117,13 @@ def _compute_PI(
             zone_stop = min(l, i + excl_zone)
             squared_distance_profile[zone_start : zone_stop + 1] = np.inf
 
+            # Update `P_squared[thread_idx, index, :]` with `squared_distance_profile[index]`
+
             # Reminder(1): this `squared_distance_profile` is the (square of) distance profile
             # that corresponds to `S_i`, the subsequence with start index `i`.
 
             # Reminder(2): `P_squared[thread_idx, index, :]` should contain the (approx.)
-            # TopK distance between `S_idx` to its neighbors (in thread_idx). And,
+            # TopK distance between `S_index` to its neighbors (in thread_idx). And,
             # these distances are sorted ascendingly. so, `P_squared[thread_idx, index, 0]`
             # is smallest and `P_squared[thread_idx, index, -1]` is the largest in the array
             # `P_squared[thread_idx, index, :]`
@@ -132,12 +133,18 @@ def _compute_PI(
             # from `S_idx` to one of its neighbors, `S_i`. If `d_squared` is less than
             # `P_squared[thread_idx, idx, -1]`, then that means the so-far-discovered TopK
             # for `S_idx` (i.e. `P_squared[thread_idx, idx, :]`) MUST be updated!
+            # Note that the matrix profile of indices in the trivial zone of `i` cannot
+            # be updated here since `squared_distance_profile` in those indices are
+            # set to inf.
 
             # note: further explanation!
             # `squared_distance_profile` (of `S_i`) is actually the `i`-th row of
             # Squared-Distance-Matrix. Its idx-th element (which is in idx-th column),
             # is `d_squared = squared_distance_profile[idx]`. If `d_squared < P_squared[thread_idx, idx, -1]`,
-            # then  `P_squared[thread_idx, idx, :]` MUST be updated.
+            # it means this value (`d_squared`) can be in the TopK neighbors of `S_idx`.
+            # In other words, `d_squared` can be in TopK smallest values of `idx`-th COLUMN. (Recall
+            # that in SELF-JOIN we can use EITHER row OR column to find NearestNeighbors)
+            # Therefore, `P_squared[thread_idx, idx, :]` MUST be updated.
             IDX = np.flatnonzero(
                 squared_distance_profile < P_squared[thread_idx, :, -1]
             )
@@ -147,16 +154,17 @@ def _compute_PI(
                 core._shift_at_index_and_insert(P_squared[thread_idx, idx], pos, d_squared)
                 core._shift_at_index_and_insert(I[thread_idx, idx], pos, i)
 
-        # find EXACT (not approx.) value of `P_squared[thread_idx, i, 0]`
+        # find EXACT (not approx.) value of `P_squared[thread_idx, i, 0]` to update
+        # matrix profile at index `i`.
         nn_of_i = np.argmin(squared_distance_profile)
         core._shift_at_index_and_insert(
             P_squared[thread_idx, i], 0, squared_distance_profile[nn_of_i]
         )
         core._shift_at_index_and_insert(I[thread_idx, i], 0, nn_of_i)
         # [note] EXACT (not approx.) values of `P_squared[thread_idx, i, :]`
-        # (not just its 0-th element) can be found by doing something like
-        # `np.sort(squared_distance_profile)[:k]`. However, it can increase the
-        # computing time, and thus this is avoided here.
+        # (not just its 0-th element but ALL TopK) can be found by doing something like
+        # `np.sort(squared_distance_profile)[:k]`. However, this can increase the
+        # computing time, and thus this was avoided here.
 
         if P_squared[thread_idx, i, 0] == np.inf:  # pragma: no cover
             I[thread_idx, i, 0] = -1
