@@ -121,11 +121,12 @@ def _compute_PI(
             # `v = squared_distance_profile[idx]` is (the square of)
             # `dist(S_i, S_idx)`, which is the same as `dist(S_idx, S_i)`. So,
             # `squared_distance_profile[idx]` is (the square of) distane from `S_idx`
-            # to one of its neighbors, `S_i`. Therefore, the value `v` can be used to
-            # update the TopK of `S_idx`, stored "ascendingly" in `P_squared[thread_idx, idx, :]`.
+            # to one of its neighbors, `S_i`. Therefore, the value `v` can be
+            # used to update the TopK of `S_idx`, stored "ascendingly" in
+            # `P_squared[thread_idx, idx, :]`.
 
-            # `P_squared[thread_idx, idx, :]` in inf for those `idx` that are in the trivial zone,
-            # including the `i` itself. So, those will not be updated here.
+            # `P_squared[thread_idx, idx, :]` in inf for those `idx` that are in
+            # the trivial zone, including the `i` itself. Those are not updated here.
             IDX = np.flatnonzero(
                 squared_distance_profile < P_squared[thread_idx, :, -1]
             )
