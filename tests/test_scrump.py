@@ -740,10 +740,10 @@ def test_scrump_self_join_KNN(T_A, T_B, percentages):
 
             np.random.seed(seed)
             ref_mp = naive.scrump(T_B, m, T_B, percentage, zone, False, None, k=k)
-            ref_P = ref_mp[:, 0]
-            ref_I = ref_mp[:, 1]
-            ref_left_I = ref_mp[:, 2]
-            ref_right_I = ref_mp[:, 3]
+            ref_P = ref_mp[:, :k]
+            ref_I = ref_mp[:, k : 2 * k]
+            ref_left_I = ref_mp[:, 2 * k]
+            ref_right_I = ref_mp[:, 2 * k + 1]
 
             np.random.seed(seed)
             approx = scrump(
