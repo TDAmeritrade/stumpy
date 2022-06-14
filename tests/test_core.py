@@ -1089,7 +1089,7 @@ def test_merge_topk_PI():
         npt.assert_array_equal(ref_I, comp_I)
 
 
-def test_shift_at_index_and_insert():
+def test_shift_insert_at_index():
     for k in range(1, 6):
         a = np.random.rand(k)
 
@@ -1100,6 +1100,6 @@ def test_shift_at_index_and_insert():
             comp = a.copy()
 
             ref = np.insert(ref, idx, v)[:-1]
-            core._shift_at_index_and_insert(comp, idx, v)  # update comp in place
+            core._shift_insert_at_index(comp, idx, v)  # update comp in place
 
             npt.assert_array_equal(ref, comp)

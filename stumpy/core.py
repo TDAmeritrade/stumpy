@@ -2608,7 +2608,7 @@ def _merge_topk_PI(PA, PB, IA, IB):
 
 
 @njit
-def _shift_at_index_and_insert(a, idx, v):
+def _shift_insert_at_index(a, idx, v):
     """
     Insert value `v` into array `a` at index `idx` (in place) and discard
     the last element (i.e. without changing the length of `a`)

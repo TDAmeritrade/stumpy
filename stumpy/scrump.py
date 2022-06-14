@@ -151,16 +151,14 @@ def _compute_PI(
             for idx in IDX:
                 d_squared = squared_distance_profile[idx]
                 pos = np.searchsorted(P_squared[thread_idx, idx], d_squared, side="right")
-                core._shift_at_index_and_insert(P_squared[thread_idx, idx], pos, d_squared)
-                core._shift_at_index_and_insert(I[thread_idx, idx], pos, i)
+                core._shift_insert_at_index(P_squared[thread_idx, idx], pos, d_squared)
+                core._shift_insert_at_index(I[thread_idx, idx], pos, i)
 
         # find EXACT (not approx.) value of `P_squared[thread_idx, i, 0]` to update
         # matrix profile at index `i`.
         nn_of_i = np.argmin(squared_distance_profile)
-        core._shift_at_index_and_insert(
-            P_squared[thread_idx, i], 0, squared_distance_profile[nn_of_i]
-        )
-        core._shift_at_index_and_insert(I[thread_idx, i], 0, nn_of_i)
+        core._shift_insert_at_index(P_squared[thread_idx, i], 0, squared_distance_profile[nn_of_i])
+        core._shift_insert_at_index(I[thread_idx, i], 0, nn_of_i)
         # [note] EXACT (not approx.) values of `P_squared[thread_idx, i, :]`
         # (not just its 0-th element but ALL TopK) can be found by doing something like
         # `np.sort(squared_distance_profile)[:k]`. However, this can increase the
@@ -193,19 +191,15 @@ def _compute_PI(
                     pos = np.searchsorted(
                         P_squared[thread_idx, i + g], d_squared, side="right"
                     )
-                    core._shift_at_index_and_insert(
-                        P_squared[thread_idx, i + g], pos, d_squared
-                    )
-                    core._shift_at_index_and_insert(I[thread_idx, i + g], pos, j + g)
+                    core._shift_insert_at_index(P_squared[thread_idx, i + g], pos, d_squared)
+                    core._shift_insert_at_index(I[thread_idx, i + g], pos, j + g)
 
                 if d_squared < P_squared[thread_idx, j + g, -1]:
                     pos = np.searchsorted(
                         P_squared[thread_idx, j + g], d_squared, side="right"
                     )
-                    core._shift_at_index_and_insert(
-                        P_squared[thread_idx, j + g], pos, d_squared
-                    )
-                    core._shift_at_index_and_insert(I[thread_idx, j + g], pos, i + g)
+                    core._shift_insert_at_index(P_squared[thread_idx, j + g], pos, d_squared)
+                    core._shift_insert_at_index(I[thread_idx, j + g], pos, i + g)
 
             QT_j = QT_j_prime
             for g in range(1, min(s, i + 1, j + 1)):
@@ -222,23 +216,15 @@ def _compute_PI(
                     pos = np.searchsorted(
                         P_squared[thread_idx, i - g], d_squared, side="right"
                     )
-                    core._shift_at_index_and_shift_at_index_and_insert(
-                        P_squared[thread_idx, i - g], pos, d_squared
-                    )
-                    core._shift_at_index_and_shift_at_index_and_insert(
-                        I[thread_idx, i - g], pos, j - g
-                    )
+                    core._shift_insert_at_index(P_squared[thread_idx, i - g], pos, d_squared)
+                    core._shift_insert_at_index(I[thread_idx, i - g], pos, j - g)
 
                 if d_squared < P_squared[thread_idx, j - g, -1]:
                     pos = np.searchsorted(
                         P_squared[thread_idx, j - g], d_squared, side="right"
                     )
-                    core._shift_at_index_and_shift_at_index_and_insert(
-                        P_squared[thread_idx, j - g], pos, d_squared
-                    )
-                    core._shift_at_index_and_shift_at_index_and_insert(
-                        I[thread_idx, j - g], pos, i - g
-                    )
+                    core._shift_insert_at_index(P_squared[thread_idx, j - g], pos, d_squared)
+                    core._shift_insert_at_index(I[thread_idx, j - g], pos, i - g)
 
 
 @njit(
