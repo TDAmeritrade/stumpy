@@ -1092,12 +1092,14 @@ def test_merge_topk_PI():
 def test_shift_insert_at_index():
     for k in range(1, 6):
         a = np.random.rand(k)
+        ref = np.empty(k, dtype=np.float64)
+        comp = np.empty(k, dtype=np.float64)
 
         indices = np.arange(k + 1)
         values = np.random.rand(k + 1)
         for (idx, v) in zip(indices, values):
-            ref = a.copy()
-            comp = a.copy()
+            ref[:] = a
+            comp[:] = a
 
             ref = np.insert(ref, idx, v)[:-1]
             core._shift_insert_at_index(comp, idx, v)  # update comp in place
