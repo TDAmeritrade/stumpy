@@ -2596,12 +2596,8 @@ def _merge_topk_PI(PA, PB, IA, IB):
             if PB[i, j] < PA[i, -1]:
                 idx = np.searchsorted(PA[i, start:stop], PB[i, j], side="right") + start
 
-                for g in range(PB.shape[1] - 1, idx, -1):
-                    PA[i, g] = PA[i, g - 1]
-                    IA[i, g] = IA[i, g - 1]
-
-                PA[i, idx] = PB[i, j]
-                IA[i, idx] = IB[i, j]
+                _shift_insert_at_index(PA[i], idx, PB[i, j])
+                _shift_insert_at_index(IA[i], idx, IB[i, j])
 
                 start = idx
                 stop += 1  # because of shifting elements to the right by one
