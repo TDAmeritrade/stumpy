@@ -264,9 +264,6 @@ def stumped(
             )
         )
 
-    profile = np.empty((l, 2 * k))
-    indices = np.empty((l, 2 * k))
-
     results = dask_client.gather(futures)
     profile, profile_L, profile_R, indices, indices_L, indices_R = results[0]
 
