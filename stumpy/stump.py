@@ -515,7 +515,7 @@ def _stump(
     PL = np.sqrt(p_norm_L)
     PR = np.sqrt(p_norm_R)
 
-    return P, PL, PR, I, IL[0, :], IR[0, :]
+    return P, PL, PR, I, IL[0], IR[0]
 
 
 @core.non_normalized(aamp)
