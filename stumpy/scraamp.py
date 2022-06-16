@@ -388,6 +388,11 @@ class scraamp:
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
 
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
+
     Attributes
     ----------
     P_ : numpy.ndarray
@@ -460,6 +465,11 @@ class scraamp:
 
         p : float, default 2.0
             The p-norm to apply for computing the Minkowski distance.
+
+        k : int, default 1
+            The number of top `k` smallest distances used to construct the matrix profile.
+            Note that this will increase the total computational time and memory usage
+            when k > 1.
         """
         self._ignore_trivial = ignore_trivial
         self._p = p
