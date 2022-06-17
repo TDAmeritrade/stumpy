@@ -2623,7 +2623,7 @@ def _shift_insert_at_index(a, idx, v, shift=1):
 
     idx: int
         The index at which the value `v` should be inserted. This can be any
-        integer number from `0` to `len(a) - 1`.
+        integer number from `0` to `len(a)`.
 
     v: float
         The value that should be inserted into array `a` at index `idx`
@@ -2631,7 +2631,7 @@ def _shift_insert_at_index(a, idx, v, shift=1):
     shift: int, default 1
         The value 1 (default) indicates discarding the last element after inserting
         value `v` at index `idx`. The other value, -1, indicates discarding the first
-        element after inserting value `v` at index `idx`. Any value other than 1 
+        element after inserting value `v` at index `idx`. Any value other than 1
         or -1 results in no change in the input array `a`.
 
     Returns
