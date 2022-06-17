@@ -2647,5 +2647,5 @@ def _shift_insert_at_index(a, idx, v, shift=1):
             # elements were shifted to left, and thus the insertion becomes `idx-1`
             a[idx - 1] = v
 
-    else:
+    else:  # pragma: no cover
         pass
