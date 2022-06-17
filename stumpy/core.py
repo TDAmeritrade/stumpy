@@ -2571,18 +2571,18 @@ def _merge_topk_PI(PA, PB, IA, IB):
     Parameters
     ----------
     PA : numpy.ndarray
-        a (top-k) matrix profile, with ndim of 2, where values in each row are
+        A (top-k) matrix profile, with ndim of 2, where values in each row are
         sorted in ascending order. Also, it needs to be the same shape as PB.
 
     PB : numpy.ndarray
-        a (top-k) matrix profile, with ndim of 2, where values in each row are
+        A (top-k) matrix profile, with ndim of 2, where values in each row are
         sorted in ascending order. Also, it needs to be the same shape as PA.
 
     IA : numpy.ndarray
-        a (top-k) matrix profile indices, corresponding to PA
+        A (top-k) matrix profile indices, corresponding to PA
 
     IB : numpy.ndarray
-        a (top-k) matrix profile indices, corresponding to PB
+        A (top-k) matrix profile indices, corresponding to PB
 
     Returns
     -------
@@ -2607,8 +2607,9 @@ def _merge_topk_PI(PA, PB, IA, IB):
 def _shift_insert_at_index(a, idx, v, shift=1):
     """
     Insert value `v` into array `a` at index `idx` (in place) and discard
-    the last element (i.e. without changing the length of `a`) when `shift=1` (default).
-    When `shift=-1`, the first element will be discarded instead.
+    the last element when `shift=1` (default). When `shift=-1`, the first element
+    will be discarded instead. In both cases, the length of `a` remain unchanged
+    at the end of function.
 
     Note
     ----
@@ -2630,7 +2631,8 @@ def _shift_insert_at_index(a, idx, v, shift=1):
     shift: int, default 1
         The value 1 (default) indicates discarding the last element after inserting
         value `v` at index `idx`. The other value, -1, indicates discarding the first
-        element after inserting value `v` at index `idx`
+        element after inserting value `v` at index `idx`. Any value other than 1 
+        or -1 results in no change in the input array `a`.
 
     Returns
     -------

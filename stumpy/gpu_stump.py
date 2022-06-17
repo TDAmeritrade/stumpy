@@ -26,20 +26,20 @@ def _gpu_searchsorted_left(a, v, bfs, nlevel):
         1-dim array sorted in ascending order.
 
     v : float
-        value to insert into array `a`
+        Value to insert into array `a`
 
     bfs : numpy.ndarray
         The breadth-first-search indices where the missing leaves of its corresponding
         binary search tree are filled with -1.
 
     nlevel : int
-        the number of levels in the binary search tree from which the array
+        The number of levels in the binary search tree from which the array
         `bfs` is obtained.
 
     Returns
     -------
     idx : int
-        the index of the insertion point
+        The index of the insertion point
     """
     n = a.shape[0]
     idx = 0
@@ -71,20 +71,20 @@ def _gpu_searchsorted_right(a, v, bfs, nlevel):
         1-dim array sorted in ascending order.
 
     v : float
-        value to insert into array `a`
+        Value to insert into array `a`
 
     bfs : numpy.ndarray
         The breadth-first-search indices where the missing leaves of its corresponding
         binary search tree are filled with -1.
 
     nlevel : int
-        the number of levels in the binary search tree from which the array
+        The number of levels in the binary search tree from which the array
         `bfs` is obtained.
 
     Returns
     -------
     idx : int
-        the index of the insertion point
+        The index of the insertion point
     """
     n = a.shape[0]
     idx = 0
@@ -142,7 +142,7 @@ def _compute_and_update_PI_kernel(
     Parameters
     ----------
     i : int
-        sliding window `i`
+        Sliding window `i`
 
     T_A : numpy.ndarray
         The time series or sequence for which to compute the dot product
@@ -214,7 +214,7 @@ def _compute_and_update_PI_kernel(
         binary search tree are filled with -1.
 
     nlevel : int
-        the number of levels in the binary search tree from which the array
+        The number of levels in the binary search tree from which the array
         `bfs` is obtained.
 
     k : int
