@@ -149,8 +149,8 @@ def _compute_PI(
                 m * M_T[j] * μ_Q[i]
             )
             QT_j_prime = QT_j
-            # Update Top-k of BOTH subsequences at i+g and j+g (i.e. left neighbor of i, j),
-            # by using the distance between `S_(i+g)` and `S_(j+g)`
+            # Update Top-k of BOTH subsequences at i+g and j+g (i.e. left neighbor
+            # of i, j), by using the distance between `S_(i+g)` and `S_(j+g)`
             for g in range(1, min(s, l - max(i, j))):
                 QT_j = (
                     QT_j
@@ -184,8 +184,8 @@ def _compute_PI(
                     core._shift_insert_at_index(I[thread_idx, j + g], pos, i + g)
 
             QT_j = QT_j_prime
-            # Update Top-k of BOTH subsequences at i-g and j-g (i.e. left neighbor of i, j),
-            # by using the distance between `S_(i-g)` and `S_(j-g)`
+            # Update Top-k of BOTH subsequences at i-g and j-g (i.e. left neighbor
+            # of i, j), by using the distance between `S_(i-g)` and `S_(j-g)`
             for g in range(1, min(s, i + 1, j + 1)):
                 QT_j = QT_j - T_B[i - g + m] * T_A[j - g + m] + T_B[i - g] * T_A[j - g]
                 d_squared = core._calculate_squared_distance(
