@@ -55,6 +55,7 @@ def _gpu_searchsorted_kernel(A, V, bfs, nlevel, is_left, IDX):
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 def test_gpu_searchsorted():
     n = 3 * config.STUMPY_THREADS_PER_BLOCK + 1
+    V = np.empty(n, dtype=np.float64)
 
     threads_per_block = config.STUMPY_THREADS_PER_BLOCK
     blocks_per_grid = math.ceil(n / threads_per_block)
@@ -66,7 +67,7 @@ def test_gpu_searchsorted():
         A = np.sort(np.random.rand(n, k), axis=1)
         device_A = cuda.to_device(A)
 
-        V = np.random.rand(n)
+        V[:] = np.random.rand(n)
         for i, idx in enumerate(np.random.choice(np.arange(n), size=k, replace=False)):
             V[idx] = A[idx, i]  # create ties
         device_V = cuda.to_device(V)
