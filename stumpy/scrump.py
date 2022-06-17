@@ -150,7 +150,7 @@ def _compute_PI(
                 m * M_T[j] * μ_Q[i]
             )
             QT_j_prime = QT_j
-            # Update Top-k of BOTH subsequences at i+g and j+g (i.e. left neighbor
+            # Update Top-k of BOTH subsequences at i+g and j+g (i.e. right neighbor
             # of i, j), by using the distance between `S_(i+g)` and `S_(j+g)`
             for g in range(1, min(s, l - max(i, j))):
                 QT_j = (
