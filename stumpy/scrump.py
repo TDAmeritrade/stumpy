@@ -122,16 +122,17 @@ def _compute_PI(
             # can be used to update the top-k for BOTH subsequence `i` and
             # subsequence `j`. We update the latter here.
 
-            IDX = np.flatnonzero(
+            idx = np.flatnonzero(
                 squared_distance_profile < P_squared[thread_idx, :, -1]
             )
-            for idx in IDX:
-                d_squared = squared_distance_profile[idx]
+            for j in idx:
                 pos = np.searchsorted(
-                    P_squared[thread_idx, idx], d_squared, side="right"
+                    P_squared[thread_idx, j], squared_distance_profile[j], side="right"
                 )
-                core._shift_insert_at_index(P_squared[thread_idx, idx], pos, d_squared)
-                core._shift_insert_at_index(I[thread_idx, idx], pos, i)
+                core._shift_insert_at_index(
+                    P_squared[thread_idx, j], pos, squared_distance_profile[j]
+                )
+                core._shift_insert_at_index(I[thread_idx, j], pos, i)
 
         # find EXACT (not approx.) value of `P_squared[thread_idx, i, 0]`
         nn_of_i = np.argmin(squared_distance_profile)
