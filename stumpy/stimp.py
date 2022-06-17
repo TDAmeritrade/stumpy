@@ -218,7 +218,7 @@ class _stimp:
                 approx.update()
                 self._PAN[
                     self._bfs_indices[self._n_processed], : approx.P_.shape[0]
-                ] = approx.P_
+                ] = approx.P_.ravel()
             else:
                 out = self._mp_func(
                     self._T,
