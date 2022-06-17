@@ -108,8 +108,8 @@ def test_scrump_self_join(T_A, T_B, percentages):
 
         np.random.seed(seed)
         ref_mp = naive.scrump(T_B, m, T_B, percentage, zone, False, None)
-        ref_P = ref_mp[:, 0]
-        ref_I = ref_mp[:, 1]
+        ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+        ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
         ref_left_I = ref_mp[:, 2]
         ref_right_I = ref_mp[:, 3]
 
@@ -141,8 +141,8 @@ def test_scrump_A_B_join(T_A, T_B, percentages):
 
         np.random.seed(seed)
         ref_mp = naive.scrump(T_A, m, T_B, percentage, None, False, None)
-        ref_P = ref_mp[:, 0]
-        ref_I = ref_mp[:, 1]
+        ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+        ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
         ref_left_I = ref_mp[:, 2]
         ref_right_I = ref_mp[:, 3]
 
@@ -175,8 +175,8 @@ def test_scrump_A_B_join_swap(T_A, T_B, percentages):
 
         np.random.seed(seed)
         ref_mp = naive.scrump(T_B, m, T_A, percentage, None, False, None)
-        ref_P = ref_mp[:, 0]
-        # ref_I = ref_mp[:, 1]
+        ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+        # ref_I = ref_mp[:, 1].reshape(-1, 1)
         ref_left_I = ref_mp[:, 2]
         ref_right_I = ref_mp[:, 3]
 
@@ -211,8 +211,8 @@ def test_scrump_self_join_larger_window(T_A, T_B, m, percentages):
 
             np.random.seed(seed)
             ref_mp = naive.scrump(T_B, m, T_B, percentage, zone, False, None)
-            ref_P = ref_mp[:, 0]
-            ref_I = ref_mp[:, 1]
+            ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+            ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
             ref_left_I = ref_mp[:, 2]
             ref_right_I = ref_mp[:, 3]
 
@@ -241,8 +241,8 @@ def test_scrump_self_join_full(T_A, T_B):
     zone = int(np.ceil(m / 4))
 
     ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True)
-    ref_P = ref_mp[:, 0]
-    ref_I = ref_mp[:, 1]
+    ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+    ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
     ref_left_I = ref_mp[:, 2]
     ref_right_I = ref_mp[:, 3]
 
@@ -262,8 +262,8 @@ def test_scrump_self_join_full(T_A, T_B):
     npt.assert_almost_equal(ref_right_I, comp_right_I)
 
     ref_mp = stump(T_B, m, ignore_trivial=True)
-    ref_P = ref_mp[:, 0]
-    ref_I = ref_mp[:, 1]
+    ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+    ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
     ref_left_I = ref_mp[:, 2]
     ref_right_I = ref_mp[:, 3]
 
@@ -279,8 +279,8 @@ def test_scrump_A_B_join_full(T_A, T_B):
     m = 3
 
     ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
-    ref_P = ref_mp[:, 0]
-    ref_I = ref_mp[:, 1]
+    ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+    ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
     ref_left_I = ref_mp[:, 2]
     ref_right_I = ref_mp[:, 3]
 
@@ -300,8 +300,8 @@ def test_scrump_A_B_join_full(T_A, T_B):
     npt.assert_almost_equal(ref_right_I, comp_right_I)
 
     ref_mp = stump(T_A, m, T_B=T_B, ignore_trivial=False)
-    ref_P = ref_mp[:, 0]
-    ref_I = ref_mp[:, 1]
+    ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+    ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
     ref_left_I = ref_mp[:, 2]
     ref_right_I = ref_mp[:, 3]
 
@@ -317,8 +317,8 @@ def test_scrump_A_B_join_full_swap(T_A, T_B):
     m = 3
 
     ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
-    ref_P = ref_mp[:, 0]
-    ref_I = ref_mp[:, 1]
+    ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+    ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
     ref_left_I = ref_mp[:, 2]
     ref_right_I = ref_mp[:, 3]
 
@@ -345,8 +345,8 @@ def test_scrump_self_join_full_larger_window(T_A, T_B, m):
         zone = int(np.ceil(m / 4))
 
         ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True)
-        ref_P = ref_mp[:, 0]
-        ref_I = ref_mp[:, 1]
+        ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+        ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
         ref_left_I = ref_mp[:, 2]
         ref_right_I = ref_mp[:, 3]
 
@@ -383,8 +383,8 @@ def test_scrump_plus_plus_self_join(T_A, T_B, percentages):
                 if ref_P[i] < ref_mp[i, 0]:
                     ref_mp[i, 0] = ref_P[i]
                     ref_mp[i, 1] = ref_I[i]
-            ref_P = ref_mp[:, 0]
-            ref_I = ref_mp[:, 1]
+            ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+            ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
             # ref_left_I = ref_mp[:, 2]
             # ref_right_I = ref_mp[:, 3]
 
@@ -424,8 +424,8 @@ def test_scrump_plus_plus_A_B_join(T_A, T_B, percentages):
                 if ref_P[i] < ref_mp[i, 0]:
                     ref_mp[i, 0] = ref_P[i]
                     ref_mp[i, 1] = ref_I[i]
-            ref_P = ref_mp[:, 0]
-            ref_I = ref_mp[:, 1]
+            ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+            ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
             ref_left_I = ref_mp[:, 2]
             ref_right_I = ref_mp[:, 3]
 
@@ -459,8 +459,8 @@ def test_scrump_plus_plus_self_join_full(T_A, T_B):
     zone = int(np.ceil(m / 4))
 
     ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True)
-    ref_P = ref_mp[:, 0]
-    ref_I = ref_mp[:, 1]
+    ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+    ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
     ref_left_I = ref_mp[:, 2]
     ref_right_I = ref_mp[:, 3]
 
@@ -488,8 +488,8 @@ def test_scrump_plus_plus_A_B_join_full(T_A, T_B):
     zone = int(np.ceil(m / 4))
 
     ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
-    ref_P = ref_mp[:, 0]
-    ref_I = ref_mp[:, 1]
+    ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+    ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
     ref_left_I = ref_mp[:, 2]
     ref_right_I = ref_mp[:, 3]
 
@@ -517,8 +517,8 @@ def test_scrump_plus_plus_A_B_join_full_swap(T_A, T_B):
     zone = int(np.ceil(m / 4))
 
     ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
-    ref_P = ref_mp[:, 0]
-    ref_I = ref_mp[:, 1]
+    ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+    ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
     ref_left_I = ref_mp[:, 2]
     ref_right_I = ref_mp[:, 3]
 
@@ -552,8 +552,8 @@ def test_scrump_constant_subsequence_self_join(percentages):
 
         np.random.seed(seed)
         ref_mp = naive.scrump(T, m, T, percentage, zone, False, None)
-        ref_P = ref_mp[:, 0]
-        ref_I = ref_mp[:, 1]
+        ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+        ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
         ref_left_I = ref_mp[:, 2]
         ref_right_I = ref_mp[:, 3]
 
@@ -590,8 +590,8 @@ def test_scrump_identical_subsequence_self_join(percentages):
 
         np.random.seed(seed)
         ref_mp = naive.scrump(T, m, T, percentage, zone, False, None)
-        ref_P = ref_mp[:, 0]
-        # ref_I = ref_mp[:, 1]
+        ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+        # ref_I = ref_mp[:, 1].reshape(-1, 1)
         # ref_left_I = ref_mp[:, 2]
         # ref_right_I = ref_mp[:, 3]
 
@@ -636,8 +636,8 @@ def test_scrump_nan_inf_self_join(
 
             np.random.seed(seed)
             ref_mp = naive.scrump(T_B_sub, m, T_B_sub, percentage, zone, False, None)
-            ref_P = ref_mp[:, 0]
-            ref_I = ref_mp[:, 1]
+            ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+            ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
             ref_left_I = ref_mp[:, 2]
             ref_right_I = ref_mp[:, 3]
 
@@ -670,8 +670,8 @@ def test_scrump_nan_zero_mean_self_join(percentages):
 
         np.random.seed(seed)
         ref_mp = naive.scrump(T, m, T, percentage, zone, False, None)
-        ref_P = ref_mp[:, 0]
-        ref_I = ref_mp[:, 1]
+        ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
+        ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
         ref_left_I = ref_mp[:, 2]
         ref_right_I = ref_mp[:, 3]
 
