@@ -112,10 +112,91 @@ def _compute_PI(
         squared_distance_profile[:] = core._mass(Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
         squared_distance_profile[:] = np.square(squared_distance_profile)
         if excl_zone is not None:
-            zone_start = max(0, i - excl_zone)
-            zone_stop = min(l, i + excl_zone)
-            squared_distance_profile[zone_start : zone_stop + 1] = np.inf
+            core._apply_exclusion_zone(squared_distance_profile, i, excl_zone, np.inf)
 
+        # find EXACT (not approx.) value of `P_squared[thread_idx, i, 0]`
+        nn = np.argmin(squared_distance_profile)
+        core._shift_insert_at_index(
+            P_squared[thread_idx, i], 0, squared_distance_profile[nn]
+        )
+        core._shift_insert_at_index(I[thread_idx, i], 0, nn)
+
+        if P_squared[thread_idx, i, 0] == np.inf:  # pragma: no cover
+            I[thread_idx, i, 0] = -1
+            continue
+
+        j = I[thread_idx, i, 0]
+        # Given the squared distance, work backwards and compute QT
+        QT_j = (m - P_squared[thread_idx, i, 0] / 2.0) * (Σ_T[j] * σ_Q[i]) + (
+            m * M_T[j] * μ_Q[i]
+        )
+        QT_j_prime = QT_j
+        # Update Top-k of BOTH subsequences at i+g and j+g (i.e. right neighbor
+        # of i, j), by using the distance between `S_(i+g)` and `S_(j+g)`
+        for g in range(1, min(s, l - max(i, j))):
+            QT_j = (
+                QT_j
+                - T_B[i + g - 1] * T_A[j + g - 1]
+                + T_B[i + g + m - 1] * T_A[j + g + m - 1]
+            )
+            D_squared = core._calculate_squared_distance(
+                m,
+                QT_j,
+                M_T[i + g],
+                Σ_T[i + g],
+                μ_Q[j + g],
+                σ_Q[j + g],
+            )
+            if D_squared < P_squared[thread_idx, i + g, -1]:
+                pos = np.searchsorted(
+                    P_squared[thread_idx, i + g], D_squared, side="right"
+                )
+                core._shift_insert_at_index(
+                    P_squared[thread_idx, i + g], pos, D_squared
+                )
+                core._shift_insert_at_index(I[thread_idx, i + g], pos, j + g)
+
+            if D_squared < P_squared[thread_idx, j + g, -1]:
+                pos = np.searchsorted(
+                    P_squared[thread_idx, j + g], D_squared, side="right"
+                )
+                core._shift_insert_at_index(
+                    P_squared[thread_idx, j + g], pos, D_squared
+                )
+                core._shift_insert_at_index(I[thread_idx, j + g], pos, i + g)
+
+        QT_j = QT_j_prime
+        # Update Top-k of BOTH subsequences at i-g and j-g (i.e. left neighbor
+        # of i, j), by using the distance between `S_(i-g)` and `S_(j-g)`
+        for g in range(1, min(s, i + 1, j + 1)):
+            QT_j = QT_j - T_B[i - g + m] * T_A[j - g + m] + T_B[i - g] * T_A[j - g]
+            D_squared = core._calculate_squared_distance(
+                m,
+                QT_j,
+                M_T[i - g],
+                Σ_T[i - g],
+                μ_Q[j - g],
+                σ_Q[j - g],
+            )
+            if D_squared < P_squared[thread_idx, i - g, -1]:
+                pos = np.searchsorted(
+                    P_squared[thread_idx, i - g], D_squared, side="right"
+                )
+                core._shift_insert_at_index(
+                    P_squared[thread_idx, i - g], pos, D_squared
+                )
+                core._shift_insert_at_index(I[thread_idx, i - g], pos, j - g)
+
+            if D_squared < P_squared[thread_idx, j - g, -1]:
+                pos = np.searchsorted(
+                    P_squared[thread_idx, j - g], D_squared, side="right"
+                )
+                core._shift_insert_at_index(
+                    P_squared[thread_idx, j - g], pos, D_squared
+                )
+                core._shift_insert_at_index(I[thread_idx, j - g], pos, i - g)
+
+        # self-join only
         if excl_zone is not None:
             # Note that the squared distance, `squared_distance_profile[j]`,
             # between subsequences `S_i = T[i : i + m]` and `S_j = T[j : j + m]`
@@ -133,87 +214,6 @@ def _compute_PI(
                     P_squared[thread_idx, j], pos, squared_distance_profile[j]
                 )
                 core._shift_insert_at_index(I[thread_idx, j], pos, i)
-
-        # find EXACT (not approx.) value of `P_squared[thread_idx, i, 0]`
-        nn_of_i = np.argmin(squared_distance_profile)
-        core._shift_insert_at_index(
-            P_squared[thread_idx, i], 0, squared_distance_profile[nn_of_i]
-        )
-        core._shift_insert_at_index(I[thread_idx, i], 0, nn_of_i)
-
-        if P_squared[thread_idx, i, 0] == np.inf:  # pragma: no cover
-            I[thread_idx, i, 0] = -1
-        else:
-            j = I[thread_idx, i, 0]
-            # Given the squared distance, work backwards and compute QT
-            QT_j = (m - P_squared[thread_idx, i, 0] / 2.0) * (Σ_T[j] * σ_Q[i]) + (
-                m * M_T[j] * μ_Q[i]
-            )
-            QT_j_prime = QT_j
-            # Update Top-k of BOTH subsequences at i+g and j+g (i.e. right neighbor
-            # of i, j), by using the distance between `S_(i+g)` and `S_(j+g)`
-            for g in range(1, min(s, l - max(i, j))):
-                QT_j = (
-                    QT_j
-                    - T_B[i + g - 1] * T_A[j + g - 1]
-                    + T_B[i + g + m - 1] * T_A[j + g + m - 1]
-                )
-                D_squared = core._calculate_squared_distance(
-                    m,
-                    QT_j,
-                    M_T[i + g],
-                    Σ_T[i + g],
-                    μ_Q[j + g],
-                    σ_Q[j + g],
-                )
-                if D_squared < P_squared[thread_idx, i + g, -1]:
-                    pos = np.searchsorted(
-                        P_squared[thread_idx, i + g], D_squared, side="right"
-                    )
-                    core._shift_insert_at_index(
-                        P_squared[thread_idx, i + g], pos, D_squared
-                    )
-                    core._shift_insert_at_index(I[thread_idx, i + g], pos, j + g)
-
-                if D_squared < P_squared[thread_idx, j + g, -1]:
-                    pos = np.searchsorted(
-                        P_squared[thread_idx, j + g], D_squared, side="right"
-                    )
-                    core._shift_insert_at_index(
-                        P_squared[thread_idx, j + g], pos, D_squared
-                    )
-                    core._shift_insert_at_index(I[thread_idx, j + g], pos, i + g)
-
-            QT_j = QT_j_prime
-            # Update Top-k of BOTH subsequences at i-g and j-g (i.e. left neighbor
-            # of i, j), by using the distance between `S_(i-g)` and `S_(j-g)`
-            for g in range(1, min(s, i + 1, j + 1)):
-                QT_j = QT_j - T_B[i - g + m] * T_A[j - g + m] + T_B[i - g] * T_A[j - g]
-                D_squared = core._calculate_squared_distance(
-                    m,
-                    QT_j,
-                    M_T[i - g],
-                    Σ_T[i - g],
-                    μ_Q[j - g],
-                    σ_Q[j - g],
-                )
-                if D_squared < P_squared[thread_idx, i - g, -1]:
-                    pos = np.searchsorted(
-                        P_squared[thread_idx, i - g], D_squared, side="right"
-                    )
-                    core._shift_insert_at_index(
-                        P_squared[thread_idx, i - g], pos, D_squared
-                    )
-                    core._shift_insert_at_index(I[thread_idx, i - g], pos, j - g)
-
-                if D_squared < P_squared[thread_idx, j - g, -1]:
-                    pos = np.searchsorted(
-                        P_squared[thread_idx, j - g], D_squared, side="right"
-                    )
-                    core._shift_insert_at_index(
-                        P_squared[thread_idx, j - g], pos, D_squared
-                    )
-                    core._shift_insert_at_index(I[thread_idx, j - g], pos, i - g)
 
 
 @njit(
