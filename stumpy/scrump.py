@@ -746,23 +746,20 @@ class scrump:
     @property
     def P_(self):
         """
-        Get the updated (top-k) matrix profile. When `k=1`, it is a 1d array.
-        When `k>1`, it is a 2d array with exactly k columns consist of (top-k) matrix
-        profile.
+        Get the updated (top-k) matrix profile. When k=1 (default), the first (and only)
+        column in this 2D array consists of the matrix profile. When k > 1, the output
+        has exactly k columns consist of the top-k matrix profile.
         """
-        if self._k == 1:
-            return self._P.reshape((self._P.shape[0],)).astype(np.float64)
         return self._P.astype(np.float64)
 
     @property
     def I_(self):
         """
-        Get the updated (top-k) matrix profile indices. When `k=1`, it is a 1d array.
-        When `k>1`, it is a 2d array with exactly k columns consist of (top-k) matrix
-        profile indices.
+        Get the updated (top-k) matrix profile indices. When k=1 (default), the
+        first (and only) column in this 2D array consists of the matrix profile
+        indices. When k > 1, the output has exactly k columns consist of the top-k
+        matrix profile indices.
         """
-        if self._k == 1:
-            return self._I.reshape((self._I.shape[0],)).astype(np.int64)
         return self._I.astype(np.int64)
 
     @property
