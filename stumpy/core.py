@@ -2643,7 +2643,7 @@ def _shift_insert_at_index(a, idx, v, shift=1):
 
     elif shift == -1:
         if 0 < idx <= len(a):
-            a[: idx - 1] = a[1 : idx]
+            a[: idx - 1] = a[1:idx]
             # elements were shifted to left, and thus the insertion becomes `idx-1`
             a[idx - 1] = v
 

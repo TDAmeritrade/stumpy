@@ -1108,7 +1108,6 @@ def test_shift_insert_at_index():
 
             npt.assert_array_equal(ref, comp)
 
-
         # test shift = -1
         for (idx, v) in zip(indices, values):
             ref[:] = a
