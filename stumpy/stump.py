@@ -212,28 +212,26 @@ def _compute_diagonal(
                 if T_B_subseq_isconstant[i + g] and T_A_subseq_isconstant[i]:
                     pearson = 1.0
 
-                # ρ[thread_idx, i, :] is sorted ascendingly. To update
-                # it, Its first element (i.e. the smallest value
-                # of array ρ[thread_idx, i]) MUST be discarded. Therefore,
-                # if the insertion index of new value in `ρ[thread_idx, i]` is idx,
-                # then, it should be substracted by 1 since the left of idx is shifted
-                # to the left.
+                # ρ[thread_idx, i, :] is sorted ascendingly. It MUST be updated
+                # when the newly-calculated pearson value becomes greater than the
+                # first (i.e. smallest) element of this array. (Reminder: higher
+                # pearson value means lower distance, which is of our interest)
                 if pearson > ρ[thread_idx, i, 0]:
-                    idx = np.searchsorted(ρ[thread_idx, i], pearson)
-                    ρ[thread_idx, i, : idx - 1] = ρ[thread_idx, i, 1:idx]
-                    ρ[thread_idx, i, idx - 1] = pearson
-
-                    I[thread_idx, i, : idx - 1] = I[thread_idx, i, 1:idx]
-                    I[thread_idx, i, idx - 1] = i + g
+                    pos = np.searchsorted(ρ[thread_idx, i], pearson)
+                    core._shift_insert_at_index(
+                        ρ[thread_idx, i], pos, pearson, shift=-1
+                    )
+                    core._shift_insert_at_index(I[thread_idx, i], pos, i + g, shift=-1)
 
                 if ignore_trivial:  # self-joins only
                     if pearson > ρ[thread_idx, i + g, 0]:
-                        idx = np.searchsorted(ρ[thread_idx, i + g], pearson)
-                        ρ[thread_idx, i + g, : idx - 1] = ρ[thread_idx, i + g, 1:idx]
-                        ρ[thread_idx, i + g, idx - 1] = pearson
-
-                        I[thread_idx, i + g, : idx - 1] = I[thread_idx, i + g, 1:idx]
-                        I[thread_idx, i + g, idx - 1] = i
+                        pos = np.searchsorted(ρ[thread_idx, i + g], pearson)
+                        core._shift_insert_at_index(
+                            ρ[thread_idx, i + g], pos, pearson, shift=-1
+                        )
+                        core._shift_insert_at_index(
+                            I[thread_idx, i + g], pos, i, shift=-1
+                        )
 
                     if i < i + g:
                         # left pearson correlation and left matrix profile index
@@ -477,12 +475,13 @@ def _stump(
                 k - 1, -1, -1
             ):  # reverse iteration to preserve order in ties
                 if ρ[0, i, 0] < ρ[thread_idx, i, j]:
-                    idx = np.searchsorted(ρ[0, i], ρ[thread_idx, i, j])
-                    ρ[0, i, : idx - 1] = ρ[0, i, 1:idx]
-                    ρ[0, i, idx - 1] = ρ[thread_idx, i, j]
-
-                    I[0, i, : idx - 1] = I[0, i, 1:idx]
-                    I[0, i, idx - 1] = I[thread_idx, i, j]
+                    pos = np.searchsorted(ρ[0, i], ρ[thread_idx, i, j])
+                    core._shift_insert_at_index(
+                        ρ[0, i], pos, ρ[thread_idx, i, j], shift=-1
+                    )
+                    core._shift_insert_at_index(
+                        I[0, i], pos, I[thread_idx, i, j], shift=-1
+                    )
 
             if ρL[0, i] < ρL[thread_idx, i]:
                 ρL[0, i] = ρL[thread_idx, i]
