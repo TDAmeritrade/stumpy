@@ -116,17 +116,12 @@ def _compute_PI(
             zone_stop = min(l, i + excl_zone)
             squared_distance_profile[zone_start : zone_stop + 1] = np.inf
 
-        if excl_zone is not None:  # self-join
-            # note: S_index = T[index: index + m]
-            # `v = squared_distance_profile[idx]` is (the square of)
-            # `dist(S_i, S_idx)`, which is the same as `dist(S_idx, S_i)`. So,
-            # `squared_distance_profile[idx]` is (the square of) distance from `S_idx`
-            # to one of its neighbors, `S_i`. Therefore, the value `v` can be
-            # used to update the TopK of `S_idx`, stored "ascendingly" in
-            # `P_squared[thread_idx, idx, :]`.
+        if excl_zone is not None:
+            # Note that the squared distance, `squared_distance_profile[j]`,
+            # between subsequences `S_i = T[i : i + m]` and `S_j = T[j : j + m]`
+            # can be used to update the top-k for BOTH subsequence `i` and
+            # subsequence `j`. We update the latter here.
 
-            # `P_squared[thread_idx, idx, :]` is inf for those `idx` that are in
-            # the trivial zone, including the `i` itself. Those are not updated here.
             IDX = np.flatnonzero(
                 squared_distance_profile < P_squared[thread_idx, :, -1]
             )
@@ -148,14 +143,14 @@ def _compute_PI(
         if P_squared[thread_idx, i, 0] == np.inf:  # pragma: no cover
             I[thread_idx, i, 0] = -1
         else:
-            # update P_squared[thread_idx, index, :] for those `index` that are
-            # in the vicinity of `i` or its 1NN, `j`.
             j = I[thread_idx, i, 0]
             # Given the squared distance, work backwards and compute QT
             QT_j = (m - P_squared[thread_idx, i, 0] / 2.0) * (Σ_T[j] * σ_Q[i]) + (
                 m * M_T[j] * μ_Q[i]
             )
             QT_j_prime = QT_j
+            # Update Top-k of BOTH subsequences at i+g and j+g (i.e. left neighbor of i, j),
+            # by using the distance between `S_(i+g)` and `S_(j+g)`
             for g in range(1, min(s, l - max(i, j))):
                 QT_j = (
                     QT_j
@@ -189,6 +184,8 @@ def _compute_PI(
                     core._shift_insert_at_index(I[thread_idx, j + g], pos, i + g)
 
             QT_j = QT_j_prime
+            # Update Top-k of BOTH subsequences at i-g and j-g (i.e. left neighbor of i, j),
+            # by using the distance between `S_(i-g)` and `S_(j-g)`
             for g in range(1, min(s, i + 1, j + 1)):
                 QT_j = QT_j - T_B[i - g + m] * T_A[j - g + m] + T_B[i - g] * T_A[j - g]
                 d_squared = core._calculate_squared_distance(
