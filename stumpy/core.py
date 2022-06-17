@@ -2604,27 +2604,48 @@ def _merge_topk_PI(PA, PB, IA, IB):
 
 
 @njit
-def _shift_insert_at_index(a, idx, v):
+def _shift_insert_at_index(a, idx, v, shift=1):
     """
     Insert value `v` into array `a` at index `idx` (in place) and discard
-    the last element (i.e. without changing the length of `a`)
+    the last element (i.e. without changing the length of `a`) when `shift=1` (default).
+    When `shift=-1`, the first element will be discarded instead.
+
+    Note
+    ----
+    No check is performed to ensure the value of parameter `shift` is 1 or -1.
+    It is user's responsibility to provide a valid value for this parameter.
 
     Parameters
     ----------
     a: numpy.ndarray
-        a 1d array
+        A 1d array
 
     idx: int
-        the index at which the value `v` should be inserted. This can be any
-        integer number from `0` to `len(a) - 1`
+        The index at which the value `v` should be inserted. This can be any
+        integer number from `0` to `len(a) - 1`.
 
     v: float
-        the value that should be inserted into array `a` at index `idx`
+        The value that should be inserted into array `a` at index `idx`
+
+    shift: int, default 1
+        The value 1 (default) indicates discarding the last element after inserting
+        value `v` at index `idx`. The other value, -1, indicates discarding the first
+        element after inserting value `v` at index `idx`
 
     Returns
     -------
     None
     """
-    if idx < len(a):
-        a[idx + 1 :] = a[idx:-1]
-        a[idx] = v
+    if shift == 1:
+        if 0 <= idx < len(a):
+            a[idx + 1 :] = a[idx:-1]
+            a[idx] = v
+
+    elif shift == -1:
+        if 0 < idx <= len(a):
+            a[: idx - 1] = a[1 : idx]
+            # elements were shifted to left, and thus the insertion becomes `idx-1`
+            a[idx - 1] = v
+
+    else:
+        pass
