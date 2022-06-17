@@ -486,19 +486,26 @@ class scrump:
     Attributes
     ----------
     P_ : numpy.ndarray
-        The updated matrix profile
+        The updated (top-k) matrix profile
 
     I_ : numpy.ndarray
-        The updated matrix profile indices
+        The updated (top-k) matrix profile indices
+
+    left_I_ : numpy.ndarray
+        The updated left (top-1) matrix profile indices
+
+    right_I_ : numpy.ndarray
+        The updated right (top-1) matrix profile indices
+
 
     Methods
     -------
     update()
         Update the matrix profile and the matrix profile indices by computing
         additional new distances (limited by `percentage`) that make up the full
-        distance matrix. Each output contains three columns that correspond to
-        the matrix profile, the left matrix profile, and the right matrix profile,
-        respectively.
+        distance matrix. The outputs are (top-k) matrix profile, (top-1) left
+        matrix profile, (top-1) right matrix profile, (top-k) matrix profile indices,
+        (top-1) left matrix profile indices, (top-1) right matrix profile indices.
 
     See Also
     --------
@@ -765,13 +772,13 @@ class scrump:
     @property
     def left_I_(self):
         """
-        Get the updated left matrix profile indices
+        Get the updated left (top-1) matrix profile indices
         """
         return self._IL.astype(np.int64)
 
     @property
     def right_I_(self):
         """
-        Get the updated right matrix profile indices
+        Get the updated right (top-1) matrix profile indices
         """
         return self._IR.astype(np.int64)
