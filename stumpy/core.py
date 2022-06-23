@@ -2604,12 +2604,12 @@ def _merge_topk_PI(PA, PB, IA, IB):
 
 
 @njit
-def _shift_insert_at_index(a, idx, v, shift=1):
+def _shift_insert_at_index(a, idx, v, shift='right'):
     """
-    If `shift=1`, all elements in `a[idx:]` are shifted to the right by one element
-    and the last element is discarded. If `shift=-1`, all elements in `a[:idx]`
-    are shifted to the left by one element and the first element is discarded. In
-    both cases, the length of `a` remains unchanged.
+    If `shift=right`, all elements in `a[idx:]` are shifted to the right by one element
+    and the last element is discarded. If `shift=left` or any other string value,
+    all elements in `a[:idx]` are shifted to the left by one element and the first
+    element is discarded. In both cases, the length of `a` remains unchanged.
 
     Note
     ----
@@ -2623,22 +2623,24 @@ def _shift_insert_at_index(a, idx, v, shift=1):
 
     idx: int
         The index at which the value `v` should be inserted. This can be any
-        integer number from `0` to `len(a)`.
+        integer number from `0` to `len(a)`. When `idx=0` and `shift` is set to
+        "right", or when `idx=len(a)` and `shift` is set to any other string value,
+        then no change will occur on the input array `a`.
 
     v: float
         The value that should be inserted into array `a` at index `idx`
 
-    shift: int, default 1
-        The value 1 (default) indicates discarding the last element after inserting
-        value `v` at index `idx`. The other value, -1, indicates discarding the first
-        element after inserting value `v` at index `idx`. Any value other than 1
-        or -1 results in no change in the input array `a`.
+    shift: str, default "right"
+        The value that indicates whether the shifting of elements should be to the
+        right or to the left. If "right" (default), all elements in `a[idx:]` are
+        shifted to right by one element. For any other string value, all elements
+        in `a[:idx]` are shifted to the left by one element.
 
     Returns
     -------
     None
     """
-    if shift >= 0:
+    if shift == 'right':
         if 0 <= idx < len(a):
             a[idx + 1 :] = a[idx:-1]
             a[idx] = v
