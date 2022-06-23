@@ -1104,7 +1104,9 @@ def test_shift_insert_at_index():
             comp[:] = a
 
             ref = np.insert(ref, idx, v)[:-1]
-            core._shift_insert_at_index(comp, idx, v, shift="right")  # update comp in place
+            core._shift_insert_at_index(
+                comp, idx, v, shift="right"
+            )  # update comp in place
 
             npt.assert_array_equal(ref, comp)
 
@@ -1114,6 +1116,8 @@ def test_shift_insert_at_index():
             comp[:] = a
 
             ref = np.insert(ref, idx, v)[1:]
-            core._shift_insert_at_index(comp, idx, v, shift="left")  # update comp in place
+            core._shift_insert_at_index(
+                comp, idx, v, shift="left"
+            )  # update comp in place
 
             npt.assert_array_equal(ref, comp)

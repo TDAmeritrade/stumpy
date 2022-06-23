@@ -2604,7 +2604,7 @@ def _merge_topk_PI(PA, PB, IA, IB):
 
 
 @njit
-def _shift_insert_at_index(a, idx, v, shift='right'):
+def _shift_insert_at_index(a, idx, v, shift="right"):
     """
     If `shift=right`, all elements in `a[idx:]` are shifted to the right by one element
     and the last element is discarded. If `shift=left` or any other string value,
@@ -2640,7 +2640,7 @@ def _shift_insert_at_index(a, idx, v, shift='right'):
     -------
     None
     """
-    if shift == 'right':
+    if shift == "right":
         if 0 <= idx < len(a):
             a[idx + 1 :] = a[idx:-1]
             a[idx] = v

@@ -221,7 +221,9 @@ def _compute_diagonal(
                     core._shift_insert_at_index(
                         ρ[thread_idx, i], pos, pearson, shift="left"
                     )
-                    core._shift_insert_at_index(I[thread_idx, i], pos, i + g, shift="left")
+                    core._shift_insert_at_index(
+                        I[thread_idx, i], pos, i + g, shift="left"
+                    )
 
                 if ignore_trivial:  # self-joins only
                     if pearson > ρ[thread_idx, i + g, 0]:
