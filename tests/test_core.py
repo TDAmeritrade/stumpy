@@ -1098,22 +1098,22 @@ def test_shift_insert_at_index():
         indices = np.arange(k + 1)
         values = np.random.rand(k + 1)
 
-        # test shift = 1
+        # test shift = "right"
         for (idx, v) in zip(indices, values):
             ref[:] = a
             comp[:] = a
 
             ref = np.insert(ref, idx, v)[:-1]
-            core._shift_insert_at_index(comp, idx, v, shift=1)  # update comp in place
+            core._shift_insert_at_index(comp, idx, v, shift="right")  # update comp in place
 
             npt.assert_array_equal(ref, comp)
 
-        # test shift = -1
+        # test shift = "left"
         for (idx, v) in zip(indices, values):
             ref[:] = a
             comp[:] = a
 
             ref = np.insert(ref, idx, v)[1:]
-            core._shift_insert_at_index(comp, idx, v, shift=-1)  # update comp in place
+            core._shift_insert_at_index(comp, idx, v, shift="left")  # update comp in place
 
             npt.assert_array_equal(ref, comp)
