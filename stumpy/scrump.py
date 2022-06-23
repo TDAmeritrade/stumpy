@@ -114,7 +114,6 @@ def _compute_PI(
         if excl_zone is not None:
             core._apply_exclusion_zone(squared_distance_profile, i, excl_zone, np.inf)
 
-        # find EXACT (not approx.) value of `P_squared[thread_idx, i, 0]`
         nn = np.argmin(squared_distance_profile)
         core._shift_insert_at_index(
             P_squared[thread_idx, i], 0, squared_distance_profile[nn]
