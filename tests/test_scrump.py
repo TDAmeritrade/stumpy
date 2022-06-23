@@ -773,3 +773,44 @@ def test_scrump_A_B_join_KNN(T_A, T_B, percentages):
             npt.assert_almost_equal(ref_I, comp_I)
             npt.assert_almost_equal(ref_left_I, comp_left_I)
             npt.assert_almost_equal(ref_right_I, comp_right_I)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+@pytest.mark.parametrize("percentages", percentages)
+def test_scrump_plus_plus_self_join_KNN(T_A, T_B, percentages):
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    for k in range(2, 4):
+        for s in range(1, zone + 1):
+            for percentage in percentages:
+                seed = np.random.randint(100000)
+
+                np.random.seed(seed)
+                ref_P, ref_I = naive.prescrump(
+                    T_B, m, T_B, s=s, exclusion_zone=zone, k=k
+                )
+                ref_P_aux, ref_I_aux, _, _ = naive.scrump(
+                    T_B, m, T_B, percentage, zone, True, s, k=k
+                )
+                naive.merge_topk_PI(ref_P, ref_P_aux, ref_I, ref_I_aux)
+
+                np.random.seed(seed)
+                approx = scrump(
+                    T_B,
+                    m,
+                    ignore_trivial=True,
+                    percentage=percentage,
+                    pre_scrump=True,
+                    s=s,
+                    k=k,
+                )
+                approx.update()
+                comp_P = approx.P_
+                comp_I = approx.I_
+
+                naive.replace_inf(ref_P)
+                naive.replace_inf(comp_I)
+
+                npt.assert_almost_equal(ref_P, comp_P)
+                npt.assert_almost_equal(ref_I, comp_I)
