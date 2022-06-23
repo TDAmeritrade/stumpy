@@ -219,18 +219,18 @@ def _compute_diagonal(
                 if pearson > ρ[thread_idx, i, 0]:
                     pos = np.searchsorted(ρ[thread_idx, i], pearson)
                     core._shift_insert_at_index(
-                        ρ[thread_idx, i], pos, pearson, shift=-1
+                        ρ[thread_idx, i], pos, pearson, shift="left"
                     )
-                    core._shift_insert_at_index(I[thread_idx, i], pos, i + g, shift=-1)
+                    core._shift_insert_at_index(I[thread_idx, i], pos, i + g, shift="left")
 
                 if ignore_trivial:  # self-joins only
                     if pearson > ρ[thread_idx, i + g, 0]:
                         pos = np.searchsorted(ρ[thread_idx, i + g], pearson)
                         core._shift_insert_at_index(
-                            ρ[thread_idx, i + g], pos, pearson, shift=-1
+                            ρ[thread_idx, i + g], pos, pearson, shift="left"
                         )
                         core._shift_insert_at_index(
-                            I[thread_idx, i + g], pos, i, shift=-1
+                            I[thread_idx, i + g], pos, i, shift="left"
                         )
 
                     if i < i + g:
@@ -477,10 +477,10 @@ def _stump(
                 if ρ[0, i, 0] < ρ[thread_idx, i, j]:
                     pos = np.searchsorted(ρ[0, i], ρ[thread_idx, i, j])
                     core._shift_insert_at_index(
-                        ρ[0, i], pos, ρ[thread_idx, i, j], shift=-1
+                        ρ[0, i], pos, ρ[thread_idx, i, j], shift="left"
                     )
                     core._shift_insert_at_index(
-                        I[0, i], pos, I[thread_idx, i, j], shift=-1
+                        I[0, i], pos, I[thread_idx, i, j], shift="left"
                     )
 
             if ρL[0, i] < ρL[thread_idx, i]:
