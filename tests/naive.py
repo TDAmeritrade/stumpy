@@ -1496,7 +1496,7 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s, k=1):
             for j in range(n_B - m + 1):
                 if j - i == g:
                     d = dist_matrix[i, j]
-                    if d < P[i, - 1]: # update TopK of P[i]
+                    if d < P[i, -1]:  # update TopK of P[i]
                         idx = searchsorted_right(P[i], d)
                         P[i] = np.insert(P[i], idx, d)[:-1]
                         I[i] = np.insert(I[i], idx, i + g)[:-1]

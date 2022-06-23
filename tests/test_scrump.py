@@ -107,7 +107,9 @@ def test_scrump_self_join(T_A, T_B, percentages):
         seed = np.random.randint(100000)
 
         np.random.seed(seed)
-        ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(T_B, m, T_B, percentage, zone, False, None)
+        ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(
+            T_B, m, T_B, percentage, zone, False, None
+        )
 
         np.random.seed(seed)
         approx = scrump(
@@ -136,7 +138,9 @@ def test_scrump_A_B_join(T_A, T_B, percentages):
         seed = np.random.randint(100000)
 
         np.random.seed(seed)
-        ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(T_A, m, T_B, percentage, None, False, None)
+        ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(
+            T_A, m, T_B, percentage, None, False, None
+        )
 
         np.random.seed(seed)
         approx = scrump(
@@ -166,7 +170,9 @@ def test_scrump_A_B_join_swap(T_A, T_B, percentages):
         seed = np.random.randint(100000)
 
         np.random.seed(seed)
-        ref_P, _, ref_left_I, ref_right_I = naive.scrump(T_B, m, T_A, percentage, None, False, None)
+        ref_P, _, ref_left_I, ref_right_I = naive.scrump(
+            T_B, m, T_A, percentage, None, False, None
+        )
 
         np.random.seed(seed)
         approx = scrump(
@@ -198,7 +204,9 @@ def test_scrump_self_join_larger_window(T_A, T_B, m, percentages):
             seed = np.random.randint(100000)
 
             np.random.seed(seed)
-            ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(T_B, m, T_B, percentage, zone, False, None)
+            ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(
+                T_B, m, T_B, percentage, zone, False, None
+            )
 
             np.random.seed(seed)
             approx = scrump(
@@ -362,7 +370,9 @@ def test_scrump_plus_plus_self_join(T_A, T_B, percentages):
 
             np.random.seed(seed)
             ref_P, ref_I = naive.prescrump(T_B, m, T_B, s=s, exclusion_zone=zone)
-            ref_P_aux, ref_I_aux, _, _ = naive.scrump(T_B, m, T_B, percentage, zone, True, s)
+            ref_P_aux, ref_I_aux, _, _ = naive.scrump(
+                T_B, m, T_B, percentage, zone, True, s
+            )
             naive.merge_topk_PI(ref_P, ref_P_aux, ref_I, ref_I_aux)
 
             np.random.seed(seed)
@@ -393,7 +403,9 @@ def test_scrump_plus_plus_A_B_join(T_A, T_B, percentages):
             np.random.seed(seed)
             ref_P, ref_I = naive.prescrump(T_A, m, T_B, s=s)
 
-            ref_P_aux, ref_I_aux, ref_left_I_aux, ref_right_I_aux = naive.scrump(T_A, m, T_B, percentage, None, False, None)
+            ref_P_aux, ref_I_aux, ref_left_I_aux, ref_right_I_aux = naive.scrump(
+                T_A, m, T_B, percentage, None, False, None
+            )
             naive.merge_topk_PI(ref_P, ref_P_aux, ref_I, ref_I_aux)
             ref_left_I = ref_left_I_aux
             ref_right_I = ref_right_I_aux
@@ -520,7 +532,9 @@ def test_scrump_constant_subsequence_self_join(percentages):
         seed = np.random.randint(100000)
 
         np.random.seed(seed)
-        ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(T, m, T, percentage, zone, False, None)
+        ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(
+            T, m, T, percentage, zone, False, None
+        )
 
         np.random.seed(seed)
         approx = scrump(
@@ -596,7 +610,9 @@ def test_scrump_nan_inf_self_join(
             seed = np.random.randint(100000)
 
             np.random.seed(seed)
-            ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(T_B_sub, m, T_B_sub, percentage, zone, False, None)
+            ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(
+                T_B_sub, m, T_B_sub, percentage, zone, False, None
+            )
 
             np.random.seed(seed)
             approx = scrump(T_B_sub, m, percentage=percentage, pre_scrump=False)
@@ -626,7 +642,9 @@ def test_scrump_nan_zero_mean_self_join(percentages):
         seed = np.random.randint(100000)
 
         np.random.seed(seed)
-        ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(T, m, T, percentage, zone, False, None)
+        ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(
+            T, m, T, percentage, zone, False, None
+        )
 
         np.random.seed(seed)
         approx = scrump(T, m, percentage=percentage, pre_scrump=False)
@@ -692,7 +710,9 @@ def test_scrump_self_join_KNN(T_A, T_B, percentages):
             seed = np.random.randint(100000)
 
             np.random.seed(seed)
-            ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(T_B, m, T_B, percentage, zone, False, None, k=k)
+            ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(
+                T_B, m, T_B, percentage, zone, False, None, k=k
+            )
 
             np.random.seed(seed)
             approx = scrump(
@@ -726,8 +746,10 @@ def test_scrump_A_B_join_KNN(T_A, T_B, percentages):
             seed = np.random.randint(100000)
 
             np.random.seed(seed)
-            ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(T_A, m, T_B, percentage, None, False, None, k=k)
-    
+            ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(
+                T_A, m, T_B, percentage, None, False, None, k=k
+            )
+
             np.random.seed(seed)
             approx = scrump(
                 T_A,
