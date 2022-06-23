@@ -1417,41 +1417,44 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
         if exclusion_zone is not None:
             apply_exclusion_zone(distance_profile, i, exclusion_zone, np.inf)
 
-            # only for self-join
-            for idx in np.flatnonzero(distance_profile < P[:, -1]):
-                pos = np.searchsorted(P[idx], distance_profile[idx], side="right")
-                P[idx] = np.insert(P[idx], pos, distance_profile[idx])[:-1]
-                I[idx] = np.insert(I[idx], pos, i)[:-1]
-
         I[i, 1:] = I[i, :-1]
         I[i, 0] = np.argmin(distance_profile)
         P[i, 1:] = P[i, :-1]
         P[i, 0] = distance_profile[I[i, 0]]
+
         if P[i, 0] == np.inf:
             I[i, 0] = -1
-        else:
-            j = I[i, 0]  # index of 1st NN
-            for g in range(1, min(s, l - max(i, j))):
-                d = dist_matrix[i + g, j + g]
-                if d < P[i + g, -1]:
-                    pos = np.searchsorted(P[i + g], d, side="right")
-                    P[i + g] = np.insert(P[i + g], pos, d)[:-1]
-                    I[i + g] = np.insert(I[i + g], pos, j + g)[:-1]
-                if d < P[j + g]:
-                    pos = np.searchsorted(P[j + g], d, side="right")
-                    P[j + g] = np.insert(P[j + g], pos, d)[:-1]
-                    I[j + g] = np.insert(I[j + g], pos, i + g)[:-1]
+            continue
 
-            for g in range(1, min(s, i + 1, j + 1)):
-                d = dist_matrix[i - g, j - g]
-                if d < P[i - g, -1]:
-                    pos = np.searchsorted(P[i - g], d, side="right")
-                    P[i - g] = np.insert(P[i - g], pos, d)[:-1]
-                    I[i - g] = np.insert(I[i - g], pos, j - g)[:-1]
-                if d < P[j - g]:
-                    pos = np.searchsorted(P[j - g], d, side="right")
-                    P[j - g] = np.insert(P[j - g], pos, d)[:-1]
-                    I[j - g] = np.insert(I[j - g], pos, i - g)[:-1]
+        j = I[i, 0]  # index of 1st NN
+        for g in range(1, min(s, l - max(i, j))):
+            d = dist_matrix[i + g, j + g]
+            if d < P[i + g, -1]:
+                pos = np.searchsorted(P[i + g], d, side="right")
+                P[i + g] = np.insert(P[i + g], pos, d)[:-1]
+                I[i + g] = np.insert(I[i + g], pos, j + g)[:-1]
+            if d < P[j + g]:
+                pos = np.searchsorted(P[j + g], d, side="right")
+                P[j + g] = np.insert(P[j + g], pos, d)[:-1]
+                I[j + g] = np.insert(I[j + g], pos, i + g)[:-1]
+
+        for g in range(1, min(s, i + 1, j + 1)):
+            d = dist_matrix[i - g, j - g]
+            if d < P[i - g, -1]:
+                pos = np.searchsorted(P[i - g], d, side="right")
+                P[i - g] = np.insert(P[i - g], pos, d)[:-1]
+                I[i - g] = np.insert(I[i - g], pos, j - g)[:-1]
+            if d < P[j - g]:
+                pos = np.searchsorted(P[j - g], d, side="right")
+                P[j - g] = np.insert(P[j - g], pos, d)[:-1]
+                I[j - g] = np.insert(I[j - g], pos, i - g)[:-1]
+
+        # self-join only
+        if exclusion_zone is not None:
+            for idx in np.flatnonzero(distance_profile < P[:, -1]):
+                pos = np.searchsorted(P[idx], distance_profile[idx], side="right")
+                P[idx] = np.insert(P[idx], pos, distance_profile[idx])[:-1]
+                I[idx] = np.insert(I[idx], pos, i)[:-1]
 
     return P, I
 
