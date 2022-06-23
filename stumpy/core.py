@@ -2606,10 +2606,10 @@ def _merge_topk_PI(PA, PB, IA, IB):
 @njit
 def _shift_insert_at_index(a, idx, v, shift=1):
     """
-    Insert value `v` into array `a` at index `idx` (in place) and discard
-    the last element when `shift=1` (default). When `shift=-1`, the first element
-    will be discarded instead. In both cases, the length of `a` remain unchanged
-    at the end of function.
+    If `shift=1`, all elements in `a[idx:]` are shifted to the right by one element
+    and the last element is discarded. If `shift=-1`, all elements in `a[:idx]`
+    are shifted to the left by one element and the first element is discarded. In
+    both cases, the length of `a` remains unchanged.
 
     Note
     ----
