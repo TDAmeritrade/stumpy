@@ -1481,8 +1481,13 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s, k=1):
     diags_ranges_start = diags_ranges[0, 0]
     diags_ranges_stop = diags_ranges[0, 1]
 
-    P = np.full((l, k + 2), np.inf, dtype=np.float64)  # Topk + left/ right
-    I = np.full((l, k + 2), -1, dtype=np.int64)  # Topk + left/ right
+    P = np.full((l, k), np.inf, dtype=np.float64)  # Topk
+    PL = np.full(l, np.inf, dtype=np.float64)
+    PR = np.full(l, np.inf, dtype=np.float64)
+
+    I = np.full((l, k), -1, dtype=np.int64)
+    IL = np.full(l, -1, dtype=np.int64)
+    IR = np.full(l, -1, dtype=np.int64)
 
     for diag_idx in range(diags_ranges_start, diags_ranges_stop):
         g = diags[diag_idx]
@@ -1491,32 +1496,27 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s, k=1):
             for j in range(n_B - m + 1):
                 if j - i == g:
                     d = dist_matrix[i, j]
-                    if d < P[i, k - 1]:
-                        # update TopK of P[i]
+                    if d < P[i, - 1]: # update TopK of P[i]
                         idx = searchsorted_right(P[i], d)
-                        P[i, :k] = np.insert(P[i, :k], idx, d)[:-1]
-                        I[i, :k] = np.insert(I[i, :k], idx, i + g)[:-1]
+                        P[i] = np.insert(P[i], idx, d)[:-1]
+                        I[i] = np.insert(I[i], idx, i + g)[:-1]
 
-                    if exclusion_zone is not None and d < P[i + g, k - 1]:
+                    if exclusion_zone is not None and d < P[i + g, -1]:
                         idx = searchsorted_right(P[i + g], d)
-                        P[i + g, :k] = np.insert(P[i + g, :k], idx, d)[:-1]
-                        I[i + g, :k] = np.insert(I[i + g, :k], idx, i)[:-1]
+                        P[i + g] = np.insert(P[i + g], idx, d)[:-1]
+                        I[i + g] = np.insert(I[i + g], idx, i)[:-1]
 
                     # left matrix profile and left matrix profile indices
-                    if exclusion_zone is not None and i < i + g and d < P[i + g, k]:
-                        P[i + g, k] = d
-                        I[i + g, k] = i
+                    if exclusion_zone is not None and i < i + g and d < PL[i + g]:
+                        PL[i + g] = d
+                        IL[i + g] = i
 
                     # right matrix profile and right matrix profile indices
-                    if exclusion_zone is not None and i + g > i and d < P[i, k + 1]:
-                        P[i, k + 1] = d
-                        I[i, k + 1] = i + g
+                    if exclusion_zone is not None and i + g > i and d < PR[i]:
+                        PR[i] = d
+                        IR[i] = i + g
 
-    out = np.empty((l, 2 * k + 2), dtype=object)
-    out[:, :k] = P[:, :k]
-    out[:, k:] = I
-
-    return out
+    return P, I, IL, IR
 
 
 def prescraamp(T_A, m, T_B, s, exclusion_zone=None, p=2.0):
