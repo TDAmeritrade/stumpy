@@ -2634,18 +2634,19 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     None
     """
     for i in range(ρB.shape[0]):
-        # start = 0
-        # stop = np.searchsorted(PA[i], PB[i, -1], side="right")
+        start = np.searchsorted(ρA[i], ρB[i, 0], side="left")
+        stop = ρB.shape[1]
 
         for j in range(ρB.shape[1] - 1, -1, -1):
             if ρB[i, j] > ρA[i, 0]:
-                idx = np.searchsorted(ρA[i], ρB[i, j], side="left")  # + start
+                idx = np.searchsorted(ρA[i, start:stop], ρB[i, j], side="left") + start
 
                 _shift_insert_at_index(ρA[i], idx, ρB[i, j], shift="left")
                 _shift_insert_at_index(IA[i], idx, IB[i, j], shift="left")
 
-                # start = idx
-                # stop += 1  # because of shifting elements to the right by one
+                stop = idx  # because of shifting elements to the left by one
+                if start > 0:
+                    start -= 1
 
 
 @njit
