@@ -471,27 +471,18 @@ def _stump(
 
     # Reduction of results from all threads
     for thread_idx in range(1, n_threads):
-        for i in prange(l):
-            # top-k
-            for j in range(
-                k - 1, -1, -1
-            ):  # reverse iteration to preserve order in ties
-                if ρ[0, i, 0] < ρ[thread_idx, i, j]:
-                    pos = np.searchsorted(ρ[0, i], ρ[thread_idx, i, j])
-                    core._shift_insert_at_index(
-                        ρ[0, i], pos, ρ[thread_idx, i, j], shift="left"
-                    )
-                    core._shift_insert_at_index(
-                        I[0, i], pos, I[thread_idx, i, j], shift="left"
-                    )
+        # update top-k arrays
+        core._merge_topk_ρI(ρ[0], ρ[thread_idx], I[0], I[thread_idx])
 
-            if ρL[0, i] < ρL[thread_idx, i]:
-                ρL[0, i] = ρL[thread_idx, i]
-                IL[0, i] = IL[thread_idx, i]
+        # update left matrix profile and  matrix profile indices
+        cond = ρL[0] < ρL[thread_idx]
+        ρL[0] = np.where(cond, ρL[thread_idx], ρL[0])
+        IL[0] = np.where(cond, IL[thread_idx], IL[0])
 
-            if ρR[0, i] < ρR[thread_idx, i]:
-                ρR[0, i] = ρR[thread_idx, i]
-                IR[0, i] = IR[thread_idx, i]
+        # update right matrix profile and  matrix profile indices
+        cond = ρR[0] < ρR[thread_idx]
+        ρR[0] = np.where(cond, ρR[thread_idx], ρR[0])
+        IR[0] = np.where(cond, IR[thread_idx], IR[0])
 
     # Reverse top-k rho (and its associated I) to be in descending order and
     # then convert from Pearson correlations to Euclidean distances (ascending order)
