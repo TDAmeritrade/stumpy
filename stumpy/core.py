@@ -2568,6 +2568,9 @@ def _merge_topk_PI(PA, PB, IA, IB):
     always choosing values of PA over values of PB in case of ties. Also, update
     IA accordingly.
 
+    Unlike `_merge_topk_ρI`, where `top-k` largest values are kept, this function
+    keeps `top-k` smallest values.
+
     Parameters
     ----------
     PA : numpy.ndarray
