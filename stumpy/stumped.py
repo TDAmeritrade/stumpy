@@ -274,13 +274,13 @@ def stumped(
 
         # Update top-1 left matrix profile and matrix profile index
         cond = PL < profile_L
-        profile_L = np.where(cond, PL, profile_L)
-        indices_L = np.where(cond, IL, indices_L)
+        profile_L[:] = np.where(cond, PL, profile_L)
+        indices_L[:] = np.where(cond, IL, indices_L)
 
         # Update top-1 right matrix profile and matrix profile index
         cond = PR < profile_R
-        profile_R = np.where(cond, PR, profile_R)
-        indices_R = np.where(cond, IR, indices_R)
+        profile_R[:] = np.where(cond, PR, profile_R)
+        indices_R[:] = np.where(cond, IR, indices_R)
 
     out = np.empty((l, 2 * k + 2), dtype=object)
     out[:, :k] = profile
