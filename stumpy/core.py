@@ -2603,6 +2603,51 @@ def _merge_topk_PI(PA, PB, IA, IB):
                 stop += 1  # because of shifting elements to the right by one
 
 
+@njit(parallel=True)
+def _merge_topk_ρI(ρA, ρB, IA, IB):
+    """
+    Merge two top-k pearson profiles ρA and ρB, and update ρA (in place). In the
+    merged array (from right to left): the priority is with ρA (from right to left),
+    and then with ρB(from right to left) Also, update IA accordingly.
+
+    Unlike `_merge_topk_PI`, where `top-k` smallest values are kept, this function
+    keeps `top-k` largest values.
+
+    Parameters
+    ----------
+    ρA : numpy.ndarray
+        A (top-k) pearson profile, with ndim of 2, where values in each row are
+        sorted in ascending order. Also, it needs to be the same shape as ρB.
+
+    ρB : numpy.ndarray
+        A (top-k) pearson profile, with ndim of 2, where values in each row are
+        sorted in ascending order. Also, it needs to be the same shape as ρA.
+
+    IA : numpy.ndarray
+        A (top-k) matrix profile indices, corresponding to ρA
+
+    IB : numpy.ndarray
+        A (top-k) matrix profile indices, corresponding to ρB
+
+    Returns
+    -------
+    None
+    """
+    for i in range(ρB.shape[0]):
+        # start = 0
+        # stop = np.searchsorted(PA[i], PB[i, -1], side="right")
+
+        for j in range(ρB.shape[1] - 1, -1, -1):
+            if ρB[i, j] > ρA[i, 0]:
+                idx = np.searchsorted(ρA[i], ρB[i, j], side="left")  # + start
+
+                _shift_insert_at_index(ρA[i], idx, ρB[i, j], shift="left")
+                _shift_insert_at_index(IA[i], idx, IB[i, j], shift="left")
+
+                # start = idx
+                # stop += 1  # because of shifting elements to the right by one
+
+
 @njit
 def _shift_insert_at_index(a, idx, v, shift="right"):
     """
