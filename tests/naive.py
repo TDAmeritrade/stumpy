@@ -1814,5 +1814,5 @@ def merge_topk_ρI(ρA, ρB, IA, IB):
     profile = np.take_along_axis(profile, idx, axis=1)
     indices = np.take_along_axis(indices, idx, axis=1)
 
-    ρA[:, :] = profile[:, ρA.shape[1]: ]
-    IA[:, :] = indices[:, ρA.shape[1]: ]
+    ρA[:, :] = profile[:, ρA.shape[1] :]
+    IA[:, :] = indices[:, ρA.shape[1] :]
