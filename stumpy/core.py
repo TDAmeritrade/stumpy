@@ -2636,7 +2636,7 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     -------
     None
     """
-    for i in range(ρB.shape[0]):
+    for i in prange(ρB.shape[0]):
         start = np.searchsorted(ρA[i], ρB[i, 0], side="left")
         stop = ρB.shape[1]
 
