@@ -1790,3 +1790,29 @@ def merge_topk_PI(PA, PB, IA, IB):
 
     PA[:, :] = profile[:, : PA.shape[1]]
     IA[:, :] = indices[:, : PA.shape[1]]
+
+
+def merge_topk_ρI(ρA, ρB, IA, IB):
+    # this is to merge two pearson profiles, each is a 2D array where each row
+    # contains an ascendingly-sorted values.
+    # Note that we are interested in keeping the top-k largest values.
+    # In the merged array (from right to left): the priority is with ρA (from right
+    # to left), and then with ρB(from right to left)
+
+    # Example:
+    # ρA = [0(I), 0(II), 1], and ρB = [0', 1'(I), 1'(II)].
+    # the prime symbol is to indicate that the values are from ρB
+    # and the greek numbers are to differntiate two same values in one array
+
+    # so, the outcome of merging process should be:
+    # [0', 0(I), 0(II), 1'(I), 1'(II), 1]
+
+    profile = np.column_stack((ρB, ρA))
+    indices = np.column_stack((IB, IA))
+
+    idx = np.argsort(profile, axis=1)
+    profile = np.take_along_axis(profile, idx, axis=1)
+    indices = np.take_along_axis(indices, idx, axis=1)
+
+    ρA[:, :] = profile[:, ρA.shape[1]: ]
+    IA[:, :] = indices[:, ρA.shape[1]: ]
