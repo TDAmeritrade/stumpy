@@ -1089,6 +1089,34 @@ def test_merge_topk_PI():
         npt.assert_array_equal(ref_I, comp_I)
 
 
+def test_merge_topk_ρI():
+    n = 50
+    for k in range(1, 6):
+        ρA = np.random.rand(n * k).reshape(n, k)
+        ρA[:, :] = np.sort(ρA, axis=1)  # sorting each row separately
+
+        ρB = np.random.rand(n * k).reshape(n, k)
+        col_idx = np.random.randint(0, k, size=n)
+        for i in range(n):  # creating ties between values of PA and PB
+            ρB[i, col_idx[i]] = np.random.choice(ρA[i], size=1, replace=False)
+        ρB[:, :] = np.sort(ρB, axis=1)  # sorting each row separately
+
+        IA = np.arange(n * k).reshape(n, k)
+        IB = IA + n * k
+
+        ref_ρ = ρA.copy()
+        ref_I = IA.copy()
+
+        comp_ρ = ρA.copy()
+        comp_I = IA.copy()
+
+        naive.merge_topk_ρI(ref_ρ, ρB, ref_I, IB)
+        core._merge_topk_ρI(comp_ρ, ρB, comp_I, IB)
+
+        npt.assert_array_equal(ref_ρ, comp_ρ)
+        npt.assert_array_equal(ref_I, comp_I)
+
+
 def test_shift_insert_at_index():
     for k in range(1, 6):
         a = np.random.rand(k)
