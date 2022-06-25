@@ -848,7 +848,7 @@ class stumpi_egress(object):
                 )
 
         # update top-k for the last, newly-updated index
-        I_last_topk = np.argsort(D)[: self._k]
+        I_last_topk = np.argsort(D, kind="mergesort")[: self._k]
         self.P_[-1] = D[I_last_topk]
         self.I_[-1] = I_last_topk + self._n_appended
         self.I_[-1][self.P_[-1] == np.inf] = -1
