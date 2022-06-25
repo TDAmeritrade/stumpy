@@ -787,25 +787,28 @@ class aampi_egress(object):
 
 
 class stumpi_egress(object):
-    def __init__(self, T, m, excl_zone=None):
+    def __init__(self, T, m, excl_zone=None, k=1):
         self._T = np.asarray(T)
         self._T = self._T.copy()
         self._T_isfinite = np.isfinite(self._T)
         self._m = m
+        self._k = k
 
         self._excl_zone = excl_zone
         if self._excl_zone is None:
             self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
-        mp = stump(T, m, exclusion_zone=self._excl_zone)
-        self.P_ = mp[:, 0]
-        self.I_ = mp[:, 1].astype(np.int64)
-        self.left_P_ = np.full(self.P_.shape, np.inf)
-        self.left_I_ = mp[:, 2].astype(np.int64)
-        for i, j in enumerate(self.left_I_):
-            if j >= 0:
-                D = core.mass(self._T[i : i + self._m], self._T[j : j + self._m])
+        mp = stump(T, m, exclusion_zone=self._excl_zone, k=k)
+        self.P_ = mp[:, :k].astype(np.float64)
+        self.I_ = mp[:, k : 2 * k].astype(np.int64)
+
+        self.left_I_ = mp[:, 2 * k].astype(np.int64)
+        self.left_P_ = np.full_like(self.left_I_, np.inf, dtype=np.float64)
+
+        for i, nn_i in enumerate(self.left_I_):
+            if nn_i >= 0:
+                D = core.mass(self._T[i : i + self._m], self._T[nn_i : nn_i + self._m])
                 self.left_P_[i] = D[0]
 
         self._n_appended = 0
@@ -821,8 +824,8 @@ class stumpi_egress(object):
             self._T[-1] = 0
         self._n_appended += 1
 
-        self.P_[:] = np.roll(self.P_, -1)
-        self.I_[:] = np.roll(self.I_, -1)
+        self.P_[:, :] = np.roll(self.P_, -1, axis=0)
+        self.I_[:, :] = np.roll(self.I_, -1, axis=0)
         self.left_P_[:] = np.roll(self.left_P_, -1)
         self.left_I_[:] = np.roll(self.left_I_, -1)
 
@@ -835,22 +838,25 @@ class stumpi_egress(object):
             D[:] = np.inf
 
         apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
+        # update top-k matrix profile using newly calculated distance profile `D`
         for j in range(D.shape[0]):
-            if D[j] < self.P_[j]:
-                self.I_[j] = D.shape[0] - 1 + self._n_appended
-                self.P_[j] = D[j]
+            if D[j] < self.P_[j, -1]:
+                pos = np.searchsorted(self.P_[j], D[j], side="right")
+                self.P_[j] = np.insert(self.P_[j], pos, D[j])[:-1]
+                self.I_[j] = np.insert(
+                    self.I_[j], pos, D.shape[0] - 1 + self._n_appended
+                )
 
-        I_last = np.argmin(D)
+        # update top-k for the last, newly-updated index
+        I_last_topk = np.argsort(D)[: self._k]
+        self.P_[-1] = D[I_last_topk]
+        self.I_[-1] = I_last_topk + self._n_appended
+        self.I_[-1][self.P_[-1] == np.inf] = -1
 
-        if np.isinf(D[I_last]):
-            self.I_[-1] = -1
-            self.P_[-1] = np.inf
-        else:
-            self.I_[-1] = I_last + self._n_appended
-            self.P_[-1] = D[I_last]
-
-        self.left_I_[-1] = I_last + self._n_appended
-        self.left_P_[-1] = D[I_last]
+        # for  last indx, the left matrix profile value is self.P_[-1, 0]
+        # and the same goes for left matrix profile index
+        self.left_P_[-1] = self.P_[-1, 0]
+        self.left_I_[-1] = self.I_[-1, 0]
 
 
 def across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m):
