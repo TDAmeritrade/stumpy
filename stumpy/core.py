@@ -2653,16 +2653,29 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
         start = np.searchsorted(ρA[i], ρB[i, 0], side="left")
         stop = ρB.shape[1]
 
+        if start == ρB.shape[1]:
+            # means ρB[i, 0] > ρA[i, -1], i.e. the minimum value in ρB[i] is greater
+            # than greatest value in ρA[i]. So, we should replace ρA[i] with ρB[i].
+            ρA[i] = ρB[i]
+            IA[i] = IB[i]
+            continue
+
         for j in range(ρB.shape[1] - 1, -1, -1):
-            if ρB[i, j] > ρA[i, 0]:
-                idx = np.searchsorted(ρA[i, start:stop], ρB[i, j], side="left") + start
+            if ρB[i, j] <= ρA[i, 0]:
+                # ρB[i] is sorted ascaendingly.
+                # Hence, next iteration: ρB[i, j-1] <= ρB[i, j] <= ρA[i, 0]
+                break
 
-                _shift_insert_at_index(ρA[i], idx, ρB[i, j], shift="left")
-                _shift_insert_at_index(IA[i], idx, IB[i, j], shift="left")
+            # ρB[i, j] is greater than ρA[i, 0], the minimum value in ρA[i]. so,
+            # we MUST update ρA[i] to make sure we are keeping top-k largest values.
+            idx = np.searchsorted(ρA[i, start:stop], ρB[i, j], side="left") + start
 
-                stop = idx  # because of shifting elements to the left by one
-                if start > 0:
-                    start -= 1
+            _shift_insert_at_index(ρA[i], idx, ρB[i, j], shift="left")
+            _shift_insert_at_index(IA[i], idx, IB[i, j], shift="left")
+
+            stop = idx  # because of shifting elements to the left by one
+            if start > 0:
+                start -= 1
 
 
 @njit
