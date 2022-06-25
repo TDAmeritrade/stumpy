@@ -114,11 +114,11 @@ def _compute_PI(
         if excl_zone is not None:
             core._apply_exclusion_zone(squared_distance_profile, i, excl_zone, np.inf)
 
-        nn = np.argmin(squared_distance_profile)
+        nn_idx = np.argmin(squared_distance_profile)
         core._shift_insert_at_index(
-            P_squared[thread_idx, i], 0, squared_distance_profile[nn]
+            P_squared[thread_idx, i], 0, squared_distance_profile[nn_idx]
         )
-        core._shift_insert_at_index(I[thread_idx, i], 0, nn)
+        core._shift_insert_at_index(I[thread_idx, i], 0, nn_idx)
 
         if P_squared[thread_idx, i, 0] == np.inf:  # pragma: no cover
             I[thread_idx, i, 0] = -1
