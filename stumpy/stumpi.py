@@ -36,19 +36,30 @@ class stumpi:
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
 
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
+
     Attributes
     ----------
     P_ : numpy.ndarray
-        The updated matrix profile for `T`
+        The updated (top-k) matrix profile for `T`. When `k=1` (default), the first
+        (and only) column in this 2D array consists of the matrix profile. When
+        `k > 1`, the output has exactly `k` columns consist of the top-k matrix
+        profile.
 
     I_ : numpy.ndarray
-        The updated matrix profile indices for `T`
+        The updated (top-k) matrix profile indices for `T`. When `k=1` (default),
+        the first (and only) column in this 2D array consists of the matrix profile
+        indices. When `k > 1`, the output has exactly `k` columns consist of the
+        top-k matrix profile indices.
 
     left_P_ : numpy.ndarray
-        The updated left matrix profile for `T`
+        The updated left (top-1) matrix profile for `T`
 
     left_I_ : numpy.ndarray
-        The updated left matrix profile indices for `T`
+        The updated left (top-1) matrix profile indices for `T`
 
     T_ : numpy.ndarray
         The updated time series or sequence for which the matrix profile and matrix
@@ -81,7 +92,7 @@ class stumpi:
     array([-1,  0,  1,  2])
     """
 
-    def __init__(self, T, m, egress=True, normalize=True, p=2.0):
+    def __init__(self, T, m, egress=True, normalize=True, p=2.0, k=1):
         """
         Initialize the `stumpi` object
 
@@ -106,27 +117,34 @@ class stumpi:
         p : float, default 2.0
             The p-norm to apply for computing the Minkowski distance. This parameter is
             ignored when `normalize == True`.
+
+        k : int, default 1
+            The number of top `k` smallest distances used to construct the matrix profile.
+            Note that this will increase the total computational time and memory usage
+            when k > 1.
         """
         self._T = core._preprocess(T)
         core.check_window_size(m, max_size=self._T.shape[-1])
         self._m = m
+        self._k = k
+
         self._n = self._T.shape[0]
         self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
         self._T_isfinite = np.isfinite(self._T)
         self._egress = egress
 
-        mp = stump(self._T, self._m)
-        self._P = mp[:, 0].astype(np.float64)
-        self._I = mp[:, 1].astype(np.int64)
-        self._left_I = mp[:, 2].astype(np.int64)
-        self._left_P = np.empty(self._P.shape, dtype=np.float64)
-        self._left_P[:] = np.inf
+        mp = stump(self._T, self._m, k=self._k)
+        self._P = mp[:, :k].astype(np.float64)
+        self._I = mp[:, k : 2 * k].astype(np.int64)
+
+        self._left_I = mp[:, 2 * k].astype(np.int64)
+        self._left_P = np.full_like(self._left_I, np.inf, dtype=np.float64)
 
         self._T, self._M_T, self._Σ_T = core.preprocess(self._T, self._m)
         # Retrieve the left matrix profile values
-        for i, j in enumerate(self._left_I):
-            if j >= 0:
-                D = core.mass(self._T[i : i + self._m], self._T[j : j + self._m])
+        for i, nn_i in enumerate(self._left_I):
+            if nn_i >= 0:
+                D = core.mass(self._T[i : i + self._m], self._T[nn_i : nn_i + self._m])
                 self._left_P[i] = D[0]
 
         Q = self._T[-m:]
@@ -138,7 +156,7 @@ class stumpi:
     def update(self, t):
         """
         Append a single new data point, `t`, to the existing time series `T` and update
-        the matrix profile and matrix profile indices.
+        the (top-k) matrix profile and matrix profile indices.
 
         Parameters
         ----------
@@ -161,8 +179,8 @@ class stumpi:
 
     def _update_egress(self, t):
         """
-        Ingress a new data point, egress the oldest data point, and update the matrix
-        profile and matrix profile indices
+        Ingress a new data point, egress the oldest data point, and update the (top-k)
+        matrix profile and matrix profile indices
         """
         self._n = self._T.shape[0]
         l = self._n - self._m + 1 - 1  # Subtract 1 due to egress
@@ -174,8 +192,8 @@ class stumpi:
         t_drop = self._T[l - 1]
         self._T_isfinite[:-1] = self._T_isfinite[1:]
 
-        self._I[:-1] = self._I[1:]
-        self._P[:-1] = self._P[1:]
+        self._I[:-1, :] = self._I[1:, :]
+        self._P[:-1, :] = self._P[1:, :]
         self._left_I[:-1] = self._left_I[1:]
         self._left_P[:-1] = self._left_P[1:]
 
@@ -211,28 +229,34 @@ class stumpi:
 
         core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
 
-        update_idx = np.argwhere(D < self._P).flatten()
-        self._I[update_idx] = D.shape[0] + self._n_appended - 1  # D.shape[0] is base-1
-        self._P[update_idx] = D[update_idx]
+        update_idx = np.argwhere(D < self._P[:, -1]).flatten()
+        for i in update_idx:
+            pos = np.searchsorted(self._P[i], D[i], side="right")
+            core._shift_insert_at_index(self._P[i], pos, D[i])
+            core._shift_insert_at_index(
+                self._I[i], pos, D.shape[0] + self._n_appended - 1
+            )
+            # D.shape[0] is base-1
 
-        I_last = np.argmin(D)
+        # O(Nlog(K)) time complexity
+        self._P[-1] = np.inf
+        self._I[-1] = -1
+        for i, d in enumerate(D):
+            if d < self._P[-1, -1]:  # mean last index, maximum value (k-th value)
+                pos = np.searchsorted(self._P[-1], d, side="right")
+                core._shift_insert_at_index(self._P[-1], pos, d)
+                core._shift_insert_at_index(self._I[-1], pos, i + self._n_appended)
 
-        if np.isinf(D[I_last]):
-            self._I[-1] = -1
-            self._P[-1] = np.inf
-        else:
-            self._I[-1] = I_last + self._n_appended
-            self._P[-1] = D[I_last]
-
-        self._left_I[-1] = I_last + self._n_appended
-        self._left_P[-1] = D[I_last]
+        # for last index, the left matrix profile is basically `self._P[-1, 0]`
+        self._left_P[-1] = self._P[-1, 0]
+        self._left_I[-1] = self._I[-1, 0]
 
         self._QT[:] = self._QT_new
 
     def _update(self, t):
         """
-        Ingress a new data point and update the matrix profile and matrix profile
-        indices without egressing the oldest data point
+        Ingress a new data point and update the (top-k) matrix profile and matrix
+        profile indices without egressing the oldest data point
         """
         n = self._T.shape[0]
         l = n - self._m + 1
@@ -269,25 +293,33 @@ class stumpi:
 
         core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
 
-        update_idx = np.argwhere(D[:l] < self._P[:l]).flatten()
-        self._I[update_idx] = l
-        self._P[update_idx] = D[update_idx]
+        update_idx = np.argwhere(D[:l] < self._P[:l, -1]).flatten()
+        for i in update_idx:
+            pos = np.searchsorted(self._P[i], D[i], side="right")
+            core._shift_insert_at_index(self._P[i], pos, D[i])
+            core._shift_insert_at_index(self._I[i], pos, l)
 
-        I_last = np.argmin(D)
-        if np.isinf(D[I_last]):
-            I_new = np.append(self._I, -1)
-            P_new = np.append(self._P, np.inf)
-        else:
-            I_new = np.append(self._I, I_last)
-            P_new = np.append(self._P, D[I_last])
-        left_I_new = np.append(self._left_I, I_last)
-        left_P_new = np.append(self._left_P, D[I_last])
+        # Calculating top-k and left matrix profile for new subsequence whose
+        # distance profie is D
+
+        # O(Nlog(K)) time complexity for obtaining top-k
+        P_new = np.full((1, self._k), np.inf, dtype=np.float64)
+        I_new = np.full((1, self._k), -1, dtype=np.int64)
+
+        for i, d in enumerate(D):
+            if d < P_new[-1]:  # maximum value in sorted array P_new
+                pos = np.searchsorted(P_new, d, side="right")
+                core._shift_insert_at_index(P_new, pos, d)
+                core._shift_insert_at_index(I_new, pos, i)
+
+        left_I_new = P_new[0, 0]
+        left_P_new = I_new[0, 0]
 
         self._T = T_new
-        self._P = P_new
-        self._I = I_new
-        self._left_I = left_I_new
-        self._left_P = left_P_new
+        self._P = np.append(self._P, P_new, axis=0)
+        self._I = np.append(self._I, I_new, axis=0)
+        self._left_P = np.append(self._left_P, left_P_new)
+        self._left_I = np.append(self._left_I, left_I_new)
         self._QT = QT_new
         self._M_T = M_T_new
         self._Σ_T = Σ_T_new
@@ -295,28 +327,28 @@ class stumpi:
     @property
     def P_(self):
         """
-        Get the matrix profile
+        Get the (top-k) matrix profile
         """
         return self._P.astype(np.float64)
 
     @property
     def I_(self):
         """
-        Get the matrix profile indices
+        Get the (top-k) matrix profile indices
         """
         return self._I.astype(np.int64)
 
     @property
     def left_P_(self):
         """
-        Get the left matrix profile
+        Get the (top-1) left matrix profile
         """
         return self._left_P.astype(np.float64)
 
     @property
     def left_I_(self):
         """
-        Get the left matrix profile indices
+        Get the (top-1) sleft matrix profile indices
         """
         return self._left_I.astype(np.int64)
 
