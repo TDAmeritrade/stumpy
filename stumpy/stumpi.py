@@ -119,9 +119,9 @@ class stumpi:
             ignored when `normalize == True`.
 
         k : int, default 1
-            The number of top `k` smallest distances used to construct the matrix profile.
-            Note that this will increase the total computational time and memory usage
-            when k > 1.
+            The number of top `k` smallest distances used to construct the matrix
+            profile. Note that this will increase the total computational time and
+            memory usage when `k > 1`.
         """
         self._T = core._preprocess(T)
         core.check_window_size(m, max_size=self._T.shape[-1])
