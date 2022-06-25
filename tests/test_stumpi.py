@@ -35,7 +35,7 @@ def test_stumpi_self_join():
     ref_mp = naive.stump(stream.T_, m, exclusion_zone=zone, row_wise=True)
     ref_P = ref_mp[:, 0].reshape(-1, 1)
     ref_I = ref_mp[:, 1].reshape(-1, 1)
-    ref_left_I = ref_mp[:, 2]
+    ref_left_I = ref_mp[:, 2].astype(np.int64)
     ref_left_P = np.full_like(ref_left_I, np.inf, dtype=np.float64)
     for i, j in enumerate(ref_left_I):
         if j >= 0:
@@ -860,21 +860,24 @@ def test_stumpi_profile_index_match():
 
     T_stream = T_full[:warm_start].copy()
     stream = stumpi(T_stream, m, egress=True)
-    P = np.full(stream.P_.shape, np.inf)
-    left_P = np.full(stream.left_P_.shape, np.inf)
+    P = np.full_like(stream.P_, np.inf, dtype=np.float64)
+    left_P = np.full_like(stream.left_P_, np.inf, dtype=np.float64)
 
     n = 0
     for i in range(len(T_stream), len(T_full)):
         t = T_full[i]
         stream.update(t)
 
-        P[:] = np.inf
-        idx = np.argwhere(stream.I_ >= 0).flatten()
-        P[idx] = naive.distance(
-            naive.z_norm(T_full_subseq[idx + n + 1], axis=1),
-            naive.z_norm(T_full_subseq[stream.I_[idx]], axis=1),
-            axis=1,
-        )
+        P[:, :] = np.inf
+        mask = stream.I_ >= 0
+
+        for j in range(P.shape[1]):  # `j` as j-th nearest neighbor
+            IDX = np.flatnonzero(mask[:, j])
+            P[IDX, j] = naive.distance(
+                naive.z_norm(T_full_subseq[IDX + n + 1], axis=1),
+                naive.z_norm(T_full_subseq[stream.I_[IDX, j]], axis=1),
+                axis=1,
+            )
 
         left_P[:] = np.inf
         idx = np.argwhere(stream.left_I_ >= 0).flatten()

@@ -845,7 +845,7 @@ class stumpi_egress(object):
                 self.P_[j] = np.insert(self.P_[j], pos, D[j])[:-1]
                 self.I_[j] = np.insert(
                     self.I_[j], pos, D.shape[0] - 1 + self._n_appended
-                )
+                )[:-1]
 
         # update top-k for the last, newly-updated index
         I_last_topk = np.argsort(D, kind="mergesort")[: self._k]
