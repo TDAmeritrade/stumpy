@@ -130,8 +130,9 @@ def _compute_PI(
             m * M_T[j] * μ_Q[i]
         )
         QT_j_prime = QT_j
-        # Update Top-k of BOTH subsequences at i+g and j+g (i.e. right neighbor
-        # of i, j), by using the distance between `S_(i+g)` and `S_(j+g)`
+        # Update top-k for both subsequences `S[i+g] = T[i+g:i+g+m]`` and
+        # `S[j+g] = T[j+g:j+g+m]` (i.e., the right neighbors of `T[i : i+m]` and
+        # `T[j:j+m]`) by using the distance between `S[i+g]` and `S[j+g]`
         for g in range(1, min(s, l - max(i, j))):
             QT_j = (
                 QT_j
@@ -165,8 +166,9 @@ def _compute_PI(
                 core._shift_insert_at_index(I[thread_idx, j + g], pos, i + g)
 
         QT_j = QT_j_prime
-        # Update Top-k of BOTH subsequences at i-g and j-g (i.e. left neighbor
-        # of i, j), by using the distance between `S_(i-g)` and `S_(j-g)`
+        # Update top-k for both subsequences `S[i-g] = T[i-g:i-g+m]` and
+        # `S[j-g] = T[j-g:j-g+m]` (i.e., the left neighbors of `T[i : i+m]` and
+        # `T[j:j+m]`) by using the distance between `S[i-g]` and `S[j-g]`
         for g in range(1, min(s, i + 1, j + 1)):
             QT_j = QT_j - T_B[i - g + m] * T_A[j - g + m] + T_B[i - g] * T_A[j - g]
             D_squared = core._calculate_squared_distance(
@@ -195,7 +197,8 @@ def _compute_PI(
                 )
                 core._shift_insert_at_index(I[thread_idx, j - g], pos, i - g)
 
-        # self-join only
+        # In the case of a self-join, the calculated distances can also be used
+        # to refine the top-k for all non-trivial subsequences
         if excl_zone is not None:
             # Note that the squared distance, `squared_distance_profile[j]`,
             # between subsequences `S_i = T[i : i + m]` and `S_j = T[j : j + m]`
