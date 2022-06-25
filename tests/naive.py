@@ -720,7 +720,7 @@ class aampi_egress(object):
         self._T_isfinite = np.isfinite(self._T)
         self._m = m
         self._p = p
-        if excl_zone is None:
+        if excl_zone is None:  # see stumpi, and make similar changes here
             self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
@@ -792,11 +792,13 @@ class stumpi_egress(object):
         self._T = self._T.copy()
         self._T_isfinite = np.isfinite(self._T)
         self._m = m
-        if excl_zone is None:
+
+        self._excl_zone = excl_zone
+        if self._excl_zone is None:
             self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
-        mp = stump(T, m)
+        mp = stump(T, m, exclusion_zone=self._excl_zone)
         self.P_ = mp[:, 0]
         self.I_ = mp[:, 1].astype(np.int64)
         self.left_P_ = np.full(self.P_.shape, np.inf)
