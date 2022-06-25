@@ -2624,8 +2624,7 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
 
     ρB : numpy.ndarray
         A (top-k) pearson profile, with ndim of 2, where values in each row are
-        sorted in ascending order. Also, it needs to be the same shape as ρA. `ρB`
-        must have the same shape as `ρA`.
+        sorted in ascending order. `ρB` must have the same shape as `ρA`.
 
     IA : numpy.ndarray
         A (top-k) matrix profile indices corresponding to ρA
