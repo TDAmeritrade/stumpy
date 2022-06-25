@@ -35,9 +35,8 @@ def test_stumpi_self_join():
     ref_mp = naive.stump(stream.T_, m, exclusion_zone=zone, row_wise=True)
     ref_P = ref_mp[:, 0].reshape(-1, 1)
     ref_I = ref_mp[:, 1].reshape(-1, 1)
-    ref_left_P = np.empty(ref_P.shape)
-    ref_left_P[:] = np.inf
     ref_left_I = ref_mp[:, 2]
+    ref_left_P = np.full_like(ref_left_I, np.inf, dtype=np.float64)
     for i, j in enumerate(ref_left_I):
         if j >= 0:
             D = core.mass(stream.T_[i : i + m], stream.T_[j : j + m])
