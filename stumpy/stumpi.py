@@ -303,8 +303,8 @@ class stumpi:
         # distance profie is D
 
         # O(Nlog(K)) time complexity for obtaining top-k
-        P_new = np.full((1, self._k), np.inf, dtype=np.float64)
-        I_new = np.full((1, self._k), -1, dtype=np.int64)
+        P_new = np.full(self._k, np.inf, dtype=np.float64)
+        I_new = np.full(self._k, -1, dtype=np.int64)
 
         for i, d in enumerate(D):
             if d < P_new[-1]:  # maximum value in sorted array P_new
@@ -312,12 +312,12 @@ class stumpi:
                 core._shift_insert_at_index(P_new, pos, d)
                 core._shift_insert_at_index(I_new, pos, i)
 
-        left_I_new = P_new[0, 0]
-        left_P_new = I_new[0, 0]
+        left_I_new = P_new[0]
+        left_P_new = I_new[0]
 
         self._T = T_new
-        self._P = np.append(self._P, P_new, axis=0)
-        self._I = np.append(self._I, I_new, axis=0)
+        self._P = np.append(self._P, P_new.reshape(1, -1), axis=0)
+        self._I = np.append(self._I, I_new.reshape(1, -1), axis=0)
         self._left_P = np.append(self._left_P, left_P_new)
         self._left_I = np.append(self._left_I, left_I_new)
         self._QT = QT_new
