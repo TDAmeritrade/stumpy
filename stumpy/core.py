@@ -2596,24 +2596,25 @@ def _merge_topk_PI(PA, PB, IA, IB):
         stop = np.searchsorted(PA[i], PB[i, -1], side="right")
 
         if stop == 0:
-            # means PB[i, -1] < PA[i, 0], i.e. the maximum value in PB[i] is less
-            # than smallest value in PA[i]. So, we should replace PA[i] with PB[i].
+            # means `PB[i, -1] < PA[i, 0]`, i.e. the maximum value in `PB[i]` is
+            # less than smallest value in `PA[i]`. So, we should replace `PA[i]`
+            # with `PB[i]` so that we have the top-k smallest.
             PA[i] = PB[i]
             IA[i] = IB[i]
             continue
 
         for j in range(PB.shape[1]):
             if PB[i, j] >= PA[i, -1]:
-                # PB[i] is sorted ascaendingly.
-                # Hence: PB[i, j+1] >= PB[i, j] >= PA[i, -1]
+                # `PB[i]` is sorted ascaendingly.
+                # Hence, in next iteration: `PB[i, j+1] >= PB[i, j] >= PA[i, -1]`
                 break
 
-            # PB[i, j] is less than PA[i, -1], the maximum value in PA[i]. so,
-            # we MUST update PA[i].
+            # `PB[i, j]` is less than `PA[i, -1]`, the maximum value in `PA[i]`.
+            # so, we must update `PA[i]` to have the top-k smallest values.
             idx = np.searchsorted(PA[i, start:stop], PB[i, j], side="right") + start
 
-            _shift_insert_at_index(PA[i], idx, PB[i, j])
-            _shift_insert_at_index(IA[i], idx, IB[i, j])
+            _shift_insert_at_index(PA[i], idx, PB[i, j], shift="right")
+            _shift_insert_at_index(IA[i], idx, IB[i, j], shift="right")
 
             start = idx
             stop += 1  # because of shifting elements to the right by one
@@ -2622,9 +2623,13 @@ def _merge_topk_PI(PA, PB, IA, IB):
 @njit(parallel=True)
 def _merge_topk_ρI(ρA, ρB, IA, IB):
     """
-    Merge two top-k pearson profiles ρA and ρB, and update ρA (in place). In the
-    merged array (from right to left): the priority is with ρA (from right to left),
-    and then with ρB(from right to left) Also, update IA accordingly.
+    Merge two top-k pearson profiles ρA and ρB, and update ρA (in place). The priority
+    is with ρA (from right to left) and then ρB (from right to left).
+
+    Example:
+    note: the prime symbol below is to distinguish two elements with same value
+    ρA = [0, 0', 1], and ρB = [0, 1, 1'].
+    merging outcome: [1_B, 1'_B, 1_A]
 
     Unlike `_merge_topk_PI`, where `top-k` smallest values are kept, this function
     keeps `top-k` largest values.
@@ -2654,42 +2659,39 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
         stop = ρB.shape[1]
 
         if start == ρB.shape[1]:
-            # means ρB[i, 0] > ρA[i, -1], i.e. the minimum value in ρB[i] is greater
-            # than greatest value in ρA[i]. So, we should replace ρA[i] with ρB[i].
+            # means `ρB[i, 0] > ρA[i, -1]`, i.e. the minimum value in `ρB[i]` is
+            # greater than greatest value in `ρA[i]`. So, we should replace `ρA[i]`
+            # with `ρB[i]` so that we have top-k largest values
             ρA[i] = ρB[i]
             IA[i] = IB[i]
             continue
 
         for j in range(ρB.shape[1] - 1, -1, -1):
             if ρB[i, j] <= ρA[i, 0]:
-                # ρB[i] is sorted ascaendingly.
-                # Hence, next iteration: ρB[i, j-1] <= ρB[i, j] <= ρA[i, 0]
+                # `ρB[i]` is sorted ascaendingly.
+                # Hence, in the next iteration: `ρB[i, j-1] <= ρB[i, j] <= ρA[i, 0]`
                 break
 
-            # ρB[i, j] is greater than ρA[i, 0], the minimum value in ρA[i]. so,
-            # we MUST update ρA[i] to make sure we are keeping top-k largest values.
+            # `ρB[i, j]` is greater than `ρA[i, 0]`, the minimum value in `ρA[i]`.
+            # so, we must update `ρA[i]` to make sure we have top-k largest values.
             idx = np.searchsorted(ρA[i, start:stop], ρB[i, j], side="left") + start
 
             _shift_insert_at_index(ρA[i], idx, ρB[i, j], shift="left")
             _shift_insert_at_index(IA[i], idx, IB[i, j], shift="left")
 
-            stop = idx  # because of shifting elements to the left by one
+            stop = idx
             if start > 0:
-                start -= 1
+                start -= 1  # because of shifting elements to the left by one
 
 
 @njit
 def _shift_insert_at_index(a, idx, v, shift="right"):
     """
     If `shift=right`, all elements in `a[idx:]` are shifted to the right by one element
-    and the last element is discarded. If `shift=left` or any other string value,
-    all elements in `a[:idx]` are shifted to the left by one element and the first
-    element is discarded. In both cases, the length of `a` remains unchanged.
-
-    Note
-    ----
-    No check is performed to ensure the value of parameter `shift` is 1 or -1.
-    It is user's responsibility to provide a valid value for this parameter.
+    and the last element is discarded. If `shift=left` (or any string value other
+    than "right") all elements in `a[:idx]` are shifted to the left by one element
+    and the first element is discarded. In both cases, the length of `a` remains
+    unchanged.
 
     Parameters
     ----------
@@ -2698,9 +2700,9 @@ def _shift_insert_at_index(a, idx, v, shift="right"):
 
     idx: int
         The index at which the value `v` should be inserted. This can be any
-        integer number from `0` to `len(a)`. When `idx=0` and `shift` is set to
-        "right", or when `idx=len(a)` and `shift` is set to any other string value,
-        then no change will occur on the input array `a`.
+        integer number from `0` to `len(a)`. When `idx=0` and `shift="right"`,
+        OR when `idx=len(a)` and `shift != "right"`, then no change will occur on
+        the input array `a`.
 
     v: float
         The value that should be inserted into array `a` at index `idx`
@@ -2723,5 +2725,5 @@ def _shift_insert_at_index(a, idx, v, shift="right"):
     else:
         if 0 < idx <= len(a):
             a[: idx - 1] = a[1:idx]
-            # elements were shifted to left, and thus the insertion becomes `idx-1`
+            # elements were shifted to left, thus the insertion index becomes `idx-1`
             a[idx - 1] = v

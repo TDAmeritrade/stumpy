@@ -1793,20 +1793,26 @@ def merge_topk_PI(PA, PB, IA, IB):
 
 
 def merge_topk_ρI(ρA, ρB, IA, IB):
-    # this is to merge two pearson profiles, each is a 2D array where each row
-    # contains an ascendingly-sorted values.
-    # Note that we are interested in keeping the top-k largest values.
-    # In the merged array (from right to left): the priority is with ρA (from right
-    # to left), and then with ρB(from right to left)
+    # this is to merge two pearson profiles `ρA` and `ρB`, where each is a 2D array
+    # and each row is sorted ascendingly. Smaller distance corresponds to larger
+    # pearson values. Therefore, we want to keep top-k largest values in merging
+    # row `ρA[i]` and `ρB[i]`. The priority is with `ρA (from right to left)` and
+    # then `ρB (from right to left)`.
 
     # Example:
-    # ρA = [0(I), 0(II), 1], and ρB = [0', 1'(I), 1'(II)].
-    # the prime symbol is to indicate that the values are from ρB
-    # and the greek numbers are to differntiate two same values in one array
+    # note: the prime symbol below is to distinguish two elements with same value
+    # ρA = [0, 0', 1], and ρB = [0, 1, 1'].
+    # merging outcome: [1_B, 1'_B, 1_A]
 
-    # so, the outcome of merging process should be:
-    # [0', 0(I), 0(II), 1'(I), 1'(II), 1]
+    # Naive Implementation:
+    # keeping top-k largest with the aforementioned priority rule is the same as
+    # sorting ascendingly while prioritizing `ρB` (from left to right) over `ρA`
+    # (from left to right), and then keep the second half of merged array.
 
+    # In our example, it would be like this:
+    # merging `ρB` and `ρA` (prioritizing smaller values in `ρB`):
+    # [0_B, 0_A, 0'_A, 1_B, 1'_B, 1_A], and we just need to keep the second half
+    # of this array (and discard the first half)
     profile = np.column_stack((ρB, ρA))
     indices = np.column_stack((IB, IA))
 
@@ -1814,5 +1820,6 @@ def merge_topk_ρI(ρA, ρB, IA, IB):
     profile[:, :] = np.take_along_axis(profile, idx, axis=1)
     indices[:, :] = np.take_along_axis(indices, idx, axis=1)
 
+    # keep the last k elements (top-k largest values)
     ρA[:, :] = profile[:, ρA.shape[1] :]
     IA[:, :] = indices[:, ρA.shape[1] :]
