@@ -2595,15 +2595,28 @@ def _merge_topk_PI(PA, PB, IA, IB):
         start = 0
         stop = np.searchsorted(PA[i], PB[i, -1], side="right")
 
+        if stop == 0:
+            # means PB[i, -1] < PA[i, 0], i.e. the maximum value in PB[i] is less
+            # than smallest value in PA[i]. So, we should replace PA[i] with PB[i].
+            PA[i] = PB[i]
+            IA[i] = IB[i]
+            continue
+
         for j in range(PB.shape[1]):
-            if PB[i, j] < PA[i, -1]:
-                idx = np.searchsorted(PA[i, start:stop], PB[i, j], side="right") + start
+            if PB[i, j] >= PA[i, -1]:
+                # PB[i] is sorted ascaendingly.
+                # Hence: PB[i, j+1] >= PB[i, j] >= PA[i, -1]
+                break
 
-                _shift_insert_at_index(PA[i], idx, PB[i, j])
-                _shift_insert_at_index(IA[i], idx, IB[i, j])
+            # PB[i, j] is less than PA[i, -1], the maximum value in PA[i]. so,
+            # we MUST update PA[i].
+            idx = np.searchsorted(PA[i, start:stop], PB[i, j], side="right") + start
 
-                start = idx
-                stop += 1  # because of shifting elements to the right by one
+            _shift_insert_at_index(PA[i], idx, PB[i, j])
+            _shift_insert_at_index(IA[i], idx, IB[i, j])
+
+            start = idx
+            stop += 1  # because of shifting elements to the right by one
 
 
 @njit(parallel=True)
