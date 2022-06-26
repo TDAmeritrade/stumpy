@@ -1457,7 +1457,8 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
                 P[j - g] = np.insert(P[j - g], pos, d)[:-1]
                 I[j - g] = np.insert(I[j - g], pos, i - g)[:-1]
 
-        # self-join only
+        # In the case of a self-join, the calculated distance profile can also be
+        # used to refine the top-k for all non-trivial subsequences
         if exclusion_zone is not None:
             for idx in np.flatnonzero(distance_profile < P[:, -1]):
                 pos = np.searchsorted(P[idx], distance_profile[idx], side="right")

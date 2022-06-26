@@ -197,8 +197,8 @@ def _compute_PI(
                 )
                 core._shift_insert_at_index(I[thread_idx, j - g], pos, i - g)
 
-        # In the case of a self-join, the calculated distances can also be used
-        # to refine the top-k for all non-trivial subsequences
+        # In the case of a self-join, the calculated distance profile can also be
+        # used to refine the top-k for all non-trivial subsequences
         if excl_zone is not None:
             # Note that the squared distance, `squared_distance_profile[j]`,
             # between subsequences `S_i = T[i : i + m]` and `S_j = T[j : j + m]`
