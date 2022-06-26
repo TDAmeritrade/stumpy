@@ -1803,25 +1803,24 @@ def merge_topk_PI(PA, PB, IA, IB):
 
 def merge_topk_ρI(ρA, ρB, IA, IB):
     # this is to merge two pearson profiles `ρA` and `ρB`, where each is a 2D array
-    # and each row is sorted ascendingly. Smaller distance corresponds to larger
-    # pearson values. Therefore, we want to keep top-k largest values in merging
-    # row `ρA[i]` and `ρB[i]`. The priority is with `ρA (from right to left)` and
-    # then `ρB (from right to left)`.
+    # and each row is sorted ascendingly. we want to keep top-k largest values in
+    # merging row `ρA[i]` and `ρB[i]`.
 
-    # Example:
-    # note: the prime symbol below is to distinguish two elements with same value
+    # In case of ties between `ρA` and `ρB`, the priority is with `ρA`. In case
+    # of ties within `ρA, the priority is with an element with greater index.
+    # Example
+    # note: the prime symbol is to distinguish two elements with same value
     # ρA = [0, 0', 1], and ρB = [0, 1, 1'].
     # merging outcome: [1_B, 1'_B, 1_A]
 
     # Naive Implementation:
-    # keeping top-k largest with the aforementioned priority rule is the same as
-    # sorting ascendingly while prioritizing `ρB` (from left to right) over `ρA`
-    # (from left to right), and then keep the second half of merged array.
+    # keeping top-k largest with the aforementioned priority rules is the same as
+    # `merge_topk_PI` but with swapping `ρA` and `ρB`
 
-    # In our example, it would be like this:
-    # merging `ρB` and `ρA` (prioritizing smaller values in `ρB`):
-    # [0_B, 0_A, 0'_A, 1_B, 1'_B, 1_A], and we just need to keep the second half
-    # of this array (and discard the first half)
+    # For the same example:
+    # merging `ρB` and `ρA` ascendingly while choosing `ρB` over `ρA` in case of
+    # ties: [0_B, 0_A, 0'_A, 1_B, 1'_B, 1_A], and we just need to keep the second
+    # half of this array, and discard the first half.
     profile = np.column_stack((ρB, ρA))
     indices = np.column_stack((IB, IA))
 
