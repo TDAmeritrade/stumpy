@@ -493,7 +493,7 @@ def _stump(
     p_norm_R = np.abs(2 * m * (1 - ρR[0, :]))
 
     for i in prange(p_norm.shape[0]):
-        for j in prange(p_norm.shape[1]):
+        for j in range(p_norm.shape[1]):
             if p_norm[i, j] < config.STUMPY_P_NORM_THRESHOLD:
                 p_norm[i, j] = 0.0
 
