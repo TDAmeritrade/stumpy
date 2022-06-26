@@ -131,20 +131,18 @@ class stumpi:
         self._left_P[mask] = self._P[mask]
 
         # the remaining ones
-        for idx in np.flatnonzero(~mask & self._left_I >= 0):
-            nn_idx = self._left_I[idx]
-            QT = np.dot(
-                self._T[idx : idx + self._m], self._T[nn_idx : nn_idx + self._m]
-            )
+        for i in np.flatnonzero(self._left_I >= 0 & ~mask):
+            j = self._left_I[i]
+            QT = np.dot(self._T[i : i + self._m], self._T[j : j + self._m])
             D_square = core._calculate_squared_distance(
                 self._m,
                 QT,
-                self._M_T[idx],
-                self._Σ_T[idx],
-                self._M_T[nn_idx],
-                self._Σ_T[nn_idx],
+                self._M_T[i],
+                self._Σ_T[i],
+                self._M_T[j],
+                self._Σ_T[j],
             )
-            self._left_P[idx] = np.sqrt(D_square)
+            self._left_P[i] = np.sqrt(D_square)
 
         Q = self._T[-m:]
         self._QT = core.sliding_dot_product(Q, self._T)
