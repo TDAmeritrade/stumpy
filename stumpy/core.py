@@ -2623,11 +2623,16 @@ def _merge_topk_PI(PA, PB, IA, IB):
 @njit(parallel=True)
 def _merge_topk_ρI(ρA, ρB, IA, IB):
     """
-    Merge two top-k pearson profiles ρA and ρB, and update ρA (in place). The priority
-    is with ρA (from right to left) and then ρB (from right to left).
+    Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place) by
+    keeping the top-k largest values in merging two `top-k` rows `ρA[i]` and `ρB[i]`,
+    each sorted ascendingly.
+
+    from right to left of the merged array: In case of ties between `ρA[i]` and
+    `ρB[i]`, the priority is with `ρA[i]`, and in case of ties within `ρA[i]`,
+    the priority is with element with greater index.
 
     Example:
-    note: the prime symbol below is to distinguish two elements with same value
+    note: the prime symbol is to distinguish two elements with same value
     ρA = [0, 0', 1], and ρB = [0, 1, 1'].
     merging outcome: [1_B, 1'_B, 1_A]
 
