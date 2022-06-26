@@ -124,10 +124,27 @@ class stumpi:
 
         self._T, self._M_T, self._Σ_T = core.preprocess(self._T, self._m)
         # Retrieve the left matrix profile values
-        for i, j in enumerate(self._left_I):
-            if j >= 0:
-                D = core.mass(self._T[i : i + self._m], self._T[j : j + self._m])
-                self._left_P[i] = D[0]
+
+        # if left neighbor of `S[i] = T[i, i+m]` is actually its matrix profile index
+        # neighbor, then their distance is matrix profile[i]!!!
+        mask = self._left_I == self._I
+        self._left_P[mask] = self._P[mask]
+
+        # the remaining ones
+        for idx in np.flatnonzero(~mask & self._left_I >= 0):
+            nn_idx = self._left_I[idx]
+            QT = np.dot(
+                self._T[idx : idx + self._m], self._T[nn_idx : nn_idx + self._m]
+            )
+            D_square = core._calculate_squared_distance(
+                self._m,
+                QT,
+                self._M_T[idx],
+                self._Σ_T[idx],
+                self._M_T[nn_idx],
+                self._Σ_T[nn_idx],
+            )
+            self._left_P[idx] = np.sqrt(D_square)
 
         Q = self._T[-m:]
         self._QT = core.sliding_dot_product(Q, self._T)
