@@ -891,3 +891,175 @@ def test_stumpi_profile_index_match():
         npt.assert_almost_equal(stream.left_P_, left_P)
 
         n += 1
+
+
+def test_stumpi_self_join_KNN():
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    for k in range(2, 4):
+        seed = np.random.randint(100000)
+        np.random.seed(seed)
+
+        T = np.random.rand(30)
+        stream = stumpi(T, m, egress=False, k=k)
+        for i in range(34):
+            t = np.random.rand()
+            stream.update(t)
+
+        comp_P = stream.P_
+        comp_I = stream.I_
+        comp_left_P = stream.left_P_
+        comp_left_I = stream.left_I_
+
+        ref_mp = naive.stump(stream.T_, m, exclusion_zone=zone, row_wise=True, k=k)
+        ref_P = ref_mp[:, 0].reshape(-1, 1)
+        ref_I = ref_mp[:, 1].reshape(-1, 1)
+        ref_left_I = ref_mp[:, 2].astype(np.int64)
+        ref_left_P = np.full_like(ref_left_I, np.inf, dtype=np.float64)
+        for i, j in enumerate(ref_left_I):
+            if j >= 0:
+                D = core.mass(stream.T_[i : i + m], stream.T_[j : j + m])
+                ref_left_P[i] = D[0]
+
+        naive.replace_inf(ref_P)
+        naive.replace_inf(ref_left_P)
+        naive.replace_inf(comp_P)
+        naive.replace_inf(comp_left_P)
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_left_P, comp_left_P)
+        npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+        np.random.seed(seed)
+        T = np.random.rand(30)
+        T = pd.Series(T)
+        stream = stumpi(T, m, egress=False, k=k)
+        for i in range(34):
+            t = np.random.rand()
+            stream.update(t)
+
+        comp_P = stream.P_
+        comp_I = stream.I_
+        comp_left_P = stream.left_P_
+        comp_left_I = stream.left_I_
+
+        naive.replace_inf(comp_P)
+        naive.replace_inf(comp_left_P)
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_left_P, comp_left_P)
+        npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+
+def test_stumpi_self_join_egress_KNN():
+    m = 3
+
+    for k in range(2, 4):
+        seed = np.random.randint(100000)
+        np.random.seed(seed)
+        n = 30
+        T = np.random.rand(n)
+
+        ref_mp = naive.stumpi_egress(T, m, k=k)
+        ref_P = ref_mp.P_.copy()
+        ref_I = ref_mp.I_
+        ref_left_P = ref_mp.left_P_.copy()
+        ref_left_I = ref_mp.left_I_
+
+        stream = stumpi(T, m, egress=True, k=k)
+
+        comp_P = stream.P_.copy()
+        comp_I = stream.I_
+        comp_left_P = stream.left_P_.copy()
+        comp_left_I = stream.left_I_
+
+        naive.replace_inf(ref_P)
+        naive.replace_inf(ref_left_P)
+        naive.replace_inf(comp_P)
+        naive.replace_inf(comp_left_P)
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_left_P, comp_left_P)
+        npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+        for i in range(34):
+            t = np.random.rand()
+            ref_mp.update(t)
+            stream.update(t)
+
+            comp_P = stream.P_.copy()
+            comp_I = stream.I_
+            comp_left_P = stream.left_P_.copy()
+            comp_left_I = stream.left_I_
+
+            ref_P = ref_mp.P_.copy()
+            ref_I = ref_mp.I_
+            ref_left_P = ref_mp.left_P_.copy()
+            ref_left_I = ref_mp.left_I_
+
+            naive.replace_inf(ref_P)
+            naive.replace_inf(ref_left_P)
+            naive.replace_inf(comp_P)
+            naive.replace_inf(comp_left_P)
+
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
+            npt.assert_almost_equal(ref_left_P, comp_left_P)
+            npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+        np.random.seed(seed)
+        T = np.random.rand(n)
+        T = pd.Series(T)
+
+        ref_mp = naive.stumpi_egress(T, m, k=k)
+        ref_P = ref_mp.P_.copy()
+        ref_I = ref_mp.I_
+        ref_left_P = ref_mp.left_P_.copy()
+        ref_left_I = ref_mp.left_I_
+
+        stream = stumpi(T, m, egress=True, k=k)
+
+        comp_P = stream.P_.copy()
+        comp_I = stream.I_
+        comp_left_P = stream.left_P_.copy()
+        comp_left_I = stream.left_I_
+
+        naive.replace_inf(ref_P)
+        naive.replace_inf(ref_left_P)
+        naive.replace_inf(comp_P)
+        naive.replace_inf(comp_left_P)
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_left_P, comp_left_P)
+        npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+        for i in range(34):
+            t = np.random.rand()
+            t = np.random.rand()
+            ref_mp.update(t)
+            stream.update(t)
+
+            comp_P = stream.P_.copy()
+            comp_I = stream.I_
+            comp_left_P = stream.left_P_.copy()
+            comp_left_I = stream.left_I_
+
+            ref_P = ref_mp.P_.copy()
+            ref_I = ref_mp.I_
+            ref_left_P = ref_mp.left_P_.copy()
+            ref_left_I = ref_mp.left_I_
+
+            naive.replace_inf(ref_P)
+            naive.replace_inf(ref_left_P)
+            naive.replace_inf(comp_P)
+            naive.replace_inf(comp_left_P)
+
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
+            npt.assert_almost_equal(ref_left_P, comp_left_P)
+            npt.assert_almost_equal(ref_left_I, comp_left_I)
