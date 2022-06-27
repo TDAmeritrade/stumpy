@@ -126,7 +126,7 @@ class stumpi:
         # Retrieve the left matrix profile values
 
         # Since each matrix profile value is the minimum between the left and right
-        # matrix profile values, we can save time by re-computing the left matrix
+        # matrix profile values, we can save time by re-computing ONlY the left matrix
         # profile value only when the matrix profile index is equal to the right
         # matrix profile index.
         mask = self._left_I == self._I
