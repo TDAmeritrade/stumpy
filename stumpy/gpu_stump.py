@@ -284,13 +284,17 @@ def _compute_and_update_PI_kernel(
                 indices_R[j] = i
 
         if p_norm < profile[j, -1]:
-            idx = _gpu_searchsorted_right(profile[j], p_norm, bfs, nlevel)
-            for g in range(k - 1, idx, -1):
-                profile[j, g] = profile[j, g - 1]
-                indices[j, g] = indices[j, g - 1]
+            if k == 1:
+                profile[j, 0] = p_norm
+                indices[j, 0] = i
+            else:
+                idx = _gpu_searchsorted_right(profile[j], p_norm, bfs, nlevel)
+                for g in range(k - 1, idx, -1):
+                    profile[j, g] = profile[j, g - 1]
+                    indices[j, g] = indices[j, g - 1]
 
-            profile[j, idx] = p_norm
-            indices[j, idx] = i
+                profile[j, idx] = p_norm
+                indices[j, idx] = i
 
 
 def _gpu_stump(
