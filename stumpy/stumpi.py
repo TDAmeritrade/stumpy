@@ -124,10 +124,28 @@ class stumpi:
 
         self._T, self._M_T, self._Σ_T = core.preprocess(self._T, self._m)
         # Retrieve the left matrix profile values
-        for i, j in enumerate(self._left_I):
-            if j >= 0:
-                D = core.mass(self._T[i : i + self._m], self._T[j : j + self._m])
-                self._left_P[i] = D[0]
+
+        # Since each matrix profile value is the minimum between the left and right
+        # matrix profile values, we can save time by re-computing only the left matrix
+        # profile value when the matrix profile index is equal to the right matrix
+        # profile index.
+        mask = self._left_I == self._I
+        self._left_P[mask] = self._P[mask]
+
+        # Only re-compute the `i`-th left matrix profile value, `self._left_P[i]`,
+        # when `self._I[i] != self._left_I[i]`
+        for i in np.flatnonzero(self._left_I >= 0 & ~mask):
+            j = self._left_I[i]
+            QT = np.dot(self._T[i : i + self._m], self._T[j : j + self._m])
+            D_square = core._calculate_squared_distance(
+                self._m,
+                QT,
+                self._M_T[i],
+                self._Σ_T[i],
+                self._M_T[j],
+                self._Σ_T[j],
+            )
+            self._left_P[i] = np.sqrt(D_square)
 
         Q = self._T[-m:]
         self._QT = core.sliding_dot_product(Q, self._T)
