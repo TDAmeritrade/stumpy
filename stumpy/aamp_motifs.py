@@ -97,7 +97,10 @@ def _aamp_motifs(
     motif_distances = []
 
     candidate_idx = np.argmin(P[-1])
-    while len(motif_indices) < max_motifs:
+    for i in range(l):
+        if len(motif_indices) >= max_motifs:
+            break
+
         profile_value = P[-1, candidate_idx]
         if profile_value > cutoff or not np.isfinite(profile_value):  # pragma: no cover
             break
@@ -398,11 +401,14 @@ def aamp_match(
     else:
         candidate_idx = np.argmin(D)
 
-    while (
-        D[candidate_idx] <= atol + max_distance
-        and np.isfinite(D[candidate_idx])
-        and len(matches) < max_matches
-    ):
+    for i in range(len(D)):
+        if (
+            D[candidate_idx] > atol + max_distance
+            or ~np.isfinite(D[candidate_idx])
+            or len(matches) >= max_matches
+        ):
+            break
+
         matches.append([D[candidate_idx], candidate_idx])
         core.apply_exclusion_zone(D, candidate_idx, excl_zone, np.inf)
         candidate_idx = np.argmin(D)
