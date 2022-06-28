@@ -638,9 +638,6 @@ def gpu_stump(
     out[:, 0] = profile[0][:, 0]
     out[:, 1:4] = indices[0][:, :]
 
-    threshold = 10e-6
-    if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
-        logger.warning(f"A large number of values are smaller than {threshold}.")
-        logger.warning("For a self-join, try setting `ignore_trivial = True`.")
+    core._check_P(out)
 
     return out
