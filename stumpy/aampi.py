@@ -190,7 +190,9 @@ class aampi:
         self._p_norm_new[0] = (
             np.linalg.norm(self._T[: self._m] - S[: self._m], ord=self._p) ** self._p
         )
-
+        self._p_norm_new[:] = np.where(
+            self._p_norm_new < config.STUMPY_P_NORM_THRESHOLD, 0, self._p_norm_new
+        )
         D = np.power(self._p_norm_new, 1.0 / self._p)
         D[~self._T_subseq_isfinite] = np.inf
         if np.any(~self._T_isfinite[-self._m :]):
@@ -248,7 +250,9 @@ class aampi:
         p_norm_new[0] = (
             np.linalg.norm(T_new[: self._m] - S[: self._m], ord=self._p) ** self._p
         )
-
+        p_norm_new[:] = np.where(
+            p_norm_new < config.STUMPY_P_NORM_THRESHOLD, 0, p_norm_new
+        )
         D = np.power(p_norm_new, 1.0 / self._p)
         D[~self._T_subseq_isfinite] = np.inf
         if np.any(~self._T_isfinite[-self._m :]):
