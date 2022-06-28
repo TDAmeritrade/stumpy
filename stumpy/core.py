@@ -69,6 +69,12 @@ def _compare_parameters(norm, non_norm, exclude=None):
     return is_same_params
 
 
+def _check_P(P, threshold=10e-6):
+    if are_distances_too_small(P[:, 0], threshold=threshold):  # pragma: no cover
+        logger.warning(f"A large number of values are smaller than {threshold}.")
+        logger.warning("For a self-join, try setting `ignore_trivial = True`.")
+
+
 def non_normalized(non_norm, exclude=None, replace=None):
     """
     Decorator for swapping a z-normalized function (or class) for its complementary
