@@ -97,7 +97,7 @@ def _motifs(
 
     candidate_idx = np.argmin(P[-1])
     for i in range(l):
-        if len(motif_indices) == max_motifs:
+        if len(motif_indices) >= max_motifs:
             break
 
         profile_value = P[-1, candidate_idx]
@@ -471,8 +471,8 @@ def match(
     for i in range(len(D)):
         if (
             D[candidate_idx] > atol + max_distance
-            or D[candidate_idx] == np.inf
-            or len(matches) == max_matches
+            or ~np.isfinite(D[candidate_idx])
+            or len(matches) >= max_matches
         ):
             break
 
