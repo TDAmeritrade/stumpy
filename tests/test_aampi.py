@@ -672,6 +672,108 @@ def test_aampi_constant_subsequence_self_join_egress():
         # npt.assert_almost_equal(ref_left_I, comp_left_I)
 
 
+def test_aampi_update_constant_subsequence_self_join():
+    m = 3
+
+    seed = np.random.randint(100000)
+    np.random.seed(seed)
+    T_full = np.random.rand(64)  # generate random data
+    T_full[40:55] = 3  # add constant level interval
+
+    T_stream = T_full[:10].copy()
+    stream = aampi(T_stream, m, egress=False)
+
+    for i in range(len(T_stream), len(T_full)):
+        t = T_full[i]
+        stream.update(t)
+
+    comp_P = stream.P_
+
+    ref_mp = naive.aamp(stream.T_, m)
+    ref_P = ref_mp[:, 0]
+
+    naive.replace_inf(ref_P)
+    naive.replace_inf(comp_P)
+    npt.assert_almost_equal(ref_P, comp_P)
+
+    T_full = pd.Series(T_full)
+    T_stream = T_full[:10].copy()
+    stream = aampi(T_stream, m, egress=False)
+
+    for i in range(len(T_stream), len(T_full)):
+        t = T_full[i]
+        stream.update(t)
+
+    comp_P = stream.P_
+
+    naive.replace_inf(comp_P)
+    npt.assert_almost_equal(ref_P, comp_P)
+
+
+def test_aampi_update_constant_subsequence_self_join_egress():
+    m = 3
+
+    seed = np.random.randint(100000)
+    np.random.seed(seed)
+
+    T_full = np.random.rand(64)  # generate random data
+    T_full[40:55] = 3  # add constant level interval
+    T_stream = T_full[:10].copy()
+
+    ref_mp = naive.aampi_egress(T_stream, m)
+    ref_P = ref_mp.P_.copy()
+    ref_left_P = ref_mp.left_P_.copy()
+
+    stream = aampi(T_stream, m, egress=True)
+
+    for i in range(len(T_stream), len(T_full)):
+        t = T_full[i]
+        ref_mp.update(t)
+        stream.update(t)
+
+        comp_P = stream.P_.copy()
+        comp_left_P = stream.left_P_.copy()
+
+        ref_P = ref_mp.P_.copy()
+        ref_left_P = ref_mp.left_P_.copy()
+
+        naive.replace_inf(ref_P)
+        naive.replace_inf(ref_left_P)
+        naive.replace_inf(comp_P)
+        naive.replace_inf(comp_left_P)
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_left_P, comp_left_P)
+
+    T_full = pd.Series(T_full)
+    T_stream = T_full[:10].copy()
+
+    ref_mp = naive.aampi_egress(T_stream, m)
+    ref_P = ref_mp.P_.copy()
+    ref_left_P = ref_mp.left_P_.copy()
+
+    stream = aampi(T_stream, m, egress=True)
+
+    for i in range(len(T_stream), len(T_full)):
+        t = T_full[i]
+        ref_mp.update(t)
+        stream.update(t)
+
+        comp_P = stream.P_.copy()
+        comp_left_P = stream.left_P_.copy()
+
+        ref_P = ref_mp.P_.copy()
+        ref_left_P = ref_mp.left_P_.copy()
+
+        naive.replace_inf(ref_P)
+        naive.replace_inf(ref_left_P)
+        naive.replace_inf(comp_P)
+        naive.replace_inf(comp_left_P)
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_left_P, comp_left_P)
+
+
 def test_aampi_identical_subsequence_self_join():
     m = 3
     seed = np.random.randint(100000)
