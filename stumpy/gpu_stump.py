@@ -528,9 +528,9 @@ def _gpu_stump(
         indices_L = device_indices_L.copy_to_host()
         indices_R = device_indices_R.copy_to_host()
 
-        profile = np.sqrt(profile)
-        profile_L = np.sqrt(profile_L)
-        profile_R = np.sqrt(profile_R)
+        profile[:, :] = np.sqrt(profile)
+        profile_L[:] = np.sqrt(profile_L)
+        profile_R[:] = np.sqrt(profile_R)
 
         profile_fname = core.array_to_temp_file(profile)
         profile_L_fname = core.array_to_temp_file(profile_L)
