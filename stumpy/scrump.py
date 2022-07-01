@@ -743,13 +743,13 @@ class scrump:
 
             # update left matrix profile and indices
             cond = PL < self._PL
-            self._PL = np.where(cond, PL, self._PL)
-            self._IL = np.where(cond, IL, self._IL)
+            self._PL[:] = np.where(cond, PL, self._PL)
+            self._IL[:] = np.where(cond, IL, self._IL)
 
             # update right matrix profile and indices
             cond = PR < self._PR
-            self._PR = np.where(cond, PR, self._PR)
-            self._IR = np.where(cond, IR, self._IR)
+            self._PR[:] = np.where(cond, PR, self._PR)
+            self._IR[:] = np.where(cond, IR, self._IR)
 
             self._chunk_idx += 1
 
