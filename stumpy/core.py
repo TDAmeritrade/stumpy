@@ -2571,6 +2571,12 @@ def _merge_topk_PI(PA, PB, IA, IB):
     Unlike `_merge_topk_ρI`, where `top-k` largest values are kept, this function
     keeps `top-k` smallest values.
 
+    `PA` and `PB` are 2D arrays, with each row sorted ascendingly. To update `PA[i]`,
+    the array `PB[i]` is traversed forward from index `0` to its last index, and
+    will update `PA[i]` if its element is smaller than `PA[i, -1]`, i.e. the greatest
+    value in `PA[i]`. In case of tied value `v`, it will be inserted to the right side
+    of the greatest index in `PA[i]` whose value is `v`.
+
     Parameters
     ----------
     PA : numpy.ndarray
@@ -2627,17 +2633,14 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     keeping the top-k largest values in merging two `top-k` rows `ρA[i]` and `ρB[i]`,
     each sorted ascendingly.
 
-    from right to left of the merged array: In case of ties between `ρA[i]` and
-    `ρB[i]`, the priority is with `ρA[i]`, and in case of ties within `ρA[i]`,
-    the priority is with element with greater index.
-
-    Example:
-    note: the prime symbol is to distinguish two elements with same value
-    ρA = [0, 0', 1], and ρB = [0, 1, 1'].
-    merging outcome: [1_B, 1'_B, 1_A]
-
     Unlike `_merge_topk_PI`, where `top-k` smallest values are kept, this function
     keeps `top-k` largest values.
+
+    `ρA` and `ρB` are 2D arrays, with each row sorted ascendingly. To update `ρA[i]`,
+    the array `ρB[i]` is traversed backward from its last index to index 0, and will
+    update `ρA[i]` if its element is greater than `ρA[i, 0]`, i.e. the smallest value
+    in `ρA[i]`. In case of tied value `v`, it will be inserted to the left side of the
+    lowest index in `ρA[i]` whose value is `v`.
 
     Parameters
     ----------
@@ -2705,8 +2708,8 @@ def _shift_insert_at_index(a, idx, v, shift="right"):
 
     idx: int
         The index at which the value `v` should be inserted. This can be any
-        integer number from `0` to `len(a)`. When `idx=0` and `shift="right"`,
-        OR when `idx=len(a)` and `shift != "right"`, then no change will occur on
+        integer number from `0` to `len(a)`. When `idx=len(a)` and `shift="right"`,
+        OR when `idx=0` and `shift != "right"`, then no change will occur on
         the input array `a`.
 
     v: float
