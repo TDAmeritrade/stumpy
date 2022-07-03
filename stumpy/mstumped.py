@@ -186,17 +186,4 @@ def mstumped(dask_client, T, m, include=None, discords=False, normalize=True):
         stop = min(k, start + step)
         P[:, start + 1 : stop], I[:, start + 1 : stop] = results[i]
 
-    # Delete data from Dask cluster
-    dask_client.cancel(T_A_future)
-    dask_client.cancel(M_T_future)
-    dask_client.cancel(Σ_T_future)
-    dask_client.cancel(μ_Q_future)
-    dask_client.cancel(σ_Q_future)
-    for QT_future in QT_futures:
-        dask_client.cancel(QT_future)
-    for QT_first_future in QT_first_futures:
-        dask_client.cancel(QT_first_future)
-    for future in futures:
-        dask_client.cancel(future)
-
     return P, I

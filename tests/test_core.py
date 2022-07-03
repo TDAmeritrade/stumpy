@@ -66,7 +66,7 @@ def split(node, out):
     return node[:mid], node[mid + 1 :]
 
 
-def naive_bsf_indices(n):
+def naive_bfs_indices(n, fill_value=None):
     a = np.arange(n)
     nodes = [a.tolist()]
     out = []
@@ -79,7 +79,30 @@ def naive_bsf_indices(n):
                     tmp.append(n)
         nodes = tmp
 
-    return np.array(out)
+    out = np.array(out)
+
+    if fill_value is not None:
+        remainder = out.shape[0]
+        level = 0
+        count = np.power(2, level)
+
+        while remainder >= count:
+            remainder -= count
+            level += 1
+            count = np.power(2, level)
+
+        if remainder > 0:
+            out = out[:-remainder]
+            last_level = np.empty(np.power(2, level), dtype=np.int64)
+            last_level[0::2] = out[-np.power(2, level - 1) :] - 1
+            last_level[1::2] = out[-np.power(2, level - 1) :] + 1
+            mask = np.isin(last_level, out)
+            last_level[mask] = fill_value
+            n = len(a)
+            last_level[last_level >= n] = fill_value
+            out = np.concatenate([out, last_level])
+
+    return out
 
 
 test_data = [
@@ -91,7 +114,7 @@ test_data = [
     (np.random.uniform(-1000, 1000, [8]), np.random.uniform(-1000, 1000, [64])),
 ]
 
-n = [9, 10, 16]
+n = list(range(1, 50))
 
 
 def test_check_bad_dtype():
@@ -1011,11 +1034,19 @@ def test_total_diagonal_ndists():
 
 
 @pytest.mark.parametrize("n", n)
-def test_bsf_indices(n):
-    ref_bsf_indices = naive_bsf_indices(n)
-    cmp_bsf_indices = np.array(list(core._bfs_indices(n)))
+def test_bfs_indices(n):
+    ref_bfs_indices = naive_bfs_indices(n)
+    cmp_bfs_indices = np.array(list(core._bfs_indices(n)))
 
-    npt.assert_almost_equal(ref_bsf_indices, cmp_bsf_indices)
+    npt.assert_almost_equal(ref_bfs_indices, cmp_bfs_indices)
+
+
+@pytest.mark.parametrize("n", n)
+def test_bfs_indices_fill_value(n):
+    ref_bfs_indices = naive_bfs_indices(n, -1)
+    cmp_bfs_indices = np.array(list(core._bfs_indices(n, -1)))
+
+    npt.assert_almost_equal(ref_bfs_indices, cmp_bfs_indices)
 
 
 def test_select_P_ABBA_val_inf():

@@ -27,7 +27,6 @@ def get_extras_require():
 
 
 configuration = {
-    "name": "stumpy",
     "version": "1.11.1",
     "python_requires=": ">=3.7",
     "author": "Sean M. Law",
@@ -66,4 +65,4 @@ configuration = {
     "extras_require": {"ci": get_extras_require()},
 }
 
-setup(**configuration)
+setup(name="stumpy", **configuration)

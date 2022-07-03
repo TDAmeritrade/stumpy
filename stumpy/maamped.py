@@ -167,15 +167,4 @@ def maamped(dask_client, T, m, include=None, discords=False, p=2.0):
         stop = min(k, start + step)
         P[:, start + 1 : stop], I[:, start + 1 : stop] = results[i]
 
-    # Delete data from Dask cluster
-    dask_client.cancel(T_A_future)
-    dask_client.cancel(T_A_subseq_isfinite_future)
-    dask_client.cancel(T_B_subseq_isfinite_future)
-    for p_norm_future in p_norm_futures:
-        dask_client.cancel(p_norm_future)
-    for p_norm_first_future in p_norm_first_futures:
-        dask_client.cancel(p_norm_first_future)
-    for future in futures:
-        dask_client.cancel(future)
-
     return P, I

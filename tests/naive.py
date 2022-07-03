@@ -1403,6 +1403,12 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None):
         distance_profile = dist_matrix[i]
         if exclusion_zone is not None:
             apply_exclusion_zone(distance_profile, i, exclusion_zone, np.inf)
+
+            # only for self-join
+            mask = distance_profile < P
+            P[mask] = distance_profile[mask]
+            I[mask] = i
+
         I[i] = np.argmin(distance_profile)
         P[i] = distance_profile[I[i]]
         if P[i] == np.inf:
@@ -1507,6 +1513,12 @@ def prescraamp(T_A, m, T_B, s, exclusion_zone=None, p=2.0):
         distance_profile = distance_matrix[i]
         if exclusion_zone is not None:
             apply_exclusion_zone(distance_profile, i, exclusion_zone, np.inf)
+
+            # only for self-join
+            mask = distance_profile < P
+            P[mask] = distance_profile[mask]
+            I[mask] = i
+
         I[i] = np.argmin(distance_profile)
         P[i] = distance_profile[I[i]]
         if P[i] == np.inf:  # pragma: no cover

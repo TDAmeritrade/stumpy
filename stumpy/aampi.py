@@ -103,7 +103,18 @@ class aampi:
         )
 
         # Retrieve the left matrix profile values
-        for i, j in enumerate(self._left_I):
+
+        # Since each matrix profile value is the minimum between the left and right
+        # matrix profile values, we can save time by re-computing only the left matrix
+        # profile value when the matrix profile index is equal to the right matrix
+        # profile index.
+        mask = self._left_I == self._I
+        self._left_P[mask] = self._P[mask]
+
+        # Only re-compute the `i`-th left matrix profile value, `self._left_P[i]`,
+        # when `self._I[i] != self._left_I[i]`
+        for i in np.flatnonzero(self._left_I >= 0 & ~mask):
+            j = self._left_I[i]
             if j >= 0:
                 self._left_P[i] = np.linalg.norm(
                     self._T[i : i + self._m] - self._T[j : j + self._m], ord=self._p
@@ -179,7 +190,9 @@ class aampi:
         self._p_norm_new[0] = (
             np.linalg.norm(self._T[: self._m] - S[: self._m], ord=self._p) ** self._p
         )
-
+        self._p_norm_new[:] = np.where(
+            self._p_norm_new < config.STUMPY_P_NORM_THRESHOLD, 0, self._p_norm_new
+        )
         D = np.power(self._p_norm_new, 1.0 / self._p)
         D[~self._T_subseq_isfinite] = np.inf
         if np.any(~self._T_isfinite[-self._m :]):
@@ -237,7 +250,9 @@ class aampi:
         p_norm_new[0] = (
             np.linalg.norm(T_new[: self._m] - S[: self._m], ord=self._p) ** self._p
         )
-
+        p_norm_new[:] = np.where(
+            p_norm_new < config.STUMPY_P_NORM_THRESHOLD, 0, p_norm_new
+        )
         D = np.power(p_norm_new, 1.0 / self._p)
         D[~self._T_subseq_isfinite] = np.inf
         if np.any(~self._T_isfinite[-self._m :]):
