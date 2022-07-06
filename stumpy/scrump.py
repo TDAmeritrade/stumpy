@@ -742,14 +742,14 @@ class scrump:
             core._merge_topk_PI(self._P, P, self._I, I)
 
             # update left matrix profile and indices
-            cond = PL < self._PL
-            self._PL[:] = np.where(cond, PL, self._PL)
-            self._IL[:] = np.where(cond, IL, self._IL)
+            mask = PL < self._PL
+            self._PL[mask] = PL[mask]
+            self._IL[mask] = IL[mask]
 
             # update right matrix profile and indices
-            cond = PR < self._PR
-            self._PR[:] = np.where(cond, PR, self._PR)
-            self._IR[:] = np.where(cond, IR, self._IR)
+            mask = PR < self._PR
+            self._PR[mask] = PR[mask]
+            self._IR[mask] = IR[mask]
 
             self._chunk_idx += 1
 

@@ -475,14 +475,14 @@ def _stump(
         core._merge_topk_ρI(ρ[0], ρ[thread_idx], I[0], I[thread_idx])
 
         # update left matrix profile and  matrix profile indices
-        cond = ρL[0] < ρL[thread_idx]
-        ρL[0] = np.where(cond, ρL[thread_idx], ρL[0])
-        IL[0] = np.where(cond, IL[thread_idx], IL[0])
+        mask = ρL[0] < ρL[thread_idx]
+        ρL[0, mask] = ρL[thread_idx, mask]
+        IL[0, mask] = IL[thread_idx, mask]
 
         # update right matrix profile and  matrix profile indices
-        cond = ρR[0] < ρR[thread_idx]
-        ρR[0] = np.where(cond, ρR[thread_idx], ρR[0])
-        IR[0] = np.where(cond, IR[thread_idx], IR[0])
+        mask = ρR[0] < ρR[thread_idx]
+        ρR[0, mask] = ρR[thread_idx, mask]
+        IR[0, mask] = IR[thread_idx, mask]
 
     # Reverse top-k rho (and its associated I) to be in descending order and
     # then convert from Pearson correlations to Euclidean distances (ascending order)

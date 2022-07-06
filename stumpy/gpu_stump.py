@@ -854,14 +854,14 @@ def gpu_stump(
         core._merge_topk_PI(profile[0], profile[i], indices[0], indices[i])
 
         # Update (top-1) left matrix profile and matrix profile indices
-        cond = profile_L[0] < profile_L[i]
-        profile_L[0] = np.where(cond, profile_L[0], profile_L[i])
-        indices_L[0] = np.where(cond, indices_L[0], indices_L[i])
+        mask = profile_L[0] < profile_L[i]
+        profile_L[0][mask] = profile_L[i][mask]
+        indices_L[0][mask] = indices_L[i][mask]
 
         # Update (top-1) right matrix profile and matrix profile indices
-        cond = profile_R[0] < profile_R[i]
-        profile_R[0] = np.where(cond, profile_R[0], profile_R[i])
-        indices_R[0] = np.where(cond, indices_R[0], indices_R[i])
+        mask = profile_R[0] < profile_R[i]
+        profile_R[0][mask] = profile_R[i][mask]
+        indices_R[0][mask] = indices_R[i][mask]
 
     out = np.empty((w, 2 * k + 2), dtype=object)  # last two columns are to store
     # (top-1) left/right matrix profile indices

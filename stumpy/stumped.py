@@ -273,14 +273,14 @@ def stumped(
         core._merge_topk_PI(profile, P, indices, I)
 
         # Update top-1 left matrix profile and matrix profile index
-        cond = PL < profile_L
-        profile_L[:] = np.where(cond, PL, profile_L)
-        indices_L[:] = np.where(cond, IL, indices_L)
+        mask = PL < profile_L
+        profile_L[mask] = PL[mask]
+        indices_L[mask] = IL[mask]
 
         # Update top-1 right matrix profile and matrix profile index
-        cond = PR < profile_R
-        profile_R[:] = np.where(cond, PR, profile_R)
-        indices_R[:] = np.where(cond, IR, indices_R)
+        mask = PR < profile_R
+        profile_R[mask] = PR[mask]
+        indices_R[mask] = IR[mask]
 
     out = np.empty((l, 2 * k + 2), dtype=object)
     out[:, :k] = profile
