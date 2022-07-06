@@ -758,7 +758,7 @@ class scrump:
         """
         Get the updated (top-k) matrix profile. When k=1 (default), the first (and only)
         column in this 2D array consists of the matrix profile. When k > 1, the output
-        has exactly k columns consist of the top-k matrix profile.
+        has exactly k columns consisting of the top-k matrix profile.
         """
         return self._P.astype(np.float64)
 
@@ -767,7 +767,7 @@ class scrump:
         """
         Get the updated (top-k) matrix profile indices. When k=1 (default), the
         first (and only) column in this 2D array consists of the matrix profile
-        indices. When k > 1, the output has exactly k columns consist of the top-k
+        indices. When k > 1, the output has exactly k columns consisting of the top-k
         matrix profile indices.
         """
         return self._I.astype(np.int64)

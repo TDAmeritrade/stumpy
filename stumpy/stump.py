@@ -212,10 +212,10 @@ def _compute_diagonal(
                 if T_B_subseq_isconstant[i + g] and T_A_subseq_isconstant[i]:
                     pearson = 1.0
 
-                # ρ[thread_idx, i, :] is sorted ascendingly. It MUST be updated
-                # when the newly-calculated pearson value becomes greater than the
-                # first (i.e. smallest) element of this array. (Reminder: higher
-                # pearson value means lower distance, which is of our interest)
+                # `ρ[thread_idx, i, :]` is sorted ascendingly and MUST be updated
+                # when the newly-calculated `pearson` value becomes greater than the
+                # first (i.e. smallest) element in this array. Note that a higher
+                # pearson value corresponds to a lower distance.
                 if pearson > ρ[thread_idx, i, 0]:
                     pos = np.searchsorted(ρ[thread_idx, i], pearson)
                     core._shift_insert_at_index(

@@ -256,16 +256,18 @@ class stumpi:
             )
             # D.shape[0] is base-1
 
-        # O(Nlog(K)) time complexity
+        # Calculate the (top-k) matrix profile values/indices for the last susequence
+        # by using its correspondng distance profile `D`
         self._P[-1] = np.inf
         self._I[-1] = -1
         for i, d in enumerate(D):
-            if d < self._P[-1, -1]:  # mean last index, maximum value (k-th value)
+            if d < self._P[-1, -1]:
                 pos = np.searchsorted(self._P[-1], d, side="right")
                 core._shift_insert_at_index(self._P[-1], pos, d)
                 core._shift_insert_at_index(self._I[-1], pos, i + self._n_appended)
 
-        # for last index, the left matrix profile is basically `self._P[-1, 0]`
+        # All neighbors of the last subsequence are on its left. So, its matrix profile
+        # value/index and its left matrix profile value/index must be equal.
         self._left_P[-1] = self._P[-1, 0]
         self._left_I[-1] = self._I[-1, 0]
 
@@ -318,12 +320,9 @@ class stumpi:
             core._shift_insert_at_index(self._I[i], pos, l)
 
         # Calculating top-k and left matrix profile for new subsequence whose
-        # distance profie is D
-
-        # O(Nlog(K)) time complexity for obtaining top-k
+        # distance profie is `D`
         P_new = np.full(self._k, np.inf, dtype=np.float64)
         I_new = np.full(self._k, -1, dtype=np.int64)
-
         for i, d in enumerate(D):
             if d < P_new[-1]:  # maximum value in sorted array P_new
                 pos = np.searchsorted(P_new, d, side="right")
