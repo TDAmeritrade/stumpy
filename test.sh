@@ -135,6 +135,7 @@ test_unit()
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_ostinato.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_ostinato.py
+    check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mpdist.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_motifs.py
@@ -142,9 +143,11 @@ test_unit()
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_mmotifs.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_mpdist.py
+    check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_snippets.py
     check_errs $?
     pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_stimp.py
+    check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stimp.py
     check_errs $?
     # aamp
@@ -161,6 +164,7 @@ test_unit()
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_ostinato.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp_ostinato.py
+    check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aampdist.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_motifs.py
@@ -168,9 +172,11 @@ test_unit()
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_mmotifs.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aampdist.py
+    check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aampdist_snippets.py
     check_errs $?
     pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp_stimp.py
+    check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp_stimp.py
     check_errs $?
     pytest -x -W ignore::DeprecationWarning tests/test_non_normalized_decorator.py
