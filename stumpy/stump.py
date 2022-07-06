@@ -407,13 +407,13 @@ def _stump(
     l = n_A - m + 1
     n_threads = numba.config.NUMBA_NUM_THREADS
 
-    ρ = np.full((n_threads, l, k), -np.inf, dtype=np.float64)
+    ρ = np.full((n_threads, l, k), np.NINF, dtype=np.float64)
     I = np.full((n_threads, l, k), -1, dtype=np.int64)
 
-    ρL = np.full((n_threads, l), -np.inf, dtype=np.float64)
+    ρL = np.full((n_threads, l), np.NINF, dtype=np.float64)
     IL = np.full((n_threads, l), -1, dtype=np.int64)
 
-    ρR = np.full((n_threads, l), -np.inf, dtype=np.float64)
+    ρR = np.full((n_threads, l), np.NINF, dtype=np.float64)
     IR = np.full((n_threads, l), -1, dtype=np.int64)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
