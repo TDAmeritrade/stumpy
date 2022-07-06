@@ -32,7 +32,7 @@ done
 check_errs()
 {
   # Function. Parameter 1 is the return code
-  if [[ $1 -ne "0" ]]; then
+  if [[ $1 -ne "0" && $1 -ne "5" ]]; then
     echo "Error: pytest encountered exit code $1"
     # as a bonus, make our script exit with the right error code.
     exit $1
@@ -119,6 +119,7 @@ test_unit()
 {
     echo "Testing Numba JIT Compiled Functions"
     pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_stump.py
+    check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_core.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_config.py
@@ -148,6 +149,7 @@ test_unit()
     check_errs $?
     # aamp
     pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_gpu_aamp.py
+    check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_aamp.py tests/test_maamp.py tests/test_scraamp.py tests/test_aampi.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_scraamp.py

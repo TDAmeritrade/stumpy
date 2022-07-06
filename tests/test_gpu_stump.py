@@ -3,9 +3,18 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 from stumpy import core, gpu_stump
-from stumpy.gpu_stump import _gpu_searchsorted_left, _gpu_searchsorted_right
 from stumpy import config
 from numba import cuda
+
+if cuda.is_available():
+    from stumpy.gpu_stump import _gpu_searchsorted_left, _gpu_searchsorted_right
+else:  # pragma: no cover
+    from stumpy.core import (
+        _gpu_searchsorted_left_driver_not_found as _gpu_searchsorted_left,
+    )
+    from stumpy.core import (
+        _gpu_searchsorted_right_driver_not_found as _gpu_searchsorted_right,
+    )
 
 try:
     from numba.errors import NumbaPerformanceWarning
