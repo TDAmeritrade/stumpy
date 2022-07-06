@@ -476,13 +476,13 @@ def _stump(
 
         # update left matrix profile and  matrix profile indices
         mask = ρL[0] < ρL[thread_idx]
-        ρL[0, mask] = ρL[thread_idx, mask]
-        IL[0, mask] = IL[thread_idx, mask]
+        ρL[0][mask] = ρL[thread_idx][mask]
+        IL[0][mask] = IL[thread_idx][mask]
 
         # update right matrix profile and  matrix profile indices
         mask = ρR[0] < ρR[thread_idx]
-        ρR[0, mask] = ρR[thread_idx, mask]
-        IR[0, mask] = IR[thread_idx, mask]
+        ρR[0][mask] = ρR[thread_idx][mask]
+        IR[0][mask] = IR[thread_idx][mask]
 
     # Reverse top-k rho (and its associated I) to be in descending order and
     # then convert from Pearson correlations to Euclidean distances (ascending order)
