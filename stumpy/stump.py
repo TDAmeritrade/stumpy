@@ -548,7 +548,8 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
     k : int, default 1
         The number of top `k` smallest distances used to construct the matrix profile.
         Note that this will increase the total computational time and memory usage
-        when k > 1.
+        when k > 1. If you have access to a GPU device, then you may be able to
+        leverage `gpu_stump` for better performance and scalability.
 
     Returns
     -------
