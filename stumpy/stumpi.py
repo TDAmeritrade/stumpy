@@ -210,8 +210,8 @@ class stumpi:
         t_drop = self._T[l - 1]
         self._T_isfinite[:-1] = self._T_isfinite[1:]
 
-        self._I[:-1, :] = self._I[1:, :]
-        self._P[:-1, :] = self._P[1:, :]
+        self._I[:-1] = self._I[1:]
+        self._P[:-1] = self._P[1:]
         self._left_I[:-1] = self._left_I[1:]
         self._left_P[:-1] = self._left_P[1:]
 
