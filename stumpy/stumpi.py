@@ -46,13 +46,13 @@ class stumpi:
     P_ : numpy.ndarray
         The updated (top-k) matrix profile for `T`. When `k=1` (default), the first
         (and only) column in this 2D array consists of the matrix profile. When
-        `k > 1`, the output has exactly `k` columns consist of the top-k matrix
+        `k > 1`, the output has exactly `k` columns consisting of the top-k matrix
         profile.
 
     I_ : numpy.ndarray
         The updated (top-k) matrix profile indices for `T`. When `k=1` (default),
         the first (and only) column in this 2D array consists of the matrix profile
-        indices. When `k > 1`, the output has exactly `k` columns consist of the
+        indices. When `k > 1`, the output has exactly `k` columns consisting of the
         top-k matrix profile indices.
 
     left_P_ : numpy.ndarray
@@ -344,14 +344,19 @@ class stumpi:
     @property
     def P_(self):
         """
-        Get the (top-k) matrix profile
+        Get the (top-k) matrix profile. When `k=1` (default), the first (and only)
+        column in this 2D array consists of the matrix profile. When `k > 1`, the
+        output has exactly `k` columns consisting of the top-k matrix profile.
         """
         return self._P.astype(np.float64)
 
     @property
     def I_(self):
         """
-        Get the (top-k) matrix profile indices
+        Get the (top-k) matrix profile indices. When `k=1` (default), the first
+        (and only) column in this 2D array consists of the matrix profile indices.
+        When `k > 1`, the output has exactly `k` columns consisting of the top-k
+        matrix profile indices.
         """
         return self._I.astype(np.int64)
 

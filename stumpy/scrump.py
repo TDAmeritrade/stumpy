@@ -513,9 +513,9 @@ class scrump:
     update()
         Update the matrix profile and the matrix profile indices by computing
         additional new distances (limited by `percentage`) that make up the full
-        distance matrix. The outputs are (top-k) matrix profile, (top-1) left
+        distance matrix. It updates the (top-k) matrix profile, (top-1) left
         matrix profile, (top-1) right matrix profile, (top-k) matrix profile indices,
-        (top-1) left matrix profile indices, (top-1) right matrix profile indices.
+        (top-1) left matrix profile indices, and (top-1) right matrix profile indices.
 
     See Also
     --------
