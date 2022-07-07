@@ -151,7 +151,7 @@ class stumpi:
         self._left_P[mask] = self._P[mask, 0]
 
         # Only re-compute the `i`-th left matrix profile value, `self._left_P[i]`,
-        # when `self._I[i, 0] != self._left_I[i]`
+        # when `self._left_I[i] != self._I[i, 0]`
         for i in np.flatnonzero(self._left_I >= 0 & ~mask):
             j = self._left_I[i]
             QT = np.dot(self._T[i : i + self._m], self._T[j : j + self._m])
@@ -319,8 +319,8 @@ class stumpi:
             core._shift_insert_at_index(self._P[i], pos, D[i])
             core._shift_insert_at_index(self._I[i], pos, l)
 
-        # Calculating top-k and left matrix profile for new subsequence whose
-        # distance profie is `D`
+        # Calculating top-k matrix profile and (top-1) left matrix profile (and thier
+        # corresponding indices) for new subsequence whose distance profie is `D`
         P_new = np.full(self._k, np.inf, dtype=np.float64)
         I_new = np.full(self._k, -1, dtype=np.int64)
         for i, d in enumerate(D):
