@@ -2587,9 +2587,9 @@ def _merge_topk_PI(PA, PB, IA, IB):
 
     `PA` and `PB` are 2D arrays, with each row sorted ascendingly. To update `PA[i]`,
     the array `PB[i]` is traversed forward from index `0` to its last index, and
-    will update `PA[i]` if its element is smaller than `PA[i, -1]`, i.e. the greatest
-    value in `PA[i]`. In case of tied value `v`, it will be inserted to the right side
-    of the greatest index in `PA[i]` whose value is `v`.
+    if its element is smaller than `PA[i, -1]`, i.e. the greatest value in `PA[i]`,
+    then `PA[i]` will be updatd.  In case of tied value `v`, it will be inserted to
+    the right side of the greatest index in `PA[i]` whose value is `v`.
 
     Parameters
     ----------
@@ -2651,10 +2651,10 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     keeps `top-k` largest values.
 
     `ρA` and `ρB` are 2D arrays, with each row sorted ascendingly. To update `ρA[i]`,
-    the array `ρB[i]` is traversed backward from its last index to index 0, and will
-    update `ρA[i]` if its element is greater than `ρA[i, 0]`, i.e. the smallest value
-    in `ρA[i]`. In case of tied value `v`, it will be inserted to the left side of the
-    lowest index in `ρA[i]` whose value is `v`.
+    the array `ρB[i]` is traversed backward from its last index to index 0, and if
+    its element is greater than `ρA[i, 0]`, i.e. the smallest value in `ρA[i]`, then
+    `ρA[i]` will be updated. In case of tied value `v`, it will be inserted to the
+    left side of the lowest index in `ρA[i]` whose value is `v`.
 
     Parameters
     ----------
