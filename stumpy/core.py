@@ -2709,11 +2709,14 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
 @njit
 def _shift_insert_at_index(a, idx, v, shift="right"):
     """
-    If `shift=right`, all elements in `a[idx:]` are shifted to the right by one element
-    and the last element is discarded. If `shift=left` (or any string value other
-    than "right") all elements in `a[:idx]` are shifted to the left by one element
-    and the first element is discarded. In both cases, the length of `a` remains
-    unchanged.
+    If `shift=right`(default), all elements in `a[idx:]` are shifted to the right by
+    one element and the last element is discarded. If  `shift=left`, all elements in
+    `a[:idx]` are shifted to the left by one element and the first element is discarded.
+    In both cases, the length of `a` remains unchanged.
+
+    Note that for any other string value for parameter `shift`, the parameter will be
+    reset to `shift="right"`.
+
 
     Parameters
     ----------
@@ -2723,7 +2726,7 @@ def _shift_insert_at_index(a, idx, v, shift="right"):
     idx: int
         The index at which the value `v` should be inserted. This can be any
         integer number from `0` to `len(a)`. When `idx=len(a)` and `shift="right"`,
-        OR when `idx=0` and `shift != "right"`, then no change will occur on
+        OR when `idx=0` and `shift="left"`, then no change will occur on
         the input array `a`.
 
     v: float
@@ -2731,21 +2734,21 @@ def _shift_insert_at_index(a, idx, v, shift="right"):
 
     shift: str, default "right"
         The value that indicates whether the shifting of elements should be to the
-        right or to the left. If "right" (default), all elements in `a[idx:]` are
-        shifted to right by one element. For any other string value, all elements
+        right or to the left. If `shift="right"` (default), all elements in `a[idx:]`
+        are shifted to the right by one element. If `shift="left"`, all elements
         in `a[:idx]` are shifted to the left by one element.
 
     Returns
     -------
     None
     """
-    if shift == "right":
+    if shift == "left":
+        if 0 < idx <= len(a):
+            a[: idx - 1] = a[1:idx]
+            # elements were shifted to the left, thus the insertion index becomes `idx-1`
+            a[idx - 1] = v
+
+    else:
         if 0 <= idx < len(a):
             a[idx + 1 :] = a[idx:-1]
             a[idx] = v
-
-    else:
-        if 0 < idx <= len(a):
-            a[: idx - 1] = a[1:idx]
-            # elements were shifted to left, thus the insertion index becomes `idx-1`
-            a[idx - 1] = v
