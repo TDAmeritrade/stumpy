@@ -295,12 +295,12 @@ def _prescrump(
     out1 : numpy.ndarray
         The (top-k) Matrix profile. When k=1 (default), the first (and only) column
         in this 2D array consists of the matrix profile. When k > 1, the output
-        has exactly k columns consist of the top-k matrix profile.
+        has exactly `k` columns consisting of the top-k matrix profile.
 
     out2 : numpy.ndarray
         The (top-k) Matrix profile indices. When k=1 (default), the first (and only)
         column in this 2D array consists of the matrix profile indices. When k > 1,
-        the output has exactly k columns consist of the top-k matrix profile.
+        the output has exactly `k` columns consisting of the top-k matrix profile indices.
 
     Notes
     -----
@@ -381,14 +381,14 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
     Returns
     -------
     P : numpy.ndarray
-        The (top-k) Matrix profile. When k = 1 (default), the first and only column
-        consists of the matrix profile. When k > 1, the output has exactly k columns
-        consist of the top-k matrix profile.
+        The (top-k) Matrix profile. When k = 1 (default), the first (and only) column
+        in this 2D array consists of the matrix profile. When k > 1, the output has
+        exactly `k` columns consisting of the top-k matrix profile.
 
     I : numpy.ndarray
-        The (top-k) Matrix profile. When k = 1 (default), the first and only column
-        consists of the matrix profile indices. When k > 1, the output has exactly
-        k columns consist of the top-k matrix profile indices.
+        The (top-k) Matrix profile indices. When k = 1 (default), the first (and only)
+        column in this 2D array consists of the matrix profile indices. When k > 1,
+        the output has exactly `k` columns consisting of the top-k matrix profile indices.
 
     Notes
     -----
@@ -489,10 +489,14 @@ class scrump:
     Attributes
     ----------
     P_ : numpy.ndarray
-        The updated (top-k) matrix profile
+        The updated (top-k) matrix profile. When k=1 (default), the first (and only)
+        column in this 2D array consists of the matrix profile. When k > 1, the output
+        has exactly k columns consisting of the top-k matrix profile.
 
     I_ : numpy.ndarray
-        The updated (top-k) matrix profile indices
+        The updated (top-k) matrix profile indices. When k=1 (default), the first (and only)
+        column in this 2D array consists of the matrix profile indices. When k > 1,
+        the output has exactly k columns consisting of the top-k matrix profile indices.
 
     left_I_ : numpy.ndarray
         The updated left (top-1) matrix profile indices
@@ -758,7 +762,7 @@ class scrump:
         """
         Get the updated (top-k) matrix profile. When k=1 (default), the first (and only)
         column in this 2D array consists of the matrix profile. When k > 1, the output
-        has exactly k columns consisting of the top-k matrix profile.
+        has exactly `k` columns consisting of the top-k matrix profile.
         """
         return self._P.astype(np.float64)
 
@@ -767,7 +771,7 @@ class scrump:
         """
         Get the updated (top-k) matrix profile indices. When k=1 (default), the
         first (and only) column in this 2D array consists of the matrix profile
-        indices. When k > 1, the output has exactly k columns consisting of the top-k
+        indices. When k > 1, the output has exactly `k` columns consisting of the top-k
         matrix profile indices.
         """
         return self._I.astype(np.int64)
