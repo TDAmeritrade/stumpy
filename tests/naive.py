@@ -169,10 +169,9 @@ def searchsorted_right(a, v):
 
 def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
     """
-    Traverse distance matrix diagonally and update the top-k nearest neighbor
-    matrix profile and matrix profile indices if the parameter `row_wise` is
-    set to `False`. If the parameter `row_wise` is set to `True`,
-    it is a row-wise traversal.
+    Traverse distance matrix diagonally and update the top-k matrix profile and
+    matrix profile indices if the parameter `row_wise` is set to `False`. If the
+    parameter `row_wise` is set to `True`, it is a row-wise traversal.
     """
     if T_B is None:  # self-join:
         ignore_trivial = True
@@ -194,7 +193,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
     if exclusion_zone is None:
         exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    P = np.full((l, k + 2), np.inf)
+    P = np.full((l, k + 2), np.inf, dtype=np.float64)
     I = np.full((l, k + 2), -1, dtype=np.int64)  # two more columns are to store
     # ... left and right top-1 matrix profile indices
 
@@ -720,8 +719,10 @@ class aampi_egress(object):
         self._T_isfinite = np.isfinite(self._T)
         self._m = m
         self._p = p
-        if excl_zone is None:  # see stumpi, and make similar changes here
-            self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
+
+        if excl_zone is None:  # apply similar changes in naive `class stumpi_egress`
+            excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
+        self._excl_zone = excl_zone
 
         self._l = self._T.shape[0] - m + 1
         mp = aamp(T, m, p=p)
