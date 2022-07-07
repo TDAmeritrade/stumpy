@@ -2745,7 +2745,8 @@ def _shift_insert_at_index(a, idx, v, shift="right"):
     if shift == "left":
         if 0 < idx <= len(a):
             a[: idx - 1] = a[1:idx]
-            # elements were shifted to the left, thus the insertion index becomes `idx-1`
+            # elements were shifted to the left, thus the insertion index becomes
+            # `idx-1`
             a[idx - 1] = v
 
     else:
