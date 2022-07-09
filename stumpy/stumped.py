@@ -263,24 +263,6 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, 
     out[:, 0] = profile[:, 0]
     out[:, 1:4] = indices
 
-    # Delete data from Dask cluster
-    dask_client.cancel(T_A_future)
-    dask_client.cancel(T_B_future)
-    dask_client.cancel(M_T_future)
-    dask_client.cancel(μ_Q_future)
-    dask_client.cancel(Σ_T_inverse_future)
-    dask_client.cancel(σ_Q_inverse_future)
-    dask_client.cancel(M_T_m_1_future)
-    dask_client.cancel(μ_Q_m_1_future)
-    dask_client.cancel(T_A_subseq_isfinite_future)
-    dask_client.cancel(T_B_subseq_isfinite_future)
-    dask_client.cancel(T_A_subseq_isconstant_future)
-    dask_client.cancel(T_B_subseq_isconstant_future)
-    for diags_future in diags_futures:
-        dask_client.cancel(diags_future)
-    for future in futures:
-        dask_client.cancel(future)
-
     core._check_P(out)
 
     return out

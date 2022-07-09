@@ -150,16 +150,6 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2.0):
     out[:, 0] = profile[:, 0]
     out[:, 1:4] = indices
 
-    # Delete data from Dask cluster
-    dask_client.cancel(T_A_future)
-    dask_client.cancel(T_B_future)
-    dask_client.cancel(T_A_subseq_isfinite_future)
-    dask_client.cancel(T_B_subseq_isfinite_future)
-    for diags_future in diags_futures:
-        dask_client.cancel(diags_future)
-    for future in futures:
-        dask_client.cancel(future)
-
     core._check_P(out)
 
     return out
