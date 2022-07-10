@@ -287,6 +287,6 @@ def stumped(
     out[:, :k] = profile
     out[:, k:] = np.column_stack((indices, indices_L, indices_R))
 
-    core._check_P(out)
+    core._check_P(out[:, 0])
 
     return out

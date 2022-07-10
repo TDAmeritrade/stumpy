@@ -707,6 +707,6 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
     out[:, :k] = P
     out[:, k:] = np.column_stack((I, IL, IR))
 
-    core._check_P(out)
+    core._check_P(out[:, 0])
 
     return out

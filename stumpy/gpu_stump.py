@@ -868,6 +868,6 @@ def gpu_stump(
     out[:, :k] = profile[0]
     out[:, k:] = np.column_stack((indices[0], indices_L[0], indices_R[0]))
 
-    core._check_P(out)
+    core._check_P(out[:, 0])
 
     return out

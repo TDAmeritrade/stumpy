@@ -330,4 +330,6 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
     out[:, 0] = P[:, 0]
     out[:, 1:] = I[:, :]
 
+    core._check_P(out[:, 0])
+
     return out

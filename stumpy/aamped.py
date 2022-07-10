@@ -156,6 +156,6 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
     out[:, 0] = profile[:, 0]
     out[:, 1:4] = indices
 
-    core._check_P(out)
+    core._check_P(out[:, 0])
 
     return out

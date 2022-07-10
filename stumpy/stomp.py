@@ -159,6 +159,6 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
 
         out[i] = P, I, IL, IR
 
-    core._check_P(out)
+    core._check_P(out[:, 0])
 
     return out
