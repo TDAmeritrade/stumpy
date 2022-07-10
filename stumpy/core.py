@@ -2599,7 +2599,7 @@ def _check_P(P, threshold=1e-6):
         logger.warning("For a self-join, try setting `ignore_trivial=True`.")
 
 
-@njit(parallel=True)
+@njit
 def _merge_topk_PI(PA, PB, IA, IB):
     """
     Merge two top-k matrix profiles PA and PB, and update PA (in place) while
@@ -2635,36 +2635,27 @@ def _merge_topk_PI(PA, PB, IA, IB):
     -------
     None
     """
-    for i in prange(PB.shape[0]):
-        start = 0
-        stop = np.searchsorted(PA[i], PB[i, -1], side="right")
+    tmp_P = np.empty(PA.shape[1], dtype=np.float64)
+    tmp_I = np.empty(PA.shape[1], dtype=np.int64)
+    for i in range(len(PA)):
+        tmp_P[:] = np.empty(PA.shape[1], dtype=np.float64)
+        tmp_I[:] = np.empty(PA.shape[1], dtype=np.int64)
+        aj, bj = 0, 0
+        for k in range(len(tmp_P)):
+            if PB[i, bj] < PA[i, aj]:
+                tmp_P[k] = PB[i, bj]
+                tmp_I[k] = IB[i, bj]
+                bj += 1
+            else:
+                tmp_P[k] = PA[i, aj]
+                tmp_I[k] = IA[i, aj]
+                aj += 1
 
-        if stop == 0:
-            # means `PB[i, -1] < PA[i, 0]`, i.e. the maximum value in `PB[i]` is
-            # less than smallest value in `PA[i]`. So, we should replace `PA[i]`
-            # with `PB[i]` so that we have the top-k smallest.
-            PA[i] = PB[i]
-            IA[i] = IB[i]
-            continue
-
-        for j in range(PB.shape[1]):
-            if PB[i, j] >= PA[i, -1]:
-                # `PB[i]` is sorted ascaendingly.
-                # Hence, in next iteration: `PB[i, j+1] >= PB[i, j] >= PA[i, -1]`
-                break
-
-            # `PB[i, j]` is less than `PA[i, -1]`, the maximum value in `PA[i]`.
-            # so, we must update `PA[i]` to have the top-k smallest values.
-            idx = np.searchsorted(PA[i, start:stop], PB[i, j], side="right") + start
-
-            _shift_insert_at_index(PA[i], idx, PB[i, j], shift="right")
-            _shift_insert_at_index(IA[i], idx, IB[i, j], shift="right")
-
-            start = idx
-            stop += 1  # because of shifting elements to the right by one
+        PA[i] = tmp_P
+        IA[i] = tmp_I
 
 
-@njit(parallel=True)
+@njit
 def _merge_topk_ρI(ρA, ρB, IA, IB):
     """
     Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place) by
@@ -2700,34 +2691,25 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     -------
     None
     """
-    for i in prange(ρB.shape[0]):
-        start = np.searchsorted(ρA[i], ρB[i, 0], side="left")
-        stop = ρB.shape[1]
+    tmp_ρ = np.empty(ρA.shape[1], dtype=np.float64)
+    tmp_I = np.empty(ρA.shape[1], dtype=np.int64)
+    last_idx = len(tmp_ρ) - 1
+    for i in range(len(ρA)):
+        tmp_ρ[:] = np.empty(ρA.shape[1], dtype=np.float64)
+        tmp_I[:] = np.empty(ρA.shape[1], dtype=np.int64)
+        aj, bj = last_idx, last_idx
+        for k in range(last_idx, -1, -1):
+            if ρB[i, bj] > ρA[i, aj]:
+                tmp_ρ[k] = ρB[i, bj]
+                tmp_I[k] = IB[i, bj]
+                bj -= 1
+            else:
+                tmp_ρ[k] = ρA[i, aj]
+                tmp_I[k] = IA[i, aj]
+                aj -= 1
 
-        if start == ρB.shape[1]:
-            # means `ρB[i, 0] > ρA[i, -1]`, i.e. the minimum value in `ρB[i]` is
-            # greater than greatest value in `ρA[i]`. So, we should replace `ρA[i]`
-            # with `ρB[i]` so that we have top-k largest values
-            ρA[i] = ρB[i]
-            IA[i] = IB[i]
-            continue
-
-        for j in range(ρB.shape[1] - 1, -1, -1):
-            if ρB[i, j] <= ρA[i, 0]:
-                # `ρB[i]` is sorted ascaendingly.
-                # Hence, in the next iteration: `ρB[i, j-1] <= ρB[i, j] <= ρA[i, 0]`
-                break
-
-            # `ρB[i, j]` is greater than `ρA[i, 0]`, the minimum value in `ρA[i]`.
-            # so, we must update `ρA[i]` to make sure we have top-k largest values.
-            idx = np.searchsorted(ρA[i, start:stop], ρB[i, j], side="left") + start
-
-            _shift_insert_at_index(ρA[i], idx, ρB[i, j], shift="left")
-            _shift_insert_at_index(IA[i], idx, IB[i, j], shift="left")
-
-            stop = idx
-            if start > 0:
-                start -= 1  # because of shifting elements to the left by one
+        ρA[i] = tmp_ρ
+        IA[i] = tmp_I
 
 
 @njit
