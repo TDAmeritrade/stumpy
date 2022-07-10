@@ -1059,3 +1059,8 @@ def test_select_P_ABBA_val_inf():
     p_abba.sort()
     ref = p_abba[k - 1]
     npt.assert_almost_equal(ref, comp)
+
+
+def test_check_P():
+    with pytest.raises(ValueError):
+        core._check_P(np.random.rand(10).reshape(2, 5))

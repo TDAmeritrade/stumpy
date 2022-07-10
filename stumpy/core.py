@@ -69,12 +69,6 @@ def _compare_parameters(norm, non_norm, exclude=None):
     return is_same_params
 
 
-def _check_P(P, threshold=10e-6):
-    if are_distances_too_small(P[:, 0], threshold=threshold):  # pragma: no cover
-        logger.warning(f"A large number of values are smaller than {threshold}.")
-        logger.warning("For a self-join, try setting `ignore_trivial = True`.")
-
-
 def non_normalized(non_norm, exclude=None, replace=None):
     """
     Decorator for swapping a z-normalized function (or class) for its complementary
@@ -2565,3 +2559,27 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
             MPdist = partition[k]
 
     return MPdist
+
+
+def _check_P(P, threshold=1e-6):
+    """
+    Check if the 1-dimensional matrix profile values are too small and
+    log a warning the if true.
+
+    Parameters
+    ----------
+    P : numpy.ndarray
+        A 1-dimensional matrix profile
+
+    threshold : float, default 1e-6
+        A distance threshold
+
+    Returns
+    -------
+        None
+    """
+    if P.ndim != 1:
+        raise ValueError("`P` was {P.ndim}-dimensional and must be 1-dimensional")
+    if are_distances_too_small(P, threshold=threshold):  # pragma: no cover
+        logger.warning(f"A large number of values in `P` are smaller than {threshold}.")
+        logger.warning("For a self-join, try setting `ignore_trivial=True`.")

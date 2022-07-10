@@ -638,6 +638,6 @@ def gpu_stump(
     out[:, 0] = profile[0][:, 0]
     out[:, 1:4] = indices[0][:, :]
 
-    core._check_P(out)
+    core._check_P(out[:, 0])
 
     return out
