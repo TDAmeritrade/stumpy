@@ -1061,11 +1061,6 @@ def test_select_P_ABBA_val_inf():
     npt.assert_almost_equal(ref, comp)
 
 
-def test_check_P():
-    with pytest.raises(ValueError):
-        core._check_P(np.random.rand(10).reshape(2, 5))
-
-
 def test_merge_topk_PI():
     n = 50
     for k in range(1, 6):
@@ -1154,3 +1149,8 @@ def test_shift_insert_at_index():
             )  # update comp in place
 
             npt.assert_array_equal(ref, comp)
+
+
+def test_check_P():
+    with pytest.raises(ValueError):
+        core._check_P(np.random.rand(10).reshape(2, 5))
