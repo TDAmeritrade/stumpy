@@ -2777,4 +2777,3 @@ def _check_P(P, threshold=1e-6):
     if are_distances_too_small(P, threshold=threshold):  # pragma: no cover
         logger.warning(f"A large number of values in `P` are smaller than {threshold}.")
         logger.warning("For a self-join, try setting `ignore_trivial=True`.")
-
