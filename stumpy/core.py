@@ -2547,7 +2547,7 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
 
     k : int
         Specify the `k`th value in the concatenated matrix profiles to return. This
-        parameter is ignored when `k_func` is not None.
+        parameter is ignored when `custom_func` is not None.
 
     custom_func : object, default None
         A custom user defined function for selecting the desired value from the
