@@ -2602,34 +2602,29 @@ def _check_P(P, threshold=1e-6):
 @njit
 def _merge_topk_PI(PA, PB, IA, IB):
     """
-    Merge two top-k matrix profiles PA and PB, and update PA (in place) while
-    always choosing values of PA over values of PB in case of ties. Also, update
-    IA accordingly.
+    Merge two top-k matrix profiles `PA` and `PB`, and update `PA` (in place) while
+    always prioritizing the values of `PA` over the values of `PB` in case of ties.
+    (i.e., values from `PB` are always inserted to the right of values from `PA`).
+    Also, update `IA` accordingly.
 
     Unlike `_merge_topk_ρI`, where `top-k` largest values are kept, this function
     keeps `top-k` smallest values.
 
-    `PA` and `PB` are 2D arrays, with each row sorted ascendingly. To update `PA[i]`,
-    the array `PB[i]` is traversed forward from index `0` to its last index, and
-    if its element is smaller than `PA[i, -1]`, i.e. the greatest value in `PA[i]`,
-    then `PA[i]` will be updatd.  In case of tied value `v`, it will be inserted to
-    the right side of the greatest index in `PA[i]` whose value is `v`.
-
     Parameters
     ----------
     PA : numpy.ndarray
-        A (top-k) matrix profile, with ndim of 2, where values in each row are
-        sorted in ascending order.
+        A (top-k) matrix profile where values in each row are sorted in ascending
+        order. `PA` must be 2-dimensional.
 
     PB : numpy.ndarray
-        A (top-k) matrix profile, with ndim of 2, where values in each row are
-        sorted in ascending order. `PB` must have the same shape as `PA`.
+        A (top-k) matrix profile where values in each row are sorted in ascending
+        order. `PB` must have the same shape as `PA`.
 
     IA : numpy.ndarray
-        A (top-k) matrix profile indices corresponding to PA
+        A (top-k) matrix profile indices corresponding to `PA`
 
     IB : numpy.ndarray
-        A (top-k) matrix profile indices corresponding to PB
+        A (top-k) matrix profile indices corresponding to `PB`
 
     Returns
     -------
@@ -2656,34 +2651,29 @@ def _merge_topk_PI(PA, PB, IA, IB):
 @njit
 def _merge_topk_ρI(ρA, ρB, IA, IB):
     """
-    Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place) by
-    keeping the top-k largest values in merging two `top-k` rows `ρA[i]` and `ρB[i]`,
-    each sorted ascendingly.
+    Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place) while
+    always prioritizing the values of `ρA` over the values of `ρB` in case of ties.
+    (i.e., values from `ρB` are always inserted to the left of values from `ρA`).
+    Also, update `IA` accordingly.
 
     Unlike `_merge_topk_PI`, where `top-k` smallest values are kept, this function
     keeps `top-k` largest values.
 
-    `ρA` and `ρB` are 2D arrays, with each row sorted ascendingly. To update `ρA[i]`,
-    the array `ρB[i]` is traversed backward from its last index to index 0, and if
-    its element is greater than `ρA[i, 0]`, i.e. the smallest value in `ρA[i]`, then
-    `ρA[i]` will be updated. In case of tied value `v`, it will be inserted to the
-    left side of the lowest index in `ρA[i]` whose value is `v`.
-
     Parameters
     ----------
     ρA : numpy.ndarray
-        A (top-k) pearson profile, with ndim of 2, where values in each row are
-        sorted in ascending order.
+        A (top-k) pearson profile where values in each row are sorted in ascending
+        order. `ρA` must be 2-dimensional.
 
     ρB : numpy.ndarray
-        A (top-k) pearson profile, with ndim of 2, where values in each row are
-        sorted in ascending order. `ρB` must have the same shape as `ρA`.
+        A (top-k) pearson profile, where values in each row are sorted in ascending
+        order. `ρB` must have the same shape as `ρA`.
 
     IA : numpy.ndarray
-        A (top-k) matrix profile indices corresponding to ρA
+        A (top-k) matrix profile indices corresponding to `ρA`
 
     IB : numpy.ndarray
-        A (top-k) matrix profile indices corresponding to ρB
+        A (top-k) matrix profile indices corresponding to `ρB`
 
     Returns
     -------
