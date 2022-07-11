@@ -2635,11 +2635,9 @@ def _merge_topk_PI(PA, PB, IA, IB):
     -------
     None
     """
-    tmp_P = np.empty(PA.shape[1], dtype=np.float64)
-    tmp_I = np.empty(PA.shape[1], dtype=np.int64)
     for i in range(len(PA)):
-        tmp_P[:] = np.empty(PA.shape[1], dtype=np.float64)
-        tmp_I[:] = np.empty(PA.shape[1], dtype=np.int64)
+        tmp_P = np.empty(PA.shape[1], dtype=np.float64)
+        tmp_I = np.empty(PA.shape[1], dtype=np.int64)
         aj, bj = 0, 0
         for k in range(len(tmp_P)):
             if PB[i, bj] < PA[i, aj]:
@@ -2691,12 +2689,10 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     -------
     None
     """
-    tmp_ρ = np.empty(ρA.shape[1], dtype=np.float64)
-    tmp_I = np.empty(ρA.shape[1], dtype=np.int64)
-    last_idx = len(tmp_ρ) - 1
+    last_idx = ρA.shape[1] - 1
     for i in range(len(ρA)):
-        tmp_ρ[:] = np.empty(ρA.shape[1], dtype=np.float64)
-        tmp_I[:] = np.empty(ρA.shape[1], dtype=np.int64)
+        tmp_ρ = np.empty(ρA.shape[1], dtype=np.float64)
+        tmp_I = np.empty(ρA.shape[1], dtype=np.int64)
         aj, bj = last_idx, last_idx
         for k in range(last_idx, -1, -1):
             if ρB[i, bj] > ρA[i, aj]:
