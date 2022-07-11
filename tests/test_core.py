@@ -1149,3 +1149,8 @@ def test_shift_insert_at_index():
             )  # update comp in place
 
             npt.assert_array_equal(ref, comp)
+
+
+def test_check_P():
+    with pytest.raises(ValueError):
+        core._check_P(np.random.rand(10).reshape(2, 5))

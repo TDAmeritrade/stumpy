@@ -2753,3 +2753,28 @@ def _shift_insert_at_index(a, idx, v, shift="right"):
         if 0 <= idx < len(a):
             a[idx + 1 :] = a[idx:-1]
             a[idx] = v
+
+
+def _check_P(P, threshold=1e-6):
+    """
+    Check if the 1-dimensional matrix profile values are too small and
+    log a warning the if true.
+
+    Parameters
+    ----------
+    P : numpy.ndarray
+        A 1-dimensional matrix profile
+
+    threshold : float, default 1e-6
+        A distance threshold
+
+    Returns
+    -------
+        None
+    """
+    if P.ndim != 1:
+        raise ValueError("`P` was {P.ndim}-dimensional and must be 1-dimensional")
+    if are_distances_too_small(P, threshold=threshold):  # pragma: no cover
+        logger.warning(f"A large number of values in `P` are smaller than {threshold}.")
+        logger.warning("For a self-join, try setting `ignore_trivial=True`.")
+
