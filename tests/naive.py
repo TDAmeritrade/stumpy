@@ -218,7 +218,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
 
             # self-join: right matrix profile index (top-1)
             if ignore_trivial and i < D.shape[0]:
-                IR = i + np.argmin(D[i:])  # shift arg by `i` to get true index
+                IR = i + np.argmin(D[i:])  # offset by `i` to get true index
                 if D[IR] == np.inf:
                     IR = -1
                 I[i, k + 1] = IR
@@ -239,7 +239,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
                 d = distance_matrix[i, i + g]
                 if d < P[i, k - 1]:
                     idx = searchsorted_right(P[i], d)
-                    # to keep the top-k, we must get rid of the last element.
+                    # to keep the top-k, we must discard the last element.
                     P[i, :k] = np.insert(P[i, :k], idx, d)[:-1]
                     I[i, :k] = np.insert(I[i, :k], idx, i + g)[:-1]
 
@@ -854,8 +854,8 @@ class stumpi_egress(object):
         self.I_[-1] = I_last_topk + self._n_appended
         self.I_[-1][self.P_[-1] == np.inf] = -1
 
-        # for  last indx, the left matrix profile value is self.P_[-1, 0]
-        # and the same goes for left matrix profile index
+        # for the last index, the left matrix profile value is self.P_[-1, 0]
+        # and the same goes for the left matrix profile index
         self.left_P_[-1] = self.P_[-1, 0]
         self.left_I_[-1] = self.I_[-1, 0]
 

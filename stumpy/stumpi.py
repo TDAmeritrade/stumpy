@@ -266,8 +266,9 @@ class stumpi:
                 core._shift_insert_at_index(self._P[-1], pos, d)
                 core._shift_insert_at_index(self._I[-1], pos, i + self._n_appended)
 
-        # All neighbors of the last subsequence are on its left. So, its matrix profile
-        # value/index and its left matrix profile value/index must be equal.
+        # All neighbors of the last subsequence are on its left. So, its (top-1)
+        # matrix profile value/index and its left matrix profile value/index must
+        # be equal.
         self._left_P[-1] = self._P[-1, 0]
         self._left_I[-1] = self._I[-1, 0]
 
