@@ -2680,7 +2680,7 @@ def _shift_insert_at_index(a, idx, v, shift="right"):
     If `shift=right`(default), all elements in `a[idx:]` are shifted to the right by
     one element and the last element is discarded. If  `shift=left`, all elements in
     `a[:idx]` are shifted to the left by one element and the first element is discarded.
-    In both cases, the length of `a` remains unchanged.
+    In both cases, `a` is updated in palce and its length remains unchanged.
 
     Note that for any other string value for parameter `shift`, the parameter will be
     reset to `shift="right"`.
