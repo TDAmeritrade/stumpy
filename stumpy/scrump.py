@@ -684,9 +684,9 @@ class scrump:
 
         if pre_scrump:
             if self._ignore_trivial:
-                P, I = prescrump(T_A, m, s=s, k=k)
+                P, I = prescrump(T_A, m, s=s, k=self._k)
             else:
-                P, I = prescrump(T_A, m, T_B=T_B, s=s, k=k)
+                P, I = prescrump(T_A, m, T_B=T_B, s=s, k=self._k)
 
             core._merge_topk_PI(self._P, P, self._I, I)
 
