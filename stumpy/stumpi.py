@@ -249,10 +249,10 @@ class stumpi:
 
         update_idx = np.argwhere(D < self._P[:, -1]).flatten()
         for i in update_idx:
-            pos = np.searchsorted(self._P[i], D[i], side="right")
-            core._shift_insert_at_index(self._P[i], pos, D[i])
+            idx = np.searchsorted(self._P[i], D[i], side="right")
+            core._shift_insert_at_index(self._P[i], idx, D[i])
             core._shift_insert_at_index(
-                self._I[i], pos, D.shape[0] + self._n_appended - 1
+                self._I[i], idx, D.shape[0] + self._n_appended - 1
             )
             # D.shape[0] is base-1
 
@@ -262,9 +262,9 @@ class stumpi:
         self._I[-1] = -1
         for i, d in enumerate(D):
             if d < self._P[-1, -1]:
-                pos = np.searchsorted(self._P[-1], d, side="right")
-                core._shift_insert_at_index(self._P[-1], pos, d)
-                core._shift_insert_at_index(self._I[-1], pos, i + self._n_appended)
+                idx = np.searchsorted(self._P[-1], d, side="right")
+                core._shift_insert_at_index(self._P[-1], idx, d)
+                core._shift_insert_at_index(self._I[-1], idx, i + self._n_appended)
 
         # All neighbors of the last subsequence are on its left. So, its (top-1)
         # matrix profile value/index and its left matrix profile value/index must
@@ -316,9 +316,9 @@ class stumpi:
 
         update_idx = np.argwhere(D[:l] < self._P[:l, -1]).flatten()
         for i in update_idx:
-            pos = np.searchsorted(self._P[i], D[i], side="right")
-            core._shift_insert_at_index(self._P[i], pos, D[i])
-            core._shift_insert_at_index(self._I[i], pos, l)
+            idx = np.searchsorted(self._P[i], D[i], side="right")
+            core._shift_insert_at_index(self._P[i], idx, D[i])
+            core._shift_insert_at_index(self._I[i], idx, l)
 
         # Calculating top-k matrix profile and (top-1) left matrix profile (and thier
         # corresponding indices) for new subsequence whose distance profie is `D`
@@ -326,9 +326,9 @@ class stumpi:
         I_new = np.full(self._k, -1, dtype=np.int64)
         for i, d in enumerate(D):
             if d < P_new[-1]:  # maximum value in sorted array P_new
-                pos = np.searchsorted(P_new, d, side="right")
-                core._shift_insert_at_index(P_new, pos, d)
-                core._shift_insert_at_index(I_new, pos, i)
+                idx = np.searchsorted(P_new, d, side="right")
+                core._shift_insert_at_index(P_new, idx, d)
+                core._shift_insert_at_index(I_new, idx, i)
 
         left_I_new = I_new[0]
         left_P_new = P_new[0]

@@ -148,22 +148,22 @@ def _compute_PI(
                 σ_Q[j + g],
             )
             if D_squared < P_squared[thread_idx, i + g, -1]:
-                pos = np.searchsorted(
+                idx = np.searchsorted(
                     P_squared[thread_idx, i + g], D_squared, side="right"
                 )
                 core._shift_insert_at_index(
-                    P_squared[thread_idx, i + g], pos, D_squared
+                    P_squared[thread_idx, i + g], idx, D_squared
                 )
-                core._shift_insert_at_index(I[thread_idx, i + g], pos, j + g)
+                core._shift_insert_at_index(I[thread_idx, i + g], idx, j + g)
 
             if D_squared < P_squared[thread_idx, j + g, -1]:
-                pos = np.searchsorted(
+                idx = np.searchsorted(
                     P_squared[thread_idx, j + g], D_squared, side="right"
                 )
                 core._shift_insert_at_index(
-                    P_squared[thread_idx, j + g], pos, D_squared
+                    P_squared[thread_idx, j + g], idx, D_squared
                 )
-                core._shift_insert_at_index(I[thread_idx, j + g], pos, i + g)
+                core._shift_insert_at_index(I[thread_idx, j + g], idx, i + g)
 
         QT_j = QT_j_prime
         # Update top-k for both subsequences `S[i-g] = T[i-g:i-g+m]` and
@@ -180,22 +180,22 @@ def _compute_PI(
                 σ_Q[j - g],
             )
             if D_squared < P_squared[thread_idx, i - g, -1]:
-                pos = np.searchsorted(
+                idx = np.searchsorted(
                     P_squared[thread_idx, i - g], D_squared, side="right"
                 )
                 core._shift_insert_at_index(
-                    P_squared[thread_idx, i - g], pos, D_squared
+                    P_squared[thread_idx, i - g], idx, D_squared
                 )
-                core._shift_insert_at_index(I[thread_idx, i - g], pos, j - g)
+                core._shift_insert_at_index(I[thread_idx, i - g], idx, j - g)
 
             if D_squared < P_squared[thread_idx, j - g, -1]:
-                pos = np.searchsorted(
+                idx = np.searchsorted(
                     P_squared[thread_idx, j - g], D_squared, side="right"
                 )
                 core._shift_insert_at_index(
-                    P_squared[thread_idx, j - g], pos, D_squared
+                    P_squared[thread_idx, j - g], idx, D_squared
                 )
-                core._shift_insert_at_index(I[thread_idx, j - g], pos, i - g)
+                core._shift_insert_at_index(I[thread_idx, j - g], idx, i - g)
 
         # In the case of a self-join, the calculated distance profile can also be
         # used to refine the top-k for all non-trivial subsequences
@@ -205,17 +205,17 @@ def _compute_PI(
             # can be used to update the top-k for BOTH subsequence `i` and
             # subsequence `j`. We update the latter here.
 
-            idx = np.flatnonzero(
+            indices = np.flatnonzero(
                 squared_distance_profile < P_squared[thread_idx, :, -1]
             )
-            for j in idx:
-                pos = np.searchsorted(
+            for j in indices:
+                idx = np.searchsorted(
                     P_squared[thread_idx, j], squared_distance_profile[j], side="right"
                 )
                 core._shift_insert_at_index(
-                    P_squared[thread_idx, j], pos, squared_distance_profile[j]
+                    P_squared[thread_idx, j], idx, squared_distance_profile[j]
                 )
-                core._shift_insert_at_index(I[thread_idx, j], pos, i)
+                core._shift_insert_at_index(I[thread_idx, j], idx, i)
 
 
 @njit(

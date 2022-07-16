@@ -217,22 +217,22 @@ def _compute_diagonal(
                 # first (i.e. smallest) element in this array. Note that a higher
                 # pearson value corresponds to a lower distance.
                 if pearson > ρ[thread_idx, i, 0]:
-                    pos = np.searchsorted(ρ[thread_idx, i], pearson)
+                    idx = np.searchsorted(ρ[thread_idx, i], pearson)
                     core._shift_insert_at_index(
-                        ρ[thread_idx, i], pos, pearson, shift="left"
+                        ρ[thread_idx, i], idx, pearson, shift="left"
                     )
                     core._shift_insert_at_index(
-                        I[thread_idx, i], pos, i + g, shift="left"
+                        I[thread_idx, i], idx, i + g, shift="left"
                     )
 
                 if ignore_trivial:  # self-joins only
                     if pearson > ρ[thread_idx, i + g, 0]:
-                        pos = np.searchsorted(ρ[thread_idx, i + g], pearson)
+                        idx = np.searchsorted(ρ[thread_idx, i + g], pearson)
                         core._shift_insert_at_index(
-                            ρ[thread_idx, i + g], pos, pearson, shift="left"
+                            ρ[thread_idx, i + g], idx, pearson, shift="left"
                         )
                         core._shift_insert_at_index(
-                            I[thread_idx, i + g], pos, i, shift="left"
+                            I[thread_idx, i + g], idx, i, shift="left"
                         )
 
                     if i < i + g:
