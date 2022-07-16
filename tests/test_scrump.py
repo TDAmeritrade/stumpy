@@ -384,7 +384,7 @@ def test_scrump_plus_plus_self_join(T_A, T_B, percentages):
             comp_I = approx.I_
 
             naive.replace_inf(ref_P)
-            naive.replace_inf(comp_I)
+            naive.replace_inf(comp_P)
 
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
@@ -810,7 +810,7 @@ def test_scrump_plus_plus_self_join_KNN(T_A, T_B, percentages):
                 comp_I = approx.I_
 
                 naive.replace_inf(ref_P)
-                naive.replace_inf(comp_I)
+                naive.replace_inf(comp_P)
 
                 npt.assert_almost_equal(ref_P, comp_P)
                 npt.assert_almost_equal(ref_I, comp_I)
