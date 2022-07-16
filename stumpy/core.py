@@ -2677,13 +2677,13 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
 @njit
 def _shift_insert_at_index(a, idx, v, shift="right"):
     """
-    If `shift=right`(default), all elements in `a[idx:]` are shifted to the right by
-    one element and the last element is discarded. If  `shift=left`, all elements in
-    `a[:idx]` are shifted to the left by one element and the first element is discarded.
-    In both cases, `a` is updated in palce and its length remains unchanged.
+    If `shift=right` (default), all elements in `a[idx:]` are shifted to the right by
+    one element, `v` in inserted at index `idx` and the last element is discarded.
+    If `shift=left`, all elements in `a[:idx]` are shifted to the left by one element,
+    `v` in inserted at index `idx-1`, and the first element is discarded. In both cases,
+    `a` is updated in place and its length remains unchanged.
 
-    Note that for any other string value for parameter `shift`, the parameter will be
-    reset to `shift="right"`.
+    Note that all unrecognized `shift` inputs will default to `shift=right`.
 
 
     Parameters
@@ -2701,8 +2701,8 @@ def _shift_insert_at_index(a, idx, v, shift="right"):
         The value that should be inserted into array `a` at index `idx`
 
     shift: str, default "right"
-        The value that indicates whether the shifting of elements should be to the
-        right or to the left. If `shift="right"` (default), all elements in `a[idx:]`
+        The value that indicates whether the shifting of elements should be towards
+        the right or left. If `shift="right"` (default), all elements in `a[idx:]`
         are shifted to the right by one element. If `shift="left"`, all elements
         in `a[:idx]` are shifted to the left by one element.
 
@@ -2716,7 +2716,6 @@ def _shift_insert_at_index(a, idx, v, shift="right"):
             # elements were shifted to the left, thus the insertion index becomes
             # `idx-1`
             a[idx - 1] = v
-
     else:
         if 0 <= idx < len(a):
             a[idx + 1 :] = a[idx:-1]
