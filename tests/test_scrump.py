@@ -814,3 +814,23 @@ def test_scrump_plus_plus_self_join_KNN(T_A, T_B, percentages):
 
                 npt.assert_almost_equal(ref_P, comp_P)
                 npt.assert_almost_equal(ref_I, comp_I)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_prescrump_self_join_larger_window_m_5_k_5(T_A, T_B):
+    m = 5
+    k = 5
+    zone = int(np.ceil(m / 4))
+
+    if len(T_B) > m:
+        for s in range(1, zone + 1):
+            seed = np.random.randint(100000)
+
+            np.random.seed(seed)
+            ref_P, ref_I = naive.prescrump(T_B, m, T_B, s=s, exclusion_zone=zone)
+
+            np.random.seed(seed)
+            comp_P, comp_I = prescrump(T_B, m, s=s)
+
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
