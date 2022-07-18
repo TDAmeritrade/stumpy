@@ -144,7 +144,7 @@ def _compute_PI(
                 if D_squared < P_squared[thread_idx, i + k]:
                     P_squared[thread_idx, i + k] = D_squared
                     I[thread_idx, i + k] = j + k
-                if D_squared < P_squared[thread_idx, j + k]:
+                if excl_zone is not None and D_squared < P_squared[thread_idx, j + k]:
                     P_squared[thread_idx, j + k] = D_squared
                     I[thread_idx, j + k] = i + k
             QT_j = QT_j_prime
@@ -161,7 +161,7 @@ def _compute_PI(
                 if D_squared < P_squared[thread_idx, i - k]:
                     P_squared[thread_idx, i - k] = D_squared
                     I[thread_idx, i - k] = j - k
-                if D_squared < P_squared[thread_idx, j - k]:
+                if excl_zone is not None and D_squared < P_squared[thread_idx, j - k]:
                     P_squared[thread_idx, j - k] = D_squared
                     I[thread_idx, j - k] = i - k
 
