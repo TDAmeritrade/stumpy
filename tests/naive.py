@@ -1420,7 +1420,7 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None):
                 if d < P[i + k]:
                     P[i + k] = d
                     I[i + k] = j + k
-                if d < P[j + k]:
+                if exclusion_zone is not None and d < P[j + k]:
                     P[j + k] = d
                     I[j + k] = i + k
 
@@ -1429,7 +1429,7 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None):
                 if d < P[i - k]:
                     P[i - k] = d
                     I[i - k] = j - k
-                if d < P[j - k]:
+                if exclusion_zone is not None and d < P[j - k]:
                     P[j - k] = d
                     I[j - k] = i - k
 
