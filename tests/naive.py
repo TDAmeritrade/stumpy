@@ -1442,7 +1442,7 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
                 pos = np.searchsorted(P[i + g], d, side="right")
                 P[i + g] = np.insert(P[i + g], pos, d)[:-1]
                 I[i + g] = np.insert(I[i + g], pos, j + g)[:-1]
-            if d < P[j + g, -1]:
+            if exclusion_zone is not None and d < P[j + g, -1]:
                 pos = np.searchsorted(P[j + g], d, side="right")
                 P[j + g] = np.insert(P[j + g], pos, d)[:-1]
                 I[j + g] = np.insert(I[j + g], pos, i + g)[:-1]
@@ -1453,7 +1453,7 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
                 pos = np.searchsorted(P[i - g], d, side="right")
                 P[i - g] = np.insert(P[i - g], pos, d)[:-1]
                 I[i - g] = np.insert(I[i - g], pos, j - g)[:-1]
-            if d < P[j - g, -1]:
+            if exclusion_zone is not None and d < P[j - g, -1]:
                 pos = np.searchsorted(P[j - g], d, side="right")
                 P[j - g] = np.insert(P[j - g], pos, d)[:-1]
                 I[j - g] = np.insert(I[j - g], pos, i - g)[:-1]

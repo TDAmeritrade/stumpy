@@ -156,7 +156,7 @@ def _compute_PI(
                 )
                 core._shift_insert_at_index(I[thread_idx, i + g], idx, j + g)
 
-            if D_squared < P_squared[thread_idx, j + g, -1]:
+            if excl_zone is not None and D_squared < P_squared[thread_idx, j + g, -1]:
                 idx = np.searchsorted(
                     P_squared[thread_idx, j + g], D_squared, side="right"
                 )
@@ -188,7 +188,7 @@ def _compute_PI(
                 )
                 core._shift_insert_at_index(I[thread_idx, i - g], idx, j - g)
 
-            if D_squared < P_squared[thread_idx, j - g, -1]:
+            if excl_zone is not None and D_squared < P_squared[thread_idx, j - g, -1]:
                 idx = np.searchsorted(
                     P_squared[thread_idx, j - g], D_squared, side="right"
                 )
