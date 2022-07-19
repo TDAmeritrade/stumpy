@@ -1119,7 +1119,7 @@ def test_merge_topk_PI():
         comp_I = IA.copy()
 
         naive.merge_topk_PI(ref_P, PB, ref_I, IB, assume_unique=False)
-        core._merge_topk_PI(comp_P, PB, comp_I, IB)
+        core._merge_topk_PI(comp_P, PB, comp_I, IB, assume_unique=False)
 
         npt.assert_array_equal(ref_P, comp_P)
         npt.assert_array_equal(ref_I, comp_I)
