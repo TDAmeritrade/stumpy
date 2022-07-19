@@ -1426,10 +1426,15 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
         if exclusion_zone is not None:
             apply_exclusion_zone(distance_profile, i, exclusion_zone, np.inf)
 
-        I[i, 1:] = I[i, :-1]
-        I[i, 0] = np.argmin(distance_profile)
-        P[i, 1:] = P[i, :-1]
-        P[i, 0] = distance_profile[I[i, 0]]
+        idx = np.argmin(distance_profile)
+        if idx not in I[i]:
+            I[i, 1:] = I[i, :-1]
+            I[i, 0] = idx
+            P[i, 1:] = P[i, :-1]
+            P[i, 0] = distance_profile[I[i, 0]]
+
+        # else: the idx, i.e. 1NN of `i`, was already obtained (it maynot be stored
+        # at the first index of array I[i] though!)
 
         if P[i, 0] == np.inf:
             I[i, 0] = -1
@@ -1440,31 +1445,36 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
             d = dist_matrix[i + g, j + g]
             if d < P[i + g, -1]:
                 pos = np.searchsorted(P[i + g], d, side="right")
-                P[i + g] = np.insert(P[i + g], pos, d)[:-1]
-                I[i + g] = np.insert(I[i + g], pos, j + g)[:-1]
+                if (j + g) not in I[i + g, :pos]:
+                    P[i + g] = np.insert(P[i + g], pos, d)[:-1]
+                    I[i + g] = np.insert(I[i + g], pos, j + g)[:-1]
             if exclusion_zone is not None and d < P[j + g, -1]:
                 pos = np.searchsorted(P[j + g], d, side="right")
-                P[j + g] = np.insert(P[j + g], pos, d)[:-1]
-                I[j + g] = np.insert(I[j + g], pos, i + g)[:-1]
+                if (i + g) not in I[j + g, :pos]:
+                    P[j + g] = np.insert(P[j + g], pos, d)[:-1]
+                    I[j + g] = np.insert(I[j + g], pos, i + g)[:-1]
 
         for g in range(1, min(s, i + 1, j + 1)):
             d = dist_matrix[i - g, j - g]
             if d < P[i - g, -1]:
                 pos = np.searchsorted(P[i - g], d, side="right")
-                P[i - g] = np.insert(P[i - g], pos, d)[:-1]
-                I[i - g] = np.insert(I[i - g], pos, j - g)[:-1]
+                if (j - g) not in I[i - g, :pos]:
+                    P[i - g] = np.insert(P[i - g], pos, d)[:-1]
+                    I[i - g] = np.insert(I[i - g], pos, j - g)[:-1]
             if exclusion_zone is not None and d < P[j - g, -1]:
                 pos = np.searchsorted(P[j - g], d, side="right")
-                P[j - g] = np.insert(P[j - g], pos, d)[:-1]
-                I[j - g] = np.insert(I[j - g], pos, i - g)[:-1]
+                if (i - g) not in I[j - g, :pos]:
+                    P[j - g] = np.insert(P[j - g], pos, d)[:-1]
+                    I[j - g] = np.insert(I[j - g], pos, i - g)[:-1]
 
         # In the case of a self-join, the calculated distance profile can also be
         # used to refine the top-k for all non-trivial subsequences
         if exclusion_zone is not None:
             for idx in np.flatnonzero(distance_profile < P[:, -1]):
                 pos = np.searchsorted(P[idx], distance_profile[idx], side="right")
-                P[idx] = np.insert(P[idx], pos, distance_profile[idx])[:-1]
-                I[idx] = np.insert(I[idx], pos, i)[:-1]
+                if i not in I[idx, :pos]:
+                    P[idx] = np.insert(P[idx], pos, distance_profile[idx])[:-1]
+                    I[idx] = np.insert(I[idx], pos, i)[:-1]
 
     return P, I
 
