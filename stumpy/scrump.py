@@ -116,6 +116,8 @@ def _compute_PI(
 
         nn_idx = np.argmin(squared_distance_profile)
         if nn_idx not in I[thread_idx, i]:
+            # It is more than likely that the top-k values for the `i`-th subsequence
+            # will be already populated. So, we must shift-insert here 
             core._shift_insert_at_index(
                 P_squared[thread_idx, i], 0, squared_distance_profile[nn_idx]
             )
