@@ -1518,13 +1518,15 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s, k=1):
                     d = dist_matrix[i, j]
                     if d < P[i, -1]:  # update TopK of P[i]
                         idx = searchsorted_right(P[i], d)
-                        P[i] = np.insert(P[i], idx, d)[:-1]
-                        I[i] = np.insert(I[i], idx, i + g)[:-1]
+                        if (i + g) not in I[i, :idx]:
+                            P[i] = np.insert(P[i], idx, d)[:-1]
+                            I[i] = np.insert(I[i], idx, i + g)[:-1]
 
                     if exclusion_zone is not None and d < P[i + g, -1]:
                         idx = searchsorted_right(P[i + g], d)
-                        P[i + g] = np.insert(P[i + g], idx, d)[:-1]
-                        I[i + g] = np.insert(I[i + g], idx, i)[:-1]
+                        if i not in I[i + g, :idx]:
+                            P[i + g] = np.insert(P[i + g], idx, d)[:-1]
+                            I[i + g] = np.insert(I[i + g], idx, i)[:-1]
 
                     # left matrix profile and left matrix profile indices
                     if exclusion_zone is not None and i < i + g and d < PL[i + g]:
