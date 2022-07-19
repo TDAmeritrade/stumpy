@@ -2576,7 +2576,7 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
 
 
 @njit
-def _merge_topk_PI(PA, PB, IA, IB):
+def _merge_topk_PI(PA, PB, IA, IB, assume_unique=True):
     """
     Merge two top-k matrix profiles `PA` and `PB`, and update `PA` (in place) while
     always prioritizing the values of `PA` over the values of `PB` in case of ties.
@@ -2602,22 +2602,55 @@ def _merge_topk_PI(PA, PB, IA, IB):
     IB : numpy.ndarray
         A (top-k) matrix profile indices corresponding to `PB`
 
+    assume_unique : bool, default True
+        If True (default), each row of IA and its corresponding row in IB have no
+        duplicates. False otherwise.
+
     Returns
     -------
     None
     """
-    tmp_P = np.empty(PA.shape[1], dtype=np.float64)
-    tmp_I = np.empty(PA.shape[1], dtype=np.int64)
-    for i in range(len(PA)):
+    k = PA.shape[1]
+    tmp_P = np.empty(k, dtype=np.float64)
+    tmp_I = np.empty(k, dtype=np.int64)
+    for i in range(PA.shape[0]):
         aj, bj = 0, 0
-        for k in range(len(tmp_P)):
+        idx = 0
+        prev_val = np.inf
+        for _ in range(2 * k):  # 2 * k to traverse both A and B
+            if idx >= k:
+                break
+            if aj >= k:  # PA is already fully traversed.
+                tmp_P[idx:] = PB[i, bj : bj + k - idx]
+                tmp_I[idx:] = IB[i, bj : bj + k - idx]
+                break
+            if bj >= k:  # PB is already fully traversed.
+                tmp_P[idx:] = PA[i, aj : aj + k - idx]
+                tmp_I[idx:] = IA[i, aj : aj + k - idx]
+                break
+
             if PB[i, bj] < PA[i, aj]:
-                tmp_P[k] = PB[i, bj]
-                tmp_I[k] = IB[i, bj]
+                if (
+                    assume_unique
+                    or abs(PB[i, bj] - prev_val) > 1e-6
+                    or IB[i, bj] not in tmp_I[:idx]
+                ):
+                    tmp_P[idx] = PB[i, bj]
+                    tmp_I[idx] = IB[i, bj]
+                    prev_val = tmp_P[idx]
+                    idx += 1
                 bj += 1
+
             else:
-                tmp_P[k] = PA[i, aj]
-                tmp_I[k] = IA[i, aj]
+                if (
+                    assume_unique
+                    or abs(PB[i, bj] - prev_val) > 1e-6
+                    or IB[i, bj] not in tmp_I[:idx]
+                ):
+                    tmp_P[k] = PA[i, aj]
+                    tmp_I[k] = IA[i, aj]
+                    prev_val = tmp_P[idx]
+                    idx += 1
                 aj += 1
 
         PA[i] = tmp_P
