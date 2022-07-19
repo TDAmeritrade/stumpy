@@ -2644,8 +2644,8 @@ def _merge_topk_PI(PA, PB, IA, IB, assume_unique=True):
             else:
                 if (
                     assume_unique
-                    or abs(PA[i, bj] - prev_val) > 1e-6
-                    or IB[i, bj] not in tmp_I[:idx]
+                    or abs(PA[i, aj] - prev_val) > 1e-6
+                    or IA[i, aj] not in tmp_I[:idx]
                 ):
                     tmp_P[idx] = PA[i, aj]
                     tmp_I[idx] = IA[i, aj]
