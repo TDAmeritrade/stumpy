@@ -677,8 +677,8 @@ def test_prescrump_self_join_KNN(T_A, T_B):
             np.random.seed(seed)
             comp_P, comp_I = prescrump(T_B, m, s=s, k=k)
 
-            npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
+            npt.assert_almost_equal(ref_P, comp_P)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
