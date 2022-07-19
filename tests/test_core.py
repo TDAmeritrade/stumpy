@@ -1062,6 +1062,7 @@ def test_select_P_ABBA_val_inf():
 
 
 def test_merge_topk_PI():
+    # `assume_unique = True`
     n = 50
     for k in range(1, 6):
         PA = np.random.rand(n * k).reshape(n, k)
@@ -1083,6 +1084,41 @@ def test_merge_topk_PI():
         comp_I = IA.copy()
 
         naive.merge_topk_PI(ref_P, PB, ref_I, IB)
+        core._merge_topk_PI(comp_P, PB, comp_I, IB)
+
+        npt.assert_array_equal(ref_P, comp_P)
+        npt.assert_array_equal(ref_I, comp_I)
+
+    # `assume_unique = False`
+    n = 50
+    for k in range(1, 6):
+        PA = np.random.rand(n * k).reshape(n, k)
+        PB = np.random.rand(n * k).reshape(n, k)
+
+        IA = np.arange(n * k).reshape(n, k)
+        IB = IA + n * k
+
+        col_idx_A = np.random.randint(0, k, size=n)
+        col_idx_B = np.random.randint(0, k, size=n)
+        for i in range(n):  # creating random duplicates between A and B
+            PB[i, col_idx_B[i]] = PA[i, col_idx_A[i]] + np.random.rand(1) * 1e-8
+            IB[i, col_idx_B[i]] = IA[i, col_idx_A[i]]
+
+        IDX = np.argsort(PA, axis=1)
+        PA[:, :] = np.take_along_axis(PA, IDX, axis=1)
+        IA[:, :] = np.take_along_axis(IA, IDX, axis=1)
+
+        IDX = np.argsort(PB, axis=1)
+        PB[:, :] = np.take_along_axis(PB, IDX, axis=1)
+        IB[:, :] = np.take_along_axis(IB, IDX, axis=1)
+
+        ref_P = PA.copy()
+        ref_I = IA.copy()
+
+        comp_P = PA.copy()
+        comp_I = IA.copy()
+
+        naive.merge_topk_PI(ref_P, PB, ref_I, IB, assume_unique=False)
         core._merge_topk_PI(comp_P, PB, comp_I, IB)
 
         npt.assert_array_equal(ref_P, comp_P)
