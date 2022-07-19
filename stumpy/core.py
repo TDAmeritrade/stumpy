@@ -2632,7 +2632,7 @@ def _merge_topk_PI(PA, PB, IA, IB, assume_unique=True):
             if PB[i, bj] < PA[i, aj]:
                 if (
                     assume_unique
-                    or abs(PB[i, bj] - prev_val) > 1e-6
+                    or abs(PB[i, bj] - prev_val) > 1e-3
                     or IB[i, bj] not in tmp_I[:idx][::-1]  # traverse in reverse to
                     # find duplicate in shorter time
                 ):
@@ -2645,7 +2645,7 @@ def _merge_topk_PI(PA, PB, IA, IB, assume_unique=True):
             else:
                 if (
                     assume_unique
-                    or abs(PA[i, aj] - prev_val) > 1e-6
+                    or abs(PA[i, aj] - prev_val) > 1e-3
                     or IA[i, aj] not in tmp_I[:idx][::-1]  # traverse in reverse to
                     # find duplicate in shorter time
                 ):
