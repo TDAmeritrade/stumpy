@@ -1807,7 +1807,7 @@ def merge_topk_PI(PA, PB, IA, IB, assume_unique=True):
     profile = np.column_stack((PA, PB))
     indices = np.column_stack((IA, IB))
 
-    IDX = np.argsort(profile, axis=1)
+    IDX = np.argsort(profile, axis=1, kind="mergesort")
     if assume_unique:
         profile[:, :] = np.take_along_axis(profile, IDX, axis=1)
         indices[:, :] = np.take_along_axis(indices, IDX, axis=1)
