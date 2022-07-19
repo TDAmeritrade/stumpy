@@ -700,7 +700,7 @@ class scrump:
             else:
                 P, I = prescrump(T_A, m, T_B=T_B, s=s, k=self._k)
 
-            core._merge_topk_PI(self._P, P, self._I, I)
+            core._merge_topk_PI(self._P, P, self._I, I, assume_unique=False)
 
         if self._ignore_trivial:
             self._diags = np.random.permutation(
@@ -758,7 +758,7 @@ class scrump:
             )
 
             # Update (top-k) matrix profile and indices
-            core._merge_topk_PI(self._P, P, self._I, I)
+            core._merge_topk_PI(self._P, P, self._I, I, assume_unique=False)
 
             # update left matrix profile and indices
             mask = PL < self._PL
