@@ -115,10 +115,11 @@ def _compute_PI(
             core._apply_exclusion_zone(squared_distance_profile, i, excl_zone, np.inf)
 
         nn_idx = np.argmin(squared_distance_profile)
-        core._shift_insert_at_index(
-            P_squared[thread_idx, i], 0, squared_distance_profile[nn_idx]
-        )
-        core._shift_insert_at_index(I[thread_idx, i], 0, nn_idx)
+        if nn_idx not in I[thread_idx, i]:
+            core._shift_insert_at_index(
+                P_squared[thread_idx, i], 0, squared_distance_profile[nn_idx]
+            )
+            core._shift_insert_at_index(I[thread_idx, i], 0, nn_idx)
 
         if P_squared[thread_idx, i, 0] == np.inf:  # pragma: no cover
             I[thread_idx, i, 0] = -1
@@ -151,19 +152,21 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, i + g], D_squared, side="right"
                 )
-                core._shift_insert_at_index(
-                    P_squared[thread_idx, i + g], idx, D_squared
-                )
-                core._shift_insert_at_index(I[thread_idx, i + g], idx, j + g)
+                if (j + g) not in I[thread_idx, i + g, :idx]:
+                    core._shift_insert_at_index(
+                        P_squared[thread_idx, i + g], idx, D_squared
+                    )
+                    core._shift_insert_at_index(I[thread_idx, i + g], idx, j + g)
 
             if excl_zone is not None and D_squared < P_squared[thread_idx, j + g, -1]:
                 idx = np.searchsorted(
                     P_squared[thread_idx, j + g], D_squared, side="right"
                 )
-                core._shift_insert_at_index(
-                    P_squared[thread_idx, j + g], idx, D_squared
-                )
-                core._shift_insert_at_index(I[thread_idx, j + g], idx, i + g)
+                if (i + g) not in I[thread_idx, j + g, :idx]:
+                    core._shift_insert_at_index(
+                        P_squared[thread_idx, j + g], idx, D_squared
+                    )
+                    core._shift_insert_at_index(I[thread_idx, j + g], idx, i + g)
 
         QT_j = QT_j_prime
         # Update top-k for both subsequences `S[i-g] = T[i-g:i-g+m]` and
@@ -183,19 +186,21 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, i - g], D_squared, side="right"
                 )
-                core._shift_insert_at_index(
-                    P_squared[thread_idx, i - g], idx, D_squared
-                )
-                core._shift_insert_at_index(I[thread_idx, i - g], idx, j - g)
+                if (j - g) not in I[thread_idx, i - g, :idx]:
+                    core._shift_insert_at_index(
+                        P_squared[thread_idx, i - g], idx, D_squared
+                    )
+                    core._shift_insert_at_index(I[thread_idx, i - g], idx, j - g)
 
             if excl_zone is not None and D_squared < P_squared[thread_idx, j - g, -1]:
                 idx = np.searchsorted(
                     P_squared[thread_idx, j - g], D_squared, side="right"
                 )
-                core._shift_insert_at_index(
-                    P_squared[thread_idx, j - g], idx, D_squared
-                )
-                core._shift_insert_at_index(I[thread_idx, j - g], idx, i - g)
+                if (i - g) not in I[thread_idx, j - g, :idx]:
+                    core._shift_insert_at_index(
+                        P_squared[thread_idx, j - g], idx, D_squared
+                    )
+                    core._shift_insert_at_index(I[thread_idx, j - g], idx, i - g)
 
         # In the case of a self-join, the calculated distance profile can also be
         # used to refine the top-k for all non-trivial subsequences
@@ -212,10 +217,11 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, j], squared_distance_profile[j], side="right"
                 )
-                core._shift_insert_at_index(
-                    P_squared[thread_idx, j], idx, squared_distance_profile[j]
-                )
-                core._shift_insert_at_index(I[thread_idx, j], idx, i)
+                if i not in I[thread_idx, j, :idx]:
+                    core._shift_insert_at_index(
+                        P_squared[thread_idx, j], idx, squared_distance_profile[j]
+                    )
+                    core._shift_insert_at_index(I[thread_idx, j], idx, i)
 
 
 @njit(
@@ -337,7 +343,13 @@ def _prescrump(
         )
 
     for thread_idx in range(1, n_threads):
-        core._merge_topk_PI(P_squared[0], P_squared[thread_idx], I[0], I[thread_idx])
+        core._merge_topk_PI(
+            P_squared[0],
+            P_squared[thread_idx],
+            I[0],
+            I[thread_idx],
+            assume_unique=False,
+        )
 
     return np.sqrt(P_squared[0]), I[0]
 
