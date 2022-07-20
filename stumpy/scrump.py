@@ -136,7 +136,7 @@ def _compute_PI(
         # Update top-k for both subsequences `S[i+g] = T[i+g:i+g+m]`` and
         # `S[j+g] = T[j+g:j+g+m]` (i.e., the right neighbors of `T[i : i+m]` and
         # `T[j:j+m]`) by using the distance between `S[i+g]` and `S[j+g]`
-        for g in range(1, min(s, l - l - i, w - j)):
+        for g in range(1, min(s, l - i, w - j)):
             QT_j = (
                 QT_j
                 - T_B[j + g - 1] * T_A[i + g - 1]

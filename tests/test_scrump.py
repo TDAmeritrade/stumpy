@@ -662,6 +662,7 @@ def test_scrump_nan_zero_mean_self_join(percentages):
         npt.assert_almost_equal(ref_left_I, comp_left_I)
         npt.assert_almost_equal(ref_right_I, comp_right_I)
 
+
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_prescrump_A_B_join_larger_window(T_A, T_B):
     m = 5
@@ -678,6 +679,7 @@ def test_prescrump_A_B_join_larger_window(T_A, T_B):
 
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
+
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_prescrump_self_join_KNN(T_A, T_B):
