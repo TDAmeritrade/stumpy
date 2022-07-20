@@ -1415,8 +1415,8 @@ def aampdist_snippets(
 def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
     dist_matrix = distance_matrix(T_A, T_B, m)
 
-    n_A = T_A.shape[0]
-    l = n_A - m + 1
+    l = T_A.shape[0] - m + 1  # matrix profile length
+    w = T_B.shape[0] - m + 1  # distance profile length
 
     P = np.full((l, k), np.inf, dtype=np.float64)
     I = np.full((l, k), -1, dtype=np.int64)
@@ -1441,7 +1441,7 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
             continue
 
         j = nn_idx
-        for g in range(1, min(s, l - max(i, j))):
+        for g in range(1, min(s, l - i, w - j)):
             d = dist_matrix[i + g, j + g]
             if d < P[i + g, -1]:
                 pos = np.searchsorted(P[i + g], d, side="right")
@@ -1544,8 +1544,8 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s, k=1):
 def prescraamp(T_A, m, T_B, s, exclusion_zone=None, p=2.0):
     distance_matrix = aamp_distance_matrix(T_A, T_B, m, p)
 
-    n_A = T_A.shape[0]
-    l = n_A - m + 1
+    l = T_A.shape[0] - m + 1  # length of matrix profile
+    w = T_B.shape[0] - m + 1  # length of each distance profile
 
     P = np.empty(l)
     I = np.empty(l, dtype=np.int64)
@@ -1568,12 +1568,12 @@ def prescraamp(T_A, m, T_B, s, exclusion_zone=None, p=2.0):
             I[i] = -1
         else:
             j = I[i]
-            for k in range(1, min(s, l - max(i, j))):
+            for k in range(1, min(s, l - i, w - j)):
                 d = distance_matrix[i + k, j + k]
                 if d < P[i + k]:
                     P[i + k] = d
                     I[i + k] = j + k
-                if d < P[j + k]:
+                if exclusion_zone is not None and d < P[j + k]:
                     P[j + k] = d
                     I[j + k] = i + k
 
@@ -1582,7 +1582,7 @@ def prescraamp(T_A, m, T_B, s, exclusion_zone=None, p=2.0):
                 if d < P[i - k]:
                     P[i - k] = d
                     I[i - k] = j - k
-                if d < P[j - k]:
+                if exclusion_zone is not None and d < P[j - k]:
                     P[j - k] = d
                     I[j - k] = i - k
 
