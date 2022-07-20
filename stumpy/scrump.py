@@ -154,7 +154,13 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, i + g], D_squared, side="right"
                 )
-                if (j + g) not in I[thread_idx, i + g]:
+                # Due to numerical error, it is possible that the element that is
+                # about to insert at idx is identical to an element of array located
+                # at idx, idx + 1, .... Hence, we should traverse full array.
+                # This is optimized in the if conditon.
+                if ((j + g) not in I[thread_idx, i + g, :idx][::-1]) and (
+                    (j + g) not in I[thread_idx, i + g, idx:]
+                ):
                     core._shift_insert_at_index(
                         P_squared[thread_idx, i + g], idx, D_squared
                     )
@@ -164,7 +170,9 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, j + g], D_squared, side="right"
                 )
-                if (i + g) not in I[thread_idx, j + g]:
+                if ((i + g) not in I[thread_idx, j + g, :idx][::-1]) and (
+                    (i + g) not in I[thread_idx, j + g, idx:]
+                ):
                     core._shift_insert_at_index(
                         P_squared[thread_idx, j + g], idx, D_squared
                     )
@@ -188,7 +196,9 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, i - g], D_squared, side="right"
                 )
-                if (j - g) not in I[thread_idx, i - g]:
+                if ((j - g) not in I[thread_idx, i - g, :idx][::-1]) and (
+                    (j - g) not in I[thread_idx, i - g, idx:]
+                ):
                     core._shift_insert_at_index(
                         P_squared[thread_idx, i - g], idx, D_squared
                     )
@@ -198,7 +208,9 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, j - g], D_squared, side="right"
                 )
-                if (i - g) not in I[thread_idx, j - g]:
+                if ((i - g) not in I[thread_idx, j - g, :idx][::-1]) and (
+                    (i - g) not in I[thread_idx, j - g, idx:]
+                ):
                     core._shift_insert_at_index(
                         P_squared[thread_idx, j - g], idx, D_squared
                     )
@@ -219,7 +231,9 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, j], squared_distance_profile[j], side="right"
                 )
-                if i not in I[thread_idx, j]:
+                if (i not in I[thread_idx, j, :idx][::-1]) and (
+                    i not in I[thread_idx, j, idx:]
+                ):
                     core._shift_insert_at_index(
                         P_squared[thread_idx, j], idx, squared_distance_profile[j]
                     )
