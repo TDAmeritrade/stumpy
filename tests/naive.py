@@ -1850,7 +1850,7 @@ def merge_topk_ρI(ρA, ρB, IA, IB):
     profile = np.column_stack((ρB, ρA))
     indices = np.column_stack((IB, IA))
 
-    idx = np.argsort(profile, axis=1)
+    idx = np.argsort(profile, axis=1, kind="mergesort")
     profile[:, :] = np.take_along_axis(profile, idx, axis=1)
     indices[:, :] = np.take_along_axis(indices, idx, axis=1)
 
