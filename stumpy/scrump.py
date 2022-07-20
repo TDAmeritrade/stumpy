@@ -127,7 +127,7 @@ def _compute_PI(
             I[thread_idx, i, 0] = -1
             continue
 
-        j = I[thread_idx, i, 0]
+        j = nn_idx
         # Given the squared distance, work backwards and compute QT
         QT_j = (m - P_squared[thread_idx, i, 0] / 2.0) * (Σ_T[j] * σ_Q[i]) + (
             m * M_T[j] * μ_Q[i]
@@ -154,7 +154,7 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, i + g], D_squared, side="right"
                 )
-                if (j + g) not in I[thread_idx, i + g, :idx]:
+                if (j + g) not in I[thread_idx, i + g]:
                     core._shift_insert_at_index(
                         P_squared[thread_idx, i + g], idx, D_squared
                     )
@@ -164,7 +164,7 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, j + g], D_squared, side="right"
                 )
-                if (i + g) not in I[thread_idx, j + g, :idx]:
+                if (i + g) not in I[thread_idx, j + g]:
                     core._shift_insert_at_index(
                         P_squared[thread_idx, j + g], idx, D_squared
                     )
@@ -188,7 +188,7 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, i - g], D_squared, side="right"
                 )
-                if (j - g) not in I[thread_idx, i - g, :idx]:
+                if (j - g) not in I[thread_idx, i - g]:
                     core._shift_insert_at_index(
                         P_squared[thread_idx, i - g], idx, D_squared
                     )
@@ -198,7 +198,7 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, j - g], D_squared, side="right"
                 )
-                if (i - g) not in I[thread_idx, j - g, :idx]:
+                if (i - g) not in I[thread_idx, j - g]:
                     core._shift_insert_at_index(
                         P_squared[thread_idx, j - g], idx, D_squared
                     )
@@ -219,7 +219,7 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, j], squared_distance_profile[j], side="right"
                 )
-                if i not in I[thread_idx, j, :idx]:
+                if i not in I[thread_idx, j]:
                     core._shift_insert_at_index(
                         P_squared[thread_idx, j], idx, squared_distance_profile[j]
                     )
