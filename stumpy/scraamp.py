@@ -88,8 +88,10 @@ def _compute_PI(
     -------
     None
     """
-    l = T_B.shape[0] - m + 1
-    p_norm_profile = np.empty(l)
+    l = T_A.shape[0] - m + 1  # length of matrix profile
+    w = T_B.shape[0] - m + 1  # length of each distance profile
+
+    p_norm_profile = np.empty(w)
     for i in indices[start:stop]:
         if not T_A_subseq_isfinite[i]:  # pragma: no cover
             p_norm_profile[:] = np.inf
@@ -117,11 +119,11 @@ def _compute_PI(
             # Given the squared distance, work backwards and compute QT
             p_norm_j = P_NORM[thread_idx, i]
             p_norm_j_prime = p_norm_j
-            for k in range(1, min(s, l - max(i, j))):
+            for k in range(1, min(s, l - i, w - j)):
                 p_norm_j = (
                     p_norm_j
-                    - abs(T_B[i + k - 1] - T_A[j + k - 1]) ** p
-                    + abs(T_B[i + k + m - 1] - T_A[j + k + m - 1]) ** p
+                    - abs(T_B[j + k - 1] - T_A[i + k - 1]) ** p
+                    + abs(T_B[j + k + m - 1] - T_A[i + k + m - 1]) ** p
                 )
                 if (
                     not T_A_subseq_isfinite[i + k] or not T_B_subseq_isfinite[j + k]
@@ -141,8 +143,8 @@ def _compute_PI(
             for k in range(1, min(s, i + 1, j + 1)):
                 p_norm_j = (
                     p_norm_j
-                    - abs(T_B[i - k + m] - T_A[j - k + m]) ** p
-                    + abs(T_B[i - k] - T_A[j - k]) ** p
+                    - abs(T_B[j - k + m] - T_A[i - k + m]) ** p
+                    + abs(T_B[j - k] - T_A[i - k]) ** p
                 )
                 if (
                     not T_A_subseq_isfinite[i - k] or not T_B_subseq_isfinite[j - k]

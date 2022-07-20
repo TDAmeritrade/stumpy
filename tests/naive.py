@@ -1391,8 +1391,8 @@ def aampdist_snippets(
 def prescrump(T_A, m, T_B, s, exclusion_zone=None):
     dist_matrix = distance_matrix(T_A, T_B, m)
 
-    n_A = T_A.shape[0]
-    l = n_A - m + 1
+    l = T_A.shape[0] - m + 1  # matrix profile length
+    w = T_B.shape[0] - m + 1  # distance profile length
 
     P = np.empty(l)
     I = np.empty(l, dtype=np.int64)
@@ -1415,7 +1415,7 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None):
             I[i] = -1
         else:
             j = I[i]
-            for k in range(1, min(s, l - max(i, j))):
+            for k in range(1, min(s, l - i, w - j)):
                 d = dist_matrix[i + k, j + k]
                 if d < P[i + k]:
                     P[i + k] = d
@@ -1501,8 +1501,8 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s):
 def prescraamp(T_A, m, T_B, s, exclusion_zone=None, p=2.0):
     distance_matrix = aamp_distance_matrix(T_A, T_B, m, p)
 
-    n_A = T_A.shape[0]
-    l = n_A - m + 1
+    l = T_A.shape[0] - m + 1  # length of matrix profile
+    w = T_B.shape[0] - m + 1  # length of each distance profile
 
     P = np.empty(l)
     I = np.empty(l, dtype=np.int64)
@@ -1525,7 +1525,7 @@ def prescraamp(T_A, m, T_B, s, exclusion_zone=None, p=2.0):
             I[i] = -1
         else:
             j = I[i]
-            for k in range(1, min(s, l - max(i, j))):
+            for k in range(1, min(s, l - i, w - j)):
                 d = distance_matrix[i + k, j + k]
                 if d < P[i + k]:
                     P[i + k] = d
