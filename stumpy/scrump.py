@@ -19,10 +19,10 @@ def _compute_PI(
     T_A,
     T_B,
     m,
-    M_T,
-    Σ_T,
     μ_Q,
     σ_Q,
+    M_T,
+    Σ_T,
     indices,
     start,
     stop,
@@ -48,17 +48,17 @@ def _compute_PI(
     m : int
         Window size
 
-    M_T : numpy.ndarray
-        Sliding window mean for T_B
-
-    Σ_T : numpy.ndarray
-        Sliding window standard deviation for T_B
-
     μ_Q : numpy.ndarray
         Sliding window mean for T_A
 
     σ_Q : numpy.ndarray
         Sliding window standard deviation for T_A
+
+    M_T : numpy.ndarray
+        Sliding window mean for T_B
+
+    Σ_T : numpy.ndarray
+        Sliding window standard deviation for T_B
 
     indices : numpy.ndarray
         The subsequence indices to compute `prescrump` for
@@ -176,10 +176,10 @@ def _prescrump(
     T_A,
     T_B,
     m,
-    M_T,
-    Σ_T,
     μ_Q,
     σ_Q,
+    M_T,
+    Σ_T,
     indices,
     s,
     excl_zone=None,
@@ -199,17 +199,17 @@ def _prescrump(
     m : int
         Window size
 
-    M_T : numpy.ndarray
-        Sliding window mean for T_B
-
-    Σ_T : numpy.ndarray
-        Sliding window standard deviation for T_B
-
     μ_Q : numpy.ndarray
         Sliding window mean for T_A
 
     σ_Q : numpy.ndarray
         Sliding window standard deviation for T_A
+
+    M_T : numpy.ndarray
+        Sliding window mean for T_B
+
+    Σ_T : numpy.ndarray
+        Sliding window standard deviation for T_B
 
     indices : numpy.ndarray
         The subsequence indices to compute `prescrump` for
@@ -257,10 +257,10 @@ def _prescrump(
             T_A,
             T_B,
             m,
-            M_T,
-            Σ_T,
             μ_Q,
             σ_Q,
+            M_T,
+            Σ_T,
             indices,
             idx_ranges[thread_idx, 0],
             idx_ranges[thread_idx, 1],
@@ -347,10 +347,10 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0):
         T_A,
         T_B,
         m,
-        M_T,
-        Σ_T,
         μ_Q,
         σ_Q,
+        M_T,
+        Σ_T,
         indices,
         s,
         excl_zone,
