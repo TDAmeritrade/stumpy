@@ -97,9 +97,10 @@ def _compute_PI(
 
     See Algorithm 2
     """
-    l = T_B.shape[0] - m + 1
-    squared_distance_profile = np.empty(l)
-    QT = np.empty(l, dtype=np.float64)
+    l = T_A.shape[0] - m + 1  # length of matrix profile
+    w = T_B.shape[0] - m + 1  # length of distance profile
+    squared_distance_profile = np.empty(w)
+    QT = np.empty(w, dtype=np.float64)
     for i in indices[start:stop]:
         Q = T_A[i : i + m]
         QT[:] = core._sliding_dot_product(Q, T_B)
@@ -127,7 +128,7 @@ def _compute_PI(
                 m * M_T[j] * μ_Q[i]
             )
             QT_j_prime = QT_j
-            for k in range(1, min(s, l - max(i, j))):
+            for k in range(1, min(s, l - i, w - j)):
                 QT_j = (
                     QT_j
                     - T_B[i + k - 1] * T_A[j + k - 1]
