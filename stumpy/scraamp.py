@@ -134,7 +134,7 @@ def _compute_PI(
                 if p_norm < P_NORM[thread_idx, i + k]:
                     P_NORM[thread_idx, i + k] = p_norm
                     I[thread_idx, i + k] = j + k
-                if p_norm < P_NORM[thread_idx, j + k]:
+                if excl_zone is not None and p_norm < P_NORM[thread_idx, j + k]:
                     P_NORM[thread_idx, j + k] = p_norm
                     I[thread_idx, j + k] = i + k
             p_norm_j = p_norm_j_prime
@@ -155,7 +155,7 @@ def _compute_PI(
                 if p_norm < P_NORM[thread_idx, i - k]:
                     P_NORM[thread_idx, i - k] = p_norm
                     I[thread_idx, i - k] = j - k
-                if p_norm < P_NORM[thread_idx, j - k]:
+                if excl_zone is not None and p_norm < P_NORM[thread_idx, j - k]:
                     P_NORM[thread_idx, j - k] = p_norm
                     I[thread_idx, j - k] = i - k
 
