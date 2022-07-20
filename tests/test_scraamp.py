@@ -723,3 +723,21 @@ def test_scraamp_nan_zero_mean_self_join(percentages):
         npt.assert_almost_equal(ref_I, comp_I)
         npt.assert_almost_equal(ref_left_I, comp_left_I)
         npt.assert_almost_equal(ref_right_I, comp_right_I)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_prescraamp_A_B_join_larger_window(T_A, T_B):
+    m = 5
+    zone = int(np.ceil(m / 4))
+    if len(T_A) > m and len(T_B) > m:
+        for s in range(1, zone + 1):
+            seed = np.random.randint(100000)
+
+            np.random.seed(seed)
+            ref_P, ref_I = naive.prescraamp(T_A, m, T_B, s=s)
+
+            np.random.seed(seed)
+            comp_P, comp_I = prescraamp(T_A, m, T_B, s=s)
+
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
