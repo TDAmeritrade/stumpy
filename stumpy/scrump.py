@@ -19,10 +19,10 @@ def _compute_PI(
     T_A,
     T_B,
     m,
-    M_T,
-    Σ_T,
     μ_Q,
     σ_Q,
+    M_T,
+    Σ_T,
     indices,
     start,
     stop,
@@ -49,18 +49,17 @@ def _compute_PI(
     m : int
         Window size
 
-    M_T : numpy.ndarray
-        Sliding window mean for T_A
-
-    Σ_T : numpy.ndarray
-        Sliding window standard deviation for T_A
-
     μ_Q : numpy.ndarray
-        Mean of the query sequence, `Q`, relative to the current sliding window in `T_B`
+        Sliding window mean for `T_A`
 
     σ_Q : numpy.ndarray
-        Standard deviation of the query sequence, `Q`, relative to the current
-        sliding window in `T_B`
+        Sliding window standard deviation for `T_A`
+
+    M_T : numpy.ndarray
+        Sliding window mean for `T_B`
+
+    Σ_T : numpy.ndarray
+        Sliding window standard deviation for `T_B`
 
     indices : numpy.ndarray
         The subsequence indices to compute `prescrump` for
@@ -103,9 +102,10 @@ def _compute_PI(
 
     See Algorithm 2
     """
-    l = T_B.shape[0] - m + 1
-    squared_distance_profile = np.empty(l)
-    QT = np.empty(l, dtype=np.float64)
+    l = T_A.shape[0] - m + 1  # length of matrix profile
+    w = T_B.shape[0] - m + 1  # length of distance profile
+    squared_distance_profile = np.empty(w)
+    QT = np.empty(w, dtype=np.float64)
     for i in indices[start:stop]:
         Q = T_A[i : i + m]
         QT[:] = core._sliding_dot_product(Q, T_B)
@@ -136,19 +136,19 @@ def _compute_PI(
         # Update top-k for both subsequences `S[i+g] = T[i+g:i+g+m]`` and
         # `S[j+g] = T[j+g:j+g+m]` (i.e., the right neighbors of `T[i : i+m]` and
         # `T[j:j+m]`) by using the distance between `S[i+g]` and `S[j+g]`
-        for g in range(1, min(s, l - max(i, j))):
+        for g in range(1, min(s, l - l - i, w - j)):
             QT_j = (
                 QT_j
-                - T_B[i + g - 1] * T_A[j + g - 1]
-                + T_B[i + g + m - 1] * T_A[j + g + m - 1]
+                - T_B[j + g - 1] * T_A[i + g - 1]
+                + T_B[j + g + m - 1] * T_A[i + g + m - 1]
             )
             D_squared = core._calculate_squared_distance(
                 m,
                 QT_j,
-                M_T[i + g],
-                Σ_T[i + g],
-                μ_Q[j + g],
-                σ_Q[j + g],
+                M_T[j + g],
+                Σ_T[j + g],
+                μ_Q[i + g],
+                σ_Q[i + g],
             )
             if D_squared < P_squared[thread_idx, i + g, -1]:
                 idx = np.searchsorted(
@@ -175,14 +175,14 @@ def _compute_PI(
         # `S[j-g] = T[j-g:j-g+m]` (i.e., the left neighbors of `T[i : i+m]` and
         # `T[j:j+m]`) by using the distance between `S[i-g]` and `S[j-g]`
         for g in range(1, min(s, i + 1, j + 1)):
-            QT_j = QT_j - T_B[i - g + m] * T_A[j - g + m] + T_B[i - g] * T_A[j - g]
+            QT_j = QT_j - T_B[j - g + m] * T_A[i - g + m] + T_B[j - g] * T_A[i - g]
             D_squared = core._calculate_squared_distance(
                 m,
                 QT_j,
-                M_T[i - g],
-                Σ_T[i - g],
-                μ_Q[j - g],
-                σ_Q[j - g],
+                M_T[j - g],
+                Σ_T[j - g],
+                μ_Q[i - g],
+                σ_Q[i - g],
             )
             if D_squared < P_squared[thread_idx, i - g, -1]:
                 idx = np.searchsorted(
@@ -236,10 +236,10 @@ def _prescrump(
     T_A,
     T_B,
     m,
-    M_T,
-    Σ_T,
     μ_Q,
     σ_Q,
+    M_T,
+    Σ_T,
     indices,
     s,
     excl_zone=None,
@@ -260,18 +260,18 @@ def _prescrump(
     m : int
         Window size
 
-    M_T : numpy.ndarray
-        Sliding window mean for T_A
-
-    Σ_T : numpy.ndarray
-        Sliding window standard deviation for T_A
-
     μ_Q : numpy.ndarray
-        Mean of the query sequence, `Q`, relative to the current sliding window in `T_B`
+        Sliding window mean for `T_A`
 
     σ_Q : numpy.ndarray
-        Standard deviation of the query sequence, `Q`, relative to the current
-        sliding window in `T_B`
+        Sliding window standard deviation for `T_A`
+
+    M_T : numpy.ndarray
+        Sliding window mean for `T_B`
+
+    Σ_T : numpy.ndarray
+        Sliding window standard deviation for `T_B`
+
 
     indices : numpy.ndarray
         The subsequence indices to compute `prescrump` for
@@ -329,10 +329,10 @@ def _prescrump(
             T_A,
             T_B,
             m,
-            M_T,
-            Σ_T,
             μ_Q,
             σ_Q,
+            M_T,
+            Σ_T,
             indices,
             idx_ranges[thread_idx, 0],
             idx_ranges[thread_idx, 1],
@@ -433,10 +433,10 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
         T_A,
         T_B,
         m,
-        M_T,
-        Σ_T,
         μ_Q,
         σ_Q,
+        M_T,
+        Σ_T,
         indices,
         s,
         excl_zone,
