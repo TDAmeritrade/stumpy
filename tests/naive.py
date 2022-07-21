@@ -1805,7 +1805,7 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
 def merge_topk_PI(PA, PB, IA, IB):
     k = PA.shape[1]
     for i in range(PA.shape[0]):
-        _, _, overlap_idx_B = np.intersect1d(IA[i], IB[i])
+        _, _, overlap_idx_B = np.intersect1d(IA[i], IB[i], return_indices=True)
         PB[i, overlap_idx_B] = np.inf
 
     profile = np.column_stack((PA, PB))
