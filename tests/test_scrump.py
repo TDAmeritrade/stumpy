@@ -373,7 +373,7 @@ def test_scrump_plus_plus_self_join(T_A, T_B, percentages):
             ref_P_aux, ref_I_aux, _, _ = naive.scrump(
                 T_B, m, T_B, percentage, zone, True, s
             )
-            naive.merge_topk_PI(ref_P, ref_P_aux, ref_I, ref_I_aux, assume_unique=False)
+            naive.merge_topk_PI(ref_P, ref_P_aux, ref_I, ref_I_aux)
 
             np.random.seed(seed)
             approx = scrump(
@@ -406,7 +406,7 @@ def test_scrump_plus_plus_A_B_join(T_A, T_B, percentages):
             ref_P_aux, ref_I_aux, ref_left_I_aux, ref_right_I_aux = naive.scrump(
                 T_A, m, T_B, percentage, None, False, None
             )
-            naive.merge_topk_PI(ref_P, ref_P_aux, ref_I, ref_I_aux, assume_unique=False)
+            naive.merge_topk_PI(ref_P, ref_P_aux, ref_I, ref_I_aux)
             ref_left_I = ref_left_I_aux
             ref_right_I = ref_right_I_aux
 
@@ -812,7 +812,7 @@ def test_scrump_plus_plus_self_join_KNN(T_A, T_B, percentages):
                     T_B, m, T_B, percentage, zone, True, s, k=k
                 )
                 naive.merge_topk_PI(
-                    ref_P, ref_P_aux, ref_I, ref_I_aux, assume_unique=False
+                    ref_P, ref_P_aux, ref_I, ref_I_aux
                 )
 
                 np.random.seed(seed)
