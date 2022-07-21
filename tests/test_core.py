@@ -1083,8 +1083,8 @@ def test_merge_topk_PI():
         comp_P = PA.copy()
         comp_I = IA.copy()
 
-        naive.merge_topk_PI(ref_P, PB, ref_I, IB)
-        core._merge_topk_PI(comp_P, PB, comp_I, IB)
+        naive.merge_topk_PI(ref_P, PB.copy(), ref_I, IB.copy())
+        core._merge_topk_PI(comp_P, PB.copy(), comp_I, IB.copy())
 
         npt.assert_array_equal(ref_P, comp_P)
         npt.assert_array_equal(ref_I, comp_I)
@@ -1098,12 +1098,14 @@ def test_merge_topk_PI():
         IA = np.arange(n * k).reshape(n, k)
         IB = IA + n * k
 
-        col_idx_A = np.random.randint(0, k, size=n)
-        col_idx_B = np.random.randint(0, k, size=n)
-        for i in range(n):  # creating random duplicates between A and B
-            PB[i, col_idx_B[i]] = PA[i, col_idx_A[i]] + np.random.rand(1) * 1e-8
-            IB[i, col_idx_B[i]] = IA[i, col_idx_A[i]]
+        cols_idx_A = np.random.randint(0, k, size=n)
+        for i in range(n):
+            # create overlaps
+            IDX = np.random.choice(np.arange(k), cols_idx_A[i], replace=False)
+            PB[i, IDX] = PA[i, IDX]
+            IB[i, IDX]] = IA[i, IDX]
 
+        # sort each row of PA/PB (and update  IA/IB accordingly)
         IDX = np.argsort(PA, axis=1)
         PA[:, :] = np.take_along_axis(PA, IDX, axis=1)
         IA[:, :] = np.take_along_axis(IA, IDX, axis=1)
@@ -1118,8 +1120,8 @@ def test_merge_topk_PI():
         comp_P = PA.copy()
         comp_I = IA.copy()
 
-        naive.merge_topk_PI(ref_P, PB, ref_I, IB, assume_unique=False)
-        core._merge_topk_PI(comp_P, PB, comp_I, IB, assume_unique=False)
+        naive.merge_topk_PI(ref_P, PB.copy(), ref_I, IB.copy())
+        core._merge_topk_PI(comp_P, PB.copy(), comp_I, IB.copy())
 
         npt.assert_array_equal(ref_P, comp_P)
         npt.assert_array_equal(ref_I, comp_I)
