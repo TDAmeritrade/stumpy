@@ -811,9 +811,7 @@ def test_scrump_plus_plus_self_join_KNN(T_A, T_B, percentages):
                 ref_P_aux, ref_I_aux, _, _ = naive.scrump(
                     T_B, m, T_B, percentage, zone, True, s, k=k
                 )
-                naive.merge_topk_PI(
-                    ref_P, ref_P_aux, ref_I, ref_I_aux
-                )
+                naive.merge_topk_PI(ref_P, ref_P_aux, ref_I, ref_I_aux)
 
                 np.random.seed(seed)
                 approx = scrump(
