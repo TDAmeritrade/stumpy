@@ -1445,12 +1445,12 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
             d = dist_matrix[i + g, j + g]
             if d < P[i + g, -1]:
                 pos = np.searchsorted(P[i + g], d, side="right")
-                if (j + g) not in I[i + g, :]:
+                if (j + g) not in I[i + g]:
                     P[i + g] = np.insert(P[i + g], pos, d)[:-1]
                     I[i + g] = np.insert(I[i + g], pos, j + g)[:-1]
             if exclusion_zone is not None and d < P[j + g, -1]:
                 pos = np.searchsorted(P[j + g], d, side="right")
-                if (i + g) not in I[j + g, :]:
+                if (i + g) not in I[j + g]:
                     P[j + g] = np.insert(P[j + g], pos, d)[:-1]
                     I[j + g] = np.insert(I[j + g], pos, i + g)[:-1]
 
@@ -1458,12 +1458,12 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
             d = dist_matrix[i - g, j - g]
             if d < P[i - g, -1]:
                 pos = np.searchsorted(P[i - g], d, side="right")
-                if (j - g) not in I[i - g, :]:
+                if (j - g) not in I[i - g]:
                     P[i - g] = np.insert(P[i - g], pos, d)[:-1]
                     I[i - g] = np.insert(I[i - g], pos, j - g)[:-1]
             if exclusion_zone is not None and d < P[j - g, -1]:
                 pos = np.searchsorted(P[j - g], d, side="right")
-                if (i - g) not in I[j - g, :]:
+                if (i - g) not in I[j - g]:
                     P[j - g] = np.insert(P[j - g], pos, d)[:-1]
                     I[j - g] = np.insert(I[j - g], pos, i - g)[:-1]
 
@@ -1472,7 +1472,7 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
         if exclusion_zone is not None:
             for idx in np.flatnonzero(distance_profile < P[:, -1]):
                 pos = np.searchsorted(P[idx], distance_profile[idx], side="right")
-                if i not in I[idx, :]:
+                if i not in I[idx]:
                     P[idx] = np.insert(P[idx], pos, distance_profile[idx])[:-1]
                     I[idx] = np.insert(I[idx], pos, i)[:-1]
 
@@ -1518,13 +1518,13 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s, k=1):
                     d = dist_matrix[i, j]
                     if d < P[i, -1]:  # update TopK of P[i]
                         idx = searchsorted_right(P[i], d)
-                        if (i + g) not in I[i, :]:
+                        if (i + g) not in I[i]:
                             P[i] = np.insert(P[i], idx, d)[:-1]
                             I[i] = np.insert(I[i], idx, i + g)[:-1]
 
                     if exclusion_zone is not None and d < P[i + g, -1]:
                         idx = searchsorted_right(P[i + g], d)
-                        if i not in I[i + g, :]:
+                        if i not in I[i + g]:
                             P[i + g] = np.insert(P[i + g], idx, d)[:-1]
                             I[i + g] = np.insert(I[i + g], idx, i)[:-1]
 
