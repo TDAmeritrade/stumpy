@@ -158,9 +158,7 @@ def _compute_PI(
                 # about to insert at idx is identical to an element of array located
                 # at idx, idx + 1, .... Hence, we should traverse full array.
                 # This is optimized in the if conditon.
-                if ((j + g) not in I[thread_idx, i + g, :idx][::-1]) and (
-                    (j + g) not in I[thread_idx, i + g, idx:]
-                ):
+                if (j + g) not in I[thread_idx, i + g]:
                     core._shift_insert_at_index(
                         P_squared[thread_idx, i + g], idx, D_squared
                     )
@@ -170,9 +168,7 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, j + g], D_squared, side="right"
                 )
-                if ((i + g) not in I[thread_idx, j + g, :idx][::-1]) and (
-                    (i + g) not in I[thread_idx, j + g, idx:]
-                ):
+                if (i + g) not in I[thread_idx, j + g]:
                     core._shift_insert_at_index(
                         P_squared[thread_idx, j + g], idx, D_squared
                     )
@@ -196,9 +192,7 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, i - g], D_squared, side="right"
                 )
-                if ((j - g) not in I[thread_idx, i - g, :idx][::-1]) and (
-                    (j - g) not in I[thread_idx, i - g, idx:]
-                ):
+                if (j - g) not in I[thread_idx, i - g]:
                     core._shift_insert_at_index(
                         P_squared[thread_idx, i - g], idx, D_squared
                     )
@@ -208,9 +202,7 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, j - g], D_squared, side="right"
                 )
-                if ((i - g) not in I[thread_idx, j - g, :idx][::-1]) and (
-                    (i - g) not in I[thread_idx, j - g, idx:]
-                ):
+                if (i - g) not in I[thread_idx, j - g]:
                     core._shift_insert_at_index(
                         P_squared[thread_idx, j - g], idx, D_squared
                     )
@@ -231,9 +223,7 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, j], squared_distance_profile[j], side="right"
                 )
-                if (i not in I[thread_idx, j, :idx][::-1]) and (
-                    i not in I[thread_idx, j, idx:]
-                ):
+                if i not in I[thread_idx, j]:
                     core._shift_insert_at_index(
                         P_squared[thread_idx, j], idx, squared_distance_profile[j]
                     )
@@ -359,13 +349,7 @@ def _prescrump(
         )
 
     for thread_idx in range(1, n_threads):
-        core._merge_topk_PI(
-            P_squared[0],
-            P_squared[thread_idx],
-            I[0],
-            I[thread_idx],
-            assume_unique=False,
-        )
+        core._merge_topk_PI(P_squared[0], P_squared[thread_idx], I[0], I[thread_idx])
 
     return np.sqrt(P_squared[0]), I[0]
 
@@ -716,7 +700,7 @@ class scrump:
             else:
                 P, I = prescrump(T_A, m, T_B=T_B, s=s, k=self._k)
 
-            core._merge_topk_PI(self._P, P, self._I, I, assume_unique=False)
+            core._merge_topk_PI(self._P, P, self._I, I)
 
         if self._ignore_trivial:
             self._diags = np.random.permutation(
@@ -774,7 +758,7 @@ class scrump:
             )
 
             # Update (top-k) matrix profile and indices
-            core._merge_topk_PI(self._P, P, self._I, I, assume_unique=False)
+            core._merge_topk_PI(self._P, P, self._I, I)
 
             # update left matrix profile and indices
             mask = PL < self._PL
