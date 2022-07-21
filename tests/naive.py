@@ -1802,29 +1802,20 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
     return total_ndists
 
 
-def merge_topk_PI(PA, PB, IA, IB, assume_unique=True):
+def merge_topk_PI(PA, PB, IA, IB):
     k = PA.shape[1]
+    for i in range(PA.shape[0]):
+        _, _, overlap_idx_B = np.intersect1d(IA[i], IB[i])
+        PB[i, overlap_idx_B] = np.inf
+
     profile = np.column_stack((PA, PB))
     indices = np.column_stack((IA, IB))
-
     IDX = np.argsort(profile, axis=1, kind="mergesort")
-    if assume_unique:
-        profile[:, :] = np.take_along_axis(profile, IDX, axis=1)
-        indices[:, :] = np.take_along_axis(indices, IDX, axis=1)
+    profile[:, :] = np.take_along_axis(profile, IDX, axis=1)
+    indices[:, :] = np.take_along_axis(indices, IDX, axis=1)
 
-        PA[:, :] = profile[:, :k]
-        IA[:, :] = indices[:, :k]
-    else:
-        # avoid duplicates while merging IA[i] and IB[i]
-        IDX_merged = np.full_like(PA, -1, dtype=np.int64)
-        for i, idx in enumerate(IDX):
-            _, arg_unique = np.unique(indices[i, idx], return_index=True)
-            arg_unique = np.sort(arg_unique)[:k]  # preserving order of their appearence
-            idx = idx[arg_unique]
-            IDX_merged[i, : len(idx)] = idx
-
-        PA[:, :] = np.take_along_axis(profile, IDX_merged, axis=1)
-        IA[:, :] = np.take_along_axis(indices, IDX_merged, axis=1)
+    PA[:, :] = profile[:, :k]
+    IA[:, :] = indices[:, :k]
 
 
 def merge_topk_ρI(ρA, ρB, IA, IB):
