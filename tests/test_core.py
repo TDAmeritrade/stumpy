@@ -1103,7 +1103,7 @@ def test_merge_topk_PI():
             # create overlaps
             IDX = np.random.choice(np.arange(k), cols_idx_A[i], replace=False)
             PB[i, IDX] = PA[i, IDX]
-            IB[i, IDX]] = IA[i, IDX]
+            IB[i, IDX] = IA[i, IDX]
 
         # sort each row of PA/PB (and update  IA/IB accordingly)
         IDX = np.argsort(PA, axis=1)
