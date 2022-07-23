@@ -2581,7 +2581,9 @@ def _merge_topk_PI(PA, PB, IA, IB):
     Merge two top-k matrix profiles `PA` and `PB`, and update `PA` (in place) while
     always prioritizing the values of `PA` over the values of `PB` in case of ties.
     (i.e., values from `PB` are always inserted to the right of values from `PA`).
-    Also, update `IA` accordingly.
+    Also, update `IA` accordingly. In case of overlapping values between two arrays
+    IA[i] and IB[i], the ones in IB[i] (and their corresponding values in PB[i])
+    are ignored throughout the updating process of IA[i] (and PA[i]).
 
     Unlike `_merge_topk_ρI`, where `top-k` largest values are kept, this function
     keeps `top-k` smallest values.
