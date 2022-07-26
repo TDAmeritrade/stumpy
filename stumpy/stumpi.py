@@ -371,7 +371,7 @@ class stumpi:
     @property
     def left_I_(self):
         """
-        Get the (top-1) sleft matrix profile indices
+        Get the (top-1) left matrix profile indices
         """
         return self._left_I.astype(np.int64)
 
