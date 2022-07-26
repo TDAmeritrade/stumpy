@@ -157,10 +157,6 @@ def _compute_PI(
                 idx = np.searchsorted(
                     P_squared[thread_idx, i + g], D_squared, side="right"
                 )
-                # Due to numerical error, it is possible that the element that is
-                # about to insert at idx is identical to an element of array located
-                # at idx, idx + 1, .... Hence, we should traverse full array.
-                # This is optimized in the if conditon.
                 if (j + g) not in I[thread_idx, i + g]:
                     core._shift_insert_at_index(
                         P_squared[thread_idx, i + g], idx, D_squared
