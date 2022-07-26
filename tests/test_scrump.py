@@ -875,7 +875,9 @@ def test_prescrump_A_B_join_larger_window_m_5_k_5(T_A, T_B):
 
 def test_prescrump_self_join_KNN_no_overlap():
     # This test is designed to ensure that the performant version prescrump avoids
-    # overlap while computing the top-k matrix  profiles
+    # overlap while computing the top-k matrix profiles and matrix profile indices.
+    # So, there would be no duplicates in each row of top-k matrix  profile indices
+    # excluding the elements filled with `-1`.
     T = np.array(
         [
             -916.64703784,
@@ -945,15 +947,17 @@ def test_prescrump_self_join_KNN_no_overlap():
         ]
     )
 
-    mk_seeds = {
+    # test_cases: dict() with `key: value` pair, where key is `(m, k)`, and value
+    # is a list of random `seeds`
+    test_cases = {
         (3, 2): [4279, 9133, 8190],
         (3, 5): [1267, 4016, 4046],
         (5, 2): [6327, 4926, 3712],
         (5, 5): [3032, 3032, 8117],
     }
-    for (m, k), seeds in mk_seeds.items():
+    for (m, k), specified_seeds in test_cases.items():
         zone = int(np.ceil(m / 4))
-        for seed in seeds:
+        for seed in specified_seeds:
             np.random.seed(seed)
             ref_P, ref_I = naive.prescrump(T, m, T, s=1, exclusion_zone=zone, k=k)
             comp_P, comp_I = prescrump(T, m, s=1, k=k)
