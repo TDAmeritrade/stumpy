@@ -1061,8 +1061,9 @@ def test_select_P_ABBA_val_inf():
     npt.assert_almost_equal(ref, comp)
 
 
-def test_merge_topk_PI():
-    # `assume_unique = True`
+def test_merge_topk_PI_without_overlap():
+    # This is to test function `core._merge_topk_PI(PA, PB, IA, IB)` when there
+    # is no overlap between row IA[i] and row IB[i].
     n = 50
     for k in range(1, 6):
         PA = np.random.rand(n * k).reshape(n, k)
@@ -1089,7 +1090,10 @@ def test_merge_topk_PI():
         npt.assert_array_equal(ref_P, comp_P)
         npt.assert_array_equal(ref_I, comp_I)
 
-    # `assume_unique = False`
+
+def test_merge_topk_PI_with_overlap():
+    # This is to test function `core._merge_topk_PI(PA, PB, IA, IB)` when there
+    # is overlap between row IA[i] and row IB[i].
     n = 50
     for k in range(1, 6):
         PA = np.random.rand(n * k).reshape(n, k)
@@ -1098,13 +1102,13 @@ def test_merge_topk_PI():
         IA = np.arange(n * k).reshape(n, k)
         IB = IA + n * k
 
-        cols_idx_A = np.random.randint(0, k, size=n)
+        num_overlaps = np.random.randint(1, k + 1, size=n)
         for i in range(n):
             # create overlaps
-            IDX = np.random.choice(np.arange(k), cols_idx_A[i], replace=False)
-            imprecision = np.random.uniform(low=-1e6, high=1e6, size=len(IDX))
-            PB[i, IDX] = PA[i, IDX] + imprecision
-            IB[i, IDX] = IA[i, IDX]
+            col_IDX = np.random.choice(np.arange(k), num_overlaps[i], replace=False)
+            imprecision = np.random.uniform(low=-1e6, high=1e6, size=len(col_IDX))
+            PB[i, col_IDX] = PA[i, col_IDX] + imprecision
+            IB[i, col_IDX] = IA[i, col_IDX]
 
         # sort each row of PA/PB (and update  IA/IB accordingly)
         IDX = np.argsort(PA, axis=1)
@@ -1128,7 +1132,9 @@ def test_merge_topk_PI():
         npt.assert_array_equal(ref_I, comp_I)
 
 
-def test_merge_topk_ρI():
+def test_merge_topk_ρI_without_overlap():
+    # This is to test function `core._merge_topk_ρI(ρA, ρB, IA, IB)` when there
+    # is no overlap between row IA[i] and row IB[i].
     n = 50
     for k in range(1, 6):
         ρA = np.random.rand(n * k).reshape(n, k)
@@ -1151,6 +1157,47 @@ def test_merge_topk_ρI():
 
         naive.merge_topk_ρI(ref_ρ, ρB, ref_I, IB)
         core._merge_topk_ρI(comp_ρ, ρB, comp_I, IB)
+
+        npt.assert_array_equal(ref_ρ, comp_ρ)
+        npt.assert_array_equal(ref_I, comp_I)
+
+
+def test_merge_topk_ρI_with_overlap():
+    # This is to test function `core._merge_topk_ρI(ρA, ρB, IA, IB)` when there
+    # is overlap between row IA[i] and row IB[i].
+    n = 50
+    for k in range(1, 6):
+        ρA = np.random.rand(n * k).reshape(n, k)
+        ρB = np.random.rand(n * k).reshape(n, k)
+
+        IA = np.arange(n * k).reshape(n, k)
+        IB = IA + n * k
+
+        num_overlaps = np.random.randint(1, k + 1, size=n)
+        for i in range(n):
+            # create overlaps
+            col_IDX = np.random.choice(np.arange(k), num_overlaps[i], replace=False)
+            imprecision = np.random.uniform(low=-1e6, high=1e6, size=len(col_IDX))
+            ρB[i, col_IDX] = ρA[i, col_IDX] + imprecision
+            IB[i, col_IDX] = IA[i, col_IDX]
+
+        # sort each row of PA/PB (and update  IA/IB accordingly)
+        IDX = np.argsort(ρA, axis=1)
+        ρA[:, :] = np.take_along_axis(ρA, IDX, axis=1)
+        IA[:, :] = np.take_along_axis(IA, IDX, axis=1)
+
+        IDX = np.argsort(ρB, axis=1)
+        ρB[:, :] = np.take_along_axis(ρB, IDX, axis=1)
+        IB[:, :] = np.take_along_axis(IB, IDX, axis=1)
+
+        ref_ρ = ρA.copy()
+        ref_I = IA.copy()
+
+        comp_ρ = ρA.copy()
+        comp_I = IA.copy()
+
+        naive.merge_topk_ρI(ref_ρ, ρB.copy(), ref_I, IB.copy())
+        core._merge_topk_ρI(comp_ρ, ρB.copy(), comp_I, IB.copy())
 
         npt.assert_array_equal(ref_ρ, comp_ρ)
         npt.assert_array_equal(ref_I, comp_I)

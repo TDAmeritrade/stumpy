@@ -1861,5 +1861,5 @@ def merge_topk_ρI(ρA, ρB, IA, IB):
     indices[:, :] = np.take_along_axis(indices, idx, axis=1)
 
     # keep the last k elements (top-k largest values)
-    ρA[:, :] = profile[:, ρA.shape[1] :]
-    IA[:, :] = indices[:, ρA.shape[1] :]
+    ρA[:, :] = profile[:, k:]
+    IA[:, :] = indices[:, k:]
