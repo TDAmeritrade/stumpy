@@ -1433,18 +1433,26 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
             P[i, 1:] = P[i, :-1]
             P[i, 0] = distance_profile[I[i, 0]]
 
-        # else: the idx, i.e. 1NN of `i`, was already obtained (it maynot be stored
-        # at the first index of array I[i] though!)
+        # else: the idx, i.e. 1NN of `i`, was already obtained. it may not be
+        # at the first index of array I[i] though! e.g. P[i] = [1e-10, 1e-9]),
+        # I[i] = [a, b]. Here, `b` can be the actual nn of i. However, the
+        # distance between `seq i` and `seq b` might be calculated alrady in one
+        # of previous iteration and, due to slight numerical error, it might have
+        # been inserted to the rigth of a.
 
         if P[i, 0] == np.inf:
             I[i, 0] = -1
             continue
 
-        j = nn_idx
+        j = nn_idx  # to follow the original paper even in top-k version, we use
+        # the actual nn_idx rather than I[i, 0].
         for g in range(1, min(s, l - i, w - j)):
             d = dist_matrix[i + g, j + g]
             if d < P[i + g, -1]:
                 pos = np.searchsorted(P[i + g], d, side="right")
+                # Do NOT optimize the `condition` in the following if statement
+                # and similar ones in this naive function. This is to ensure
+                # we are avoiding duplicates in each row of I.
                 if (j + g) not in I[i + g]:
                     P[i + g] = np.insert(P[i + g], pos, d)[:-1]
                     I[i + g] = np.insert(I[i + g], pos, j + g)[:-1]
