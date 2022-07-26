@@ -1815,6 +1815,7 @@ def merge_topk_PI(PA, PB, IA, IB):
     for i in range(PA.shape[0]):
         _, _, overlap_idx_B = np.intersect1d(IA[i], IB[i], return_indices=True)
         PB[i, overlap_idx_B] = np.inf
+        IB[i, overlap_idx_B] = -1
 
     profile = np.column_stack((PA, PB))
     indices = np.column_stack((IA, IB))
@@ -1846,6 +1847,12 @@ def merge_topk_ρI(ρA, ρB, IA, IB):
     # merging `ρB` and `ρA` ascendingly while choosing `ρB` over `ρA` in case of
     # ties: [0_B, 0_A, 0'_A, 1_B, 1'_B, 1_A], and we just need to keep the second
     # half of this array, and discard the first half.
+    k = ρA.shape[1]
+    for i in range(ρA.shape[0]):
+        _, _, overlap_idx_B = np.intersect1d(IA[i], IB[i], return_indices=True)
+        ρB[i, overlap_idx_B] = np.NINF
+        IB[i, overlap_idx_B] = -1
+
     profile = np.column_stack((ρB, ρA))
     indices = np.column_stack((IB, IA))
 
