@@ -2673,8 +2673,7 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     tmp_I = np.empty(k, dtype=np.int64)
     last_idx = k - 1
     for i in range(len(ρA)):
-        overlap = np.intersect1d(IA[i], IB[i])
-
+        overlap = _intersect1d_int(IA[i], IB[i])
         aj, bj = last_idx, last_idx
         idx = last_idx
         for _ in range(2 * k):  # 2 * k to traverse both A and B if needed
