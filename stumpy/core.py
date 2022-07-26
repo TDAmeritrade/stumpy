@@ -2612,7 +2612,7 @@ def _merge_topk_PI(PA, PB, IA, IB):
     tmp_P = np.empty(k, dtype=np.float64)
     tmp_I = np.empty(k, dtype=np.int64)
     for i in range(PA.shape[0]):
-        overlap = np.intersect1d(IA[i], IB[i])
+        overlap = set(IB[i]).intersection(set(IA[i]))
         aj, bj = 0, 0
         idx = 0
         for _ in range(2 * k):  # 2 * k to traverse both A and B
@@ -2673,7 +2673,7 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     tmp_I = np.empty(k, dtype=np.int64)
     last_idx = k - 1
     for i in range(len(ρA)):
-        overlap = _intersect1d_int(IA[i], IB[i])
+        overlap = set(IB[i]).intersection(set(IA[i]))
         aj, bj = last_idx, last_idx
         idx = last_idx
         for _ in range(2 * k):  # 2 * k to traverse both A and B if needed
@@ -2765,27 +2765,3 @@ def _check_P(P, threshold=1e-6):
     if are_distances_too_small(P, threshold=threshold):  # pragma: no cover
         logger.warning(f"A large number of values in `P` are smaller than {threshold}.")
         logger.warning("For a self-join, try setting `ignore_trivial=True`.")
-
-
-@njit
-def _intersect1d_int(arr1, arr2):
-    """
-    Returns the overlapping values between two 1D arrays `arr1` and `arr2` that
-    consist of integer values.
-
-    Parameters
-    ----------
-    arr1 : numpy.ndarray
-        a 1D numpy array consisting of interget values
-
-    arr2 : numpy.ndarray
-        a 1D numpy array consisting of interget values
-
-    Returns
-    -------
-    out :  numpy.ndarray
-        a numpy array consits of the overlapping values between `arr1` and `arr2`
-    """
-    return np.array(
-        list(set(arr1).intersection(set(arr2))), dtype=np.int64  # Basic set comparison
-    )

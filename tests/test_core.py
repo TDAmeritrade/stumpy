@@ -1192,21 +1192,3 @@ def test_shift_insert_at_index():
 def test_check_P():
     with pytest.raises(ValueError):
         core._check_P(np.random.rand(10).reshape(2, 5))
-
-
-def test_intersect1d_int():
-    max_len_arr = 20
-    for n in range(1, max_len_arr):
-        arr1 = np.random.randint(0, 100, size=n)
-        arr2 = np.random.randint(0, 100, size=n)
-
-        # creating overlaps between `arr1` and `arr2`
-        s = np.random.randint(0, high=n)
-        IDX_1 = np.random.choice(np.arange(n), s, replace=False)
-        IDX_2 = np.random.choice(np.arange(n), s, replace=False)
-        arr2[IDX_2] = arr1[IDX_1]
-
-        ref = np.intersect1d(arr1, arr2)
-        comp = core._intersect1d_int(arr1, arr2)
-
-        npt.assert_array_equal(np.sort(ref), np.sort(comp))
