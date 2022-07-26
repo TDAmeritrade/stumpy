@@ -2667,19 +2667,29 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     -------
     None
     """
-    tmp_ρ = np.empty(ρA.shape[1], dtype=np.float64)
-    tmp_I = np.empty(ρA.shape[1], dtype=np.int64)
-    last_idx = len(tmp_ρ) - 1
+    k = ρA.shape[1]
+
+    tmp_ρ = np.empty(k, dtype=np.float64)
+    tmp_I = np.empty(k, dtype=np.int64)
+    last_idx = k - 1
     for i in range(len(ρA)):
+        overlap = np.intersect1d(IA[i], IB[i])
+
         aj, bj = last_idx, last_idx
-        for k in range(last_idx, -1, -1):
-            if ρB[i, bj] > ρA[i, aj]:
-                tmp_ρ[k] = ρB[i, bj]
-                tmp_I[k] = IB[i, bj]
+        idx = last_idx
+        for _ in range(2 * k):  # 2 * k to traverse both A and B if needed
+            if idx < 0:
+                break
+            if bj >= 0 and ρB[i, bj] > ρA[i, aj]:
+                if IB[i, bj] not in overlap:
+                    tmp_ρ[idx] = ρB[i, bj]
+                    tmp_I[idx] = IB[i, bj]
+                    idx -= 1
                 bj -= 1
             else:
-                tmp_ρ[k] = ρA[i, aj]
-                tmp_I[k] = IA[i, aj]
+                tmp_ρ[idx] = ρA[i, aj]
+                tmp_I[idx] = IA[i, aj]
+                idx -= 1
                 aj -= 1
 
         ρA[i] = tmp_ρ
