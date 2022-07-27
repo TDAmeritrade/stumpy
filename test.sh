@@ -20,6 +20,8 @@ do
         custom_testfiles+=("$var")
     elif [[ $var =~ ^[\-0-9]+$ ]]; then
         max_iter=$var
+    elif [[ "$var" == "links" ]]; then
+        test_mode="links"
     else
         echo "Using default test_mode=\"all\""
     fi
@@ -195,6 +197,12 @@ test_coverage()
     coverage report -m --skip-covered --omit=setup.py
 }
 
+check_links()
+{
+    echo "Checking notebook links"
+    pytest --check-links docs/Tutorial_*.ipynb
+}
+
 clean_up()
 {
     echo "Cleaning Up"
@@ -225,6 +233,9 @@ elif [[ $test_mode == "custom" ]]; then
     # export NUMBA_DISABLE_JIT=1
     # export NUMBA_ENABLE_CUDASIM=1
     test_custom
+elif [[ $test_mode == "links" ]]; then
+    echo "Check Notebook Links  Only"
+    check_links
 else
     echo "Executing Unit Tests And Code Coverage"
     test_unit
