@@ -1181,7 +1181,7 @@ def test_merge_topk_ρI_with_overlap():
             ρB[i, col_IDX] = ρA[i, col_IDX] + imprecision
             IB[i, col_IDX] = IA[i, col_IDX]
 
-        # sort each row of PA/PB (and update  IA/IB accordingly)
+        # sort each row of ρA/ρB (and update IA/IB accordingly)
         IDX = np.argsort(ρA, axis=1)
         ρA[:, :] = np.take_along_axis(ρA, IDX, axis=1)
         IA[:, :] = np.take_along_axis(IA, IDX, axis=1)
