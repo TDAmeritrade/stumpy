@@ -976,4 +976,4 @@ def test_prescrump_self_join_KNN_no_overlap():
             comp_P, comp_I = prescrump(T, m, s=1, k=k)
 
             npt.assert_almost_equal(ref_P, comp_P)
-            npt.assert_array_equal(ref_I, comp_I)
+            npt.assert_almost_equal(ref_I, comp_I)

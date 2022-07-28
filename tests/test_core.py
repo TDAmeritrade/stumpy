@@ -1087,8 +1087,8 @@ def test_merge_topk_PI_without_overlap():
         naive.merge_topk_PI(ref_P, PB.copy(), ref_I, IB.copy())
         core._merge_topk_PI(comp_P, PB.copy(), comp_I, IB.copy())
 
-        npt.assert_array_equal(ref_P, comp_P)
-        npt.assert_array_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
 
 
 def test_merge_topk_PI_with_overlap():
@@ -1128,8 +1128,8 @@ def test_merge_topk_PI_with_overlap():
         naive.merge_topk_PI(ref_P, PB.copy(), ref_I, IB.copy())
         core._merge_topk_PI(comp_P, PB.copy(), comp_I, IB.copy())
 
-        npt.assert_array_equal(ref_P, comp_P)
-        npt.assert_array_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
 
 
 def test_merge_topk_ρI_without_overlap():
@@ -1158,8 +1158,8 @@ def test_merge_topk_ρI_without_overlap():
         naive.merge_topk_ρI(ref_ρ, ρB.copy(), ref_I, IB.copy())
         core._merge_topk_ρI(comp_ρ, ρB.copy(), comp_I, IB.copy())
 
-        npt.assert_array_equal(ref_ρ, comp_ρ)
-        npt.assert_array_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_ρ, comp_ρ)
+        npt.assert_almost_equal(ref_I, comp_I)
 
 
 def test_merge_topk_ρI_with_overlap():
@@ -1199,8 +1199,8 @@ def test_merge_topk_ρI_with_overlap():
         naive.merge_topk_ρI(ref_ρ, ρB.copy(), ref_I, IB.copy())
         core._merge_topk_ρI(comp_ρ, ρB.copy(), comp_I, IB.copy())
 
-        npt.assert_array_equal(ref_ρ, comp_ρ)
-        npt.assert_array_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_ρ, comp_ρ)
+        npt.assert_almost_equal(ref_I, comp_I)
 
 
 def test_shift_insert_at_index():
@@ -1222,7 +1222,7 @@ def test_shift_insert_at_index():
                 comp, idx, v, shift="right"
             )  # update comp in place
 
-            npt.assert_array_equal(ref, comp)
+            npt.assert_almost_equal(ref, comp)
 
         # test shift = "left"
         for (idx, v) in zip(indices, values):
@@ -1234,7 +1234,7 @@ def test_shift_insert_at_index():
                 comp, idx, v, shift="left"
             )  # update comp in place
 
-            npt.assert_array_equal(ref, comp)
+            npt.assert_almost_equal(ref, comp)
 
 
 def test_check_P():
