@@ -878,6 +878,19 @@ def test_prescrump_self_join_KNN_no_overlap():
     # overlap while computing the top-k matrix profiles and matrix profile indices.
     # So, there would be no duplicates in each row of top-k matrix  profile indices
     # excluding the elements filled with `-1`.
+    # Let's denote `I[i]` as the array with length `k` that contains the start index
+    # of best-so-far top-k neighbors of `subseq i`. Also, we denote `P[i]` as their
+    # corresponding distances to `subseq i`. After calculating the distance
+    # between `subseq i` to its neighbor `j` (let's call it `d`), we can insert `j`
+    # into I[i] only if j is not already in I[i], and for that we need to check
+    # the whole array I[i]. Although one might think to perform
+    # `idx = np.searchosrted(P[i], d)` first followed by the check `if j not in I[i, :idx]`
+    # HOWEVER, the latter approach may result in duplicates(!) due to the imprecision
+    # in calculation of ditances. In other words, it is possible that the distance
+    # between subseq i and subseq j was calculated in one of previous iterations of
+    # updating process and its value might be slightly higher than `d`. So, althought
+    # j might be already in I[i], it might not be in `I[i, :idx]`.
+
     T = np.array(
         [
             -916.64703784,
