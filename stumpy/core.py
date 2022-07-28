@@ -2615,7 +2615,8 @@ def _merge_topk_PI(PA, PB, IA, IB):
         overlap = set(IB[i]).intersection(set(IA[i]))
         aj, bj = 0, 0
         idx = 0
-        for _ in range(2 * k):  # 2 * k to traverse both A and B
+        # 2 * k iterations are required to traverse both A and B if needed.
+        for _ in range(2 * k):
             if idx >= k:
                 break
             if bj < k and PB[i, bj] < PA[i, aj]:
@@ -2674,7 +2675,8 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
         overlap = set(IB[i]).intersection(set(IA[i]))
         aj, bj = last_idx, last_idx
         idx = last_idx
-        for _ in range(2 * k):  # 2 * k to traverse both A and B if needed
+        # 2 * k iterations are required to traverse both A and B if needed.
+        for _ in range(2 * k):
             if idx < 0:
                 break
             if bj >= 0 and ρB[i, bj] > ρA[i, aj]:
