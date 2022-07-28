@@ -2641,7 +2641,9 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place) while
     always prioritizing the values of `ρA` over the values of `ρB` in case of ties.
     (i.e., values from `ρB` are always inserted to the left of values from `ρA`).
-    Also, update `IA` accordingly.
+    Also, update `IA` accordingly. In case of overlapping values between two arrays
+    IA[i] and IB[i], the ones in IB[i] (and their corresponding values in ρB[i])
+    are ignored throughout the updating process of IA[i] (and ρA[i]).
 
     Unlike `_merge_topk_PI`, where `top-k` smallest values are kept, this function
     keeps `top-k` largest values.
