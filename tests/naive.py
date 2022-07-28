@@ -1432,19 +1432,11 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
             P[i] = np.insert(P[i], pos, distance_profile[nn_idx])[:-1]
             I[i] = np.insert(I[i], pos, nn_idx)[:-1]
 
-        # else: the idx, i.e. 1NN of `i`, was already obtained. it may not be
-        # at the first index of array I[i] though! e.g. P[i] = [1e-10, 1e-9]),
-        # I[i] = [a, b]. Here, `b` can be the actual nn of i. However, the
-        # distance between `seq i` and `seq b` might be calculated alrady in one
-        # of previous iteration and, due to slight numerical error, it might have
-        # been inserted to the rigth of a.
-
         if P[i, 0] == np.inf:
             I[i, 0] = -1
             continue
 
-        j = nn_idx  # to follow the original paper even in top-k version, we use
-        # the actual nn_idx rather than I[i, 0].
+        j = nn_idx
         for g in range(1, min(s, l - i, w - j)):
             d = dist_matrix[i + g, j + g]
             if d < P[i + g, -1] and (j + g) not in I[i + g]:
