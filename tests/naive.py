@@ -1428,10 +1428,10 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
 
         nn_idx = np.argmin(distance_profile)
         if nn_idx not in I[i]:
-            I[i, 1:] = I[i, :-1]
-            I[i, 0] = nn_idx
-            P[i, 1:] = P[i, :-1]
-            P[i, 0] = distance_profile[I[i, 0]]
+            if distance_profile[nn_idx] < P[i, -1]:
+                pos = np.searchsorted(P[i], distance_profile[nn_idx], side="right")
+                P[i] = np.insert(P[i], pos, distance_profile[nn_idx])[:-1]
+                I[i] = np.insert(I[i], pos, nn_idx)[:-1]
 
         # else: the idx, i.e. 1NN of `i`, was already obtained. it may not be
         # at the first index of array I[i] though! e.g. P[i] = [1e-10, 1e-9]),

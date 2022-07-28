@@ -121,10 +121,16 @@ def _compute_PI(
             # values in `I[thread_idx]` are equal to `-1` or not all values in
             # `P_squared[thread_idx, i]` are equal  to `np.inf`), we must
             # shift-insert here rather than assign values to the first element.
-            core._shift_insert_at_index(
-                P_squared[thread_idx, i], 0, squared_distance_profile[nn_idx]
-            )
-            core._shift_insert_at_index(I[thread_idx, i], 0, nn_idx)
+            if squared_distance_profile[nn_idx] < P_squared[thread_idx, i, -1]:
+                idx = np.searchsorted(
+                    P_squared[thread_idx, i],
+                    squared_distance_profile[nn_idx],
+                    side="right",
+                )
+                core._shift_insert_at_index(
+                    P_squared[thread_idx, i], idx, squared_distance_profile[nn_idx]
+                )
+                core._shift_insert_at_index(I[thread_idx, i], idx, nn_idx)
 
         if P_squared[thread_idx, i, 0] == np.inf:  # pragma: no cover
             I[thread_idx, i, 0] = -1
