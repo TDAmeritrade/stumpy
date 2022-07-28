@@ -1427,11 +1427,10 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
             apply_exclusion_zone(distance_profile, i, exclusion_zone, np.inf)
 
         nn_idx = np.argmin(distance_profile)
-        if nn_idx not in I[i]:
-            if distance_profile[nn_idx] < P[i, -1]:
-                pos = np.searchsorted(P[i], distance_profile[nn_idx], side="right")
-                P[i] = np.insert(P[i], pos, distance_profile[nn_idx])[:-1]
-                I[i] = np.insert(I[i], pos, nn_idx)[:-1]
+        if distance_profile[nn_idx] < P[i, -1] and nn_idx not in I[i]:
+            pos = np.searchsorted(P[i], distance_profile[nn_idx], side="right")
+            P[i] = np.insert(P[i], pos, distance_profile[nn_idx])[:-1]
+            I[i] = np.insert(I[i], pos, nn_idx)[:-1]
 
         # else: the idx, i.e. 1NN of `i`, was already obtained. it may not be
         # at the first index of array I[i] though! e.g. P[i] = [1e-10, 1e-9]),
@@ -1448,39 +1447,43 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
         # the actual nn_idx rather than I[i, 0].
         for g in range(1, min(s, l - i, w - j)):
             d = dist_matrix[i + g, j + g]
-            if d < P[i + g, -1]:
+            if d < P[i + g, -1] and (j + g) not in I[i + g]:
                 pos = np.searchsorted(P[i + g], d, side="right")
                 # Do NOT optimize the `condition` in the following if statement
                 # and similar ones in this naive function. This is to ensure
                 # we are avoiding duplicates in each row of I.
-                if (j + g) not in I[i + g]:
-                    P[i + g] = np.insert(P[i + g], pos, d)[:-1]
-                    I[i + g] = np.insert(I[i + g], pos, j + g)[:-1]
-            if exclusion_zone is not None and d < P[j + g, -1]:
+                P[i + g] = np.insert(P[i + g], pos, d)[:-1]
+                I[i + g] = np.insert(I[i + g], pos, j + g)[:-1]
+            if (
+                exclusion_zone is not None
+                and d < P[j + g, -1]
+                and (i + g) not in I[j + g]
+            ):
                 pos = np.searchsorted(P[j + g], d, side="right")
-                if (i + g) not in I[j + g]:
-                    P[j + g] = np.insert(P[j + g], pos, d)[:-1]
-                    I[j + g] = np.insert(I[j + g], pos, i + g)[:-1]
+                P[j + g] = np.insert(P[j + g], pos, d)[:-1]
+                I[j + g] = np.insert(I[j + g], pos, i + g)[:-1]
 
         for g in range(1, min(s, i + 1, j + 1)):
             d = dist_matrix[i - g, j - g]
-            if d < P[i - g, -1]:
+            if d < P[i - g, -1] and (j - g) not in I[i - g]:
                 pos = np.searchsorted(P[i - g], d, side="right")
-                if (j - g) not in I[i - g]:
-                    P[i - g] = np.insert(P[i - g], pos, d)[:-1]
-                    I[i - g] = np.insert(I[i - g], pos, j - g)[:-1]
-            if exclusion_zone is not None and d < P[j - g, -1]:
+                P[i - g] = np.insert(P[i - g], pos, d)[:-1]
+                I[i - g] = np.insert(I[i - g], pos, j - g)[:-1]
+            if (
+                exclusion_zone is not None
+                and d < P[j - g, -1]
+                and (i - g) not in I[j - g]
+            ):
                 pos = np.searchsorted(P[j - g], d, side="right")
-                if (i - g) not in I[j - g]:
-                    P[j - g] = np.insert(P[j - g], pos, d)[:-1]
-                    I[j - g] = np.insert(I[j - g], pos, i - g)[:-1]
+                P[j - g] = np.insert(P[j - g], pos, d)[:-1]
+                I[j - g] = np.insert(I[j - g], pos, i - g)[:-1]
 
         # In the case of a self-join, the calculated distance profile can also be
         # used to refine the top-k for all non-trivial subsequences
         if exclusion_zone is not None:
             for idx in np.flatnonzero(distance_profile < P[:, -1]):
-                pos = np.searchsorted(P[idx], distance_profile[idx], side="right")
                 if i not in I[idx]:
+                    pos = np.searchsorted(P[idx], distance_profile[idx], side="right")
                     P[idx] = np.insert(P[idx], pos, distance_profile[idx])[:-1]
                     I[idx] = np.insert(I[idx], pos, i)[:-1]
 
