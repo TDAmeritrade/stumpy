@@ -2618,14 +2618,12 @@ def _merge_topk_PI(PA, PB, IA, IB):
         for _ in range(2 * k):  # 2 * k to traverse both A and B
             if idx >= k:
                 break
-
             if bj < k and PB[i, bj] < PA[i, aj]:
                 if IB[i, bj] not in overlap:
                     tmp_P[idx] = PB[i, bj]
                     tmp_I[idx] = IB[i, bj]
                     idx += 1
                 bj += 1
-
             else:
                 tmp_P[idx] = PA[i, aj]
                 tmp_I[idx] = IA[i, aj]
