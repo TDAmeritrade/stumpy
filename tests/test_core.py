@@ -1155,8 +1155,8 @@ def test_merge_topk_ρI_without_overlap():
         comp_ρ = ρA.copy()
         comp_I = IA.copy()
 
-        naive.merge_topk_ρI(ref_ρ, ρB, ref_I, IB)
-        core._merge_topk_ρI(comp_ρ, ρB, comp_I, IB)
+        naive.merge_topk_ρI(ref_ρ, ρB.copy(), ref_I, IB.copy())
+        core._merge_topk_ρI(comp_ρ, ρB.copy(), comp_I, IB.copy())
 
         npt.assert_array_equal(ref_ρ, comp_ρ)
         npt.assert_array_equal(ref_I, comp_I)
