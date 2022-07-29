@@ -874,23 +874,21 @@ def test_prescrump_A_B_join_larger_window_m_5_k_5(T_A, T_B):
 
 
 def test_prescrump_self_join_KNN_no_overlap():
-    # This test is designed to ensure that the performant version prescrump avoids
-    # overlap while computing the top-k matrix profiles and matrix profile indices.
-    # So, there would be no duplicates in each row of top-k matrix  profile indices
-    # excluding the elements filled with `-1`.
+    # This test is particularly designed to raise error in some rare cases.
     # Let's denote `I[i]` as the array with length `k` that contains the start index
     # of best-so-far top-k neighbors of `subseq i`. Also, we denote `P[i]` as their
-    # corresponding distances to `subseq i`. After calculating the distance
-    # between `subseq i` to its neighbor `j` (let's call it `d`), we can insert `j`
-    # into I[i] only if j is not already in I[i], and for that we need to check
-    # the whole array I[i]. Although one might think to perform
-    # `idx = np.searchosrted(P[i], d)` first followed by the check `if j not in
-    # `I[i, :idx]`. HOWEVER, the latter approach may result in duplicates(!) due
-    # to the imprecision in calculation of ditances. In other words, it is possible
+    # corresponding ascendingly-sorted distances to `subseq i`. After calculating
+    # the distance between `subseq i` to its neighbor `j` (let's call it `d`), `j`
+    # is eligible to be inserted into I[i] only if `j` is not already in I[i].
+    # Otherwise, we will have  duplicates in I[i]. One might think to first perform
+    # `idx = np.searchosrted(P[i], d, side="right")` and then check if `j` is in
+    # `I[i, :idx]` or not. HOWEVER, the latter approach may result in duplicates(!)
+    # due to the imprecision in calculation of ditances. In other words, it is possible
     # that the distance between subseq i and subseq j was calculated in one of
-    # previous iterations of updating process and its value might be slightly higher
-    # than `d`. So, althought j might be already in I[i], it might not be in
-    # `I[i, :idx]`.
+    # previous iterations that value might be slightly higher than `d` (In theory,
+    # they should be exactly the same). So, althought j might be already in I[i],
+    # it might not be in `I[i, :idx]`. Hence, we need to perform a full traversal
+    # of I[i] and check all of its elemenets.
 
     T = np.array(
         [
