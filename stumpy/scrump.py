@@ -119,11 +119,6 @@ def _compute_PI(
             squared_distance_profile[nn_idx] < P_squared[thread_idx, i, -1]
             and nn_idx not in I[thread_idx, i]
         ):
-            # Since the top-k values for the `i`-th subsequence may already
-            # be updated/populated in other previous iterations (i.e., not all
-            # values in `I[thread_idx]` are equal to `-1` or not all values in
-            # `P_squared[thread_idx, i]` are equal  to `np.inf`), we must
-            # shift-insert here rather than assign values to the first element.
             idx = np.searchsorted(
                 P_squared[thread_idx, i],
                 squared_distance_profile[nn_idx],
