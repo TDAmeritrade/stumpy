@@ -874,21 +874,25 @@ def test_prescrump_A_B_join_larger_window_m_5_k_5(T_A, T_B):
 
 
 def test_prescrump_self_join_KNN_no_overlap():
-    # This test is particularly designed to raise error in some rare cases.
-    # Let's denote `I[i]` as the array with length `k` that contains the start index
-    # of best-so-far top-k neighbors of `subseq i`. Also, we denote `P[i]` as their
-    # corresponding ascendingly-sorted distances to `subseq i`. After calculating
-    # the distance between `subseq i` to its neighbor `j` (let's call it `d`), `j`
-    # is eligible to be inserted into I[i] only if `j` is not already in I[i].
-    # Otherwise, we will have  duplicates in I[i]. One might think to first perform
-    # `idx = np.searchosrted(P[i], d, side="right")` and then check if `j` is in
-    # `I[i, :idx]` or not. HOWEVER, the latter approach may result in duplicates(!)
-    # due to the imprecision in calculation of ditances. In other words, it is possible
-    # that the distance between subseq i and subseq j was calculated in one of
-    # previous iterations that value might be slightly higher than `d` (In theory,
-    # they should be exactly the same). So, althought j might be already in I[i],
-    # it might not be in `I[i, :idx]`. Hence, we need to perform a full traversal
-    # of I[i] and check all of its elemenets.
+    # This test is particularly designed to raise error in a rare case described
+    # as follows: Let's denote `I[i]` as the array with length `k` that contains
+    # the start index of the best-so-far top-k nearest neighbors of `subseq i`,
+    # (`S_i`). Also, we denote `P[i]` as their corresponding ascendingly-sorted
+    # distances to `subseq i`. After calculating the distance between `subseq i`
+    # to its neighbor `subseq j` (`S_j`). Let's denote `d` as the distance between
+    # these two subseqs. `j` is eligible to be inserted into I[i] if `d` is less
+    # than the `P[i, -1]` and if `j` is not in I[i]. One might think to first perform
+    # `idx = np.searchosrted(P[i], d, side="right")` and then check if `j`
+    # is in `I[i, :idx]` or not. HOWEVER, this does  not suffice! The latter approach
+    # may result in duplicates(!) due to the imprecision in calculation of ditances.
+    # It is possible  that the distance between `S_i` and `S_j` was
+    # calculated in one of previous iterations and that value might be slightly
+    # higher than `d` (In theory, they should be exactly the same!!). Thus, althought
+    # `j` might be already in I[i], it might not appear in `I[i, :idx]`. In other
+    # words, we might have `j` as the element `I[i, w]`, where `w >= idx` and hence
+    # P[i, w] > d).  In theory, P[i, w] and d should be equal as they both show the
+    # same distance, i.e. the distance between `S_i` and `S_j`.
+    # To sum up, we need to search whole I[i] for `j`.
 
     T = np.array(
         [
