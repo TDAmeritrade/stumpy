@@ -97,7 +97,7 @@ def _aamp_motifs(
     motif_distances = []
 
     candidate_idx = np.argmin(P[-1])
-    for i in range(l):
+    for _ in range(l):
         if len(motif_indices) >= max_motifs:
             break
 
@@ -357,6 +357,9 @@ def aamp_match(
         to `Q` are less than or equal to`max_distance`, sorted by distance (lowest to
         highest). The second column consists of the corresponding indices in `T`.
     """
+    if np.any(np.isnan(Q)) or np.any(np.isinf(Q)):  # pragma: no cover
+        raise ValueError("Q contains illegal values (NaN or inf)")
+
     if len(Q.shape) == 1:
         Q = Q[np.newaxis, :]
     if len(T.shape) == 1:
@@ -364,22 +367,7 @@ def aamp_match(
 
     d, n = T.shape
     m = Q.shape[1]
-
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-    if max_matches is None:  # pragma: no cover
-        max_matches = np.inf
-
-    if np.any(np.isnan(Q)) or np.any(np.isinf(Q)):  # pragma: no cover
-        raise ValueError("Q contains illegal values (NaN or inf)")
-
-    if max_distance is None:  # pragma: no cover
-
-        def max_distance(D):
-            D_copy = D.copy().astype(np.float64)
-            D_copy[np.isinf(D_copy)] = np.nan
-            return np.nanmax(
-                [np.nanmean(D_copy) - 2.0 * np.nanstd(D_copy), np.nanmin(D_copy)]
-            )
 
     if T_subseq_isfinite is None:
         T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
@@ -389,28 +377,13 @@ def aamp_match(
     D = np.empty((d, n - m + 1))
     for i in range(d):
         D[i, :] = core.mass_absolute(Q[i], T[i], T_subseq_isfinite[i], p=p)
-
     D = np.mean(D, axis=0)
-    if not isinstance(max_distance, float):
-        max_distance = max_distance(D)
 
-    matches = []
-
-    if query_idx is not None:
-        candidate_idx = query_idx
-    else:
-        candidate_idx = np.argmin(D)
-
-    for i in range(len(D)):
-        if (
-            D[candidate_idx] > atol + max_distance
-            or ~np.isfinite(D[candidate_idx])
-            or len(matches) >= max_matches
-        ):
-            break
-
-        matches.append([D[candidate_idx], candidate_idx])
-        core.apply_exclusion_zone(D, candidate_idx, excl_zone, np.inf)
-        candidate_idx = np.argmin(D)
-
-    return np.array(matches, dtype=object)
+    return core._find_matches(
+        D,
+        excl_zone,
+        max_distance=max_distance,
+        max_matches=max_matches,
+        query_idx=query_idx,
+        atol=atol,
+    )
