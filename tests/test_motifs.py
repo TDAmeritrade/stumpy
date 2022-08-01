@@ -11,22 +11,7 @@ def naive_match(Q, T, excl_zone, max_distance):
     m = Q.shape[0]
     D = naive.distance_profile(Q, T, m)
 
-    matches = []
-    for i in range(D.size):
-        dist = D[i]
-        if dist <= max_distance:
-            matches.append(i)
-
-    # Removes indices that are inside the exclusion zone of some occurrence with
-    # a smaller distance to the query
-    matches.sort(key=lambda x: D[x])
-    result = []
-    while len(matches) > 0:
-        o = matches[0]
-        result.append([D[o], o])
-        matches = [x for x in matches if x < o - excl_zone or x > o + excl_zone]
-
-    return np.array(result, dtype=object)
+    return naive.find_matches(D, excl_zone, max_distance)
 
 
 test_data = [

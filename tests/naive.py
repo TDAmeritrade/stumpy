@@ -1757,3 +1757,25 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
         )
 
     return total_ndists
+
+
+def find_matches(D, excl_zone, max_distance, max_matches=None):
+    if max_matches is None:
+        max_matches = len(D)
+
+    matches = []
+    for i in range(D.size):
+        dist = D[i]
+        if dist <= max_distance:
+            matches.append(i)
+
+    # Removes indices that are inside the exclusion zone of some occurrence with
+    # a smaller distance to the query
+    matches.sort(key=lambda x: D[x])
+    result = []
+    while len(matches) > 0:
+        idx = matches[0]
+        result.append([D[idx], idx])
+        matches = [x for x in matches if x < idx - excl_zone or x > idx + excl_zone]
+
+    return np.array(result[:max_matches], dtype=object)

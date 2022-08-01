@@ -2640,6 +2640,7 @@ def _find_matches(
         of susequences in `T` selected as the match of `Q`.
 
     """
+    D = D.copy()
     if max_distance is None:
 
         def max_distance(D):
@@ -2652,7 +2653,7 @@ def _find_matches(
     if not isinstance(max_distance, float):
         max_distance = max_distance(D)
 
-    if max_matches is None:  # pragma: no cover
+    if max_matches is None:
         max_matches = np.inf
 
     if query_idx is not None:
