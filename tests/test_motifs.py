@@ -7,11 +7,11 @@ from stumpy import core, motifs, match
 import naive
 
 
-def naive_match(Q, T, excl_zone, max_distance):
+def naive_match(Q, T, excl_zone, max_distance, max_matches=None):
     m = Q.shape[0]
     D = naive.distance_profile(Q, T, m)
 
-    return naive.find_matches(D, excl_zone, max_distance)
+    return naive.find_matches(D, excl_zone, max_distance, max_matches)
 
 
 test_data = [
