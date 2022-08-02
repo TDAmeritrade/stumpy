@@ -190,6 +190,9 @@ def _compute_diagonal(
                 if T_B_subseq_isconstant[i + k] and T_A_subseq_isconstant[i]:
                     pearson = 1.0
 
+                if pearson > config.STUMPY_PERFECT_CORRELATION:
+                    pearson = 1.0
+
                 if pearson > ρ[thread_idx, i, 0]:
                     ρ[thread_idx, i, 0] = pearson
                     I[thread_idx, i, 0] = i + k
