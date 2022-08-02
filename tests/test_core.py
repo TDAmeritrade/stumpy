@@ -1064,3 +1064,25 @@ def test_select_P_ABBA_val_inf():
 def test_check_P():
     with pytest.raises(ValueError):
         core._check_P(np.random.rand(10).reshape(2, 5))
+
+
+def test_find_matches_all():
+    # max_matches: None, i.e. find all matches
+    max_distance = np.inf
+    D = np.random.rand(64)
+    for excl_zone in range(3):
+        ref = naive.find_matches(D, excl_zone, max_distance, max_matches=None)
+        comp = core._find_matches(D, excl_zone, max_distance, max_matches=None)
+
+        npt.assert_almost_equal(ref, comp)
+
+
+def test_find_matches_maxmatch():
+    max_distance = np.inf
+    D = np.random.rand(64)
+    for excl_zone in range(3):
+        max_matches = np.random.randint(0, 100)
+        ref = naive.find_matches(D, excl_zone, max_distance, max_matches)
+        comp = core._find_matches(D, excl_zone, max_distance, max_matches)
+
+        npt.assert_almost_equal(ref, comp)

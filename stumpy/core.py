@@ -2583,3 +2583,95 @@ def _check_P(P, threshold=1e-6):
     if are_distances_too_small(P, threshold=threshold):  # pragma: no cover
         logger.warning(f"A large number of values in `P` are smaller than {threshold}.")
         logger.warning("For a self-join, try setting `ignore_trivial=True`.")
+
+
+def _find_matches(
+    D, excl_zone, max_distance=None, max_matches=None, query_idx=None, atol=1e-8
+):
+    """
+    Find all matches of a query `Q` whose distance profile with `T` is `D`.
+
+    Parameters
+    ----------
+    D : numpy.ndarray
+        The distance profile of `Q` with `T`. It is a 1D numpy array of size
+        `len(T)-len(Q)+1`, where `D[i]` is the distance between query `Q` and
+        `T[i : i + len(Q)]`.
+
+    excl_zone : int
+        Size of the exclusion zone. That is, after finding the next-best-match
+        located at index `idx`, we ignore subsequences with start index in range
+        (idx -  excl_zone, idx + excl_zone + 1).
+
+    max_distance : float or function, default None
+        Maximum distance between `Q` and a subsequence `S` for `S` to be considered a
+        match.
+        If a function, then it has to be a function of one argument `D`, which will be
+        the distance profile of `Q` with `T` (a 1D numpy array of size `n-m+1`).
+        If None, this defaults to
+        `np.nanmax([np.nanmean(D) - 2 * np.nanstd(D), np.nanmin(D)])` (i.e. at
+        least the closest match will be returned).
+
+    max_matches : int, default None
+        The maximum amount of similar occurrences to be returned. The resulting
+        occurrences are sorted by distance, so a value of `10` means that the
+        indices of the most similar `10` subsequences is returned. If `None`, then all
+        occurrences are returned.
+
+    query_idx : int, default None
+        This is the index position along the time series, `T`, where the query
+        subsequence, `Q`, is located.
+        `query_idx` should only be used when the matrix profile is a self-join and
+        should be set to `None` for matrix profiles computed from AB-joins.
+        If `query_idx` is set to a specific integer value, then this will help ensure
+        that the self-match will be returned first.
+
+    atol : float, default 1e-8
+        The absolute tolerance parameter. This value will be added to `max_distance`
+        when comparing distances between subsequences.
+
+    Returns
+    -------
+    out : numpy.ndarray
+        The first column consists of values selected from `D`. These are the distances
+        of subsequences of `T` whose distances to `Q` are less than or equal to
+        `max_distance`, sorted by distance (lowest to highest). The second column
+        consists of the corresponding indices in `D`. These are in fact the start index
+        of susequences in `T` selected as the match of `Q`.
+
+    """
+    D = D.copy()
+    if max_distance is None:
+
+        def max_distance(D):
+            D_copy = D.copy().astype(np.float64)
+            D_copy[np.isinf(D_copy)] = np.nan
+            return np.nanmax(
+                [np.nanmean(D_copy) - 2.0 * np.nanstd(D_copy), np.nanmin(D_copy)]
+            )
+
+    if not isinstance(max_distance, float):
+        max_distance = max_distance(D)
+
+    if max_matches is None:
+        max_matches = np.inf
+
+    if query_idx is not None:
+        candidate_idx = query_idx
+    else:
+        candidate_idx = np.argmin(D)
+
+    matches = []
+    for _ in range(len(D)):
+        if (
+            D[candidate_idx] > atol + max_distance
+            or ~np.isfinite(D[candidate_idx])
+            or len(matches) >= max_matches
+        ):
+            break
+
+        matches.append([D[candidate_idx], candidate_idx])
+        apply_exclusion_zone(D, candidate_idx, excl_zone, np.inf)
+        candidate_idx = np.argmin(D)
+
+    return np.array(matches, dtype=object)
