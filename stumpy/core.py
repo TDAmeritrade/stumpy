@@ -1456,11 +1456,11 @@ def _mass_distance_matrix(Q, T, m, distance_matrix, μ_Q, σ_Q, M_T, Σ_T):
     distance_matrix : numpy.ndarray
         The full output distance matrix. This is mandatory since it may be reused.
 
-    μ_Q : float
-        Mean of `Q`
+    μ_Q : numpy.ndarray
+        Sliding mean of `Q`
 
-    σ_Q : float
-        Standard deviation of `Q`
+    σ_Q : numpy.ndarray
+        Sliding standard deviation of `Q`
 
     M_T : numpy.ndarray
         Sliding mean of `T`
@@ -2533,7 +2533,7 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
 
     k : int
         Specify the `k`th value in the concatenated matrix profiles to return. This
-        parameter is ignored when `k_func` is not None.
+        parameter is ignored when `custom_func` is not None.
 
     custom_func : object, default None
         A custom user defined function for selecting the desired value from the

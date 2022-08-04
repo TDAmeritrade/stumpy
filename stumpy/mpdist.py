@@ -192,13 +192,14 @@ def _mpdist_vect(
         Time series or sequence
 
     m : int
-        Window size
+        Window size that will be used for calculating the mpdist between Q and
+        any subsequence in T (of size `len(Q)`)
 
-    μ_Q : float
-        Mean of `Q`
+    μ_Q : numpy.ndarray
+        Sliding mean of `Q`
 
-    σ_Q : float
-        Standard deviation of `Q`
+    σ_Q : numpy.ndarray
+        Sliding standard deviation of `Q`
 
     M_T : numpy.ndarray
         Sliding mean of `T`
@@ -222,6 +223,13 @@ def _mpdist_vect(
         and should take `P_ABBA` as its only input parameter and return a single
         `MPdist` value. The `percentage` and `k` parameters are ignored when
         `custom_func` is not None.
+
+    Returns
+    -------
+    MPdist_vect : numpy.ndarray
+        The mpdist-based distance profile of `Q` with `T`. It is a 1D array of
+        size `len(T) - len(Q) + 1`. MPdist_vect[i] is the mpdist distance between
+        `Q` and subsequence `T[i : i + len(Q)]`.
     """
     j = Q.shape[0] - m + 1  # `k` is reserved for `P_ABBA` selection
     l = T.shape[0] - m + 1
