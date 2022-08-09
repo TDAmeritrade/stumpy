@@ -800,7 +800,7 @@ class stumpi_egress(object):
             self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
-        mp = stump(T, m, exclusion_zone=self._excl_zone, k=k)
+        mp = stump(T, m, exclusion_zone=self._excl_zone, k=self._k)
         self.P_ = mp[:, :k].astype(np.float64)
         self.I_ = mp[:, k : 2 * k].astype(np.int64)
 
@@ -814,7 +814,15 @@ class stumpi_egress(object):
 
         self._n_appended = 0
 
+        if self._k == 1:
+            self.P_ = self.P_.flatten()
+            self.I_ = self.I_.flatten()
+
     def update(self, t):
+        if self._k == 1:
+            self.P_ = self.P_.reshape(-1, 1)
+            self.I_ = self.I_.reshape(-1, 1)
+
         self._T[:] = np.roll(self._T, -1)
         self._T_isfinite[:] = np.roll(self._T_isfinite, -1)
         if np.isfinite(t):
@@ -825,8 +833,8 @@ class stumpi_egress(object):
             self._T[-1] = 0
         self._n_appended += 1
 
-        self.P_[:, :] = np.roll(self.P_, -1, axis=0)
-        self.I_[:, :] = np.roll(self.I_, -1, axis=0)
+        self.P_ = np.roll(self.P_, -1, axis=0)
+        self.I_ = np.roll(self.I_, -1, axis=0)
         self.left_P_[:] = np.roll(self.left_P_, -1)
         self.left_I_[:] = np.roll(self.left_I_, -1)
 
@@ -858,6 +866,10 @@ class stumpi_egress(object):
         # and the same goes for the left matrix profile index
         self.left_P_[-1] = self.P_[-1, 0]
         self.left_I_[-1] = self.I_[-1, 0]
+
+        if self._k == 1:
+            self.P_ = self.P_.flatten()
+            self.I_ = self.I_.flatten()
 
 
 def across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m):

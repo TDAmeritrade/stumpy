@@ -33,8 +33,8 @@ def test_stumpi_self_join():
     comp_left_I = stream.left_I_
 
     ref_mp = naive.stump(stream.T_, m, exclusion_zone=zone, row_wise=True)
-    ref_P = ref_mp[:, 0].reshape(-1, 1)
-    ref_I = ref_mp[:, 1].reshape(-1, 1)
+    ref_P = ref_mp[:, 0]
+    ref_I = ref_mp[:, 1]
     ref_left_I = ref_mp[:, 2].astype(np.int64)
     ref_left_P = np.full_like(ref_left_I, np.inf, dtype=np.float64)
     for i, j in enumerate(ref_left_I):
@@ -210,8 +210,8 @@ def test_stumpi_init_nan_inf_self_join(substitute, substitution_locations):
 
         stream.T_[substitution_location] = substitute
         ref_mp = naive.stump(stream.T_, m, exclusion_zone=zone, row_wise=True)
-        ref_P = ref_mp[:, 0].reshape(-1, 1)
-        ref_I = ref_mp[:, 1].reshape(-1, 1)
+        ref_P = ref_mp[:, 0]
+        ref_I = ref_mp[:, 1]
 
         naive.replace_inf(ref_P)
         naive.replace_inf(comp_P)
@@ -385,8 +385,8 @@ def test_stumpi_stream_nan_inf_self_join(substitute, substitution_locations):
 
         stream.T_[30:][substitution_location] = substitute
         ref_mp = naive.stump(stream.T_, m, exclusion_zone=zone, row_wise=True)
-        ref_P = ref_mp[:, 0].reshape(-1, 1)
-        ref_I = ref_mp[:, 1].reshape(-1, 1)
+        ref_P = ref_mp[:, 0]
+        ref_I = ref_mp[:, 1]
 
         naive.replace_inf(ref_P)
         naive.replace_inf(comp_P)
@@ -546,7 +546,7 @@ def test_stumpi_constant_subsequence_self_join():
     # comp_I = stream.I_
 
     ref_mp = naive.stump(stream.T_, m, exclusion_zone=zone, row_wise=True)
-    ref_P = ref_mp[:, 0].reshape(-1, 1)
+    ref_P = ref_mp[:, 0]
     # ref_I = ref_mp[:, 1]
 
     naive.replace_inf(ref_P)
@@ -701,7 +701,7 @@ def test_stumpi_identical_subsequence_self_join():
     # comp_I = stream.I_
 
     ref_mp = naive.stump(stream.T_, m, exclusion_zone=zone, row_wise=True)
-    ref_P = ref_mp[:, 0].reshape(-1, 1)
+    ref_P = ref_mp[:, 0]
     # ref_I = ref_mp[:, 1]
 
     naive.replace_inf(ref_P)
