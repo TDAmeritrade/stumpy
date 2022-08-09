@@ -2669,7 +2669,6 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     None
     """
     k = ρA.shape[1]
-
     tmp_ρ = np.empty(k, dtype=np.float64)
     tmp_I = np.empty(k, dtype=np.int64)
     last_idx = k - 1
