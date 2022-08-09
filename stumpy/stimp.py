@@ -214,11 +214,12 @@ class _stimp:
                     ignore_trivial=True,
                     percentage=self._percentage,
                     pre_scrump=self._pre_scrump,
+                    k=1,
                 )
                 approx.update()
                 self._PAN[
                     self._bfs_indices[self._n_processed], : approx.P_.shape[0]
-                ] = approx.P_.flatten()
+                ] = approx.P_
             else:
                 out = self._mp_func(
                     self._T,
