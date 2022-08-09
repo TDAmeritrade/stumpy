@@ -1880,4 +1880,3 @@ def find_matches(D, excl_zone, max_distance, max_matches=None):
         matches = [x for x in matches if x < idx - excl_zone or x > idx + excl_zone]
 
     return np.array(result[:max_matches], dtype=object)
-
