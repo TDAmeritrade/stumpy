@@ -233,8 +233,8 @@ def test_scrump_self_join_full(T_A, T_B):
     zone = int(np.ceil(m / 4))
 
     ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True)
-    ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
-    ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
+    ref_P = ref_mp[:, 0]
+    ref_I = ref_mp[:, 1]
     ref_left_I = ref_mp[:, 2]
     ref_right_I = ref_mp[:, 3]
 
@@ -369,10 +369,15 @@ def test_scrump_plus_plus_self_join(T_A, T_B, percentages):
             seed = np.random.randint(100000)
 
             np.random.seed(seed)
-            ref_P, ref_I = naive.prescrump(T_B, m, T_B, s=s, exclusion_zone=zone)
+            ref_P, ref_I = naive.prescrump(T_B, m, T_B, s=s, exclusion_zone=zone, k=1)
             ref_P_aux, ref_I_aux, _, _ = naive.scrump(
-                T_B, m, T_B, percentage, zone, True, s
+                T_B, m, T_B, percentage, zone, True, s, k=1
             )
+
+            # ref_P and ref_I are always 2D arrays. naive.scrump, howeve, gives
+            # 1D array when k=1.
+            ref_P_aux = ref_P_aux.reshape(-1, 1)
+            ref_I_aux = ref_I_aux.reshape(-1, 1)
             naive.merge_topk_PI(ref_P, ref_P_aux, ref_I, ref_I_aux)
 
             np.random.seed(seed)
@@ -386,6 +391,8 @@ def test_scrump_plus_plus_self_join(T_A, T_B, percentages):
             naive.replace_inf(ref_P)
             naive.replace_inf(comp_P)
 
+            ref_P = ref_P.flatten()
+            ref_I = ref_I.flatten()
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
 
@@ -401,11 +408,16 @@ def test_scrump_plus_plus_A_B_join(T_A, T_B, percentages):
             seed = np.random.randint(100000)
 
             np.random.seed(seed)
-            ref_P, ref_I = naive.prescrump(T_A, m, T_B, s=s)
+            ref_P, ref_I = naive.prescrump(T_A, m, T_B, s=s, k=1)
 
             ref_P_aux, ref_I_aux, ref_left_I_aux, ref_right_I_aux = naive.scrump(
-                T_A, m, T_B, percentage, None, False, None
+                T_A, m, T_B, percentage, None, False, None, k=1
             )
+
+            # ref_P and ref_I are always 2D arrays. naive.scrump, howeve, gives
+            # 1D array when k=1
+            ref_P_aux = ref_P_aux.reshape(-1, 1)
+            ref_I_aux = ref_I_aux.reshape(-1, 1)
             naive.merge_topk_PI(ref_P, ref_P_aux, ref_I, ref_I_aux)
             ref_left_I = ref_left_I_aux
             ref_right_I = ref_right_I_aux
@@ -428,6 +440,8 @@ def test_scrump_plus_plus_A_B_join(T_A, T_B, percentages):
             naive.replace_inf(ref_P)
             naive.replace_inf(comp_P)
 
+            ref_P = ref_P.flatten()
+            ref_I = ref_I.flatten()
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
             npt.assert_almost_equal(ref_left_I, comp_left_I)
@@ -876,24 +890,20 @@ def test_prescrump_A_B_join_larger_window_m_5_k_5(T_A, T_B):
 def test_prescrump_self_join_KNN_no_overlap():
     # This test is particularly designed to raise error in a rare case described
     # as follows: Let's denote `I[i]` as the array with length `k` that contains
-    # the start index of the best-so-far top-k nearest neighbors of `subseq i`,
+    # the start indices of the best-so-far top-k nearest neighbors of `subseq i`,
     # (`S_i`). Also, we denote `P[i]` as their corresponding ascendingly-sorted
-    # distances to `subseq i`. After calculating the distance between `subseq i`
-    # to its neighbor `subseq j` (`S_j`). Let's denote `d` as the distance between
-    # these two subseqs. `j` is eligible to be inserted into I[i] if `d` is less
-    # than the `P[i, -1]` and if `j` is not in I[i]. One might think to first perform
-    # `idx = np.searchosrted(P[i], d, side="right")` and then check if `j`
-    # is in `I[i, :idx]` or not. HOWEVER, this does  not suffice! The latter approach
-    # may result in duplicates(!) due to the imprecision in calculation of ditances.
-    # It is possible  that the distance between `S_i` and `S_j` was
-    # calculated in one of previous iterations and that value might be slightly
-    # higher than `d` (In theory, they should be exactly the same!!). Thus, althought
-    # `j` might be already in I[i], it might not appear in `I[i, :idx]`. In other
-    # words, we might have `j` as the element `I[i, w]`, where `w >= idx` and hence
-    # P[i, w] > d).  In theory, P[i, w] and d should be equal as they both show the
-    # same distance, i.e. the distance between `S_i` and `S_j`.
-    # To sum up, we need to search whole I[i] for `j`.
-
+    # distances. Let's denote `d` as the distane betweeen `S_i` and `S_j`. P[i] and
+    # I[i] must be updated if (1) `j` is not in I[i] and (2) `d` < P[i,-1]. Regarding
+    # the former condition, one needs to check the whole array I[i]. Checking the
+    # array I[i, :idx], where `idx = np.searchsorted(P[i], 'd', side='right')` is
+    # not completly correct and that is due to imprecision in numerical calculation.
+    # It may happen that `j` is not in `I[i, :idx]`, but it is in fact at `I[i, idx]`
+    # (or any other position in array I[i]). And, its corresponding distance, i.e
+    # P[i, idx], is d + 1e-5, for instance. In theory, this should be exactly `d`.
+    #  However, due to imprecision, we may calculated a slightly different value
+    # for such distance in one of previous iterations in function prescrump. This
+    #  test results in error if someone tries to change the performant code of prescrump
+    # function and check `I[i, :idx]` rather than the full array `I[i]`.
     T = np.array(
         [
             -916.64703784,
