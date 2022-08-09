@@ -1541,6 +1541,10 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s, k=1):
                         PR[i] = d
                         IR[i] = i + g
 
+    if k == 1:
+        P = P.flatten()
+        I = I.flatten()
+
     return P, I, IL, IR
 
 

@@ -517,15 +517,16 @@ class scrump:
     Attributes
     ----------
     P_ : numpy.ndarray
-        The updated (top-k) matrix profile. When k=1 (default), the first (and only)
-        column in this 2D array consists of the matrix profile. When k > 1, the output
-        has exactly k columns consisting of the top-k matrix profile.
+        The updated (top-k) matrix profile. When `k=1` (default), this output is
+        a 1D array consisting of the matrix profile values. When `k > 1`, the output
+        is a 2D array that has exactly `k` columns consisting of the top-k matrix
+        profile values.
 
     I_ : numpy.ndarray
-        The updated (top-k) matrix profile indices. When k=1 (default), the first
-        (and only) column in this 2D array consists of the matrix profile indices.
-        When k > 1, the output has exactly k columns consisting of the top-k matrix
-        profile indices.
+        The updated (top-k) matrix profile indices. When `k=1` (default), this output is
+        a 1D array consisting of the matrix profile indices. When `k > 1`, the output
+        is a 2D array that has exactly `k` columns consisting of the top-k matrix
+        profile indiecs.
 
     left_I_ : numpy.ndarray
         The updated left (top-1) matrix profile indices
@@ -789,21 +790,28 @@ class scrump:
     @property
     def P_(self):
         """
-        Get the updated (top-k) matrix profile. When k=1 (default), the first (and only)
-        column in this 2D array consists of the matrix profile. When k > 1, the output
-        has exactly `k` columns consisting of the top-k matrix profile.
+        Get the updated (top-k) matrix profile. When `k=1` (default), this output is
+        a 1D array consisting of the updated matrix profile values. When `k > 1`,
+        the output is a 2D array that has exactly `k` columns consisting of the
+        updated top-k matrix profile values.
         """
-        return self._P.astype(np.float64)
+        if self._k == 1:
+            return self._P.flatten().astype(np.float64)
+        else:
+            return self._P.astype(np.float64)
 
     @property
     def I_(self):
         """
-        Get the updated (top-k) matrix profile indices. When k=1 (default), the
-        first (and only) column in this 2D array consists of the matrix profile
-        indices. When k > 1, the output has exactly `k` columns consisting of the top-k
-        matrix profile indices.
+        Get the updated (top-k) matrix profile indices. When `k=1` (default), this
+        output is a 1D array consisting of the updated matrix profile indices. When
+        `k > 1`, the output is a 2D array that has exactly `k` columns consisting
+        of the updated top-k matrix profile indices.
         """
-        return self._I.astype(np.int64)
+        if self._k == 1:
+            return self._I.flatten().astype(np.int64)
+        else:
+            return self._I.astype(np.int64)
 
     @property
     def left_I_(self):
