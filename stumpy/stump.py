@@ -474,12 +474,12 @@ def _stump(
         # update top-k arrays
         core._merge_topk_ρI(ρ[0], ρ[thread_idx], I[0], I[thread_idx])
 
-        # update left matrix profile and  matrix profile indices
+        # update left matrix profile and matrix profile indices
         mask = ρL[0] < ρL[thread_idx]
         ρL[0][mask] = ρL[thread_idx][mask]
         IL[0][mask] = IL[thread_idx][mask]
 
-        # update right matrix profile and  matrix profile indices
+        # update right matrix profile and matrix profile indices
         mask = ρR[0] < ρR[thread_idx]
         ρR[0][mask] = ρR[thread_idx][mask]
         IR[0][mask] = IR[thread_idx][mask]
