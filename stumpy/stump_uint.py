@@ -157,9 +157,17 @@ def _compute_diagonal(
         k = diags[diag_idx]
 
         if k >= 0:
-            iter_range = np.arange(0, min(n_A - m + 1, n_B - m + 1 - k), dtype=np.uint64)
+            iter_range = np.arange(
+                0,
+                min(n_A - m + 1, n_B - m + 1 - k),
+                dtype=np.uint64,
+            )
         else:
-            iter_range = np.arange(-k, min(n_A - m + 1, n_B - m + 1 - k), dtype=np.uint64)
+            iter_range = np.arange(
+                -k,
+                min(n_A - m + 1, n_B - m + 1 - k),
+                dtype=np.uint64,
+            )
 
         for i in iter_range:
             ik = numba.uint64(i + k)
@@ -167,12 +175,7 @@ def _compute_diagonal(
             im = numba.uint64(i + m)
 
             if i == 0 or (k < 0 and i == -k):
-                cov = (
-                    np.dot(
-                        (T_B[ik : ikm] - M_T[ik]), (T_A[i : im] - μ_Q[i])
-                    )
-                    * m_inverse
-                )
+                cov = np.dot((T_B[ik:ikm] - M_T[ik]), (T_A[i:im] - μ_Q[i])) * m_inverse
             else:
                 # The next lines are equivalent and left for reference
                 # cov = cov + constant * (
@@ -180,9 +183,7 @@ def _compute_diagonal(
                 #     * (T_A[i + m - 1] - μ_Q_m_1[i])
                 #     - (T_B[i + k - 1] - M_T_m_1[i + k]) * (T_A[i - 1] - μ_Q_m_1[i])
                 # )
-                cov = cov + constant * (
-                    cov_a[ik] * cov_b[i] - cov_c[ik] * cov_d[i]
-                )
+                cov = cov + constant * cov_a[ik] * cov_b[i] - cov_c[ik] * cov_d[i]
 
             if T_B_subseq_isfinite[ik] and T_A_subseq_isfinite[i]:
                 # Neither subsequence contains NaNs
