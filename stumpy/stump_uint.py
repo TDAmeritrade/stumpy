@@ -183,7 +183,7 @@ def _compute_diagonal(
                 #     * (T_A[i + m - 1] - μ_Q_m_1[i])
                 #     - (T_B[i + k - 1] - M_T_m_1[i + k]) * (T_A[i - 1] - μ_Q_m_1[i])
                 # )
-                cov = cov + constant * cov_a[ik] * cov_b[i] - cov_c[ik] * cov_d[i]
+                cov = cov + constant * (cov_a[ik] * cov_b[i] - cov_c[ik] * cov_d[i])
 
             if T_B_subseq_isfinite[ik] and T_A_subseq_isfinite[i]:
                 # Neither subsequence contains NaNs
