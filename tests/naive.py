@@ -819,9 +819,9 @@ class stumpi_egress(object):
             self.I_ = self.I_.flatten()
 
     def update(self, t):
-        if self._k == 1:
-            self.P_ = self.P_.reshape(-1, 1)
-            self.I_ = self.I_.reshape(-1, 1)
+        # ensure than self.P_ and self.I_ are 2D
+        self.P_ = self.P_.reshape(-1, self._k)
+        self.I_ = self.I_.reshape(-1, self._k)
 
         self._T[:] = np.roll(self._T, -1)
         self._T_isfinite[:] = np.roll(self._T_isfinite, -1)
@@ -1490,6 +1490,10 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
                     pos = np.searchsorted(P[idx], distance_profile[idx], side="right")
                     P[idx] = np.insert(P[idx], pos, distance_profile[idx])[:-1]
                     I[idx] = np.insert(I[idx], pos, i)[:-1]
+
+    if k == 1:
+        P = P.flatten()
+        I = I.flatten()
 
     return P, I
 
