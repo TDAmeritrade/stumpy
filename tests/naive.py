@@ -867,6 +867,7 @@ class stumpi_egress(object):
         self.left_P_[-1] = self.P_[-1, 0]
         self.left_I_[-1] = self.I_[-1, 0]
 
+        # post-processing: ensure that self.P_ and self.I_ is 1D.
         if self._k == 1:
             self.P_ = self.P_.flatten()
             self.I_ = self.I_.flatten()
@@ -1827,6 +1828,12 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
 
 def merge_topk_PI(PA, PB, IA, IB):
     k = PA.shape[1]
+    if k == 1:
+        mask = PB < PA
+        PA[mask] = PB[mask]
+        IA[mask] = IB[mask]
+        return
+
     for i in range(PA.shape[0]):
         _, _, overlap_idx_B = np.intersect1d(IA[i], IB[i], return_indices=True)
         PB[i, overlap_idx_B] = np.inf

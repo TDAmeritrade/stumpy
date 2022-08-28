@@ -233,8 +233,8 @@ def test_scrump_self_join_full(T_A, T_B):
     zone = int(np.ceil(m / 4))
 
     ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True)
-    ref_P = ref_mp[:, 0].reshape(-1, 1)  # to match shape of comp_P when k=1
-    ref_I = ref_mp[:, 1].reshape(-1, 1)  # to match shape of comp_I when k=1
+    ref_P = ref_mp[:, 0]  # .reshape(-1, 1)  # to match shape of comp_P when k=1
+    ref_I = ref_mp[:, 1]  # .reshape(-1, 1)  # to match shape of comp_I when k=1
     ref_left_I = ref_mp[:, 2]
     ref_right_I = ref_mp[:, 3]
 
