@@ -233,8 +233,8 @@ def test_scrump_self_join_full(T_A, T_B):
     zone = int(np.ceil(m / 4))
 
     ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True)
-    ref_P = ref_mp[:, 0]  # .reshape(-1, 1)  # to match shape of comp_P when k=1
-    ref_I = ref_mp[:, 1]  # .reshape(-1, 1)  # to match shape of comp_I when k=1
+    ref_P = ref_mp[:, 0]
+    ref_I = ref_mp[:, 1]
     ref_left_I = ref_mp[:, 2]
     ref_right_I = ref_mp[:, 3]
 
@@ -374,10 +374,6 @@ def test_scrump_plus_plus_self_join(T_A, T_B, percentages):
                 T_B, m, T_B, percentage, zone, True, s, k=1
             )
 
-            # ref_P and ref_I are always 2D arrays. naive.scrump, howeve, gives
-            # 1D array when k=1.
-            ref_P_aux = ref_P_aux.reshape(-1, 1)
-            ref_I_aux = ref_I_aux.reshape(-1, 1)
             naive.merge_topk_PI(ref_P, ref_P_aux, ref_I, ref_I_aux)
 
             np.random.seed(seed)
@@ -414,10 +410,6 @@ def test_scrump_plus_plus_A_B_join(T_A, T_B, percentages):
                 T_A, m, T_B, percentage, None, False, None, k=1
             )
 
-            # ref_P and ref_I are always 2D arrays. naive.scrump, howeve, gives
-            # 1D array when k=1
-            ref_P_aux = ref_P_aux.reshape(-1, 1)
-            ref_I_aux = ref_I_aux.reshape(-1, 1)
             naive.merge_topk_PI(ref_P, ref_P_aux, ref_I, ref_I_aux)
             ref_left_I = ref_left_I_aux
             ref_right_I = ref_right_I_aux
