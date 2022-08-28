@@ -455,7 +455,10 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
         k,
     )
 
-    return P, I
+    if k == 1:
+        return P.flatten().astype(np.float64), I.flatten().astype(np.int64)
+    else:
+        return P, I
 
 
 @core.non_normalized(
@@ -715,7 +718,11 @@ class scrump:
             else:
                 P, I = prescrump(T_A, m, T_B=T_B, s=s, k=self._k)
 
-            core._merge_topk_PI(self._P, P, self._I, I)
+            # P and I are 1D when `self._k` is 1. So, we should reshape them
+            # before passing them to `_merge_topk_PI`
+            core._merge_topk_PI(
+                self._P, P.reshape(-1, self._k), self._I, I.reshape(-1, self._k)
+            )
 
         if self._ignore_trivial:
             self._diags = np.random.permutation(
