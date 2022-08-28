@@ -868,22 +868,19 @@ def test_stumpi_profile_index_match():
         t = T_full[i]
         stream.update(t)
 
-        P[:, :] = np.inf
-        mask = stream.I_ >= 0
-
-        for j in range(P.shape[1]):  # `j` as j-th nearest neighbor
-            IDX = np.flatnonzero(mask[:, j])
-            P[IDX, j] = naive.distance(
-                naive.z_norm(T_full_subseq[IDX + n + 1], axis=1),
-                naive.z_norm(T_full_subseq[stream.I_[IDX, j]], axis=1),
-                axis=1,
-            )
+        P[:] = np.inf
+        indices = np.argwhere(stream.I_ >= 0).flatten()
+        P[indices] = naive.distance(
+            naive.z_norm(T_full_subseq[indices + n + 1], axis=1),
+            naive.z_norm(T_full_subseq[stream.I_[indices]], axis=1),
+            axis=1,
+        )
 
         left_P[:] = np.inf
-        idx = np.argwhere(stream.left_I_ >= 0).flatten()
-        left_P[idx] = naive.distance(
-            naive.z_norm(T_full_subseq[idx + n + 1], axis=1),
-            naive.z_norm(T_full_subseq[stream.left_I_[idx]], axis=1),
+        indices = np.argwhere(stream.left_I_ >= 0).flatten()
+        left_P[indices] = naive.distance(
+            naive.z_norm(T_full_subseq[indices + n + 1], axis=1),
+            naive.z_norm(T_full_subseq[stream.left_I_[indices]], axis=1),
             axis=1,
         )
 
