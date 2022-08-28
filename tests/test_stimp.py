@@ -52,7 +52,7 @@ def test_stimp_1_percent(T):
         tmp_P, tmp_I = naive.prescrump(T, m, T, s=s, exclusion_zone=zone)
         ref_P, ref_I, _, _ = naive.scrump(T, m, T, percentage, zone, True, s)
         naive.merge_topk_PI(ref_P, tmp_P, ref_I, tmp_I)
-        ref_PAN[pan._bfs_indices[idx], : ref_P.shape[0]] = ref_P.flatten()
+        ref_PAN[pan._bfs_indices[idx], : ref_P.shape[0]] = ref_P
 
     # Compare raw pan
     cmp_PAN = pan._PAN
@@ -107,7 +107,7 @@ def test_stimp_max_m(T):
         tmp_P, tmp_I = naive.prescrump(T, m, T, s=s, exclusion_zone=zone)
         ref_P, ref_I, _, _ = naive.scrump(T, m, T, percentage, zone, True, s)
         naive.merge_topk_PI(ref_P, tmp_P, ref_I, tmp_I)
-        ref_PAN[pan._bfs_indices[idx], : ref_P.shape[0]] = ref_P.flatten()
+        ref_PAN[pan._bfs_indices[idx], : ref_P.shape[0]] = ref_P
 
     # Compare raw pan
     cmp_PAN = pan._PAN
