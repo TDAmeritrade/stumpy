@@ -2609,6 +2609,12 @@ def _merge_topk_PI(PA, PB, IA, IB):
     None
     """
     k = PA.shape[1]
+    if k == 1:
+        mask = PB < PA
+        PA[mask] = PB[mask]
+        IA[mask] = IB[mask]
+        return
+
     tmp_P = np.empty(k, dtype=np.float64)
     tmp_I = np.empty(k, dtype=np.int64)
     for i in range(PA.shape[0]):
@@ -2669,6 +2675,12 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     None
     """
     k = ρA.shape[1]
+    if k == 1:
+        mask = ρB > ρA
+        ρA[mask] = ρB[mask]
+        IA[mask] = IB[mask]
+        return
+
     tmp_ρ = np.empty(k, dtype=np.float64)
     tmp_I = np.empty(k, dtype=np.int64)
     last_idx = k - 1
