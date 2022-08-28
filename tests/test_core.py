@@ -1078,6 +1078,21 @@ def test_merge_topk_PI_without_overlap():
         IA = np.arange(n * k).reshape(n, k)
         IB = IA + n * k
 
+        # if k=1, make them 1D
+        if k == 1:
+            PA = PA.reshape(
+                -1,
+            )
+            IA = IA.reshape(
+                -1,
+            )
+            PB = PB.reshape(
+                -1,
+            )
+            IB = IB.reshape(
+                -1,
+            )
+
         ref_P = PA.copy()
         ref_I = IA.copy()
 
@@ -1096,6 +1111,8 @@ def test_merge_topk_PI_with_overlap():
     # is overlap between row IA[i] and row IB[i].
     n = 50
     for k in range(1, 6):
+        # note: we do not have overlap issue when k is 1. The `k=1` is considered
+        # for the sake of consistency with the `without-overlap` test function.
         PA = np.random.rand(n * k).reshape(n, k)
         PB = np.random.rand(n * k).reshape(n, k)
 
@@ -1118,6 +1135,21 @@ def test_merge_topk_PI_with_overlap():
         IDX = np.argsort(PB, axis=1)
         PB[:, :] = np.take_along_axis(PB, IDX, axis=1)
         IB[:, :] = np.take_along_axis(IB, IDX, axis=1)
+
+        # if k=1, make them 1D
+        if k == 1:
+            PA = PA.reshape(
+                -1,
+            )
+            IA = IA.reshape(
+                -1,
+            )
+            PB = PB.reshape(
+                -1,
+            )
+            IB = IB.reshape(
+                -1,
+            )
 
         ref_P = PA.copy()
         ref_I = IA.copy()
@@ -1149,6 +1181,21 @@ def test_merge_topk_ρI_without_overlap():
         IA = np.arange(n * k).reshape(n, k)
         IB = IA + n * k
 
+        # if k=1, make them 1D
+        if k == 1:
+            ρA = ρA.reshape(
+                -1,
+            )
+            IA = IA.reshape(
+                -1,
+            )
+            ρB = ρB.reshape(
+                -1,
+            )
+            IB = IB.reshape(
+                -1,
+            )
+
         ref_ρ = ρA.copy()
         ref_I = IA.copy()
 
@@ -1167,6 +1214,8 @@ def test_merge_topk_ρI_with_overlap():
     # is overlap between row IA[i] and row IB[i].
     n = 50
     for k in range(1, 6):
+        # note: we do not have overlap issue when k is 1. The `k=1` is considered
+        # for the sake of consistency with the `without-overlap` test function.
         ρA = np.random.rand(n * k).reshape(n, k)
         ρB = np.random.rand(n * k).reshape(n, k)
 
@@ -1189,6 +1238,21 @@ def test_merge_topk_ρI_with_overlap():
         IDX = np.argsort(ρB, axis=1)
         ρB[:, :] = np.take_along_axis(ρB, IDX, axis=1)
         IB[:, :] = np.take_along_axis(IB, IDX, axis=1)
+
+        # if k=1, make them 1D
+        if k == 1:
+            ρA = ρA.reshape(
+                -1,
+            )
+            IA = IA.reshape(
+                -1,
+            )
+            ρB = ρB.reshape(
+                -1,
+            )
+            IB = IB.reshape(
+                -1,
+            )
 
         ref_ρ = ρA.copy()
         ref_I = IA.copy()
