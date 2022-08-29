@@ -867,7 +867,7 @@ class stumpi_egress(object):
         self.left_P_[-1] = self.P_[-1, 0]
         self.left_I_[-1] = self.I_[-1, 0]
 
-        # post-processing: ensure that self.P_ and self.I_ is 1D.
+        # post-processing: ensure that self.P_ and self.I_ are 1D.
         if self._k == 1:
             self.P_ = self.P_.flatten()
             self.I_ = self.I_.flatten()
