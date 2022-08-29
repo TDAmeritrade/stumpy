@@ -2612,33 +2612,32 @@ def _merge_topk_PI(PA, PB, IA, IB):
         mask = PB < PA
         PA[mask] = PB[mask]
         IA[mask] = IB[mask]
-        return
-
-    k = PA.shape[1]
-    tmp_P = np.empty(k, dtype=np.float64)
-    tmp_I = np.empty(k, dtype=np.int64)
-    for i in range(PA.shape[0]):
-        overlap = set(IB[i]).intersection(set(IA[i]))
-        aj, bj = 0, 0
-        idx = 0
-        # 2 * k iterations are required to traverse both A and B if needed.
-        for _ in range(2 * k):
-            if idx >= k:
-                break
-            if bj < k and PB[i, bj] < PA[i, aj]:
-                if IB[i, bj] not in overlap:
-                    tmp_P[idx] = PB[i, bj]
-                    tmp_I[idx] = IB[i, bj]
+    else:
+        k = PA.shape[1]
+        tmp_P = np.empty(k, dtype=np.float64)
+        tmp_I = np.empty(k, dtype=np.int64)
+        for i in range(PA.shape[0]):
+            overlap = set(IB[i]).intersection(set(IA[i]))
+            aj, bj = 0, 0
+            idx = 0
+            # 2 * k iterations are required to traverse both A and B if needed.
+            for _ in range(2 * k):
+                if idx >= k:
+                    break
+                if bj < k and PB[i, bj] < PA[i, aj]:
+                    if IB[i, bj] not in overlap:
+                        tmp_P[idx] = PB[i, bj]
+                        tmp_I[idx] = IB[i, bj]
+                        idx += 1
+                    bj += 1
+                else:
+                    tmp_P[idx] = PA[i, aj]
+                    tmp_I[idx] = IA[i, aj]
                     idx += 1
-                bj += 1
-            else:
-                tmp_P[idx] = PA[i, aj]
-                tmp_I[idx] = IA[i, aj]
-                idx += 1
-                aj += 1
+                    aj += 1
 
-        PA[i] = tmp_P
-        IA[i] = tmp_I
+            PA[i] = tmp_P
+            IA[i] = tmp_I
 
 
 @njit
@@ -2678,34 +2677,33 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
         mask = ρB > ρA
         ρA[mask] = ρB[mask]
         IA[mask] = IB[mask]
-        return
-
-    k = ρA.shape[1]
-    tmp_ρ = np.empty(k, dtype=np.float64)
-    tmp_I = np.empty(k, dtype=np.int64)
-    last_idx = k - 1
-    for i in range(len(ρA)):
-        overlap = set(IB[i]).intersection(set(IA[i]))
-        aj, bj = last_idx, last_idx
-        idx = last_idx
-        # 2 * k iterations are required to traverse both A and B if needed.
-        for _ in range(2 * k):
-            if idx < 0:
-                break
-            if bj >= 0 and ρB[i, bj] > ρA[i, aj]:
-                if IB[i, bj] not in overlap:
-                    tmp_ρ[idx] = ρB[i, bj]
-                    tmp_I[idx] = IB[i, bj]
+    else:
+        k = ρA.shape[1]
+        tmp_ρ = np.empty(k, dtype=np.float64)
+        tmp_I = np.empty(k, dtype=np.int64)
+        last_idx = k - 1
+        for i in range(len(ρA)):
+            overlap = set(IB[i]).intersection(set(IA[i]))
+            aj, bj = last_idx, last_idx
+            idx = last_idx
+            # 2 * k iterations are required to traverse both A and B if needed.
+            for _ in range(2 * k):
+                if idx < 0:
+                    break
+                if bj >= 0 and ρB[i, bj] > ρA[i, aj]:
+                    if IB[i, bj] not in overlap:
+                        tmp_ρ[idx] = ρB[i, bj]
+                        tmp_I[idx] = IB[i, bj]
+                        idx -= 1
+                    bj -= 1
+                else:
+                    tmp_ρ[idx] = ρA[i, aj]
+                    tmp_I[idx] = IA[i, aj]
                     idx -= 1
-                bj -= 1
-            else:
-                tmp_ρ[idx] = ρA[i, aj]
-                tmp_I[idx] = IA[i, aj]
-                idx -= 1
-                aj -= 1
+                    aj -= 1
 
-        ρA[i] = tmp_ρ
-        IA[i] = tmp_I
+            ρA[i] = tmp_ρ
+            IA[i] = tmp_I
 
 
 @njit
