@@ -1078,21 +1078,6 @@ def test_merge_topk_PI_without_overlap():
         IA = np.arange(n * k).reshape(n, k)
         IB = IA + n * k
 
-        # if k=1, make them 1D
-        if k == 1:
-            PA = PA.reshape(
-                -1,
-            )
-            IA = IA.reshape(
-                -1,
-            )
-            PB = PB.reshape(
-                -1,
-            )
-            IB = IB.reshape(
-                -1,
-            )
-
         ref_P = PA.copy()
         ref_I = IA.copy()
 
@@ -1135,21 +1120,6 @@ def test_merge_topk_PI_with_overlap():
         IDX = np.argsort(PB, axis=1)
         PB[:, :] = np.take_along_axis(PB, IDX, axis=1)
         IB[:, :] = np.take_along_axis(IB, IDX, axis=1)
-
-        # if k=1, make them 1D
-        if k == 1:
-            PA = PA.reshape(
-                -1,
-            )
-            IA = IA.reshape(
-                -1,
-            )
-            PB = PB.reshape(
-                -1,
-            )
-            IB = IB.reshape(
-                -1,
-            )
 
         ref_P = PA.copy()
         ref_I = IA.copy()
