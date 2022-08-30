@@ -1134,6 +1134,27 @@ def test_merge_topk_PI_with_overlap():
         npt.assert_almost_equal(ref_I, comp_I)
 
 
+def test_merge_topk_PI_with_1D_input():
+    n = 50
+    PA = np.random.rand(n)
+    PB = np.random.rand(n)
+
+    IA = np.arange(n)
+    IB = IA + n
+
+    ref_P = PA.copy()
+    ref_I = IA.copy()
+
+    comp_P = PA.copy()
+    comp_I = IA.copy()
+
+    naive.merge_topk_PI(ref_P, PB.copy(), ref_I, IB.copy())
+    core._merge_topk_PI(comp_P, PB.copy(), comp_I, IB.copy())
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
+
+
 def test_merge_topk_ρI_without_overlap():
     # This is to test function `core._merge_topk_ρI(ρA, ρB, IA, IB)` when there
     # is no overlap between row IA[i] and row IB[i].
@@ -1150,21 +1171,6 @@ def test_merge_topk_ρI_without_overlap():
 
         IA = np.arange(n * k).reshape(n, k)
         IB = IA + n * k
-
-        # if k=1, make them 1D
-        if k == 1:
-            ρA = ρA.reshape(
-                -1,
-            )
-            IA = IA.reshape(
-                -1,
-            )
-            ρB = ρB.reshape(
-                -1,
-            )
-            IB = IB.reshape(
-                -1,
-            )
 
         ref_ρ = ρA.copy()
         ref_I = IA.copy()
@@ -1209,21 +1215,6 @@ def test_merge_topk_ρI_with_overlap():
         ρB[:, :] = np.take_along_axis(ρB, IDX, axis=1)
         IB[:, :] = np.take_along_axis(IB, IDX, axis=1)
 
-        # if k=1, make them 1D
-        if k == 1:
-            ρA = ρA.reshape(
-                -1,
-            )
-            IA = IA.reshape(
-                -1,
-            )
-            ρB = ρB.reshape(
-                -1,
-            )
-            IB = IB.reshape(
-                -1,
-            )
-
         ref_ρ = ρA.copy()
         ref_I = IA.copy()
 
@@ -1235,6 +1226,27 @@ def test_merge_topk_ρI_with_overlap():
 
         npt.assert_almost_equal(ref_ρ, comp_ρ)
         npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_merge_topk_ρI_with_1D_input():
+    n = 50
+    ρA = np.random.rand(n)
+    ρB = np.random.rand(n)
+
+    IA = np.arange(n)
+    IB = IA + n
+
+    ref_ρ = ρA.copy()
+    ref_I = IA.copy()
+
+    comp_ρ = ρA.copy()
+    comp_I = IA.copy()
+
+    naive.merge_topk_PI(ref_ρ, ρB.copy(), ref_I, IB.copy())
+    core._merge_topk_PI(comp_ρ, ρB.copy(), comp_I, IB.copy())
+
+    npt.assert_almost_equal(ref_ρ, comp_ρ)
+    npt.assert_almost_equal(ref_I, comp_I)
 
 
 def test_shift_insert_at_index():
