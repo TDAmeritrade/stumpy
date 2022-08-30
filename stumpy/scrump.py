@@ -250,7 +250,7 @@ def _compute_PI(
     parallel=True,
     fastmath=True,
 )
-def _prescrump(
+def _compute_approx_PI(
     T_A,
     T_B,
     m,
@@ -368,12 +368,11 @@ def _prescrump(
     return np.sqrt(P_squared[0]), I[0]
 
 
-@core.non_normalized(scraamp.prescraamp)
-def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
+def _prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
     """
-    A convenience wrapper around the Numba JIT-compiled parallelized `_prescrump`
-    function which computes the approximate (top-k) matrix profile according to
-    the preSCRIMP algorithm
+    A convenience wrapper around the Numba JIT-compiled parallelized
+    `_compute_approx_PI` function which computes the approximate (top-k) matrix
+    profile according to the preSCRIMP algorithm.
 
     Parameters
     ----------
@@ -408,15 +407,12 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
     Returns
     -------
     P : numpy.ndarray
-        The (top-k) matrix profile. When k = 1 (default), the first (and only) column
-        in this 2D array consists of the matrix profile. When k > 1, the output has
-        exactly `k` columns consisting of the top-k matrix profile.
+        The (top-k) matrix profile. This 2D array has exactly `k` columns consisting
+        of the top-k matrix profile.
 
     I : numpy.ndarray
-        The (top-k) matrix profile indices. When k = 1 (default), the first (and only)
-        column in this 2D array consists of the matrix profile indices. When k > 1,
-        the output has exactly `k` columns consisting of the top-k matrix profile
-        indices.
+        The (top-k) matrix profile indices. This 2D array has exactly `k` columns
+        consisting of the top-k matrix profile indices.
 
     Notes
     -----
@@ -441,7 +437,7 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
         s = excl_zone
 
     indices = np.random.permutation(range(0, l, s)).astype(np.int64)
-    P, I = _prescrump(
+    P, I = _compute_approx_PI(
         T_A,
         T_B,
         m,
@@ -454,6 +450,68 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
         excl_zone,
         k,
     )
+
+    return P, I
+
+
+@core.non_normalized(scraamp.prescraamp)
+def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
+    """
+    A convenience wrapper around `prescrump` function which computes the approximate
+    (top-k) matrix profile according to the preSCRIMP algorithm. The output is 1D
+    when `k=1`.
+
+    Parameters
+    ----------
+    T_A : numpy.ndarray
+        The time series or sequence for which to compute the matrix profile
+
+    m : int
+        Window size
+
+    T_B : numpy.ndarray, default None
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
+
+    s : int, default None
+        The sampling interval that defaults to
+        `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
+
+    normalize : bool, default True
+        When set to `True`, this z-normalizes subsequences prior to computing distances.
+        Otherwise, this function gets re-routed to its complementary non-normalized
+        equivalent set in the `@core.non_normalized` function decorator.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == True`.
+
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
+
+    Returns
+    -------
+    P : numpy.ndarray
+        The (top-k) matrix profile. When `k = 1` (default), this is a 1D array
+        consisting of the matrix profile. When `k > 1`, the output is  a 2D array
+        that has exactly `k` columns consisting of the top-k matrix profile.
+
+    I : numpy.ndarray
+        The (top-k) matrix profile indices. When `k = 1` (default), this is a 1D array
+        consisting of the matrix profile indices. When `k > 1`, the output is  a
+        2D array that has exactly  `k` columns consisting of the top-k matrix profile
+        indices.
+
+    Notes
+    -----
+    `DOI: 10.1109/ICDM.2018.00099 \
+    <https://www.cs.ucr.edu/~eamonn/SCRIMP_ICDM_camera_ready_updated.pdf>`__
+
+    See Algorithm 2
+    """
+    P, I = _prescrump(T_A, m, T_B, s, normalize, p, k)
 
     if k == 1:
         return P.flatten().astype(np.float64), I.flatten().astype(np.int64)
@@ -714,15 +772,11 @@ class scrump:
 
         if pre_scrump:
             if self._ignore_trivial:
-                P, I = prescrump(T_A, m, s=s, k=self._k)
+                P, I = _prescrump(T_A, m, s=s, k=self._k)
             else:
-                P, I = prescrump(T_A, m, T_B=T_B, s=s, k=self._k)
+                P, I = _prescrump(T_A, m, T_B=T_B, s=s, k=self._k)
 
-            # P and I are 1D when `self._k` is 1. So, we should reshape them
-            # before passing them to `_merge_topk_PI`
-            core._merge_topk_PI(
-                self._P, P.reshape(-1, self._k), self._I, I.reshape(-1, self._k)
-            )
+            core._merge_topk_PI(self._P, P, self._I, I)
 
         if self._ignore_trivial:
             self._diags = np.random.permutation(
