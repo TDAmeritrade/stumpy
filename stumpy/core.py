@@ -2612,7 +2612,7 @@ def _merge_topk_PI(PA, PB, IA, IB):
     None
     """
     if PA.ndim == 1:
-        mask = PB < PA
+        mask = (PB < PA) & (IB != IA)
         PA[mask] = PB[mask]
         IA[mask] = IB[mask]
     else:
@@ -2680,7 +2680,7 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     None
     """
     if ρA.ndim == 1:
-        mask = ρB > ρA
+        mask = (ρB > ρA) & (IB != IA)
         ρA[mask] = ρB[mask]
         IA[mask] = IB[mask]
     else:
