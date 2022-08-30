@@ -2578,12 +2578,15 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
 @njit
 def _merge_topk_PI(PA, PB, IA, IB):
     """
-    Merge two top-k matrix profiles `PA` and `PB`, and update `PA` (in place) while
-    always prioritizing the values of `PA` over the values of `PB` in case of ties.
-    (i.e., values from `PB` are always inserted to the right of values from `PA`).
-    Also, update `IA` accordingly. In case of overlapping values between two arrays
-    IA[i] and IB[i], the ones in IB[i] (and their corresponding values in PB[i])
-    are ignored throughout the updating process of IA[i] (and PA[i]).
+    Merge two top-k matrix profiles `PA` and `PB`, and update `PA` (in place).
+    When the inputs are 1D arrays, PA[i] is updated if it is less than PB[i]. In
+    such case, PA[i] and IA[i] are replaced with PB[i] and IB[i], respectively.
+    When the inputs are 2D arrays, always prioritizing the values of `PA` over the
+    values of `PB` in case of ties. (i.e., values from `PB` are always inserted to
+    the right of values from `PA`). Also, update `IA` accordingly. In case of
+    overlapping values between two arrays IA[i] and IB[i], the ones in IB[i] (and
+    their corresponding values in PB[i]) are ignored throughout the updating process o
+    f IA[i] (and PA[i]).
 
     Unlike `_merge_topk_ρI`, where `top-k` largest values are kept, this function
     keeps `top-k` smallest values.
@@ -2643,12 +2646,15 @@ def _merge_topk_PI(PA, PB, IA, IB):
 @njit
 def _merge_topk_ρI(ρA, ρB, IA, IB):
     """
-    Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place) while
-    always prioritizing the values of `ρA` over the values of `ρB` in case of ties.
-    (i.e., values from `ρB` are always inserted to the left of values from `ρA`).
-    Also, update `IA` accordingly. In case of overlapping values between two arrays
-    IA[i] and IB[i], the ones in IB[i] (and their corresponding values in ρB[i])
-    are ignored throughout the updating process of IA[i] (and ρA[i]).
+    Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place).
+    When the inputs are 1D arrays, ρA[i] is updated if it is more than ρB[i]. In
+    such case, ρA[i] and IA[i] are replaced with ρB[i] and IB[i], respectively.
+    When the inputs are 2D arrays, always prioritizing the values of `ρA` over
+    the values of `ρB` in case of ties. (i.e., values from `ρB` are always inserted
+    to the left of values from `ρA`). Also, update `IA` accordingly. In case of
+    overlapping values between two arrays IA[i] and IB[i], the ones in IB[i] (and
+    their corresponding values in ρB[i]) are ignored throughout the updating process
+    of IA[i] (and ρA[i]).
 
     Unlike `_merge_topk_PI`, where `top-k` smallest values are kept, this function
     keeps `top-k` largest values.
