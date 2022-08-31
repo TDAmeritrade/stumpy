@@ -442,6 +442,7 @@ def _prescrump(
     return np.sqrt(P_squared[0]), I[0]
 
 
+@core.non_normalized(scraamp.prescraamp)
 def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
     """
     A convenience wrapper around the Numba JIT-compiled parallelized
