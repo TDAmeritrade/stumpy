@@ -387,8 +387,8 @@ def test_scrump_plus_plus_self_join(T_A, T_B, percentages):
             naive.replace_inf(ref_P)
             naive.replace_inf(comp_P)
 
-            ref_P = ref_P.flatten()
-            ref_I = ref_I.flatten()
+            ref_P = ref_P
+            ref_I = ref_I
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
 
@@ -432,8 +432,8 @@ def test_scrump_plus_plus_A_B_join(T_A, T_B, percentages):
             naive.replace_inf(ref_P)
             naive.replace_inf(comp_P)
 
-            ref_P = ref_P.flatten()
-            ref_I = ref_I.flatten()
+            ref_P = ref_P
+            ref_I = ref_I
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
             npt.assert_almost_equal(ref_left_I, comp_left_I)
