@@ -482,14 +482,14 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
     Returns
     -------
     P : numpy.ndarray
-        The (top-k) matrix profile. When k = 1 (default), the first (and only) column
-        in this 2D array consists of the matrix profile. When k > 1, the output has
-        exactly `k` columns consisting of the top-k matrix profile.
+        The (top-k) matrix profile. When k = 1 (default), this is a 1D array
+        consisting of the matrix profile. When k > 1, the output is a 2D array that
+        has exactly `k` columns consisting of the top-k matrix profile.
 
     I : numpy.ndarray
-        The (top-k) matrix profile indices. When k = 1 (default), the first (and only)
-        column in this 2D array consists of the matrix profile indices. When k > 1,
-        the output has exactly `k` columns consisting of the top-k matrix profile
+        The (top-k) matrix profile indices. When k = 1 (default), this is a 1D array
+        consisting of the matrix profile indices. When k > 1, the output is a 2D
+        array that has exactly `k` columns consisting of the top-k matrix profile
         indices.
 
     Notes
