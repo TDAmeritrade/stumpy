@@ -108,8 +108,8 @@ def _compute_PI(
     k=1,
 ):
     """
-    Compute (Numba JIT-compiled) and update the squared (top-k) matrix profile distance
-    and matrix profile indces according to the preSCRIMP algorithm
+    Compute (Numba JIT-compiled) and update the squared (top-k) matrix profile
+    distance and matrix profile indces according to the preSCRIMP algorithm.
 
     Parameters
     ----------
@@ -442,12 +442,11 @@ def _prescrump(
     return np.sqrt(P_squared[0]), I[0]
 
 
-@core.non_normalized(scraamp.prescraamp)
 def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
     """
-    A convenience wrapper around the Numba JIT-compiled parallelized `_prescrump`
-    function which computes the approximate (top-k) matrix profile according to
-    the preSCRIMP algorithm
+    A convenience wrapper around the Numba JIT-compiled parallelized
+    `_prescrump` function which computes the approximate (top-k) matrix
+    profile according to the preSCRIMP algorithm.
 
     Parameters
     ----------
@@ -521,6 +520,8 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
         return P.flatten().astype(np.float64), I.flatten().astype(np.int64)
     else:
         return P, I
+
+    return P, I
 
 
 @core.non_normalized(
