@@ -800,7 +800,7 @@ class scrump:
                     excl_zone,
                 ) = _preprocess_prescrump(T_A, m, T_B=T_B, s=s)
 
-            P, I = _prescrump(T_A, T_B, μ_Q, σ_Q, M_T, Σ_T, indices, s, excl_zone, k)
+            P, I = _prescrump(T_A, T_B, m, μ_Q, σ_Q, M_T, Σ_T, indices, s, excl_zone, k)
             core._merge_topk_PI(self._P, P, self._I, I)
 
         if self._ignore_trivial:
