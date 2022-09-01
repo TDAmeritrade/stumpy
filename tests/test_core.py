@@ -1108,7 +1108,7 @@ def test_merge_topk_PI_with_overlap():
         for i in range(n):
             # create overlaps
             col_IDX = np.random.choice(np.arange(k), num_overlaps[i], replace=False)
-            imprecision = np.random.uniform(low=-1e6, high=1e6, size=len(col_IDX))
+            imprecision = np.random.uniform(low=-1e-06, high=1e-06, size=len(col_IDX))
             PB[i, col_IDX] = PA[i, col_IDX] + imprecision
             IB[i, col_IDX] = IA[i, col_IDX]
 
@@ -1202,7 +1202,7 @@ def test_merge_topk_ρI_with_overlap():
         for i in range(n):
             # create overlaps
             col_IDX = np.random.choice(np.arange(k), num_overlaps[i], replace=False)
-            imprecision = np.random.uniform(low=-1e6, high=1e6, size=len(col_IDX))
+            imprecision = np.random.uniform(low=-1e-06, high=1e-06, size=len(col_IDX))
             ρB[i, col_IDX] = ρA[i, col_IDX] + imprecision
             IB[i, col_IDX] = IA[i, col_IDX]
 
