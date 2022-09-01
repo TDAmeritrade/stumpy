@@ -81,7 +81,10 @@ def _preprocess_prescrump(T_A, m, T_B=None, s=None):
     l = n_A - m + 1
 
     if s is None:  # pragma: no cover
-        s = excl_zone
+        if excl_zone is not None:  # self-join
+            s = excl_zone
+        else:  # AB-join
+            s = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
     indices = np.random.permutation(range(0, l, s)).astype(np.int64)
 
@@ -772,9 +775,11 @@ class scrump:
         self._IR = np.full(self._l, -1, dtype=np.int64)
 
         self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
-
         if s is None:
-            s = self._excl_zone
+            if self._excl_zone is not None:  # self-join
+                s = self._excl_zone
+            else:  # pragma: no cover  # AB-join
+                s = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         if pre_scrump:
             if self._ignore_trivial:
