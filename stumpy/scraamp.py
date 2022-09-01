@@ -324,7 +324,7 @@ def prescraamp(T_A, m, T_B=None, s=None, p=2.0):
     n_A = T_A.shape[0]
     l = n_A - m + 1
 
-    if s is None:  # pragma: no cover:
+    if s is None:  # pragma: no cover
         if excl_zone is not None:  # self-join
             s = excl_zone
         else:  # AB-join
@@ -515,7 +515,7 @@ class scraamp:
         if s is None:
             if self._excl_zone is not None:  # self-join
                 s = self._excl_zone
-            else:  # AB-join
+            else:  # pragma: no cover  # AB-join
                 s = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         if pre_scraamp:
