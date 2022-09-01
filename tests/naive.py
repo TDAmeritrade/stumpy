@@ -1828,7 +1828,7 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
 
 def merge_topk_PI(PA, PB, IA, IB):
     if PA.ndim == 1:
-        mask = PB < PA
+        mask = (PB < PA) & (IB != IA)
         PA[mask] = PB[mask]
         IA[mask] = IB[mask]
         return
@@ -1870,7 +1870,7 @@ def merge_topk_ρI(ρA, ρB, IA, IB):
     # ties: [0_B, 0_A, 0'_A, 1_B, 1'_B, 1_A], and we just need to keep the second
     # half of this array, and discard the first half.
     if ρA.ndim == 1:
-        mask = ρB > ρA
+        mask = (ρB > ρA) & (IB != IA)
         ρA[mask] = ρB[mask]
         IA[mask] = IB[mask]
         return
