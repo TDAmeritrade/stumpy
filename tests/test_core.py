@@ -1135,12 +1135,19 @@ def test_merge_topk_PI_with_overlap():
 
 
 def test_merge_topk_PI_with_1D_input():
+    # including some overlaps randomly
     n = 50
     PA = np.random.rand(n)
     PB = np.random.rand(n)
 
     IA = np.arange(n)
     IB = IA + n
+
+    n_overlaps = np.random.randint(1, n + 1)
+    IDX_rows_with_overlaps = np.random.choice(np.arange(n), n_overlaps, replace=False)
+    imprecision = np.random.uniform(low=-1e-06, high=1e-06, size=n_overlaps)
+    PB[IDX_rows_with_overlaps] = PA[IDX_rows_with_overlaps] + imprecision
+    IB[IDX_rows_with_overlaps] = IA[IDX_rows_with_overlaps]
 
     ref_P = PA.copy()
     ref_I = IA.copy()
@@ -1229,6 +1236,7 @@ def test_merge_topk_ρI_with_overlap():
 
 
 def test_merge_topk_ρI_with_1D_input():
+    # including some overlaps randomly
     n = 50
     ρA = np.random.rand(n)
     ρB = np.random.rand(n)
@@ -1241,6 +1249,12 @@ def test_merge_topk_ρI_with_1D_input():
 
     comp_ρ = ρA.copy()
     comp_I = IA.copy()
+
+    n_overlaps = np.random.randint(1, n + 1)
+    IDX_rows_with_overlaps = np.random.choice(np.arange(n), n_overlaps, replace=False)
+    imprecision = np.random.uniform(low=-1e-06, high=1e-06, size=n_overlaps)
+    ρB[IDX_rows_with_overlaps] = ρA[IDX_rows_with_overlaps] + imprecision
+    IB[IDX_rows_with_overlaps] = IA[IDX_rows_with_overlaps]
 
     naive.merge_topk_PI(ref_ρ, ρB.copy(), ref_I, IB.copy())
     core._merge_topk_PI(comp_ρ, ρB.copy(), comp_I, IB.copy())
