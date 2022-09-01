@@ -324,8 +324,11 @@ def prescraamp(T_A, m, T_B=None, s=None, p=2.0):
     n_A = T_A.shape[0]
     l = n_A - m + 1
 
-    if s is None:  # pragma: no cover
-        s = excl_zone
+    if s is None:  # pragma: no cover:
+        if excl_zone is not None:  # self-join
+            s = excl_zone
+        else:  # AB-join
+            s = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
     indices = np.random.permutation(range(0, l, s)).astype(np.int64)
     P, I = _prescraamp(
@@ -509,9 +512,11 @@ class scraamp:
         self._I[:, :] = -1
 
         self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
-
         if s is None:
-            s = self._excl_zone
+            if self._excl_zone is not None:  # self-join
+                s = self._excl_zone
+            else:  # AB-join
+                s = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         if pre_scraamp:
             if self._ignore_trivial:
