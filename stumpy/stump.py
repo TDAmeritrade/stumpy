@@ -190,9 +190,6 @@ def _compute_diagonal(
                 if T_B_subseq_isconstant[i + k] and T_A_subseq_isconstant[i]:
                     pearson = 1.0
 
-                if pearson > config.STUMPY_PERFECT_CORRELATION:
-                    pearson = 1.0
-
                 if pearson > ρ[thread_idx, i, 0]:
                     ρ[thread_idx, i, 0] = pearson
                     I[thread_idx, i, 0] = i + k
@@ -431,6 +428,15 @@ def _stump(
         if p_norm[i, 2] < config.STUMPY_P_NORM_THRESHOLD:
             p_norm[i, 2] = 0.0
     P = np.sqrt(p_norm)
+    mask = P < 1e-3
+    for i in prange(P.shape[0]):
+        for j in range(P.shape[1]):
+            if mask[i, j]:
+                nn_i = I[0, i, j]
+                P[i, j] = np.linalg.norm(
+                    (T_A[i : i + m] - μ_Q[i]) * σ_Q_inverse[i]
+                    - (T_B[nn_i : nn_i + m] - M_T[nn_i]) * Σ_T_inverse[nn_i]
+                )
 
     return P[:, :], I[0, :, :]
 
