@@ -197,12 +197,17 @@ def _compute_diagonal(
                 if pearson <= -1.0:
                     pearson = -1.0
 
-                if pearson > 0.999 and pearson < 1.0:
-                    d = np.linalg.norm(
-                        (T_A[i : i + m] - μ_Q[i]) * σ_Q_inverse[i]
-                        - (T_B[i + k : i + k + m] - M_T[i + k]) * Σ_T_inverse[i + k]
-                    )
-                    pearson = 1.0 - 0.5 * m_inverse * np.square(d)
+                if pearson != 1.0 and pearson >= config.STUMPY_CORRELATION_THRESHOLD:
+                    # refine pearson only when we have to
+                    if pearson > ρ[thread_idx, i, 0] or (
+                        ignore_trivial and np.any(pearson > ρ[thread_idx, i + k])
+                    ):
+
+                        d = np.linalg.norm(
+                            (T_A[i : i + m] - μ_Q[i]) * σ_Q_inverse[i]
+                            - (T_B[i + k : i + k + m] - M_T[i + k]) * Σ_T_inverse[i + k]
+                        )
+                        pearson = 1.0 - 0.5 * m_inverse * np.square(d)
 
                 if pearson > ρ[thread_idx, i, 0]:
                     ρ[thread_idx, i, 0] = pearson
