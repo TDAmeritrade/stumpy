@@ -2579,8 +2579,13 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
 def _merge_topk_PI(PA, PB, IA, IB):
     """
     Merge two top-k matrix profiles `PA` and `PB`, and update `PA` (in place).
-    When the inputs are 1D arrays, PA[i] is updated if it is less than PB[i]. In
-    such case, PA[i] and IA[i] are replaced with PB[i] and IB[i], respectively.
+    When the inputs are 1D arrays, PA[i] is updated if it is less than PB[i] and
+    IA[i] != IB[i]. In such case, PA[i] and IA[i] are replaced with PB[i] and IB[i],
+    respectively. (Note that it might happen that IA[i]=IB[i] but PA[i] != PB[i].
+    This situation can occur if there is slight imprecision in numerical calculations.
+    In that case, we do not update PA[i] and IA[i]. While updating PA[i] and IA[i]
+    is harmless in this case, we avoid doing that so to be consistent with the merging
+    process when the inputs are 2D arrays)
     When the inputs are 2D arrays, always prioritizing the values of `PA` over the
     values of `PB` in case of ties. (i.e., values from `PB` are always inserted to
     the right of values from `PA`). Also, update `IA` accordingly. In case of
@@ -2595,7 +2600,7 @@ def _merge_topk_PI(PA, PB, IA, IB):
     ----------
     PA : numpy.ndarray
         A (top-k) matrix profile where values in each row are sorted in ascending
-        order. `PA` must be 2-dimensional.
+        order. `PA` must be 1- or 2-dimensional.
 
     PB : numpy.ndarray
         A (top-k) matrix profile where values in each row are sorted in ascending
@@ -2647,8 +2652,13 @@ def _merge_topk_PI(PA, PB, IA, IB):
 def _merge_topk_ρI(ρA, ρB, IA, IB):
     """
     Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place).
-    When the inputs are 1D arrays, ρA[i] is updated if it is more than ρB[i]. In
-    such case, ρA[i] and IA[i] are replaced with ρB[i] and IB[i], respectively.
+    When the inputs are 1D arrays, ρA[i] is updated if it is more than ρB[i] and
+    IA[i] != IB[i]. In such case, ρA[i] and IA[i] are replaced with ρB[i] and IB[i],
+    respectively. (Note that it might happen that IA[i]=IB[i] but ρA[i] != ρB[i].
+    This situation can occur if there is slight imprecision in numerical calculations.
+    In that case, we do not update ρA[i] and IA[i]. While updating ρA[i] and IA[i]
+    is harmless in this case, we avoid doing that so to be consistent with the merging
+    process when the inputs are 2D arrays)
     When the inputs are 2D arrays, always prioritizing the values of `ρA` over
     the values of `ρB` in case of ties. (i.e., values from `ρB` are always inserted
     to the left of values from `ρA`). Also, update `IA` accordingly. In case of
@@ -2663,7 +2673,7 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     ----------
     ρA : numpy.ndarray
         A (top-k) pearson profile where values in each row are sorted in ascending
-        order. `ρA` must be 2-dimensional.
+        order. `ρA` must be 1- or 2-dimensional.
 
     ρB : numpy.ndarray
         A (top-k) pearson profile, where values in each row are sorted in ascending
