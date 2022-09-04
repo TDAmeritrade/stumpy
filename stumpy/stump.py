@@ -197,7 +197,7 @@ def _compute_diagonal(
                 if pearson <= -1.0:
                     pearson = -1.0
 
-                if pearson != 1.0 and pearson >= config.STUMPY_CORRELATION_THRESHOLD:
+                if config.STUMPY_CORRELATION_THRESHOLD <= pearson < 1.0:
                     # refine pearson only when we have to
                     if pearson > ρ[thread_idx, i, 0] or (
                         ignore_trivial and np.any(pearson > ρ[thread_idx, i + k])
