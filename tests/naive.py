@@ -6,7 +6,7 @@ from scipy.stats import norm
 from stumpy import core, config
 
 
-def z_norm(a, axis=0, threshold=0.0):
+def z_norm(a, axis=0, threshold=1e-100):
     std = np.std(a, axis, keepdims=True)
     std[np.less(std, threshold, where=~np.isnan(std))] = 1.0
 
