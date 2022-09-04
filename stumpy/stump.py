@@ -202,7 +202,7 @@ def _compute_diagonal(
                 if config.STUMPY_CORRELATION_THRESHOLD <= pearson < 1.0:
                     # refine pearson only when we have to
                     if pearson > ρ[thread_idx, i, 0] or (
-                        ignore_trivial and np.any(pearson > ρ[thread_idx, i + k])
+                        ignore_trivial and pearson > ρ[thread_idx, i + k, 0]
                     ):
                         x[:] = (T_A[i : i + m] - μ_Q[i]) * σ_Q_inverse[i]
                         y[:] = (T_B[i + k : i + k + m] - M_T[i + k]) * Σ_T_inverse[
