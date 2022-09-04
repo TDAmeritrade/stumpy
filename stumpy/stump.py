@@ -201,7 +201,8 @@ def _compute_diagonal(
                             y[:] = (T_B[i + k : i + k + m] - M_T[i + k]) * Σ_T_inverse[
                                 i + k
                             ]
-                            pearson = 1.0 - m_inverse_half * np.sum(np.square(x - y))
+                            D_squared = np.sum(np.square(x)) + np.sum(np.square(y)) - 2 * np.dot(x, y) 
+                            pearson = 1.0 - m_inverse_half * D_squared
 
                 if pearson > 1.0:
                     pearson = 1.0
