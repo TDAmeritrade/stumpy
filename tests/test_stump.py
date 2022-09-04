@@ -336,7 +336,7 @@ def test_stump_volatile():
     seed = 0
     np.random.seed(seed)
     T_A = np.random.rand(64)
-    scale = np.random.choice(np.array([0.001, 1.0, 1000]), len(T), replace=True)
+    scale = np.random.choice(np.array([0.001, 1.0, 1000]), len(T_A), replace=True)
     T_A[:] = T_A * scale
 
     ref_mp = naive.stump(T_A, m, exclusion_zone=zone, row_wise=True)
