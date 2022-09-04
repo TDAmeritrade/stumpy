@@ -153,6 +153,8 @@ def _compute_diagonal(
     m_inverse = 1.0 / m
     constant = (m - 1) * m_inverse * m_inverse  # (m - 1)/(m * m)
 
+    x = np.empty(m, dtype=np.float64)
+    y = np.empty(m, dtype=np.float64)
     for diag_idx in range(diags_start_idx, diags_stop_idx):
         k = diags[diag_idx]
 
@@ -192,9 +194,9 @@ def _compute_diagonal(
 
                 # due to imprecision, the value of pearson may be outside
                 # of interval [-1, 1]
-                if pearson >= 1.0:
+                if pearson > 1.0:
                     pearson = 1.0
-                if pearson <= -1.0:
+                if pearson < -1.0:
                     pearson = -1.0
 
                 if config.STUMPY_CORRELATION_THRESHOLD <= pearson < 1.0:
@@ -202,12 +204,16 @@ def _compute_diagonal(
                     if pearson > ρ[thread_idx, i, 0] or (
                         ignore_trivial and np.any(pearson > ρ[thread_idx, i + k])
                     ):
-
-                        d = np.linalg.norm(
-                            (T_A[i : i + m] - μ_Q[i]) * σ_Q_inverse[i]
-                            - (T_B[i + k : i + k + m] - M_T[i + k]) * Σ_T_inverse[i + k]
+                        x[:] = (T_A[i : i + m] - μ_Q[i]) * σ_Q_inverse[i]
+                        y[:] = (T_B[i + k : i + k + m] - M_T[i + k]) * Σ_T_inverse[
+                            i + k
+                        ]
+                        D_squared = (
+                            np.sum(np.square(x))
+                            + np.sum(np.square(y))
+                            - 2.0 * np.dot(x, y)
                         )
-                        pearson = 1.0 - 0.5 * m_inverse * np.square(d)
+                        pearson = 1.0 - 0.5 * m_inverse * D_squared
 
                 if pearson > ρ[thread_idx, i, 0]:
                     ρ[thread_idx, i, 0] = pearson
