@@ -151,12 +151,8 @@ def _compute_diagonal(
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     m_inverse = 1.0 / m
-    m_inverse_half = 0.5 * m_inverse
-
     constant = (m - 1) * m_inverse * m_inverse  # (m - 1)/(m * m)
 
-    x = np.empty(m, dtype=np.float64)
-    y = np.empty(m, dtype=np.float64)
     for diag_idx in range(diags_start_idx, diags_stop_idx):
         k = diags[diag_idx]
 
@@ -197,16 +193,15 @@ def _compute_diagonal(
                         if pearson > ρ[thread_idx, i, 0] or (
                             ignore_trivial and pearson > ρ[thread_idx, i + k, 0]
                         ):
-                            x[:] = (T_A[i : i + m] - μ_Q[i]) * σ_Q_inverse[i]
-                            y[:] = (T_B[i + k : i + k + m] - M_T[i + k]) * Σ_T_inverse[
-                                i + k
-                            ]
-                            D_squared = (
-                                np.sum(np.square(x))
-                                + np.sum(np.square(y))
-                                - 2 * np.dot(x, y)
+                            pearson = (
+                                np.dot(
+                                    (T_B[i + k : i + k + m] - M_T[i + k]),
+                                    (T_A[i : i + m] - μ_Q[i]),
+                                )
+                                * m_inverse
+                                * Σ_T_inverse[i + k]
+                                * σ_Q_inverse[i]
                             )
-                            pearson = 1.0 - m_inverse_half * D_squared
 
                 if pearson > 1.0:
                     pearson = 1.0
