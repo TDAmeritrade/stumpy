@@ -184,20 +184,16 @@ def _compute_diagonal(
 
             if T_B_subseq_isfinite[i + k] and T_A_subseq_isfinite[i]:
                 # Neither subsequence contains NaNs
-                if T_B_subseq_isconstant[i + k] or T_A_subseq_isconstant[i]:
+                if T_B_subseq_isconstant[i + k] and T_A_subseq_isconstant[i]:
+                    pearson = 1.0
+                elif T_B_subseq_isconstant[i + k] or T_A_subseq_isconstant[i]:
                     pearson = 0.5
                 else:
                     pearson = cov * Σ_T_inverse[i + k] * σ_Q_inverse[i]
-
-                if T_B_subseq_isconstant[i + k] and T_A_subseq_isconstant[i]:
-                    pearson = 1.0
-
-                # due to imprecision, the value of pearson may be outside
-                # of interval [-1, 1]
-                if pearson > 1.0:
-                    pearson = 1.0
-                if pearson < -1.0:
-                    pearson = -1.0
+                    if pearson > 1.0:
+                        pearson = 1.0
+                    if pearson < -1.0:
+                        pearson = -1.0
 
                 if config.STUMPY_CORRELATION_THRESHOLD <= pearson < 1.0:
                     # refine pearson only when we have to
