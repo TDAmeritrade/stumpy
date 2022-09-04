@@ -151,6 +151,8 @@ def _compute_diagonal(
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     m_inverse = 1.0 / m
+    m_inverse_half = 0.5 * m_inverse
+
     constant = (m - 1) * m_inverse * m_inverse  # (m - 1)/(m * m)
 
     x = np.empty(m, dtype=np.float64)
@@ -190,26 +192,19 @@ def _compute_diagonal(
                     pearson = 0.5
                 else:
                     pearson = cov * Σ_T_inverse[i + k] * σ_Q_inverse[i]
-                    if pearson > 1.0:
-                        pearson = 1.0
-                    if pearson < -1.0:
-                        pearson = -1.0
+                    if config.STUMPY_CORRELATION_THRESHOLD <= pearson < 1.0:
+                        # refine pearson only when we have to
+                        if pearson > ρ[thread_idx, i, 0] or (
+                            ignore_trivial and pearson > ρ[thread_idx, i + k, 0]
+                        ):
+                            x[:] = (T_A[i : i + m] - μ_Q[i]) * σ_Q_inverse[i]
+                            y[:] = (T_B[i + k : i + k + m] - M_T[i + k]) * Σ_T_inverse[
+                                i + k
+                            ]
+                            pearson = 1.0 - m_inverse_half * np.sum(np.square(x - y))
 
-                if config.STUMPY_CORRELATION_THRESHOLD <= pearson < 1.0:
-                    # refine pearson only when we have to
-                    if pearson > ρ[thread_idx, i, 0] or (
-                        ignore_trivial and pearson > ρ[thread_idx, i + k, 0]
-                    ):
-                        x[:] = (T_A[i : i + m] - μ_Q[i]) * σ_Q_inverse[i]
-                        y[:] = (T_B[i + k : i + k + m] - M_T[i + k]) * Σ_T_inverse[
-                            i + k
-                        ]
-                        D_squared = (
-                            np.sum(np.square(x))
-                            + np.sum(np.square(y))
-                            - 2.0 * np.dot(x, y)
-                        )
-                        pearson = 1.0 - 0.5 * m_inverse * D_squared
+                if pearson > 1.0:
+                    pearson = 1.0
 
                 if pearson > ρ[thread_idx, i, 0]:
                     ρ[thread_idx, i, 0] = pearson
