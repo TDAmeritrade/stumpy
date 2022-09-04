@@ -245,8 +245,7 @@ def test_stump_nan_zero_mean_self_join():
 def test_stump_identical_subsequence_self_join_rare_cases():
     # This test function is designed to capture the errors that migtht be raised
     # due the imprecision in the calculation of pearson values in the edge case
-    # where two subsequences are identical (i.e. their pearson value is 1.0)
-    # This is resolved by setting config.STUMPY_PERFECT_CORRELATION
+    # where two subsequences are identical.
     m = 3
     zone = int(np.ceil(m / 4))
 
@@ -275,10 +274,6 @@ def test_stump_identical_subsequence_self_join_rare_cases():
 
 
 def test_stump_identical_subsequence_self_join_rare_cases_2():
-    # This test function is designed to capture the errors that migtht be raised
-    # due the imprecision in the calculation of pearson values in the edge case
-    # where two subsequences are identical (i.e. their pearson value is 1.0)
-    # This is resolved by setting config.STUMPY_PERFECT_CORRELATION
     m = 3
     zone = int(np.ceil(m / 4))
 
@@ -290,6 +285,34 @@ def test_stump_identical_subsequence_self_join_rare_cases_2():
         T_A = np.random.rand(20)
         T_A[1 : 1 + identical.shape[0]] = identical * 0.001
         T_A[11 : 11 + identical.shape[0]] = identical * 1000
+
+        ref_mp = naive.stump(T_A, m, exclusion_zone=zone, row_wise=True)
+        comp_mp = stump(T_A, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(
+            ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        )  # ignore indices
+
+        comp_mp = stump(pd.Series(T_A), m, ignore_trivial=True)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(
+            ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        )  # ignore indices
+
+
+def test_stump_identical_subsequence_self_join_rare_cases_3():
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    seed_values = [27343, 84451]
+    for seed in seed_values:
+        np.random.seed(seed)
+
+        identical = np.random.rand(8)
+        T_A = np.random.rand(20)
+        T_A[1 : 1 + identical.shape[0]] = identical * 0.00001
+        T_A[11 : 11 + identical.shape[0]] = identical * 100000
 
         ref_mp = naive.stump(T_A, m, exclusion_zone=zone, row_wise=True)
         comp_mp = stump(T_A, m, ignore_trivial=True)
