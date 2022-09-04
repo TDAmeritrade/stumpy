@@ -1756,8 +1756,7 @@ def preprocess_diagonal(T, m):
     T, T_subseq_isfinite = preprocess_non_normalized(T, m)
     M_T, Σ_T = compute_mean_std(T, m)
     T_sliding_min = _rolling_nanmin_1d(T, m)
-    T_sliding_max = _rolling_nanmax_1d(T, m)
-    T_subseq_isconstant = T_sliding_min == T_sliding_max
+    T_subseq_isconstant = T_sliding_min == M_T
     Σ_T[T_subseq_isfinite & T_subseq_isconstant] = 0.0
     Σ_T[Σ_T <= config.STUMPY_STDDEV_THRESHOLD] = 1.0
     Σ_T_inverse = 1.0 / Σ_T
