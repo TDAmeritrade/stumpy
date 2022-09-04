@@ -327,3 +327,28 @@ def test_stump_identical_subsequence_self_join_rare_cases_3():
         npt.assert_almost_equal(
             ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
         )  # ignore indices
+
+
+def test_stump_volatile():
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    seed = 0
+    np.random.seed(seed)
+    T_A = np.random.rand(64)
+    scale = np.random.choice(np.array([0.001, 1.0, 1000]), len(T), replace=True)
+    T_A[:] = T_A * scale
+
+    ref_mp = naive.stump(T_A, m, exclusion_zone=zone, row_wise=True)
+    comp_mp = stump(T_A, m, ignore_trivial=True)
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(
+        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
+    )  # ignore indices
+
+    comp_mp = stump(pd.Series(T_A), m, ignore_trivial=True)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(
+        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
+    )  # ignore indices
