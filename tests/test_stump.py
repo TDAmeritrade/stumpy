@@ -333,17 +333,18 @@ def test_stump_volatile():
     m = 3
     zone = int(np.ceil(m / 4))
 
-    seed = 0
-    np.random.seed(seed)
-    T = np.random.rand(64)
-    scale = np.random.choice(np.array([0.001, 0, 1000]), len(T), replace=True)
-    T[:] = T * scale
+    seed_values = [0, 1]
+    for seed in seed_values:
+        np.random.seed(seed)
+        T = np.random.rand(64)
+        scale = np.random.choice(np.array([0.001, 0, 1000]), len(T), replace=True)
+        T[:] = T * scale
 
-    ref_mp = naive.stump(T, m, exclusion_zone=zone, row_wise=True)
-    comp_mp = stump(T, m, ignore_trivial=True)
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
+        ref_mp = naive.stump(T, m, exclusion_zone=zone, row_wise=True)
+        comp_mp = stump(T, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
 
-    npt.assert_almost_equal(
-        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
-    )  # ignore indices
+        npt.assert_almost_equal(
+            ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        )  # ignore indices
