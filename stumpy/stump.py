@@ -189,7 +189,6 @@ def _compute_diagonal(
                 else:
                     pearson = cov * Σ_T_inverse[i + k] * σ_Q_inverse[i]
                     if config.STUMPY_CORRELATION_THRESHOLD <= pearson < 1.0:
-                        # refine pearson only when we have to
                         if pearson > ρ[thread_idx, i, 0] or (
                             ignore_trivial and pearson > ρ[thread_idx, i + k, 0]
                         ):
