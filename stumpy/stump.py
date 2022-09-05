@@ -193,15 +193,15 @@ def _compute_diagonal(
                         if pearson > ρ[thread_idx, i, 0] or (
                             ignore_trivial and pearson > ρ[thread_idx, i + k, 0]
                         ):
-                            pearson = (
+                            cov = (
                                 np.dot(
                                     (T_B[i + k : i + k + m] - M_T[i + k]),
                                     (T_A[i : i + m] - μ_Q[i]),
                                 )
                                 * m_inverse
-                                * Σ_T_inverse[i + k]
-                                * σ_Q_inverse[i]
                             )
+
+                            pearson = cov * Σ_T_inverse[i + k] * σ_Q_inverse[i]
 
                 if pearson > 1.0:
                     pearson = 1.0
