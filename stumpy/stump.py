@@ -190,6 +190,20 @@ def _compute_diagonal(
                 if T_B_subseq_isconstant[i + k] and T_A_subseq_isconstant[i]:
                     pearson = 1.0
 
+                if config.STUMPY_CORRELATION_THRESHOLD <= pearson < 1.0:
+                    cov = (
+                        np.dot(
+                            (T_B[i + k : i + k + m] - M_T[i + k]),
+                            (T_A[i : i + m] - μ_Q[i]),
+                        )
+                        * m_inverse
+                    )
+
+                    pearson = cov * Σ_T_inverse[i + k] * σ_Q_inverse[i]
+
+                if pearson > 1.0:
+                    pearson = 1.0
+
                 if pearson > ρ[thread_idx, i, 0]:
                     ρ[thread_idx, i, 0] = pearson
                     I[thread_idx, i, 0] = i + k
