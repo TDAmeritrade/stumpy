@@ -352,6 +352,14 @@ def test_stump_volatile():
 
 
 def test_investigate():
+    # T is generated as follows:
+    # T = np.zoros(10, dtype=np.float64)
+    # T[:3] = Q1; T[-3:] = Q2, where Q1=T_rand[12:15] and Q2=T_rand[9:12], and
+    # T_rand:
+    # seed = 1; np.random.seed(seed)
+    # T_rand =  np.random.rand(64)
+    # scale = np.random.choice(np.array([0.001, 1.0, 1000]), len(T_rand), replace=True)
+    # T_rand = T_rand * scale
     T = np.array(
         [
             2.04452250e-04,
@@ -361,9 +369,9 @@ def test_investigate():
             0.00000000e00,
             0.00000000e00,
             0.00000000e00,
-            2.80443992e-04,
-            7.89279328e-04,
-            1.03226007e02,
+            0.0,
+            0.0,
+            0.0006852195003967596,
         ]
     )
 
