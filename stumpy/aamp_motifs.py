@@ -272,6 +272,17 @@ def aamp_motifs(
             [np.nanmean(P_copy) - 2.0 * np.nanstd(P_copy), np.nanmin(P_copy)]
         )
 
+    if cutoff == 0.0:  # pragma: no cover
+        suggested_cutoff = np.partition(P, 1)[1]
+        logger.warn(
+            "The `cutoff` has been set to 0.0 and may result in little/no candidate "
+            "motifs being identified."
+        )
+        logger.warn(
+            "You may consider relaxing the constraint by increasing the `cutoff` "
+            f"(e.g., cutoff={suggested_cutoff}."
+        )
+
     T, T_subseq_isfinite = core.preprocess_non_normalized(T[np.newaxis, :], m)
     P = P[np.newaxis, :].astype(np.float64)
 
