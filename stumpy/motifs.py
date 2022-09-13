@@ -129,6 +129,10 @@ def _motifs(
             motif_distances.append(query_matches[:max_matches, 0])
             motif_indices.append(query_matches[:max_matches, 1])
 
+        if len(query_matches) == 0:  # pragma: no cover
+            # create fake `query_matches`
+            query_matches = np.array([[np.nan, candidate_idx]])
+
         for idx in query_matches[:, 1]:
             core.apply_exclusion_zone(P, int(idx), excl_zone, np.inf)
 
