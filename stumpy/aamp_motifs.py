@@ -284,7 +284,7 @@ def aamp_motifs(
         )
         logger.warn(
             "You may consider relaxing the constraint by increasing the `cutoff` "
-            f"(e.g., cutoff={suggested_cutoff}."
+            f"(e.g., cutoff={suggested_cutoff})."
         )
 
     T, T_subseq_isfinite = core.preprocess_non_normalized(T[np.newaxis, :], m)
