@@ -374,10 +374,6 @@ def test_scrump_plus_plus_self_join(T_A, T_B, percentages):
                 T_B, m, T_B, percentage, zone, True, s, k=1
             )
 
-            # ref_P and ref_I are always 2D arrays. naive.scrump, howeve, gives
-            # 1D array when k=1.
-            ref_P_aux = ref_P_aux.reshape(-1, 1)
-            ref_I_aux = ref_I_aux.reshape(-1, 1)
             naive.merge_topk_PI(ref_P, ref_P_aux, ref_I, ref_I_aux)
 
             np.random.seed(seed)
@@ -391,8 +387,8 @@ def test_scrump_plus_plus_self_join(T_A, T_B, percentages):
             naive.replace_inf(ref_P)
             naive.replace_inf(comp_P)
 
-            ref_P = ref_P.flatten()
-            ref_I = ref_I.flatten()
+            ref_P = ref_P
+            ref_I = ref_I
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
 
@@ -414,10 +410,6 @@ def test_scrump_plus_plus_A_B_join(T_A, T_B, percentages):
                 T_A, m, T_B, percentage, None, False, None, k=1
             )
 
-            # ref_P and ref_I are always 2D arrays. naive.scrump, howeve, gives
-            # 1D array when k=1
-            ref_P_aux = ref_P_aux.reshape(-1, 1)
-            ref_I_aux = ref_I_aux.reshape(-1, 1)
             naive.merge_topk_PI(ref_P, ref_P_aux, ref_I, ref_I_aux)
             ref_left_I = ref_left_I_aux
             ref_right_I = ref_right_I_aux
@@ -440,8 +432,8 @@ def test_scrump_plus_plus_A_B_join(T_A, T_B, percentages):
             naive.replace_inf(ref_P)
             naive.replace_inf(comp_P)
 
-            ref_P = ref_P.flatten()
-            ref_I = ref_I.flatten()
+            ref_P = ref_P
+            ref_I = ref_I
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
             npt.assert_almost_equal(ref_left_I, comp_left_I)

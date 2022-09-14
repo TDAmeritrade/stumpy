@@ -2578,12 +2578,20 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
 @njit
 def _merge_topk_PI(PA, PB, IA, IB):
     """
-    Merge two top-k matrix profiles `PA` and `PB`, and update `PA` (in place) while
-    always prioritizing the values of `PA` over the values of `PB` in case of ties.
-    (i.e., values from `PB` are always inserted to the right of values from `PA`).
-    Also, update `IA` accordingly. In case of overlapping values between two arrays
-    IA[i] and IB[i], the ones in IB[i] (and their corresponding values in PB[i])
-    are ignored throughout the updating process of IA[i] (and PA[i]).
+    Merge two top-k matrix profiles `PA` and `PB`, and update `PA` (in place).
+    When the inputs are 1D arrays, PA[i] is updated if it is less than PB[i] and
+    IA[i] != IB[i]. In such case, PA[i] and IA[i] are replaced with PB[i] and IB[i],
+    respectively. (Note that it might happen that IA[i]=IB[i] but PA[i] != PB[i].
+    This situation can occur if there is slight imprecision in numerical calculations.
+    In that case, we do not update PA[i] and IA[i]. While updating PA[i] and IA[i]
+    is harmless in this case, we avoid doing that so to be consistent with the merging
+    process when the inputs are 2D arrays)
+    When the inputs are 2D arrays, always prioritizing the values of `PA` over the
+    values of `PB` in case of ties. (i.e., values from `PB` are always inserted to
+    the right of values from `PA`). Also, update `IA` accordingly. In case of
+    overlapping values between two arrays IA[i] and IB[i], the ones in IB[i] (and
+    their corresponding values in PB[i]) are ignored throughout the updating process o
+    f IA[i] (and PA[i]).
 
     Unlike `_merge_topk_ρI`, where `top-k` largest values are kept, this function
     keeps `top-k` smallest values.
@@ -2592,7 +2600,7 @@ def _merge_topk_PI(PA, PB, IA, IB):
     ----------
     PA : numpy.ndarray
         A (top-k) matrix profile where values in each row are sorted in ascending
-        order. `PA` must be 2-dimensional.
+        order. `PA` must be 1- or 2-dimensional.
 
     PB : numpy.ndarray
         A (top-k) matrix profile where values in each row are sorted in ascending
@@ -2608,42 +2616,55 @@ def _merge_topk_PI(PA, PB, IA, IB):
     -------
     None
     """
-    k = PA.shape[1]
-    tmp_P = np.empty(k, dtype=np.float64)
-    tmp_I = np.empty(k, dtype=np.int64)
-    for i in range(PA.shape[0]):
-        overlap = set(IB[i]).intersection(set(IA[i]))
-        aj, bj = 0, 0
-        idx = 0
-        # 2 * k iterations are required to traverse both A and B if needed.
-        for _ in range(2 * k):
-            if idx >= k:
-                break
-            if bj < k and PB[i, bj] < PA[i, aj]:
-                if IB[i, bj] not in overlap:
-                    tmp_P[idx] = PB[i, bj]
-                    tmp_I[idx] = IB[i, bj]
+    if PA.ndim == 1:
+        mask = (PB < PA) & (IB != IA)
+        PA[mask] = PB[mask]
+        IA[mask] = IB[mask]
+    else:
+        k = PA.shape[1]
+        tmp_P = np.empty(k, dtype=np.float64)
+        tmp_I = np.empty(k, dtype=np.int64)
+        for i in range(PA.shape[0]):
+            overlap = set(IB[i]).intersection(set(IA[i]))
+            aj, bj = 0, 0
+            idx = 0
+            # 2 * k iterations are required to traverse both A and B if needed.
+            for _ in range(2 * k):
+                if idx >= k:
+                    break
+                if bj < k and PB[i, bj] < PA[i, aj]:
+                    if IB[i, bj] not in overlap:
+                        tmp_P[idx] = PB[i, bj]
+                        tmp_I[idx] = IB[i, bj]
+                        idx += 1
+                    bj += 1
+                else:
+                    tmp_P[idx] = PA[i, aj]
+                    tmp_I[idx] = IA[i, aj]
                     idx += 1
-                bj += 1
-            else:
-                tmp_P[idx] = PA[i, aj]
-                tmp_I[idx] = IA[i, aj]
-                idx += 1
-                aj += 1
+                    aj += 1
 
-        PA[i] = tmp_P
-        IA[i] = tmp_I
+            PA[i] = tmp_P
+            IA[i] = tmp_I
 
 
 @njit
 def _merge_topk_ρI(ρA, ρB, IA, IB):
     """
-    Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place) while
-    always prioritizing the values of `ρA` over the values of `ρB` in case of ties.
-    (i.e., values from `ρB` are always inserted to the left of values from `ρA`).
-    Also, update `IA` accordingly. In case of overlapping values between two arrays
-    IA[i] and IB[i], the ones in IB[i] (and their corresponding values in ρB[i])
-    are ignored throughout the updating process of IA[i] (and ρA[i]).
+    Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place).
+    When the inputs are 1D arrays, ρA[i] is updated if it is more than ρB[i] and
+    IA[i] != IB[i]. In such case, ρA[i] and IA[i] are replaced with ρB[i] and IB[i],
+    respectively. (Note that it might happen that IA[i]=IB[i] but ρA[i] != ρB[i].
+    This situation can occur if there is slight imprecision in numerical calculations.
+    In that case, we do not update ρA[i] and IA[i]. While updating ρA[i] and IA[i]
+    is harmless in this case, we avoid doing that so to be consistent with the merging
+    process when the inputs are 2D arrays)
+    When the inputs are 2D arrays, always prioritizing the values of `ρA` over
+    the values of `ρB` in case of ties. (i.e., values from `ρB` are always inserted
+    to the left of values from `ρA`). Also, update `IA` accordingly. In case of
+    overlapping values between two arrays IA[i] and IB[i], the ones in IB[i] (and
+    their corresponding values in ρB[i]) are ignored throughout the updating process
+    of IA[i] (and ρA[i]).
 
     Unlike `_merge_topk_PI`, where `top-k` smallest values are kept, this function
     keeps `top-k` largest values.
@@ -2652,7 +2673,7 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     ----------
     ρA : numpy.ndarray
         A (top-k) pearson profile where values in each row are sorted in ascending
-        order. `ρA` must be 2-dimensional.
+        order. `ρA` must be 1- or 2-dimensional.
 
     ρB : numpy.ndarray
         A (top-k) pearson profile, where values in each row are sorted in ascending
@@ -2668,32 +2689,37 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     -------
     None
     """
-    k = ρA.shape[1]
-    tmp_ρ = np.empty(k, dtype=np.float64)
-    tmp_I = np.empty(k, dtype=np.int64)
-    last_idx = k - 1
-    for i in range(len(ρA)):
-        overlap = set(IB[i]).intersection(set(IA[i]))
-        aj, bj = last_idx, last_idx
-        idx = last_idx
-        # 2 * k iterations are required to traverse both A and B if needed.
-        for _ in range(2 * k):
-            if idx < 0:
-                break
-            if bj >= 0 and ρB[i, bj] > ρA[i, aj]:
-                if IB[i, bj] not in overlap:
-                    tmp_ρ[idx] = ρB[i, bj]
-                    tmp_I[idx] = IB[i, bj]
+    if ρA.ndim == 1:
+        mask = (ρB > ρA) & (IB != IA)
+        ρA[mask] = ρB[mask]
+        IA[mask] = IB[mask]
+    else:
+        k = ρA.shape[1]
+        tmp_ρ = np.empty(k, dtype=np.float64)
+        tmp_I = np.empty(k, dtype=np.int64)
+        last_idx = k - 1
+        for i in range(len(ρA)):
+            overlap = set(IB[i]).intersection(set(IA[i]))
+            aj, bj = last_idx, last_idx
+            idx = last_idx
+            # 2 * k iterations are required to traverse both A and B if needed.
+            for _ in range(2 * k):
+                if idx < 0:
+                    break
+                if bj >= 0 and ρB[i, bj] > ρA[i, aj]:
+                    if IB[i, bj] not in overlap:
+                        tmp_ρ[idx] = ρB[i, bj]
+                        tmp_I[idx] = IB[i, bj]
+                        idx -= 1
+                    bj -= 1
+                else:
+                    tmp_ρ[idx] = ρA[i, aj]
+                    tmp_I[idx] = IA[i, aj]
                     idx -= 1
-                bj -= 1
-            else:
-                tmp_ρ[idx] = ρA[i, aj]
-                tmp_I[idx] = IA[i, aj]
-                idx -= 1
-                aj -= 1
+                    aj -= 1
 
-        ρA[i] = tmp_ρ
-        IA[i] = tmp_I
+            ρA[i] = tmp_ρ
+            IA[i] = tmp_I
 
 
 @njit

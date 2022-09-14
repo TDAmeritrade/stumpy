@@ -14,6 +14,83 @@ from .stump import _stump
 logger = logging.getLogger(__name__)
 
 
+def _preprocess_prescrump(T_A, m, T_B=None, s=None):
+    """
+    Performs several preprocessings and returns outputs that are needed for the
+    prescrump algorithm.
+
+    Parameters
+    ----------
+    T_A : numpy.ndarray
+        The time series or sequence for which to compute the matrix profile
+
+    m : int
+        Window size
+
+    T_B : numpy.ndarray, default None
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
+
+    s : int, default None
+        The sampling interval that defaults to
+        `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
+
+    Returns
+    -------
+    T_A : numpy.ndarray
+        A copy of the time series input `T_A`, where all NaN and inf values
+        are replaced with zero.
+
+    T_B : numpy.ndarray
+        A copy of the time series input `T_B`, where all NaN and inf values
+        are replaced with zero. If the input `T_B` is not provided (default),
+        this array is just a copy of `T_A`.
+
+    μ_Q : numpy.ndarray
+        Sliding window mean for `T_A`
+
+    σ_Q : numpy.ndarray
+        Sliding window standard deviation for `T_A`
+
+    M_T : numpy.ndarray
+        Sliding window mean for `T_B`
+
+    Σ_T : numpy.ndarray
+        Sliding window standard deviation for `T_B`
+
+    indices : numpy.ndarray
+        The subsequence indices to compute `prescrump` for
+
+    s : int
+        The sampling interval that defaults to
+        `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
+
+    excl_zone : int
+        The half width for the exclusion zone
+    """
+    if T_B is None:
+        T_B = T_A
+        excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    else:
+        excl_zone = None
+
+    T_A, μ_Q, σ_Q = core.preprocess(T_A, m)
+    T_B, M_T, Σ_T = core.preprocess(T_B, m)
+
+    n_A = T_A.shape[0]
+    l = n_A - m + 1
+
+    if s is None:  # pragma: no cover
+        if excl_zone is not None:  # self-join
+            s = excl_zone
+        else:  # AB-join
+            s = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+    indices = np.random.permutation(range(0, l, s)).astype(np.int64)
+
+    return (T_A, T_B, μ_Q, σ_Q, M_T, Σ_T, indices, s, excl_zone)
+
+
 @njit(fastmath=True)
 def _compute_PI(
     T_A,
@@ -34,8 +111,8 @@ def _compute_PI(
     k=1,
 ):
     """
-    Compute (Numba JIT-compiled) and update the squared (top-k) matrix profile distance
-    and matrix profile indces according to the preSCRIMP algorithm
+    Compute (Numba JIT-compiled) and update the squared (top-k) matrix profile
+    distance and matrix profile indces according to the preSCRIMP algorithm.
 
     Parameters
     ----------
@@ -371,9 +448,9 @@ def _prescrump(
 @core.non_normalized(scraamp.prescraamp)
 def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
     """
-    A convenience wrapper around the Numba JIT-compiled parallelized `_prescrump`
-    function which computes the approximate (top-k) matrix profile according to
-    the preSCRIMP algorithm
+    A convenience wrapper around the Numba JIT-compiled parallelized
+    `_prescrump` function which computes the approximate (top-k) matrix
+    profile according to the preSCRIMP algorithm.
 
     Parameters
     ----------
@@ -408,14 +485,14 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
     Returns
     -------
     P : numpy.ndarray
-        The (top-k) matrix profile. When k = 1 (default), the first (and only) column
-        in this 2D array consists of the matrix profile. When k > 1, the output has
-        exactly `k` columns consisting of the top-k matrix profile.
+        The (top-k) matrix profile. When k = 1 (default), this is a 1D array
+        consisting of the matrix profile. When k > 1, the output is a 2D array that
+        has exactly `k` columns consisting of the top-k matrix profile.
 
     I : numpy.ndarray
-        The (top-k) matrix profile indices. When k = 1 (default), the first (and only)
-        column in this 2D array consists of the matrix profile indices. When k > 1,
-        the output has exactly `k` columns consisting of the top-k matrix profile
+        The (top-k) matrix profile indices. When k = 1 (default), this is a 1D array
+        consisting of the matrix profile indices. When k > 1, the output is a 2D
+        array that has exactly `k` columns consisting of the top-k matrix profile
         indices.
 
     Notes
@@ -425,25 +502,10 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
 
     See Algorithm 2
     """
-    if T_B is None:
-        T_B = T_A
-        excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-    else:
-        excl_zone = None
+    T_A, T_B, μ_Q, σ_Q, M_T, Σ_T, indices, s, excl_zone = _preprocess_prescrump(
+        T_A, m, T_B=T_B, s=s
+    )
 
-    T_A, μ_Q, σ_Q = core.preprocess(T_A, m)
-    T_B, M_T, Σ_T = core.preprocess(T_B, m)
-
-    n_A = T_A.shape[0]
-    l = n_A - m + 1
-
-    if s is None:  # pragma: no cover
-        if excl_zone is not None:  # self-join
-            s = excl_zone
-        else:  # AB-join
-            s = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-
-    indices = np.random.permutation(range(0, l, s)).astype(np.int64)
     P, I = _prescrump(
         T_A,
         T_B,
@@ -457,6 +519,11 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
         excl_zone,
         k,
     )
+
+    if k == 1:
+        return P.flatten().astype(np.float64), I.flatten().astype(np.int64)
+    else:
+        return P, I
 
     return P, I
 
@@ -716,10 +783,31 @@ class scrump:
 
         if pre_scrump:
             if self._ignore_trivial:
-                P, I = prescrump(T_A, m, s=s, k=self._k)
+                (
+                    T_A,
+                    T_B,
+                    μ_Q,
+                    σ_Q,
+                    M_T,
+                    Σ_T,
+                    indices,
+                    s,
+                    excl_zone,
+                ) = _preprocess_prescrump(T_A, m, s=s)
             else:
-                P, I = prescrump(T_A, m, T_B=T_B, s=s, k=self._k)
+                (
+                    T_A,
+                    T_B,
+                    μ_Q,
+                    σ_Q,
+                    M_T,
+                    Σ_T,
+                    indices,
+                    s,
+                    excl_zone,
+                ) = _preprocess_prescrump(T_A, m, T_B=T_B, s=s)
 
+            P, I = _prescrump(T_A, T_B, m, μ_Q, σ_Q, M_T, Σ_T, indices, s, excl_zone, k)
             core._merge_topk_PI(self._P, P, self._I, I)
 
         if self._ignore_trivial:

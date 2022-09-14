@@ -819,9 +819,9 @@ class stumpi_egress(object):
             self.I_ = self.I_.flatten()
 
     def update(self, t):
-        if self._k == 1:
-            self.P_ = self.P_.reshape(-1, 1)
-            self.I_ = self.I_.reshape(-1, 1)
+        # ensure than self.P_ and self.I_ are 2D
+        self.P_ = self.P_.reshape(-1, self._k)
+        self.I_ = self.I_.reshape(-1, self._k)
 
         self._T[:] = np.roll(self._T, -1)
         self._T_isfinite[:] = np.roll(self._T_isfinite, -1)
@@ -867,6 +867,7 @@ class stumpi_egress(object):
         self.left_P_[-1] = self.P_[-1, 0]
         self.left_I_[-1] = self.I_[-1, 0]
 
+        # post-processing: ensure that self.P_ and self.I_ are 1D.
         if self._k == 1:
             self.P_ = self.P_.flatten()
             self.I_ = self.I_.flatten()
@@ -1491,6 +1492,10 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
                     P[idx] = np.insert(P[idx], pos, distance_profile[idx])[:-1]
                     I[idx] = np.insert(I[idx], pos, i)[:-1]
 
+    if k == 1:
+        P = P.flatten()
+        I = I.flatten()
+
     return P, I
 
 
@@ -1822,6 +1827,12 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
 
 
 def merge_topk_PI(PA, PB, IA, IB):
+    if PA.ndim == 1:
+        mask = (PB < PA) & (IB != IA)
+        PA[mask] = PB[mask]
+        IA[mask] = IB[mask]
+        return
+
     k = PA.shape[1]
     for i in range(PA.shape[0]):
         _, _, overlap_idx_B = np.intersect1d(IA[i], IB[i], return_indices=True)
@@ -1858,6 +1869,12 @@ def merge_topk_ρI(ρA, ρB, IA, IB):
     # merging `ρB` and `ρA` ascendingly while choosing `ρB` over `ρA` in case of
     # ties: [0_B, 0_A, 0'_A, 1_B, 1'_B, 1_A], and we just need to keep the second
     # half of this array, and discard the first half.
+    if ρA.ndim == 1:
+        mask = (ρB > ρA) & (IB != IA)
+        ρA[mask] = ρB[mask]
+        IA[mask] = IB[mask]
+        return
+
     k = ρA.shape[1]
     for i in range(ρA.shape[0]):
         _, _, overlap_idx_B = np.intersect1d(IA[i], IB[i], return_indices=True)
