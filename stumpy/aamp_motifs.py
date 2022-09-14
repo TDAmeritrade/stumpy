@@ -129,6 +129,9 @@ def _aamp_motifs(
             motif_distances.append(query_matches[:max_matches, 0])
             motif_indices.append(query_matches[:max_matches, 1])
 
+        if len(query_matches) == 0:  # pragma: no cover
+            query_matches = np.array([[np.nan, candidate_idx]])
+
         for idx in query_matches[:, 1]:
             core.apply_exclusion_zone(P, int(idx), excl_zone, np.inf)
 
@@ -270,6 +273,17 @@ def aamp_motifs(
         P_copy[np.isinf(P_copy)] = np.nan
         cutoff = np.nanmax(
             [np.nanmean(P_copy) - 2.0 * np.nanstd(P_copy), np.nanmin(P_copy)]
+        )
+
+    if cutoff == 0.0:  # pragma: no cover
+        suggested_cutoff = np.partition(P, 1)[1]
+        logger.warn(
+            "The `cutoff` has been set to 0.0 and may result in little/no candidate "
+            "motifs being identified."
+        )
+        logger.warn(
+            "You may consider relaxing the constraint by increasing the `cutoff` "
+            f"(e.g., cutoff={suggested_cutoff})."
         )
 
     T, T_subseq_isfinite = core.preprocess_non_normalized(T[np.newaxis, :], m)
