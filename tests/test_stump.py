@@ -330,7 +330,7 @@ def test_stump_identical_subsequence_self_join_rare_cases_3():
 
 
 def test_stump_volatile():
-    return True  # bypassing test for now
+    # return True  # bypassing test for now
     m = 3
     zone = int(np.ceil(m / 4))
 
