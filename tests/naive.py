@@ -1268,7 +1268,9 @@ def mpdist_snippets(
     for i in range(k):
         mask = snippets_profiles[i] <= total_min
         snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
-        total_min = total_min - mask.astype(float)
+        total_min[
+            mask
+        ] = np.NINF  # safer than total_min = total_min - mask.astype(float)
         slices = _get_mask_slices(mask)
         snippets_regimes_list.append(slices)
 
@@ -1355,7 +1357,9 @@ def aampdist_snippets(
     for i in range(k):
         mask = snippets_profiles[i] <= total_min
         snippets_fractions[i] = np.sum(mask) / total_min.shape[0]
-        total_min = total_min - mask.astype(float)
+        total_min[
+            mask
+        ] = np.NINF  # safer than total_min = total_min - mask.astype(float)
         slices = _get_mask_slices(mask)
         snippets_regimes_list.append(slices)
 
