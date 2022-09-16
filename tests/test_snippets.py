@@ -162,13 +162,13 @@ def test_mpdist_snippets_s(T, m, k, s):
     npt.assert_almost_equal(ref_regimes, cmp_regimes)
 
 
-def test_snippet_new(T, m, k, s):
+def test_snippet_new():
     # causes failure. Maybe because of imprecision?
     seed = 15
     np.random.seed(seed)
     T = np.random.uniform(-1000, 1000, [64]).astype(np.float64)
 
-    percentage = 0.49
+    percentage = 0.3
     m = 8
     k = 3
 
