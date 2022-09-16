@@ -1087,18 +1087,20 @@ def mpdist_vect(T_A, T_B, m, percentage=0.05, k=None):
     P_ABBA = np.empty(2 * j, dtype=np.float64)
     MPdist_vect = np.empty(n_B - n_A + 1)
 
-    if k is None:
+    if k is not None:
+        k = min(int(k), P_ABBA.shape[0] - 1)
+    else:
         percentage = min(percentage, 1.0)
         percentage = max(percentage, 0.0)
-        k = min(math.ceil(percentage * (2 * n_A)), 2 * j - 1)
+        k = min(math.ceil(percentage * (2 * n_A)), P_ABBA.shape[0]-1)
 
-    k = min(int(k), P_ABBA.shape[0] - 1)
 
-    for i in range(n_B - n_A + 1):
+
+    for i in range(MPdist_vect.shape[0]):
         P_ABBA[:j] = stump(T_A, m, T_B[i : i + n_A])[:, 0]
         P_ABBA[j:] = stump(T_B[i : i + n_A], m, T_A)[:, 0]
         P_ABBA.sort()
-        MPdist_vect[i] = P_ABBA[min(k, P_ABBA.shape[0] - 1)]
+        MPdist_vect[i] = P_ABBA[k]
 
     return MPdist_vect
 
