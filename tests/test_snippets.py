@@ -8,7 +8,7 @@ import naive
 
 
 test_data = [np.random.uniform(-1000, 1000, [64]).astype(np.float64)]
-s = [6, 7, 8]
+s = [3, 6, 7, 8]
 percentage = [0.7, 0.8, 0.9]
 m = [8, 9, 10]
 k = [1, 2, 3]
