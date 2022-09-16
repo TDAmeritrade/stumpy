@@ -165,7 +165,7 @@ def test_mpdist_snippets_s(T, m, k, s):
 def test_snippet_low_s():
     T = np.random.uniform(-1000, 1000, [64]).astype(np.float64)
 
-    k = 2
+    k = 1
     m = 20
     s = 8  # less than m / 2
 
@@ -205,7 +205,7 @@ def test_snippet_low_s():
 def test_snippet_low_percentage():
     T = np.random.uniform(-1000, 1000, [64]).astype(np.float64)
 
-    k = 2
+    k = 1
     m = 20
     percentage = 0.3  # less than 0.5
 
