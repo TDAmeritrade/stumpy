@@ -1092,9 +1092,7 @@ def mpdist_vect(T_A, T_B, m, percentage=0.05, k=None):
     else:
         percentage = min(percentage, 1.0)
         percentage = max(percentage, 0.0)
-        k = min(math.ceil(percentage * (2 * n_A)), P_ABBA.shape[0]-1)
-
-
+        k = min(math.ceil(percentage * (2 * n_A)), P_ABBA.shape[0] - 1)
 
     for i in range(MPdist_vect.shape[0]):
         P_ABBA[:j] = stump(T_A, m, T_B[i : i + n_A])[:, 0]
