@@ -1715,12 +1715,10 @@ def preprocess_diagonal(T, m):
     subsequence using awindow size of `m` and `m-1`, respectively, and the inverse
     standard deviation, `Σ_T_inverse`. Every subsequence that contains at least
     one NaN or inf value will have a `False` value in its `T_subseq_isfinite` `bool`
-    arra and it will also have a mean of np.inf. For the standard
-    deviation these values are ignored. If all values are illegal, the
-    standard deviation will be 0 (see `core.compute_mean_std`). Additionally,
-    the inverse standard deviation, σ_inverse, will also be computed and returned.
-    Finally, constant subsequences (i.e., subsequences with a standard deviation of
-    zero), will have a corresponding `True` value in its `T_subseq_isconstant` array.
+    array.  Additionally, the inverse standard deviation, σ_inverse, will also be
+    computed and returned. Finally, constant subsequences (i.e., subsequences with
+    a standard deviation of zero), will have a corresponding `True` value in its
+    `T_subseq_isconstant` array.
 
     Parameters
     ----------
