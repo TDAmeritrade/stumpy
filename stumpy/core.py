@@ -577,7 +577,7 @@ def _welford_nanvar(a, w, a_subseq_isfinite):
                 * (a[last_idx] - curr_mean + a[prev_start_idx] - prev_mean)
                 / w
             )
-            if curr_var < config.STUMPY_MIN_VAR_PRECISION:
+            if curr_var < config.STUMPY_MIN_VAR:
                 curr_var = np.nanvar(a[start_idx:stop_idx])
 
         all_variances[start_idx] = curr_var
