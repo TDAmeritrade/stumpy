@@ -25,8 +25,8 @@ def _compute_diagonal(
     m,
     M_T,
     μ_Q,
-    Σ_T_inverse,
-    σ_Q_inverse,
+    Σ_T,
+    σ_Q,
     cov_a,
     cov_b,
     cov_c,
@@ -182,27 +182,35 @@ def _compute_diagonal(
 
             if T_B_subseq_isfinite[i + k] and T_A_subseq_isfinite[i]:
                 # Neither subsequence contains NaNs
-                if T_B_subseq_isconstant[i + k] or T_A_subseq_isconstant[i]:
-                    pearson = 0.5
-                else:
-                    pearson = cov * Σ_T_inverse[i + k] * σ_Q_inverse[i]
-
                 if T_B_subseq_isconstant[i + k] and T_A_subseq_isconstant[i]:
                     pearson = 1.0
-
-                if config.STUMPY_CORRELATION_THRESHOLD <= pearson < 1.0:
-                    cov = (
-                        np.dot(
-                            (T_B[i + k : i + k + m] - M_T[i + k]),
-                            (T_A[i : i + m] - μ_Q[i]),
+                elif T_B_subseq_isconstant[i + k] or T_A_subseq_isconstant[i]:
+                    pearson = 0.5
+                else:
+                    denom = Σ_T[i + k] * σ_Q[i]
+                    if denom < 1.0:
+                        cov = (
+                            np.dot(
+                                (T_B[i + k : i + k + m] - M_T[i + k]),
+                                (T_A[i : i + m] - μ_Q[i]),
+                            )
+                            * m_inverse
                         )
-                        * m_inverse
-                    )
 
-                    pearson = cov * Σ_T_inverse[i + k] * σ_Q_inverse[i]
+                    pearson = cov / denom
+                    if pearson > 1.0:
+                        pearson = 1.0
 
-                if pearson > 1.0:
-                    pearson = 1.0
+                # if config.STUMPY_CORRELATION_THRESHOLD <= pearson < 1.0:
+                #    cov = (
+                #        np.dot(
+                #            (T_B[i + k : i + k + m] - M_T[i + k]),
+                #            (T_A[i : i + m] - μ_Q[i]),
+                #        )
+                #        * m_inverse
+                #    )
+
+                #    pearson = cov * Σ_T_inverse[i + k] * σ_Q_inverse[i]
 
                 if pearson > ρ[thread_idx, i, 0]:
                     ρ[thread_idx, i, 0] = pearson
@@ -239,8 +247,8 @@ def _stump(
     m,
     M_T,
     μ_Q,
-    Σ_T_inverse,
-    σ_Q_inverse,
+    Σ_T,
+    σ_Q,
     M_T_m_1,
     μ_Q_m_1,
     T_A_subseq_isfinite,
@@ -398,8 +406,8 @@ def _stump(
             m,
             M_T,
             μ_Q,
-            Σ_T_inverse,
-            σ_Q_inverse,
+            Σ_T,
+            σ_Q,
             cov_a,
             cov_b,
             cov_c,
@@ -559,7 +567,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
     (
         T_A,
         μ_Q,
-        σ_Q_inverse,
+        σ_Q,
         μ_Q_m_1,
         T_A_subseq_isfinite,
         T_A_subseq_isconstant,
@@ -568,7 +576,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
     (
         T_B,
         M_T,
-        Σ_T_inverse,
+        Σ_T,
         M_T_m_1,
         T_B_subseq_isfinite,
         T_B_subseq_isconstant,
@@ -614,8 +622,8 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
         m,
         M_T,
         μ_Q,
-        Σ_T_inverse,
-        σ_Q_inverse,
+        Σ_T,
+        σ_Q,
         M_T_m_1,
         μ_Q_m_1,
         T_A_subseq_isfinite,
