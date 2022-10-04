@@ -792,13 +792,12 @@ def test_preprocess_diagonal():
 
     ref_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
     ref_M, ref_Σ = naive.compute_mean_std(ref_T, m)
-    ref_Σ_inverse = 1.0 / ref_Σ
     ref_M_m_1, _ = naive.compute_mean_std(ref_T, m - 1)
 
     (
         comp_T,
         comp_M,
-        comp_Σ_inverse,
+        comp_Σ,
         comp_M_m_1,
         comp_T_subseq_isfinite,
         comp_T_subseq_isconstant,
@@ -806,14 +805,14 @@ def test_preprocess_diagonal():
 
     npt.assert_almost_equal(ref_T, comp_T)
     npt.assert_almost_equal(ref_M, comp_M)
-    npt.assert_almost_equal(ref_Σ_inverse, comp_Σ_inverse)
+    npt.assert_almost_equal(ref_Σ, comp_Σ)
     npt.assert_almost_equal(ref_M_m_1, comp_M_m_1)
 
     T = pd.Series(T)
     (
         comp_T,
         comp_M,
-        comp_Σ_inverse,
+        comp_Σ,
         comp_M_m_1,
         comp_T_subseq_isfinite,
         comp_T_subseq_isconstant,
@@ -821,7 +820,7 @@ def test_preprocess_diagonal():
 
     npt.assert_almost_equal(ref_T, comp_T)
     npt.assert_almost_equal(ref_M, comp_M)
-    npt.assert_almost_equal(ref_Σ_inverse, comp_Σ_inverse)
+    npt.assert_almost_equal(ref_Σ, comp_Σ)
     npt.assert_almost_equal(ref_M_m_1, comp_M_m_1)
 
 
