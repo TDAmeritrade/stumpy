@@ -1740,8 +1740,8 @@ def preprocess_diagonal(T, m):
     M_T : numpy.ndarray
         Rolling mean with a subsequence length of `m`
 
-    Σ_T_inverse : numpy.ndarray
-        Inverted rolling standard deviation
+    Σ_T : numpy.ndarray
+        Rolling standard deviation
 
     M_T_m_1 : numpy.ndarray
         Rolling mean with a subsequence length of `m-1`

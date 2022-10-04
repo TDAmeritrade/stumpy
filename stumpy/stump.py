@@ -66,11 +66,11 @@ def _compute_diagonal(
     μ_Q : numpy.ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window
 
-    Σ_T_inverse : numpy.ndarray
-        Inverse sliding standard deviation of time series, `T`
+    Σ_T : numpy.ndarray
+        Sliding standard deviation of time series, `T`
 
-    σ_Q_inverse : numpy.ndarray
-        Inverse standard deviation of the query sequence, `Q`, relative to the current
+    σ_Q : numpy.ndarray
+        Standard deviation of the query sequence, `Q`, relative to the current
         sliding window
 
     cov_a : numpy.ndarray
@@ -281,11 +281,11 @@ def _stump(
     μ_Q : numpy.ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window
 
-    Σ_T_inverse : numpy.ndarray
-        Inverse sliding standard deviation of time series, `T`
+    Σ_T : numpy.ndarray
+        Sliding standard deviation of time series, `T`
 
-    σ_Q_inverse : numpy.ndarray
-        Inverse standard deviation of the query sequence, `Q`, relative to the current
+    σ_Q : numpy.ndarray
+        Standard deviation of the query sequence, `Q`, relative to the current
         sliding window
 
     M_T_m_1 : numpy.ndarray

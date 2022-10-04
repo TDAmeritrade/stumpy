@@ -529,7 +529,7 @@ class scrump:
         (
             self._T_A,
             self._μ_Q,
-            self._σ_Q_inverse,
+            self._σ_Q,
             self._μ_Q_m_1,
             self._T_A_subseq_isfinite,
             self._T_A_subseq_isconstant,
@@ -538,7 +538,7 @@ class scrump:
         (
             self._T_B,
             self._M_T,
-            self._Σ_T_inverse,
+            self._Σ_T,
             self._M_T_m_1,
             self._T_B_subseq_isfinite,
             self._T_B_subseq_isconstant,
@@ -639,8 +639,8 @@ class scrump:
                 self._m,
                 self._M_T,
                 self._μ_Q,
-                self._Σ_T_inverse,
-                self._σ_Q_inverse,
+                self._Σ_T,
+                self._σ_Q,
                 self._M_T_m_1,
                 self._μ_Q_m_1,
                 self._T_A_subseq_isfinite,

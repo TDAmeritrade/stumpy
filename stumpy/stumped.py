@@ -141,7 +141,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, 
     (
         T_A,
         μ_Q,
-        σ_Q_inverse,
+        σ_Q,
         μ_Q_m_1,
         T_A_subseq_isfinite,
         T_A_subseq_isconstant,
@@ -150,7 +150,7 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, 
     (
         T_B,
         M_T,
-        Σ_T_inverse,
+        Σ_T,
         M_T_m_1,
         T_B_subseq_isfinite,
         T_B_subseq_isconstant,
@@ -202,8 +202,8 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, 
     T_B_future = dask_client.scatter(T_B, broadcast=True, hash=False)
     M_T_future = dask_client.scatter(M_T, broadcast=True, hash=False)
     μ_Q_future = dask_client.scatter(μ_Q, broadcast=True, hash=False)
-    Σ_T_inverse_future = dask_client.scatter(Σ_T_inverse, broadcast=True, hash=False)
-    σ_Q_inverse_future = dask_client.scatter(σ_Q_inverse, broadcast=True, hash=False)
+    Σ_T_future = dask_client.scatter(Σ_T, broadcast=True, hash=False)
+    σ_Q_future = dask_client.scatter(σ_Q, broadcast=True, hash=False)
     M_T_m_1_future = dask_client.scatter(M_T_m_1, broadcast=True, hash=False)
     μ_Q_m_1_future = dask_client.scatter(μ_Q_m_1, broadcast=True, hash=False)
     T_A_subseq_isfinite_future = dask_client.scatter(
@@ -238,8 +238,8 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, 
                 m,
                 M_T_future,
                 μ_Q_future,
-                Σ_T_inverse_future,
-                σ_Q_inverse_future,
+                Σ_T_future,
+                σ_Q_future,
                 M_T_m_1_future,
                 μ_Q_m_1_future,
                 T_A_subseq_isfinite_future,
