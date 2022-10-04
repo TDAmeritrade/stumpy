@@ -111,6 +111,10 @@ html_theme_options = {
     ],
 }
 
+html_theme_ = {
+    "navbar_end": ["navbar-icon-links"],
+}
+
 html_context = {"default_mode": "light"}
 
 # Add any paths that contain custom static files (such as style sheets) here,
