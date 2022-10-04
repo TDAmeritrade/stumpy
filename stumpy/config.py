@@ -15,5 +15,5 @@ STUMPY_MAX_P_NORM_DISTANCE = np.finfo(np.float64).max
 STUMPY_MAX_DISTANCE = np.sqrt(STUMPY_MAX_P_NORM_DISTANCE)
 STUMPY_EXCL_ZONE_DENOM = 4
 STUMPY_MIN_VAR = 1.0
-STUMPY_MIN_STD_AB = 1.0 # denom in equation: pearson_AB = cov / (std_A * std_B)
+STUMPY_MIN_STD_AB = 1.0  # denom in equation: pearson_AB = cov / (std_A * std_B)
 STUMPY_CORRELATION_THRESHOLD = 0.99999999  # 1 - 1e-08
