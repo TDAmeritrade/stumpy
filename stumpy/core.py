@@ -1755,12 +1755,12 @@ def preprocess_diagonal(T, m):
     """
     T, T_subseq_isfinite = preprocess_non_normalized(T, m)
     M_T, Σ_T = compute_mean_std(T, m)
+
     T_subseq_isconstant = Σ_T < config.STUMPY_STDDEV_THRESHOLD
     Σ_T[T_subseq_isconstant] = 1.0  # Avoid divide by zero in next inversion step
-    Σ_T_inverse = 1.0 / Σ_T
     M_T_m_1, _ = compute_mean_std(T, m - 1)
 
-    return T, M_T, Σ_T_inverse, M_T_m_1, T_subseq_isfinite, T_subseq_isconstant
+    return T, M_T, Σ_T, M_T_m_1, T_subseq_isfinite, T_subseq_isconstant
 
 
 def replace_distance(D, search_val, replace_val, epsilon=0.0):
