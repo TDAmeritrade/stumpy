@@ -188,7 +188,7 @@ def _compute_diagonal(
                     pearson = 0.5
                 else:
                     denom = Σ_T[i + k] * σ_Q[i]
-                    if denom < 1.0:
+                    if denom < config.STUMPY_MIN_STD_AB:
                         cov = (
                             np.dot(
                                 (T_B[i + k : i + k + m] - M_T[i + k]),
