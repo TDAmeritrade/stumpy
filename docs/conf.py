@@ -109,9 +109,6 @@ html_theme_options = {
             "icon": "fab fa-twitter-square",
         },
     ],
-}
-
-html_theme_ = {
     "navbar_end": ["navbar-icon-links"],
 }
 
