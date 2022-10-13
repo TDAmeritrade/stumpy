@@ -720,12 +720,12 @@ class aampi_egress(object):
         self._m = m
         self._p = p
 
-        if excl_zone is None:  # apply similar changes in naive `class stumpi_egress`
-            excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
         self._excl_zone = excl_zone
+        if self._excl_zone is None:
+            self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
-        mp = aamp(T, m, p=p)
+        mp = aamp(T, m, exclusion_zone=self._excl_zone, p=p)
         self.P_ = mp[:, 0]
         self.I_ = mp[:, 1].astype(np.int64)
         self.left_P_ = np.full(self.P_.shape, np.inf)
