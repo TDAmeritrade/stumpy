@@ -109,6 +109,7 @@ html_theme_options = {
             "icon": "fab fa-twitter-square",
         },
     ],
+    "navbar_end": ["navbar-icon-links"],
 }
 
 html_context = {"default_mode": "light"}
