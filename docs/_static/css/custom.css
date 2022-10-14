@@ -5,3 +5,6 @@
     display: block;
     overflow-x: scroll;
 }
+html div.rendered_html table {
+    display-table: auto;
+}
