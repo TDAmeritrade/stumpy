@@ -6,5 +6,5 @@
     overflow-x: scroll;
 }
 html div.rendered_html table {
-    display-table: auto;
+    table-layout: auto;
 }
