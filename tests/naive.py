@@ -801,30 +801,22 @@ class stumpi_egress(object):
 
         self._l = self._T.shape[0] - m + 1
         mp = stump(T, m, exclusion_zone=self._excl_zone, k=self._k)
-        self.P_ = mp[:, :k].astype(np.float64)
-        self.I_ = mp[:, k : 2 * k].astype(np.int64)
+        self._P = mp[:, :k].astype(np.float64)
+        self._I = mp[:, k : 2 * k].astype(np.int64)
 
-        self.left_I_ = mp[:, 2 * k].astype(np.int64)
-        self.left_P_ = np.full_like(self.left_I_, np.inf, dtype=np.float64)
+        self._left_I = mp[:, 2 * k].astype(np.int64)
+        self._left_P = np.full_like(self._left_I, np.inf, dtype=np.float64)
 
-        for idx, nn_idx in enumerate(self.left_I_):
+        for idx, nn_idx in enumerate(self._left_I):
             if nn_idx >= 0:
                 D = core.mass(
                     self._T[idx : idx + self._m], self._T[nn_idx : nn_idx + self._m]
                 )
-                self.left_P_[idx] = D[0]
+                self._left_P[idx] = D[0]
 
         self._n_appended = 0
 
-        if self._k == 1:
-            self.P_ = self.P_.flatten()
-            self.I_ = self.I_.flatten()
-
     def update(self, t):
-        # ensure than self.P_ and self.I_ are 2D
-        self.P_ = self.P_.reshape(-1, self._k)
-        self.I_ = self.I_.reshape(-1, self._k)
-
         self._T[:] = np.roll(self._T, -1)
         self._T_isfinite[:] = np.roll(self._T_isfinite, -1)
         if np.isfinite(t):
@@ -835,10 +827,10 @@ class stumpi_egress(object):
             self._T[-1] = 0
         self._n_appended += 1
 
-        self.P_ = np.roll(self.P_, -1, axis=0)
-        self.I_ = np.roll(self.I_, -1, axis=0)
-        self.left_P_[:] = np.roll(self.left_P_, -1)
-        self.left_I_[:] = np.roll(self.left_I_, -1)
+        self._P = np.roll(self._P, -1, axis=0)
+        self._I = np.roll(self._I, -1, axis=0)
+        self._left_P[:] = np.roll(self._left_P, -1)
+        self._left_I[:] = np.roll(self._left_I, -1)
 
         D = core.mass(self._T[-self._m :], self._T)
         T_subseq_isfinite = np.all(
@@ -851,28 +843,45 @@ class stumpi_egress(object):
         apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
         # update top-k matrix profile using newly calculated distance profile `D`
         for j in range(D.shape[0]):
-            if D[j] < self.P_[j, -1]:
-                pos = np.searchsorted(self.P_[j], D[j], side="right")
-                self.P_[j] = np.insert(self.P_[j], pos, D[j])[:-1]
-                self.I_[j] = np.insert(
-                    self.I_[j], pos, D.shape[0] - 1 + self._n_appended
+            if D[j] < self._P[j, -1]:
+                pos = np.searchsorted(self._P[j], D[j], side="right")
+                self._P[j] = np.insert(self._P[j], pos, D[j])[:-1]
+                self._I[j] = np.insert(
+                    self._I[j], pos, D.shape[0] - 1 + self._n_appended
                 )[:-1]
 
         # update top-k for the last, newly-updated index
         I_last_topk = np.argsort(D, kind="mergesort")[: self._k]
-        self.P_[-1] = D[I_last_topk]
-        self.I_[-1] = I_last_topk + self._n_appended
-        self.I_[-1][self.P_[-1] == np.inf] = -1
+        self._P[-1] = D[I_last_topk]
+        self._I[-1] = I_last_topk + self._n_appended
+        self._I[-1][self._P[-1] == np.inf] = -1
 
         # for the last index, the left matrix profile value is self.P_[-1, 0]
         # and the same goes for the left matrix profile index
-        self.left_P_[-1] = self.P_[-1, 0]
-        self.left_I_[-1] = self.I_[-1, 0]
+        self._left_P[-1] = self._P[-1, 0]
+        self._left_I[-1] = self._I[-1, 0]
 
-        # post-processing: ensure that self.P_ and self.I_ are 1D.
+    @property
+    def P_(self):
         if self._k == 1:
-            self.P_ = self.P_.flatten()
-            self.I_ = self.I_.flatten()
+            return self._P.flatten().astype(np.float64)
+        else:
+            return self._P.astype(np.float64)
+
+    @property
+    def I_(self):
+        if self._k == 1:
+            return self._I.flatten().astype(np.int64)
+        else:
+            return self._I.astype(np.int64)
+
+    @property
+    def left_P_(self):
+        return self._left_P.astype(np.float64)
+
+    @property
+    def left_I_(self):
+        return self._left_I.astype(np.int64)
 
 
 def across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m):
