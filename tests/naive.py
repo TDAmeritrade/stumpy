@@ -807,10 +807,12 @@ class stumpi_egress(object):
         self.left_I_ = mp[:, 2 * k].astype(np.int64)
         self.left_P_ = np.full_like(self.left_I_, np.inf, dtype=np.float64)
 
-        for i, nn_i in enumerate(self.left_I_):
-            if nn_i >= 0:
-                D = core.mass(self._T[i : i + self._m], self._T[nn_i : nn_i + self._m])
-                self.left_P_[i] = D[0]
+        for idx, nn_idx in enumerate(self.left_I_):
+            if nn_idx >= 0:
+                D = core.mass(
+                    self._T[idx : idx + self._m], self._T[nn_idx : nn_idx + self._m]
+                )
+                self.left_P_[idx] = D[0]
 
         self._n_appended = 0
 
