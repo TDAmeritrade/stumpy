@@ -51,14 +51,14 @@ def test_gpu_stump_int_input():
 
 
 @cuda.jit("(f8[:, :], f8[:], i8[:], i8, b1, i8[:])")
-def _gpu_searchsorted_kernel(A, V, bfs, nlevel, is_left, IDX):
+def _gpu_searchsorted_kernel(a, v, bfs, nlevel, is_left, idx):
     # A wrapper kernel for calling device function _gpu_searchsorted_left/right.
     i = cuda.grid(1)
-    if i < A.shape[0]:
+    if i < a.shape[0]:
         if is_left:
-            IDX[i] = _gpu_searchsorted_left(A[i], V[i], bfs, nlevel)
+            idx[i] = _gpu_searchsorted_left(a[i], v[i], bfs, nlevel)
         else:
-            IDX[i] = _gpu_searchsorted_right(A[i], V[i], bfs, nlevel)
+            idx[i] = _gpu_searchsorted_right(a[i], v[i], bfs, nlevel)
 
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
