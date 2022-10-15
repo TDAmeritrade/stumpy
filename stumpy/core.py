@@ -254,7 +254,7 @@ def rolling_window(a, window):
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
-def z_norm(a, axis=0):
+def z_norm(a, axis=0, threshold=config.STUMPY_STDDEV_THRESHOLD):
     """
     Calculate the z-normalized input array `a` by subtracting the mean and
     dividing by the standard deviation along a given axis.
@@ -267,13 +267,17 @@ def z_norm(a, axis=0):
     axis : int, default 0
         NumPy array axis
 
+    threshold : float, default to config.STUMPY_STDDEV_THRESHOLD
+        A non-nan std value being less than `threshold` will be replaced with 1.0
+
     Returns
     -------
     output : numpy.ndarray
         An array with z-normalized values computed along a specified axis.
     """
     std = np.std(a, axis, keepdims=True)
-    std[std == 0] = 1
+    mask = ~np.isnan(std) & std < config.STUMPY_STDDEV_THRESHOLD
+    std[mask] = 1.0
 
     return (a - np.mean(a, axis, keepdims=True)) / std
 
