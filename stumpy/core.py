@@ -276,8 +276,7 @@ def z_norm(a, axis=0, threshold=config.STUMPY_STDDEV_THRESHOLD):
         An array with z-normalized values computed along a specified axis.
     """
     std = np.std(a, axis, keepdims=True)
-    mask = ~np.isnan(std) & std < config.STUMPY_STDDEV_THRESHOLD
-    std[mask] = 1.0
+    std[np.less(std, threshold, where=~np.isnan(std))] = 1.0
 
     return (a - np.mean(a, axis, keepdims=True)) / std
 
