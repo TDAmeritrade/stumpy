@@ -809,8 +809,8 @@ class stumpi_egress(object):
 
         for idx, nn_idx in enumerate(self._left_I):
             if nn_idx >= 0:
-                D = core.mass(
-                    self._T[idx : idx + self._m], self._T[nn_idx : nn_idx + self._m]
+                D = distance_profile(
+                    self._T[idx : idx + self._m], self._T[nn_idx : nn_idx + self._m], m
                 )
                 self._left_P[idx] = D[0]
 
