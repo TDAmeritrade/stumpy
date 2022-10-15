@@ -588,9 +588,9 @@ class scrump:
     ----------
     P_ : numpy.ndarray
         The updated (top-k) matrix profile. When `k=1` (default), this output is
-        a 1D array consisting of the matrix profile values. When `k > 1`, the output
+        a 1D array consisting of the matrix profile. When `k > 1`, the output
         is a 2D array that has exactly `k` columns consisting of the top-k matrix
-        profile values.
+        profile.
 
     I_ : numpy.ndarray
         The updated (top-k) matrix profile indices. When `k=1` (default), this output is
@@ -883,10 +883,10 @@ class scrump:
     @property
     def P_(self):
         """
-        Get the updated (top-k) matrix profile. When `k=1` (default), this output is
-        a 1D array consisting of the updated matrix profile values. When `k > 1`,
-        the output is a 2D array that has exactly `k` columns consisting of the
-        updated top-k matrix profile values.
+        Get the updated (top-k) matrix profile. When `k=1` (default), this output
+        is a 1D array consisting of the updated matrix profile. When `k > 1`, the
+        output is a 2D array that has exactly `k` columns consisting of the updated
+        top-k matrix profile.
         """
         if self._k == 1:
             return self._P.flatten().astype(np.float64)

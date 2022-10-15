@@ -2581,19 +2581,19 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
 def _merge_topk_PI(PA, PB, IA, IB):
     """
     Merge two top-k matrix profiles `PA` and `PB`, and update `PA` (in place).
-    When the inputs are 1D arrays, PA[i] is updated if it is less than PB[i] and
+    When the inputs are 1D arrays, PA[i] is updated if it is greater than PB[i] and
     IA[i] != IB[i]. In such case, PA[i] and IA[i] are replaced with PB[i] and IB[i],
     respectively. (Note that it might happen that IA[i]=IB[i] but PA[i] != PB[i].
     This situation can occur if there is slight imprecision in numerical calculations.
     In that case, we do not update PA[i] and IA[i]. While updating PA[i] and IA[i]
     is harmless in this case, we avoid doing that so to be consistent with the merging
     process when the inputs are 2D arrays)
-    When the inputs are 2D arrays, always prioritizing the values of `PA` over the
+    When the inputs are 2D arrays, we always prioritize the values of `PA` over the
     values of `PB` in case of ties. (i.e., values from `PB` are always inserted to
     the right of values from `PA`). Also, update `IA` accordingly. In case of
     overlapping values between two arrays IA[i] and IB[i], the ones in IB[i] (and
-    their corresponding values in PB[i]) are ignored throughout the updating process o
-    f IA[i] (and PA[i]).
+    their corresponding values in PB[i]) are ignored throughout the updating process
+    of IA[i] (and PA[i]).
 
     Unlike `_merge_topk_ρI`, where `top-k` largest values are kept, this function
     keeps `top-k` smallest values.
@@ -2654,14 +2654,14 @@ def _merge_topk_PI(PA, PB, IA, IB):
 def _merge_topk_ρI(ρA, ρB, IA, IB):
     """
     Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place).
-    When the inputs are 1D arrays, ρA[i] is updated if it is more than ρB[i] and
+    When the inputs are 1D arrays, ρA[i] is updated if it is less than ρB[i] and
     IA[i] != IB[i]. In such case, ρA[i] and IA[i] are replaced with ρB[i] and IB[i],
     respectively. (Note that it might happen that IA[i]=IB[i] but ρA[i] != ρB[i].
     This situation can occur if there is slight imprecision in numerical calculations.
     In that case, we do not update ρA[i] and IA[i]. While updating ρA[i] and IA[i]
     is harmless in this case, we avoid doing that so to be consistent with the merging
     process when the inputs are 2D arrays)
-    When the inputs are 2D arrays, always prioritizing the values of `ρA` over
+    When the inputs are 2D arrays, we always prioritize the values of `ρA` over
     the values of `ρB` in case of ties. (i.e., values from `ρB` are always inserted
     to the left of values from `ρA`). Also, update `IA` accordingly. In case of
     overlapping values between two arrays IA[i] and IB[i], the ones in IB[i] (and
