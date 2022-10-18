@@ -1463,11 +1463,11 @@ def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
         j = nn_idx
         for g in range(1, min(s, l - i, w - j)):
             d = dist_matrix[i + g, j + g]
+            # Do NOT optimize the `condition` in the following if statement
+            # and similar ones in this naive function. This is to ensure
+            # we are avoiding duplicates in each row of I.
             if d < P[i + g, -1] and (j + g) not in I[i + g]:
                 pos = np.searchsorted(P[i + g], d, side="right")
-                # Do NOT optimize the `condition` in the following if statement
-                # and similar ones in this naive function. This is to ensure
-                # we are avoiding duplicates in each row of I.
                 P[i + g] = np.insert(P[i + g], pos, d)[:-1]
                 I[i + g] = np.insert(I[i + g], pos, j + g)[:-1]
             if (
