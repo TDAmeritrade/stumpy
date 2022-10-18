@@ -1845,25 +1845,30 @@ def merge_topk_PI(PA, PB, IA, IB):
                 IA[i] = IB[i]
         return
 
-    k = PA.shape[1]
-    for i in range(PA.shape[0]):
-        _, _, overlap_idx_B = np.intersect1d(IA[i], IB[i], return_indices=True)
-        PB[i, overlap_idx_B] = np.inf
-        IB[i, overlap_idx_B] = -1
+    else:
+        k = PA.shape[1]
+        for i in range(PA.shape[0]):
+            _, _, overlap_idx_B = np.intersect1d(IA[i], IB[i], return_indices=True)
+            PB[i, overlap_idx_B] = np.inf
+            IB[i, overlap_idx_B] = -1
 
-    profile = np.column_stack((PA, PB))
-    indices = np.column_stack((IA, IB))
-    IDX = np.argsort(profile, axis=1, kind="mergesort")
-    profile[:, :] = np.take_along_axis(profile, IDX, axis=1)
-    indices[:, :] = np.take_along_axis(indices, IDX, axis=1)
+        profile = np.column_stack((PA, PB))
+        indices = np.column_stack((IA, IB))
+        IDX = np.argsort(profile, axis=1, kind="mergesort")
+        profile[:, :] = np.take_along_axis(profile, IDX, axis=1)
+        indices[:, :] = np.take_along_axis(indices, IDX, axis=1)
 
-    PA[:, :] = profile[:, :k]
-    IA[:, :] = indices[:, :k]
+        PA[:, :] = profile[:, :k]
+        IA[:, :] = indices[:, :k]
+
+        return
 
 
 def merge_topk_ρI(ρA, ρB, IA, IB):
-    # this is to merge two pearson profiles `ρA` and `ρB`, where each is a 2D array
-    # and each row is sorted ascendingly. we want to keep top-k largest values in
+    # This function merges two pearson profiles `ρA` and `ρB`, and updates `ρA`
+    # and `IA` accordingly. When the inputs are 1D, `ρA[i]` is updated if
+    #  `ρA[i] < ρB[i]` and IA[i] != IB[i]. When the inputs are 2D, each row in
+    #  `ρA` and `ρB` is sorted ascendingly. we want to keep top-k largest values in
     # merging row `ρA[i]` and `ρB[i]`.
 
     # In case of ties between `ρA` and `ρB`, the priority is with `ρA`. In case
@@ -1879,8 +1884,8 @@ def merge_topk_ρI(ρA, ρB, IA, IB):
 
     # For the same example:
     # merging `ρB` and `ρA` ascendingly while choosing `ρB` over `ρA` in case of
-    # ties: [0_B, 0_A, 0'_A, 1_B, 1'_B, 1_A], and we just need to keep the second
-    # half of this array, and discard the first half.
+    # ties: [0_B, 0_A, 0'_A, 1_B, 1'_B, 1_A], and the second half of this array
+    # is the desribale outcome.
     if ρA.ndim == 1:
         for i in range(ρA.shape[0]):
             if ρB[i] > ρA[i] and IB[i] != IA[i]:
@@ -1888,22 +1893,25 @@ def merge_topk_ρI(ρA, ρB, IA, IB):
                 IA[i] = IB[i]
         return
 
-    k = ρA.shape[1]
-    for i in range(ρA.shape[0]):
-        _, _, overlap_idx_B = np.intersect1d(IA[i], IB[i], return_indices=True)
-        ρB[i, overlap_idx_B] = np.NINF
-        IB[i, overlap_idx_B] = -1
+    else:
+        k = ρA.shape[1]
+        for i in range(ρA.shape[0]):
+            _, _, overlap_idx_B = np.intersect1d(IA[i], IB[i], return_indices=True)
+            ρB[i, overlap_idx_B] = np.NINF
+            IB[i, overlap_idx_B] = -1
 
-    profile = np.column_stack((ρB, ρA))
-    indices = np.column_stack((IB, IA))
+        profile = np.column_stack((ρB, ρA))
+        indices = np.column_stack((IB, IA))
 
-    idx = np.argsort(profile, axis=1, kind="mergesort")
-    profile[:, :] = np.take_along_axis(profile, idx, axis=1)
-    indices[:, :] = np.take_along_axis(indices, idx, axis=1)
+        idx = np.argsort(profile, axis=1, kind="mergesort")
+        profile[:, :] = np.take_along_axis(profile, idx, axis=1)
+        indices[:, :] = np.take_along_axis(indices, idx, axis=1)
 
-    # keep the last k elements (top-k largest values)
-    ρA[:, :] = profile[:, k:]
-    IA[:, :] = indices[:, k:]
+        # keep the last k elements (top-k largest values)
+        ρA[:, :] = profile[:, k:]
+        IA[:, :] = indices[:, k:]
+
+        return
 
 
 def find_matches(D, excl_zone, max_distance, max_matches=None):
