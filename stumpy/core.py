@@ -2582,7 +2582,7 @@ def _merge_topk_PI(PA, PB, IA, IB):
     Merge two top-k matrix profiles `PA` and `PB`, and update `PA` (in place).
     When the inputs are 1D arrays, PA[i] is updated if it is greater than PB[i] and
     IA[i] != IB[i]. In such case, PA[i] and IA[i] are replaced with PB[i] and IB[i],
-    respectively. (Note that it might happen that IA[i]=IB[i] but PA[i] != PB[i].
+    respectively. (Note that it might happen that IA[i]==IB[i] but PA[i] != PB[i].
     This situation can occur if there is slight imprecision in numerical calculations.
     In that case, we do not update PA[i] and IA[i]. While updating PA[i] and IA[i]
     is harmless in this case, we avoid doing that so to be consistent with the merging
@@ -2655,7 +2655,7 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
     Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place).
     When the inputs are 1D arrays, ρA[i] is updated if it is less than ρB[i] and
     IA[i] != IB[i]. In such case, ρA[i] and IA[i] are replaced with ρB[i] and IB[i],
-    respectively. (Note that it might happen that IA[i]=IB[i] but ρA[i] != ρB[i].
+    respectively. (Note that it might happen that IA[i]==IB[i] but ρA[i] != ρB[i].
     This situation can occur if there is slight imprecision in numerical calculations.
     In that case, we do not update ρA[i] and IA[i]. While updating ρA[i] and IA[i]
     is harmless in this case, we avoid doing that so to be consistent with the merging
