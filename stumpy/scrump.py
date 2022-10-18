@@ -191,26 +191,26 @@ def _compute_PI(
         if excl_zone is not None:
             core._apply_exclusion_zone(squared_distance_profile, i, excl_zone, np.inf)
 
-        nn_idx = np.argmin(squared_distance_profile)
+        nn_i = np.argmin(squared_distance_profile)
         if (
-            squared_distance_profile[nn_idx] < P_squared[thread_idx, i, -1]
-            and nn_idx not in I[thread_idx, i]
+            squared_distance_profile[nn_i] < P_squared[thread_idx, i, -1]
+            and nn_i not in I[thread_idx, i]
         ):
             idx = np.searchsorted(
                 P_squared[thread_idx, i],
-                squared_distance_profile[nn_idx],
+                squared_distance_profile[nn_i],
                 side="right",
             )
             core._shift_insert_at_index(
-                P_squared[thread_idx, i], idx, squared_distance_profile[nn_idx]
+                P_squared[thread_idx, i], idx, squared_distance_profile[nn_i]
             )
-            core._shift_insert_at_index(I[thread_idx, i], idx, nn_idx)
+            core._shift_insert_at_index(I[thread_idx, i], idx, nn_i)
 
         if P_squared[thread_idx, i, 0] == np.inf:  # pragma: no cover
             I[thread_idx, i, 0] = -1
             continue
 
-        j = nn_idx
+        j = nn_i
         # Given the squared distance, work backwards and compute QT
         QT_j = (m - P_squared[thread_idx, i, 0] / 2.0) * (Σ_T[j] * σ_Q[i]) + (
             m * M_T[j] * μ_Q[i]
