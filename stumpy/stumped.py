@@ -265,6 +265,6 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, 
 
     core._check_P(out[:, 0])
 
-    dask_client.wait_for_workers(nworkers)
+    dask_client.restart()
 
     return out
