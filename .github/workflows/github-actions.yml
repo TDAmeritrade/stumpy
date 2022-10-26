@@ -25,9 +25,9 @@ jobs:
       - name: Install STUMPY And Other Dependencies
         run: pip install --editable .[ci]
         shell: bash
-      - name: Reinstall Numba
-        run: pip uninstall -y numba && pip install numba==0.55
-        shell: bash
+      #- name: Reinstall Numba
+      #  run: pip uninstall -y numba && pip install numba==0.55
+      #  shell: bash
       - name: Run Black
         run: black --check --diff ./
         shell: bash
