@@ -33,5 +33,5 @@ jobs:
         shell: bash
       - name: Run Unit Tests
         # run: ./test.sh unit
-        run: ./test.sh custom tests/test_stumped.py 20
+        run: ./test.sh custom tests/test_stumped.py::test_stumped_self_join 20
         shell: bash
