@@ -13,6 +13,7 @@ def dask_cluster():
     yield cluster
     cluster.close()
 
+
 niters = list(range(20))
 test_data = [
     (
