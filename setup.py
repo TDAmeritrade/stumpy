@@ -9,15 +9,24 @@ def readme():
 
 def get_extras_require():
     extras = [
-        "pandas >= 0.20.0",
-        "dask >= 1.2.2",
-        "distributed >= 1.28.1",
-        "coverage >= 4.5.3",
-        "flake8 >= 3.7.7",
-        "flake8-docstrings >= 1.5.0",
-        "black >= 19.3b0",
-        "pytest >= 4.4.1",
-        "codecov",
+        #"pandas >= 0.20.0",
+        #"dask >= 1.2.2",
+        #"distributed >= 1.28.1",
+        #"coverage >= 4.5.3",
+        #"flake8 >= 3.7.7",
+        #"flake8-docstrings >= 1.5.0",
+        #"black >= 19.3b0",
+        #"pytest >= 4.4.1",
+        #"codecov",
+        "pandas == 1.5.0",
+        "dask == 2022.10.0",
+        "distributed == 2022.10.0",
+        "coverage == 6.5.0",
+        "flake8 == 5.0.4",
+        "flake8-docstrings == 1.6.0",
+        "black == 22.10.0",
+        "pytest == 7.1.3",
+        "codecov == 2.1.12",
     ]
 
     if "linux" in sys.platform:
@@ -57,7 +66,8 @@ configuration = {
     "maintainer_email": "seanmylaw@gmail.com",
     "license": "3-clause BSD License",
     "packages": ["stumpy"],
-    "install_requires": ["numpy >= 1.17", "scipy >= 1.5", "numba >= 0.54"],
+    #"install_requires": ["numpy >= 1.17", "scipy >= 1.5, ==1.9.2", "numba >= 0.54, ==56.3"],
+    "install_requires": ["numpy==1.23.4", "scipy==1.9.2", "numba==56.3"],
     "ext_modules": [],
     "cmdclass": {},
     "tests_require": ["pytest"],
