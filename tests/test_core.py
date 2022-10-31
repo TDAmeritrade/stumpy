@@ -1086,3 +1086,33 @@ def test_find_matches_maxmatch():
         comp = core._find_matches(D, excl_zone, max_distance, max_matches)
 
         npt.assert_almost_equal(ref, comp)
+
+
+def test_get_tiles():
+    n = np.random.randint(10, 100)
+    m = np.random.randint(9, n)
+    diags_lower_idx = np.random.randint(-n + m, n - m)
+    diags_upper_idx = n - m
+    diags = np.arange(diags_lower_idx, diags_upper_idx)
+    tile_length = np.random.randint(1, n)
+
+    cmp_tiles = core._get_tiles(m, n, n, diags, tile_length)
+    for cmp_tile in cmp_tiles:
+        cmp_y_offset, cmp_x_offset = cmp_tile[:2]
+        cmp_tile_height, cmp_tile_width = cmp_tile[2:4]
+        cmp_tile_lower_diag, cmp_tile_upper_diag = cmp_tile[4:6]
+        cmp_tile_ndist = cmp_tile[6]
+
+        ref_tile_height = min(tile_length, n - m + 1 - cmp_y_offset)
+        assert ref_tile_height == cmp_tile_height
+        ref_tile_width = min(tile_length, n - m + 1 - cmp_x_offset)
+        assert ref_tile_width == cmp_tile_width
+
+        ref_tile_ndist = 0
+        for diag_idx in range(cmp_tile_lower_diag, cmp_tile_upper_diag):
+            if diag_idx >= 0:
+                ref_tile_ndist += min(cmp_tile_width - diag_idx, cmp_tile_height)
+            else:
+                ref_tile_ndist += min(cmp_tile_height + diag_idx, cmp_tile_width)
+
+        assert ref_tile_ndist == cmp_tile_ndist

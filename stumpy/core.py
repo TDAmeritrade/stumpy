@@ -7,7 +7,7 @@ import functools
 import inspect
 
 import numpy as np
-from numba import njit
+from numba import njit, prange
 from scipy.signal import convolve
 from scipy.ndimage import maximum_filter1d, minimum_filter1d
 from scipy import linalg
@@ -2673,3 +2673,76 @@ def _find_matches(
         candidate_idx = np.argmin(D)
 
     return np.array(matches, dtype=object)
+
+
+@njit(
+    # "(i8, i8, i8, i8[:], i8)"
+)
+def _get_tiles(m, n_A, n_B, diags, tile_length):
+    """
+    Split distance matrix into tiles of given size
+
+    Parameters
+    ----------
+    m : int
+        Window size
+
+    n_A : ndarray
+        The length of time series `T_A`
+
+    n_B : ndarray
+        The length of time series `T_B`
+
+    diags : ndarray
+        The diagonal indices of interest
+
+    tile_length : int
+        Maximum length of each tile
+
+    Returns
+    -------
+    tiles : ndarray
+        An array of 7-element-arrays representing each tile:
+        The first two values represent offset positions of the tile
+        The second two values represent dimensions of the tile
+        The third two values represent diagonal indices to traverse in the tile
+        The seventh value represents number of distances in the tile
+    """
+    # dimensions of distance matrix
+    height = n_A - m + 1
+    width = n_B - m + 1
+    # tile rows & columns
+    tile_rows = int(np.ceil(height / tile_length))
+    tile_columns = int(np.ceil(width / tile_length))
+    # number of tiles
+    tiles_count = tile_rows * tile_columns
+    tiles = np.empty((tiles_count, 7), dtype=np.int64)
+
+    for tile_idx in prange(tiles_count):
+        height_offset = int(tile_idx / tile_columns) * tile_length
+        width_offset = (tile_idx % tile_columns) * tile_length
+        # height of current tile
+        tile_height = min(tile_length, height - height_offset)
+        # width of current tile
+        tile_width = min(tile_length, width - width_offset)
+
+        # lower and upper diagonal indices to traverse within tile
+        tile_lower_diag = max(1 - tile_height, diags[0] + height_offset - width_offset)
+        tile_upper_diag = min(tile_width, diags[-1] + 1 + height_offset - width_offset)
+
+        tile_ndist = _total_diagonal_ndists(
+            tile_lower_diag,
+            tile_upper_diag,
+            tile_height,
+            tile_width,
+        )
+
+        tiles[tile_idx, 0] = height_offset
+        tiles[tile_idx, 1] = width_offset
+        tiles[tile_idx, 2] = tile_height
+        tiles[tile_idx, 3] = tile_width
+        tiles[tile_idx, 4] = tile_lower_diag
+        tiles[tile_idx, 5] = tile_upper_diag
+        tiles[tile_idx, 6] = tile_ndist
+
+    return tiles

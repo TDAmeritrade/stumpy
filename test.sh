@@ -127,6 +127,8 @@ test_unit()
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump.py tests/test_mstump.py tests/test_stumpi.py
     check_errs $?
+    pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stump_tiles.py
+    check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_scrump.py
     check_errs $?
     pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning tests/test_stumped.py
