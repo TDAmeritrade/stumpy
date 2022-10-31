@@ -835,7 +835,7 @@ def _get_multi_QT(start, T, m):
 @njit(
     # "(i8, i8, i8, f8[:, :], f8[:, :], i8, i8, f8[:, :], f8[:, :], f8[:, :],"
     # "f8[:, :], f8[:, :], f8[:, :], f8[:, :])",
-    parallel=True,
+    # parallel=True,
     fastmath=True,
 )
 def _compute_multi_D(
@@ -937,7 +937,7 @@ def _compute_multi_D(
 
 @njit(
     # "(i8, i8, f8[:, :], f8[:], i8, f8[:, :], i8[:, :], f8)",
-    parallel=True,
+    # parallel=True,
     fastmath=True,
 )
 def _compute_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
