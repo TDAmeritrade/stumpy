@@ -139,7 +139,7 @@ def _compute_diagonal(
 
 @njit(
     # "(f8[:], f8[:], i8, b1[:], b1[:], i8[:], b1)",
-    # parallel=True,
+    parallel=True,
     fastmath=True,
 )
 def _aamp(
