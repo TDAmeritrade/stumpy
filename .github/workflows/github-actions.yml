@@ -31,9 +31,6 @@ jobs:
       - name: Run Flake8
         run: flake8 ./
         shell: bash
-      - name: Check Numba Environment
-        run: numba -s
-        shell: bash
       - name: Run Unit Tests
         # run: ./test.sh unit
         run: ./test.sh custom tests/test_stumped.py::test_stumped_self_join 20
