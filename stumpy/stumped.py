@@ -5,6 +5,7 @@
 import logging
 
 import numpy as np
+import numba
 
 from . import core, config
 from .stump import _stump
@@ -250,6 +251,8 @@ def stumped(dask_client, T_A, m, T_B=None, ignore_trivial=True, normalize=True, 
                 ignore_trivial,
             )
         )
+
+    print(numba.threading_layer())
 
     results = dask_client.gather(futures)
     profile, indices = results[0]
