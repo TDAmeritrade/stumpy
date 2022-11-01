@@ -3,6 +3,7 @@ import numpy.testing as npt
 import pandas as pd
 from stumpy import stump_tiles, config
 import pytest
+from unittest.mock import patch
 import naive
 
 
@@ -28,89 +29,78 @@ def test_stump_tiles_int_input():
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_tiles_self_join(T_A, T_B):
-    tmp_tile_length = config.STUMPY_MAX_TILE_LENGTH
-    config.STUMPY_MAX_TILE_LENGTH = max(int(len(T_B) / 4), 2)
+    with patch("stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(len(T_B) / 4), 2)):
+        m = 3
+        zone = int(np.ceil(m / 4))
+        ref_mp = naive.stump(T_B, m, exclusion_zone=zone)
+        comp_mp = stump_tiles(T_B, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
-    m = 3
-    zone = int(np.ceil(m / 4))
-    ref_mp = naive.stump(T_B, m, exclusion_zone=zone)
-    comp_mp = stump_tiles(T_B, m, ignore_trivial=True)
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp, comp_mp)
-
-    comp_mp = stump_tiles(pd.Series(T_B), m, ignore_trivial=True)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp, comp_mp)
-
-    config.STUMPY_MAX_TILE_LENGTH = tmp_tile_length
+        comp_mp = stump_tiles(pd.Series(T_B), m, ignore_trivial=True)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_tiles_A_B_join(T_A, T_B):
-    tmp_tile_length = config.STUMPY_MAX_TILE_LENGTH
-    config.STUMPY_MAX_TILE_LENGTH = max(int(min(len(T_A), len(T_B)) / 4), 2)
+    with patch(
+        "stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(min(len(T_A), len(T_B)) / 4), 2)
+    ):
+        m = 3
+        ref_mp = naive.stump(T_A, m, T_B=T_B)
+        comp_mp = stump_tiles(T_A, m, T_B, ignore_trivial=False)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
-    m = 3
-    ref_mp = naive.stump(T_A, m, T_B=T_B)
-    comp_mp = stump_tiles(T_A, m, T_B, ignore_trivial=False)
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp, comp_mp)
-
-    comp_mp = stump_tiles(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp, comp_mp)
-
-    config.STUMPY_MAX_TILE_LENGTH = tmp_tile_length
+        comp_mp = stump_tiles(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 def test_stump_tiles_constant_subsequence_self_join():
     T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
-    tmp_tile_length = config.STUMPY_MAX_TILE_LENGTH
-    config.STUMPY_MAX_TILE_LENGTH = max(int(len(T_A) / 4), 2)
 
-    m = 3
-    zone = int(np.ceil(m / 4))
-    ref_mp = naive.stump(T_A, m, exclusion_zone=zone)
-    comp_mp = stump_tiles(T_A, m, ignore_trivial=True)
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
+    with patch("stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(len(T_A) / 4), 2)):
+        m = 3
+        zone = int(np.ceil(m / 4))
+        ref_mp = naive.stump(T_A, m, exclusion_zone=zone)
+        comp_mp = stump_tiles(T_A, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    comp_mp = stump_tiles(pd.Series(T_A), m, ignore_trivial=True)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
-
-    config.STUMPY_MAX_TILE_LENGTH = tmp_tile_length
-
+        comp_mp = stump_tiles(pd.Series(T_A), m, ignore_trivial=True)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 def test_stump_tiles_one_constant_subsequence_A_B_join():
     T_A = np.random.rand(20)
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
-    tmp_tile_length = config.STUMPY_MAX_TILE_LENGTH
-    config.STUMPY_MAX_TILE_LENGTH = max(int(min(len(T_A), len(T_B)) / 4), 2)
 
-    m = 3
-    ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
-    comp_mp = stump_tiles(T_A, m, T_B, ignore_trivial=False)
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
+    with patch(
+        "stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(min(len(T_A), len(T_B)) / 4), 2)
+    ):
+        m = 3
+        ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
+        comp_mp = stump_tiles(T_A, m, T_B, ignore_trivial=False)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    comp_mp = stump_tiles(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
+        comp_mp = stump_tiles(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    # Swap inputs
-    ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
-    comp_mp = stump_tiles(T_B, m, T_A, ignore_trivial=False)
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
-
-    config.STUMPY_MAX_TILE_LENGTH = tmp_tile_length
+        # Swap inputs
+        ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
+        comp_mp = stump_tiles(T_B, m, T_A, ignore_trivial=False)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 def test_stump_tiles_two_constant_subsequences_A_B_join():
@@ -118,32 +108,31 @@ def test_stump_tiles_two_constant_subsequences_A_B_join():
         (np.zeros(10, dtype=np.float64), np.ones(10, dtype=np.float64))
     )
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
-    tmp_tile_length = config.STUMPY_MAX_TILE_LENGTH
-    config.STUMPY_MAX_TILE_LENGTH = max(int(min(len(T_A), len(T_B)) / 4), 2)
 
-    m = 3
-    ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
-    comp_mp = stump_tiles(T_A, m, T_B, ignore_trivial=False)
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
+    with patch(
+        "stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(min(len(T_A), len(T_B)) / 4), 2)
+    ):
+        m = 3
+        ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
+        comp_mp = stump_tiles(T_A, m, T_B, ignore_trivial=False)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    comp_mp = stump_tiles(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
+        comp_mp = stump_tiles(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    # Swap inputs
-    ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
-    comp_mp = stump_tiles(T_B, m, T_A, ignore_trivial=False)
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
+        # Swap inputs
+        ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
+        comp_mp = stump_tiles(T_B, m, T_A, ignore_trivial=False)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-    comp_mp = stump_tiles(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
-
-    config.STUMPY_MAX_TILE_LENGTH = tmp_tile_length
+        comp_mp = stump_tiles(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
 
 def test_stump_tiles_identical_subsequence_self_join():
@@ -151,26 +140,23 @@ def test_stump_tiles_identical_subsequence_self_join():
     T_A = np.random.rand(20)
     T_A[1 : 1 + identical.shape[0]] = identical
     T_A[11 : 11 + identical.shape[0]] = identical
-    tmp_tile_length = config.STUMPY_MAX_TILE_LENGTH
-    config.STUMPY_MAX_TILE_LENGTH = max(int(len(T_A) / 4), 2)
 
-    m = 3
-    zone = int(np.ceil(m / 4))
-    ref_mp = naive.stump(T_A, m, exclusion_zone=zone, row_wise=True)
-    comp_mp = stump_tiles(T_A, m, ignore_trivial=True)
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(
-        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
-    )  # ignore indices
+    with patch("stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(len(T_A) / 4), 2)):
+        m = 3
+        zone = int(np.ceil(m / 4))
+        ref_mp = naive.stump(T_A, m, exclusion_zone=zone, row_wise=True)
+        comp_mp = stump_tiles(T_A, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(
+            ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        )  # ignore indices
 
-    comp_mp = stump_tiles(pd.Series(T_A), m, ignore_trivial=True)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(
-        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
-    )  # ignore indices
-
-    config.STUMPY_MAX_TILE_LENGTH = tmp_tile_length
+        comp_mp = stump_tiles(pd.Series(T_A), m, ignore_trivial=True)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(
+            ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        )  # ignore indices
 
 
 def test_stump_tiles_identical_subsequence_A_B_join():
@@ -179,34 +165,33 @@ def test_stump_tiles_identical_subsequence_A_B_join():
     T_B = np.random.rand(20)
     T_A[1 : 1 + identical.shape[0]] = identical
     T_B[11 : 11 + identical.shape[0]] = identical
-    tmp_tile_length = config.STUMPY_MAX_TILE_LENGTH
-    config.STUMPY_MAX_TILE_LENGTH = max(int(min(len(T_A), len(T_B)) / 4), 2)
 
-    m = 3
-    ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
-    comp_mp = stump_tiles(T_A, m, T_B, ignore_trivial=False)
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(
-        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
-    )  # ignore indices
+    with patch(
+        "stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(min(len(T_A), len(T_B)) / 4), 2)
+    ):
+        m = 3
+        ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
+        comp_mp = stump_tiles(T_A, m, T_B, ignore_trivial=False)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(
+            ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        )  # ignore indices
 
-    comp_mp = stump_tiles(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(
-        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
-    )  # ignore indices
+        comp_mp = stump_tiles(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(
+            ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        )  # ignore indices
 
-    # Swap inputs
-    ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
-    comp_mp = stump_tiles(T_B, m, T_A, ignore_trivial=False)
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(
-        ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
-    )  # ignore indices
-
-    config.STUMPY_MAX_TILE_LENGTH = tmp_tile_length
+        # Swap inputs
+        ref_mp = naive.stump(T_B, m, T_B=T_A, row_wise=True)
+        comp_mp = stump_tiles(T_B, m, T_A, ignore_trivial=False)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(
+            ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        )  # ignore indices
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -216,25 +201,22 @@ def test_stump_tiles_nan_inf_self_join(T_A, T_B, substitute_B, substitution_loca
     m = 3
 
     T_B_sub = T_B.copy()
-    tmp_tile_length = config.STUMPY_MAX_TILE_LENGTH
-    config.STUMPY_MAX_TILE_LENGTH = max(int(len(T_B) / 4), 2)
 
-    for substitution_location_B in substitution_locations:
-        T_B_sub[:] = T_B[:]
-        T_B_sub[substitution_location_B] = substitute_B
+    with patch("stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(len(T_B) / 4), 2)):
+        for substitution_location_B in substitution_locations:
+            T_B_sub[:] = T_B[:]
+            T_B_sub[substitution_location_B] = substitute_B
 
-        zone = int(np.ceil(m / 4))
-        ref_mp = naive.stump(T_B_sub, m, exclusion_zone=zone, row_wise=True)
-        comp_mp = stump_tiles(T_B_sub, m, ignore_trivial=True)
-        naive.replace_inf(ref_mp)
-        naive.replace_inf(comp_mp)
-        npt.assert_almost_equal(ref_mp, comp_mp)
+            zone = int(np.ceil(m / 4))
+            ref_mp = naive.stump(T_B_sub, m, exclusion_zone=zone, row_wise=True)
+            comp_mp = stump_tiles(T_B_sub, m, ignore_trivial=True)
+            naive.replace_inf(ref_mp)
+            naive.replace_inf(comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)
 
-        comp_mp = stump_tiles(pd.Series(T_B_sub), m, ignore_trivial=True)
-        naive.replace_inf(comp_mp)
-        npt.assert_almost_equal(ref_mp, comp_mp)
-
-    config.STUMPY_MAX_TILE_LENGTH = tmp_tile_length
+            comp_mp = stump_tiles(pd.Series(T_B_sub), m, ignore_trivial=True)
+            naive.replace_inf(comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -248,44 +230,39 @@ def test_stump_tiles_nan_inf_A_B_join(
 
     T_A_sub = T_A.copy()
     T_B_sub = T_B.copy()
-    tmp_tile_length = config.STUMPY_MAX_TILE_LENGTH
-    config.STUMPY_MAX_TILE_LENGTH = max(int(min(len(T_A), len(T_B)) / 4), 2)
 
-    for substitution_location_B in substitution_locations:
-        for substitution_location_A in substitution_locations:
-            T_A_sub[:] = T_A[:]
-            T_B_sub[:] = T_B[:]
-            T_A_sub[substitution_location_A] = substitute_A
-            T_B_sub[substitution_location_B] = substitute_B
+    with patch(
+        "stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(min(len(T_A), len(T_B)) / 4), 2)
+    ):
+        for substitution_location_B in substitution_locations:
+            for substitution_location_A in substitution_locations:
+                T_A_sub[:] = T_A[:]
+                T_B_sub[:] = T_B[:]
+                T_A_sub[substitution_location_A] = substitute_A
+                T_B_sub[substitution_location_B] = substitute_B
 
-            ref_mp = naive.stump(T_A_sub, m, T_B=T_B_sub, row_wise=True)
-            comp_mp = stump_tiles(T_A_sub, m, T_B_sub, ignore_trivial=False)
-            naive.replace_inf(ref_mp)
-            naive.replace_inf(comp_mp)
-            npt.assert_almost_equal(ref_mp, comp_mp)
+                ref_mp = naive.stump(T_A_sub, m, T_B=T_B_sub, row_wise=True)
+                comp_mp = stump_tiles(T_A_sub, m, T_B_sub, ignore_trivial=False)
+                naive.replace_inf(ref_mp)
+                naive.replace_inf(comp_mp)
+                npt.assert_almost_equal(ref_mp, comp_mp)
 
-            comp_mp = stump_tiles(
-                pd.Series(T_A_sub), m, pd.Series(T_B_sub), ignore_trivial=False
-            )
-            naive.replace_inf(comp_mp)
-            npt.assert_almost_equal(ref_mp, comp_mp)
-
-    config.STUMPY_MAX_TILE_LENGTH = tmp_tile_length
+                comp_mp = stump_tiles(
+                    pd.Series(T_A_sub), m, pd.Series(T_B_sub), ignore_trivial=False
+                )
+                naive.replace_inf(comp_mp)
+                npt.assert_almost_equal(ref_mp, comp_mp)
 
 
 def test_stump_tiles_nan_zero_mean_self_join():
     T = np.array([-1, 0, 1, np.inf, 1, 0, -1])
-    tmp_tile_length = config.STUMPY_MAX_TILE_LENGTH
-    config.STUMPY_MAX_TILE_LENGTH = max(int(len(T) / 4), 2)
 
-    m = 3
+    with patch("stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(len(T) / 4), 2)):
+        m = 3
+        zone = int(np.ceil(m / 4))
+        ref_mp = naive.stump(T, m, exclusion_zone=zone, row_wise=True)
+        comp_mp = stump_tiles(T, m, ignore_trivial=True)
 
-    zone = int(np.ceil(m / 4))
-    ref_mp = naive.stump(T, m, exclusion_zone=zone, row_wise=True)
-    comp_mp = stump_tiles(T, m, ignore_trivial=True)
-
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp, comp_mp)
-
-    config.STUMPY_MAX_TILE_LENGTH = tmp_tile_length
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
