@@ -49,8 +49,8 @@ def test_stumped_self_join(T_A, T_B, niters, dask_cluster):
         m = 3
         zone = int(np.ceil(m / 4))
         ref_mp = naive.stump(T_B, m, exclusion_zone=zone)
-        print(numba.threading_layer())
         comp_mp = stumped(dask_client, T_B, m, ignore_trivial=True)
+        print(numba.threading_layer())
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
         npt.assert_almost_equal(ref_mp, comp_mp)
