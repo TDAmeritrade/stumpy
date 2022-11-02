@@ -33,8 +33,12 @@ jobs:
       - name: Run Flake8
         run: flake8 ./
         shell: bash
+      - name: Custom pip install
+        run: pip install tbb numba
+        shell: bash
       - name: Get numba environment
         run: numba -s
+        shell: bash
       - name: Run Unit Tests
         # run: ./test.sh unit
         run: ./test.sh custom tests/test_stumped.py::test_stumped_self_join print 20
