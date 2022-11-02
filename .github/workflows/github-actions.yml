@@ -37,7 +37,7 @@ jobs:
         run: pip install tbb numba
         shell: bash
       - name: Get numba environment
-        run: sudo numba -s
+        run: python -m numba -s
         shell: bash
       - name: Run Unit Tests
         # run: ./test.sh unit
