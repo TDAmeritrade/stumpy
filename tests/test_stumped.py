@@ -8,7 +8,8 @@ import naive
 import numba
 
 
-numba.config.THREADING_LAYER = 'tbb'
+numba.config.THREADING_LAYER = "tbb"
+
 
 @pytest.fixture(scope="module")
 def dask_cluster():
