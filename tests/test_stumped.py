@@ -5,7 +5,10 @@ from stumpy import config, stumped
 from dask.distributed import Client, LocalCluster
 import pytest
 import naive
+import numba
 
+
+numba.config.THREADING_LAYER = 'tbb'
 
 @pytest.fixture(scope="module")
 def dask_cluster():
