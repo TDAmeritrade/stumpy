@@ -27,6 +27,7 @@ def get_extras_require():
         "black == 22.10.0",
         "pytest == 7.1.3",
         "codecov == 2.1.12",
+        "tbb >= 2019.5",
     ]
 
     if "linux" in sys.platform:
