@@ -62,6 +62,9 @@ jobs:
       - name: Run Flake8
         run: flake8 ./
         shell: bash
+      - name: Show Full Numba Environment
+        run: python -m numba -s
+        shell: bash
       - name: Run Unit Tests
         run: ./test.sh unit
         shell: bash
