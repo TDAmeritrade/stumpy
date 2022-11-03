@@ -28,7 +28,7 @@ jobs:
         run: pip install --editable .[ci]
         shell: bash
       - name: Install TBB Threading Layer
-        run: pip install tbb
+        run: pip install tbb tbb-devel
         shell: bash
       - name: Run Black
         run: black --check --diff ./
