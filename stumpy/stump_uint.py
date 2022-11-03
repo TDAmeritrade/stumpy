@@ -152,6 +152,7 @@ def _compute_diagonal(
     n_B = T_B.shape[0]
     m_inverse = 1.0 / m
     constant = (m - 1) * m_inverse * m_inverse  # (m - 1)/(m * m)
+    m = np.uint64(m)
 
     for diag_idx in range(diags_start_idx, diags_stop_idx):
         k = diags[diag_idx]
@@ -168,8 +169,8 @@ def _compute_diagonal(
             if i == 0 or (k < 0 and i == -k):
                 cov = (
                     np.dot(
-                        (T_B[j : j + np.uint64(m)] - M_T[j]),
-                        (T_A[i : i + np.uint64(m)] - μ_Q[i]),
+                        (T_B[j : j + m] - M_T[j]),
+                        (T_A[i : i + m] - μ_Q[i]),
                     )
                     * m_inverse
                 )
