@@ -110,10 +110,13 @@ def _compute_diagonal(
                     ** p
                 )
             else:
+                prev_i = np.uint64(i - 1)
+                prev_j = np.uint64(j - 1)
+
                 p_norm = np.abs(
                     p_norm
-                    - np.absolute(T_B[j - 1] - T_A[i - 1]) ** p
-                    + np.absolute(T_B[j + unsigned_m - 1] - T_A[i + unsigned_m - 1])
+                    - np.absolute(T_B[prev_j] - T_A[prev_i]) ** p
+                    + np.absolute(T_B[prev_j + unsigned_m] - T_A[prev_i + unsigned_m])
                     ** p
                 )
 
