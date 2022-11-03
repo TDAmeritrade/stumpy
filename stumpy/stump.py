@@ -158,9 +158,9 @@ def _compute_diagonal(
         k = diags[diag_idx]
 
         if k >= 0:
-            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - k))
+            iter_range = range(0, np.uint64(min(n_A - m + 1, n_B - m + 1 - k)))
         else:
-            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
+            iter_range = range(-k, np.uint64(min(n_A - m + 1, n_B - m + 1 - k)))
 
         for signed_i in iter_range:
             i = np.uint64(signed_i)
