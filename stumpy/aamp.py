@@ -103,9 +103,7 @@ def _compute_diagonal(
             j = np.uint64(i + k)
 
             if i == 0 or (k < 0 and i == -k):
-                p_norm = (
-                    np.linalg.norm(T_B[j : j + m] - T_A[i : i + m], ord=p) ** p
-                )
+                p_norm = np.linalg.norm(T_B[j : j + m] - T_A[i : i + m], ord=p) ** p
             else:
                 p_norm = np.abs(
                     p_norm
