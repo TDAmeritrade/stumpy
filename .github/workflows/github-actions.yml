@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: main
 env:
-  NUMAB_THREADING_LAYER: tbb
+  NUMBA_THREADING_LAYER: tbb
 jobs:
   unit-testing:
     runs-on: ${{ matrix.os }}
