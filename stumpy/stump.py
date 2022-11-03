@@ -152,15 +152,15 @@ def _compute_diagonal(
     n_B = T_B.shape[0]
     m_inverse = 1.0 / m
     constant = (m - 1) * m_inverse * m_inverse  # (m - 1)/(m * m)
-    m = np.uint64(m)
+    unsigned_m = np.uint64(m)
 
     for diag_idx in range(diags_start_idx, diags_stop_idx):
         k = diags[diag_idx]
 
         if k >= 0:
-            iter_range = range(0, np.uint64(min(n_A - m + 1, n_B - m + 1 - k)))
+            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - k))
         else:
-            iter_range = range(-k, np.uint64(min(n_A - m + 1, n_B - m + 1 - k)))
+            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
 
         for signed_i in iter_range:
             i = np.uint64(signed_i)
@@ -169,8 +169,8 @@ def _compute_diagonal(
             if i == 0 or (k < 0 and i == -k):
                 cov = (
                     np.dot(
-                        (T_B[j : j + m] - M_T[j]),
-                        (T_A[i : i + m] - μ_Q[i]),
+                        (T_B[j : j + unsigned_m] - M_T[j]),
+                        (T_A[i : i + unsigned_m] - μ_Q[i]),
                     )
                     * m_inverse
                 )

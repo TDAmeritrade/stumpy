@@ -88,27 +88,33 @@ def _compute_diagonal(
     """
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
-    m = np.uint64(m)
+    unsigned_m = np.uint64(m)
 
     for diag_idx in range(diags_start_idx, diags_stop_idx):
         k = diags[diag_idx]
 
         if k >= 0:
-            iter_range = range(0, np.uint64(min(n_A - m + 1, n_B - m + 1 - k)))
+            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - k))
         else:
-            iter_range = range(-k, np.uint64(min(n_A - m + 1, n_B - m + 1 - k)))
+            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
 
         for signed_i in iter_range:
             i = np.uint64(signed_i)
             j = np.uint64(i + k)
 
             if i == 0 or (k < 0 and i == -k):
-                p_norm = np.linalg.norm(T_B[j : j + m] - T_A[i : i + m], ord=p) ** p
+                p_norm = (
+                    np.linalg.norm(
+                        T_B[j : j + unsigned_m] - T_A[i : i + unsigned_m], ord=p
+                    )
+                    ** p
+                )
             else:
                 p_norm = np.abs(
                     p_norm
                     - np.absolute(T_B[j - 1] - T_A[i - 1]) ** p
-                    + np.absolute(T_B[j + m - 1] - T_A[i + m - 1]) ** p
+                    + np.absolute(T_B[j + unsigned_m - 1] - T_A[i + unsigned_m - 1])
+                    ** p
                 )
 
             if p_norm < config.STUMPY_P_NORM_THRESHOLD:
