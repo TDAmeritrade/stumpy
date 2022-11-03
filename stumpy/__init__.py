@@ -7,6 +7,7 @@ from .stumped import stumped  # noqa: F401
 from .mstump import mstump, subspace, mdl  # noqa: F401
 from .mstumped import mstumped  # noqa: F401
 from .aamp import aamp  # noqa: F401
+from .aamp_uint import aamp_uint  # noqa: F401
 from .aamped import aamped  # noqa: F401
 from .maamp import maamp, maamp_subspace, maamp_mdl  # noqa: F401
 from .maamped import maamped  # noqa: F401
