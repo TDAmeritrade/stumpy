@@ -14,6 +14,7 @@ def dask_cluster():
     cluster.close()
 
 
+niters = list(range(20))
 test_data = [
     (
         np.array([9, 8100, -60, 7], dtype=np.float64),
@@ -41,12 +42,14 @@ def test_stumped_int_input(dask_cluster):
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 @pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
 @pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stumped_self_join(T_A, T_B, dask_cluster):
+@pytest.mark.parametrize("niters", niters)
+def test_stumped_self_join(T_A, T_B, niters, dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 3
         zone = int(np.ceil(m / 4))
         ref_mp = naive.stump(T_B, m, exclusion_zone=zone)
         comp_mp = stumped(dask_client, T_B, m, ignore_trivial=True)
+        dask_client.restart()
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
         npt.assert_almost_equal(ref_mp, comp_mp)
