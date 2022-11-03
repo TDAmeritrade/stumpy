@@ -25,10 +25,10 @@ jobs:
         run: python -c "import sys; print(sys.version)"
         shell: bash
       - name: Install STUMPY And Other Dependencies
-        run: pip install --editable .[ci]
+        run: python -m pip install --editable .[ci]
         shell: bash
       - name: Install TBB Threading Layer
-        run: pip install tbb tbb-devel
+        run: python -m pip install tbb tbb-devel
         shell: bash
       - name: Run Black
         run: black --check --diff ./
