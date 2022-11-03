@@ -242,7 +242,7 @@ def _aamp(
     return np.power(P[0, :, :], 1.0 / p), I[0, :, :]
 
 
-def aamp_uint(T_A, m, T_B=None, ignore_trivial=True, p=2.0):
+def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2.0):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile
 
