@@ -2,12 +2,10 @@ from pkg_resources import get_distribution, DistributionNotFound
 import os.path
 from .core import mass  # noqa: F401
 from .stump import stump  # noqa: F401
-from .stump_uint import stump_uint  # noqa: F401
 from .stumped import stumped  # noqa: F401
 from .mstump import mstump, subspace, mdl  # noqa: F401
 from .mstumped import mstumped  # noqa: F401
 from .aamp import aamp  # noqa: F401
-from .aamp_uint import aamp_uint  # noqa: F401
 from .aamped import aamped  # noqa: F401
 from .maamp import maamp, maamp_subspace, maamp_mdl  # noqa: F401
 from .maamped import maamped  # noqa: F401
