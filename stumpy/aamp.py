@@ -103,7 +103,7 @@ def _compute_diagonal(
             uint64_i = np.uint64(i)
             uint64_j = np.uint64(i + k)
 
-            if uint64_i == 0 or (k < 0 and uint64_i == -k):
+            if uint64_i == 0 or uint64_j == -k:
                 p_norm = (
                     np.linalg.norm(
                         T_B[uint64_j : uint64_j + uint64_m]
