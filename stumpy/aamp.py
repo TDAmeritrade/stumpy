@@ -88,6 +88,7 @@ def _compute_diagonal(
     """
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
+    m = np.uint64(m)
 
     for diag_idx in range(diags_start_idx, diags_stop_idx):
         k = diags[diag_idx]
@@ -97,42 +98,45 @@ def _compute_diagonal(
         else:
             iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
 
-        for i in iter_range:
+        for signed_i in iter_range:
+            i = np.uint64(signed_i)
+            j = np.uint64(i + k)
+
             if i == 0 or (k < 0 and i == -k):
                 p_norm = (
-                    np.linalg.norm(T_B[i + k : i + k + m] - T_A[i : i + m], ord=p) ** p
+                    np.linalg.norm(T_B[j : j + m] - T_A[i : i + m], ord=p) ** p
                 )
             else:
                 p_norm = np.abs(
                     p_norm
-                    - np.absolute(T_B[i + k - 1] - T_A[i - 1]) ** p
-                    + np.absolute(T_B[i + k + m - 1] - T_A[i + m - 1]) ** p
+                    - np.absolute(T_B[j - 1] - T_A[i - 1]) ** p
+                    + np.absolute(T_B[j + m - 1] - T_A[i + m - 1]) ** p
                 )
 
             if p_norm < config.STUMPY_P_NORM_THRESHOLD:
                 p_norm = 0.0
 
-            if T_A_subseq_isfinite[i] and T_B_subseq_isfinite[i + k]:
+            if T_A_subseq_isfinite[i] and T_B_subseq_isfinite[j]:
                 # Neither subsequence contains NaNs
                 if p_norm < P[thread_idx, i, 0]:
                     P[thread_idx, i, 0] = p_norm
-                    I[thread_idx, i, 0] = i + k
+                    I[thread_idx, i, 0] = j
 
                 if ignore_trivial:
-                    if p_norm < P[thread_idx, i + k, 0]:
-                        P[thread_idx, i + k, 0] = p_norm
-                        I[thread_idx, i + k, 0] = i
+                    if p_norm < P[thread_idx, j, 0]:
+                        P[thread_idx, j, 0] = p_norm
+                        I[thread_idx, j, 0] = i
 
-                    if i < i + k:
+                    if i < j:
                         # left matrix profile and left matrix profile index
-                        if p_norm < P[thread_idx, i + k, 1]:
-                            P[thread_idx, i + k, 1] = p_norm
-                            I[thread_idx, i + k, 1] = i
+                        if p_norm < P[thread_idx, j, 1]:
+                            P[thread_idx, j, 1] = p_norm
+                            I[thread_idx, j, 1] = i
 
                         # right matrix profile and right matrix profile index
                         if p_norm < P[thread_idx, i, 2]:
                             P[thread_idx, i, 2] = p_norm
-                            I[thread_idx, i, 2] = i + k
+                            I[thread_idx, i, 2] = j
 
     return
 
@@ -240,7 +244,7 @@ def _aamp(
     return np.power(P[0, :, :], 1.0 / p), I[0, :, :]
 
 
-def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2.0):
+def aamp_uint(T_A, m, T_B=None, ignore_trivial=True, p=2.0):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile
 
