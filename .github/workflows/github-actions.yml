@@ -40,7 +40,7 @@ jobs:
         run: python -m numba -s
         shell: bash
       - name: Check TBB Import
-        run: python -c 'from numba.npyufunc import tpppool'
+        run: python -c 'from numba.np.ufunc import tbbpool'
         shell: bash
       - name: Show Ful Pip List
         run: python -m pip list
