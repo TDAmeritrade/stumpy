@@ -24,16 +24,25 @@ jobs:
         run: sed 's/>/=/g' requirements.txt | sed 's/$/\.*/g' > requirements.min.txt
         shell: bash
       - name: Install Minimum Requirements
-        run: pip install --upgrade -r requirements.min.txt
+        run: python -m pip install --upgrade -r requirements.min.txt
         shell: bash
       - name: Install STUMPY And Other Dependencies
-        run: pip install --editable .[ci]
+        run: python -m pip install --editable .[ci]
         shell: bash
       - name: Run Black
         run: black --check --diff ./
         shell: bash
       - name: Run Flake8
         run: flake8 ./
+        shell: bash
+      - name: Link OpenMP
+        run: |
+             if [ "$RUNNER_OS" == "macOS" ]; then
+                  brew link --force libomp
+             fi
+        shell: bash
+      - name: Show Full Numba Environment
+        run: python -m numba -s
         shell: bash
       - name: Run Unit Tests
         run: ./test.sh unit
@@ -54,13 +63,19 @@ jobs:
         run: python -c "import sys; print(sys.version)"
         shell: bash
       - name: Install STUMPY And Other Dependencies
-        run: pip install --editable .[ci]
+        run: python -m pip install --editable .[ci]
         shell: bash
       - name: Run Black
         run: black --check --diff ./
         shell: bash
       - name: Run Flake8
         run: flake8 ./
+        shell: bash
+      - name: Link OpenMP
+        run: |
+             if [ "$RUNNER_OS" == "macOS" ]; then
+                  brew link --force libomp
+             fi
         shell: bash
       - name: Show Full Numba Environment
         run: python -m numba -s
@@ -84,13 +99,22 @@ jobs:
         run: python -c "import sys; print(sys.version)"
         shell: bash
       - name: Install STUMPY And Other Dependencies
-        run: pip install --editable .[ci]
+        run: python -m pip install --editable .[ci]
         shell: bash
       - name: Run Black
         run: black --check --diff ./
         shell: bash
       - name: Run Flake8
         run: flake8 ./
+        shell: bash
+      - name: Link OpenMP
+        run: |
+             if [ "$RUNNER_OS" == "macOS" ]; then
+                  brew link --force libomp
+             fi
+        shell: bash
+      - name: Show Full Numba Environment
+        run: python -m numba -s
         shell: bash
       - name: Run Coverage Tests
         run: ./test.sh coverage
