@@ -152,6 +152,7 @@ def _compute_diagonal(
     n_B = T_B.shape[0]
     m_inverse = 1.0 / m
     constant = (m - 1) * m_inverse * m_inverse  # (m - 1)/(m * m)
+    uint64_m = np.uint64(m)
 
     for diag_idx in range(diags_start_idx, diags_stop_idx):
         k = diags[diag_idx]
@@ -162,10 +163,14 @@ def _compute_diagonal(
             iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
 
         for i in iter_range:
-            if i == 0 or (k < 0 and i == -k):
+            uint64_i = np.uint64(i)
+            uint64_j = np.uint64(i + k)
+
+            if uint64_i == 0 or uint64_j == 0:
                 cov = (
                     np.dot(
-                        (T_B[i + k : i + k + m] - M_T[i + k]), (T_A[i : i + m] - μ_Q[i])
+                        (T_B[uint64_j : uint64_j + uint64_m] - M_T[uint64_j]),
+                        (T_A[uint64_i : uint64_i + uint64_m] - μ_Q[uint64_i]),
                     )
                     * m_inverse
                 )
@@ -177,38 +182,39 @@ def _compute_diagonal(
                 #     - (T_B[i + k - 1] - M_T_m_1[i + k]) * (T_A[i - 1] - μ_Q_m_1[i])
                 # )
                 cov = cov + constant * (
-                    cov_a[i + k] * cov_b[i] - cov_c[i + k] * cov_d[i]
+                    cov_a[uint64_j] * cov_b[uint64_i]
+                    - cov_c[uint64_j] * cov_d[uint64_i]
                 )
 
-            if T_B_subseq_isfinite[i + k] and T_A_subseq_isfinite[i]:
+            if T_B_subseq_isfinite[uint64_j] and T_A_subseq_isfinite[uint64_i]:
                 # Neither subsequence contains NaNs
-                if T_B_subseq_isconstant[i + k] or T_A_subseq_isconstant[i]:
+                if T_B_subseq_isconstant[uint64_j] or T_A_subseq_isconstant[uint64_i]:
                     pearson = 0.5
                 else:
-                    pearson = cov * Σ_T_inverse[i + k] * σ_Q_inverse[i]
+                    pearson = cov * Σ_T_inverse[uint64_j] * σ_Q_inverse[uint64_i]
 
-                if T_B_subseq_isconstant[i + k] and T_A_subseq_isconstant[i]:
+                if T_B_subseq_isconstant[uint64_j] and T_A_subseq_isconstant[uint64_i]:
                     pearson = 1.0
 
-                if pearson > ρ[thread_idx, i, 0]:
-                    ρ[thread_idx, i, 0] = pearson
-                    I[thread_idx, i, 0] = i + k
+                if pearson > ρ[thread_idx, uint64_i, 0]:
+                    ρ[thread_idx, uint64_i, 0] = pearson
+                    I[thread_idx, uint64_i, 0] = uint64_j
 
                 if ignore_trivial:  # self-joins only
-                    if pearson > ρ[thread_idx, i + k, 0]:
-                        ρ[thread_idx, i + k, 0] = pearson
-                        I[thread_idx, i + k, 0] = i
+                    if pearson > ρ[thread_idx, uint64_j, 0]:
+                        ρ[thread_idx, uint64_j, 0] = pearson
+                        I[thread_idx, uint64_j, 0] = uint64_i
 
-                    if i < i + k:
+                    if uint64_i < uint64_j:
                         # left pearson correlation and left matrix profile index
-                        if pearson > ρ[thread_idx, i + k, 1]:
-                            ρ[thread_idx, i + k, 1] = pearson
-                            I[thread_idx, i + k, 1] = i
+                        if pearson > ρ[thread_idx, uint64_j, 1]:
+                            ρ[thread_idx, uint64_j, 1] = pearson
+                            I[thread_idx, uint64_j, 1] = uint64_i
 
                         # right pearson correlation and right matrix profile index
-                        if pearson > ρ[thread_idx, i, 2]:
-                            ρ[thread_idx, i, 2] = pearson
-                            I[thread_idx, i, 2] = i + k
+                        if pearson > ρ[thread_idx, uint64_i, 2]:
+                            ρ[thread_idx, uint64_i, 2] = pearson
+                            I[thread_idx, uint64_i, 2] = uint64_j
 
     return
 
