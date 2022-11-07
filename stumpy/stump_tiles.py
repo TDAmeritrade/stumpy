@@ -173,7 +173,9 @@ def _compute_tiles(
                 iter_ranges[diag_idx, 0] = tile_diag_idx - y_offset + x_offset
                 # store global range of diagonal to traverse
                 iter_ranges[diag_idx, 1] = y_offset - min(0, tile_diag_idx)
-                iter_ranges[diag_idx, 2] = y_offset + min(tile_height, tile_width - tile_diag_idx)
+                iter_ranges[diag_idx, 2] = y_offset + min(
+                    tile_height, tile_width - tile_diag_idx
+                )
 
                 # record length of longest diagonal
                 longest_diag_len = max(
@@ -210,7 +212,8 @@ def _compute_tiles(
                         #     * (T_A[i - 1] - μ_Q_m_1[i])
                         # )
                         cov = covariances[diag_iter_idx] + constant * (
-                            cov_a[uint64_j] * cov_b[uint64_i] - cov_c[uint64_j] * cov_d[uint64_i]
+                            cov_a[uint64_j] * cov_b[uint64_i]
+                            - cov_c[uint64_j] * cov_d[uint64_i]
                         )
 
                     # store covariance
@@ -218,12 +221,20 @@ def _compute_tiles(
 
                     if T_B_subseq_isfinite[uint64_j] and T_A_subseq_isfinite[uint64_i]:
                         # Neither subsequence contains NaNs
-                        if T_B_subseq_isconstant[uint64_j] or T_A_subseq_isconstant[uint64_i]:
+                        if (
+                            T_B_subseq_isconstant[uint64_j]
+                            or T_A_subseq_isconstant[uint64_i]
+                        ):
                             pearson = 0.5
                         else:
-                            pearson = cov * Σ_T_inverse[uint64_j] * σ_Q_inverse[uint64_i]
+                            pearson = (
+                                cov * Σ_T_inverse[uint64_j] * σ_Q_inverse[uint64_i]
+                            )
 
-                        if T_B_subseq_isconstant[uint64_j] and T_A_subseq_isconstant[uint64_i]:
+                        if (
+                            T_B_subseq_isconstant[uint64_j]
+                            and T_A_subseq_isconstant[uint64_i]
+                        ):
                             pearson = 1.0
 
                         if pearson > ρ[thread_idx, uint64_i, 0]:
