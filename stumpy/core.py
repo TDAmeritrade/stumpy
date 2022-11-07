@@ -2709,26 +2709,26 @@ def _get_tiles(m, n_A, n_B, diags, tile_length):
         The seventh value represents number of distances in the tile
     """
     # dimensions of distance matrix
-    height = n_A - m + 1
-    width = n_B - m + 1
+    l = n_A - m + 1
+    w = n_B - m + 1
     # tile rows & columns
-    tile_rows = int(np.ceil(height / tile_length))
-    tile_columns = int(np.ceil(width / tile_length))
+    tile_rows = int(np.ceil(l / tile_length))
+    tile_columns = int(np.ceil(w / tile_length))
     # number of tiles
     tiles_count = tile_rows * tile_columns
     tiles = np.empty((tiles_count, 7), dtype=np.int64)
 
     for tile_idx in prange(tiles_count):
-        height_offset = int(tile_idx / tile_columns) * tile_length
-        width_offset = (tile_idx % tile_columns) * tile_length
+        y_offset = int(tile_idx / tile_columns) * tile_length
+        x_offset = (tile_idx % tile_columns) * tile_length
         # height of current tile
-        tile_height = min(tile_length, height - height_offset)
+        tile_height = min(tile_length, l - y_offset)
         # width of current tile
-        tile_width = min(tile_length, width - width_offset)
+        tile_width = min(tile_length, w - x_offset)
 
         # lower and upper diagonal indices to traverse within tile
-        tile_lower_diag = max(1 - tile_height, diags[0] + height_offset - width_offset)
-        tile_upper_diag = min(tile_width, diags[-1] + 1 + height_offset - width_offset)
+        tile_lower_diag = max(1 - tile_height, diags[0] + y_offset - x_offset)
+        tile_upper_diag = min(tile_width, diags[-1] + 1 + y_offset - x_offset)
 
         tile_ndist = _total_diagonal_ndists(
             tile_lower_diag,
@@ -2737,8 +2737,8 @@ def _get_tiles(m, n_A, n_B, diags, tile_length):
             tile_width,
         )
 
-        tiles[tile_idx, 0] = height_offset
-        tiles[tile_idx, 1] = width_offset
+        tiles[tile_idx, 0] = y_offset
+        tiles[tile_idx, 1] = x_offset
         tiles[tile_idx, 2] = tile_height
         tiles[tile_idx, 3] = tile_width
         tiles[tile_idx, 4] = tile_lower_diag

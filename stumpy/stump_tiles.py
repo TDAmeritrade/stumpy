@@ -151,44 +151,29 @@ def _compute_tiles(
     """
     m_inverse = 1.0 / m
     constant = (m - 1) * m_inverse * m_inverse  # (m - 1)/(m * m)
-    m_uint = np.uint64(m)
+    uint64_m = np.uint64(m)
 
     iter_ranges = np.zeros((config.STUMPY_N_DIAGONALS, 3), dtype=np.uint64)
     covariances = np.zeros(config.STUMPY_N_DIAGONALS, dtype=np.float64)
-    diags_indices = np.arange(1 - tile_length, tile_length)
 
     for tile_idx in range(tiles_ranges[thread_idx, 0], tiles_ranges[thread_idx, 1]):
         y_offset, x_offset = tiles[tile_idx, 0], tiles[tile_idx, 1]
         tile_height, tile_width = tiles[tile_idx, 2], tiles[tile_idx, 3]
+        n_diags = tiles[tile_idx, 5] - tiles[tile_idx, 4]
 
-        lower_diag_idx = tiles[tile_idx, 4] + tile_length - 1
-        upper_diag_idx = tiles[tile_idx, 5] + tile_length - 2
-        diags = diags_indices[lower_diag_idx : upper_diag_idx + 1]
-
-        for chunk_idx in range(0, diags.shape[0], config.STUMPY_N_DIAGONALS):
+        for chunk_idx in range(0, n_diags, config.STUMPY_N_DIAGONALS):
             # get current chunk size, i.e. number of diagonals to traverse together
-            current_n_diags = min(config.STUMPY_N_DIAGONALS, diags.shape[0] - chunk_idx)
-            # get diagonals to traverse together
-            diags_chunk = diags[chunk_idx : chunk_idx + current_n_diags]
+            chunk_size = min(config.STUMPY_N_DIAGONALS, n_diags - chunk_idx)
 
             longest_diag_len = -1
-            for diag_idx in range(diags_chunk.shape[0]):
-                diag = diags_chunk[diag_idx]
+            for diag_idx in range(chunk_size):
+                tile_diag_idx = tiles[tile_idx, 4] + chunk_idx + diag_idx
 
-                # store index of diagonal
-                iter_ranges[diag_idx, 0] = diag - y_offset + x_offset
-
-                # store range of diagonal to traverse
-                if diag >= 0:
-                    iter_ranges[diag_idx, 1] = y_offset
-                    iter_ranges[diag_idx, 2] = (
-                        min(tile_height, tile_width - diag) + y_offset
-                    )
-                else:
-                    iter_ranges[diag_idx, 1] = y_offset - diag
-                    iter_ranges[diag_idx, 2] = (
-                        min(tile_height, tile_width - diag) + y_offset
-                    )
+                # store global index of diagonal
+                iter_ranges[diag_idx, 0] = tile_diag_idx - y_offset + x_offset
+                # store global range of diagonal to traverse
+                iter_ranges[diag_idx, 1] = y_offset - min(0, tile_diag_idx)
+                iter_ranges[diag_idx, 2] = y_offset + min(tile_height, tile_width - tile_diag_idx)
 
                 # record length of longest diagonal
                 longest_diag_len = max(
@@ -196,23 +181,23 @@ def _compute_tiles(
                     iter_ranges[diag_idx, 2] - iter_ranges[diag_idx, 1],
                 )
 
-            for idx in range(longest_diag_len):
+            for row_idx in range(longest_diag_len):
                 for diag_iter_idx in range(iter_ranges.shape[0]):
                     diag_iter_range = iter_ranges[diag_iter_idx]
 
                     # continue if no elements remain for this diagonal
-                    if idx >= diag_iter_range[2] - diag_iter_range[1]:
+                    if row_idx >= diag_iter_range[2] - diag_iter_range[1]:
                         continue
 
-                    k = diag_iter_range[0]
-                    i = diag_iter_range[1] + np.uint64(idx)
+                    uint64_i = diag_iter_range[1] + np.uint64(row_idx)
+                    uint64_j = uint64_i + diag_iter_range[0]
 
-                    # if first value in diagonal, compute covariance manually
-                    if idx == 0:
+                    # if first value in diagonal, compute covariance using dot product
+                    if row_idx == 0:
                         cov = (
                             np.dot(
-                                (T_B[i + k : i + k + m_uint] - M_T[i + k]),
-                                (T_A[i : i + m_uint] - μ_Q[i]),
+                                (T_B[uint64_j : uint64_j + uint64_m] - M_T[uint64_j]),
+                                (T_A[uint64_i : uint64_i + uint64_m] - μ_Q[uint64_i]),
                             )
                             * m_inverse
                         )
@@ -225,41 +210,41 @@ def _compute_tiles(
                         #     * (T_A[i - 1] - μ_Q_m_1[i])
                         # )
                         cov = covariances[diag_iter_idx] + constant * (
-                            cov_a[i + k] * cov_b[i] - cov_c[i + k] * cov_d[i]
+                            cov_a[uint64_j] * cov_b[uint64_i] - cov_c[uint64_j] * cov_d[uint64_i]
                         )
 
                     # store covariance
                     covariances[diag_iter_idx] = cov
 
-                    if T_B_subseq_isfinite[i + k] and T_A_subseq_isfinite[i]:
+                    if T_B_subseq_isfinite[uint64_j] and T_A_subseq_isfinite[uint64_i]:
                         # Neither subsequence contains NaNs
-                        if T_B_subseq_isconstant[i + k] or T_A_subseq_isconstant[i]:
+                        if T_B_subseq_isconstant[uint64_j] or T_A_subseq_isconstant[uint64_i]:
                             pearson = 0.5
                         else:
-                            pearson = cov * Σ_T_inverse[i + k] * σ_Q_inverse[i]
+                            pearson = cov * Σ_T_inverse[uint64_j] * σ_Q_inverse[uint64_i]
 
-                        if T_B_subseq_isconstant[i + k] and T_A_subseq_isconstant[i]:
+                        if T_B_subseq_isconstant[uint64_j] and T_A_subseq_isconstant[uint64_i]:
                             pearson = 1.0
 
-                        if pearson > ρ[thread_idx, i, 0]:
-                            ρ[thread_idx, i, 0] = pearson
-                            I[thread_idx, i, 0] = i + k
+                        if pearson > ρ[thread_idx, uint64_i, 0]:
+                            ρ[thread_idx, uint64_i, 0] = pearson
+                            I[thread_idx, uint64_i, 0] = uint64_j
 
                         if ignore_trivial:  # self-joins only
-                            if pearson > ρ[thread_idx, i + k, 0]:
-                                ρ[thread_idx, i + k, 0] = pearson
-                                I[thread_idx, i + k, 0] = i
+                            if pearson > ρ[thread_idx, uint64_j, 0]:
+                                ρ[thread_idx, uint64_j, 0] = pearson
+                                I[thread_idx, uint64_j, 0] = uint64_i
 
-                            if i < i + k:
+                            if uint64_i < uint64_j:
                                 # left pearson correlation & left matrix profile index
-                                if pearson > ρ[thread_idx, i + k, 1]:
-                                    ρ[thread_idx, i + k, 1] = pearson
-                                    I[thread_idx, i + k, 1] = i
+                                if pearson > ρ[thread_idx, uint64_j, 1]:
+                                    ρ[thread_idx, uint64_j, 1] = pearson
+                                    I[thread_idx, uint64_j, 1] = uint64_i
 
                                 # right pearson correlation & right matrix profile index
-                                if pearson > ρ[thread_idx, i, 2]:
-                                    ρ[thread_idx, i, 2] = pearson
-                                    I[thread_idx, i, 2] = i + k
+                                if pearson > ρ[thread_idx, uint64_i, 2]:
+                                    ρ[thread_idx, uint64_i, 2] = pearson
+                                    I[thread_idx, uint64_i, 2] = uint64_j
 
     return
 
