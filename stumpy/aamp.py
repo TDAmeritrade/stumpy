@@ -88,6 +88,8 @@ def _compute_diagonal(
     """
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
+    uint64_m = np.uint64(m)
+    uint64_1 = np.uint64(1)
 
     for diag_idx in range(diags_start_idx, diags_stop_idx):
         k = diags[diag_idx]
@@ -98,41 +100,54 @@ def _compute_diagonal(
             iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
 
         for i in iter_range:
-            if i == 0 or (k < 0 and i == -k):
+            uint64_i = np.uint64(i)
+            uint64_j = np.uint64(i + k)
+
+            if uint64_i == 0 or uint64_j == 0:
                 p_norm = (
-                    np.linalg.norm(T_B[i + k : i + k + m] - T_A[i : i + m], ord=p) ** p
+                    np.linalg.norm(
+                        T_B[uint64_j : uint64_j + uint64_m]
+                        - T_A[uint64_i : uint64_i + uint64_m],
+                        ord=p,
+                    )
+                    ** p
                 )
             else:
                 p_norm = np.abs(
                     p_norm
-                    - np.absolute(T_B[i + k - 1] - T_A[i - 1]) ** p
-                    + np.absolute(T_B[i + k + m - 1] - T_A[i + m - 1]) ** p
+                    - np.absolute(T_B[uint64_j - uint64_1] - T_A[uint64_i - uint64_1])
+                    ** p
+                    + np.absolute(
+                        T_B[uint64_j + uint64_m - uint64_1]
+                        - T_A[uint64_i + uint64_m - uint64_1]
+                    )
+                    ** p
                 )
 
             if p_norm < config.STUMPY_P_NORM_THRESHOLD:
                 p_norm = 0.0
 
-            if T_A_subseq_isfinite[i] and T_B_subseq_isfinite[i + k]:
+            if T_A_subseq_isfinite[uint64_i] and T_B_subseq_isfinite[uint64_j]:
                 # Neither subsequence contains NaNs
-                if p_norm < P[thread_idx, i, 0]:
-                    P[thread_idx, i, 0] = p_norm
-                    I[thread_idx, i, 0] = i + k
+                if p_norm < P[thread_idx, uint64_i, 0]:
+                    P[thread_idx, uint64_i, 0] = p_norm
+                    I[thread_idx, uint64_i, 0] = uint64_j
 
                 if ignore_trivial:
-                    if p_norm < P[thread_idx, i + k, 0]:
-                        P[thread_idx, i + k, 0] = p_norm
-                        I[thread_idx, i + k, 0] = i
+                    if p_norm < P[thread_idx, uint64_j, 0]:
+                        P[thread_idx, uint64_j, 0] = p_norm
+                        I[thread_idx, uint64_j, 0] = uint64_i
 
-                    if i < i + k:
+                    if uint64_i < uint64_j:
                         # left matrix profile and left matrix profile index
-                        if p_norm < P[thread_idx, i + k, 1]:
-                            P[thread_idx, i + k, 1] = p_norm
-                            I[thread_idx, i + k, 1] = i
+                        if p_norm < P[thread_idx, uint64_j, 1]:
+                            P[thread_idx, uint64_j, 1] = p_norm
+                            I[thread_idx, uint64_j, 1] = uint64_i
 
                         # right matrix profile and right matrix profile index
-                        if p_norm < P[thread_idx, i, 2]:
-                            P[thread_idx, i, 2] = p_norm
-                            I[thread_idx, i, 2] = i + k
+                        if p_norm < P[thread_idx, uint64_i, 2]:
+                            P[thread_idx, uint64_i, 2] = p_norm
+                            I[thread_idx, uint64_i, 2] = uint64_j
 
     return
 

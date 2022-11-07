@@ -174,6 +174,7 @@ def _compute_diagonal(
     n_B = T_B.shape[0]
     m_inverse = 1.0 / m
     constant = (m - 1) * m_inverse * m_inverse  # (m - 1)/(m * m)
+    uint64_m = np.uint64(m)
 
     for diag_idx in range(diags_start_idx, diags_stop_idx):
         g = diags[diag_idx]
@@ -184,10 +185,14 @@ def _compute_diagonal(
             iter_range = range(-g, min(n_A - m + 1, n_B - m + 1 - g))
 
         for i in iter_range:
-            if i == 0 or (g < 0 and i == -g):
+            uint64_i = np.uint64(i)
+            uint64_j = np.uint64(i + g)
+
+            if uint64_i == 0 or uint64_j == 0:
                 cov = (
                     np.dot(
-                        (T_B[i + g : i + g + m] - M_T[i + g]), (T_A[i : i + m] - μ_Q[i])
+                        (T_B[uint64_j : uint64_j + uint64_m] - M_T[uint64_j]),
+                        (T_A[uint64_i : uint64_i + uint64_m] - μ_Q[uint64_i]),
                     )
                     * m_inverse
                 )
@@ -199,17 +204,18 @@ def _compute_diagonal(
                 #     - (T_B[i + k - 1] - M_T_m_1[i + k]) * (T_A[i - 1] - μ_Q_m_1[i])
                 # )
                 cov = cov + constant * (
-                    cov_a[i + g] * cov_b[i] - cov_c[i + g] * cov_d[i]
+                    cov_a[uint64_j] * cov_b[uint64_i]
+                    - cov_c[uint64_j] * cov_d[uint64_i]
                 )
 
-            if T_B_subseq_isfinite[i + g] and T_A_subseq_isfinite[i]:
+            if T_B_subseq_isfinite[uint64_j] and T_A_subseq_isfinite[uint64_i]:
                 # Neither subsequence contains NaNs
-                if T_B_subseq_isconstant[i + g] or T_A_subseq_isconstant[i]:
+                if T_B_subseq_isconstant[uint64_j] or T_A_subseq_isconstant[uint64_i]:
                     pearson = 0.5
                 else:
-                    pearson = cov * Σ_T_inverse[i + g] * σ_Q_inverse[i]
+                    pearson = cov * Σ_T_inverse[uint64_j] * σ_Q_inverse[uint64_i]
 
-                if T_B_subseq_isconstant[i + g] and T_A_subseq_isconstant[i]:
+                if T_B_subseq_isconstant[uint64_j] and T_A_subseq_isconstant[uint64_i]:
                     pearson = 1.0
 
                 # `ρ[thread_idx, i, :]` is sorted ascendingly and MUST be updated
@@ -217,34 +223,34 @@ def _compute_diagonal(
                 # first (i.e. smallest) element in this array. Note that a higher
                 # pearson value corresponds to a lower distance.
                 if pearson > ρ[thread_idx, i, 0]:
-                    idx = np.searchsorted(ρ[thread_idx, i], pearson)
+                    idx = np.searchsorted(ρ[thread_idx, uint64_i], pearson)
                     core._shift_insert_at_index(
-                        ρ[thread_idx, i], idx, pearson, shift="left"
+                        ρ[thread_idx, uint64_i], idx, pearson, shift="left"
                     )
                     core._shift_insert_at_index(
-                        I[thread_idx, i], idx, i + g, shift="left"
+                        I[thread_idx, uint64_i], idx, uint64_j, shift="left"
                     )
 
                 if ignore_trivial:  # self-joins only
-                    if pearson > ρ[thread_idx, i + g, 0]:
-                        idx = np.searchsorted(ρ[thread_idx, i + g], pearson)
+                    if pearson > ρ[thread_idx, uint64_j, 0]:
+                        idx = np.searchsorted(ρ[thread_idx, uint64_j], pearson)
                         core._shift_insert_at_index(
-                            ρ[thread_idx, i + g], idx, pearson, shift="left"
+                            ρ[thread_idx, uint64_j], idx, pearson, shift="left"
                         )
                         core._shift_insert_at_index(
-                            I[thread_idx, i + g], idx, i, shift="left"
+                            I[thread_idx, uint64_j], idx, uint64_i, shift="left"
                         )
 
-                    if i < i + g:
+                    if uint64_i < uint64_j:
                         # left pearson correlation and left matrix profile index
-                        if pearson > ρL[thread_idx, i + g]:
-                            ρL[thread_idx, i + g] = pearson
-                            IL[thread_idx, i + g] = i
+                        if pearson > ρL[thread_idx, uint64_j]:
+                            ρL[thread_idx, uint64_j] = pearson
+                            IL[thread_idx, uint64_j] = uint64_i
 
                         # right pearson correlation and right matrix profile index
-                        if pearson > ρR[thread_idx, i]:
-                            ρR[thread_idx, i] = pearson
-                            IR[thread_idx, i] = i + g
+                        if pearson > ρR[thread_idx, uint64_i]:
+                            ρR[thread_idx, uint64_i] = pearson
+                            IR[thread_idx, uint64_i] = uint64_j
 
     return
 
