@@ -222,7 +222,7 @@ def _compute_diagonal(
                 # when the newly-calculated `pearson` value becomes greater than the
                 # first (i.e. smallest) element in this array. Note that a higher
                 # pearson value corresponds to a lower distance.
-                if pearson > ρ[thread_idx, i, 0]:
+                if pearson > ρ[thread_idx, uint64_i, 0]:
                     idx = np.searchsorted(ρ[thread_idx, uint64_i], pearson)
                     core._shift_insert_at_index(
                         ρ[thread_idx, uint64_i], idx, pearson, shift="left"
