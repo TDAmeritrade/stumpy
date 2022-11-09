@@ -1,9 +1,20 @@
+import math
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import gpu_stump
+from stumpy import core, gpu_stump
 from stumpy import config
 from numba import cuda
+
+if cuda.is_available():
+    from stumpy.gpu_stump import _gpu_searchsorted_left, _gpu_searchsorted_right
+else:  # pragma: no cover
+    from stumpy.core import (
+        _gpu_searchsorted_left_driver_not_found as _gpu_searchsorted_left,
+    )
+    from stumpy.core import (
+        _gpu_searchsorted_right_driver_not_found as _gpu_searchsorted_right,
+    )
 
 try:
     from numba.errors import NumbaPerformanceWarning
@@ -37,6 +48,62 @@ substitution_values = [np.nan, np.inf]
 def test_gpu_stump_int_input():
     with pytest.raises(TypeError):
         gpu_stump(np.arange(10), 5, ignore_trivial=True)
+
+
+@cuda.jit("(f8[:, :], f8[:], i8[:], i8, b1, i8[:])")
+def _gpu_searchsorted_kernel(a, v, bfs, nlevel, is_left, idx):
+    # A wrapper kernel for calling device function _gpu_searchsorted_left/right.
+    i = cuda.grid(1)
+    if i < a.shape[0]:
+        if is_left:
+            idx[i] = _gpu_searchsorted_left(a[i], v[i], bfs, nlevel)
+        else:
+            idx[i] = _gpu_searchsorted_right(a[i], v[i], bfs, nlevel)
+
+
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+def test_gpu_searchsorted():
+    n = 3 * config.STUMPY_THREADS_PER_BLOCK + 1
+    V = np.empty(n, dtype=np.float64)
+
+    threads_per_block = config.STUMPY_THREADS_PER_BLOCK
+    blocks_per_grid = math.ceil(n / threads_per_block)
+
+    for k in range(1, 32):
+        device_bfs = cuda.to_device(core._bfs_indices(k, fill_value=-1))
+        nlevel = np.floor(np.log2(k) + 1).astype(np.int64)
+
+        A = np.sort(np.random.rand(n, k), axis=1)
+        device_A = cuda.to_device(A)
+
+        V[:] = np.random.rand(n)
+        for i, idx in enumerate(np.random.choice(np.arange(n), size=k, replace=False)):
+            V[idx] = A[idx, i]  # create ties
+        device_V = cuda.to_device(V)
+
+        is_left = True  # test case
+        ref_IDX = [np.searchsorted(A[i], V[i], side="left") for i in range(n)]
+        ref_IDX = np.asarray(ref_IDX, dtype=np.int64)
+
+        comp_IDX = np.full(n, -1, dtype=np.int64)
+        device_comp_IDX = cuda.to_device(comp_IDX)
+        _gpu_searchsorted_kernel[blocks_per_grid, threads_per_block](
+            device_A, device_V, device_bfs, nlevel, is_left, device_comp_IDX
+        )
+        comp_IDX = device_comp_IDX.copy_to_host()
+        npt.assert_array_equal(ref_IDX, comp_IDX)
+
+        is_left = False  # test case
+        ref_IDX = [np.searchsorted(A[i], V[i], side="right") for i in range(n)]
+        ref_IDX = np.asarray(ref_IDX, dtype=np.int64)
+
+        comp_IDX = np.full(n, -1, dtype=np.int64)
+        device_comp_IDX = cuda.to_device(comp_IDX)
+        _gpu_searchsorted_kernel[blocks_per_grid, threads_per_block](
+            device_A, device_V, device_bfs, nlevel, is_left, device_comp_IDX
+        )
+        comp_IDX = device_comp_IDX.copy_to_host()
+        npt.assert_array_equal(ref_IDX, comp_IDX)
 
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
@@ -350,3 +417,32 @@ def test_gpu_stump_nan_zero_mean_self_join():
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
     npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_gpu_stump_self_join_KNN(T_A, T_B):
+    m = 3
+    zone = int(np.ceil(m / 4))
+    for k in range(2, 4):
+        ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True, k=k)
+        comp_mp = gpu_stump(T_B, m, ignore_trivial=True, k=k)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
+
+        comp_mp = gpu_stump(pd.Series(T_B), m, ignore_trivial=True, k=k)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_gpu_stump_A_B_join_KNN(T_A, T_B):
+    m = 3
+    for k in range(2, 4):
+        ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True, k=k)
+        comp_mp = gpu_stump(T_A, m, T_B, ignore_trivial=False, k=k)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)

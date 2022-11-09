@@ -14,6 +14,79 @@ from .aamp import _aamp
 logger = logging.getLogger(__name__)
 
 
+def _preprocess_prescraamp(T_A, m, T_B=None, s=None):
+    """
+    Performs several preprocessings and returns outputs that are needed for the
+    non-normalized preSCRIMP algorithm.
+
+    Parameters
+    ----------
+    T_A : numpy.ndarray
+        The time series or sequence for which to compute the matrix profile
+
+    m : int
+        Window size
+
+    T_B : numpy.ndarray, default None
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
+
+    s : int, default None
+        The sampling interval that defaults to
+        `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
+
+    Returns
+    -------
+    T_A : numpy.ndarray
+        A copy of the time series input `T_A`, where all NaN and inf values
+        are replaced with zero.
+
+    T_B : numpy.ndarray
+        A copy of the time series input `T_B`, where all NaN and inf values
+        are replaced with zero. If the input `T_B` is not provided (default),
+        this array is just a copy of `T_A`.
+
+    T_A_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_A` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_B_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_B` contains a
+        `np.nan`/`np.inf` value (False)
+
+    indices : numpy.ndarray
+        The subsequence indices to compute `prescrump` for
+
+    s : int
+        The sampling interval that defaults to
+        `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
+
+    excl_zone : int
+        The half width for the exclusion zone
+    """
+    if T_B is None:
+        T_B = T_A
+        excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    else:
+        excl_zone = None
+
+    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
+    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
+
+    n_A = T_A.shape[0]
+    l = n_A - m + 1
+
+    if s is None:  # pragma: no cover
+        if excl_zone is not None:  # self-join
+            s = excl_zone
+        else:  # AB-join
+            s = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+    indices = np.random.permutation(range(0, l, s)).astype(np.int64)
+
+    return (T_A, T_B, T_A_subseq_isfinite, T_B_subseq_isfinite, indices, s, excl_zone)
+
+
 @njit(fastmath=True)
 def _compute_PI(
     T_A,
@@ -272,7 +345,8 @@ def _prescraamp(
     return np.power(P_NORM[0], 1.0 / p), I[0]
 
 
-def prescraamp(T_A, m, T_B=None, s=None, p=2.0):
+def prescraamp(T_A, m, T_B=None, s=None, p=2.0, k=1):
+    # this function should be modified so that it can return top-k matrix profile
     """
     A convenience wrapper around the Numba JIT-compiled parallelized `_prescraamp`
     function which computes the approximate matrix profile according to the
@@ -297,6 +371,11 @@ def prescraamp(T_A, m, T_B=None, s=None, p=2.0):
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
 
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
+
     Returns
     -------
     P : numpy.ndarray
@@ -312,25 +391,16 @@ def prescraamp(T_A, m, T_B=None, s=None, p=2.0):
 
     See Algorithm 2
     """
-    if T_B is None:
-        T_B = T_A
-        excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-    else:
-        excl_zone = None
+    (
+        T_A,
+        T_B,
+        T_A_subseq_isfinite,
+        T_B_subseq_isfinite,
+        indices,
+        s,
+        excl_zone,
+    ) = _preprocess_prescraamp(T_A, m, T_B=T_B, s=s)
 
-    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
-    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
-
-    n_A = T_A.shape[0]
-    l = n_A - m + 1
-
-    if s is None:  # pragma: no cover
-        if excl_zone is not None:  # self-join
-            s = excl_zone
-        else:  # AB-join
-            s = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-
-    indices = np.random.permutation(range(0, l, s)).astype(np.int64)
     P, I = _prescraamp(
         T_A,
         T_B,
@@ -387,6 +457,11 @@ class scraamp:
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
 
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
+
     Attributes
     ----------
     P_ : numpy.ndarray
@@ -422,6 +497,7 @@ class scraamp:
         pre_scraamp=False,
         s=None,
         p=2.0,
+        k=1,  # this function needs to be modified for top-k
     ):
         """
         Initialize the `scraamp` object
@@ -458,6 +534,11 @@ class scraamp:
 
         p : float, default 2.0
             The p-norm to apply for computing the Minkowski distance.
+
+        k : int, default 1
+            The number of top `k` smallest distances used to construct the matrix
+            profile. Note that this will increase the total computational time and
+            memory usage when k > 1.
         """
         self._ignore_trivial = ignore_trivial
         self._p = p
@@ -520,9 +601,38 @@ class scraamp:
 
         if pre_scraamp:
             if self._ignore_trivial:
-                P, I = prescraamp(T_A, m, s=s, p=p)
+                (
+                    T_A,
+                    T_B,
+                    T_A_subseq_isfinite,
+                    T_B_subseq_isfinite,
+                    indices,
+                    s,
+                    excl_zone,
+                ) = _preprocess_prescraamp(T_A, m, s=s)
             else:
-                P, I = prescraamp(T_A, m, T_B=T_B, s=s, p=p)
+                (
+                    T_A,
+                    T_B,
+                    T_A_subseq_isfinite,
+                    T_B_subseq_isfinite,
+                    indices,
+                    s,
+                    excl_zone,
+                ) = _preprocess_prescraamp(T_A, m, T_B=T_B, s=s)
+
+            P, I = _prescraamp(
+                T_A,
+                T_B,
+                m,
+                T_A_subseq_isfinite,
+                T_B_subseq_isfinite,
+                p,
+                indices,
+                s,
+                excl_zone,
+            )
+
             for i in range(P.shape[0]):
                 if self._P[i, 0] > P[i]:
                     self._P[i, 0] = P[i]

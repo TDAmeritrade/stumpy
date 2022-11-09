@@ -40,13 +40,18 @@ def _compute_diagonal(
     diags_stop_idx,
     thread_idx,
     ρ,
+    ρL,
+    ρR,
     I,
+    IL,
+    IR,
     ignore_trivial,
+    k,
 ):
     """
-    Compute (Numba JIT-compiled) and update the Pearson correlation, ρ, and I
-    sequentially along individual diagonals using a single thread and avoiding race
-    conditions
+    Compute (Numba JIT-compiled) and update the (top-k) Pearson correlation (ρ),
+    ρL, ρR, I, IL, and IR sequentially along individual diagonals using a single
+    thread and avoiding race conditions.
 
     Parameters
     ----------
@@ -116,14 +121,31 @@ def _compute_diagonal(
         The thread index
 
     ρ : numpy.ndarray
-        The Pearson correlations
+        The (top-k) Pearson correlations, sorted in ascending order per row
+
+    ρL : numpy.ndarray
+        The top-1 left Pearson correlations
+
+    ρR : numpy.ndarray
+        The top-1 right Pearson correlations
 
     I : numpy.ndarray
-        The matrix profile indices
+        The (top-k) matrix profile indices
+
+    IL : numpy.ndarray
+        The top-1 left matrix profile indices
+
+    IR : numpy.ndarray
+        The top-1 right matrix profile indices
 
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
+
+    k : int
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
 
     Returns
     -------
@@ -155,16 +177,16 @@ def _compute_diagonal(
     uint64_m = np.uint64(m)
 
     for diag_idx in range(diags_start_idx, diags_stop_idx):
-        k = diags[diag_idx]
+        g = diags[diag_idx]
 
-        if k >= 0:
-            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - k))
+        if g >= 0:
+            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - g))
         else:
-            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
+            iter_range = range(-g, min(n_A - m + 1, n_B - m + 1 - g))
 
         for i in iter_range:
             uint64_i = np.uint64(i)
-            uint64_j = np.uint64(i + k)
+            uint64_j = np.uint64(i + g)
 
             if uint64_i == 0 or uint64_j == 0:
                 cov = (
@@ -196,25 +218,39 @@ def _compute_diagonal(
                 if T_B_subseq_isconstant[uint64_j] and T_A_subseq_isconstant[uint64_i]:
                     pearson = 1.0
 
+                # `ρ[thread_idx, i, :]` is sorted ascendingly and MUST be updated
+                # when the newly-calculated `pearson` value becomes greater than the
+                # first (i.e. smallest) element in this array. Note that a higher
+                # pearson value corresponds to a lower distance.
                 if pearson > ρ[thread_idx, uint64_i, 0]:
-                    ρ[thread_idx, uint64_i, 0] = pearson
-                    I[thread_idx, uint64_i, 0] = uint64_j
+                    idx = np.searchsorted(ρ[thread_idx, uint64_i], pearson)
+                    core._shift_insert_at_index(
+                        ρ[thread_idx, uint64_i], idx, pearson, shift="left"
+                    )
+                    core._shift_insert_at_index(
+                        I[thread_idx, uint64_i], idx, uint64_j, shift="left"
+                    )
 
                 if ignore_trivial:  # self-joins only
                     if pearson > ρ[thread_idx, uint64_j, 0]:
-                        ρ[thread_idx, uint64_j, 0] = pearson
-                        I[thread_idx, uint64_j, 0] = uint64_i
+                        idx = np.searchsorted(ρ[thread_idx, uint64_j], pearson)
+                        core._shift_insert_at_index(
+                            ρ[thread_idx, uint64_j], idx, pearson, shift="left"
+                        )
+                        core._shift_insert_at_index(
+                            I[thread_idx, uint64_j], idx, uint64_i, shift="left"
+                        )
 
                     if uint64_i < uint64_j:
                         # left pearson correlation and left matrix profile index
-                        if pearson > ρ[thread_idx, uint64_j, 1]:
-                            ρ[thread_idx, uint64_j, 1] = pearson
-                            I[thread_idx, uint64_j, 1] = uint64_i
+                        if pearson > ρL[thread_idx, uint64_j]:
+                            ρL[thread_idx, uint64_j] = pearson
+                            IL[thread_idx, uint64_j] = uint64_i
 
                         # right pearson correlation and right matrix profile index
-                        if pearson > ρ[thread_idx, uint64_i, 2]:
-                            ρ[thread_idx, uint64_i, 2] = pearson
-                            I[thread_idx, uint64_i, 2] = uint64_j
+                        if pearson > ρR[thread_idx, uint64_i]:
+                            ρR[thread_idx, uint64_i] = pearson
+                            IR[thread_idx, uint64_i] = uint64_j
 
     return
 
@@ -241,11 +277,13 @@ def _stump(
     T_B_subseq_isconstant,
     diags,
     ignore_trivial,
+    k,
 ):
     """
     A Numba JIT-compiled version of STOMPopt with Pearson correlations for parallel
-    computation of the matrix profile, matrix profile indices, left matrix profile
-    indices, and right matrix profile indices.
+    computation of the (top-k) matrix profile, the (top-k) matrix profile indices,
+    the top-1 left matrix profile and its matrix profile index, and the top-1 right
+    matrix profile and its matrix profile index.
 
     Parameters
     ----------
@@ -300,15 +338,30 @@ def _stump(
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
 
+    k : int
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
+
     Returns
     -------
     profile : numpy.ndarray
-        Matrix profile
+        The (top-k) matrix profile
 
     indices : numpy.ndarray
-        The first column consists of the matrix profile indices, the second
-        column consists of the left matrix profile indices, and the third
-        column consists of the right matrix profile indices.
+        The (top-k) matrix profile indices
+
+    left profile : numpy.ndarray
+        The (top-1) left matrix profile
+
+    left indices : numpy.ndarray
+        The (top-1) left matrix profile indices
+
+    right profile : numpy.ndarray
+        The (top-1) right matrix profile
+
+    right indices : numpy.ndarray
+        The (top-1) right matrix profile indices
 
     Notes
     -----
@@ -359,8 +412,15 @@ def _stump(
     n_B = T_B.shape[0]
     l = n_A - m + 1
     n_threads = numba.config.NUMBA_NUM_THREADS
-    ρ = np.full((n_threads, l, 3), -np.inf, dtype=np.float64)
-    I = np.full((n_threads, l, 3), -1, dtype=np.int64)
+
+    ρ = np.full((n_threads, l, k), np.NINF, dtype=np.float64)
+    I = np.full((n_threads, l, k), -1, dtype=np.int64)
+
+    ρL = np.full((n_threads, l), np.NINF, dtype=np.float64)
+    IL = np.full((n_threads, l), -1, dtype=np.int64)
+
+    ρR = np.full((n_threads, l), np.NINF, dtype=np.float64)
+    IR = np.full((n_threads, l), -1, dtype=np.int64)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, n_threads, False)
@@ -383,7 +443,8 @@ def _stump(
     cov_d[:] = cov_d - μ_Q_m_1
 
     for thread_idx in prange(n_threads):
-        # Compute and update cov, I within a single thread to avoiding race conditions
+        # Compute and update pearson correlations and matrix profile indices
+        # within a single thread and avoiding race conditions
         _compute_diagonal(
             T_A,
             T_B,
@@ -405,47 +466,64 @@ def _stump(
             diags_ranges[thread_idx, 1],
             thread_idx,
             ρ,
+            ρL,
+            ρR,
             I,
+            IL,
+            IR,
             ignore_trivial,
+            k,
         )
 
     # Reduction of results from all threads
     for thread_idx in range(1, n_threads):
-        for i in prange(l):
-            if ρ[0, i, 0] < ρ[thread_idx, i, 0]:
-                ρ[0, i, 0] = ρ[thread_idx, i, 0]
-                I[0, i, 0] = I[thread_idx, i, 0]
-            # left pearson correlation and left matrix profile indices
-            if ρ[0, i, 1] < ρ[thread_idx, i, 1]:
-                ρ[0, i, 1] = ρ[thread_idx, i, 1]
-                I[0, i, 1] = I[thread_idx, i, 1]
-            # right pearson correlation and right matrix profile indices
-            if ρ[0, i, 2] < ρ[thread_idx, i, 2]:
-                ρ[0, i, 2] = ρ[thread_idx, i, 2]
-                I[0, i, 2] = I[thread_idx, i, 2]
+        # update top-k arrays
+        core._merge_topk_ρI(ρ[0], ρ[thread_idx], I[0], I[thread_idx])
 
-    # Convert pearson correlations to distances
-    p_norm = np.abs(2 * m * (1 - ρ[0, :, :]))
+        # update left matrix profile and matrix profile indices
+        mask = ρL[0] < ρL[thread_idx]
+        ρL[0][mask] = ρL[thread_idx][mask]
+        IL[0][mask] = IL[thread_idx][mask]
+
+        # update right matrix profile and matrix profile indices
+        mask = ρR[0] < ρR[thread_idx]
+        ρR[0][mask] = ρR[thread_idx][mask]
+        IR[0][mask] = IR[thread_idx][mask]
+
+    # Reverse top-k rho (and its associated I) to be in descending order and
+    # then convert from Pearson correlations to Euclidean distances (ascending order)
+    p_norm = np.abs(2 * m * (1 - ρ[0, :, ::-1]))
+    I = I[0, :, ::-1]
+
+    p_norm_L = np.abs(2 * m * (1 - ρL[0, :]))
+    p_norm_R = np.abs(2 * m * (1 - ρR[0, :]))
+
     for i in prange(p_norm.shape[0]):
-        if p_norm[i, 0] < config.STUMPY_P_NORM_THRESHOLD:
-            p_norm[i, 0] = 0.0
-        if p_norm[i, 1] < config.STUMPY_P_NORM_THRESHOLD:
-            p_norm[i, 1] = 0.0
-        if p_norm[i, 2] < config.STUMPY_P_NORM_THRESHOLD:
-            p_norm[i, 2] = 0.0
-    P = np.sqrt(p_norm)
+        for j in range(p_norm.shape[1]):
+            if p_norm[i, j] < config.STUMPY_P_NORM_THRESHOLD:
+                p_norm[i, j] = 0.0
 
-    return P[:, :], I[0, :, :]
+        if p_norm_L[i] < config.STUMPY_P_NORM_THRESHOLD:
+            p_norm_L[i] = 0.0
+
+        if p_norm_R[i] < config.STUMPY_P_NORM_THRESHOLD:
+            p_norm_R[i] = 0.0
+
+    P = np.sqrt(p_norm)
+    PL = np.sqrt(p_norm_L)
+    PR = np.sqrt(p_norm_R)
+
+    return P, PL, PR, I, IL[0], IR[0]
 
 
 @core.non_normalized(aamp)
-def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
+def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
     """
     Compute the z-normalized matrix profile
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
-    `_stump` function which computes the matrix profile according to STOMPopt with
-    Pearson correlations.
+    `_stump` function which computes the (top-k) matrix profile according to
+    STOMPopt with Pearson correlations.
 
     Parameters
     ----------
@@ -473,13 +551,25 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
 
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1. If you have access to a GPU device, then you may be able to
+        leverage `gpu_stump` for better performance and scalability.
+
     Returns
     -------
     out : numpy.ndarray
-        The first column consists of the matrix profile, the second column
-        consists of the matrix profile indices, the third column consists of
-        the left matrix profile indices, and the fourth column consists of
-        the right matrix profile indices.
+        When k = 1 (default), the first column consists of the matrix profile,
+        the second column consists of the matrix profile indices, the third column
+        consists of the left matrix profile indices, and the fourth column consists
+        of the right matrix profile indices. However, when k > 1, the output array
+        will contain exactly 2 * k + 2 columns. The first k columns (i.e., out[:, :k])
+        consists of the top-k matrix profile, the next set of k columns
+        (i.e., out[:, k:2k]) consists of the corresponding top-k matrix profile
+        indices, and the last two columns (i.e., out[:, 2k] and out[:, 2k+1] or,
+        equivalently, out[:, -2] and out[:, -1]) correspond to the top-1 left
+        matrix profile indices and the top-1 right matrix profile indices, respectively.
 
     See Also
     --------
@@ -593,14 +683,13 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
     l = n_A - m + 1
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-    out = np.empty((l, 4), dtype=object)
 
     if ignore_trivial:
         diags = np.arange(excl_zone + 1, n_A - m + 1, dtype=np.int64)
     else:
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
-    P, I = _stump(
+    P, PL, PR, I, IL, IR = _stump(
         T_A,
         T_B,
         m,
@@ -616,10 +705,13 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0):
         T_B_subseq_isconstant,
         diags,
         ignore_trivial,
+        k,
     )
 
-    out[:, 0] = P[:, 0]
-    out[:, 1:] = I
+    out = np.empty((l, 2 * k + 2), dtype=object)  # last two columns are to
+    # store left and right matrix profile indices
+    out[:, :k] = P
+    out[:, k:] = np.column_stack((I, IL, IR))
 
     core._check_P(out[:, 0])
 

@@ -255,7 +255,8 @@ def _aamp(
     return np.power(P[0, :, :], 1.0 / p), I[0, :, :]
 
 
-def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2.0):
+def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
+    # function needs to be changed to return top-k matrix profile
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile
 
@@ -281,6 +282,11 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2.0):
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
+
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
 
     Returns
     -------
