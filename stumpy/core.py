@@ -209,6 +209,20 @@ def _gpu_aamp_stimp_driver_not_found(*args, **kwargs):  # pragma: no cover
     driver_not_found()
 
 
+def _gpu_searchsorted_left_driver_not_found(*args, **kwargs):  # pragma: no cover
+    """
+    Dummy function to raise CudaSupportError driver not found error.
+    """
+    driver_not_found()
+
+
+def _gpu_searchsorted_right_driver_not_found(*args, **kwargs):  # pragma: no cover
+    """
+    Dummy function to raise CudaSupportError driver not found error.
+    """
+    driver_not_found()
+
+
 def get_pkg_name():  # pragma: no cover
     """
     Return package name.
@@ -240,7 +254,7 @@ def rolling_window(a, window):
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
-def z_norm(a, axis=0):
+def z_norm(a, axis=0, threshold=config.STUMPY_STDDEV_THRESHOLD):
     """
     Calculate the z-normalized input array `a` by subtracting the mean and
     dividing by the standard deviation along a given axis.
@@ -253,13 +267,16 @@ def z_norm(a, axis=0):
     axis : int, default 0
         NumPy array axis
 
+    threshold : float, default to config.STUMPY_STDDEV_THRESHOLD
+        A non-nan std value being less than `threshold` will be replaced with 1.0
+
     Returns
     -------
     output : numpy.ndarray
         An array with z-normalized values computed along a specified axis.
     """
     std = np.std(a, axis, keepdims=True)
-    std[std == 0] = 1
+    std[np.less(std, threshold, where=~np.isnan(std))] = 1.0
 
     return (a - np.mean(a, axis, keepdims=True)) / std
 
@@ -2557,6 +2574,201 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
             MPdist = partition[k]
 
     return MPdist
+
+
+@njit
+def _merge_topk_PI(PA, PB, IA, IB):
+    """
+    Merge two top-k matrix profiles `PA` and `PB`, and update `PA` (in place).
+    When the inputs are 1D arrays, PA[i] is updated if it is greater than PB[i] and
+    IA[i] != IB[i]. In such case, PA[i] and IA[i] are replaced with PB[i] and IB[i],
+    respectively. (Note that it might happen that IA[i]==IB[i] but PA[i] != PB[i].
+    This situation can occur if there is slight imprecision in numerical calculations.
+    In that case, we do not update PA[i] and IA[i]. While updating PA[i] and IA[i]
+    is harmless in this case, we avoid doing that so to be consistent with the merging
+    process when the inputs are 2D arrays)
+    When the inputs are 2D arrays, we always prioritize the values of `PA` over the
+    values of `PB` in case of ties. (i.e., values from `PB` are always inserted to
+    the right of values from `PA`). Also, update `IA` accordingly. In case of
+    overlapping values between two arrays IA[i] and IB[i], the ones in IB[i] (and
+    their corresponding values in PB[i]) are ignored throughout the updating process
+    of IA[i] (and PA[i]).
+
+    Unlike `_merge_topk_ρI`, where `top-k` largest values are kept, this function
+    keeps `top-k` smallest values.
+
+    Parameters
+    ----------
+    PA : numpy.ndarray
+        A (top-k) matrix profile where values in each row are sorted in ascending
+        order. `PA` must be 1- or 2-dimensional.
+
+    PB : numpy.ndarray
+        A (top-k) matrix profile where values in each row are sorted in ascending
+        order. `PB` must have the same shape as `PA`.
+
+    IA : numpy.ndarray
+        A (top-k) matrix profile indices corresponding to `PA`
+
+    IB : numpy.ndarray
+        A (top-k) matrix profile indices corresponding to `PB`
+
+    Returns
+    -------
+    None
+    """
+    if PA.ndim == 1:
+        mask = (PB < PA) & (IB != IA)
+        PA[mask] = PB[mask]
+        IA[mask] = IB[mask]
+    else:
+        k = PA.shape[1]
+        tmp_P = np.empty(k, dtype=np.float64)
+        tmp_I = np.empty(k, dtype=np.int64)
+        for i in range(PA.shape[0]):
+            overlap = set(IB[i]).intersection(set(IA[i]))
+            aj, bj = 0, 0
+            idx = 0
+            # 2 * k iterations are required to traverse both A and B if needed.
+            for _ in range(2 * k):
+                if idx >= k:
+                    break
+                if bj < k and PB[i, bj] < PA[i, aj]:
+                    if IB[i, bj] not in overlap:
+                        tmp_P[idx] = PB[i, bj]
+                        tmp_I[idx] = IB[i, bj]
+                        idx += 1
+                    bj += 1
+                else:
+                    tmp_P[idx] = PA[i, aj]
+                    tmp_I[idx] = IA[i, aj]
+                    idx += 1
+                    aj += 1
+
+            PA[i] = tmp_P
+            IA[i] = tmp_I
+
+
+@njit
+def _merge_topk_ρI(ρA, ρB, IA, IB):
+    """
+    Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place).
+    When the inputs are 1D arrays, ρA[i] is updated if it is less than ρB[i] and
+    IA[i] != IB[i]. In such case, ρA[i] and IA[i] are replaced with ρB[i] and IB[i],
+    respectively. (Note that it might happen that IA[i]==IB[i] but ρA[i] != ρB[i].
+    This situation can occur if there is slight imprecision in numerical calculations.
+    In that case, we do not update ρA[i] and IA[i]. While updating ρA[i] and IA[i]
+    is harmless in this case, we avoid doing that so to be consistent with the merging
+    process when the inputs are 2D arrays)
+    When the inputs are 2D arrays, we always prioritize the values of `ρA` over
+    the values of `ρB` in case of ties. (i.e., values from `ρB` are always inserted
+    to the left of values from `ρA`). Also, update `IA` accordingly. In case of
+    overlapping values between two arrays IA[i] and IB[i], the ones in IB[i] (and
+    their corresponding values in ρB[i]) are ignored throughout the updating process
+    of IA[i] (and ρA[i]).
+
+    Unlike `_merge_topk_PI`, where `top-k` smallest values are kept, this function
+    keeps `top-k` largest values.
+
+    Parameters
+    ----------
+    ρA : numpy.ndarray
+        A (top-k) pearson profile where values in each row are sorted in ascending
+        order. `ρA` must be 1- or 2-dimensional.
+
+    ρB : numpy.ndarray
+        A (top-k) pearson profile, where values in each row are sorted in ascending
+        order. `ρB` must have the same shape as `ρA`.
+
+    IA : numpy.ndarray
+        A (top-k) matrix profile indices corresponding to `ρA`
+
+    IB : numpy.ndarray
+        A (top-k) matrix profile indices corresponding to `ρB`
+
+    Returns
+    -------
+    None
+    """
+    if ρA.ndim == 1:
+        mask = (ρB > ρA) & (IB != IA)
+        ρA[mask] = ρB[mask]
+        IA[mask] = IB[mask]
+    else:
+        k = ρA.shape[1]
+        tmp_ρ = np.empty(k, dtype=np.float64)
+        tmp_I = np.empty(k, dtype=np.int64)
+        last_idx = k - 1
+        for i in range(len(ρA)):
+            overlap = set(IB[i]).intersection(set(IA[i]))
+            aj, bj = last_idx, last_idx
+            idx = last_idx
+            # 2 * k iterations are required to traverse both A and B if needed.
+            for _ in range(2 * k):
+                if idx < 0:
+                    break
+                if bj >= 0 and ρB[i, bj] > ρA[i, aj]:
+                    if IB[i, bj] not in overlap:
+                        tmp_ρ[idx] = ρB[i, bj]
+                        tmp_I[idx] = IB[i, bj]
+                        idx -= 1
+                    bj -= 1
+                else:
+                    tmp_ρ[idx] = ρA[i, aj]
+                    tmp_I[idx] = IA[i, aj]
+                    idx -= 1
+                    aj -= 1
+
+            ρA[i] = tmp_ρ
+            IA[i] = tmp_I
+
+
+@njit
+def _shift_insert_at_index(a, idx, v, shift="right"):
+    """
+    If `shift=right` (default), all elements in `a[idx:]` are shifted to the right by
+    one element, `v` in inserted at index `idx` and the last element is discarded.
+    If `shift=left`, all elements in `a[:idx]` are shifted to the left by one element,
+    `v` in inserted at index `idx-1`, and the first element is discarded. In both cases,
+    `a` is updated in place and its length remains unchanged.
+
+    Note that all unrecognized `shift` inputs will default to `shift=right`.
+
+
+    Parameters
+    ----------
+    a: numpy.ndarray
+        A 1d array
+
+    idx: int
+        The index at which the value `v` should be inserted. This can be any
+        integer number from `0` to `len(a)`. When `idx=len(a)` and `shift="right"`,
+        OR when `idx=0` and `shift="left"`, then no change will occur on
+        the input array `a`.
+
+    v: float
+        The value that should be inserted into array `a` at index `idx`
+
+    shift: str, default "right"
+        The value that indicates whether the shifting of elements should be towards
+        the right or left. If `shift="right"` (default), all elements in `a[idx:]`
+        are shifted to the right by one element. If `shift="left"`, all elements
+        in `a[:idx]` are shifted to the left by one element.
+
+    Returns
+    -------
+    None
+    """
+    if shift == "left":
+        if 0 < idx <= len(a):
+            a[: idx - 1] = a[1:idx]
+            # elements were shifted to the left, thus the insertion index becomes
+            # `idx-1`
+            a[idx - 1] = v
+    else:
+        if 0 <= idx < len(a):
+            a[idx + 1 :] = a[idx:-1]
+            a[idx] = v
 
 
 def _check_P(P, threshold=1e-6):
