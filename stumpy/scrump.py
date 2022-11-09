@@ -525,8 +525,6 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
     else:
         return P, I
 
-    return P, I
-
 
 @core.non_normalized(
     scraamp.scraamp,
