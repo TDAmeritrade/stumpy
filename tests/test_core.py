@@ -1256,8 +1256,8 @@ def test_merge_topk_ρI_with_1D_input():
     ρB[IDX_rows_with_overlaps] = ρA[IDX_rows_with_overlaps] + imprecision
     IB[IDX_rows_with_overlaps] = IA[IDX_rows_with_overlaps]
 
-    naive.merge_topk_PI(ref_ρ, ρB.copy(), ref_I, IB.copy())
-    core._merge_topk_PI(comp_ρ, ρB.copy(), comp_I, IB.copy())
+    naive._merge_topk_ρI(ref_ρ, ρB.copy(), ref_I, IB.copy())
+    core._merge_topk_ρI(comp_ρ, ρB.copy(), comp_I, IB.copy())
 
     npt.assert_almost_equal(ref_ρ, comp_ρ)
     npt.assert_almost_equal(ref_I, comp_I)
