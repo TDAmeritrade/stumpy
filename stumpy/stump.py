@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 @njit(
     # "(f8[:], f8[:], i8, f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], f8[:],"
-    # "b1[:], b1[:], b1[:], b1[:], i8[:], i8, i8, i8, f8[:, :, :], i8[:, :, :], b1)",
+    # "b1[:], b1[:], b1[:], b1[:], i8[:], i8, i8, i8, f8[:, :, :], f8[:, :, :],""
+    # "f8[:, :, :], i8[:, :, :], i8[:, :, :], i8[:, :, :], b1)",
     fastmath=True,
 )
 def _compute_diagonal(
@@ -46,7 +47,6 @@ def _compute_diagonal(
     IL,
     IR,
     ignore_trivial,
-    k,
 ):
     """
     Compute (Numba JIT-compiled) and update the (top-k) Pearson correlation (ρ),
@@ -79,13 +79,13 @@ def _compute_diagonal(
         sliding window
 
     cov_a : numpy.ndarray
-        The first covariance term relating T_A[i + k + m - 1] and M_T_m_1[i + k]
+        The first covariance term relating T_A[i + g + m - 1] and M_T_m_1[i + g]
 
     cov_b : numpy.ndarray
         The second covariance term relating T_B[i + m - 1] and μ_Q_m_1[i]
 
     cov_c : numpy.ndarray
-        The third covariance term relating T_A[i + k - 1] and M_T_m_1[i + k]
+        The third covariance term relating T_A[i + g - 1] and M_T_m_1[i + g]
 
     cov_d : numpy.ndarray
         The fourth covariance term relating T_B[i - 1] and μ_Q_m_1[i]
@@ -199,9 +199,9 @@ def _compute_diagonal(
             else:
                 # The next lines are equivalent and left for reference
                 # cov = cov + constant * (
-                #     (T_B[i + k + m - 1] - M_T_m_1[i + k])
+                #     (T_B[i + g + m - 1] - M_T_m_1[i + g])
                 #     * (T_A[i + m - 1] - μ_Q_m_1[i])
-                #     - (T_B[i + k - 1] - M_T_m_1[i + k]) * (T_A[i - 1] - μ_Q_m_1[i])
+                #     - (T_B[i + g - 1] - M_T_m_1[i + g]) * (T_A[i - 1] - μ_Q_m_1[i])
                 # )
                 cov = cov + constant * (
                     cov_a[uint64_j] * cov_b[uint64_i]
@@ -257,7 +257,7 @@ def _compute_diagonal(
 
 @njit(
     # "(f8[:], f8[:], i8, f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], b1[:], b1[:],"
-    # "b1[:], b1[:], i8[:], b1)",
+    # "b1[:], b1[:], i8[:], b1, i8)",
     parallel=True,
     fastmath=True,
 )
@@ -472,7 +472,6 @@ def _stump(
             IL,
             IR,
             ignore_trivial,
-            k,
         )
 
     # Reduction of results from all threads
@@ -689,7 +688,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
     else:
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
-    P, PL, PR, I, IL, IR = _stump(
+    P, _, _, I, IL, IR = _stump(
         T_A,
         T_B,
         m,
