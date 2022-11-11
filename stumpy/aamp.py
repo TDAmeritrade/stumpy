@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 @njit(
     # "(f8[:], f8[:], i8, b1[:], b1[:], f8, i8[:], i8, i8, i8, f8[:, :, :],"
-    # "i8[:, :, :], b1)",
+    # "f8[:, :], f8[:, :], i8[:, :, :], i8[:, :], i8[:, :], b1)",
     fastmath=True,
 )
 def _compute_diagonal(
@@ -36,7 +36,6 @@ def _compute_diagonal(
     IL,
     IR,
     ignore_trivial,
-    k,
 ):
     """
     Compute (Numba JIT-compiled) and update the (top-k) matrix profile P,
@@ -99,11 +98,6 @@ def _compute_diagonal(
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
-
-    k : int
-        The number of top `k` smallest distances used to construct the matrix profile.
-        Note that this will increase the total computational time and memory usage
-        when k > 1.
 
     Returns
     -------
@@ -191,7 +185,7 @@ def _compute_diagonal(
 
 
 @njit(
-    # "(f8[:], f8[:], i8, b1[:], b1[:], i8[:], b1)",
+    # "(f8[:], f8[:], i8, b1[:], b1[:], i8[:], b1, i8)",
     parallel=True,
     fastmath=True,
 )
@@ -309,7 +303,6 @@ def _aamp(
             IL,
             IR,
             ignore_trivial,
-            k,
         )
 
     # Reduction of results from all threads
