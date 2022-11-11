@@ -674,7 +674,7 @@ class scraamp:
         if self._chunk_idx < self._n_chunks:
             start_idx, stop_idx = self._chunk_diags_ranges[self._chunk_idx]
 
-            P, I = _aamp(
+            P, PL, PR, I, IL, IR = _aamp(
                 self._T_A,
                 self._T_B,
                 self._m,
@@ -683,7 +683,12 @@ class scraamp:
                 self._p,
                 self._diags[start_idx:stop_idx],
                 self._ignore_trivial,
+                1,  # should be replaced with self._k
             )
+
+            # the next two lines are temporary solution.
+            P = np.column_stack((P, PL, PR))
+            I = np.column_stack((I, IL, IR))
 
             # Update matrix profile and indices
             for i in range(self._P.shape[0]):
