@@ -2889,6 +2889,8 @@ def _find_matches(
 
 @njit(
     # "(i8, i8, i8, i8[:], i8)"
+    fastmath=True,
+    parallel=True,
 )
 def _get_tiles(m, n_A, n_B, diags, tile_length):
     """
@@ -2931,7 +2933,7 @@ def _get_tiles(m, n_A, n_B, diags, tile_length):
     tiles = np.empty((tiles_count, 7), dtype=np.int64)
 
     for tile_idx in prange(tiles_count):
-        y_offset = int(tile_idx / tile_columns) * tile_length
+        y_offset = (tile_idx // tile_columns) * tile_length
         x_offset = (tile_idx % tile_columns) * tile_length
         # height of current tile
         tile_height = min(tile_length, l - y_offset)
