@@ -141,6 +141,7 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
                 p,
                 diags_futures[i],
                 ignore_trivial,
+                k,
             )
         )
 
