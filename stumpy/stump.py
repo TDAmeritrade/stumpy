@@ -688,7 +688,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
     else:
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
-    P, _, _, I, IL, IR = _stump(
+    P, PL, PR, I, IL, IR = _stump(
         T_A,
         T_B,
         m,
