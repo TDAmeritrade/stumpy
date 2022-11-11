@@ -213,7 +213,9 @@ def _compute_tiles(
                         continue
 
                     uint64_i = np.uint64(diag_iter_range[1] + row_idx)
-                    uint64_j = np.uint64(diag_iter_range[0] + diag_iter_range[1] + row_idx)
+                    uint64_j = np.uint64(
+                        diag_iter_range[0] + diag_iter_range[1] + row_idx
+                    )
 
                     # if first value in diagonal, compute covariance using dot product
                     if row_idx == 0:
@@ -229,7 +231,8 @@ def _compute_tiles(
                         # cov = cov + constant * (
                         #     (T_B[i + k + m - 1] - M_T_m_1[i + k])
                         #     * (T_A[i + m - 1] - μ_Q_m_1[i])
-                        #     - (T_B[i + k - 1] - M_T_m_1[i + k]) * (T_A[i - 1] - μ_Q_m_1[i])
+                        #     - (T_B[i + k - 1] - M_T_m_1[i + k])
+                        #     * (T_A[i - 1] - μ_Q_m_1[i])
                         # )
                         cov = covariances[diag_idx] + constant * (
                             cov_a[uint64_j] * cov_b[uint64_i]
@@ -241,18 +244,27 @@ def _compute_tiles(
 
                     if T_B_subseq_isfinite[uint64_j] and T_A_subseq_isfinite[uint64_i]:
                         # Neither subsequence contains NaNs
-                        if T_B_subseq_isconstant[uint64_j] or T_A_subseq_isconstant[uint64_i]:
+                        if (
+                            T_B_subseq_isconstant[uint64_j]
+                            or T_A_subseq_isconstant[uint64_i]
+                        ):
                             pearson = 0.5
                         else:
-                            pearson = cov * Σ_T_inverse[uint64_j] * σ_Q_inverse[uint64_i]
+                            pearson = (
+                                cov * Σ_T_inverse[uint64_j] * σ_Q_inverse[uint64_i]
+                            )
 
-                        if T_B_subseq_isconstant[uint64_j] and T_A_subseq_isconstant[uint64_i]:
+                        if (
+                            T_B_subseq_isconstant[uint64_j]
+                            and T_A_subseq_isconstant[uint64_i]
+                        ):
                             pearson = 1.0
 
-                        # `ρ[thread_idx, i, :]` is sorted ascendingly and MUST be updated
-                        # when the newly-calculated `pearson` value becomes greater than the
-                        # first (i.e. smallest) element in this array. Note that a higher
-                        # pearson value corresponds to a lower distance.
+                        # `ρ[thread_idx, i, :]` is sorted ascendingly and MUST be
+                        # updated when the newly-calculated `pearson` value becomes
+                        # greater than the first (i.e. smallest) element in this array.
+                        # Note that a higher pearson value corresponds to a lower
+                        # distance.
                         if pearson > ρ[thread_idx, uint64_i, 0]:
                             idx = np.searchsorted(ρ[thread_idx, uint64_i], pearson)
                             core._shift_insert_at_index(
@@ -273,12 +285,12 @@ def _compute_tiles(
                                 )
 
                             if uint64_i < uint64_j:
-                                # left pearson correlation and left matrix profile index
+                                # left pearson correlation & left matrix profile index
                                 if pearson > ρL[thread_idx, uint64_j]:
                                     ρL[thread_idx, uint64_j] = pearson
                                     IL[thread_idx, uint64_j] = uint64_i
 
-                                # right pearson correlation and right matrix profile index
+                                # right pearson correlation & right matrix profile index
                                 if pearson > ρR[thread_idx, uint64_i]:
                                     ρR[thread_idx, uint64_i] = pearson
                                     IR[thread_idx, uint64_i] = uint64_j

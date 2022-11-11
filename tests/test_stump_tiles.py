@@ -57,7 +57,9 @@ def test_stump_tiles_A_B_join(T_A, T_B):
             naive.replace_inf(comp_mp)
             npt.assert_almost_equal(ref_mp, comp_mp)
 
-            comp_mp = stump_tiles(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+            comp_mp = stump_tiles(
+                pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
+            )
             naive.replace_inf(comp_mp)
             npt.assert_almost_equal(ref_mp, comp_mp)
 
@@ -95,7 +97,9 @@ def test_stump_tiles_one_constant_subsequence_A_B_join():
             naive.replace_inf(comp_mp)
             npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-            comp_mp = stump_tiles(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+            comp_mp = stump_tiles(
+                pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
+            )
             naive.replace_inf(comp_mp)
             npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
@@ -124,7 +128,9 @@ def test_stump_tiles_two_constant_subsequences_A_B_join():
             naive.replace_inf(comp_mp)
             npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-            comp_mp = stump_tiles(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+            comp_mp = stump_tiles(
+                pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
+            )
             naive.replace_inf(comp_mp)
             npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
@@ -135,7 +141,9 @@ def test_stump_tiles_two_constant_subsequences_A_B_join():
             naive.replace_inf(comp_mp)
             npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
-            comp_mp = stump_tiles(pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False)
+            comp_mp = stump_tiles(
+                pd.Series(T_B), m, pd.Series(T_A), ignore_trivial=False
+            )
             naive.replace_inf(comp_mp)
             npt.assert_almost_equal(ref_mp[:, 0], comp_mp[:, 0])  # ignore indices
 
@@ -185,7 +193,9 @@ def test_stump_tiles_identical_subsequence_A_B_join():
                 ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
             )  # ignore indices
 
-            comp_mp = stump_tiles(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+            comp_mp = stump_tiles(
+                pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False
+            )
             naive.replace_inf(comp_mp)
             npt.assert_almost_equal(
                 ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
@@ -308,6 +318,8 @@ def test_stump_tiles_A_B_join_KNN(T_A, T_B):
                 naive.replace_inf(comp_mp)
                 npt.assert_almost_equal(ref_mp, comp_mp)
 
-                comp_mp = stump_tiles(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False, k=k)
+                comp_mp = stump_tiles(
+                    pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False, k=k
+                )
                 naive.replace_inf(comp_mp)
                 npt.assert_almost_equal(ref_mp, comp_mp)
