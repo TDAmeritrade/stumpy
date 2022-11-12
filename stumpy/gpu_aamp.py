@@ -597,7 +597,14 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
         else:
             # Execute last chunk in parent process
             # Only parent process is executed when a single GPU is requested
-            profile[idx], indices[idx] = _gpu_aamp(
+            (
+                profile[idx],
+                profile_L[idx],
+                profile_R[idx],
+                indices[idx],
+                indices_L[idx],
+                indices_R[idx],
+            ) = _gpu_aamp(
                 T_A_fname,
                 T_B_fname,
                 m,
