@@ -534,19 +534,31 @@ class scraamp:
     Attributes
     ----------
     P_ : numpy.ndarray
-        The updated matrix profile
+        The updated (top-k) matrix profile. When `k=1` (default), this output is
+        a 1D array consisting of the matrix profile. When `k > 1`, the output
+        is a 2D array that has exactly `k` columns consisting of the top-k matrix
+        profile.
 
     I_ : numpy.ndarray
-        The updated matrix profile indices
+        The updated (top-k) matrix profile indices. When `k=1` (default), this output is
+        a 1D array consisting of the matrix profile indices. When `k > 1`, the output
+        is a 2D array that has exactly `k` columns consisting of the top-k matrix
+        profile indiecs.
+
+    left_I_ : numpy.ndarray
+        The updated left (top-1) matrix profile indices
+
+    right_I_ : numpy.ndarray
+        The updated right (top-1) matrix profile indices
 
     Methods
     -------
     update()
         Update the matrix profile and the matrix profile indices by computing
         additional new distances (limited by `percentage`) that make up the full
-        distance matrix. Each output contains three columns that correspond to
-        the matrix profile, the left matrix profile, and the right matrix profile,
-        respectively.
+        distance matrix. It updates the (top-k) matrix profile, (top-1) left
+        matrix profile, (top-1) right matrix profile, (top-k) matrix profile indices,
+        (top-1) left matrix profile indices, and (top-1) right matrix profile indices.
 
     Notes
     -----
@@ -655,11 +667,15 @@ class scraamp:
         self._n_A = self._T_A.shape[0]
         self._n_B = self._T_B.shape[0]
         self._l = self._n_A - self._m + 1
+        self._k = k
 
-        self._P = np.empty((self._l, 3), dtype=np.float64)
-        self._I = np.empty((self._l, 3), dtype=np.int64)
-        self._P[:, :] = np.inf
-        self._I[:, :] = -1
+        self._P = np.full((self._l, self._k), np.inf, dtype=np.float64)
+        self._PL = np.full(self._l, np.inf, dtype=np.float64)
+        self._PR = np.full(self._l, np.inf, dtype=np.float64)
+
+        self._I = np.full((self._l, self._k), -1, dtype=np.int64)
+        self._IL = np.full(self._l, -1, dtype=np.int64)
+        self._IR = np.full(self._l, -1, dtype=np.int64)
 
         self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
         if s is None:
@@ -700,12 +716,9 @@ class scraamp:
                 indices,
                 s,
                 excl_zone,
+                k,
             )
-
-            for i in range(P.shape[0]):
-                if self._P[i, 0] > P[i]:
-                    self._P[i, 0] = P[i]
-                    self._I[i, 0] = I[i]
+            core._merge_topk_PI(self._P, P, self._I, I)
 
         if self._ignore_trivial:
             self._diags = np.random.permutation(
@@ -736,9 +749,9 @@ class scraamp:
 
     def update(self):
         """
-        Update the matrix profile and the matrix profile indices by computing
-        additional new distances (limited by `percentage`) that make up the full
-        distance matrix.
+        Update the (top-k) matrix profile and the (top-k) matrix profile indices by
+        computing additional new distances (limited by `percentage`) that make up
+        the full distance matrix.
         """
         if self._chunk_idx < self._n_chunks:
             start_idx, stop_idx = self._chunk_diags_ranges[self._chunk_idx]
@@ -752,53 +765,60 @@ class scraamp:
                 self._p,
                 self._diags[start_idx:stop_idx],
                 self._ignore_trivial,
-                1,  # should be replaced with self._k
+                self._k,
             )
 
-            # the next two lines are temporary solution.
-            P = np.column_stack((P, PL, PR))
-            I = np.column_stack((I, IL, IR))
+            # Update (top-k) matrix profile and indices
+            core._merge_topk_PI(self._P, P, self._I, I)
 
-            # Update matrix profile and indices
-            for i in range(self._P.shape[0]):
-                if self._P[i, 0] > P[i, 0]:
-                    self._P[i, 0] = P[i, 0]
-                    self._I[i, 0] = I[i, 0]
-                # left matrix profile and left matrix profile indices
-                if self._P[i, 1] > P[i, 1]:
-                    self._P[i, 1] = P[i, 1]
-                    self._I[i, 1] = I[i, 1]
-                # right matrix profile and right matrix profile indices
-                if self._P[i, 2] > P[i, 2]:
-                    self._P[i, 2] = P[i, 2]
-                    self._I[i, 2] = I[i, 2]
+            # update left matrix profile and indices
+            mask = PL < self._PL
+            self._PL[mask] = PL[mask]
+            self._IL[mask] = IL[mask]
+
+            # update right matrix profile and indices
+            mask = PR < self._PR
+            self._PR[mask] = PR[mask]
+            self._IR[mask] = IR[mask]
 
             self._chunk_idx += 1
 
     @property
     def P_(self):
         """
-        Get the updated matrix profile
+        Get the updated (top-k) matrix profile. When `k=1` (default), this output
+        is a 1D array consisting of the updated matrix profile. When `k > 1`, the
+        output is a 2D array that has exactly `k` columns consisting of the updated
+        top-k matrix profile.
         """
-        return self._P[:, 0].astype(np.float64)
+        if self._k == 1:
+            return self._P.flatten().astype(np.float64)
+        else:
+            return self._P.astype(np.float64)
 
     @property
     def I_(self):
         """
-        Get the updated matrix profile indices
+        Get the updated (top-k) matrix profile indices. When `k=1` (default), this
+        output is a 1D array consisting of the updated matrix profile indices. When
+        `k > 1`, the output is a 2D array that has exactly `k` columns consisting
+        of the updated top-k matrix profile indices.
         """
-        return self._I[:, 0].astype(np.int64)
+        if self._k == 1:
+            return self._I.flatten().astype(np.int64)
+        else:
+            return self._I.astype(np.int64)
 
     @property
     def left_I_(self):
         """
-        Get the updated left matrix profile indices
+        Get the updated left (top-1) matrix profile indices
         """
-        return self._I[:, 1].astype(np.int64)
+        return self._IL.astype(np.int64)
 
     @property
     def right_I_(self):
         """
-        Get the updated right matrix profile indices
+        Get the updated right (top-1) matrix profile indices
         """
-        return self._I[:, 2].astype(np.int64)
+        return self._IR.astype(np.int64)

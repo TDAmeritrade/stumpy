@@ -1686,7 +1686,7 @@ def prescraamp(T_A, m, T_B, s, exclusion_zone=None, p=2.0, k=1):
     return P, I
 
 
-def scraamp(T_A, m, T_B, percentage, exclusion_zone, pre_scraamp, s, p=2.0):
+def scraamp(T_A, m, T_B, percentage, exclusion_zone, pre_scraamp, s, p=2.0, k=1):
     distance_matrix = aamp_distance_matrix(T_A, T_B, m, p)
 
     n_A = T_A.shape[0]
@@ -1708,47 +1708,48 @@ def scraamp(T_A, m, T_B, percentage, exclusion_zone, pre_scraamp, s, p=2.0):
     diags_ranges_start = diags_ranges[0, 0]
     diags_ranges_stop = diags_ranges[0, 1]
 
-    out = np.full((l, 4), np.inf, dtype=object)
-    out[:, 1:] = -1
-    left_P = np.full(l, np.inf, dtype=np.float64)
-    right_P = np.full(l, np.inf, dtype=np.float64)
+    P = np.full((l, k), np.inf, dtype=np.float64)  # Topk
+    PL = np.full(l, np.inf, dtype=np.float64)
+    PR = np.full(l, np.inf, dtype=np.float64)
+
+    I = np.full((l, k), -1, dtype=np.int64)
+    IL = np.full(l, -1, dtype=np.int64)
+    IR = np.full(l, -1, dtype=np.int64)
 
     for diag_idx in range(diags_ranges_start, diags_ranges_stop):
-        k = diags[diag_idx]
+        g = diags[diag_idx]
 
         for i in range(n_A - m + 1):
             for j in range(n_B - m + 1):
-                if j - i == k:
-                    if distance_matrix[i, j] < out[i, 0]:
-                        out[i, 0] = distance_matrix[i, j]
-                        out[i, 1] = i + k
+                if j - i == g:
+                    d = distance_matrix[i, j]
+                    if d < P[i, -1]:
+                        idx = searchsorted_right(P[i], d)
+                        if (i + g) not in I[i]:
+                            P[i] = np.insert(P[i], idx, d)[:-1]
+                            I[i] = np.insert(I[i], idx, i + g)[:-1]
 
-                    if (
-                        exclusion_zone is not None
-                        and distance_matrix[i, j] < out[i + k, 0]
-                    ):
-                        out[i + k, 0] = distance_matrix[i, j]
-                        out[i + k, 1] = i
+                    if exclusion_zone is not None and d < P[i + g, -1]:
+                        idx = searchsorted_right(P[i + g], d)
+                        if i not in I[i + g]:
+                            P[i + g] = np.insert(P[i + g], idx, d)[:-1]
+                            I[i + g] = np.insert(I[i + g], idx, i)[:-1]
 
                     # left matrix profile and left matrix profile indices
-                    if (
-                        exclusion_zone is not None
-                        and i < i + k
-                        and distance_matrix[i, j] < left_P[i + k]
-                    ):
-                        left_P[i + k] = distance_matrix[i, j]
-                        out[i + k, 2] = i
+                    if exclusion_zone is not None and i < i + g and d < PL[i + g]:
+                        PL[i + g] = d
+                        IL[i + g] = i
 
                     # right matrix profile and right matrix profile indices
-                    if (
-                        exclusion_zone is not None
-                        and i + k > i
-                        and distance_matrix[i, j] < right_P[i]
-                    ):
-                        right_P[i] = distance_matrix[i, j]
-                        out[i, 3] = i + k
+                    if exclusion_zone is not None and i + g > i and d < PR[i]:
+                        PR[i] = d
+                        IR[i] = i + g
 
-    return out
+    if k == 1:
+        P = P.flatten()
+        I = I.flatten()
+
+    return P, I, IL, IR
 
 
 def normalize_pan(pan, ms, bfs_indices, n_processed, T_min=None, T_max=None, p=2.0):
