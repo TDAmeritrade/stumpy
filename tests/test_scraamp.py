@@ -762,3 +762,22 @@ def test_prescraamp_self_join_KNN(T_A, T_B):
 
                 npt.assert_almost_equal(ref_P, comp_P)
                 npt.assert_almost_equal(ref_I, comp_I)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_prescraamp_A_B_join_KNN(T_A, T_B):
+    m = 3
+    zone = int(np.ceil(m / 4))
+    for k in range(2, 4):
+        for p in [1.0, 2.0, 3.0]:
+            for s in range(1, zone + 1):
+                seed = np.random.randint(100000)
+
+                np.random.seed(seed)
+                ref_P, ref_I = naive.prescraamp(T_A, m, T_B, s=s, p=p, k=k)
+
+                np.random.seed(seed)
+                comp_P, comp_I = prescraamp(T_A, m, T_B=T_B, s=s, p=p, k=k)
+
+                npt.assert_almost_equal(ref_P, comp_P)
+                npt.assert_almost_equal(ref_I, comp_I)
