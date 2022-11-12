@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 @njit(
     # "(f8[:], f8[:], i8, f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], f8[:],"
-    # "b1[:], b1[:], b1[:], b1[:], i8[:, :, :], i8[:, :], i8, f8[:, :, :], f8[:, :, :],
-    # f8[:, :, :], i8[:, :, :], i8[:, :, :], i8[:, :, :], b1, i8)",
+    # "b1[:], b1[:], b1[:], b1[:], i8[:, :, :], i8[:, :], i8, f8[:, :, :], f8[:, :],
+    # f8[:, :], i8[:, :, :], i8[:, :], i8[:, :], b1)",
     fastmath=True,
 )
 def _compute_tiles(
@@ -46,7 +46,6 @@ def _compute_tiles(
     IL,
     IR,
     ignore_trivial,
-    k,
 ):
     """
     Compute (Numba JIT-compiled) and update the (top-k) Pearson correlation (ρ),
@@ -79,13 +78,13 @@ def _compute_tiles(
         sliding window
 
     cov_a : numpy.ndarray
-        The first covariance term relating T_A[i + k + m - 1] and M_T_m_1[i + k]
+        The first covariance term relating T_A[j + m - 1] and M_T_m_1[j]
 
     cov_b : numpy.ndarray
         The second covariance term relating T_B[i + m - 1] and μ_Q_m_1[i]
 
     cov_c : numpy.ndarray
-        The third covariance term relating T_A[i + k - 1] and M_T_m_1[i + k]
+        The third covariance term relating T_A[j - 1] and M_T_m_1[j]
 
     cov_d : numpy.ndarray
         The fourth covariance term relating T_B[i - 1] and μ_Q_m_1[i]
@@ -229,9 +228,9 @@ def _compute_tiles(
                     else:
                         # The next lines are equivalent and left for reference
                         # cov = cov + constant * (
-                        #     (T_B[i + k + m - 1] - M_T_m_1[i + k])
+                        #     (T_B[j + m - 1] - M_T_m_1[j])
                         #     * (T_A[i + m - 1] - μ_Q_m_1[i])
-                        #     - (T_B[i + k - 1] - M_T_m_1[i + k])
+                        #     - (T_B[j - 1] - M_T_m_1[j])
                         #     * (T_A[i - 1] - μ_Q_m_1[i])
                         # )
                         cov = covariances[diag_idx] + constant * (
@@ -300,7 +299,7 @@ def _compute_tiles(
 
 @njit(
     # "(f8[:], f8[:], i8, f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], b1[:], b1[:],"
-    # "b1[:], b1[:], i8[:], b1)",
+    # "b1[:], b1[:], i8[:], b1, i8)",
     parallel=True,
     fastmath=True,
 )
@@ -515,7 +514,6 @@ def _stump_tiles(
             IL,
             IR,
             ignore_trivial,
-            k,
         )
 
     # Reduction of results from all threads
