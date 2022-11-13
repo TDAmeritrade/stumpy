@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 @cuda.jit(
     "(i8, f8[:], f8[:], i8, f8, f8[:], f8[:], f8[:], b1[:], b1[:],"
-    "i8, b1, i8, f8[:, :], i8[:, :], b1)"
+    "i8, b1, i8, f8[:, :], f8[:], f8[:], i8[:, :], i8[:], i8[:], b1,"
+    "i8[:], i8, i2)"
 )
 def _compute_and_update_PI_kernel(
     i,
@@ -149,7 +150,7 @@ def _compute_and_update_PI_kernel(
 
     for j in range(start, p_norm_out.shape[0], stride):
         zone_start = max(0, j - excl_zone)
-        zone_stop = min(k, j + excl_zone)
+        zone_stop = min(w, j + excl_zone)
 
         if compute_p_norm:
             p_norm_out[j] = (
