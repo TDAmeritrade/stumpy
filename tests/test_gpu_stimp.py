@@ -25,7 +25,7 @@ T = [
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T", T)
-@patch("stumpy.config.THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def test_gpu_stimp(T):
     threshold = 0.2
     min_m = 3

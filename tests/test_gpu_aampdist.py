@@ -31,7 +31,7 @@ test_data = [
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T_A, T_B", test_data)
-@patch("stumpy.config.THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def test_gpu_aampdist(T_A, T_B):
     m = 3
     for p in [1.0, 2.0, 3.0]:

@@ -22,7 +22,7 @@ if not cuda.is_available():  # pragma: no cover
 @pytest.mark.parametrize(
     "seed", np.random.choice(np.arange(10000), size=2, replace=False)
 )
-@patch("stumpy.config.THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def test_random_gpu_aamp_ostinato(seed):
     m = 50
     np.random.seed(seed)
@@ -38,7 +38,7 @@ def test_random_gpu_aamp_ostinato(seed):
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("seed", [41, 88])
-@patch("stumpy.config.THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def test_deterministic_gpu_aamp_ostinato(seed):
     m = 50
     np.random.seed(seed)

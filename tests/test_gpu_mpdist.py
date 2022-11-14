@@ -31,7 +31,7 @@ test_data = [
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("T_A, T_B", test_data)
-@patch("stumpy.config.THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def test_gpu_mpdist(T_A, T_B):
     m = 3
     ref_mpdist = naive.mpdist(T_A, T_B, m)
