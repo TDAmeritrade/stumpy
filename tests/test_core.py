@@ -289,7 +289,7 @@ def test_compute_mean_std(Q, T):
 def test_compute_mean_std_chunked(Q, T):
     m = Q.shape[0]
 
-    with patch("config.STUMPY_MEAN_STD_NUM_CHUNKS", 2):
+    with patch("stumpy.config.STUMPY_MEAN_STD_NUM_CHUNKS", 2):
         ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
         ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
         comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
@@ -305,7 +305,7 @@ def test_compute_mean_std_chunked(Q, T):
 def test_compute_mean_std_chunked_many(Q, T):
     m = Q.shape[0]
 
-    with patch("config.STUMPY_MEAN_STD_NUM_CHUNKS", 128):
+    with patch("stumpy.config.STUMPY_MEAN_STD_NUM_CHUNKS", 128):
         ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
         ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
         comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
@@ -342,7 +342,7 @@ def test_compute_mean_std_multidimensional_chunked(Q, T):
     Q = np.array([Q, np.random.uniform(-1000, 1000, [Q.shape[0]])])
     T = np.array([T, T, np.random.uniform(-1000, 1000, [T.shape[0]])])
 
-    with patch("config.STUMPY_MEAN_STD_NUM_CHUNKS", 2):
+    with patch("stumpy.config.STUMPY_MEAN_STD_NUM_CHUNKS", 2):
         ref_μ_Q, ref_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
         ref_M_T, ref_Σ_T = naive_compute_mean_std_multidimensional(T, m)
         comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
@@ -361,7 +361,7 @@ def test_compute_mean_std_multidimensional_chunked_many(Q, T):
     Q = np.array([Q, np.random.uniform(-1000, 1000, [Q.shape[0]])])
     T = np.array([T, T, np.random.uniform(-1000, 1000, [T.shape[0]])])
 
-    with patch("config.STUMPY_MEAN_STD_NUM_CHUNKS", 128):
+    with patch("stumpy.config.STUMPY_MEAN_STD_NUM_CHUNKS", 128):
         ref_μ_Q, ref_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
         ref_M_T, ref_Σ_T = naive_compute_mean_std_multidimensional(T, m)
         comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
