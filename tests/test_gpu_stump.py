@@ -53,7 +53,6 @@ def test_gpu_stump_int_input():
 
 
 @cuda.jit("(f8[:, :], f8[:], i8[:], i8, b1, i8[:])")
-@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def _gpu_searchsorted_kernel(a, v, bfs, nlevel, is_left, idx):
     # A wrapper kernel for calling device function _gpu_searchsorted_left/right.
     i = cuda.grid(1)
