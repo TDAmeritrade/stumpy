@@ -190,7 +190,7 @@ def _compute_tiles(
         # total number of diagonals to traverse
         n_diags = tile_upper_diag - tile_lower_diag
         # number of diagonal "chunks" if we divide our diagonals into chunks
-        n_chunks = np.ceil(n_diags / config.STUMPY_N_DIAGONALS)
+        n_chunks = int(np.ceil(n_diags / config.STUMPY_N_DIAGONALS))
 
         # chunk_idx is the index of the chunk we are dealing with
         for chunk_idx in range(0, n_chunks):
