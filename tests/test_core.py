@@ -1134,7 +1134,7 @@ def test_merge_topk_PI_with_overlap():
         npt.assert_almost_equal(ref_I, comp_I)
 
 
-def test_merge_topk_PI_with_1D_input():
+def test_merge_topk_PI_with_1D_input_with_overlap():
     # including some overlaps randomly
     n = 50
     PA = np.random.rand(n)
@@ -1160,6 +1160,23 @@ def test_merge_topk_PI_with_1D_input():
 
     npt.assert_almost_equal(ref_P, comp_P)
     npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_merge_topk_PI_with_1D_input_without_overlap():
+    n = 50
+    arr = np.random.rand(2 * n)
+    np.random.shuffle(arr)
+
+    PA = arr[:n]
+    PB = arr[n:]
+    if np.all(PA <= PB):
+        # swap values between arrrays so that `PB > PA` becomes true for
+        # some elements
+        n_swap = np.random.randint(1, n + 1)
+        IDX = np.random.choice(np.arange(n), n_swap, replace=False)
+        X = PB[IDX].copy()
+        PB[IDX] = PA[IDX]
+        PA[IDX] = X
 
 
 def test_merge_topk_ρI_without_overlap():
@@ -1235,7 +1252,7 @@ def test_merge_topk_ρI_with_overlap():
         npt.assert_almost_equal(ref_I, comp_I)
 
 
-def test_merge_topk_ρI_with_1D_input():
+def test_merge_topk_ρI_with_1D_input_with_overlap():
     # including some overlaps randomly
     n = 50
     ρA = np.random.rand(n)
@@ -1255,6 +1272,38 @@ def test_merge_topk_ρI_with_1D_input():
     imprecision = np.random.uniform(low=-1e-06, high=1e-06, size=n_overlaps)
     ρB[IDX_rows_with_overlaps] = ρA[IDX_rows_with_overlaps] + imprecision
     IB[IDX_rows_with_overlaps] = IA[IDX_rows_with_overlaps]
+
+    naive.merge_topk_ρI(ref_ρ, ρB.copy(), ref_I, IB.copy())
+    core._merge_topk_ρI(comp_ρ, ρB.copy(), comp_I, IB.copy())
+
+    npt.assert_almost_equal(ref_ρ, comp_ρ)
+    npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_merge_topk_ρI_with_1D_input_without_overlap():
+    n = 50
+    arr = np.random.rand(2 * n)
+    np.random.shuffle(arr)
+
+    ρA = arr[:n]
+    ρB = arr[n:]
+    if np.all(ρA > ρB):
+        # Swap values between arrays `ρA` and `ρB` so that `ρB > ρA` becomes true
+        # for some elements
+        n_swap = np.random.randint(1, n + 1)
+        IDX = np.random.choice(np.arange(n), n_swap, replace=False)
+        X = ρB[IDX].copy()
+        ρB[IDX] = ρA[IDX]
+        ρA[IDX] = X
+
+    IA = np.arange(n)
+    IB = IA + n
+
+    ref_ρ = ρA.copy()
+    ref_I = IA.copy()
+
+    comp_ρ = ρA.copy()
+    comp_I = IA.copy()
 
     naive.merge_topk_ρI(ref_ρ, ρB.copy(), ref_I, IB.copy())
     core._merge_topk_ρI(comp_ρ, ρB.copy(), comp_I, IB.copy())
