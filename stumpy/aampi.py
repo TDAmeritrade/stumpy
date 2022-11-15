@@ -225,8 +225,10 @@ class aampi:
             self._I[-1] = I_last + self._n_appended
             self._P[-1] = D[I_last]
 
-        self._left_I[-1] = I_last + self._n_appended
-        self._left_P[-1] = D[I_last]
+        # Regarding the last subsequence, the left profile (index) value is the
+        # same as the profile (index) value.
+        self._left_I[-1] = self._I[-1]
+        self._left_P[-1] = self._P[-1]
 
         self._p_norm[:] = self._p_norm_new
 
@@ -283,8 +285,11 @@ class aampi:
         else:
             I_new = np.append(self._I, I_last)
             P_new = np.append(self._P, D[I_last])
-        left_I_new = np.append(self._left_I, I_last)
-        left_P_new = np.append(self._left_P, D[I_last])
+
+        # Regarding the last subsequence, the left profile (index) value is the
+        # same as the profile (index) value.
+        left_I_new = np.append(self._left_I, I_new[-1])
+        left_P_new = np.append(self._left_P, P_new[-1])
 
         self._T = T_new
         self._P = P_new
