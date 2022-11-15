@@ -976,3 +976,66 @@ def test_aampi_profile_index_match():
         npt.assert_almost_equal(stream.left_P_, left_P)
 
         n += 1
+
+
+def test_aampi_self_join_KNN():
+    m = 3
+    for k in range(2, 4):
+        for p in [1.0, 2.0, 3.0]:
+            seed = np.random.randint(100000)
+            np.random.seed(seed)
+
+            n = 30
+            T = np.random.rand(n)
+            stream = aampi(T, m, egress=False, p=p, k=k)
+            for i in range(34):
+                t = np.random.rand()
+                stream.update(t)
+
+            comp_P = stream.P_
+            comp_I = stream.I_
+            comp_left_P = stream.left_P_
+            comp_left_I = stream.left_I_
+
+            ref_mp = naive.aamp(stream.T_, m, p=p, k=k)
+            ref_P = ref_mp[:, :k]
+            ref_I = ref_mp[:, k : 2 * k]
+            ref_left_P = np.full(ref_P.shape, np.inf)
+            ref_left_I = ref_mp[:, 2 * k]
+            for i, j in enumerate(ref_left_I):
+                if j >= 0:
+                    ref_left_P[i] = np.linalg.norm(
+                        stream.T_[i : i + m] - stream.T_[j : j + m], ord=p
+                    )
+
+            naive.replace_inf(ref_P)
+            naive.replace_inf(ref_left_P)
+            naive.replace_inf(comp_P)
+            naive.replace_inf(comp_left_P)
+
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
+            npt.assert_almost_equal(ref_left_P, comp_left_P)
+            npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+            np.random.seed(seed)
+            n = 30
+            T = np.random.rand(n)
+            T = pd.Series(T)
+            stream = aampi(T, m, egress=False, p=p, k=k)
+            for i in range(34):
+                t = np.random.rand()
+                stream.update(t)
+
+            comp_P = stream.P_
+            comp_I = stream.I_
+            comp_left_P = stream.left_P_
+            comp_left_I = stream.left_I_
+
+            naive.replace_inf(comp_P)
+            naive.replace_inf(comp_left_P)
+
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
+            npt.assert_almost_equal(ref_left_P, comp_left_P)
+            npt.assert_almost_equal(ref_left_I, comp_left_I)
