@@ -749,7 +749,7 @@ def get_array_ranges(a, n_chunks, truncate):
 
 
 class aampi_egress(object):
-    def __init__(self, T, m, excl_zone=None, p=2.0):
+    def __init__(self, T, m, excl_zone=None, p=2.0, k=1):
         self._T = np.asarray(T)
         self._T = self._T.copy()
         self._T_isfinite = np.isfinite(self._T)
@@ -770,8 +770,9 @@ class aampi_egress(object):
         self._left_P = np.full_like(self._left_I, np.inf, dtype=np.float64)
         for idx, nn_idx in enumerate(self._left_I):
             if nn_idx >= 0:
-                self.left_P_[idx] = np.linalg.norm(
-                    self._T[idx : idx + self._m] - self._T[nn_idx : nn_idx + self._m], ord=self._p
+                self._left_P[idx] = np.linalg.norm(
+                    self._T[idx : idx + self._m] - self._T[nn_idx : nn_idx + self._m],
+                    ord=self._p,
                 )
 
         self._n_appended = 0
@@ -807,7 +808,7 @@ class aampi_egress(object):
 
         apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
         for j in range(D.shape[0]):
-            if D[j] < self.P_[j, -1]:
+            if D[j] < self._P[j, -1]:
                 pos = np.searchsorted(self._P[j], D[j], side="right")
                 self._P[j] = np.insert(self._P[j], pos, D[j])[:-1]
                 self._I[j] = np.insert(
