@@ -177,43 +177,78 @@ def _compute_tiles(
     covariances = np.zeros(config.STUMPY_N_DIAGONALS, dtype=np.float64)
 
     for tile_idx in range(tiles_ranges[thread_idx, 0], tiles_ranges[thread_idx, 1]):
-        y_offset, x_offset = tiles[tile_idx, 0], tiles[tile_idx, 1]
-        tile_height, tile_width = tiles[tile_idx, 2], tiles[tile_idx, 3]
-        n_diags = tiles[tile_idx, 5] - tiles[tile_idx, 4]
+        (
+            i_offset,  # i location of current tile in distance profile
+            j_offset,  # j location of current tile in distance profile
+            tile_height,  # height of current tile
+            tile_width,  # width of current tile
+            tile_lower_diag,  # index of first diagonal to traverse on current tile
+            tile_upper_diag,  # index of last diagonal to traverse on current tile + 1
+            _,
+        ) = tiles[tile_idx]
 
-        for chunk_idx in range(0, n_diags, config.STUMPY_N_DIAGONALS):
-            # get current chunk size, i.e. number of diagonals to traverse together
-            chunk_size = min(config.STUMPY_N_DIAGONALS, n_diags - chunk_idx)
+        # total number of diagonals to traverse
+        n_diags = tile_upper_diag - tile_lower_diag
+        # number of diagonal "chunks" if we divide our diagonals into chunks
+        n_chunks = np.ceil(n_diags / config.STUMPY_N_DIAGONALS)
 
+        # chunk_idx is the index of the chunk we are dealing with
+        for chunk_idx in range(0, n_chunks):
+            # number of diagonals to traverse together
+            chunk_size = min(
+                config.STUMPY_N_DIAGONALS,
+                n_diags - (chunk_idx * config.STUMPY_N_DIAGONALS),
+            )
+
+            # the longest diagonal to be traversed within the current chunk of diagonals
             longest_diag_len = 0
-            for diag_idx in range(chunk_size):
-                tile_diag_idx = tiles[tile_idx, 4] + chunk_idx + diag_idx
+            # chunk_diag_idx is the diagonal index we are dealing with,
+            # with respect to the chunk
+            for chunk_diag_idx in range(chunk_size):
+                # tile_diag_idx is the diagonal index we are dealing with,
+                # with respect to the entire tile
+                tile_diag_idx = (
+                    tile_lower_diag
+                    + (chunk_idx * config.STUMPY_N_DIAGONALS)
+                    + chunk_diag_idx
+                )
 
-                # store global index of diagonal
-                iter_ranges[diag_idx, 0] = tile_diag_idx - y_offset + x_offset
-                # store global range of diagonal to traverse
-                iter_ranges[diag_idx, 1] = y_offset - min(0, tile_diag_idx)
-                iter_ranges[diag_idx, 2] = y_offset + min(
+                # here we store the diagonal index we are dealing with,
+                # with respect to the entire distance matrix
+                iter_ranges[chunk_diag_idx, 0] = tile_diag_idx - i_offset + j_offset
+                # here we store the i location where the current diagonal begins
+                iter_ranges[chunk_diag_idx, 1] = i_offset - min(0, tile_diag_idx)
+                # here we store the i location where the current diagonal ends
+                iter_ranges[chunk_diag_idx, 2] = i_offset + min(
                     tile_height, tile_width - tile_diag_idx
                 )
 
                 # record length of longest diagonal
                 longest_diag_len = max(
                     longest_diag_len,
-                    iter_ranges[diag_idx, 2] - iter_ranges[diag_idx, 1],
+                    iter_ranges[chunk_diag_idx, 2] - iter_ranges[chunk_diag_idx, 1],
                 )
 
+            # row idx is the index of the row of n diagonals we are traversing together
             for row_idx in range(longest_diag_len):
-                for diag_idx in range(chunk_size):
-                    diag_iter_range = iter_ranges[diag_idx]
+                # chunk_diag_idx is the diagonal index we are dealing with,
+                # with respect to the chunk
+                for chunk_diag_idx in range(chunk_size):
+                    (
+                        global_diag_idx,
+                        diag_start_i_offset,
+                        diag_end_i_offset,
+                    ) = iter_ranges[chunk_diag_idx]
 
                     # continue if no elements remain for this diagonal
-                    if row_idx >= diag_iter_range[2] - diag_iter_range[1]:
+                    if row_idx >= diag_end_i_offset - diag_start_i_offset:
                         continue
 
-                    uint64_i = np.uint64(diag_iter_range[1] + row_idx)
+                    # i location of the current distance
+                    uint64_i = np.uint64(diag_start_i_offset + row_idx)
+                    # j location of the current distance
                     uint64_j = np.uint64(
-                        diag_iter_range[0] + diag_iter_range[1] + row_idx
+                        global_diag_idx + diag_start_i_offset + row_idx
                     )
 
                     # if first value in diagonal, compute covariance using dot product
@@ -233,13 +268,13 @@ def _compute_tiles(
                         #     - (T_B[j - 1] - M_T_m_1[j])
                         #     * (T_A[i - 1] - μ_Q_m_1[i])
                         # )
-                        cov = covariances[diag_idx] + constant * (
+                        cov = covariances[chunk_diag_idx] + constant * (
                             cov_a[uint64_j] * cov_b[uint64_i]
                             - cov_c[uint64_j] * cov_d[uint64_i]
                         )
 
                     # store covariance
-                    covariances[diag_idx] = cov
+                    covariances[chunk_diag_idx] = cov
 
                     if T_B_subseq_isfinite[uint64_j] and T_A_subseq_isfinite[uint64_i]:
                         # Neither subsequence contains NaNs
