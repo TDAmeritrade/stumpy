@@ -783,8 +783,8 @@ class aampi_egress(object):
             self.I_[-1] = I_last + self._n_appended
             self.P_[-1] = D[I_last]
 
-        self.left_I_[-1] = I_last + self._n_appended
-        self.left_P_[-1] = D[I_last]
+        self.left_I_[-1] = self.I_[-1]
+        self.left_P_[-1] = self.P_[-1]
 
 
 class stumpi_egress(object):
