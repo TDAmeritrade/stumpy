@@ -755,21 +755,23 @@ class aampi_egress(object):
         self._T_isfinite = np.isfinite(self._T)
         self._m = m
         self._p = p
+        self._k = k
 
         self._excl_zone = excl_zone
         if self._excl_zone is None:
             self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
-        mp = aamp(T, m, exclusion_zone=self._excl_zone, p=p)
-        self.P_ = mp[:, 0]
-        self.I_ = mp[:, 1].astype(np.int64)
-        self.left_P_ = np.full(self.P_.shape, np.inf)
-        self.left_I_ = mp[:, 2].astype(np.int64)
-        for i, j in enumerate(self.left_I_):
-            if j >= 0:
-                self.left_P_[i] = np.linalg.norm(
-                    self._T[i : i + self._m] - self._T[j : j + self._m], ord=self._p
+        mp = aamp(T, m, exclusion_zone=self._excl_zone, p=p, k=self._k)
+        self._P = mp[:, :k].astype(np.float64)
+        self._I = mp[:, k : 2 * k].astype(np.int64)
+
+        self._left_I = mp[:, 2 * k].astype(np.int64)
+        self._left_P = np.full_like(self._left_I, np.inf, dtype=np.float64)
+        for idx, nn_idx in enumerate(self._left_I):
+            if nn_idx >= 0:
+                self.left_P_[idx] = np.linalg.norm(
+                    self._T[idx : idx + self._m] - self._T[nn_idx : nn_idx + self._m], ord=self._p
                 )
 
         self._n_appended = 0
@@ -785,12 +787,11 @@ class aampi_egress(object):
             self._T[-1] = 0
         self._n_appended += 1
 
-        self.P_[:] = np.roll(self.P_, -1)
-        self.I_[:] = np.roll(self.I_, -1)
-        self.left_P_[:] = np.roll(self.left_P_, -1)
-        self.left_I_[:] = np.roll(self.left_I_, -1)
+        self._P = np.roll(self._P, -1, axis=0)
+        self._I = np.roll(self._I, -1, axis=0)
+        self._left_P[:] = np.roll(self._left_P, -1)
+        self._left_I[:] = np.roll(self._left_I, -1)
 
-        D = core.mass_absolute(self._T[-self._m :], self._T)
         D = cdist(
             core.rolling_window(self._T[-self._m :], self._m),
             core.rolling_window(self._T, self._m),
@@ -806,21 +807,45 @@ class aampi_egress(object):
 
         apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
         for j in range(D.shape[0]):
-            if D[j] < self.P_[j]:
-                self.I_[j] = D.shape[0] - 1 + self._n_appended
-                self.P_[j] = D[j]
+            if D[j] < self.P_[j, -1]:
+                pos = np.searchsorted(self._P[j], D[j], side="right")
+                self._P[j] = np.insert(self._P[j], pos, D[j])[:-1]
+                self._I[j] = np.insert(
+                    self._I[j], pos, D.shape[0] - 1 + self._n_appended
+                )[:-1]
 
-        I_last = np.argmin(D)
+        # update top-k for the last, newly-updated index
+        I_last_topk = np.argsort(D, kind="mergesort")[: self._k]
+        self._P[-1] = D[I_last_topk]
+        self._I[-1] = I_last_topk + self._n_appended
+        self._I[-1][self._P[-1] == np.inf] = -1
 
-        if np.isinf(D[I_last]):
-            self.I_[-1] = -1
-            self.P_[-1] = np.inf
+        # for the last index, the left matrix profile value is self.P_[-1, 0]
+        # and the same goes for the left matrix profile index
+        self._left_P[-1] = self._P[-1, 0]
+        self._left_I[-1] = self._I[-1, 0]
+
+    @property
+    def P_(self):
+        if self._k == 1:
+            return self._P.flatten().astype(np.float64)
         else:
-            self.I_[-1] = I_last + self._n_appended
-            self.P_[-1] = D[I_last]
+            return self._P.astype(np.float64)
 
-        self.left_I_[-1] = I_last + self._n_appended
-        self.left_P_[-1] = D[I_last]
+    @property
+    def I_(self):
+        if self._k == 1:
+            return self._I.flatten().astype(np.int64)
+        else:
+            return self._I.astype(np.int64)
+
+    @property
+    def left_P_(self):
+        return self._left_P.astype(np.float64)
+
+    @property
+    def left_I_(self):
+        return self._left_I.astype(np.int64)
 
 
 class stumpi_egress(object):
