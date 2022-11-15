@@ -1000,8 +1000,9 @@ def test_aampi_self_join_KNN():
             ref_mp = naive.aamp(stream.T_, m, p=p, k=k)
             ref_P = ref_mp[:, :k]
             ref_I = ref_mp[:, k : 2 * k]
-            ref_left_P = np.full(ref_P.shape, np.inf)
+
             ref_left_I = ref_mp[:, 2 * k]
+            ref_left_P = np.full_like(ref_left_I, np.inf, dtype=np.float64)
             for i, j in enumerate(ref_left_I):
                 if j >= 0:
                     ref_left_P[i] = np.linalg.norm(
