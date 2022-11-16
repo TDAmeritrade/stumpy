@@ -134,7 +134,7 @@ class stumpi:
         self._egress = egress
 
         mp = stump(self._T, self._m, k=self._k)
-        self._P = mp[:, :self._k].astype(np.float64)
+        self._P = mp[:, : self._k].astype(np.float64)
         self._I = mp[:, self._k : 2 * self._k].astype(np.int64)
 
         self._left_I = mp[:, 2 * self._k].astype(np.int64)
@@ -165,7 +165,7 @@ class stumpi:
             )
             self._left_P[i] = np.sqrt(D_square)
 
-        Q = self._T[-mself._m:]
+        Q = self._T[-self._m :]
         self._QT = core.sliding_dot_product(Q, self._T)
         if self._egress:
             self._QT_new = np.empty(self._QT.shape[0], dtype=np.float64)

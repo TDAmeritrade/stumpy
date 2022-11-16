@@ -104,7 +104,7 @@ class aampi:
         self._k = k
 
         mp = aamp(self._T, self._m, p=self._p, k=self._k)
-        self._P = mp[:, :self._k].astype(np.float64)
+        self._P = mp[:, : self._k].astype(np.float64)
         self._I = mp[:, self._k : 2 * self._k].astype(np.int64)
         self._left_I = mp[:, 2 * self._k].astype(np.int64)
         self._left_P = np.full_like(self._left_I, np.inf, dtype=np.float64)
@@ -133,7 +133,7 @@ class aampi:
                     self._T[i : i + self._m] - self._T[j : j + self._m], ord=self._p
                 )
 
-        Q = self._T[-self._m:]
+        Q = self._T[-self._m :]
         self._p_norm = core.mass_absolute(Q, self._T, p=self._p) ** self._p
         if self._egress:
             self._p_norm_new = np.empty(self._p_norm.shape[0], dtype=np.float64)
