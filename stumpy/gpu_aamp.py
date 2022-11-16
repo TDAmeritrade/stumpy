@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 @cuda.jit(
     "(i8, f8[:], f8[:], i8, f8, f8[:], f8[:], f8[:], b1[:], b1[:],"
     "i8, b1, i8, f8[:, :], f8[:], f8[:], i8[:, :], i8[:], i8[:], b1,"
-    "i8[:], i8, i2)"
+    "i8[:], i8, i8)"
 )
 def _compute_and_update_PI_kernel(
     i,
