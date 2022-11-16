@@ -1134,20 +1134,12 @@ def test_merge_topk_PI_with_overlap():
         npt.assert_almost_equal(ref_I, comp_I)
 
 
-def test_merge_topk_PI_with_1D_input_with_overlap():
-    # including some overlaps randomly
-    n = 50
-    PA = np.random.rand(n)
-    PB = np.random.rand(n)
+def test_merge_topk_PI_with_1D_input():
+    PA = np.array([0.1, 0.3, 0.5, 0.7, 0.9])
+    PB = np.array([0.2, 0.3, 0.6, 0.8, 1.0])
 
-    IA = np.arange(n)
-    IB = IA + n
-
-    n_overlaps = np.random.randint(1, n + 1)
-    IDX_rows_with_overlaps = np.random.choice(np.arange(n), n_overlaps, replace=False)
-    imprecision = np.random.uniform(low=-1e-06, high=1e-06, size=n_overlaps)
-    PB[IDX_rows_with_overlaps] = PA[IDX_rows_with_overlaps] + imprecision
-    IB[IDX_rows_with_overlaps] = IA[IDX_rows_with_overlaps]
+    IA = np.array([0, 1, 2, 3, 4])
+    IB = np.array([10, 1, 12, 13, 14])
 
     ref_P = PA.copy()
     ref_I = IA.copy()
@@ -1160,23 +1152,6 @@ def test_merge_topk_PI_with_1D_input_with_overlap():
 
     npt.assert_almost_equal(ref_P, comp_P)
     npt.assert_almost_equal(ref_I, comp_I)
-
-
-def test_merge_topk_PI_with_1D_input_without_overlap():
-    n = 50
-    arr = np.random.rand(2 * n)
-    np.random.shuffle(arr)
-
-    PA = arr[:n]
-    PB = arr[n:]
-    if np.all(PA <= PB):
-        # swap values between arrrays so that `PB > PA` becomes true for
-        # some elements
-        n_swap = np.random.randint(1, n + 1)
-        IDX = np.random.choice(np.arange(n), n_swap, replace=False)
-        X = PB[IDX].copy()
-        PB[IDX] = PA[IDX]
-        PA[IDX] = X
 
 
 def test_merge_topk_ρI_without_overlap():
@@ -1252,52 +1227,13 @@ def test_merge_topk_ρI_with_overlap():
         npt.assert_almost_equal(ref_I, comp_I)
 
 
-def test_merge_topk_ρI_with_1D_input_with_overlap():
-    # including some overlaps randomly
-    n = 50
-    ρA = np.random.rand(n)
-    ρB = np.random.rand(n)
+def test_merge_topk_ρI_with_1D_input():
 
-    IA = np.arange(n)
-    IB = IA + n
+    ρA = np.array([0.1, 0.3, 0.5, 0.7, 0.9])
+    ρB = np.array([0.2, 0.3, 0.6, 0.8, 1.0])
 
-    ref_ρ = ρA.copy()
-    ref_I = IA.copy()
-
-    comp_ρ = ρA.copy()
-    comp_I = IA.copy()
-
-    n_overlaps = np.random.randint(1, n + 1)
-    IDX_rows_with_overlaps = np.random.choice(np.arange(n), n_overlaps, replace=False)
-    imprecision = np.random.uniform(low=-1e-06, high=1e-06, size=n_overlaps)
-    ρB[IDX_rows_with_overlaps] = ρA[IDX_rows_with_overlaps] + imprecision
-    IB[IDX_rows_with_overlaps] = IA[IDX_rows_with_overlaps]
-
-    naive.merge_topk_ρI(ref_ρ, ρB.copy(), ref_I, IB.copy())
-    core._merge_topk_ρI(comp_ρ, ρB.copy(), comp_I, IB.copy())
-
-    npt.assert_almost_equal(ref_ρ, comp_ρ)
-    npt.assert_almost_equal(ref_I, comp_I)
-
-
-def test_merge_topk_ρI_with_1D_input_without_overlap():
-    n = 50
-    arr = np.random.rand(2 * n)
-    np.random.shuffle(arr)
-
-    ρA = arr[:n]
-    ρB = arr[n:]
-    if np.all(ρA > ρB):
-        # Swap values between arrays `ρA` and `ρB` so that `ρB > ρA` becomes true
-        # for some elements
-        n_swap = np.random.randint(1, n + 1)
-        IDX = np.random.choice(np.arange(n), n_swap, replace=False)
-        X = ρB[IDX].copy()
-        ρB[IDX] = ρA[IDX]
-        ρA[IDX] = X
-
-    IA = np.arange(n)
-    IB = IA + n
+    IA = np.array([0, 1, 2, 3, 4])
+    IB = np.array([10, 1, 12, 13, 14])
 
     ref_ρ = ρA.copy()
     ref_I = IA.copy()
