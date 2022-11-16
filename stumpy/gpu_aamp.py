@@ -272,13 +272,22 @@ def _gpu_aamp(
     Returns
     -------
     profile_fname : str
-        The file name for the matrix profile
+        The file name for the (top-k) matrix profile
+
+    profile_L_fname : str
+        The file name for the (top-1) left matrix profile
+
+    profile_R_fname : str
+        The file name for the (top-1) right matrix profile
 
     indices_fname : str
-        The file name for the matrix profile indices. The first column of the
-        array consists of the matrix profile indices, the second column consists
-        of the left matrix profile indices, and the third column consists of the
-        right matrix profile indices.
+        The file name for the (top-k) matrix profile indices
+
+    indices_L_fname : str
+        The file name for the (top-1) left matrix profile indices
+
+    indices_R_fname : str
+        The file name for the (top-1) right matrix profile indices
 
     Notes
     -----
@@ -422,14 +431,14 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
     # function needs to be revised to return (top-k) matrix profile and
     # matrix profile indices
     """
-    Compute the non-normalized (i.e., without z-normalization) matrix profile with one
-    or more GPU devices
+    Compute the non-normalized (i.e., without z-normalization) matrix profile with
+    one or more GPU devices
 
     This is a convenience wrapper around the Numba `cuda.jit` `_gpu_aamp` function
-    which computes the non-normalized matrix profile according to modified version
-    GPU-STOMP. The default number of threads-per-block is set to `512` and may be
-    changed by setting the global parameter `config.STUMPY_THREADS_PER_BLOCK` to an
-    appropriate number based on your GPU hardware.
+    which computes the non-normalized (top-k) matrix profile according to modified
+    version GPU-STOMP. The default number of threads-per-block is set to `512` and
+    may be changed by setting the global parameter `config.STUMPY_THREADS_PER_BLOCK`
+    to an appropriate number based on your GPU hardware.
 
     Parameters
     ----------
@@ -671,7 +680,7 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
         os.remove(indices_L_fname)
         os.remove(indices_R_fname)
 
-    for i in range(1, len(device_ids)):
+    for i in range(1, len(device_ids)):  # pragma: no cover
         # Update (top-k) matrix profile and matrix profile indices
         core._merge_topk_PI(profile[0], profile[i], indices[0], indices[i])
 
