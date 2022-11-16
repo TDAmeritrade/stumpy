@@ -1149,14 +1149,6 @@ def test_merge_topk_PI_with_1D_input():
     PB[IDX_rows_with_overlaps] = PA[IDX_rows_with_overlaps] + imprecision
     IB[IDX_rows_with_overlaps] = IA[IDX_rows_with_overlaps]
 
-    IDX = np.argsort(PA)
-    PA[:] = PA[IDX]
-    IA[:] = IA[IDX]
-
-    IDX = np.argsort(PB)
-    PB[:] = PB[IDX]
-    IB[:] = IB[IDX]
-
     ref_P = PA.copy()
     ref_I = IA.copy()
     comp_P = PA.copy()
@@ -1280,14 +1272,6 @@ def test_merge_topk_ρI_with_1D_input():
     imprecision = np.random.uniform(low=-1e-06, high=1e-06, size=n_overlaps)
     ρB[IDX_rows_with_overlaps] = ρA[IDX_rows_with_overlaps] + imprecision
     IB[IDX_rows_with_overlaps] = IA[IDX_rows_with_overlaps]
-
-    IDX = np.argsort(ρA)
-    ρA[:] = ρA[IDX]
-    IA[:] = IA[IDX]
-
-    IDX = np.argsort(ρB)
-    ρB[:] = ρB[IDX]
-    IB[:] = IB[IDX]
 
     ref_ρ = ρA.copy()
     ref_I = IA.copy()
