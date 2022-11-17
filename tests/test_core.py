@@ -1151,6 +1151,29 @@ def test_merge_topk_PI_with_1D_input():
 
     ref_P = PA.copy()
     ref_I = IA.copy()
+    comp_P = PA.copy()
+    comp_I = IA.copy()
+
+    naive.merge_topk_PI(ref_P, PB.copy(), ref_I, IB.copy())
+    core._merge_topk_PI(comp_P, PB.copy(), comp_I, IB.copy())
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_merge_topk_PI_with_1D_input_hardcoded():
+    # It is possible that the generated arrays in the test function
+    # `test_merge_topk_PI_with_1D_input` does not trigger the if-block
+    # `merge_topk_PI` in 1D case. This test function ensure that the if-block
+    # will be executed.
+    PA = np.array([0.1, 0.3, 0.5, 0.7, 0.9])
+    PB = np.array([0.2, 0.3, 0.6, 0.8, 1.0])
+
+    IA = np.array([0, 1, 2, 3, 4])
+    IB = np.array([10, 1, 12, 13, 14])
+
+    ref_P = PA.copy()
+    ref_I = IA.copy()
 
     comp_P = PA.copy()
     comp_I = IA.copy()
@@ -1244,17 +1267,40 @@ def test_merge_topk_ρI_with_1D_input():
     IA = np.arange(n)
     IB = IA + n
 
-    ref_ρ = ρA.copy()
-    ref_I = IA.copy()
-
-    comp_ρ = ρA.copy()
-    comp_I = IA.copy()
-
     n_overlaps = np.random.randint(1, n + 1)
     IDX_rows_with_overlaps = np.random.choice(np.arange(n), n_overlaps, replace=False)
     imprecision = np.random.uniform(low=-1e-06, high=1e-06, size=n_overlaps)
     ρB[IDX_rows_with_overlaps] = ρA[IDX_rows_with_overlaps] + imprecision
     IB[IDX_rows_with_overlaps] = IA[IDX_rows_with_overlaps]
+
+    ref_ρ = ρA.copy()
+    ref_I = IA.copy()
+    comp_ρ = ρA.copy()
+    comp_I = IA.copy()
+
+    naive.merge_topk_ρI(ref_ρ, ρB.copy(), ref_I, IB.copy())
+    core._merge_topk_ρI(comp_ρ, ρB.copy(), comp_I, IB.copy())
+
+    npt.assert_almost_equal(ref_ρ, comp_ρ)
+    npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_merge_topk_ρI_with_1D_input_hardcoded():
+    # It is possible that the generated arrays in the test function
+    # `test_merge_topk_ρI_with_1D_input` does not trigger the if-block
+    # `merge_topk_ρI` in 1D case. This test function ensure that the if-block
+    # will be executed.
+    ρA = np.array([0.1, 0.3, 0.5, 0.7, 0.9])
+    ρB = np.array([0.2, 0.3, 0.6, 0.8, 1.0])
+
+    IA = np.array([0, 1, 2, 3, 4])
+    IB = np.array([10, 1, 12, 13, 14])
+
+    ref_ρ = ρA.copy()
+    ref_I = IA.copy()
+
+    comp_ρ = ρA.copy()
+    comp_I = IA.copy()
 
     naive.merge_topk_ρI(ref_ρ, ρB.copy(), ref_I, IB.copy())
     core._merge_topk_ρI(comp_ρ, ρB.copy(), comp_I, IB.copy())
