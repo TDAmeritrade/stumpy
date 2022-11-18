@@ -1,17 +1,18 @@
 import numpy as np
 import numpy.testing as npt
 from numba import cuda
+from unittest.mock import patch
 
 try:
     from numba.errors import NumbaPerformanceWarning
 except ModuleNotFoundError:
     from numba.core.errors import NumbaPerformanceWarning
-from stumpy import gpu_aamp_ostinato, config
+from stumpy import gpu_aamp_ostinato
 import naive
 import pytest
 
 
-config.THREADS_PER_BLOCK = 10
+TEST_THREADS_PER_BLOCK = 10
 
 if not cuda.is_available():  # pragma: no cover
     pytest.skip("Skipping Tests No GPUs Available", allow_module_level=True)
@@ -21,6 +22,7 @@ if not cuda.is_available():  # pragma: no cover
 @pytest.mark.parametrize(
     "seed", np.random.choice(np.arange(10000), size=2, replace=False)
 )
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def test_random_gpu_aamp_ostinato(seed):
     m = 50
     np.random.seed(seed)
@@ -36,6 +38,7 @@ def test_random_gpu_aamp_ostinato(seed):
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("seed", [41, 88])
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def test_deterministic_gpu_aamp_ostinato(seed):
     m = 50
     np.random.seed(seed)
