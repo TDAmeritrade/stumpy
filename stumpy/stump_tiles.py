@@ -200,12 +200,15 @@ def _compute_tiles(
                 config.STUMPY_N_DIAGONALS,
                 n_diags - (chunk_idx * config.STUMPY_N_DIAGONALS),
             )
+            # range of diags to traverse in chunk
             chunk_diags = chunk_diags_range[:chunk_size]
+            # range of diags to traverse in chunk, with respect to entire distance
+            # matrix
             tile_diags = (
                 tile_start_diag + (chunk_idx * config.STUMPY_N_DIAGONALS) + chunk_diags
             )
-            # store the diagonal indices we are dealing with, with respect to the
-            # entire distance matrix
+            # store the diagonal indices we are dealing with, with respect to entire
+            # distance matrix
             iter_ranges[chunk_diags, 0] = tile_diags - tile_i + tile_j
             # store the i locations where the diagonals begin
             iter_ranges[chunk_diags, 1] = tile_i - np.minimum(0, tile_diags)
