@@ -290,7 +290,7 @@ class aampi:
             core._shift_insert_at_index(self._P[i], idx, D[i])
             core._shift_insert_at_index(self._I[i], idx, l)
 
-        # Calculating top-k matrix profile and (top-1) left matrix profile (and thier
+        # Calculating top-k matrix profile and (top-1) left matrix profile (and their
         # corresponding indices) for new subsequence whose distance profie is `D`
         P_new = np.full(self._k, np.inf, dtype=np.float64)
         I_new = np.full(self._k, -1, dtype=np.int64)
