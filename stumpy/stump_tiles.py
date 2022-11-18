@@ -108,13 +108,10 @@ def _compute_tiles(
         A boolean array that indicates whether a subsequence in `T_B` is constant (True)
 
     tiles : ndarray
-        An array of 7-element-arrays representing each tile
+        A 7-column, 2D array, where each row corresponds to a single tile
 
     tiles_ranges : ndarray
-        A two-dimensional array representing tile indices for each thread
-
-    tile_length : int
-        Maximum length of each tile
+        A 2D array representing tile indices for each thread
 
     thread_idx : int
         The thread index
@@ -173,22 +170,26 @@ def _compute_tiles(
     constant = (m - 1) * m_inverse * m_inverse  # (m - 1)/(m * m)
     uint64_m = np.uint64(m)
 
+    # for storing diagonal iteration ranges
     iter_ranges = np.zeros((config.STUMPY_N_DIAGONALS, 3), dtype=np.int64)
+    # for storing covariance values while iterating in chunks
     covariances = np.zeros(config.STUMPY_N_DIAGONALS, dtype=np.float64)
+    # for storing range of diagonals to traverse in chunks
+    chunk_diags_range = np.arange(config.STUMPY_N_DIAGONALS)
 
     for tile_idx in range(tiles_ranges[thread_idx, 0], tiles_ranges[thread_idx, 1]):
         (
-            i_offset,  # i location of current tile in distance profile
-            j_offset,  # j location of current tile in distance profile
+            tile_i,  # i location of current tile in distance profile
+            tile_j,  # j location of current tile in distance profile
             tile_height,  # height of current tile
             tile_width,  # width of current tile
-            tile_lower_diag,  # index of first diagonal to traverse on current tile
-            tile_upper_diag,  # index of last diagonal to traverse on current tile + 1
+            tile_start_diag,  # index of first diagonal to traverse on current tile
+            tile_stop_diag,  # index of last diagonal to traverse on current tile + 1
             _,
         ) = tiles[tile_idx]
 
         # total number of diagonals to traverse
-        n_diags = tile_upper_diag - tile_lower_diag
+        n_diags = tile_stop_diag - tile_start_diag
         # number of diagonal "chunks" if we divide our diagonals into chunks
         n_chunks = int(np.ceil(n_diags / config.STUMPY_N_DIAGONALS))
 
@@ -199,35 +200,23 @@ def _compute_tiles(
                 config.STUMPY_N_DIAGONALS,
                 n_diags - (chunk_idx * config.STUMPY_N_DIAGONALS),
             )
-
-            # the longest diagonal to be traversed within the current chunk of diagonals
-            longest_diag_len = 0
-            # chunk_diag_idx is the diagonal index we are dealing with,
-            # with respect to the chunk
-            for chunk_diag_idx in range(chunk_size):
-                # tile_diag_idx is the diagonal index we are dealing with,
-                # with respect to the entire tile
-                tile_diag_idx = (
-                    tile_lower_diag
-                    + (chunk_idx * config.STUMPY_N_DIAGONALS)
-                    + chunk_diag_idx
-                )
-
-                # here we store the diagonal index we are dealing with,
-                # with respect to the entire distance matrix
-                iter_ranges[chunk_diag_idx, 0] = tile_diag_idx - i_offset + j_offset
-                # here we store the i location where the current diagonal begins
-                iter_ranges[chunk_diag_idx, 1] = i_offset - min(0, tile_diag_idx)
-                # here we store the i location where the current diagonal ends
-                iter_ranges[chunk_diag_idx, 2] = i_offset + min(
-                    tile_height, tile_width - tile_diag_idx
-                )
-
-                # record length of longest diagonal
-                longest_diag_len = max(
-                    longest_diag_len,
-                    iter_ranges[chunk_diag_idx, 2] - iter_ranges[chunk_diag_idx, 1],
-                )
+            chunk_diags = chunk_diags_range[:chunk_size]
+            tile_diags = (
+                tile_start_diag + (chunk_idx * config.STUMPY_N_DIAGONALS) + chunk_diags
+            )
+            # store the diagonal indices we are dealing with, with respect to the
+            # entire distance matrix
+            iter_ranges[chunk_diags, 0] = tile_diags - tile_i + tile_j
+            # store the i locations where the diagonals begin
+            iter_ranges[chunk_diags, 1] = tile_i - np.minimum(0, tile_diags)
+            # store the i locations where the diagonals end
+            iter_ranges[chunk_diags, 2] = tile_i + np.minimum(
+                tile_height, tile_width - tile_diags
+            )
+            # record length of longest diagonal
+            longest_diag_len = np.max(
+                iter_ranges[chunk_diags, 2] - iter_ranges[chunk_diags, 1]
+            )
 
             # row idx is the index of the row of n diagonals we are traversing together
             for row_idx in range(longest_diag_len):
@@ -236,20 +225,18 @@ def _compute_tiles(
                 for chunk_diag_idx in range(chunk_size):
                     (
                         global_diag_idx,
-                        diag_start_i_offset,
-                        diag_end_i_offset,
+                        diag_start_i,
+                        diag_end_i,
                     ) = iter_ranges[chunk_diag_idx]
 
                     # continue if no elements remain for this diagonal
-                    if row_idx >= diag_end_i_offset - diag_start_i_offset:
+                    if row_idx >= diag_end_i - diag_start_i:
                         continue
 
                     # i location of the current distance
-                    uint64_i = np.uint64(diag_start_i_offset + row_idx)
+                    uint64_i = np.uint64(diag_start_i + row_idx)
                     # j location of the current distance
-                    uint64_j = np.uint64(
-                        global_diag_idx + diag_start_i_offset + row_idx
-                    )
+                    uint64_j = np.uint64(global_diag_idx + diag_start_i + row_idx)
 
                     # if first value in diagonal, compute covariance using dot product
                     if row_idx == 0:

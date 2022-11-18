@@ -2916,11 +2916,11 @@ def _get_tiles(m, n_A, n_B, diags, tile_length):
     Returns
     -------
     tiles : ndarray
-        An array of 7-element-arrays representing each tile:
-        The first two values represent offset positions of the tile
-        The second two values represent dimensions of the tile
-        The third two values represent diagonal indices to traverse in the tile
-        The seventh value represents number of distances in the tile
+        A 7-column, 2D array, where each row corresponds to a single tile:
+        - First two columns represent i and j positions of the tile
+        - Second two columns represent dimensions of the tile
+        - Third two columns represent range of diagonal indices to traverse in the tile
+        - Seventh column represents number of distances in the tile
     """
     # dimensions of distance matrix
     l = n_A - m + 1
@@ -2933,30 +2933,30 @@ def _get_tiles(m, n_A, n_B, diags, tile_length):
     tiles = np.empty((tiles_count, 7), dtype=np.int64)
 
     for tile_idx in prange(tiles_count):
-        i_offset = (tile_idx // tile_columns) * tile_length
-        j_offset = (tile_idx % tile_columns) * tile_length
+        tile_i = (tile_idx // tile_columns) * tile_length
+        tile_j = (tile_idx % tile_columns) * tile_length
         # height of current tile
-        tile_height = min(tile_length, l - i_offset)
+        tile_height = min(tile_length, l - tile_i)
         # width of current tile
-        tile_width = min(tile_length, w - j_offset)
+        tile_width = min(tile_length, w - tile_j)
 
-        # lower and upper diagonal indices to traverse within tile
-        tile_lower_diag = max(1 - tile_height, diags[0] + i_offset - j_offset)
-        tile_upper_diag = min(tile_width, diags[-1] + 1 + i_offset - j_offset)
+        # start and stop diagonal indices to traverse within tile
+        tile_start_diag = max(-(tile_height - 1), diags[0] + tile_i - tile_j)
+        tile_stop_diag = min(tile_width, diags[-1] + 1 + tile_i - tile_j)
 
         tile_ndist = _total_diagonal_ndists(
-            tile_lower_diag,
-            tile_upper_diag,
+            tile_start_diag,
+            tile_stop_diag,
             tile_height,
             tile_width,
         )
 
-        tiles[tile_idx, 0] = i_offset
-        tiles[tile_idx, 1] = j_offset
+        tiles[tile_idx, 0] = tile_i
+        tiles[tile_idx, 1] = tile_j
         tiles[tile_idx, 2] = tile_height
         tiles[tile_idx, 3] = tile_width
-        tiles[tile_idx, 4] = tile_lower_diag
-        tiles[tile_idx, 5] = tile_upper_diag
+        tiles[tile_idx, 4] = tile_start_diag
+        tiles[tile_idx, 5] = tile_stop_diag
         tiles[tile_idx, 6] = tile_ndist
 
     return tiles
