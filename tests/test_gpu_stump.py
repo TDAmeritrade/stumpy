@@ -8,7 +8,7 @@ from numba import cuda
 from unittest.mock import patch
 
 if cuda.is_available():
-    from stumpy.gpu_stump import _gpu_searchsorted_left, _gpu_searchsorted_right
+    from stumpy.core import _gpu_searchsorted_left, _gpu_searchsorted_right
 else:  # pragma: no cover
     from stumpy.core import (
         _gpu_searchsorted_left_driver_not_found as _gpu_searchsorted_left,

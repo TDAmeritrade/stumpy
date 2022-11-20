@@ -9,7 +9,7 @@ import os
 import numpy as np
 from numba import cuda
 
-from . import core, config, gpu_stump
+from . import core, config
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +178,7 @@ def _compute_and_update_PI_kernel(
                 indices_R[j] = i
 
         if p_norm < profile[j, -1]:
-            idx = gpu_stump._gpu_searchsorted_right(profile[j], p_norm, bfs, nlevel)
+            idx = core._gpu_searchsorted_right(profile[j], p_norm, bfs, nlevel)
             for g in range(k - 1, idx, -1):
                 profile[j, g] = profile[j, g - 1]
                 indices[j, g] = indices[j, g - 1]
