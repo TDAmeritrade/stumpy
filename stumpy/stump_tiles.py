@@ -489,8 +489,7 @@ def _stump_tiles(
     ρR = np.full((n_threads, l), np.NINF, dtype=np.float64)
     IR = np.full((n_threads, l), -1, dtype=np.int64)
 
-    tile_length = config.STUMPY_MAX_TILE_LENGTH
-    tiles = core._get_tiles(m, n_A, n_B, diags, tile_length)
+    tiles = core._get_tiles(m, n_A, n_B, diags, config.STUMPY_MAX_TILE_SIZE)
     tiles_ranges = core._get_array_ranges(tiles[:, 6], n_threads, False)
 
     cov_a = T_B[m - 1 :] - M_T_m_1[:-1]

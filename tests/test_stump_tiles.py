@@ -29,7 +29,7 @@ def test_stump_tiles_int_input():
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_tiles_self_join(T_A, T_B):
-    with patch("stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(len(T_B) / 4), 2)):
+    with patch("stumpy.config.STUMPY_MAX_TILE_SIZE", max(int(len(T_B) / 4), 2)):
         with patch("stumpy.config.STUMPY_N_DIAGONALS", 3):
             m = 3
             zone = int(np.ceil(m / 4))
@@ -47,7 +47,7 @@ def test_stump_tiles_self_join(T_A, T_B):
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_tiles_A_B_join(T_A, T_B):
     with patch(
-        "stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(min(len(T_A), len(T_B)) / 4), 2)
+        "stumpy.config.STUMPY_MAX_TILE_SIZE", max(int(min(len(T_A), len(T_B)) / 4), 2)
     ):
         with patch("stumpy.config.STUMPY_N_DIAGONALS", 3):
             m = 3
@@ -67,7 +67,7 @@ def test_stump_tiles_A_B_join(T_A, T_B):
 def test_stump_tiles_constant_subsequence_self_join():
     T_A = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
 
-    with patch("stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(len(T_A) / 4), 2)):
+    with patch("stumpy.config.STUMPY_MAX_TILE_SIZE", max(int(len(T_A) / 4), 2)):
         with patch("stumpy.config.STUMPY_N_DIAGONALS", 3):
             m = 3
             zone = int(np.ceil(m / 4))
@@ -87,7 +87,7 @@ def test_stump_tiles_one_constant_subsequence_A_B_join():
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
 
     with patch(
-        "stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(min(len(T_A), len(T_B)) / 4), 2)
+        "stumpy.config.STUMPY_MAX_TILE_SIZE", max(int(min(len(T_A), len(T_B)) / 4), 2)
     ):
         with patch("stumpy.config.STUMPY_N_DIAGONALS", 3):
             m = 3
@@ -118,7 +118,7 @@ def test_stump_tiles_two_constant_subsequences_A_B_join():
     T_B = np.concatenate((np.zeros(20, dtype=np.float64), np.ones(5, dtype=np.float64)))
 
     with patch(
-        "stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(min(len(T_A), len(T_B)) / 4), 2)
+        "stumpy.config.STUMPY_MAX_TILE_SIZE", max(int(min(len(T_A), len(T_B)) / 4), 2)
     ):
         with patch("stumpy.config.STUMPY_N_DIAGONALS", 3):
             m = 3
@@ -154,7 +154,7 @@ def test_stump_tiles_identical_subsequence_self_join():
     T_A[1 : 1 + identical.shape[0]] = identical
     T_A[11 : 11 + identical.shape[0]] = identical
 
-    with patch("stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(len(T_A) / 4), 2)):
+    with patch("stumpy.config.STUMPY_MAX_TILE_SIZE", max(int(len(T_A) / 4), 2)):
         with patch("stumpy.config.STUMPY_N_DIAGONALS", 3):
             m = 3
             zone = int(np.ceil(m / 4))
@@ -181,7 +181,7 @@ def test_stump_tiles_identical_subsequence_A_B_join():
     T_B[11 : 11 + identical.shape[0]] = identical
 
     with patch(
-        "stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(min(len(T_A), len(T_B)) / 4), 2)
+        "stumpy.config.STUMPY_MAX_TILE_SIZE", max(int(min(len(T_A), len(T_B)) / 4), 2)
     ):
         with patch("stumpy.config.STUMPY_N_DIAGONALS", 3):
             m = 3
@@ -219,7 +219,7 @@ def test_stump_tiles_nan_inf_self_join(T_A, T_B, substitute_B, substitution_loca
 
     T_B_sub = T_B.copy()
 
-    with patch("stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(len(T_B) / 4), 2)):
+    with patch("stumpy.config.STUMPY_MAX_TILE_SIZE", max(int(len(T_B) / 4), 2)):
         with patch("stumpy.config.STUMPY_N_DIAGONALS", 3):
             for substitution_location_B in substitution_locations:
                 T_B_sub[:] = T_B[:]
@@ -250,7 +250,7 @@ def test_stump_tiles_nan_inf_A_B_join(
     T_B_sub = T_B.copy()
 
     with patch(
-        "stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(min(len(T_A), len(T_B)) / 4), 2)
+        "stumpy.config.STUMPY_MAX_TILE_SIZE", max(int(min(len(T_A), len(T_B)) / 4), 2)
     ):
         with patch("stumpy.config.STUMPY_N_DIAGONALS", 3):
             for substitution_location_B in substitution_locations:
@@ -276,7 +276,7 @@ def test_stump_tiles_nan_inf_A_B_join(
 def test_stump_tiles_nan_zero_mean_self_join():
     T = np.array([-1, 0, 1, np.inf, 1, 0, -1])
 
-    with patch("stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(len(T) / 4), 2)):
+    with patch("stumpy.config.STUMPY_MAX_TILE_SIZE", max(int(len(T) / 4), 2)):
         with patch("stumpy.config.STUMPY_N_DIAGONALS", 3):
             m = 3
             zone = int(np.ceil(m / 4))
@@ -290,7 +290,7 @@ def test_stump_tiles_nan_zero_mean_self_join():
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_tiles_self_join_KNN(T_A, T_B):
-    with patch("stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(len(T_B) / 4), 2)):
+    with patch("stumpy.config.STUMPY_MAX_TILE_SIZE", max(int(len(T_B) / 4), 2)):
         with patch("stumpy.config.STUMPY_N_DIAGONALS", 3):
             m = 3
             zone = int(np.ceil(m / 4))
@@ -308,7 +308,7 @@ def test_stump_tiles_self_join_KNN(T_A, T_B):
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_tiles_A_B_join_KNN(T_A, T_B):
-    with patch("stumpy.config.STUMPY_MAX_TILE_LENGTH", max(int(len(T_B) / 4), 2)):
+    with patch("stumpy.config.STUMPY_MAX_TILE_SIZE", max(int(len(T_B) / 4), 2)):
         with patch("stumpy.config.STUMPY_N_DIAGONALS", 3):
             m = 3
             for k in range(2, 4):

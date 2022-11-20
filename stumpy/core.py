@@ -2892,7 +2892,7 @@ def _find_matches(
     fastmath=True,
     parallel=True,
 )
-def _get_tiles(m, n_A, n_B, diags, tile_length):
+def _get_tiles(m, n_A, n_B, diags, tile_size):
     """
     Split distance matrix into tiles of given size
 
@@ -2910,8 +2910,8 @@ def _get_tiles(m, n_A, n_B, diags, tile_length):
     diags : ndarray
         The diagonal indices of interest
 
-    tile_length : int
-        Maximum length of each tile
+    tile_size : int
+        Maximum length of a tile
 
     Returns
     -------
@@ -2926,19 +2926,19 @@ def _get_tiles(m, n_A, n_B, diags, tile_length):
     l = n_A - m + 1
     w = n_B - m + 1
     # tile rows & columns
-    tile_rows = int(np.ceil(l / tile_length))
-    tile_columns = int(np.ceil(w / tile_length))
+    tile_rows = int(np.ceil(l / tile_size))
+    tile_columns = int(np.ceil(w / tile_size))
     # number of tiles
     tiles_count = tile_rows * tile_columns
     tiles = np.empty((tiles_count, 7), dtype=np.int64)
 
     for tile_idx in prange(tiles_count):
-        tile_i = (tile_idx // tile_columns) * tile_length
-        tile_j = (tile_idx % tile_columns) * tile_length
+        tile_i = (tile_idx // tile_columns) * tile_size
+        tile_j = (tile_idx % tile_columns) * tile_size
         # height of current tile
-        tile_height = min(tile_length, l - tile_i)
+        tile_height = min(tile_size, l - tile_i)
         # width of current tile
-        tile_width = min(tile_length, w - tile_j)
+        tile_width = min(tile_size, w - tile_j)
 
         # start and stop diagonal indices to traverse within tile
         tile_start_diag = max(-(tile_height - 1), diags[0] + tile_i - tile_j)
