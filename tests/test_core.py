@@ -4,6 +4,7 @@ import pandas as pd
 from scipy.spatial.distance import cdist
 from stumpy import core, config
 import pytest
+from unittest.mock import patch
 import os
 import math
 
@@ -288,12 +289,11 @@ def test_compute_mean_std(Q, T):
 def test_compute_mean_std_chunked(Q, T):
     m = Q.shape[0]
 
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 2
-    ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
-    ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
-    comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
-    comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
+    with patch("stumpy.config.STUMPY_MEAN_STD_NUM_CHUNKS", 2):
+        ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
+        ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
+        comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
+        comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
 
     npt.assert_almost_equal(ref_μ_Q, comp_μ_Q)
     npt.assert_almost_equal(ref_σ_Q, comp_σ_Q)
@@ -305,12 +305,11 @@ def test_compute_mean_std_chunked(Q, T):
 def test_compute_mean_std_chunked_many(Q, T):
     m = Q.shape[0]
 
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 128
-    ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
-    ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
-    comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
-    comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
+    with patch("stumpy.config.STUMPY_MEAN_STD_NUM_CHUNKS", 128):
+        ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
+        ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
+        comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
+        comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
 
     npt.assert_almost_equal(ref_μ_Q, comp_μ_Q)
     npt.assert_almost_equal(ref_σ_Q, comp_σ_Q)
@@ -343,12 +342,11 @@ def test_compute_mean_std_multidimensional_chunked(Q, T):
     Q = np.array([Q, np.random.uniform(-1000, 1000, [Q.shape[0]])])
     T = np.array([T, T, np.random.uniform(-1000, 1000, [T.shape[0]])])
 
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 2
-    ref_μ_Q, ref_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
-    ref_M_T, ref_Σ_T = naive_compute_mean_std_multidimensional(T, m)
-    comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
-    comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
+    with patch("stumpy.config.STUMPY_MEAN_STD_NUM_CHUNKS", 2):
+        ref_μ_Q, ref_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
+        ref_M_T, ref_Σ_T = naive_compute_mean_std_multidimensional(T, m)
+        comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
+        comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
 
     npt.assert_almost_equal(ref_μ_Q, comp_μ_Q)
     npt.assert_almost_equal(ref_σ_Q, comp_σ_Q)
@@ -363,12 +361,11 @@ def test_compute_mean_std_multidimensional_chunked_many(Q, T):
     Q = np.array([Q, np.random.uniform(-1000, 1000, [Q.shape[0]])])
     T = np.array([T, T, np.random.uniform(-1000, 1000, [T.shape[0]])])
 
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 128
-    ref_μ_Q, ref_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
-    ref_M_T, ref_Σ_T = naive_compute_mean_std_multidimensional(T, m)
-    comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
-    comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
+    with patch("stumpy.config.STUMPY_MEAN_STD_NUM_CHUNKS", 128):
+        ref_μ_Q, ref_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
+        ref_M_T, ref_Σ_T = naive_compute_mean_std_multidimensional(T, m)
+        comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
+        comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
 
     npt.assert_almost_equal(ref_μ_Q, comp_μ_Q)
     npt.assert_almost_equal(ref_σ_Q, comp_σ_Q)
