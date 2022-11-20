@@ -188,25 +188,22 @@ def _compute_tiles(
             _,
         ) = tiles[tile_idx]
 
-        # total number of diagonals to traverse
-        n_diags = tile_stop_diag - tile_start_diag
-        # number of diagonal "chunks" if we divide our diagonals into chunks
-        n_chunks = int(np.ceil(n_diags / config.STUMPY_N_DIAGONALS))
-
-        # chunk_idx is the index of the chunk we are dealing with
-        for chunk_idx in range(0, n_chunks):
+        # chunk_start_idx is the starting index of the chunk we are dealing with
+        for chunk_start_idx in range(
+            tile_start_diag,
+            tile_stop_diag,
+            config.STUMPY_N_DIAGONALS,
+        ):
             # number of diagonals to traverse together
             chunk_size = min(
                 config.STUMPY_N_DIAGONALS,
-                n_diags - (chunk_idx * config.STUMPY_N_DIAGONALS),
+                tile_stop_diag - chunk_start_idx,
             )
             # range of diags to traverse in chunk
             chunk_diags = chunk_diags_range[:chunk_size]
             # range of diags to traverse in chunk, with respect to entire distance
             # matrix
-            tile_diags = (
-                tile_start_diag + (chunk_idx * config.STUMPY_N_DIAGONALS) + chunk_diags
-            )
+            tile_diags = chunk_start_idx + chunk_diags
             # store the diagonal indices we are dealing with, with respect to entire
             # distance matrix
             iter_ranges[chunk_diags, 0] = tile_diags - tile_i + tile_j
