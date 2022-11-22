@@ -1355,7 +1355,15 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
     exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "p"],
     replace={"M_T": "T_subseq_isfinite", "Σ_T": None},
 )
-def mass(Q, T, M_T=None, Σ_T=None, normalize=True, p=2.0):
+def mass(
+    Q,
+    T,
+    M_T=None,
+    Σ_T=None,
+    normalize=True,
+    p=2.0,
+    T_subseq_isfinite=None,
+):
     """
     Compute the distance profile using the MASS algorithm
 
@@ -1383,6 +1391,11 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True, p=2.0):
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
+
+    T_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False). This parameter is ignored when
+        `normalize=True`.
 
     Returns
     -------

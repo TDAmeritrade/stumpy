@@ -159,6 +159,7 @@ def motifs(
     atol=1e-8,
     normalize=True,
     p=2.0,
+    T_subseq_isfinite=None,
 ):
     """
     Discover the top motifs for time series `T`
@@ -236,6 +237,11 @@ def motifs(
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
+
+    T_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False). This parameter is ignored when
+        `normalize=True`.
 
     Return
     ------
