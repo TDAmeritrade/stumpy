@@ -147,7 +147,10 @@ def _motifs(
     return motif_distances, motif_indices
 
 
-@core.non_normalized(aamp_motifs)
+@core.non_normalized(
+    aamp_motifs,
+    exclude=["normalize", "T_subseq_isfinite", "p"],
+)
 def motifs(
     T,
     P,
