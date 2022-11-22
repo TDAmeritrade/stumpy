@@ -147,10 +147,7 @@ def _motifs(
     return motif_distances, motif_indices
 
 
-@core.non_normalized(
-    aamp_motifs,
-    exclude=["normalize", "T_subseq_isfinite", "p"],
-)
+@core.non_normalized(aamp_motifs)
 def motifs(
     T,
     P,
@@ -162,7 +159,6 @@ def motifs(
     atol=1e-8,
     normalize=True,
     p=2.0,
-    T_subseq_isfinite=None,
 ):
     """
     Discover the top motifs for time series `T`
@@ -240,11 +236,6 @@ def motifs(
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
-
-    T_subseq_isfinite : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `T` contains a
-        `np.nan`/`np.inf` value (False). This parameter is ignored when
-        `normalize=True`.
 
     Return
     ------
@@ -358,6 +349,7 @@ def match(
     query_idx=None,
     normalize=True,
     p=2.0,
+    T_subseq_isfinite=None,
 ):
     """
     Find all matches of a query `Q` in a time series `T`
@@ -415,6 +407,11 @@ def match(
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
+
+    T_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False). This parameter is ignored when
+        `normalize=True`.
 
     Returns
     -------
