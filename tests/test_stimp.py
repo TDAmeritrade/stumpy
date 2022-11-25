@@ -50,12 +50,9 @@ def test_stimp_1_percent(T):
         zone = int(np.ceil(m / 4))
         s = zone
         tmp_P, tmp_I = naive.prescrump(T, m, T, s=s, exclusion_zone=zone)
-        ref_mp = naive.scrump(T, m, T, percentage, zone, True, s)
-        for i in range(ref_mp.shape[0]):
-            if tmp_P[i] < ref_mp[i, 0]:
-                ref_mp[i, 0] = tmp_P[i]
-                ref_mp[i, 1] = tmp_I[i]
-        ref_PAN[pan._bfs_indices[idx], : ref_mp.shape[0]] = ref_mp[:, 0]
+        ref_P, ref_I, _, _ = naive.scrump(T, m, T, percentage, zone, True, s)
+        naive.merge_topk_PI(ref_P, tmp_P, ref_I, tmp_I)
+        ref_PAN[pan._bfs_indices[idx], : ref_P.shape[0]] = ref_P
 
     # Compare raw pan
     cmp_PAN = pan._PAN
@@ -108,12 +105,9 @@ def test_stimp_max_m(T):
         zone = int(np.ceil(m / 4))
         s = zone
         tmp_P, tmp_I = naive.prescrump(T, m, T, s=s, exclusion_zone=zone)
-        ref_mp = naive.scrump(T, m, T, percentage, zone, True, s)
-        for i in range(ref_mp.shape[0]):
-            if tmp_P[i] < ref_mp[i, 0]:
-                ref_mp[i, 0] = tmp_P[i]
-                ref_mp[i, 1] = tmp_I[i]
-        ref_PAN[pan._bfs_indices[idx], : ref_mp.shape[0]] = ref_mp[:, 0]
+        ref_P, ref_I, _, _ = naive.scrump(T, m, T, percentage, zone, True, s)
+        naive.merge_topk_PI(ref_P, tmp_P, ref_I, tmp_I)
+        ref_PAN[pan._bfs_indices[idx], : ref_P.shape[0]] = ref_P
 
     # Compare raw pan
     cmp_PAN = pan._PAN

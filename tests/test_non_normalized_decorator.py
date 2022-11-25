@@ -340,6 +340,7 @@ def test_mmotifs(T, m):
     npt.assert_almost_equal(ref_distances, cmp_distances)
 
 
+@pytest.mark.filterwarnings("ignore:All-NaN slice encountered")
 def test_snippets():
     T = np.random.rand(64)
     m = 10

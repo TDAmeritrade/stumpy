@@ -8,6 +8,7 @@ from .aamp import aamp
 
 
 class aampi:
+    # needs to be enhanced to support top-k matrix profile
     """
     Compute an incremental non-normalized (i.e., without z-normalization) matrix profile
     for streaming data
@@ -27,6 +28,11 @@ class aampi:
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
+
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
 
     Attributes
     ----------
@@ -62,7 +68,7 @@ class aampi:
     Note that we have extended this algorithm for AB-joins as well.
     """
 
-    def __init__(self, T, m, egress=True, p=2.0):
+    def __init__(self, T, m, egress=True, p=2.0, k=1):
         """
         Initialize the `stumpi` object
 
@@ -81,6 +87,12 @@ class aampi:
 
         p : float, default 2.0
             The p-norm to apply for computing the Minkowski distance.
+
+
+        k : int, default 1
+            The number of top `k` smallest distances used to construct the matrix
+            profile. Note that this will increase the total computational time and
+            memory usage when k > 1.
         """
         self._T = core._preprocess(T)
         core.check_window_size(m, max_size=self._T.shape[-1])
@@ -213,8 +225,10 @@ class aampi:
             self._I[-1] = I_last + self._n_appended
             self._P[-1] = D[I_last]
 
-        self._left_I[-1] = I_last + self._n_appended
-        self._left_P[-1] = D[I_last]
+        # Regarding the last subsequence, the left profile (index) value is the
+        # same as the profile (index) value.
+        self._left_I[-1] = self._I[-1]
+        self._left_P[-1] = self._P[-1]
 
         self._p_norm[:] = self._p_norm_new
 
@@ -271,8 +285,11 @@ class aampi:
         else:
             I_new = np.append(self._I, I_last)
             P_new = np.append(self._P, D[I_last])
-        left_I_new = np.append(self._left_I, I_last)
-        left_P_new = np.append(self._left_P, D[I_last])
+
+        # Regarding the last subsequence, the left profile (index) value is the
+        # same as the profile (index) value.
+        left_I_new = np.append(self._left_I, I_new[-1])
+        left_P_new = np.append(self._left_P, P_new[-1])
 
         self._T = T_new
         self._P = P_new

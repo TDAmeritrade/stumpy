@@ -214,6 +214,7 @@ class _stimp:
                     ignore_trivial=True,
                     percentage=self._percentage,
                     pre_scrump=self._pre_scrump,
+                    k=1,
                 )
                 approx.update()
                 self._PAN[
