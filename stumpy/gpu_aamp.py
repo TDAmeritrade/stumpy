@@ -685,12 +685,12 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
         core._merge_topk_PI(profile[0], profile[i], indices[0], indices[i])
 
         # Update (top-1) left matrix profile and matrix profile indices
-        mask = profile_L[0] < profile_L[i]
+        mask = profile_L[0] > profile_L[i]
         profile_L[0][mask] = profile_L[i][mask]
         indices_L[0][mask] = indices_L[i][mask]
 
         # Update (top-1) right matrix profile and matrix profile indices
-        mask = profile_R[0] < profile_R[i]
+        mask = profile_R[0] > profile_R[i]
         profile_R[0][mask] = profile_R[i][mask]
         indices_R[0][mask] = indices_R[i][mask]
 
