@@ -241,22 +241,22 @@ def _aamp(
 
     Returns
     -------
-    profile : numpy.ndarray
+    out1 : numpy.ndarray
         The (top-k) matrix profile
 
-    indices : numpy.ndarray
-        The (top-k) matrix profile indices
-
-    left profile : numpy.ndarray
+    out2 : numpy.ndarray
         The (top-1) left matrix profile
 
-    left indices : numpy.ndarray
-        The (top-1) left matrix profile indices
-
-    right profile : numpy.ndarray
+    out3 : numpy.ndarray
         The (top-1) right matrix profile
 
-    right indices : numpy.ndarray
+    out4 : numpy.ndarray
+        The (top-k) matrix profile indices
+
+    out5 : numpy.ndarray
+        The (top-1) left matrix profile indices
+
+    out6 : numpy.ndarray
         The (top-1) right matrix profile indices
 
     Notes
