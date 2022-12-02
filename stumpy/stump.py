@@ -142,11 +142,6 @@ def _compute_diagonal(
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
 
-    k : int
-        The number of top `k` smallest distances used to construct the matrix profile.
-        Note that this will increase the total computational time and memory usage
-        when k > 1.
-
     Returns
     -------
     None
