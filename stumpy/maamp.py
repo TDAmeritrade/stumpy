@@ -721,7 +721,7 @@ def _maamp(
 
     Parameters
     ----------
-    T: numpy.ndarray
+    T : numpy.ndarray
         The time series or sequence for which to compute the multi-dimensional
         matrix profile
 

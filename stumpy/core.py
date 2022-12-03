@@ -2750,19 +2750,19 @@ def _shift_insert_at_index(a, idx, v, shift="right"):
 
     Parameters
     ----------
-    a: numpy.ndarray
+    a : numpy.ndarray
         A 1d array
 
-    idx: int
+    idx : int
         The index at which the value `v` should be inserted. This can be any
         integer number from `0` to `len(a)`. When `idx=len(a)` and `shift="right"`,
         OR when `idx=0` and `shift="left"`, then no change will occur on
         the input array `a`.
 
-    v: float
+    v : float
         The value that should be inserted into array `a` at index `idx`
 
-    shift: str, default "right"
+    shift : str, default "right"
         The value that indicates whether the shifting of elements should be towards
         the right or left. If `shift="right"` (default), all elements in `a[idx:]`
         are shifted to the right by one element. If `shift="left"`, all elements

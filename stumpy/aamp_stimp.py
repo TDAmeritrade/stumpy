@@ -550,6 +550,9 @@ class aamp_stimped(_aamp_stimp):
 
         step : int, default 1
             The step between subsequence window sizes
+
+        p : float, default 2.0
+            The p-norm to apply for computing the Minkowski distance.
         """
         super().__init__(
             T,

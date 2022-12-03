@@ -168,6 +168,11 @@ class aampi:
         """
         Ingress a new data point, egress the oldest data point, and update the matrix
         profile and matrix profile indices
+
+        Parameters
+        ----------
+        t : float
+            A single new data point to be appended to `T`
         """
         self._n = self._T.shape[0]
         l = self._n - self._m + 1 - 1  # Subtract 1 due to egress
@@ -245,6 +250,11 @@ class aampi:
         """
         Ingress a new data point and update the (top-k) matrix profile and matrix
         profile indices without egressing the oldest data point
+
+        Parameters
+        ----------
+        t : float
+            A single new data point to be appended to `T`
         """
         self._n = self._T.shape[0]
         l = self._n - self._m + 1

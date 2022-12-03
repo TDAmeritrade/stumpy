@@ -202,7 +202,7 @@ test_coverage()
         coverage run --append --source=. -m pytest -x -W ignore::RuntimeWarning -W ignore::DeprecationWarning $testfile
         check_errs $?
     done
-    coverage report -m --skip-covered --omit=setup.py
+    coverage report -m --skip-covered --omit=setup.py,docstring.py
 }
 
 check_links()

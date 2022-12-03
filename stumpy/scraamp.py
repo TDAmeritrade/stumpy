@@ -331,7 +331,7 @@ def _prescraamp(
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
 
-    i : int
+    indices : int
         The subsequence index in `T_B` that corresponds to `Q`
 
     s : int

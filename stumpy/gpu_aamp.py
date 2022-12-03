@@ -115,6 +115,14 @@ def _compute_and_update_PI_kernel(
     compute_p_norm : bool
         A boolean flag for whether or not to compute the p-norm
 
+    bfs : numpy.ndarray
+        The breadth-first-search indices where the missing leaves of its corresponding
+        binary search tree are filled with -1.
+
+    nlevel : int
+        The number of levels in the binary search tree from which the array
+        `bfs` is obtained.
+
     k : int
         The number of top `k` smallest distances used to construct the matrix profile.
         Note that this will increase the total computational time and memory usage
