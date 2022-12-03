@@ -1,13 +1,46 @@
 import numpy as np
+from numba import cuda
 import numpy.testing as npt
 import pandas as pd
 from scipy.spatial.distance import cdist
 from stumpy import core, config
 import pytest
+from unittest.mock import patch
 import os
 import math
 
 import naive
+
+if cuda.is_available():
+    from stumpy.core import _gpu_searchsorted_left, _gpu_searchsorted_right
+else:  # pragma: no cover
+    from stumpy.core import (
+        _gpu_searchsorted_left_driver_not_found as _gpu_searchsorted_left,
+    )
+    from stumpy.core import (
+        _gpu_searchsorted_right_driver_not_found as _gpu_searchsorted_right,
+    )
+
+try:
+    from numba.errors import NumbaPerformanceWarning
+except ModuleNotFoundError:
+    from numba.core.errors import NumbaPerformanceWarning
+
+TEST_THREADS_PER_BLOCK = 10
+
+if not cuda.is_available():  # pragma: no cover
+    pytest.skip("Skipping Tests No GPUs Available", allow_module_level=True)
+
+
+@cuda.jit("(f8[:, :], f8[:], i8[:], i8, b1, i8[:])")
+def _gpu_searchsorted_kernel(a, v, bfs, nlevel, is_left, idx):
+    # A wrapper kernel for calling device function _gpu_searchsorted_left/right.
+    i = cuda.grid(1)
+    if i < a.shape[0]:
+        if is_left:
+            idx[i] = _gpu_searchsorted_left(a[i], v[i], bfs, nlevel)
+        else:
+            idx[i] = _gpu_searchsorted_right(a[i], v[i], bfs, nlevel)
 
 
 def naive_rolling_window_dot_product(Q, T):
@@ -288,12 +321,11 @@ def test_compute_mean_std(Q, T):
 def test_compute_mean_std_chunked(Q, T):
     m = Q.shape[0]
 
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 2
-    ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
-    ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
-    comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
-    comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
+    with patch("stumpy.config.STUMPY_MEAN_STD_NUM_CHUNKS", 2):
+        ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
+        ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
+        comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
+        comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
 
     npt.assert_almost_equal(ref_μ_Q, comp_μ_Q)
     npt.assert_almost_equal(ref_σ_Q, comp_σ_Q)
@@ -305,12 +337,11 @@ def test_compute_mean_std_chunked(Q, T):
 def test_compute_mean_std_chunked_many(Q, T):
     m = Q.shape[0]
 
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 128
-    ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
-    ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
-    comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
-    comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
+    with patch("stumpy.config.STUMPY_MEAN_STD_NUM_CHUNKS", 128):
+        ref_μ_Q, ref_σ_Q = naive.compute_mean_std(Q, m)
+        ref_M_T, ref_Σ_T = naive.compute_mean_std(T, m)
+        comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
+        comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
 
     npt.assert_almost_equal(ref_μ_Q, comp_μ_Q)
     npt.assert_almost_equal(ref_σ_Q, comp_σ_Q)
@@ -343,12 +374,11 @@ def test_compute_mean_std_multidimensional_chunked(Q, T):
     Q = np.array([Q, np.random.uniform(-1000, 1000, [Q.shape[0]])])
     T = np.array([T, T, np.random.uniform(-1000, 1000, [T.shape[0]])])
 
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 2
-    ref_μ_Q, ref_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
-    ref_M_T, ref_Σ_T = naive_compute_mean_std_multidimensional(T, m)
-    comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
-    comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
+    with patch("stumpy.config.STUMPY_MEAN_STD_NUM_CHUNKS", 2):
+        ref_μ_Q, ref_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
+        ref_M_T, ref_Σ_T = naive_compute_mean_std_multidimensional(T, m)
+        comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
+        comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
 
     npt.assert_almost_equal(ref_μ_Q, comp_μ_Q)
     npt.assert_almost_equal(ref_σ_Q, comp_σ_Q)
@@ -363,12 +393,11 @@ def test_compute_mean_std_multidimensional_chunked_many(Q, T):
     Q = np.array([Q, np.random.uniform(-1000, 1000, [Q.shape[0]])])
     T = np.array([T, T, np.random.uniform(-1000, 1000, [T.shape[0]])])
 
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 128
-    ref_μ_Q, ref_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
-    ref_M_T, ref_Σ_T = naive_compute_mean_std_multidimensional(T, m)
-    comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
-    comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
-    config.STUMPY_MEAN_STD_NUM_CHUNKS = 1
+    with patch("stumpy.config.STUMPY_MEAN_STD_NUM_CHUNKS", 128):
+        ref_μ_Q, ref_σ_Q = naive_compute_mean_std_multidimensional(Q, m)
+        ref_M_T, ref_Σ_T = naive_compute_mean_std_multidimensional(T, m)
+        comp_μ_Q, comp_σ_Q = core.compute_mean_std(Q, m)
+        comp_M_T, comp_Σ_T = core.compute_mean_std(T, m)
 
     npt.assert_almost_equal(ref_μ_Q, comp_μ_Q)
     npt.assert_almost_equal(ref_σ_Q, comp_σ_Q)
@@ -1061,6 +1090,288 @@ def test_select_P_ABBA_val_inf():
     npt.assert_almost_equal(ref, comp)
 
 
+def test_merge_topk_PI_without_overlap():
+    # This is to test function `core._merge_topk_PI(PA, PB, IA, IB)` when there
+    # is no overlap between row IA[i] and row IB[i].
+    n = 50
+    for k in range(1, 6):
+        PA = np.random.rand(n * k).reshape(n, k)
+        PA[:, :] = np.sort(PA, axis=1)  # sorting each row separately
+
+        PB = np.random.rand(n * k).reshape(n, k)
+        col_idx = np.random.randint(0, k, size=n)
+        for i in range(n):  # creating ties between values of PA and PB
+            PB[i, col_idx[i]] = np.random.choice(PA[i], size=1, replace=False)
+        PB[:, :] = np.sort(PB, axis=1)  # sorting each row separately
+
+        IA = np.arange(n * k).reshape(n, k)
+        IB = IA + n * k
+
+        ref_P = PA.copy()
+        ref_I = IA.copy()
+
+        comp_P = PA.copy()
+        comp_I = IA.copy()
+
+        naive.merge_topk_PI(ref_P, PB.copy(), ref_I, IB.copy())
+        core._merge_topk_PI(comp_P, PB.copy(), comp_I, IB.copy())
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_merge_topk_PI_with_overlap():
+    # This is to test function `core._merge_topk_PI(PA, PB, IA, IB)` when there
+    # is overlap between row IA[i] and row IB[i].
+    n = 50
+    for k in range(1, 6):
+        # note: we do not have overlap issue when k is 1. The `k=1` is considered
+        # for the sake of consistency with the `without-overlap` test function.
+        PA = np.random.rand(n * k).reshape(n, k)
+        PB = np.random.rand(n * k).reshape(n, k)
+
+        IA = np.arange(n * k).reshape(n, k)
+        IB = IA + n * k
+
+        num_overlaps = np.random.randint(1, k + 1, size=n)
+        for i in range(n):
+            # create overlaps
+            col_IDX = np.random.choice(np.arange(k), num_overlaps[i], replace=False)
+            imprecision = np.random.uniform(low=-1e-06, high=1e-06, size=len(col_IDX))
+            PB[i, col_IDX] = PA[i, col_IDX] + imprecision
+            IB[i, col_IDX] = IA[i, col_IDX]
+
+        # sort each row of PA/PB (and update  IA/IB accordingly)
+        IDX = np.argsort(PA, axis=1)
+        PA[:, :] = np.take_along_axis(PA, IDX, axis=1)
+        IA[:, :] = np.take_along_axis(IA, IDX, axis=1)
+
+        IDX = np.argsort(PB, axis=1)
+        PB[:, :] = np.take_along_axis(PB, IDX, axis=1)
+        IB[:, :] = np.take_along_axis(IB, IDX, axis=1)
+
+        ref_P = PA.copy()
+        ref_I = IA.copy()
+
+        comp_P = PA.copy()
+        comp_I = IA.copy()
+
+        naive.merge_topk_PI(ref_P, PB.copy(), ref_I, IB.copy())
+        core._merge_topk_PI(comp_P, PB.copy(), comp_I, IB.copy())
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_merge_topk_PI_with_1D_input():
+    # including some overlaps randomly
+    n = 50
+    PA = np.random.rand(n)
+    PB = np.random.rand(n)
+
+    IA = np.arange(n)
+    IB = IA + n
+
+    n_overlaps = np.random.randint(1, n + 1)
+    IDX_rows_with_overlaps = np.random.choice(np.arange(n), n_overlaps, replace=False)
+    imprecision = np.random.uniform(low=-1e-06, high=1e-06, size=n_overlaps)
+    PB[IDX_rows_with_overlaps] = PA[IDX_rows_with_overlaps] + imprecision
+    IB[IDX_rows_with_overlaps] = IA[IDX_rows_with_overlaps]
+
+    ref_P = PA.copy()
+    ref_I = IA.copy()
+    comp_P = PA.copy()
+    comp_I = IA.copy()
+
+    naive.merge_topk_PI(ref_P, PB.copy(), ref_I, IB.copy())
+    core._merge_topk_PI(comp_P, PB.copy(), comp_I, IB.copy())
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_merge_topk_PI_with_1D_input_hardcoded():
+    # It is possible that the generated arrays in the test function
+    # `test_merge_topk_PI_with_1D_input` does not trigger the if-block
+    # `merge_topk_PI` in 1D case. This test function ensure that the if-block
+    # will be executed.
+    PA = np.array([0.1, 0.3, 0.5, 0.7, 0.9])
+    PB = np.array([0.2, 0.3, 0.6, 0.8, 1.0])
+
+    IA = np.array([0, 1, 2, 3, 4])
+    IB = np.array([10, 1, 12, 13, 14])
+
+    ref_P = PA.copy()
+    ref_I = IA.copy()
+
+    comp_P = PA.copy()
+    comp_I = IA.copy()
+
+    naive.merge_topk_PI(ref_P, PB.copy(), ref_I, IB.copy())
+    core._merge_topk_PI(comp_P, PB.copy(), comp_I, IB.copy())
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_merge_topk_ρI_without_overlap():
+    # This is to test function `core._merge_topk_ρI(ρA, ρB, IA, IB)` when there
+    # is no overlap between row IA[i] and row IB[i].
+    n = 50
+    for k in range(1, 6):
+        ρA = np.random.rand(n * k).reshape(n, k)
+        ρA[:, :] = np.sort(ρA, axis=1)  # sorting each row separately
+
+        ρB = np.random.rand(n * k).reshape(n, k)
+        col_idx = np.random.randint(0, k, size=n)
+        for i in range(n):  # creating ties between values of PA and PB
+            ρB[i, col_idx[i]] = np.random.choice(ρA[i], size=1, replace=False)
+        ρB[:, :] = np.sort(ρB, axis=1)  # sorting each row separately
+
+        IA = np.arange(n * k).reshape(n, k)
+        IB = IA + n * k
+
+        ref_ρ = ρA.copy()
+        ref_I = IA.copy()
+
+        comp_ρ = ρA.copy()
+        comp_I = IA.copy()
+
+        naive.merge_topk_ρI(ref_ρ, ρB.copy(), ref_I, IB.copy())
+        core._merge_topk_ρI(comp_ρ, ρB.copy(), comp_I, IB.copy())
+
+        npt.assert_almost_equal(ref_ρ, comp_ρ)
+        npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_merge_topk_ρI_with_overlap():
+    # This is to test function `core._merge_topk_ρI(ρA, ρB, IA, IB)` when there
+    # is overlap between row IA[i] and row IB[i].
+    n = 50
+    for k in range(1, 6):
+        # note: we do not have overlap issue when k is 1. The `k=1` is considered
+        # for the sake of consistency with the `without-overlap` test function.
+        ρA = np.random.rand(n * k).reshape(n, k)
+        ρB = np.random.rand(n * k).reshape(n, k)
+
+        IA = np.arange(n * k).reshape(n, k)
+        IB = IA + n * k
+
+        num_overlaps = np.random.randint(1, k + 1, size=n)
+        for i in range(n):
+            # create overlaps
+            col_IDX = np.random.choice(np.arange(k), num_overlaps[i], replace=False)
+            imprecision = np.random.uniform(low=-1e-06, high=1e-06, size=len(col_IDX))
+            ρB[i, col_IDX] = ρA[i, col_IDX] + imprecision
+            IB[i, col_IDX] = IA[i, col_IDX]
+
+        # sort each row of ρA/ρB (and update IA/IB accordingly)
+        IDX = np.argsort(ρA, axis=1)
+        ρA[:, :] = np.take_along_axis(ρA, IDX, axis=1)
+        IA[:, :] = np.take_along_axis(IA, IDX, axis=1)
+
+        IDX = np.argsort(ρB, axis=1)
+        ρB[:, :] = np.take_along_axis(ρB, IDX, axis=1)
+        IB[:, :] = np.take_along_axis(IB, IDX, axis=1)
+
+        ref_ρ = ρA.copy()
+        ref_I = IA.copy()
+
+        comp_ρ = ρA.copy()
+        comp_I = IA.copy()
+
+        naive.merge_topk_ρI(ref_ρ, ρB.copy(), ref_I, IB.copy())
+        core._merge_topk_ρI(comp_ρ, ρB.copy(), comp_I, IB.copy())
+
+        npt.assert_almost_equal(ref_ρ, comp_ρ)
+        npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_merge_topk_ρI_with_1D_input():
+    # including some overlaps randomly
+    n = 50
+    ρA = np.random.rand(n)
+    ρB = np.random.rand(n)
+
+    IA = np.arange(n)
+    IB = IA + n
+
+    n_overlaps = np.random.randint(1, n + 1)
+    IDX_rows_with_overlaps = np.random.choice(np.arange(n), n_overlaps, replace=False)
+    imprecision = np.random.uniform(low=-1e-06, high=1e-06, size=n_overlaps)
+    ρB[IDX_rows_with_overlaps] = ρA[IDX_rows_with_overlaps] + imprecision
+    IB[IDX_rows_with_overlaps] = IA[IDX_rows_with_overlaps]
+
+    ref_ρ = ρA.copy()
+    ref_I = IA.copy()
+    comp_ρ = ρA.copy()
+    comp_I = IA.copy()
+
+    naive.merge_topk_ρI(ref_ρ, ρB.copy(), ref_I, IB.copy())
+    core._merge_topk_ρI(comp_ρ, ρB.copy(), comp_I, IB.copy())
+
+    npt.assert_almost_equal(ref_ρ, comp_ρ)
+    npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_merge_topk_ρI_with_1D_input_hardcoded():
+    # It is possible that the generated arrays in the test function
+    # `test_merge_topk_ρI_with_1D_input` does not trigger the if-block
+    # `merge_topk_ρI` in 1D case. This test function ensure that the if-block
+    # will be executed.
+    ρA = np.array([0.1, 0.3, 0.5, 0.7, 0.9])
+    ρB = np.array([0.2, 0.3, 0.6, 0.8, 1.0])
+
+    IA = np.array([0, 1, 2, 3, 4])
+    IB = np.array([10, 1, 12, 13, 14])
+
+    ref_ρ = ρA.copy()
+    ref_I = IA.copy()
+
+    comp_ρ = ρA.copy()
+    comp_I = IA.copy()
+
+    naive.merge_topk_ρI(ref_ρ, ρB.copy(), ref_I, IB.copy())
+    core._merge_topk_ρI(comp_ρ, ρB.copy(), comp_I, IB.copy())
+
+    npt.assert_almost_equal(ref_ρ, comp_ρ)
+    npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_shift_insert_at_index():
+    for k in range(1, 6):
+        a = np.random.rand(k)
+        ref = np.empty(k, dtype=np.float64)
+        comp = np.empty(k, dtype=np.float64)
+
+        indices = np.arange(k + 1)
+        values = np.random.rand(k + 1)
+
+        # test shift = "right"
+        for (idx, v) in zip(indices, values):
+            ref[:] = a
+            comp[:] = a
+
+            ref = np.insert(ref, idx, v)[:-1]
+            core._shift_insert_at_index(
+                comp, idx, v, shift="right"
+            )  # update comp in place
+
+            npt.assert_almost_equal(ref, comp)
+
+        # test shift = "left"
+        for (idx, v) in zip(indices, values):
+            ref[:] = a
+            comp[:] = a
+
+            ref = np.insert(ref, idx, v)[1:]
+            core._shift_insert_at_index(
+                comp, idx, v, shift="left"
+            )  # update comp in place
+
+            npt.assert_almost_equal(ref, comp)
+
+
 def test_check_P():
     with pytest.raises(ValueError):
         core._check_P(np.random.rand(10).reshape(2, 5))
@@ -1086,3 +1397,52 @@ def test_find_matches_maxmatch():
         comp = core._find_matches(D, excl_zone, max_distance, max_matches)
 
         npt.assert_almost_equal(ref, comp)
+
+
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
+def test_gpu_searchsorted():
+    if not cuda.is_available():  # pragma: no cover
+        pytest.skip("Skipping Tests No GPUs Available", allow_module_level=True)
+
+    n = 3 * config.STUMPY_THREADS_PER_BLOCK + 1
+    V = np.empty(n, dtype=np.float64)
+
+    threads_per_block = config.STUMPY_THREADS_PER_BLOCK
+    blocks_per_grid = math.ceil(n / threads_per_block)
+
+    for k in range(1, 32):
+        device_bfs = cuda.to_device(core._bfs_indices(k, fill_value=-1))
+        nlevel = np.floor(np.log2(k) + 1).astype(np.int64)
+
+        A = np.sort(np.random.rand(n, k), axis=1)
+        device_A = cuda.to_device(A)
+
+        V[:] = np.random.rand(n)
+        for i, idx in enumerate(np.random.choice(np.arange(n), size=k, replace=False)):
+            V[idx] = A[idx, i]  # create ties
+        device_V = cuda.to_device(V)
+
+        is_left = True  # test case
+        ref_IDX = [np.searchsorted(A[i], V[i], side="left") for i in range(n)]
+        ref_IDX = np.asarray(ref_IDX, dtype=np.int64)
+
+        comp_IDX = np.full(n, -1, dtype=np.int64)
+        device_comp_IDX = cuda.to_device(comp_IDX)
+        _gpu_searchsorted_kernel[blocks_per_grid, threads_per_block](
+            device_A, device_V, device_bfs, nlevel, is_left, device_comp_IDX
+        )
+        comp_IDX = device_comp_IDX.copy_to_host()
+        npt.assert_array_equal(ref_IDX, comp_IDX)
+
+        is_left = False  # test case
+        ref_IDX = [np.searchsorted(A[i], V[i], side="right") for i in range(n)]
+        ref_IDX = np.asarray(ref_IDX, dtype=np.int64)
+
+        comp_IDX = np.full(n, -1, dtype=np.int64)
+        device_comp_IDX = cuda.to_device(comp_IDX)
+        _gpu_searchsorted_kernel[blocks_per_grid, threads_per_block](
+            device_A, device_V, device_bfs, nlevel, is_left, device_comp_IDX
+        )
+        comp_IDX = device_comp_IDX.copy_to_host()
+        npt.assert_array_equal(ref_IDX, comp_IDX)
