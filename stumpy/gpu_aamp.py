@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 @cuda.jit(
     "(i8, f8[:], f8[:], i8, f8, f8[:], f8[:], f8[:], b1[:], b1[:],"
-    "i8, b1, i8, f8[:, :], i8[:, :], b1)"
+    "i8, b1, i8, f8[:, :], f8[:], f8[:], i8[:, :], i8[:], i8[:], b1,"
+    "i8[:], i8, i8)"
 )
 def _compute_and_update_PI_kernel(
     i,
@@ -29,12 +30,19 @@ def _compute_and_update_PI_kernel(
     p_norm_first,
     T_A_subseq_isfinite,
     T_B_subseq_isfinite,
-    k,
+    w,
     ignore_trivial,
     excl_zone,
     profile,
+    profile_L,
+    profile_R,
     indices,
+    indices_L,
+    indices_R,
     compute_p_norm,
+    bfs,
+    nlevel,
+    k,
 ):
     """
     A Numba CUDA kernel to update the non-normalized (i.e., without z-normalization)
@@ -75,7 +83,7 @@ def _compute_and_update_PI_kernel(
         A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
-    k : int
+    w : int
         The total number of sliding windows to iterate over
 
     ignore_trivial : bool
@@ -87,17 +95,30 @@ def _compute_and_update_PI_kernel(
         sliding window
 
     profile : numpy.ndarray
-        Matrix profile. The first column consists of the global matrix profile,
-        the second column consists of the left matrix profile, and the third
-        column consists of the right matrix profile.
+        The (top-k) matrix profile, sorted in ascending order per row
+
+    profile_L : numpy.ndarray
+        The (top-1) left matrix profile
+
+    profile_R : numpy.ndarray
+        The (top-1) right matrix profile
 
     indices : numpy.ndarray
-        The first column consists of the matrix profile indices, the second
-        column consists of the left matrix profile indices, and the third
-        column consists of the right matrix profile indices.
+        The (top-k) matrix profile indices
+
+    indices_L : numpy.ndarray
+        The (top-1) left matrix profile indices
+
+    indices_R : numpy.ndarray
+        The (top-1) right matrix profile indices
 
     compute_p_norm : bool
         A boolean flag for whether or not to compute the p-norm
+
+    k : int
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
 
     Returns
     -------
@@ -129,7 +150,7 @@ def _compute_and_update_PI_kernel(
 
     for j in range(start, p_norm_out.shape[0], stride):
         zone_start = max(0, j - excl_zone)
-        zone_stop = min(k, j + excl_zone)
+        zone_stop = min(w, j + excl_zone)
 
         if compute_p_norm:
             p_norm_out[j] = (
@@ -149,16 +170,21 @@ def _compute_and_update_PI_kernel(
         if ignore_trivial:
             if i <= zone_stop and i >= zone_start:
                 p_norm = np.inf
-            if p_norm < profile[j, 1] and i < j:
-                profile[j, 1] = p_norm
-                indices[j, 1] = i
-            if p_norm < profile[j, 2] and i > j:
-                profile[j, 2] = p_norm
-                indices[j, 2] = i
+            if p_norm < profile_L[j] and i < j:
+                profile_L[j] = p_norm
+                indices_L[j] = i
+            if p_norm < profile_R[j] and i > j:
+                profile_R[j] = p_norm
+                indices_R[j] = i
 
-        if p_norm < profile[j, 0]:
-            profile[j, 0] = p_norm
-            indices[j, 0] = i
+        if p_norm < profile[j, -1]:
+            idx = core._gpu_searchsorted_right(profile[j], p_norm, bfs, nlevel)
+            for g in range(k - 1, idx, -1):
+                profile[j, g] = profile[j, g - 1]
+                indices[j, g] = indices[j, g - 1]
+
+            profile[j, idx] = p_norm
+            indices[j, idx] = i
 
 
 def _gpu_aamp(
@@ -172,10 +198,11 @@ def _gpu_aamp(
     p,
     p_norm_fname,
     p_norm_first_fname,
-    k,
+    w,
     ignore_trivial=True,
     range_start=1,
     device_id=0,
+    k=1,
 ):
     """
     A Numba CUDA version of AAMP for parallel computation of the non-normalized (i.e.,
@@ -223,7 +250,7 @@ def _gpu_aamp(
         The file name for the p-norm for the first window relative to the current
         sliding window
 
-    k : int
+    w : int
         The total number of sliding windows to iterate over
 
     ignore_trivial : bool, default True
@@ -237,16 +264,30 @@ def _gpu_aamp(
     device_id : int, default 0
         The (GPU) device number to use. The default value is `0`.
 
+    k : int
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
+
     Returns
     -------
     profile_fname : str
-        The file name for the matrix profile
+        The file name for the (top-k) matrix profile
+
+    profile_L_fname : str
+        The file name for the (top-1) left matrix profile
+
+    profile_R_fname : str
+        The file name for the (top-1) right matrix profile
 
     indices_fname : str
-        The file name for the matrix profile indices. The first column of the
-        array consists of the matrix profile indices, the second column consists
-        of the left matrix profile indices, and the third column consists of the
-        right matrix profile indices.
+        The file name for the (top-k) matrix profile indices
+
+    indices_L_fname : str
+        The file name for the (top-1) left matrix profile indices
+
+    indices_R_fname : str
+        The file name for the (top-1) right matrix profile indices
 
     Notes
     -----
@@ -263,7 +304,7 @@ def _gpu_aamp(
     See Table II, Figure 5, and Figure 6
     """
     threads_per_block = config.STUMPY_THREADS_PER_BLOCK
-    blocks_per_grid = math.ceil(k / threads_per_block)
+    blocks_per_grid = math.ceil(w / threads_per_block)
 
     T_A = np.load(T_A_fname, allow_pickle=False)
     T_B = np.load(T_B_fname, allow_pickle=False)
@@ -271,6 +312,10 @@ def _gpu_aamp(
     p_norm_first = np.load(p_norm_first_fname, allow_pickle=False)
     T_A_subseq_isfinite = np.load(T_A_subseq_isfinite_fname, allow_pickle=False)
     T_B_subseq_isfinite = np.load(T_B_subseq_isfinite_fname, allow_pickle=False)
+
+    device_bfs = cuda.to_device(core._bfs_indices(k, fill_value=-1))
+    nlevel = np.floor(np.log2(k) + 1).astype(np.int64)
+    # number of levels in binary search tree from which `bfs` is constructed.
 
     with cuda.gpus[device_id]:
         device_T_A = cuda.to_device(T_A)
@@ -285,11 +330,22 @@ def _gpu_aamp(
             device_T_B = cuda.to_device(T_B)
             device_T_B_subseq_isfinite = cuda.to_device(T_B_subseq_isfinite)
 
-        profile = np.full((k, 3), np.inf, dtype=np.float64)
-        indices = np.full((k, 3), -1, dtype=np.int64)
+        profile = np.full((w, k), np.inf, dtype=np.float64)
+        indices = np.full((w, k), -1, dtype=np.int64)
+
+        profile_L = np.full(w, np.inf, dtype=np.float64)
+        indices_L = np.full(w, -1, dtype=np.int64)
+
+        profile_R = np.full(w, np.inf, dtype=np.float64)
+        indices_R = np.full(w, -1, dtype=np.int64)
 
         device_profile = cuda.to_device(profile)
+        device_profile_L = cuda.to_device(profile_L)
+        device_profile_R = cuda.to_device(profile_R)
         device_indices = cuda.to_device(indices)
+        device_indices_L = cuda.to_device(indices_L)
+        device_indices_R = cuda.to_device(indices_R)
+
         _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
             range_start - 1,
             device_T_A,
@@ -301,12 +357,19 @@ def _gpu_aamp(
             device_p_norm_first,
             device_T_A_subseq_isfinite,
             device_T_B_subseq_isfinite,
-            k,
+            w,
             ignore_trivial,
             excl_zone,
             device_profile,
+            device_profile_L,
+            device_profile_R,
             device_indices,
+            device_indices_L,
+            device_indices_R,
             False,
+            device_bfs,
+            nlevel,
+            k,
         )
 
         for i in range(range_start, range_stop):
@@ -321,36 +384,61 @@ def _gpu_aamp(
                 device_p_norm_first,
                 device_T_A_subseq_isfinite,
                 device_T_B_subseq_isfinite,
-                k,
+                w,
                 ignore_trivial,
                 excl_zone,
                 device_profile,
+                device_profile_L,
+                device_profile_R,
                 device_indices,
+                device_indices_L,
+                device_indices_R,
                 True,
+                device_bfs,
+                nlevel,
+                k,
             )
 
         profile = device_profile.copy_to_host()
+        profile_L = device_profile_L.copy_to_host()
+        profile_R = device_profile_R.copy_to_host()
         indices = device_indices.copy_to_host()
-        profile = np.power(profile, 1.0 / p)
+        indices_L = device_indices_L.copy_to_host()
+        indices_R = device_indices_R.copy_to_host()
+
+        profile[:, :] = np.power(profile, 1.0 / p)
+        profile_L[:] = np.power(profile_L, 1.0 / p)
+        profile_R[:] = np.power(profile_R, 1.0 / p)
 
         profile_fname = core.array_to_temp_file(profile)
+        profile_L_fname = core.array_to_temp_file(profile_L)
+        profile_R_fname = core.array_to_temp_file(profile_R)
         indices_fname = core.array_to_temp_file(indices)
+        indices_L_fname = core.array_to_temp_file(indices_L)
+        indices_R_fname = core.array_to_temp_file(indices_R)
 
-    return profile_fname, indices_fname
+    return (
+        profile_fname,
+        profile_L_fname,
+        profile_R_fname,
+        indices_fname,
+        indices_L_fname,
+        indices_R_fname,
+    )
 
 
 def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
     # function needs to be revised to return (top-k) matrix profile and
     # matrix profile indices
     """
-    Compute the non-normalized (i.e., without z-normalization) matrix profile with one
-    or more GPU devices
+    Compute the non-normalized (i.e., without z-normalization) matrix profile with
+    one or more GPU devices
 
     This is a convenience wrapper around the Numba `cuda.jit` `_gpu_aamp` function
-    which computes the non-normalized matrix profile according to modified version
-    GPU-STOMP. The default number of threads-per-block is set to `512` and may be
-    changed by setting the global parameter `config.STUMPY_THREADS_PER_BLOCK` to an
-    appropriate number based on your GPU hardware.
+    which computes the non-normalized (top-k) matrix profile according to modified
+    version GPU-STOMP. The default number of threads-per-block is set to `512` and
+    may be changed by setting the global parameter `config.STUMPY_THREADS_PER_BLOCK`
+    to an appropriate number based on your GPU hardware.
 
     Parameters
     ----------
@@ -385,10 +473,16 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
     Returns
     -------
     out : numpy.ndarray
-        The first column consists of the matrix profile, the second column
-        consists of the matrix profile indices, the third column consists of
-        the left matrix profile indices, and the fourth column consists of
-        the right matrix profile indices.
+        When k = 1 (default), the first column consists of the matrix profile,
+        the second column consists of the matrix profile indices, the third column
+        consists of the left matrix profile indices, and the fourth column consists
+        of the right matrix profile indices. However, when k > 1, the output array
+        will contain exactly 2 * k + 2 columns. The first k columns (i.e., out[:, :k])
+        consists of the top-k matrix profile, the next set of k columns
+        (i.e., out[:, k:2k]) consists of the corresponding top-k matrix profile
+        indices, and the last two columns (i.e., out[:, 2k] and out[:, 2k+1] or,
+        equivalently, out[:, -2] and out[:, -1]) correspond to the top-1 left
+        matrix profile indices and the top-1 right matrix profile indices, respectively.
 
     Notes
     -----
@@ -434,7 +528,7 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
         logger.warning("Try setting `ignore_trivial = False`.")
 
     n = T_B.shape[0]
-    k = T_A.shape[0] - m + 1
+    w = T_A.shape[0] - m + 1
     l = n - m + 1
     excl_zone = int(
         np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
@@ -445,8 +539,6 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
     T_A_subseq_isfinite_fname = core.array_to_temp_file(T_A_subseq_isfinite)
     T_B_subseq_isfinite_fname = core.array_to_temp_file(T_B_subseq_isfinite)
 
-    out = np.empty((k, 4), dtype=object)
-
     if isinstance(device_id, int):
         device_ids = [device_id]
     else:
@@ -454,6 +546,12 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
 
     profile = [None] * len(device_ids)
     indices = [None] * len(device_ids)
+
+    profile_L = [None] * len(device_ids)
+    indices_L = [None] * len(device_ids)
+
+    profile_R = [None] * len(device_ids)
+    indices_R = [None] * len(device_ids)
 
     for _id in device_ids:
         with cuda.gpus[_id]:
@@ -499,16 +597,24 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
                     p,
                     p_norm_fname,
                     p_norm_first_fname,
-                    k,
+                    w,
                     ignore_trivial,
                     start + 1,
                     device_ids[idx],
+                    k,
                 ),
             )
         else:
             # Execute last chunk in parent process
             # Only parent process is executed when a single GPU is requested
-            profile[idx], indices[idx] = _gpu_aamp(
+            (
+                profile[idx],
+                profile_L[idx],
+                profile_R[idx],
+                indices[idx],
+                indices_L[idx],
+                indices_R[idx],
+            ) = _gpu_aamp(
                 T_A_fname,
                 T_B_fname,
                 m,
@@ -519,10 +625,11 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
                 p,
                 p_norm_fname,
                 p_norm_first_fname,
-                k,
+                w,
                 ignore_trivial,
                 start + 1,
                 device_ids[idx],
+                k,
             )
 
     # Clean up process pool for multi-GPU request
@@ -533,7 +640,14 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
         # Collect results from spawned child processes if they exist
         for idx, result in enumerate(results):
             if result is not None:
-                profile[idx], indices[idx] = result.get()
+                (
+                    profile[idx],
+                    profile_L[idx],
+                    profile_R[idx],
+                    indices[idx],
+                    indices_L[idx],
+                    indices_R[idx],
+                ) = result.get()
 
     os.remove(T_A_fname)
     os.remove(T_B_fname)
@@ -546,22 +660,44 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
 
     for idx in range(len(device_ids)):
         profile_fname = profile[idx]
+        profile_L_fname = profile_L[idx]
+        profile_R_fname = profile_R[idx]
         indices_fname = indices[idx]
+        indices_L_fname = indices_L[idx]
+        indices_R_fname = indices_R[idx]
+
         profile[idx] = np.load(profile_fname, allow_pickle=False)
+        profile_L[idx] = np.load(profile_L_fname, allow_pickle=False)
+        profile_R[idx] = np.load(profile_R_fname, allow_pickle=False)
         indices[idx] = np.load(indices_fname, allow_pickle=False)
+        indices_L[idx] = np.load(indices_L_fname, allow_pickle=False)
+        indices_R[idx] = np.load(indices_R_fname, allow_pickle=False)
+
         os.remove(profile_fname)
+        os.remove(profile_L_fname)
+        os.remove(profile_R_fname)
         os.remove(indices_fname)
+        os.remove(indices_L_fname)
+        os.remove(indices_R_fname)
 
-    for i in range(1, len(device_ids)):
-        # Update all matrix profiles and matrix profile indices
-        # (global, left, right) and store in profile[0] and indices[0]
-        for col in range(profile[0].shape[1]):  # pragma: no cover
-            cond = profile[0][:, col] < profile[i][:, col]
-            profile[0][:, col] = np.where(cond, profile[0][:, col], profile[i][:, col])
-            indices[0][:, col] = np.where(cond, indices[0][:, col], indices[i][:, col])
+    for i in range(1, len(device_ids)):  # pragma: no cover
+        # Update (top-k) matrix profile and matrix profile indices
+        core._merge_topk_PI(profile[0], profile[i], indices[0], indices[i])
 
-    out[:, 0] = profile[0][:, 0]
-    out[:, 1:4] = indices[0][:, :]
+        # Update (top-1) left matrix profile and matrix profile indices
+        mask = profile_L[0] > profile_L[i]
+        profile_L[0][mask] = profile_L[i][mask]
+        indices_L[0][mask] = indices_L[i][mask]
+
+        # Update (top-1) right matrix profile and matrix profile indices
+        mask = profile_R[0] > profile_R[i]
+        profile_R[0][mask] = profile_R[i][mask]
+        indices_R[0][mask] = indices_R[i][mask]
+
+    out = np.empty((w, 2 * k + 2), dtype=object)  # last two columns are to store
+    # (top-1) left/right matrix profile indices
+    out[:, :k] = profile[0]
+    out[:, k:] = np.column_stack((indices[0], indices_L[0], indices_R[0]))
 
     core._check_P(out[:, 0])
 

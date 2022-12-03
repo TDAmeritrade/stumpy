@@ -174,65 +174,116 @@ def _compute_PI(
             p_norm_profile[~T_B_subseq_isfinite] = np.inf
         # Update P[i] relative to all T[j : j + m]
         if excl_zone is not None:
-            zone_start = max(0, i - excl_zone)
-            zone_stop = min(l, i + excl_zone)
-            p_norm_profile[zone_start : zone_stop + 1] = np.inf
+            core._apply_exclusion_zone(p_norm_profile, i, excl_zone, np.inf)
 
-            # only for self-join
-            mask = p_norm_profile < P_NORM[thread_idx]
-            P_NORM[thread_idx][mask] = p_norm_profile[mask]
-            I[thread_idx][mask] = i
+        nn_i = np.argmin(p_norm_profile)
+        if (
+            p_norm_profile[nn_i] < P_NORM[thread_idx, i, -1]
+            and nn_i not in I[thread_idx, i]
+        ):
+            idx = np.searchsorted(
+                P_NORM[thread_idx, i],
+                p_norm_profile[nn_i],
+                side="right",
+            )
+            core._shift_insert_at_index(
+                P_NORM[thread_idx, i], idx, p_norm_profile[nn_i]
+            )
+            core._shift_insert_at_index(I[thread_idx, i], idx, nn_i)
 
-        I[thread_idx, i] = np.argmin(p_norm_profile)
-        P_NORM[thread_idx, i] = p_norm_profile[I[thread_idx, i]]
-        if P_NORM[thread_idx, i] == np.inf:  # pragma: no cover
-            I[thread_idx, i] = -1
-        else:
-            j = I[thread_idx, i]
-            # Given the squared distance, work backwards and compute QT
-            p_norm_j = P_NORM[thread_idx, i]
-            p_norm_j_prime = p_norm_j
-            for k in range(1, min(s, l - i, w - j)):
-                p_norm_j = (
-                    p_norm_j
-                    - abs(T_B[j + k - 1] - T_A[i + k - 1]) ** p
-                    + abs(T_B[j + k + m - 1] - T_A[i + k + m - 1]) ** p
-                )
-                if (
-                    not T_A_subseq_isfinite[i + k] or not T_B_subseq_isfinite[j + k]
-                ):  # pragma: no cover
-                    p_norm = np.inf
-                else:
-                    p_norm = p_norm_j
-                    if p_norm < config.STUMPY_P_NORM_THRESHOLD:  # pragma: no cover
-                        p_norm = 0.0
-                if p_norm < P_NORM[thread_idx, i + k]:
-                    P_NORM[thread_idx, i + k] = p_norm
-                    I[thread_idx, i + k] = j + k
-                if excl_zone is not None and p_norm < P_NORM[thread_idx, j + k]:
-                    P_NORM[thread_idx, j + k] = p_norm
-                    I[thread_idx, j + k] = i + k
-            p_norm_j = p_norm_j_prime
-            for k in range(1, min(s, i + 1, j + 1)):
-                p_norm_j = (
-                    p_norm_j
-                    - abs(T_B[j - k + m] - T_A[i - k + m]) ** p
-                    + abs(T_B[j - k] - T_A[i - k]) ** p
-                )
-                if (
-                    not T_A_subseq_isfinite[i - k] or not T_B_subseq_isfinite[j - k]
-                ):  # pragma: no cover
-                    p_norm = np.inf
-                else:
-                    p_norm = p_norm_j
-                    if p_norm < config.STUMPY_P_NORM_THRESHOLD:  # pragma: no cover
-                        p_norm = 0.0
-                if p_norm < P_NORM[thread_idx, i - k]:
-                    P_NORM[thread_idx, i - k] = p_norm
-                    I[thread_idx, i - k] = j - k
-                if excl_zone is not None and p_norm < P_NORM[thread_idx, j - k]:
-                    P_NORM[thread_idx, j - k] = p_norm
-                    I[thread_idx, j - k] = i - k
+        # this if is not needed as it is probably never executed
+        if P_NORM[thread_idx, i, 0] == np.inf:  # pragma: no cover
+            I[thread_idx, i, 0] = -1
+            continue
+
+        j = nn_i
+        p_norm_j = P_NORM[thread_idx, i, 0]
+        p_norm_j_prime = p_norm_j
+        for g in range(1, min(s, l - i, w - j)):
+            p_norm_j = (
+                p_norm_j
+                - abs(T_B[j + g - 1] - T_A[i + g - 1]) ** p
+                + abs(T_B[j + g + m - 1] - T_A[i + g + m - 1]) ** p
+            )
+            if (
+                not T_A_subseq_isfinite[i + g] or not T_B_subseq_isfinite[j + g]
+            ):  # pragma: no cover
+                p_norm = np.inf
+            else:
+                p_norm = p_norm_j
+                if p_norm < config.STUMPY_P_NORM_THRESHOLD:  # pragma: no cover
+                    p_norm = 0.0
+
+            if (
+                p_norm < P_NORM[thread_idx, i + g, -1]
+                and (j + g) not in I[thread_idx, i + g]
+            ):
+                idx = np.searchsorted(P_NORM[thread_idx, i + g], p_norm, side="right")
+                core._shift_insert_at_index(P_NORM[thread_idx, i + g], idx, p_norm)
+                core._shift_insert_at_index(I[thread_idx, i + g], idx, j + g)
+
+            if (
+                excl_zone is not None
+                and p_norm < P_NORM[thread_idx, j + g, -1]
+                and (i + g) not in I[thread_idx, j + g]
+            ):
+                idx = np.searchsorted(P_NORM[thread_idx, j + g], p_norm, side="right")
+                core._shift_insert_at_index(P_NORM[thread_idx, j + g], idx, p_norm)
+                core._shift_insert_at_index(I[thread_idx, j + g], idx, i + g)
+
+        p_norm_j = p_norm_j_prime
+        for g in range(1, min(s, i + 1, j + 1)):
+            p_norm_j = (
+                p_norm_j
+                - abs(T_B[j - g + m] - T_A[i - g + m]) ** p
+                + abs(T_B[j - g] - T_A[i - g]) ** p
+            )
+            if (
+                not T_A_subseq_isfinite[i - g] or not T_B_subseq_isfinite[j - g]
+            ):  # pragma: no cover
+                p_norm = np.inf
+            else:
+                p_norm = p_norm_j
+                if p_norm < config.STUMPY_P_NORM_THRESHOLD:  # pragma: no cover
+                    p_norm = 0.0
+
+            if (
+                p_norm < P_NORM[thread_idx, i - g, -1]
+                and (j - g) not in I[thread_idx, i - g]
+            ):
+                idx = np.searchsorted(P_NORM[thread_idx, i - g], p_norm, side="right")
+                core._shift_insert_at_index(P_NORM[thread_idx, i - g], idx, p_norm)
+                core._shift_insert_at_index(I[thread_idx, i - g], idx, j - g)
+
+            if (
+                excl_zone is not None
+                and p_norm < P_NORM[thread_idx, j - g, -1]
+                and (i - g) not in I[thread_idx, j - g]
+            ):
+                idx = np.searchsorted(P_NORM[thread_idx, j - g], p_norm, side="right")
+                core._shift_insert_at_index(P_NORM[thread_idx, j - g], idx, p_norm)
+                core._shift_insert_at_index(I[thread_idx, j - g], idx, i - g)
+
+        # In the case of a self-join, the calculated profile can also be used
+        # to refine the top-k for all non-trivial subsequences
+        if excl_zone is not None:
+            # Note that `p_norm_profile[j]`, the distance between subsequences
+            # `S_i = T[i : i + m]` and `S_j = T[j : j + m]` can be used to update
+            # the top-k for BOTH subsequence `i` and subsequence `j`. We update
+            # the latter here.
+
+            indices = np.flatnonzero(p_norm_profile < P_NORM[thread_idx, :, -1])
+            for j in indices:
+                if i not in I[thread_idx, j]:
+                    idx = np.searchsorted(
+                        P_NORM[thread_idx, j],
+                        p_norm_profile[j],
+                        side="right",
+                    )
+                    core._shift_insert_at_index(
+                        P_NORM[thread_idx, j], idx, p_norm_profile[j]
+                    )
+                    core._shift_insert_at_index(I[thread_idx, j], idx, i)
 
 
 @njit(
@@ -251,6 +302,7 @@ def _prescraamp(
     indices,
     s,
     excl_zone=None,
+    k=1,
 ):
     """
     A Numba JIT-compiled implementation of the non-normalized (i.e., without
@@ -298,13 +350,24 @@ def _prescraamp(
     excl_zone : int
         The half width for the exclusion zone relative to the `i`.
 
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
+
     Returns
     -------
     out1 : numpy.ndarray
-        Matrix profile
+        The (top-k) matrix profile. When k=1 (default), the first (and only) column
+        in this 2D array consists of the matrix profile. When k > 1, the output
+        has exactly `k` columns consisting of the top-k matrix profile.
 
     out2 : numpy.ndarray
-        Matrix profile indices
+        The (top-k) matrix profile indices. When k=1 (default), the first (and only)
+        column in this 2D array consists of the matrix profile indices. When k > 1,
+        the output has exactly `k` columns consisting of the top-k matrix profile
+        indices.
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2018.00099 \
@@ -314,8 +377,8 @@ def _prescraamp(
     """
     n_threads = numba.config.NUMBA_NUM_THREADS
     l = T_A.shape[0] - m + 1
-    P_NORM = np.full((n_threads, l), np.inf, dtype=np.float64)
-    I = np.full((n_threads, l), -1, dtype=np.int64)
+    P_NORM = np.full((n_threads, l, k), np.inf, dtype=np.float64)
+    I = np.full((n_threads, l, k), -1, dtype=np.int64)
 
     idx_ranges = core._get_ranges(len(indices), n_threads, truncate=False)
     for thread_idx in prange(n_threads):
@@ -337,10 +400,7 @@ def _prescraamp(
         )
 
     for thread_idx in range(1, n_threads):
-        for i in range(l):
-            if P_NORM[thread_idx, i] < P_NORM[0, i]:
-                P_NORM[0, i] = P_NORM[thread_idx, i]
-                I[0, i] = I[thread_idx, i]
+        core._merge_topk_PI(P_NORM[0], P_NORM[thread_idx], I[0], I[thread_idx])
 
     return np.power(P_NORM[0], 1.0 / p), I[0]
 
@@ -349,8 +409,8 @@ def prescraamp(T_A, m, T_B=None, s=None, p=2.0, k=1):
     # this function should be modified so that it can return top-k matrix profile
     """
     A convenience wrapper around the Numba JIT-compiled parallelized `_prescraamp`
-    function which computes the approximate matrix profile according to the
-    non-normalized (i.e., without z-normalization) preSCRIMP algorithm
+    function which computes the approximate (top-k) matrix profile according to
+    the non-normalized (i.e., without z-normalization) preSCRIMP algorithm
 
     Parameters
     ----------
@@ -379,10 +439,15 @@ def prescraamp(T_A, m, T_B=None, s=None, p=2.0, k=1):
     Returns
     -------
     P : numpy.ndarray
-        Matrix profile
+        The (top-k) matrix profile. When k = 1 (default), this is a 1D array
+        consisting of the matrix profile. When k > 1, the output is a 2D array that
+        has exactly `k` columns consisting of the top-k matrix profile.
 
     I : numpy.ndarray
-        Matrix profile indices
+        The (top-k) matrix profile indices. When k = 1 (default), this is a 1D array
+        consisting of the matrix profile indices. When k > 1, the output is a 2D
+        array that has exactly `k` columns consisting of the top-k matrix profile
+        indices.
 
     Notes
     -----
@@ -411,9 +476,13 @@ def prescraamp(T_A, m, T_B=None, s=None, p=2.0, k=1):
         indices,
         s,
         excl_zone,
+        k,
     )
 
-    return P, I
+    if k == 1:
+        return P.flatten().astype(np.float64), I.flatten().astype(np.int64)
+    else:
+        return P, I
 
 
 class scraamp:
@@ -465,19 +534,31 @@ class scraamp:
     Attributes
     ----------
     P_ : numpy.ndarray
-        The updated matrix profile
+        The updated (top-k) matrix profile. When `k=1` (default), this output is
+        a 1D array consisting of the matrix profile. When `k > 1`, the output
+        is a 2D array that has exactly `k` columns consisting of the top-k matrix
+        profile.
 
     I_ : numpy.ndarray
-        The updated matrix profile indices
+        The updated (top-k) matrix profile indices. When `k=1` (default), this output is
+        a 1D array consisting of the matrix profile indices. When `k > 1`, the output
+        is a 2D array that has exactly `k` columns consisting of the top-k matrix
+        profile indiecs.
+
+    left_I_ : numpy.ndarray
+        The updated left (top-1) matrix profile indices
+
+    right_I_ : numpy.ndarray
+        The updated right (top-1) matrix profile indices
 
     Methods
     -------
     update()
         Update the matrix profile and the matrix profile indices by computing
         additional new distances (limited by `percentage`) that make up the full
-        distance matrix. Each output contains three columns that correspond to
-        the matrix profile, the left matrix profile, and the right matrix profile,
-        respectively.
+        distance matrix. It updates the (top-k) matrix profile, (top-1) left
+        matrix profile, (top-1) right matrix profile, (top-k) matrix profile indices,
+        (top-1) left matrix profile indices, and (top-1) right matrix profile indices.
 
     Notes
     -----
@@ -586,11 +667,15 @@ class scraamp:
         self._n_A = self._T_A.shape[0]
         self._n_B = self._T_B.shape[0]
         self._l = self._n_A - self._m + 1
+        self._k = k
 
-        self._P = np.empty((self._l, 3), dtype=np.float64)
-        self._I = np.empty((self._l, 3), dtype=np.int64)
-        self._P[:, :] = np.inf
-        self._I[:, :] = -1
+        self._P = np.full((self._l, self._k), np.inf, dtype=np.float64)
+        self._PL = np.full(self._l, np.inf, dtype=np.float64)
+        self._PR = np.full(self._l, np.inf, dtype=np.float64)
+
+        self._I = np.full((self._l, self._k), -1, dtype=np.int64)
+        self._IL = np.full(self._l, -1, dtype=np.int64)
+        self._IR = np.full(self._l, -1, dtype=np.int64)
 
         self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
         if s is None:
@@ -631,12 +716,9 @@ class scraamp:
                 indices,
                 s,
                 excl_zone,
+                k,
             )
-
-            for i in range(P.shape[0]):
-                if self._P[i, 0] > P[i]:
-                    self._P[i, 0] = P[i]
-                    self._I[i, 0] = I[i]
+            core._merge_topk_PI(self._P, P, self._I, I)
 
         if self._ignore_trivial:
             self._diags = np.random.permutation(
@@ -667,14 +749,14 @@ class scraamp:
 
     def update(self):
         """
-        Update the matrix profile and the matrix profile indices by computing
-        additional new distances (limited by `percentage`) that make up the full
-        distance matrix.
+        Update the (top-k) matrix profile and the (top-k) matrix profile indices by
+        computing additional new distances (limited by `percentage`) that make up
+        the full distance matrix.
         """
         if self._chunk_idx < self._n_chunks:
             start_idx, stop_idx = self._chunk_diags_ranges[self._chunk_idx]
 
-            P, I = _aamp(
+            P, PL, PR, I, IL, IR = _aamp(
                 self._T_A,
                 self._T_B,
                 self._m,
@@ -683,48 +765,60 @@ class scraamp:
                 self._p,
                 self._diags[start_idx:stop_idx],
                 self._ignore_trivial,
+                self._k,
             )
 
-            # Update matrix profile and indices
-            for i in range(self._P.shape[0]):
-                if self._P[i, 0] > P[i, 0]:
-                    self._P[i, 0] = P[i, 0]
-                    self._I[i, 0] = I[i, 0]
-                # left matrix profile and left matrix profile indices
-                if self._P[i, 1] > P[i, 1]:
-                    self._P[i, 1] = P[i, 1]
-                    self._I[i, 1] = I[i, 1]
-                # right matrix profile and right matrix profile indices
-                if self._P[i, 2] > P[i, 2]:
-                    self._P[i, 2] = P[i, 2]
-                    self._I[i, 2] = I[i, 2]
+            # Update (top-k) matrix profile and indices
+            core._merge_topk_PI(self._P, P, self._I, I)
+
+            # update left matrix profile and indices
+            mask = PL < self._PL
+            self._PL[mask] = PL[mask]
+            self._IL[mask] = IL[mask]
+
+            # update right matrix profile and indices
+            mask = PR < self._PR
+            self._PR[mask] = PR[mask]
+            self._IR[mask] = IR[mask]
 
             self._chunk_idx += 1
 
     @property
     def P_(self):
         """
-        Get the updated matrix profile
+        Get the updated (top-k) matrix profile. When `k=1` (default), this output
+        is a 1D array consisting of the updated matrix profile. When `k > 1`, the
+        output is a 2D array that has exactly `k` columns consisting of the updated
+        top-k matrix profile.
         """
-        return self._P[:, 0].astype(np.float64)
+        if self._k == 1:
+            return self._P.flatten().astype(np.float64)
+        else:
+            return self._P.astype(np.float64)
 
     @property
     def I_(self):
         """
-        Get the updated matrix profile indices
+        Get the updated (top-k) matrix profile indices. When `k=1` (default), this
+        output is a 1D array consisting of the updated matrix profile indices. When
+        `k > 1`, the output is a 2D array that has exactly `k` columns consisting
+        of the updated top-k matrix profile indices.
         """
-        return self._I[:, 0].astype(np.int64)
+        if self._k == 1:
+            return self._I.flatten().astype(np.int64)
+        else:
+            return self._I.astype(np.int64)
 
     @property
     def left_I_(self):
         """
-        Get the updated left matrix profile indices
+        Get the updated left (top-1) matrix profile indices
         """
-        return self._I[:, 1].astype(np.int64)
+        return self._IL.astype(np.int64)
 
     @property
     def right_I_(self):
         """
-        Get the updated right matrix profile indices
+        Get the updated right (top-1) matrix profile indices
         """
-        return self._I[:, 2].astype(np.int64)
+        return self._IR.astype(np.int64)

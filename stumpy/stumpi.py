@@ -134,10 +134,10 @@ class stumpi:
         self._egress = egress
 
         mp = stump(self._T, self._m, k=self._k)
-        self._P = mp[:, :k].astype(np.float64)
-        self._I = mp[:, k : 2 * k].astype(np.int64)
+        self._P = mp[:, : self._k].astype(np.float64)
+        self._I = mp[:, self._k : 2 * self._k].astype(np.int64)
 
-        self._left_I = mp[:, 2 * k].astype(np.int64)
+        self._left_I = mp[:, 2 * self._k].astype(np.int64)
         self._left_P = np.full_like(self._left_I, np.inf, dtype=np.float64)
 
         self._T, self._M_T, self._Σ_T = core.preprocess(self._T, self._m)
@@ -165,7 +165,7 @@ class stumpi:
             )
             self._left_P[i] = np.sqrt(D_square)
 
-        Q = self._T[-m:]
+        Q = self._T[-self._m :]
         self._QT = core.sliding_dot_product(Q, self._T)
         if self._egress:
             self._QT_new = np.empty(self._QT.shape[0], dtype=np.float64)
@@ -320,7 +320,7 @@ class stumpi:
             core._shift_insert_at_index(self._P[i], idx, D[i])
             core._shift_insert_at_index(self._I[i], idx, l)
 
-        # Calculating top-k matrix profile and (top-1) left matrix profile (and thier
+        # Calculating top-k matrix profile and (top-1) left matrix profile (and their
         # corresponding indices) for new subsequence whose distance profie is `D`
         P_new = np.full(self._k, np.inf, dtype=np.float64)
         I_new = np.full(self._k, -1, dtype=np.int64)

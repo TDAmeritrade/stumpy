@@ -1,4 +1,5 @@
 import numpy as np
+from numba import cuda
 import numpy.testing as npt
 import pandas as pd
 from scipy.spatial.distance import cdist
@@ -9,6 +10,37 @@ import os
 import math
 
 import naive
+
+if cuda.is_available():
+    from stumpy.core import _gpu_searchsorted_left, _gpu_searchsorted_right
+else:  # pragma: no cover
+    from stumpy.core import (
+        _gpu_searchsorted_left_driver_not_found as _gpu_searchsorted_left,
+    )
+    from stumpy.core import (
+        _gpu_searchsorted_right_driver_not_found as _gpu_searchsorted_right,
+    )
+
+try:
+    from numba.errors import NumbaPerformanceWarning
+except ModuleNotFoundError:
+    from numba.core.errors import NumbaPerformanceWarning
+
+TEST_THREADS_PER_BLOCK = 10
+
+if not cuda.is_available():  # pragma: no cover
+    pytest.skip("Skipping Tests No GPUs Available", allow_module_level=True)
+
+
+@cuda.jit("(f8[:, :], f8[:], i8[:], i8, b1, i8[:])")
+def _gpu_searchsorted_kernel(a, v, bfs, nlevel, is_left, idx):
+    # A wrapper kernel for calling device function _gpu_searchsorted_left/right.
+    i = cuda.grid(1)
+    if i < a.shape[0]:
+        if is_left:
+            idx[i] = _gpu_searchsorted_left(a[i], v[i], bfs, nlevel)
+        else:
+            idx[i] = _gpu_searchsorted_right(a[i], v[i], bfs, nlevel)
 
 
 def naive_rolling_window_dot_product(Q, T):
@@ -1365,3 +1397,52 @@ def test_find_matches_maxmatch():
         comp = core._find_matches(D, excl_zone, max_distance, max_matches)
 
         npt.assert_almost_equal(ref, comp)
+
+
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
+def test_gpu_searchsorted():
+    if not cuda.is_available():  # pragma: no cover
+        pytest.skip("Skipping Tests No GPUs Available", allow_module_level=True)
+
+    n = 3 * config.STUMPY_THREADS_PER_BLOCK + 1
+    V = np.empty(n, dtype=np.float64)
+
+    threads_per_block = config.STUMPY_THREADS_PER_BLOCK
+    blocks_per_grid = math.ceil(n / threads_per_block)
+
+    for k in range(1, 32):
+        device_bfs = cuda.to_device(core._bfs_indices(k, fill_value=-1))
+        nlevel = np.floor(np.log2(k) + 1).astype(np.int64)
+
+        A = np.sort(np.random.rand(n, k), axis=1)
+        device_A = cuda.to_device(A)
+
+        V[:] = np.random.rand(n)
+        for i, idx in enumerate(np.random.choice(np.arange(n), size=k, replace=False)):
+            V[idx] = A[idx, i]  # create ties
+        device_V = cuda.to_device(V)
+
+        is_left = True  # test case
+        ref_IDX = [np.searchsorted(A[i], V[i], side="left") for i in range(n)]
+        ref_IDX = np.asarray(ref_IDX, dtype=np.int64)
+
+        comp_IDX = np.full(n, -1, dtype=np.int64)
+        device_comp_IDX = cuda.to_device(comp_IDX)
+        _gpu_searchsorted_kernel[blocks_per_grid, threads_per_block](
+            device_A, device_V, device_bfs, nlevel, is_left, device_comp_IDX
+        )
+        comp_IDX = device_comp_IDX.copy_to_host()
+        npt.assert_array_equal(ref_IDX, comp_IDX)
+
+        is_left = False  # test case
+        ref_IDX = [np.searchsorted(A[i], V[i], side="right") for i in range(n)]
+        ref_IDX = np.asarray(ref_IDX, dtype=np.int64)
+
+        comp_IDX = np.full(n, -1, dtype=np.int64)
+        device_comp_IDX = cuda.to_device(comp_IDX)
+        _gpu_searchsorted_kernel[blocks_per_grid, threads_per_block](
+            device_A, device_V, device_bfs, nlevel, is_left, device_comp_IDX
+        )
+        comp_IDX = device_comp_IDX.copy_to_host()
+        npt.assert_array_equal(ref_IDX, comp_IDX)

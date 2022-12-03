@@ -267,17 +267,22 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
     return result
 
 
-def aamp(T_A, m, T_B=None, exclusion_zone=None, p=2.0):
+def aamp(T_A, m, T_B=None, exclusion_zone=None, p=2.0, row_wise=False, k=1):
+    """
+    Traverse distance matrix diagonally and update the top-k matrix profile and
+    matrix profile indices if the parameter `row_wise` is set to `False`. If the
+    parameter `row_wise` is set to `True`, it is a row-wise traversal.
+    """
     T_A = np.asarray(T_A)
     T_A = T_A.copy()
 
     if T_B is None:
-        T_B = T_A.copy()
         ignore_trivial = True
+        T_B = T_A.copy()
     else:
+        ignore_trivial = False
         T_B = np.asarray(T_B)
         T_B = T_B.copy()
-        ignore_trivial = False
 
     T_A[np.isinf(T_A)] = np.nan
     T_B[np.isinf(T_B)] = np.nan
@@ -285,53 +290,84 @@ def aamp(T_A, m, T_B=None, exclusion_zone=None, p=2.0):
     rolling_T_A = core.rolling_window(T_A, m)
     rolling_T_B = core.rolling_window(T_B, m)
 
+    distance_matrix = cdist(rolling_T_A, rolling_T_B, metric="minkowski", p=p)
+
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_A - m + 1
     if exclusion_zone is None:
         exclusion_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    distance_matrix = cdist(rolling_T_A, rolling_T_B, metric="minkowski", p=p)
+    P = np.full((l, k + 2), np.inf, dtype=np.float64)
+    I = np.full((l, k + 2), -1, dtype=np.int64)  # two more columns are to store
+    # ... left and right top-1 matrix profile indices
 
-    if ignore_trivial:
-        diags = np.arange(exclusion_zone + 1, n_A - m + 1)
+    if row_wise:
+        if ignore_trivial:  # self-join
+            for i in range(l):
+                apply_exclusion_zone(distance_matrix[i], i, exclusion_zone, np.inf)
+
+        for i, D in enumerate(distance_matrix):  # D: distance profile
+            # self-join / AB-join: matrix proifle and indices
+            indices = np.argsort(D)[:k]
+            P[i, :k] = D[indices]
+            indices[P[i, :k] == np.inf] = -1
+            I[i, :k] = indices
+
+            # self-join: left matrix profile index (top-1)
+            if ignore_trivial and i > 0:
+                IL = np.argmin(D[:i])
+                if D[IL] == np.inf:
+                    IL = -1
+                I[i, k] = IL
+
+            # self-join: right matrix profile index (top-1)
+            if ignore_trivial and i < D.shape[0]:
+                IR = i + np.argmin(D[i:])  # offset by `i` to get true index
+                if D[IR] == np.inf:
+                    IR = -1
+                I[i, k + 1] = IR
+
     else:
-        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
-
-    P = np.full((l, 3), np.inf)
-    I = np.full((l, 3), -1, dtype=np.int64)
-
-    for k in diags:
-        if k >= 0:
-            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - k))
+        if ignore_trivial:
+            diags = np.arange(exclusion_zone + 1, n_A - m + 1)
         else:
-            iter_range = range(-k, min(n_A - m + 1, n_B - m + 1 - k))
+            diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1)
 
-        for i in iter_range:
-            D = distance_matrix[i, i + k]
-            if D < P[i, 0]:
-                P[i, 0] = D
-                I[i, 0] = i + k
+        for g in diags:
+            if g >= 0:
+                iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - g))
+            else:
+                iter_range = range(-g, min(n_A - m + 1, n_B - m + 1 - g))
 
-            if ignore_trivial:  # Self-joins only
-                if D < P[i + k, 0]:
-                    P[i + k, 0] = D
-                    I[i + k, 0] = i
+            for i in iter_range:
+                d = distance_matrix[i, i + g]
+                if d < P[i, k - 1]:
+                    idx = searchsorted_right(P[i], d)
+                    # to keep the top-k, we must discard the last element.
+                    P[i, :k] = np.insert(P[i, :k], idx, d)[:-1]
+                    I[i, :k] = np.insert(I[i, :k], idx, i + g)[:-1]
 
-                if i < i + k:
-                    # Left matrix profile and left matrix profile index
-                    if D < P[i + k, 1]:
-                        P[i + k, 1] = D
-                        I[i + k, 1] = i
+                if ignore_trivial:  # Self-joins only
+                    if d < P[i + g, k - 1]:
+                        idx = searchsorted_right(P[i + g], d)
+                        P[i + g, :k] = np.insert(P[i + g, :k], idx, d)[:-1]
+                        I[i + g, :k] = np.insert(I[i + g, :k], idx, i)[:-1]
 
-                    if D < P[i, 2]:
-                        # right matrix profile and right matrix profile index
-                        P[i, 2] = D
-                        I[i, 2] = i + k
+                    if i < i + g:
+                        # Left matrix profile and left matrix profile index
+                        if d < P[i + g, k]:
+                            P[i + g, k] = d
+                            I[i + g, k] = i
 
-    result = np.empty((l, 4), dtype=object)
-    result[:, 0] = P[:, 0]
-    result[:, 1:4] = I[:, :]
+                        if d < P[i, k + 1]:
+                            # right matrix profile and right matrix profile index
+                            P[i, k + 1] = d
+                            I[i, k + 1] = i + g
+
+    result = np.empty((l, 2 * k + 2), dtype=object)
+    result[:, :k] = P[:, :k]
+    result[:, k:] = I[:, :]
 
     return result
 
@@ -713,27 +749,30 @@ def get_array_ranges(a, n_chunks, truncate):
 
 
 class aampi_egress(object):
-    def __init__(self, T, m, excl_zone=None, p=2.0):
+    def __init__(self, T, m, excl_zone=None, p=2.0, k=1):
         self._T = np.asarray(T)
         self._T = self._T.copy()
         self._T_isfinite = np.isfinite(self._T)
         self._m = m
         self._p = p
+        self._k = k
 
         self._excl_zone = excl_zone
         if self._excl_zone is None:
             self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
-        mp = aamp(T, m, exclusion_zone=self._excl_zone, p=p)
-        self.P_ = mp[:, 0]
-        self.I_ = mp[:, 1].astype(np.int64)
-        self.left_P_ = np.full(self.P_.shape, np.inf)
-        self.left_I_ = mp[:, 2].astype(np.int64)
-        for i, j in enumerate(self.left_I_):
-            if j >= 0:
-                self.left_P_[i] = np.linalg.norm(
-                    self._T[i : i + self._m] - self._T[j : j + self._m], ord=self._p
+        mp = aamp(T, m, exclusion_zone=self._excl_zone, p=p, k=self._k)
+        self._P = mp[:, :k].astype(np.float64)
+        self._I = mp[:, k : 2 * k].astype(np.int64)
+
+        self._left_I = mp[:, 2 * k].astype(np.int64)
+        self._left_P = np.full_like(self._left_I, np.inf, dtype=np.float64)
+        for idx, nn_idx in enumerate(self._left_I):
+            if nn_idx >= 0:
+                self._left_P[idx] = np.linalg.norm(
+                    self._T[idx : idx + self._m] - self._T[nn_idx : nn_idx + self._m],
+                    ord=self._p,
                 )
 
         self._n_appended = 0
@@ -749,12 +788,11 @@ class aampi_egress(object):
             self._T[-1] = 0
         self._n_appended += 1
 
-        self.P_[:] = np.roll(self.P_, -1)
-        self.I_[:] = np.roll(self.I_, -1)
-        self.left_P_[:] = np.roll(self.left_P_, -1)
-        self.left_I_[:] = np.roll(self.left_I_, -1)
+        self._P = np.roll(self._P, -1, axis=0)
+        self._I = np.roll(self._I, -1, axis=0)
+        self._left_P[:] = np.roll(self._left_P, -1)
+        self._left_I[:] = np.roll(self._left_I, -1)
 
-        D = core.mass_absolute(self._T[-self._m :], self._T)
         D = cdist(
             core.rolling_window(self._T[-self._m :], self._m),
             core.rolling_window(self._T, self._m),
@@ -770,21 +808,45 @@ class aampi_egress(object):
 
         apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
         for j in range(D.shape[0]):
-            if D[j] < self.P_[j]:
-                self.I_[j] = D.shape[0] - 1 + self._n_appended
-                self.P_[j] = D[j]
+            if D[j] < self._P[j, -1]:
+                pos = np.searchsorted(self._P[j], D[j], side="right")
+                self._P[j] = np.insert(self._P[j], pos, D[j])[:-1]
+                self._I[j] = np.insert(
+                    self._I[j], pos, D.shape[0] - 1 + self._n_appended
+                )[:-1]
 
-        I_last = np.argmin(D)
+        # update top-k for the last, newly-updated index
+        I_last_topk = np.argsort(D, kind="mergesort")[: self._k]
+        self._P[-1] = D[I_last_topk]
+        self._I[-1] = I_last_topk + self._n_appended
+        self._I[-1][self._P[-1] == np.inf] = -1
 
-        if np.isinf(D[I_last]):
-            self.I_[-1] = -1
-            self.P_[-1] = np.inf
+        # for the last index, the left matrix profile value is self.P_[-1, 0]
+        # and the same goes for the left matrix profile index
+        self._left_P[-1] = self._P[-1, 0]
+        self._left_I[-1] = self._I[-1, 0]
+
+    @property
+    def P_(self):
+        if self._k == 1:
+            return self._P.flatten().astype(np.float64)
         else:
-            self.I_[-1] = I_last + self._n_appended
-            self.P_[-1] = D[I_last]
+            return self._P.astype(np.float64)
 
-        self.left_I_[-1] = self.I_[-1]
-        self.left_P_[-1] = self.P_[-1]
+    @property
+    def I_(self):
+        if self._k == 1:
+            return self._I.flatten().astype(np.int64)
+        else:
+            return self._I.astype(np.int64)
+
+    @property
+    def left_P_(self):
+        return self._left_P.astype(np.float64)
+
+    @property
+    def left_I_(self):
+        return self._left_I.astype(np.int64)
 
 
 class stumpi_egress(object):
@@ -1576,55 +1638,81 @@ def scrump(T_A, m, T_B, percentage, exclusion_zone, pre_scrump, s, k=1):
     return P, I, IL, IR
 
 
-def prescraamp(T_A, m, T_B, s, exclusion_zone=None, p=2.0):
+def prescraamp(T_A, m, T_B, s, exclusion_zone=None, p=2.0, k=1):
     distance_matrix = aamp_distance_matrix(T_A, T_B, m, p)
 
-    l = T_A.shape[0] - m + 1  # length of matrix profile
-    w = T_B.shape[0] - m + 1  # length of each distance profile
+    l = T_A.shape[0] - m + 1  # matrix profile length
+    w = T_B.shape[0] - m + 1  # distance profile length
 
-    P = np.empty(l)
-    I = np.empty(l, dtype=np.int64)
-    P[:] = np.inf
-    I[:] = -1
+    P = np.full((l, k), np.inf, dtype=np.float64)
+    I = np.full((l, k), -1, dtype=np.int64)
 
     for i in np.random.permutation(range(0, l, s)):
         distance_profile = distance_matrix[i]
         if exclusion_zone is not None:
             apply_exclusion_zone(distance_profile, i, exclusion_zone, np.inf)
 
-            # only for self-join
-            mask = distance_profile < P
-            P[mask] = distance_profile[mask]
-            I[mask] = i
+        nn_idx = np.argmin(distance_profile)
+        if distance_profile[nn_idx] < P[i, -1] and nn_idx not in I[i]:
+            pos = np.searchsorted(P[i], distance_profile[nn_idx], side="right")
+            P[i] = np.insert(P[i], pos, distance_profile[nn_idx])[:-1]
+            I[i] = np.insert(I[i], pos, nn_idx)[:-1]
 
-        I[i] = np.argmin(distance_profile)
-        P[i] = distance_profile[I[i]]
-        if P[i] == np.inf:  # pragma: no cover
-            I[i] = -1
-        else:
-            j = I[i]
-            for k in range(1, min(s, l - i, w - j)):
-                d = distance_matrix[i + k, j + k]
-                if d < P[i + k]:
-                    P[i + k] = d
-                    I[i + k] = j + k
-                if exclusion_zone is not None and d < P[j + k]:
-                    P[j + k] = d
-                    I[j + k] = i + k
+        if P[i, 0] == np.inf:
+            I[i, 0] = -1
+            continue
 
-            for k in range(1, min(s, i + 1, j + 1)):
-                d = distance_matrix[i - k, j - k]
-                if d < P[i - k]:
-                    P[i - k] = d
-                    I[i - k] = j - k
-                if exclusion_zone is not None and d < P[j - k]:
-                    P[j - k] = d
-                    I[j - k] = i - k
+        j = nn_idx
+        for g in range(1, min(s, l - i, w - j)):
+            d = distance_matrix[i + g, j + g]
+            # Do NOT optimize the `condition` in the following if statement
+            # and similar ones in this naive function. This is to ensure
+            # we are avoiding duplicates in each row of I.
+            if d < P[i + g, -1] and (j + g) not in I[i + g]:
+                pos = np.searchsorted(P[i + g], d, side="right")
+                P[i + g] = np.insert(P[i + g], pos, d)[:-1]
+                I[i + g] = np.insert(I[i + g], pos, j + g)[:-1]
+            if (
+                exclusion_zone is not None
+                and d < P[j + g, -1]
+                and (i + g) not in I[j + g]
+            ):
+                pos = np.searchsorted(P[j + g], d, side="right")
+                P[j + g] = np.insert(P[j + g], pos, d)[:-1]
+                I[j + g] = np.insert(I[j + g], pos, i + g)[:-1]
+
+        for g in range(1, min(s, i + 1, j + 1)):
+            d = distance_matrix[i - g, j - g]
+            if d < P[i - g, -1] and (j - g) not in I[i - g]:
+                pos = np.searchsorted(P[i - g], d, side="right")
+                P[i - g] = np.insert(P[i - g], pos, d)[:-1]
+                I[i - g] = np.insert(I[i - g], pos, j - g)[:-1]
+            if (
+                exclusion_zone is not None
+                and d < P[j - g, -1]
+                and (i - g) not in I[j - g]
+            ):
+                pos = np.searchsorted(P[j - g], d, side="right")
+                P[j - g] = np.insert(P[j - g], pos, d)[:-1]
+                I[j - g] = np.insert(I[j - g], pos, i - g)[:-1]
+
+        # In the case of a self-join, the calculated distance profile can also be
+        # used to refine the top-k for all non-trivial subsequences
+        if exclusion_zone is not None:
+            for idx in np.flatnonzero(distance_profile < P[:, -1]):
+                if i not in I[idx]:
+                    pos = np.searchsorted(P[idx], distance_profile[idx], side="right")
+                    P[idx] = np.insert(P[idx], pos, distance_profile[idx])[:-1]
+                    I[idx] = np.insert(I[idx], pos, i)[:-1]
+
+    if k == 1:
+        P = P.flatten()
+        I = I.flatten()
 
     return P, I
 
 
-def scraamp(T_A, m, T_B, percentage, exclusion_zone, pre_scraamp, s, p=2.0):
+def scraamp(T_A, m, T_B, percentage, exclusion_zone, pre_scraamp, s, p=2.0, k=1):
     distance_matrix = aamp_distance_matrix(T_A, T_B, m, p)
 
     n_A = T_A.shape[0]
@@ -1646,47 +1734,48 @@ def scraamp(T_A, m, T_B, percentage, exclusion_zone, pre_scraamp, s, p=2.0):
     diags_ranges_start = diags_ranges[0, 0]
     diags_ranges_stop = diags_ranges[0, 1]
 
-    out = np.full((l, 4), np.inf, dtype=object)
-    out[:, 1:] = -1
-    left_P = np.full(l, np.inf, dtype=np.float64)
-    right_P = np.full(l, np.inf, dtype=np.float64)
+    P = np.full((l, k), np.inf, dtype=np.float64)  # Topk
+    PL = np.full(l, np.inf, dtype=np.float64)
+    PR = np.full(l, np.inf, dtype=np.float64)
+
+    I = np.full((l, k), -1, dtype=np.int64)
+    IL = np.full(l, -1, dtype=np.int64)
+    IR = np.full(l, -1, dtype=np.int64)
 
     for diag_idx in range(diags_ranges_start, diags_ranges_stop):
-        k = diags[diag_idx]
+        g = diags[diag_idx]
 
         for i in range(n_A - m + 1):
             for j in range(n_B - m + 1):
-                if j - i == k:
-                    if distance_matrix[i, j] < out[i, 0]:
-                        out[i, 0] = distance_matrix[i, j]
-                        out[i, 1] = i + k
+                if j - i == g:
+                    d = distance_matrix[i, j]
+                    if d < P[i, -1]:
+                        idx = searchsorted_right(P[i], d)
+                        if (i + g) not in I[i]:
+                            P[i] = np.insert(P[i], idx, d)[:-1]
+                            I[i] = np.insert(I[i], idx, i + g)[:-1]
 
-                    if (
-                        exclusion_zone is not None
-                        and distance_matrix[i, j] < out[i + k, 0]
-                    ):
-                        out[i + k, 0] = distance_matrix[i, j]
-                        out[i + k, 1] = i
+                    if exclusion_zone is not None and d < P[i + g, -1]:
+                        idx = searchsorted_right(P[i + g], d)
+                        if i not in I[i + g]:
+                            P[i + g] = np.insert(P[i + g], idx, d)[:-1]
+                            I[i + g] = np.insert(I[i + g], idx, i)[:-1]
 
                     # left matrix profile and left matrix profile indices
-                    if (
-                        exclusion_zone is not None
-                        and i < i + k
-                        and distance_matrix[i, j] < left_P[i + k]
-                    ):
-                        left_P[i + k] = distance_matrix[i, j]
-                        out[i + k, 2] = i
+                    if exclusion_zone is not None and i < i + g and d < PL[i + g]:
+                        PL[i + g] = d
+                        IL[i + g] = i
 
                     # right matrix profile and right matrix profile indices
-                    if (
-                        exclusion_zone is not None
-                        and i + k > i
-                        and distance_matrix[i, j] < right_P[i]
-                    ):
-                        right_P[i] = distance_matrix[i, j]
-                        out[i, 3] = i + k
+                    if exclusion_zone is not None and i + g > i and d < PR[i]:
+                        PR[i] = d
+                        IR[i] = i + g
 
-    return out
+    if k == 1:
+        P = P.flatten()
+        I = I.flatten()
+
+    return P, I, IL, IR
 
 
 def normalize_pan(pan, ms, bfs_indices, n_processed, T_min=None, T_max=None, p=2.0):

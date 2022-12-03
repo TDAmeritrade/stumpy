@@ -101,12 +101,13 @@ class aampi:
         self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
         self._egress = egress
         self._p = p
+        self._k = k
 
-        mp = aamp(self._T, self._m, p=self._p)
-        self._P = mp[:, 0].astype(np.float64)
-        self._I = mp[:, 1].astype(np.int64)
-        self._left_I = mp[:, 2].astype(np.int64)
-        self._left_P = np.empty(self._P.shape, dtype=np.float64)
+        mp = aamp(self._T, self._m, p=self._p, k=self._k)
+        self._P = mp[:, : self._k].astype(np.float64)
+        self._I = mp[:, self._k : 2 * self._k].astype(np.int64)
+        self._left_I = mp[:, 2 * self._k].astype(np.int64)
+        self._left_P = np.full_like(self._left_I, np.inf, dtype=np.float64)
         self._left_P[:] = np.inf
 
         self._T_isfinite = np.isfinite(self._T)
@@ -120,8 +121,8 @@ class aampi:
         # matrix profile values, we can save time by re-computing only the left matrix
         # profile value when the matrix profile index is equal to the right matrix
         # profile index.
-        mask = self._left_I == self._I
-        self._left_P[mask] = self._P[mask]
+        mask = self._left_I == self._I[:, 0]
+        self._left_P[mask] = self._P[mask, 0]
 
         # Only re-compute the `i`-th left matrix profile value, `self._left_P[i]`,
         # when `self._I[i] != self._left_I[i]`
@@ -132,7 +133,7 @@ class aampi:
                     self._T[i : i + self._m] - self._T[j : j + self._m], ord=self._p
                 )
 
-        Q = self._T[-m:]
+        Q = self._T[-self._m :]
         self._p_norm = core.mass_absolute(Q, self._T, p=self._p) ** self._p
         if self._egress:
             self._p_norm_new = np.empty(self._p_norm.shape[0], dtype=np.float64)
@@ -202,9 +203,10 @@ class aampi:
         self._p_norm_new[0] = (
             np.linalg.norm(self._T[: self._m] - S[: self._m], ord=self._p) ** self._p
         )
-        self._p_norm_new[:] = np.where(
-            self._p_norm_new < config.STUMPY_P_NORM_THRESHOLD, 0, self._p_norm_new
-        )
+
+        mask = self._p_norm_new < config.STUMPY_P_NORM_THRESHOLD
+        self._p_norm_new[mask] = 0
+
         D = np.power(self._p_norm_new, 1.0 / self._p)
         D[~self._T_subseq_isfinite] = np.inf
         if np.any(~self._T_isfinite[-self._m :]):
@@ -212,30 +214,37 @@ class aampi:
 
         core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
 
-        update_idx = np.argwhere(D < self._P).flatten()
-        self._I[update_idx] = D.shape[0] + self._n_appended - 1  # D.shape[0] is base-1
-        self._P[update_idx] = D[update_idx]
+        update_idx = np.argwhere(D < self._P[:, -1]).flatten()
+        for i in update_idx:
+            idx = np.searchsorted(self._P[i], D[i], side="right")
+            core._shift_insert_at_index(self._P[i], idx, D[i])
+            core._shift_insert_at_index(
+                self._I[i], idx, D.shape[0] + self._n_appended - 1
+            )
+            # D.shape[0] is base-1
 
-        I_last = np.argmin(D)
+        # Calculate the (top-k) matrix profile values/indices for the last susequence
+        # by using its correspondng distance profile `D`
+        self._P[-1] = np.inf
+        self._I[-1] = -1
+        for i, d in enumerate(D):
+            if d < self._P[-1, -1]:
+                idx = np.searchsorted(self._P[-1], d, side="right")
+                core._shift_insert_at_index(self._P[-1], idx, d)
+                core._shift_insert_at_index(self._I[-1], idx, i + self._n_appended)
 
-        if np.isinf(D[I_last]):
-            self._I[-1] = -1
-            self._P[-1] = np.inf
-        else:
-            self._I[-1] = I_last + self._n_appended
-            self._P[-1] = D[I_last]
-
-        # Regarding the last subsequence, the left profile (index) value is the
-        # same as the profile (index) value.
-        self._left_I[-1] = self._I[-1]
-        self._left_P[-1] = self._P[-1]
+        # All neighbors of the last subsequence are on its left. So, its (top-1)
+        # matrix profile value/index and its left matrix profile value/index must
+        # be equal.
+        self._left_P[-1] = self._P[-1, 0]
+        self._left_I[-1] = self._I[-1, 0]
 
         self._p_norm[:] = self._p_norm_new
 
     def _update(self, t):
         """
-        Ingress a new data point and update the matrix profile and matrix profile
-        indices without egressing the oldest data point
+        Ingress a new data point and update the (top-k) matrix profile and matrix
+        profile indices without egressing the oldest data point
         """
         self._n = self._T.shape[0]
         l = self._n - self._m + 1
@@ -264,9 +273,10 @@ class aampi:
         p_norm_new[0] = (
             np.linalg.norm(T_new[: self._m] - S[: self._m], ord=self._p) ** self._p
         )
-        p_norm_new[:] = np.where(
-            p_norm_new < config.STUMPY_P_NORM_THRESHOLD, 0, p_norm_new
-        )
+
+        mask = p_norm_new < config.STUMPY_P_NORM_THRESHOLD
+        p_norm_new[mask] = 0
+
         D = np.power(p_norm_new, 1.0 / self._p)
         D[~self._T_subseq_isfinite] = np.inf
         if np.any(~self._T_isfinite[-self._m :]):
@@ -274,55 +284,69 @@ class aampi:
 
         core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
 
-        update_idx = np.argwhere(D[:l] < self._P[:l]).flatten()
-        self._I[update_idx] = l
-        self._P[update_idx] = D[update_idx]
+        update_idx = np.argwhere(D[:l] < self._P[:l, -1]).flatten()
+        for i in update_idx:
+            idx = np.searchsorted(self._P[i], D[i], side="right")
+            core._shift_insert_at_index(self._P[i], idx, D[i])
+            core._shift_insert_at_index(self._I[i], idx, l)
 
-        I_last = np.argmin(D)
-        if np.isinf(D[I_last]):
-            I_new = np.append(self._I, -1)
-            P_new = np.append(self._P, np.inf)
-        else:
-            I_new = np.append(self._I, I_last)
-            P_new = np.append(self._P, D[I_last])
+        # Calculating top-k matrix profile and (top-1) left matrix profile (and their
+        # corresponding indices) for new subsequence whose distance profie is `D`
+        P_new = np.full(self._k, np.inf, dtype=np.float64)
+        I_new = np.full(self._k, -1, dtype=np.int64)
+        for i, d in enumerate(D):
+            if d < P_new[-1]:  # maximum value in sorted array P_new
+                idx = np.searchsorted(P_new, d, side="right")
+                core._shift_insert_at_index(P_new, idx, d)
+                core._shift_insert_at_index(I_new, idx, i)
 
-        # Regarding the last subsequence, the left profile (index) value is the
-        # same as the profile (index) value.
-        left_I_new = np.append(self._left_I, I_new[-1])
-        left_P_new = np.append(self._left_P, P_new[-1])
+        left_I_new = I_new[0]
+        left_P_new = P_new[0]
 
         self._T = T_new
-        self._P = P_new
-        self._I = I_new
-        self._left_I = left_I_new
-        self._left_P = left_P_new
+        self._P = np.append(self._P, P_new.reshape(1, -1), axis=0)
+        self._I = np.append(self._I, I_new.reshape(1, -1), axis=0)
+        self._left_P = np.append(self._left_P, left_P_new)
+        self._left_I = np.append(self._left_I, left_I_new)
         self._p_norm = p_norm_new
 
     @property
     def P_(self):
         """
-        Get the matrix profile
+        Get the (top-k) matrix profile. When `k=1` (default), the output is
+        a 1D array consisting of the matrix profile. When `k > 1`, the
+        output is a 2D array that has exactly `k` columns and it consists of the
+        top-k matrix profile.
         """
-        return self._P.astype(np.float64)
+        if self._k == 1:
+            return self._P.flatten().astype(np.float64)
+        else:
+            return self._P.astype(np.float64)
 
     @property
     def I_(self):
         """
-        Get the matrix profile indices
+        Get the (top-k) matrix profile indices. When `k=1` (default), the output is
+        a 1D array consisting of the matrix profile indices. When `k > 1`, the
+        output is a 2D array that has exactly `k` columns and it consists of the
+        top-k matrix profile indices.
         """
-        return self._I.astype(np.int64)
+        if self._k == 1:
+            return self._I.flatten().astype(np.int64)
+        else:
+            return self._I.astype(np.int64)
 
     @property
     def left_P_(self):
         """
-        Get the left matrix profile
+        Get the (top-1) left matrix profile
         """
         return self._left_P.astype(np.float64)
 
     @property
     def left_I_(self):
         """
-        Get the left matrix profile indices
+        Get the (top-1) left matrix profile indices
         """
         return self._left_I.astype(np.int64)
 

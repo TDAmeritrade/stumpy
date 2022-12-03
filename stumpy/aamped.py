@@ -55,8 +55,16 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
     Returns
     -------
     out : numpy.ndarray
-        The first column consists of the matrix profile, the second column
-        consists of the matrix profile indices.
+        When k = 1 (default), the first column consists of the matrix profile,
+        the second column consists of the matrix profile indices, the third column
+        consists of the left matrix profile indices, and the fourth column consists
+        of the right matrix profile indices. However, when k > 1, the output array
+        will contain exactly 2 * k + 2 columns. The first k columns (i.e., out[:, :k])
+        consists of the top-k matrix profile, the next set of k columns
+        (i.e., out[:, k:2k]) consists of the corresponding top-k matrix profile
+        indices, and the last two columns (i.e., out[:, 2k] and out[:, 2k+1] or,
+        equivalently, out[:, -2] and out[:, -1]) correspond to the top-1 left
+        matrix profile indices and the top-1 right matrix profile indices, respectively.
 
     Notes
     -----
@@ -94,12 +102,10 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
     n_B = T_B.shape[0]
     l = n_A - m + 1
 
-    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-    out = np.empty((l, 4), dtype=object)
-
     hosts = list(dask_client.ncores().keys())
     nworkers = len(hosts)
 
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     if ignore_trivial:
         diags = np.arange(excl_zone + 1, n_A - m + 1, dtype=np.int64)
     else:
@@ -141,20 +147,30 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
                 p,
                 diags_futures[i],
                 ignore_trivial,
+                k,
             )
         )
 
     results = dask_client.gather(futures)
-    profile, indices = results[0]
+    profile, profile_L, profile_R, indices, indices_L, indices_R = results[0]
     for i in range(1, len(hosts)):
-        P, I = results[i]
-        for col in range(P.shape[1]):  # pragma: no cover
-            cond = P[:, col] < profile[:, col]
-            profile[:, col] = np.where(cond, P[:, col], profile[:, col])
-            indices[:, col] = np.where(cond, I[:, col], indices[:, col])
+        P, PL, PR, I, IL, IR = results[i]
+        # Update top-k matrix profile and matrix profile indices
+        core._merge_topk_PI(profile, P, indices, I)
 
-    out[:, 0] = profile[:, 0]
-    out[:, 1:4] = indices
+        # Update top-1 left matrix profile and matrix profile index
+        mask = PL < profile_L
+        profile_L[mask] = PL[mask]
+        indices_L[mask] = IL[mask]
+
+        # Update top-1 right matrix profile and matrix profile index
+        mask = PR < profile_R
+        profile_R[mask] = PR[mask]
+        indices_R[mask] = IR[mask]
+
+    out = np.empty((l, 2 * k + 2), dtype=object)
+    out[:, :k] = profile
+    out[:, k : 2 * k + 2] = np.column_stack((indices, indices_L, indices_R))
 
     core._check_P(out[:, 0])
 

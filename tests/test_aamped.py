@@ -602,3 +602,39 @@ def test_aamped_two_subsequences_nan_inf_A_B_join_swap(
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
         npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_aamped_self_join_KNN(T_A, T_B, dask_cluster):
+    with Client(dask_cluster) as dask_client:
+        m = 3
+        for k in range(2, 4):
+            for p in [1.0, 2.0, 3.0]:
+                ref_mp = naive.aamp(T_B, m, p=p, k=k)
+                comp_mp = aamped(dask_client, T_B, m, p=p, k=k)
+                naive.replace_inf(ref_mp)
+                naive.replace_inf(comp_mp)
+                npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_aamped_A_B_join_KNN(T_A, T_B, dask_cluster):
+    with Client(dask_cluster) as dask_client:
+        m = 3
+        for k in range(2, 4):
+            for p in [1.0, 2.0, 3.0]:
+                ref_mp = naive.aamp(T_A, m, T_B=T_B, p=p, k=k)
+                comp_mp = aamped(
+                    dask_client, T_A, m, T_B, ignore_trivial=False, p=p, k=k
+                )
+                naive.replace_inf(ref_mp)
+                naive.replace_inf(comp_mp)
+                npt.assert_almost_equal(ref_mp, comp_mp)

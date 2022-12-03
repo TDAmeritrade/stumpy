@@ -7,7 +7,7 @@ import functools
 import inspect
 
 import numpy as np
-from numba import njit
+from numba import njit, cuda
 from scipy.signal import convolve
 from scipy.ndimage import maximum_filter1d, minimum_filter1d
 from scipy import linalg
@@ -2898,3 +2898,93 @@ def _find_matches(
         candidate_idx = np.argmin(D)
 
     return np.array(matches, dtype=object)
+
+
+@cuda.jit(device=True)
+def _gpu_searchsorted_left(a, v, bfs, nlevel):
+    """
+    A device function, equivalent to numpy.searchsorted(a, v, side='left')
+
+    Parameters
+    ----------
+    a : numpy.ndarray
+        1-dim array sorted in ascending order.
+
+    v : float
+        Value to insert into array `a`
+
+    bfs : numpy.ndarray
+        The breadth-first-search indices where the missing leaves of its corresponding
+        binary search tree are filled with -1.
+
+    nlevel : int
+        The number of levels in the binary search tree from which the array
+        `bfs` is obtained.
+
+    Returns
+    -------
+    idx : int
+        The index of the insertion point
+    """
+    n = a.shape[0]
+    idx = 0
+    for level in range(nlevel):
+        if v <= a[bfs[idx]]:
+            next_idx = 2 * idx + 1
+        else:
+            next_idx = 2 * idx + 2
+
+        if level == nlevel - 1 or bfs[next_idx] < 0:
+            if v <= a[bfs[idx]]:
+                idx = max(bfs[idx], 0)
+            else:
+                idx = min(bfs[idx] + 1, n)
+            break
+        idx = next_idx
+
+    return idx
+
+
+@cuda.jit(device=True)
+def _gpu_searchsorted_right(a, v, bfs, nlevel):
+    """
+    A device function, equivalent to numpy.searchsorted(a, v, side='right')
+
+    Parameters
+    ----------
+    a : numpy.ndarray
+        1-dim array sorted in ascending order.
+
+    v : float
+        Value to insert into array `a`
+
+    bfs : numpy.ndarray
+        The breadth-first-search indices where the missing leaves of its corresponding
+        binary search tree are filled with -1.
+
+    nlevel : int
+        The number of levels in the binary search tree from which the array
+        `bfs` is obtained.
+
+    Returns
+    -------
+    idx : int
+        The index of the insertion point
+    """
+    n = a.shape[0]
+    idx = 0
+    for level in range(nlevel):
+        if v < a[bfs[idx]]:
+            next_idx = 2 * idx + 1
+        else:
+            next_idx = 2 * idx + 2
+
+        if level == nlevel - 1 or bfs[next_idx] < 0:
+            if v < a[bfs[idx]]:
+                idx = max(bfs[idx], 0)
+            else:
+                idx = min(bfs[idx] + 1, n)
+            break
+        idx = next_idx
+
+    return idx

@@ -15,100 +15,10 @@ from .gpu_aamp import gpu_aamp
 logger = logging.getLogger(__name__)
 
 
-@cuda.jit(device=True)
-def _gpu_searchsorted_left(a, v, bfs, nlevel):
-    """
-    A device function, equivalent to numpy.searchsorted(a, v, side='left')
-
-    Parameters
-    ----------
-    a : numpy.ndarray
-        1-dim array sorted in ascending order.
-
-    v : float
-        Value to insert into array `a`
-
-    bfs : numpy.ndarray
-        The breadth-first-search indices where the missing leaves of its corresponding
-        binary search tree are filled with -1.
-
-    nlevel : int
-        The number of levels in the binary search tree from which the array
-        `bfs` is obtained.
-
-    Returns
-    -------
-    idx : int
-        The index of the insertion point
-    """
-    n = a.shape[0]
-    idx = 0
-    for level in range(nlevel):
-        if v <= a[bfs[idx]]:
-            next_idx = 2 * idx + 1
-        else:
-            next_idx = 2 * idx + 2
-
-        if level == nlevel - 1 or bfs[next_idx] < 0:
-            if v <= a[bfs[idx]]:
-                idx = max(bfs[idx], 0)
-            else:
-                idx = min(bfs[idx] + 1, n)
-            break
-        idx = next_idx
-
-    return idx
-
-
-@cuda.jit(device=True)
-def _gpu_searchsorted_right(a, v, bfs, nlevel):
-    """
-    A device function, equivalent to numpy.searchsorted(a, v, side='right')
-
-    Parameters
-    ----------
-    a : numpy.ndarray
-        1-dim array sorted in ascending order.
-
-    v : float
-        Value to insert into array `a`
-
-    bfs : numpy.ndarray
-        The breadth-first-search indices where the missing leaves of its corresponding
-        binary search tree are filled with -1.
-
-    nlevel : int
-        The number of levels in the binary search tree from which the array
-        `bfs` is obtained.
-
-    Returns
-    -------
-    idx : int
-        The index of the insertion point
-    """
-    n = a.shape[0]
-    idx = 0
-    for level in range(nlevel):
-        if v < a[bfs[idx]]:
-            next_idx = 2 * idx + 1
-        else:
-            next_idx = 2 * idx + 2
-
-        if level == nlevel - 1 or bfs[next_idx] < 0:
-            if v < a[bfs[idx]]:
-                idx = max(bfs[idx], 0)
-            else:
-                idx = min(bfs[idx] + 1, n)
-            break
-        idx = next_idx
-
-    return idx
-
-
 @cuda.jit(
     "(i8, f8[:], f8[:], i8,  f8[:], f8[:], f8[:], f8[:], f8[:],"
     "f8[:], f8[:], i8, b1, i8, f8[:, :], f8[:], f8[:], i8[:, :], i8[:], i8[:],"
-    "b1, i8[:], i8, i2)"
+    "b1, i8[:], i8, i8)"
 )
 def _compute_and_update_PI_kernel(
     i,
@@ -284,7 +194,7 @@ def _compute_and_update_PI_kernel(
                 indices_R[j] = i
 
         if p_norm < profile[j, -1]:
-            idx = _gpu_searchsorted_right(profile[j], p_norm, bfs, nlevel)
+            idx = core._gpu_searchsorted_right(profile[j], p_norm, bfs, nlevel)
             for g in range(k - 1, idx, -1):
                 profile[j, g] = profile[j, g - 1]
                 indices[j, g] = indices[j, g - 1]
@@ -854,12 +764,12 @@ def gpu_stump(
         core._merge_topk_PI(profile[0], profile[i], indices[0], indices[i])
 
         # Update (top-1) left matrix profile and matrix profile indices
-        mask = profile_L[0] < profile_L[i]
+        mask = profile_L[0] > profile_L[i]
         profile_L[0][mask] = profile_L[i][mask]
         indices_L[0][mask] = indices_L[i][mask]
 
         # Update (top-1) right matrix profile and matrix profile indices
-        mask = profile_R[0] < profile_R[i]
+        mask = profile_R[0] > profile_R[i]
         profile_R[0][mask] = profile_R[i][mask]
         indices_R[0][mask] = indices_R[i][mask]
 
