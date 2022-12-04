@@ -179,36 +179,6 @@ else:  # pragma: no cover
         if cd.name == "gpu_aamp_stimp":
             gpu_aamp_stimp.__doc__ = ast.get_docstring(cd)
 
-    # Fix _gpu_searchsorted_left Docs
-    core._gpu_searchsorted_left.__doc__ = ""
-    filepath = pathlib.Path(__file__).parent / "core.py"
-
-    file_contents = ""
-    with open(filepath, encoding="utf8") as f:
-        file_contents = f.read()
-    module = ast.parse(file_contents)
-    function_definitions = [
-        node for node in module.body if isinstance(node, ast.FunctionDef)
-    ]
-    for fd in function_definitions:
-        if fd.name == "_gpu_searchsorted_left":
-            core._gpu_searchsorted_left.__doc__ = ast.get_docstring(fd)
-
-    # Fix _gpu_searchsorted_right Docs
-    core._gpu_searchsorted_right.__doc__ = ""
-    filepath = pathlib.Path(__file__).parent / "core.py"
-
-    file_contents = ""
-    with open(filepath, encoding="utf8") as f:
-        file_contents = f.read()
-    module = ast.parse(file_contents)
-    function_definitions = [
-        node for node in module.body if isinstance(node, ast.FunctionDef)
-    ]
-    for fd in function_definitions:
-        if fd.name == "_gpu_searchsorted_right":
-            core._gpu_searchsorted_right.__doc__ = ast.get_docstring(fd)
-
 try:
     _dist = get_distribution("stumpy")
     # Normalize case for Windows systems
