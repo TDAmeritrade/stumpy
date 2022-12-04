@@ -38,6 +38,8 @@ if cuda.is_available():
     from .gpu_aampdist import gpu_aampdist  # noqa: F401
     from .gpu_stimp import gpu_stimp  # noqa: F401
     from .gpu_aamp_stimp import gpu_aamp_stimp  # noqa: F401
+    from .core import _gpu_searchsorted_left  # noqa: F401
+    from .core import _gpu_searchsorted_right  # noqa: F401
 else:  # pragma: no cover
     from .core import _gpu_stump_driver_not_found as gpu_stump  # noqa: F401
     from .core import _gpu_aamp_driver_not_found as gpu_aamp  # noqa: F401
@@ -49,6 +51,13 @@ else:  # pragma: no cover
     from .core import _gpu_aampdist_driver_not_found as gpu_aampdist  # noqa: F401
     from .core import _gpu_stimp_driver_not_found as gpu_stimp  # noqa: F401
     from .core import _gpu_aamp_stimp_driver_not_found as gpu_aamp_stimp  # noqa: F401
+    from .core import (
+        _gpu_searchsorted_left_driver_not_found as _gpu_searchsorted_left,
+    )  # noqa: F401
+    from .core import (
+        _gpu_searchsorted_right_driver_not_found as _gpu_searchsorted_right,
+    )  # noqa: F401
+
     import ast
     import pathlib
 
@@ -173,6 +182,36 @@ else:  # pragma: no cover
     for cd in class_definitions:
         if cd.name == "gpu_aamp_stimp":
             gpu_aamp_stimp.__doc__ = ast.get_docstring(cd)
+
+    # Fix _gpu_searchsorted_left Docs
+    _gpu_searchsorted_left.__doc__ = ""
+    filepath = pathlib.Path(__file__).parent / "core.py"
+
+    file_contents = ""
+    with open(filepath, encoding="utf8") as f:
+        file_contents = f.read()
+    module = ast.parse(file_contents)
+    function_definitions = [
+        node for node in module.body if isinstance(node, ast.FunctionDef)
+    ]
+    for fd in function_definitions:
+        if fd.name == "_gpu_searchsorted_left":
+            _gpu_searchsorted_left.__doc__ = ast.get_docstring(fd)
+
+    # Fix _gpu_searchsorted_right Docs
+    _gpu_searchsorted_right.__doc__ = ""
+    filepath = pathlib.Path(__file__).parent / "core.py"
+
+    file_contents = ""
+    with open(filepath, encoding="utf8") as f:
+        file_contents = f.read()
+    module = ast.parse(file_contents)
+    function_definitions = [
+        node for node in module.body if isinstance(node, ast.FunctionDef)
+    ]
+    for fd in function_definitions:
+        if fd.name == "_gpu_searchsorted_right":
+            _gpu_searchsorted_right.__doc__ = ast.get_docstring(fd)
 
 try:
     _dist = get_distribution("stumpy")

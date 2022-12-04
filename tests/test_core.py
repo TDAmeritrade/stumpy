@@ -4,6 +4,7 @@ import numpy.testing as npt
 import pandas as pd
 from scipy.spatial.distance import cdist
 from stumpy import core, config
+from stumpy.core import _gpu_searchsorted_left, _gpu_searchsorted_right
 import pytest
 from unittest.mock import patch
 import os
@@ -12,7 +13,6 @@ import math
 import naive
 
 if cuda.is_available():
-    from stumpy.core import _gpu_searchsorted_left, _gpu_searchsorted_right
 
     @cuda.jit("(f8[:, :], f8[:], i8[:], i8, b1, i8[:])")
     def _gpu_searchsorted_kernel(a, v, bfs, nlevel, is_left, idx):
@@ -24,13 +24,6 @@ if cuda.is_available():
             else:
                 idx[i] = _gpu_searchsorted_right(a[i], v[i], bfs, nlevel)
 
-else:  # pragma: no cover
-    from stumpy.core import (
-        _gpu_searchsorted_left_driver_not_found as _gpu_searchsorted_left,
-    )
-    from stumpy.core import (
-        _gpu_searchsorted_right_driver_not_found as _gpu_searchsorted_right,
-    )
 
 try:
     from numba.errors import NumbaPerformanceWarning
