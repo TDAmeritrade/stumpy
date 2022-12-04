@@ -2,15 +2,13 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
+import warnings
 
 import numpy as np
 
 from . import core, config
 from .maamp import maamp_mdl
 from .aamp_motifs import aamp_match
-
-logger = logging.getLogger(__name__)
 
 
 def aamp_mmotifs(
@@ -112,11 +110,11 @@ def aamp_mmotifs(
     reset_k = False
 
     if max_motifs < 1:  # pragma: no cover
-        logger.warning(
+        warnings.warn(
             "The maximum number of motifs, `max_motifs`, "
             "must be greater than or equal to 1"
         )
-        logger.warning("`max_motifs` has been set to `1`")
+        warnings.warn("`max_motifs` has been set to `1`")
         max_motifs = 1
 
     T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)

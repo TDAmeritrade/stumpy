@@ -2,7 +2,7 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.  # noqa: E501
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
+import warnings
 import functools
 import inspect
 
@@ -21,8 +21,6 @@ try:
     from numba.cuda.cudadrv.driver import _raise_driver_not_found
 except ImportError:
     pass
-
-logger = logging.getLogger(__name__)
 
 
 def _compare_parameters(norm, non_norm, exclude=None):
@@ -60,11 +58,13 @@ def _compare_parameters(norm, non_norm, exclude=None):
 
     is_same_params = set(norm_params) == set(non_norm_params)
     if not is_same_params:
-        if exclude is not None:
-            logger.warning(f"Excluding `{exclude}` parameters, ")
-        logger.warning(f"`{norm}`: ({norm_params}) and ")
-        logger.warning(f"`{non_norm}`: ({non_norm_params}) ")
-        logger.warning("have different parameters.")
+        msg = ""
+        if exclude is not None or (isinstance(exclude, list) and len(exclude)):
+            msg += f"Excluding `{exclude}` parameters, "
+        msg += f"function `{norm.__name__}({norm_params}) and "
+        msg += f"function `{non_norm.__name__}({non_norm_params}) "
+        msg += "have different arguments/parameters."
+        warnings.warn(msg)
 
     return is_same_params
 
@@ -2804,8 +2804,8 @@ def _check_P(P, threshold=1e-6):
     if P.ndim != 1:
         raise ValueError("`P` was {P.ndim}-dimensional and must be 1-dimensional")
     if are_distances_too_small(P, threshold=threshold):  # pragma: no cover
-        logger.warning(f"A large number of values in `P` are smaller than {threshold}.")
-        logger.warning("For a self-join, try setting `ignore_trivial=True`.")
+        warnings.warn(f"A large number of values in `P` are smaller than {threshold}.")
+        warnings.warn("For a self-join, try setting `ignore_trivial=True`.")
 
 
 def _find_matches(

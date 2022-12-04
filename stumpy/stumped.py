@@ -2,15 +2,13 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
+import warnings
 
 import numpy as np
 
 from . import core, config
 from .stump import _stump
 from .aamped import aamped
-
-logger = logging.getLogger(__name__)
 
 
 @core.non_normalized(aamped)
@@ -185,12 +183,12 @@ def stumped(
     core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
     if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
-        logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
-        logger.warning("Try setting `ignore_trivial = True`.")
+        warnings.warn("Arrays T_A, T_B are equal, which implies a self-join.")
+        warnings.warn("Try setting `ignore_trivial = True`.")
 
     if ignore_trivial and core.are_arrays_equal(T_A, T_B) is False:  # pragma: no cover
-        logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
-        logger.warning("Try setting `ignore_trivial = False`.")
+        warnings.warn("Arrays T_A, T_B are not equal, which implies an AB-join.")
+        warnings.warn("Try setting `ignore_trivial = False`.")
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
