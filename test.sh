@@ -48,6 +48,13 @@ check_black()
     check_errs $?
 }
 
+check_docstrings()
+{
+    echo "Checking Missing Docstrings"
+    ./docstring.py
+    check_errs $?
+}
+
 check_flake()
 {
     echo "Checking Flake8 Style Guide Enforcement"
@@ -225,6 +232,7 @@ clean_up()
 clean_up
 check_black
 check_flake
+check_docstrings
 check_print
 check_naive
 

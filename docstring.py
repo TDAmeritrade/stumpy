@@ -5,13 +5,36 @@ import ast
 import re
 
 
-def get_docstring_args(docstring):
+def get_docstring_args(fd):
     """
-    Extract parameter arguments from docstring
+    Extract docstring parameters from function definition
     """
+    docstring = ast.get_docstring(fd)
     args = re.findall(r"(\w+)\s+\:", docstring)
-    args = [a for a in args if a != "self"]
+    args = set([a for a in args])
     return args
+
+
+def get_signature_args(fd):
+    """
+    Extract signature arguments from function definition
+    """
+    return set([a.arg for a in fd.args.args if a.arg != "self"])
+
+
+def check_args(doc_args, sig_args, file_name, func_name, class_name=None):
+    """
+    Compare docstring arguments and signature argments
+    """
+    diff_args = signature_args.difference(docstring_args)
+    if len(diff_args) > 0:
+        msg = "Found one or more arguments/parameters with missing docstring in \n"
+        msg += f"file: {file_name}\n"
+        if class_name is not None:
+            msg += f"class: {class_name}\n"
+        msg += f"function/method: {func_name}\n"
+        msg += f"parameter(s): {diff_args}\n"
+        raise RuntimeError(msg)
 
 
 ignore = ["__init__.py", "__pycache__"]
@@ -30,17 +53,9 @@ for filepath in filepaths:
             node for node in module.body if isinstance(node, ast.FunctionDef)
         ]
         for fd in function_definitions:
-            docstring_args = set(get_docstring_args(ast.get_docstring(fd)))
-            signature_args = set([a.arg for a in fd.args.args])
-            diff_args = signature_args.difference(docstring_args)
-            if len(diff_args) > 0:
-                print("Found one or more parameters with missing docstring:")
-                print(f"    File: {filepath.name}")
-                print(f"    Function: {fd.name}")
-                print(f"    Parameters: {diff_args}")
-                # print(ast.get_docstring(fd))
-                # print(docstring_args)
-                # print(signature_args)
+            docstring_args = get_docstring_args(fd)
+            signature_args = get_signature_args(fd)
+            check_args(docstring_args, signature_args, filepath.name, fd.name)
 
         # Check Class Methods
         class_definitions = [
@@ -49,15 +64,8 @@ for filepath in filepaths:
         for cd in class_definitions:
             methods = [node for node in cd.body if isinstance(node, ast.FunctionDef)]
             for fd in methods:
-                docstring_args = set(get_docstring_args(ast.get_docstring(fd)))
-                signature_args = set([a.arg for a in fd.args.args if a.arg != "self"])
-                diff_args = signature_args.difference(docstring_args)
-                if len(diff_args) > 0:
-                    print("Found one or more parameters with missing docstring:")
-                    print(f"    File: {filepath.name}")
-                    print(f"    Class: {cd.name}")
-                    print(f"    Method: {fd.name}")
-                    print(f"    Parameters: {diff_args}")
-                    # print(ast.get_docstring(fd))
-                    # print(docstring_args)
-                    # print(signature_args)
+                docstring_args = get_docstring_args(fd)
+                signature_args = get_signature_args(fd)
+                check_args(
+                    docstring_args, signature_args, filepath.name, fd.name, cd.name
+                )
