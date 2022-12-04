@@ -50,6 +50,7 @@ else:  # pragma: no cover
     from .core import _gpu_aampdist_driver_not_found as gpu_aampdist  # noqa: F401
     from .core import _gpu_stimp_driver_not_found as gpu_stimp  # noqa: F401
     from .core import _gpu_aamp_stimp_driver_not_found as gpu_aamp_stimp  # noqa: F401
+
     core._gpu_searchsorted_left = core._gpu_searchsorted_left_driver_not_found
     core._gpu_searchsorted_right = core._gpu_searchsorted_right_driver_not_found
 
@@ -179,7 +180,7 @@ else:  # pragma: no cover
             gpu_aamp_stimp.__doc__ = ast.get_docstring(cd)
 
     # Fix _gpu_searchsorted_left Docs
-    _gpu_searchsorted_left.__doc__ = ""
+    core._gpu_searchsorted_left.__doc__ = ""
     filepath = pathlib.Path(__file__).parent / "core.py"
 
     file_contents = ""
@@ -191,10 +192,10 @@ else:  # pragma: no cover
     ]
     for fd in function_definitions:
         if fd.name == "_gpu_searchsorted_left":
-            _gpu_searchsorted_left.__doc__ = ast.get_docstring(fd)
+            core._gpu_searchsorted_left.__doc__ = ast.get_docstring(fd)
 
     # Fix _gpu_searchsorted_right Docs
-    _gpu_searchsorted_right.__doc__ = ""
+    core._gpu_searchsorted_right.__doc__ = ""
     filepath = pathlib.Path(__file__).parent / "core.py"
 
     file_contents = ""
@@ -206,7 +207,7 @@ else:  # pragma: no cover
     ]
     for fd in function_definitions:
         if fd.name == "_gpu_searchsorted_right":
-            _gpu_searchsorted_right.__doc__ = ast.get_docstring(fd)
+            core._gpu_searchsorted_right.__doc__ = ast.get_docstring(fd)
 
 try:
     _dist = get_distribution("stumpy")
