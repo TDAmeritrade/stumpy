@@ -652,15 +652,17 @@ class scraamp:
         if self._ignore_trivial is False and core.are_arrays_equal(
             self._T_A, self._T_B
         ):  # pragma: no cover
-            warnings.warn("Arrays T_A, T_B are equal, which implies a self-join.")
-            warnings.warn("Try setting `ignore_trivial = True`.")
+            msg = "Arrays T_A, T_B are equal, which implies a self-join.\n"
+            msg += "Try setting `ignore_trivial = True`."
+            warnings.warn(msg)
 
         if (
             self._ignore_trivial
             and core.are_arrays_equal(self._T_A, self._T_B) is False
         ):  # pragma: no cover
-            warnings.warn("Arrays T_A, T_B are not equal, which implies an AB-join.")
-            warnings.warn("Try setting `ignore_trivial = False`.")
+            msg = "Arrays T_A, T_B are not equal, which implies an AB-join.\n"
+            msg += "Try setting `ignore_trivial = False`."
+            warnings.warn(msg)
 
         self._n_A = self._T_A.shape[0]
         self._n_B = self._T_B.shape[0]

@@ -2804,8 +2804,9 @@ def _check_P(P, threshold=1e-6):
     if P.ndim != 1:
         raise ValueError("`P` was {P.ndim}-dimensional and must be 1-dimensional")
     if are_distances_too_small(P, threshold=threshold):  # pragma: no cover
-        warnings.warn(f"A large number of values in `P` are smaller than {threshold}.")
-        warnings.warn("For a self-join, try setting `ignore_trivial=True`.")
+        msg = f"A large number of values in `P` are smaller than {threshold}.\n"
+        msg += "For a self-join, try setting `ignore_trivial=True`."
+        warnings.warn(msg)
 
 
 def _find_matches(

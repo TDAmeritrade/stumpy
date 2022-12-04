@@ -64,12 +64,9 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-    warnings.warn(
-        "stumpy.stomp._stomp is not supported and only provided for reference."
-    )
-    warnings.warn(
-        "Please use the Numba JIT-compiled stumpy.stump or stumpy.gpu_stump instead."
-    )
+    msg = "stumpy.stomp._stomp is not supported and only provided for reference.\n"
+    msg += "Please use the Numba JIT-compiled stumpy.stump or stumpy.gpu_stump instead."
+    warnings.warn(msg)
 
     if T_B is None:
         T_B = T_A
@@ -87,12 +84,14 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
     core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
     if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
-        warnings.warn("Arrays T_A, T_B are equal, which implies a self-join.")
-        warnings.warn("Try setting `ignore_trivial = True`.")
+        msg = "Arrays T_A, T_B are equal, which implies a self-join.\n"
+        msg += "Try setting `ignore_trivial = True`."
+        warnings.warn(msg)
 
     if ignore_trivial and core.are_arrays_equal(T_A, T_B) is False:  # pragma: no cover
-        warnings.warn("Arrays T_A, T_B are not equal, which implies an AB-join.")
-        warnings.warn("Try setting `ignore_trivial = False`.")
+        msg = "Arrays T_A, T_B are not equal, which implies an AB-join.\n"
+        msg += "Try setting `ignore_trivial = False`."
+        warnings.warn(msg)
 
     n = T_A.shape[0]
     l = n - m + 1

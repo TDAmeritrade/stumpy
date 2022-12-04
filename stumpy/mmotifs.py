@@ -128,11 +128,10 @@ def mmotifs(
     reset_k = False
 
     if max_motifs < 1:  # pragma: no cover
-        warnings.warn(
-            "The maximum number of motifs, `max_motifs`, "
-            "must be greater than or equal to 1"
-        )
-        warnings.warn("`max_motifs` has been set to `1`")
+        msg = "The maximum number of motifs, `max_motifs`, "
+        msg += "must be greater than or equal to 1.\n"
+        msg += "`max_motifs` has been set to `1`"
+        warnings.warn(msg)
         max_motifs = 1
 
     T, M_T, Σ_T = core.preprocess(T, m)
