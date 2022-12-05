@@ -39,7 +39,6 @@ if cuda.is_available():
     from .gpu_stimp import gpu_stimp  # noqa: F401
     from .gpu_aamp_stimp import gpu_aamp_stimp  # noqa: F401
 else:  # pragma: no cover
-    from . import core
     from .core import _gpu_stump_driver_not_found as gpu_stump  # noqa: F401
     from .core import _gpu_aamp_driver_not_found as gpu_aamp  # noqa: F401
     from .core import _gpu_ostinato_driver_not_found as gpu_ostinato  # noqa: F401
@@ -50,6 +49,8 @@ else:  # pragma: no cover
     from .core import _gpu_aampdist_driver_not_found as gpu_aampdist  # noqa: F401
     from .core import _gpu_stimp_driver_not_found as gpu_stimp  # noqa: F401
     from .core import _gpu_aamp_stimp_driver_not_found as gpu_aamp_stimp  # noqa: F401
+
+    from . import core
 
     core._gpu_searchsorted_left = core._gpu_searchsorted_left_driver_not_found
     core._gpu_searchsorted_right = core._gpu_searchsorted_right_driver_not_found
