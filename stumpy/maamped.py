@@ -2,15 +2,11 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
-
 import numpy as np
 
 from .maamp import _maamp, _get_first_maamp_profile, _get_multi_p_norm
 from .mstump import _preprocess_include
 from . import core, config
-
-logger = logging.getLogger(__name__)
 
 
 def maamped(dask_client, T, m, include=None, discords=False, p=2.0):

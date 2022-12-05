@@ -2,13 +2,11 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
+import warnings
 
 import numpy as np
 
 from . import core, config
-
-logger = logging.getLogger(__name__)
 
 
 def _aamp_motifs(
@@ -245,11 +243,10 @@ def aamp_motifs(
 
     """
     if max_motifs < 1:  # pragma: no cover
-        logger.warn(
-            "The maximum number of motifs, `max_motifs`, "
-            "must be greater than or equal to 1"
-        )
-        logger.warn("`max_motifs` has been set to `1`")
+        msg = "The maximum number of motifs, `max_motifs`, "
+        msg += "must be greater than or equal to 1.\n"
+        msg += "`max_motifs` has been set to `1`"
+        warnings.warn(msg)
         max_motifs = 1
 
     if T.ndim != 1:  # pragma: no cover
@@ -277,14 +274,11 @@ def aamp_motifs(
 
     if cutoff == 0.0:  # pragma: no cover
         suggested_cutoff = np.partition(P, 1)[1]
-        logger.warn(
-            "The `cutoff` has been set to 0.0 and may result in little/no candidate "
-            "motifs being identified."
-        )
-        logger.warn(
-            "You may consider relaxing the constraint by increasing the `cutoff` "
-            f"(e.g., cutoff={suggested_cutoff})."
-        )
+        msg = "The `cutoff` has been set to 0.0 and may result in little/no candidate "
+        msg += "motifs being identified.\n"
+        msg += "You may consider relaxing the constraint by increasing the `cutoff` "
+        msg += f"(e.g., cutoff={suggested_cutoff})."
+        warnings.warn(msg)
 
     T, T_subseq_isfinite = core.preprocess_non_normalized(T[np.newaxis, :], m)
     P = P[np.newaxis, :].astype(np.float64)
