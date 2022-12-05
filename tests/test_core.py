@@ -29,6 +29,8 @@ try:
 except ModuleNotFoundError:
     from numba.core.errors import NumbaPerformanceWarning
 
+TEST_THREADS_PER_BLOCK = 10
+
 
 def naive_rolling_window_dot_product(Q, T):
     window = len(Q)
@@ -1387,7 +1389,7 @@ def test_find_matches_maxmatch():
 
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
-@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", 10)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def test_gpu_searchsorted():
     if not cuda.is_available():  # pragma: no cover
         pytest.skip("Skipping Tests No GPUs Available")
