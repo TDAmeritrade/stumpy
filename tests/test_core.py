@@ -4,7 +4,6 @@ import numpy.testing as npt
 import pandas as pd
 from scipy.spatial.distance import cdist
 from stumpy import core, config
-from stumpy.core import _gpu_searchsorted_left, _gpu_searchsorted_right
 import pytest
 from unittest.mock import patch
 import os
@@ -20,9 +19,9 @@ if cuda.is_available():
         i = cuda.grid(1)
         if i < a.shape[0]:
             if is_left:
-                idx[i] = _gpu_searchsorted_left(a[i], v[i], bfs, nlevel)
+                idx[i] = core._gpu_searchsorted_left(a[i], v[i], bfs, nlevel)
             else:
-                idx[i] = _gpu_searchsorted_right(a[i], v[i], bfs, nlevel)
+                idx[i] = core._gpu_searchsorted_right(a[i], v[i], bfs, nlevel)
 
 
 try:
