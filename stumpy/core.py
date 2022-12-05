@@ -383,7 +383,7 @@ def are_arrays_equal(a, b):  # pragma: no cover
     if a.shape != b.shape:
         return False
 
-    return ((a == b) | (np.isnan(a) & np.isnan(b))).all()
+    return bool(((a == b) | (np.isnan(a) & np.isnan(b))).all())
 
 
 def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
@@ -2989,3 +2989,60 @@ def _gpu_searchsorted_right(a, v, bfs, nlevel):
         idx = next_idx
 
     return idx
+
+
+def check_ignore_trivial(T_A, T_B, ignore_trivial):
+    """
+    Check inputs and verify the appropriateness for self-joins vs AB-joins and
+    provides relevant warnings.
+
+    Note that the warnings will output the first occurrence of matching warnings
+    for each location (module + line number) where the warning is issued
+
+    Parameters
+    ----------
+    T_A : numpy.ndarray
+        The time series or sequence for which to compute the matrix profile
+
+    T_B : numpy.ndarray
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
+        `None` which corresponds to a self-join.
+
+    ignore_trivial : bool
+        Set to `True` if this is a self-join. Otherwise, for AB-join, set this
+        to `False`.
+
+    Returns
+    -------
+    ignore_trivial : bool
+        The (corrected) ignore_trivial value
+
+    Notes
+    -----
+    These warnings may be supresse by using a context manager
+    ```
+    import stumpy
+    import numpy as np
+    import warnings
+
+    T = np.random.rand(10_000)
+    m = 50
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Arrays T_A, T_B are equal")
+        for _ in range(5):
+            stumpy.stump(T, m, T, ignore_trivial=False)
+    ```
+    """
+    if ignore_trivial is False and are_arrays_equal(T_A, T_B):  # pragma: no cover
+        msg = "Arrays T_A, T_B are equal, which implies a self-join. "
+        msg += "Try setting `ignore_trivial = True`."
+        warnings.warn(msg)
+
+    if ignore_trivial and are_arrays_equal(T_A, T_B) is False:  # pragma: no cover
+        msg = "Arrays T_A, T_B are not equal, which implies an AB-join. "
+        msg += "`ignore_trivial` has been automatically set to `False`."
+        warnings.warn(msg)
+        ignore_trivial = False
+
+    return ignore_trivial

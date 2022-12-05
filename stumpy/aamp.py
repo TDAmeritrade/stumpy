@@ -2,8 +2,6 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import warnings
-
 import numpy as np
 from numba import njit, prange
 import numba
@@ -398,16 +396,7 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
         raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
 
     core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
-
-    if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
-        msg = "Arrays T_A, T_B are equal, which implies a self-join.\n"
-        msg += "Try setting `ignore_trivial = True`."
-        warnings.warn("msg")
-
-    if ignore_trivial and core.are_arrays_equal(T_A, T_B) is False:  # pragma: no cover
-        msg = "Arrays T_A, T_B are not equal, which implies an AB-join.\n"
-        msg += "Try setting `ignore_trivial = False`."
-        warnings.warn("msg")
+    ignore_trivial = core.check_ignore_trivial(T_A, T_B, ignore_trivial)
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
