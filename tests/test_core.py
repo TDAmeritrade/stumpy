@@ -12,14 +12,17 @@ import math
 import naive
 
 if cuda.is_available():
-    from stumpy.core import _gpu_searchsorted_left, _gpu_searchsorted_right
-else:  # pragma: no cover
-    from stumpy.core import (
-        _gpu_searchsorted_left_driver_not_found as _gpu_searchsorted_left,
-    )
-    from stumpy.core import (
-        _gpu_searchsorted_right_driver_not_found as _gpu_searchsorted_right,
-    )
+
+    @cuda.jit("(f8[:, :], f8[:], i8[:], i8, b1, i8[:])")
+    def _gpu_searchsorted_kernel(a, v, bfs, nlevel, is_left, idx):
+        # A wrapper kernel for calling device function _gpu_searchsorted_left/right.
+        i = cuda.grid(1)
+        if i < a.shape[0]:
+            if is_left:
+                idx[i] = core._gpu_searchsorted_left(a[i], v[i], bfs, nlevel)
+            else:
+                idx[i] = core._gpu_searchsorted_right(a[i], v[i], bfs, nlevel)
+
 
 try:
     from numba.errors import NumbaPerformanceWarning
@@ -27,20 +30,6 @@ except ModuleNotFoundError:
     from numba.core.errors import NumbaPerformanceWarning
 
 TEST_THREADS_PER_BLOCK = 10
-
-if not cuda.is_available():  # pragma: no cover
-    pytest.skip("Skipping Tests No GPUs Available", allow_module_level=True)
-
-
-@cuda.jit("(f8[:, :], f8[:], i8[:], i8, b1, i8[:])")
-def _gpu_searchsorted_kernel(a, v, bfs, nlevel, is_left, idx):
-    # A wrapper kernel for calling device function _gpu_searchsorted_left/right.
-    i = cuda.grid(1)
-    if i < a.shape[0]:
-        if is_left:
-            idx[i] = _gpu_searchsorted_left(a[i], v[i], bfs, nlevel)
-        else:
-            idx[i] = _gpu_searchsorted_right(a[i], v[i], bfs, nlevel)
 
 
 def naive_rolling_window_dot_product(Q, T):
@@ -1403,7 +1392,7 @@ def test_find_matches_maxmatch():
 @patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def test_gpu_searchsorted():
     if not cuda.is_available():  # pragma: no cover
-        pytest.skip("Skipping Tests No GPUs Available", allow_module_level=True)
+        pytest.skip("Skipping Tests No GPUs Available")
 
     n = 3 * config.STUMPY_THREADS_PER_BLOCK + 1
     V = np.empty(n, dtype=np.float64)

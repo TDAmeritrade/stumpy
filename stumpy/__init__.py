@@ -49,6 +49,12 @@ else:  # pragma: no cover
     from .core import _gpu_aampdist_driver_not_found as gpu_aampdist  # noqa: F401
     from .core import _gpu_stimp_driver_not_found as gpu_stimp  # noqa: F401
     from .core import _gpu_aamp_stimp_driver_not_found as gpu_aamp_stimp  # noqa: F401
+
+    from . import core
+
+    core._gpu_searchsorted_left = core._gpu_searchsorted_left_driver_not_found
+    core._gpu_searchsorted_right = core._gpu_searchsorted_right_driver_not_found
+
     import ast
     import pathlib
 
