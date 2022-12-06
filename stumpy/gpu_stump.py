@@ -337,7 +337,6 @@ def _gpu_stump(
     μ_Q = np.load(μ_Q_fname, allow_pickle=False)
     σ_Q = np.load(σ_Q_fname, allow_pickle=False)
 
-    device_bfs = cuda.to_device(core._bfs_indices(k, fill_value=-1))
     nlevel = np.floor(np.log2(k) + 1).astype(np.int64)
     # number of levels in binary search tree from which `bfs` is constructed.
 
@@ -372,6 +371,7 @@ def _gpu_stump(
         device_indices = cuda.to_device(indices)
         device_indices_L = cuda.to_device(indices_L)
         device_indices_R = cuda.to_device(indices_R)
+        device_bfs = cuda.to_device(core._bfs_indices(k, fill_value=-1))
 
         _compute_and_update_PI_kernel[blocks_per_grid, threads_per_block](
             range_start - 1,
