@@ -1152,13 +1152,15 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
     """
     Q = _preprocess(Q)
     m = Q.shape[0]
-    check_window_size(m, max_size=Q.shape[-1])
 
     if Q.ndim == 2 and Q.shape[1] == 1:  # pragma: no cover
+        warnings.warn("`Q` must be 1-dimensional and was automatically flattened")
         Q = Q.flatten()
 
     if Q.ndim != 1:  # pragma: no cover
-        raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
+        raise ValueError(f"`Q` is {Q.ndim}-dimensional and must be 1-dimensional. ")
+
+    check_window_size(m, max_size=Q.shape[-1])
 
     T = _preprocess(T)
     n = T.shape[0]
@@ -1428,13 +1430,15 @@ def mass(
     """
     Q = _preprocess(Q)
     m = Q.shape[0]
-    check_window_size(m, max_size=Q.shape[-1])
 
     if Q.ndim == 2 and Q.shape[1] == 1:  # pragma: no cover
+        warnings.warn("`Q` must be 1-dimensional and was automatically flattened")
         Q = Q.flatten()
 
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
+
+    check_window_size(m, max_size=Q.shape[-1])
 
     T = _preprocess(T)
     n = T.shape[0]
