@@ -65,7 +65,7 @@ def naive_idx_to_mp(I, T, m, normalize=True):
     I = I.astype(np.int64)
     T = T.copy()
     T_isfinite = np.isfinite(T)
-    T_subseqs_isfinite = np.all(core.rolling_window(T_isfinite, m), axis=1)
+    T_subseq_isfinite = np.all(core.rolling_window(T_isfinite, m), axis=1)
 
     T[~T_isfinite] = 0.0
     T_subseqs = core.rolling_window(T, m)
@@ -76,7 +76,7 @@ def naive_idx_to_mp(I, T, m, normalize=True):
         )
     else:
         P = naive.distance(T_subseqs, nn_subseqs, axis=1)
-    P[~T_subseqs_isfinite] = np.inf
+    P[~T_subseq_isfinite] = np.inf
     P[I < 0] = np.inf
 
     return P

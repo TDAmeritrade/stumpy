@@ -2044,11 +2044,11 @@ def rolling_isfinite(a, w):
 
 def rolling_isconstant(a, w):
     """
-    Compute the rolling isconstant for 1-D and 2-D arrays while ignoring NaNs.
+    Compute the rolling isconstant for 1-D and 2-D arrays.
 
     This is accomplished by comparing the min and max within each window and
     assigning `True` when the min and max are equal and `False` otherwise. If
-    either min or max is NaN then the window is not constant.
+    a subsequence contains at least one NaN, then the subsequence is not constant.
 
     Parameters
     ----------
@@ -2202,7 +2202,7 @@ def _idx_to_mp(I, T, m, normalize=True):
     I = I.astype(np.int64)
     T = T.copy()
     T_isfinite = np.isfinite(T)
-    T_subseqs_isfinite = np.all(rolling_window(T_isfinite, m), axis=1)
+    T_subseq_isfinite = np.all(rolling_window(T_isfinite, m), axis=1)
 
     T[~T_isfinite] = 0.0
     T_subseqs = rolling_window(T, m)
@@ -2211,7 +2211,7 @@ def _idx_to_mp(I, T, m, normalize=True):
         P = linalg.norm(z_norm(T_subseqs, axis=1) - z_norm(nn_subseqs, axis=1), axis=1)
     else:
         P = linalg.norm(T_subseqs - nn_subseqs, axis=1)
-    P[~T_subseqs_isfinite] = np.inf
+    P[~T_subseq_isfinite] = np.inf
     P[I < 0] = np.inf
 
     return P
