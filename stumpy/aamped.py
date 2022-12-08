@@ -75,8 +75,12 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
         T_B = T_A.copy()
         ignore_trivial = True
 
-    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
-    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
+    T_A, T_A_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
+        T_A, m
+    )
+    T_B, T_B_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
+        T_B, m
+    )
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")

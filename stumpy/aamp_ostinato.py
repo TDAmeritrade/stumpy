@@ -298,7 +298,11 @@ def aamp_ostinato(Ts, m, p=2.0):
 
     Ts_subseq_isfinite = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], Ts_subseq_isfinite[i] = core.preprocess_non_normalized(T, m)
+        (
+            Ts[i],
+            Ts_subseq_isfinite[i],
+            _,
+        ) = core.preprocess_non_normalized(T, m)
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _aamp_ostinato(
         Ts, m, Ts_subseq_isfinite, p
@@ -374,7 +378,11 @@ def aamp_ostinatoed(dask_client, Ts, m, p=2.0):
 
     Ts_subseq_isfinite = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], Ts_subseq_isfinite[i] = core.preprocess_non_normalized(T, m)
+        (
+            Ts[i],
+            Ts_subseq_isfinite[i],
+            _,
+        ) = core.preprocess_non_normalized(T, m)
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _aamp_ostinato(
         Ts,

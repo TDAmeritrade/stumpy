@@ -792,13 +792,13 @@ def test_preprocess_non_normalized():
 
     ref_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
 
-    comp_T, comp_T_subseq_isfinite = core.preprocess_non_normalized(T, m)
+    comp_T, comp_T_subseq_isfinite, _ = core.preprocess_non_normalized(T, m)
 
     npt.assert_almost_equal(ref_T, comp_T)
     npt.assert_almost_equal(ref_T_subseq_isfinite, comp_T_subseq_isfinite)
 
     T = pd.Series(T)
-    comp_T, comp_T_subseq_isfinite = core.preprocess_non_normalized(T, m)
+    comp_T, comp_T_subseq_isfinite, _ = core.preprocess_non_normalized(T, m)
 
     npt.assert_almost_equal(ref_T, comp_T)
     npt.assert_almost_equal(ref_T_subseq_isfinite, comp_T_subseq_isfinite)
@@ -958,6 +958,22 @@ def test_rolling_isfinite():
 
     ref = np.all(core.rolling_window(np.isfinite(a), w), axis=1)
     comp = core.rolling_isfinite(a, w)
+
+    npt.assert_almost_equal(ref, comp)
+
+
+def test_rolling_isconstant():
+    a = np.arange(12).astype(np.float64)
+    w = 3
+
+    a[:3] = 77.0
+    a[1] = np.inf
+    a[4:7] = 77.0
+    a[9:12] = [77.0, np.nan, 77.0]
+
+    ref = np.zeros(len(a) - w + 1).astype(bool)
+    ref[4] = True
+    comp = core.rolling_isconstant(a, w)
 
     npt.assert_almost_equal(ref, comp)
 

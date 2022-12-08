@@ -1182,7 +1182,7 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
         distance_profile[:] = np.inf
     else:
         if T_subseq_isfinite is None:
-            T, T_subseq_isfinite = preprocess_non_normalized(T, m)
+            T, T_subseq_isfinite, T_subseq_isconstant = preprocess_non_normalized(T, m)
         distance_profile[:] = _mass_absolute(Q, T, p)
         distance_profile[~T_subseq_isfinite] = np.inf
 
@@ -1730,13 +1730,18 @@ def preprocess_non_normalized(T, m):
     T_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant
+        (True)
     """
     T = _preprocess(T)
     check_window_size(m, max_size=T.shape[-1])
     T_subseq_isfinite = rolling_isfinite(T, m)
     T[~np.isfinite(T)] = 0.0
+    T_subseq_isconstant = rolling_isconstant(T, m)
 
-    return T, T_subseq_isfinite
+    return T, T_subseq_isfinite, T_subseq_isconstant
 
 
 def preprocess_diagonal(T, m):
@@ -1783,9 +1788,8 @@ def preprocess_diagonal(T, m):
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` is constant (True)
     """
-    T, T_subseq_isfinite = preprocess_non_normalized(T, m)
+    T, T_subseq_isfinite, T_subseq_isconstant = preprocess_non_normalized(T, m)
     M_T, Σ_T = compute_mean_std(T, m)
-    T_subseq_isconstant = Σ_T < config.STUMPY_STDDEV_THRESHOLD
     Σ_T[T_subseq_isconstant] = 1.0  # Avoid divide by zero in next inversion step
     Σ_T_inverse = 1.0 / Σ_T
     M_T_m_1, _ = compute_mean_std(T, m - 1)
@@ -2035,6 +2039,32 @@ def rolling_isfinite(a, w):
     axis = a.ndim - 1  # Account for rolling
     return np.apply_along_axis(
         lambda a_row, w: _rolling_isfinite_1d(a_row, w), axis=axis, arr=a, w=w
+    )
+
+
+def rolling_isconstant(a, w):
+    """
+    Compute the rolling isconstant for 1-D and 2-D arrays while ignoring NaNs.
+
+    This is accomplished by comparing the min and max within each window and
+    assigning `True` when the min and max are equal and `False` otherwise. If
+    either min or max is NaN then the window is not constant.
+
+    Parameters
+    ----------
+    a : numpy.ndarray
+        The input array
+
+    w : numpy.ndarray
+        The rolling window size
+
+    Returns
+    -------
+    output : numpy.ndarray
+        Rolling window isconstant.
+    """
+    return np.logical_and(
+        rolling_nanmin(a, w) == rolling_nanmax(a, w), rolling_isfinite(a, w)
     )
 
 

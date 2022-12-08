@@ -507,8 +507,12 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
         T_B = T_A
         ignore_trivial = True
 
-    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
-    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
+    T_A, T_A_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
+        T_A, m
+    )
+    T_B, T_B_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
+        T_B, m
+    )
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
