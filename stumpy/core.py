@@ -722,7 +722,7 @@ def rolling_nanstd(a, w, welford=False):
         raise ValueError("The input array `a` must be 1D or 2D.")
 
     axis = a.ndim - 1  # Account for rolling
-    if welford:
+    if welford:  # pragma nocover
         return np.apply_along_axis(
             lambda a_row, w: welford_nanstd(a_row, w), axis=axis, arr=a, w=w
         )
