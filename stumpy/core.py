@@ -659,13 +659,14 @@ def welford_nanstd(a, w=None):
     return np.sqrt(np.clip(welford_nanvar(a, w), a_min=0, a_max=None))
 
 
-def rolling_nanstd_fast(a, w):
+def rolling_nanstd_fast(a, w):  # pragma nocover
     """
     Compute the rolling standard deviation for 1-D and 2-D arrays while ignoring NaNs
     using a modified version of Welford's algorithm but is much faster than using
     `np.nanstd` with stride tricks.
 
-    This a convenience wrapper around `welford_nanstd`.
+    This a convenience wrapper around `welford_nanstd`. This is left for future
+    reference if needed.
 
     This essentially replaces:
 
@@ -3135,7 +3136,7 @@ def rolling_nanstd(T, m):
     output : numpy.ndarray
         Rolling window nanstd.
     """
-    if T.ndim > 2:
+    if T.ndim > 2:  # pragma nocover
         raise ValueError("The input array `T` must be 1D or 2D.")
 
     out = _rolling_nanstd_2d(np.atleast_2d(T), m)
