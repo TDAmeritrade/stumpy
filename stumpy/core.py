@@ -3083,28 +3083,32 @@ def check_ignore_trivial(T_A, T_B, ignore_trivial):
 
 
 @njit(parallel=True, fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
-def _rolling_nanstd(T, m, out):
+def _rolling_nanstd_2d(T, m):
     """
     A Numba JIT-compiled and parallelized function for computing the std of
-    subsequences of length `m` in `T`, which is 1D array.
+    subsequences of length `m` in `T`, which must be 2D array. It is user's
+    responsibility to make sure that the inputs are valid.
 
     Parameters
     ----------
     T : numpy.ndarray
-        The input array
+        The input array with two dimensions.
 
     m : int
         The rolling window size
 
-    out : numpy.ndarray
-        The variable to store the std values, with length len(T) - m + 1
-
     Returns
     -------
-    None
+    out : numpy.ndarray
+        This 2D array has the shape of `(T.shape[0], T.shape[1]-m+1)`. out[i,j]
+        is the std value of T[i, j : j + m]
     """
-    for i in prange(len(out)):
-        out[i] = np.nanstd(T[i : i + m])
+    out = np.empty((T.shape[0], T.shape[1] - m + 1), dtype=np.float64)
+    for i in range(out.shape[0]):
+        for j in prange(out.shape[1]):
+            out[i, j] = np.nanstd(T[i, j : j + m])
+
+    return out
 
 
 def rolling_nanstd(T, m):
@@ -3134,13 +3138,7 @@ def rolling_nanstd(T, m):
     if T.ndim > 2:
         raise ValueError("The input array `T` must be 1D or 2D.")
 
-    T_2D = np.atleast_2d(T)
-    l = T_2D.shape[1] - m + 1
-
-    out = np.empty((T_2D.shape[0], l), dtype=np.float64)
-    for i, T_row in enumerate(T_2D):
-        _rolling_nanstd(T_row, m, out[i])
-
+    out = _rolling_nanstd_2d(np.atleast_2d(T), m)
     if T.ndim == 1:
         return np.squeeze(out)
     else:
