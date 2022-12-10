@@ -2,15 +2,11 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
-
 import numpy as np
 
 from .maamp import _maamp, _get_first_maamp_profile, _get_multi_p_norm
 from .mstump import _preprocess_include
 from . import core, config
-
-logger = logging.getLogger(__name__)
 
 
 def maamped(dask_client, T, m, include=None, discords=False, p=2.0):
@@ -77,8 +73,12 @@ def maamped(dask_client, T, m, include=None, discords=False, p=2.0):
     T_A = T
     T_B = T_A
 
-    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
-    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
+    T_A, T_A_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
+        T_A, m
+    )
+    T_B, T_B_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
+        T_B, m
+    )
 
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"

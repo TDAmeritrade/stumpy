@@ -2,8 +2,6 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
-
 import numpy as np
 
 from .mstump import (
@@ -14,8 +12,6 @@ from .mstump import (
 )
 from . import core, config
 from .maamped import maamped
-
-logger = logging.getLogger(__name__)
 
 
 @core.non_normalized(maamped)

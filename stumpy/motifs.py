@@ -2,14 +2,12 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
+import warnings
 
 import numpy as np
 
 from .aamp_motifs import aamp_motifs, aamp_match
 from . import core, config
-
-logger = logging.getLogger(__name__)
 
 
 def _motifs(
@@ -272,11 +270,10 @@ def motifs(
     T = core._preprocess(T)
 
     if max_motifs < 1:  # pragma: no cover
-        logger.warn(
-            "The maximum number of motifs, `max_motifs`, "
-            "must be greater than or equal to 1"
-        )
-        logger.warn("`max_motifs` has been set to `1`")
+        msg = "The maximum number of motifs, `max_motifs`, "
+        msg += "must be greater than or equal to 1.\n"
+        msg += "`max_motifs` has been set to `1`"
+        warnings.warn(msg)
         max_motifs = 1
 
     if T.ndim != 1:  # pragma: no cover
@@ -304,14 +301,11 @@ def motifs(
 
     if cutoff == 0.0:  # pragma: no cover
         suggested_cutoff = np.partition(P, 1)[1]
-        logger.warn(
-            "The `cutoff` has been set to 0.0 and may result in little/no candidate "
-            "motifs being identified."
-        )
-        logger.warn(
-            "You may consider relaxing the constraint by increasing the `cutoff` "
-            f"(e.g., cutoff={suggested_cutoff})."
-        )
+        msg = "The `cutoff` has been set to 0.0 and may result in little/no candidate "
+        msg += "motifs being identified.\n"
+        msg += "You may consider relaxing the constraint by increasing the `cutoff` "
+        msg += f"(e.g., cutoff={suggested_cutoff})."
+        warnings.warn(msg)
 
     T, M_T, Σ_T = core.preprocess(T[np.newaxis, :], m)
     P = P[np.newaxis, :].astype(np.float64)
@@ -349,6 +343,7 @@ def match(
     query_idx=None,
     normalize=True,
     p=2.0,
+    T_subseq_isfinite=None,
 ):
     """
     Find all matches of a query `Q` in a time series `T`
@@ -406,6 +401,11 @@ def match(
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
+
+    T_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False). This parameter is ignored when
+        `normalize=True`.
 
     Returns
     -------

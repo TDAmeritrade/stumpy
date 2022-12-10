@@ -137,6 +137,7 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
         raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
 
     core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
+
     subseq_T_A = core.rolling_window(T_A, m)
     excl_zone = int(np.ceil(m / 2))
 

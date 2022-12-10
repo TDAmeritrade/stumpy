@@ -2,12 +2,12 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.  # noqa: E501
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
+import warnings
 import functools
 import inspect
 
 import numpy as np
-from numba import njit, prange
+from numba import njit, cuda, prange
 from scipy.signal import convolve
 from scipy.ndimage import maximum_filter1d, minimum_filter1d
 from scipy import linalg
@@ -21,8 +21,6 @@ try:
     from numba.cuda.cudadrv.driver import _raise_driver_not_found
 except ImportError:
     pass
-
-logger = logging.getLogger(__name__)
 
 
 def _compare_parameters(norm, non_norm, exclude=None):
@@ -60,11 +58,13 @@ def _compare_parameters(norm, non_norm, exclude=None):
 
     is_same_params = set(norm_params) == set(non_norm_params)
     if not is_same_params:
-        if exclude is not None:
-            logger.warning(f"Excluding `{exclude}` parameters, ")
-        logger.warning(f"`{norm}`: ({norm_params}) and ")
-        logger.warning(f"`{non_norm}`: ({non_norm_params}) ")
-        logger.warning("have different parameters.")
+        msg = ""
+        if exclude is not None or (isinstance(exclude, list) and len(exclude)):
+            msg += f"Excluding `{exclude}` parameters, "
+        msg += f"function `{norm.__name__}({norm_params}) and "
+        msg += f"function `{non_norm.__name__}({non_norm_params}) "
+        msg += "have different arguments/parameters."
+        warnings.warn(msg)
 
     return is_same_params
 
@@ -383,7 +383,7 @@ def are_arrays_equal(a, b):  # pragma: no cover
     if a.shape != b.shape:
         return False
 
-    return ((a == b) | (np.isnan(a) & np.isnan(b))).all()
+    return bool(((a == b) | (np.isnan(a) & np.isnan(b))).all())
 
 
 def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
@@ -1152,13 +1152,15 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
     """
     Q = _preprocess(Q)
     m = Q.shape[0]
-    check_window_size(m, max_size=Q.shape[-1])
 
     if Q.ndim == 2 and Q.shape[1] == 1:  # pragma: no cover
+        warnings.warn("`Q` must be 1-dimensional and was automatically flattened")
         Q = Q.flatten()
 
     if Q.ndim != 1:  # pragma: no cover
-        raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
+        raise ValueError(f"`Q` is {Q.ndim}-dimensional and must be 1-dimensional. ")
+
+    check_window_size(m, max_size=Q.shape[-1])
 
     T = _preprocess(T)
     n = T.shape[0]
@@ -1180,7 +1182,7 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
         distance_profile[:] = np.inf
     else:
         if T_subseq_isfinite is None:
-            T, T_subseq_isfinite = preprocess_non_normalized(T, m)
+            T, T_subseq_isfinite, T_subseq_isconstant = preprocess_non_normalized(T, m)
         distance_profile[:] = _mass_absolute(Q, T, p)
         distance_profile[~T_subseq_isfinite] = np.inf
 
@@ -1355,7 +1357,15 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
     exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "p"],
     replace={"M_T": "T_subseq_isfinite", "Σ_T": None},
 )
-def mass(Q, T, M_T=None, Σ_T=None, normalize=True, p=2.0):
+def mass(
+    Q,
+    T,
+    M_T=None,
+    Σ_T=None,
+    normalize=True,
+    p=2.0,
+    T_subseq_isfinite=None,
+):
     """
     Compute the distance profile using the MASS algorithm
 
@@ -1383,6 +1393,11 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True, p=2.0):
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
+
+    T_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False). This parameter is ignored when
+        `normalize=True`.
 
     Returns
     -------
@@ -1415,13 +1430,15 @@ def mass(Q, T, M_T=None, Σ_T=None, normalize=True, p=2.0):
     """
     Q = _preprocess(Q)
     m = Q.shape[0]
-    check_window_size(m, max_size=Q.shape[-1])
 
     if Q.ndim == 2 and Q.shape[1] == 1:  # pragma: no cover
+        warnings.warn("`Q` must be 1-dimensional and was automatically flattened")
         Q = Q.flatten()
 
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
+
+    check_window_size(m, max_size=Q.shape[-1])
 
     T = _preprocess(T)
     n = T.shape[0]
@@ -1713,13 +1730,18 @@ def preprocess_non_normalized(T, m):
     T_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant
+        (True)
     """
     T = _preprocess(T)
     check_window_size(m, max_size=T.shape[-1])
     T_subseq_isfinite = rolling_isfinite(T, m)
     T[~np.isfinite(T)] = 0.0
+    T_subseq_isconstant = rolling_isconstant(T, m)
 
-    return T, T_subseq_isfinite
+    return T, T_subseq_isfinite, T_subseq_isconstant
 
 
 def preprocess_diagonal(T, m):
@@ -1766,9 +1788,8 @@ def preprocess_diagonal(T, m):
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` is constant (True)
     """
-    T, T_subseq_isfinite = preprocess_non_normalized(T, m)
+    T, T_subseq_isfinite, T_subseq_isconstant = preprocess_non_normalized(T, m)
     M_T, Σ_T = compute_mean_std(T, m)
-    T_subseq_isconstant = Σ_T < config.STUMPY_STDDEV_THRESHOLD
     Σ_T[T_subseq_isconstant] = 1.0  # Avoid divide by zero in next inversion step
     Σ_T_inverse = 1.0 / Σ_T
     M_T_m_1, _ = compute_mean_std(T, m - 1)
@@ -2021,6 +2042,32 @@ def rolling_isfinite(a, w):
     )
 
 
+def rolling_isconstant(a, w):
+    """
+    Compute the rolling isconstant for 1-D and 2-D arrays.
+
+    This is accomplished by comparing the min and max within each window and
+    assigning `True` when the min and max are equal and `False` otherwise. If
+    a subsequence contains at least one NaN, then the subsequence is not constant.
+
+    Parameters
+    ----------
+    a : numpy.ndarray
+        The input array
+
+    w : numpy.ndarray
+        The rolling window size
+
+    Returns
+    -------
+    output : numpy.ndarray
+        Rolling window isconstant.
+    """
+    return np.logical_and(
+        rolling_nanmin(a, w) == rolling_nanmax(a, w), rolling_isfinite(a, w)
+    )
+
+
 def _get_partial_mp_func(mp_func, dask_client=None, device_id=None):
     """
     A convenience function for creating a `functools.partial` matrix profile function
@@ -2155,7 +2202,7 @@ def _idx_to_mp(I, T, m, normalize=True):
     I = I.astype(np.int64)
     T = T.copy()
     T_isfinite = np.isfinite(T)
-    T_subseqs_isfinite = np.all(rolling_window(T_isfinite, m), axis=1)
+    T_subseq_isfinite = np.all(rolling_window(T_isfinite, m), axis=1)
 
     T[~T_isfinite] = 0.0
     T_subseqs = rolling_window(T, m)
@@ -2164,7 +2211,7 @@ def _idx_to_mp(I, T, m, normalize=True):
         P = linalg.norm(z_norm(T_subseqs, axis=1) - z_norm(nn_subseqs, axis=1), axis=1)
     else:
         P = linalg.norm(T_subseqs - nn_subseqs, axis=1)
-    P[~T_subseqs_isfinite] = np.inf
+    P[~T_subseq_isfinite] = np.inf
     P[I < 0] = np.inf
 
     return P
@@ -2737,19 +2784,19 @@ def _shift_insert_at_index(a, idx, v, shift="right"):
 
     Parameters
     ----------
-    a: numpy.ndarray
+    a : numpy.ndarray
         A 1d array
 
-    idx: int
+    idx : int
         The index at which the value `v` should be inserted. This can be any
         integer number from `0` to `len(a)`. When `idx=len(a)` and `shift="right"`,
         OR when `idx=0` and `shift="left"`, then no change will occur on
         the input array `a`.
 
-    v: float
+    v : float
         The value that should be inserted into array `a` at index `idx`
 
-    shift: str, default "right"
+    shift : str, default "right"
         The value that indicates whether the shifting of elements should be towards
         the right or left. If `shift="right"` (default), all elements in `a[idx:]`
         are shifted to the right by one element. If `shift="left"`, all elements
@@ -2791,8 +2838,9 @@ def _check_P(P, threshold=1e-6):
     if P.ndim != 1:
         raise ValueError("`P` was {P.ndim}-dimensional and must be 1-dimensional")
     if are_distances_too_small(P, threshold=threshold):  # pragma: no cover
-        logger.warning(f"A large number of values in `P` are smaller than {threshold}.")
-        logger.warning("For a self-join, try setting `ignore_trivial=True`.")
+        msg = f"A large number of values in `P` are smaller than {threshold}.\n"
+        msg += "For a self-join, try setting `ignore_trivial=True`."
+        warnings.warn(msg)
 
 
 def _find_matches(
@@ -2885,6 +2933,153 @@ def _find_matches(
         candidate_idx = np.argmin(D)
 
     return np.array(matches, dtype=object)
+
+
+@cuda.jit(device=True)
+def _gpu_searchsorted_left(a, v, bfs, nlevel):
+    """
+    A device function, equivalent to numpy.searchsorted(a, v, side='left')
+
+    Parameters
+    ----------
+    a : numpy.ndarray
+        1-dim array sorted in ascending order.
+
+    v : float
+        Value to insert into array `a`
+
+    bfs : numpy.ndarray
+        The breadth-first-search indices where the missing leaves of its corresponding
+        binary search tree are filled with -1.
+
+    nlevel : int
+        The number of levels in the binary search tree from which the array
+        `bfs` is obtained.
+
+    Returns
+    -------
+    idx : int
+        The index of the insertion point
+    """
+    n = a.shape[0]
+    idx = 0
+    for level in range(nlevel):
+        if v <= a[bfs[idx]]:
+            next_idx = 2 * idx + 1
+        else:
+            next_idx = 2 * idx + 2
+
+        if level == nlevel - 1 or bfs[next_idx] < 0:
+            if v <= a[bfs[idx]]:
+                idx = max(bfs[idx], 0)
+            else:
+                idx = min(bfs[idx] + 1, n)
+            break
+        idx = next_idx
+
+    return idx
+
+
+@cuda.jit(device=True)
+def _gpu_searchsorted_right(a, v, bfs, nlevel):
+    """
+    A device function, equivalent to numpy.searchsorted(a, v, side='right')
+
+    Parameters
+    ----------
+    a : numpy.ndarray
+        1-dim array sorted in ascending order.
+
+    v : float
+        Value to insert into array `a`
+
+    bfs : numpy.ndarray
+        The breadth-first-search indices where the missing leaves of its corresponding
+        binary search tree are filled with -1.
+
+    nlevel : int
+        The number of levels in the binary search tree from which the array
+        `bfs` is obtained.
+
+    Returns
+    -------
+    idx : int
+        The index of the insertion point
+    """
+    n = a.shape[0]
+    idx = 0
+    for level in range(nlevel):
+        if v < a[bfs[idx]]:
+            next_idx = 2 * idx + 1
+        else:
+            next_idx = 2 * idx + 2
+
+        if level == nlevel - 1 or bfs[next_idx] < 0:
+            if v < a[bfs[idx]]:
+                idx = max(bfs[idx], 0)
+            else:
+                idx = min(bfs[idx] + 1, n)
+            break
+        idx = next_idx
+
+    return idx
+
+
+def check_ignore_trivial(T_A, T_B, ignore_trivial):
+    """
+    Check inputs and verify the appropriateness for self-joins vs AB-joins and
+    provides relevant warnings.
+
+    Note that the warnings will output the first occurrence of matching warnings
+    for each location (module + line number) where the warning is issued
+
+    Parameters
+    ----------
+    T_A : numpy.ndarray
+        The time series or sequence for which to compute the matrix profile
+
+    T_B : numpy.ndarray
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
+        `None` which corresponds to a self-join.
+
+    ignore_trivial : bool
+        Set to `True` if this is a self-join. Otherwise, for AB-join, set this
+        to `False`.
+
+    Returns
+    -------
+    ignore_trivial : bool
+        The (corrected) ignore_trivial value
+
+    Notes
+    -----
+    These warnings may be supresse by using a context manager
+    ```
+    import stumpy
+    import numpy as np
+    import warnings
+
+    T = np.random.rand(10_000)
+    m = 50
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Arrays T_A, T_B are equal")
+        for _ in range(5):
+            stumpy.stump(T, m, T, ignore_trivial=False)
+    ```
+    """
+    if ignore_trivial is False and are_arrays_equal(T_A, T_B):  # pragma: no cover
+        msg = "Arrays T_A, T_B are equal, which implies a self-join. "
+        msg += "Try setting `ignore_trivial = True`."
+        warnings.warn(msg)
+
+    if ignore_trivial and are_arrays_equal(T_A, T_B) is False:  # pragma: no cover
+        msg = "Arrays T_A, T_B are not equal, which implies an AB-join. "
+        msg += "`ignore_trivial` has been automatically set to `False`."
+        warnings.warn(msg)
+        ignore_trivial = False
+
+    return ignore_trivial
 
 
 @njit(
