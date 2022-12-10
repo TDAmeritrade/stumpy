@@ -659,17 +659,43 @@ def welford_nanstd(a, w=None):
     return np.sqrt(np.clip(welford_nanvar(a, w), a_min=0, a_max=None))
 
 
-def rolling_nanstd_fast(a, w):  # pragma nocover
+@njit(parallel=True, fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
+def _rolling_nanstd_1d(a, w):
     """
-    Compute the rolling standard deviation for 1-D and 2-D arrays while ignoring NaNs
-    using a modified version of Welford's algorithm but is much faster than using
-    `np.nanstd` with stride tricks.
+    A Numba JIT-compiled and parallelized function for computing the std of
+    each subsequence with length `w` in `a`, which is a 1D array.
 
-    This a convenience wrapper around `welford_nanstd`. This is left for future
-    reference if needed.
+    Parameters
+    ----------
+    a : numpy.ndarray
+        The input 1D array
+
+    w : int
+        The rolling window size
+
+    Returns
+    -------
+    out : numpy.ndarray
+        This 1D array has the length of `a.shape[0]-w+1`. `out[i]`
+        contains the std value of `a[i : i + w]`
+    """
+    l = a.shape[0] - w + 1
+    out = np.empty(l, dtype=np.float64)
+    for i in prange(l):
+        out[i] = np.nanstd(a[i : i + w])
+
+    return out
+
+
+def rolling_nanstd(a, w, welford=False):
+    """
+    Compute the rolling standard deviation for 1D and 2D arrays while ignoring
+    NaNs. When `welford==False` (default), the parallelization is used to compute
+    the std of each subsequence with length `w`. If `welford==True`, this function
+    uses a modified version of Welford's algorithm to speed up the computation at
+    the cost of losing precision.
 
     This essentially replaces:
-
         `np.nanstd(rolling_window(T[..., start:stop], m), axis=T.ndim)`
 
     Parameters
@@ -680,15 +706,30 @@ def rolling_nanstd_fast(a, w):  # pragma nocover
     w : numpy.ndarray
         The rolling window size
 
+    welford : bool, default False
+        When False (default), the computation is parallelized and the std of
+        each subsequence is calculated on its own. When `welford==True`, the
+        welford method is used to reduce the computing time at the cost of slight
+        loss of precision
+
     Returns
     -------
-    output : numpy.ndarray
-        Rolling window nanstd.
+    out : numpy.ndarray
+        Rolling window nanstd. When `a` is 1D, `out[i]` is the std of `a[i, i + w]`.
+        When `a` is 2D, `out[i, j]` is the std of `a[i, j : j + w]`.
     """
+    if a.ndim > 2:  # pragma nocover
+        raise ValueError("The input array `a` must be 1D or 2D.")
+
     axis = a.ndim - 1  # Account for rolling
-    return np.apply_along_axis(
-        lambda a_row, w: welford_nanstd(a_row, w), axis=axis, arr=a, w=w
-    )
+    if welford:
+        return np.apply_along_axis(
+            lambda a_row, w: welford_nanstd(a_row, w), axis=axis, arr=a, w=w
+        )
+    else:
+        return np.apply_along_axis(
+            lambda a_row, w: _rolling_nanstd_1d(a_row, w), axis=axis, arr=a, w=w
+        )
 
 
 def _rolling_nanmin_1d(a, w=None):
@@ -3081,66 +3122,3 @@ def check_ignore_trivial(T_A, T_B, ignore_trivial):
         ignore_trivial = False
 
     return ignore_trivial
-
-
-@njit(parallel=True, fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
-def _rolling_nanstd_2d(T, m):
-    """
-    A Numba JIT-compiled and parallelized function for computing the std of
-    subsequences of length `m` in `T`, which must be 2D array. It is user's
-    responsibility to make sure that the inputs are valid.
-
-    Parameters
-    ----------
-    T : numpy.ndarray
-        The input array with two dimensions.
-
-    m : int
-        The rolling window size
-
-    Returns
-    -------
-    out : numpy.ndarray
-        This 2D array has the shape of `(T.shape[0], T.shape[1]-m+1)`. out[i,j]
-        is the std value of T[i, j : j + m]
-    """
-    out = np.empty((T.shape[0], T.shape[1] - m + 1), dtype=np.float64)
-    for i in range(T.shape[0]):
-        for j in prange(T.shape[1] - m + 1):
-            out[i, j] = np.nanstd(T[i, j : j + m])
-
-    return out
-
-
-def rolling_nanstd(T, m):
-    """
-    Compute the rolling standard deviation for 1D and 2D arrays while ignoring
-    NaNs.
-
-    This a convenience wrapper around `_rolling_nanstd_2d`.
-
-    This essentially replaces:
-
-        `np.nanstd(rolling_window(T[..., start:stop], m), axis=T.ndim)`
-
-    Parameters
-    ----------
-    T : numpy.ndarray
-        The input array
-
-    m : int
-        The rolling window size
-
-    Returns
-    -------
-    output : numpy.ndarray
-        Rolling window nanstd.
-    """
-    if T.ndim > 2:  # pragma nocover
-        raise ValueError("The input array `T` must be 1D or 2D.")
-
-    out = _rolling_nanstd_2d(np.atleast_2d(T), m)
-    if T.ndim == 2:
-        return out
-    else:  # T.ndim is 1
-        return np.squeeze(out)
