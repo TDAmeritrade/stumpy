@@ -3104,8 +3104,8 @@ def _rolling_nanstd_2d(T, m):
         is the std value of T[i, j : j + m]
     """
     out = np.empty((T.shape[0], T.shape[1] - m + 1), dtype=np.float64)
-    for i in range(out.shape[0]):
-        for j in prange(out.shape[1]):
+    for i in range(T.shape[0]):
+        for j in prange(T.shape[1] - m + 1):
             out[i, j] = np.nanstd(T[i, j : j + m])
 
     return out
@@ -3116,7 +3116,7 @@ def rolling_nanstd(T, m):
     Compute the rolling standard deviation for 1D and 2D arrays while ignoring
     NaNs.
 
-    This a convenience wrapper around `_rolling_nanstd`.
+    This a convenience wrapper around `_rolling_nanstd_2d`.
 
     This essentially replaces:
 
@@ -3139,7 +3139,7 @@ def rolling_nanstd(T, m):
         raise ValueError("The input array `T` must be 1D or 2D.")
 
     out = _rolling_nanstd_2d(np.atleast_2d(T), m)
-    if T.ndim == 1:
-        return np.squeeze(out)
-    else:
+    if T.ndim == 2:
         return out
+    else:  # T.ndim is 1
+        return np.squeeze(out)
