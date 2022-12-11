@@ -662,13 +662,13 @@ def welford_nanstd(a, w=None):
 @njit(parallel=True, fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
 def _rolling_nanstd_1d(a, w):
     """
-    A Numba JIT-compiled and parallelized function for computing the std of
-    each subsequence with length `w` in `a`, which is a 1D array.
+    A Numba JIT-compiled and parallelized function for computing the rolling standard
+    deviation for 1-D array while ignoring NaN.
 
     Parameters
     ----------
     a : numpy.ndarray
-        The input 1D array
+        The input array
 
     w : int
         The rolling window size
@@ -690,10 +690,7 @@ def _rolling_nanstd_1d(a, w):
 def rolling_nanstd(a, w, welford=False):
     """
     Compute the rolling standard deviation for 1D and 2D arrays while ignoring
-    NaNs. When `welford==False` (default), the parallelization is used to compute
-    the std of each subsequence with length `w`. If `welford==True`, this function
-    uses a modified version of Welford's algorithm to speed up the computation at
-    the cost of losing precision.
+    NaNs.
 
     This essentially replaces:
         `np.nanstd(rolling_window(T[..., start:stop], m), axis=T.ndim)`
@@ -707,16 +704,15 @@ def rolling_nanstd(a, w, welford=False):
         The rolling window size
 
     welford : bool, default False
-        When False (default), the computation is parallelized and the std of
+        When False (default), the computation is parallelized and the stddev of
         each subsequence is calculated on its own. When `welford==True`, the
-        welford method is used to reduce the computing time at the cost of slight
-        loss of precision
+        welford method is used to reduce the computing time at the cost of slightly
+        reduced precision.
 
     Returns
     -------
     out : numpy.ndarray
-        Rolling window nanstd. When `a` is 1D, `out[i]` is the std of `a[i, i + w]`.
-        When `a` is 2D, `out[i, j]` is the std of `a[i, j : j + w]`.
+        Rolling window nanstd
     """
     if a.ndim > 2:  # pragma nocover
         raise ValueError("The input array `a` must be 1D or 2D.")
