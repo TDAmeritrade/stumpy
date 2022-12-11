@@ -6,6 +6,11 @@ from scipy.stats import norm
 from stumpy import core, config
 
 
+def rolling_nanstd(a, w):
+    # a can be 1D, 2D, or more. The rolling occurs on last axis.
+    return np.nanstd(core.rolling_window(a, w), axis=a.ndim)
+
+
 def z_norm(a, axis=0, threshold=config.STUMPY_STDDEV_THRESHOLD):
     std = np.std(a, axis, keepdims=True)
     std[np.less(std, threshold, where=~np.isnan(std))] = 1.0
