@@ -259,8 +259,8 @@ def test_rolling_std_1d():
 
 def test_rolling_std_2d():
     w = 5
-    for n_dim in range(1, 4):
-        a = np.random.rand(n_dim * 64).reshape(n_dim, 64)
+    for n_rows in range(1, 4):
+        a = np.random.rand(n_rows * 64).reshape(n_rows, 64)
         ref_std = naive.rolling_nanstd(a, w)
 
         # welford = False (default)
