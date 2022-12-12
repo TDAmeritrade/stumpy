@@ -693,7 +693,7 @@ def rolling_nanstd(a, w, welford=False):
     NaNs.
 
     This essentially replaces:
-        `np.nanstd(rolling_window(a, w), axis=a.ndim)`
+        `np.nanstd(rolling_window(a[..., start:stop], w), axis=a.ndim)`
 
     Parameters
     ----------
@@ -731,7 +731,7 @@ def _rolling_nanmin_1d(a, w=None):
 
     This essentially replaces:
 
-        `np.nanmin(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+        `np.nanmin(rolling_window(a[..., start:stop], w), axis=a.ndim)`
 
     Parameters
     ----------
@@ -761,7 +761,7 @@ def _rolling_nanmax_1d(a, w=None):
 
     This essentially replaces:
 
-        `np.nanmax(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+        `np.nanmax(rolling_window(a[..., start:stop], w), axis=a.ndim)`
 
     Parameters
     ----------
@@ -793,7 +793,7 @@ def rolling_nanmin(a, w):
 
     This essentially replaces:
 
-        `np.nanmin(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+        `np.nanmin(rolling_window(a[..., start:stop], w), axis=a.ndim)`
 
     Parameters
     ----------
@@ -822,7 +822,7 @@ def rolling_nanmax(a, w):
 
     This essentially replaces:
 
-        `np.nanmax(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+        `np.nanmax(rolling_window(a[..., start:stop], w), axis=a.ndim)`
 
     Parameters
     ----------
