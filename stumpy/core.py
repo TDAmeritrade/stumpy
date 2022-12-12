@@ -679,9 +679,9 @@ def _rolling_nanstd_1d(a, w):
         This 1D array has the length of `a.shape[0]-w+1`. `out[i]`
         contains the stddev value of `a[i : i + w]`
     """
-    l = a.shape[0] - w + 1
-    out = np.empty(l, dtype=np.float64)
-    for i in prange(l):
+    n = a.shape[0] - w + 1
+    out = np.empty(n, dtype=np.float64)
+    for i in prange(n):
         out[i] = np.nanstd(a[i : i + w])
 
     return out
