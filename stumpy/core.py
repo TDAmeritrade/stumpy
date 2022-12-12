@@ -677,7 +677,7 @@ def _rolling_nanstd_1d(a, w):
     -------
     out : numpy.ndarray
         This 1D array has the length of `a.shape[0]-w+1`. `out[i]`
-        contains the std value of `a[i : i + w]`
+        contains the stddev value of `a[i : i + w]`
     """
     l = a.shape[0] - w + 1
     out = np.empty(l, dtype=np.float64)
@@ -689,11 +689,11 @@ def _rolling_nanstd_1d(a, w):
 
 def rolling_nanstd(a, w, welford=False):
     """
-    Compute the rolling standard deviation for 1D and 2D arrays while ignoring
+    Compute the rolling standard deviation over the last axis of `a` while ignoring
     NaNs.
 
     This essentially replaces:
-        `np.nanstd(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+        `np.nanstd(rolling_window(a, w), axis=a.ndim)`
 
     Parameters
     ----------
@@ -714,9 +714,6 @@ def rolling_nanstd(a, w, welford=False):
     out : numpy.ndarray
         Rolling window nanstd
     """
-    if a.ndim > 2:  # pragma nocover
-        raise ValueError("The input array `a` must be 1D or 2D.")
-
     axis = a.ndim - 1  # Account for rolling
     if welford:  # pragma nocover
         return np.apply_along_axis(
