@@ -715,7 +715,7 @@ def rolling_nanstd(a, w, welford=False):
         Rolling window nanstd
     """
     axis = a.ndim - 1  # Account for rolling
-    if welford:  # pragma nocover
+    if welford:
         return np.apply_along_axis(
             lambda a_row, w: welford_nanstd(a_row, w), axis=axis, arr=a, w=w
         )
