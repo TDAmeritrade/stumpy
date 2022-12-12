@@ -243,6 +243,35 @@ def test_welford_nanstd():
     npt.assert_almost_equal(ref_var, comp_var)
 
 
+def test_rolling_std_1d():
+    a = np.random.rand(64)
+    for w in range(3, 6):
+        ref_std = naive.rolling_nanstd(a, w)
+
+        # welford = False (default)
+        comp_std = core.rolling_nanstd(a, w)
+        npt.assert_almost_equal(ref_std, comp_std)
+
+        # welford = True
+        comp_std = core.rolling_nanstd(a, w, welford=True)
+        npt.assert_almost_equal(ref_std, comp_std)
+
+
+def test_rolling_std_2d():
+    w = 5
+    for n_rows in range(1, 4):
+        a = np.random.rand(n_rows * 64).reshape(n_rows, 64)
+        ref_std = naive.rolling_nanstd(a, w)
+
+        # welford = False (default)
+        comp_std = core.rolling_nanstd(a, w)
+        npt.assert_almost_equal(ref_std, comp_std)
+
+        # welford = True
+        comp_std = core.rolling_nanstd(a, w, welford=True)
+        npt.assert_almost_equal(ref_std, comp_std)
+
+
 def test_rolling_nanmin_1d():
     T = np.random.rand(64)
     for m in range(1, 12):

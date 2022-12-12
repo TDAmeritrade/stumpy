@@ -7,7 +7,7 @@ import functools
 import inspect
 
 import numpy as np
-from numba import njit, cuda
+from numba import njit, cuda, prange
 from scipy.signal import convolve
 from scipy.ndimage import maximum_filter1d, minimum_filter1d
 from scipy import linalg
@@ -659,17 +659,41 @@ def welford_nanstd(a, w=None):
     return np.sqrt(np.clip(welford_nanvar(a, w), a_min=0, a_max=None))
 
 
-def rolling_nanstd(a, w):
+@njit(parallel=True, fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
+def _rolling_nanstd_1d(a, w):
     """
-    Compute the rolling standard deviation for 1-D and 2-D arrays while ignoring NaNs
-    using a modified version of Welford's algorithm but is much faster than using
-    `np.nanstd` with stride tricks.
+    A Numba JIT-compiled and parallelized function for computing the rolling standard
+    deviation for 1-D array while ignoring NaN.
 
-    This a convenience wrapper around `welford_nanstd`.
+    Parameters
+    ----------
+    a : numpy.ndarray
+        The input array
+
+    w : int
+        The rolling window size
+
+    Returns
+    -------
+    out : numpy.ndarray
+        This 1D array has the length of `a.shape[0]-w+1`. `out[i]`
+        contains the stddev value of `a[i : i + w]`
+    """
+    n = a.shape[0] - w + 1
+    out = np.empty(n, dtype=np.float64)
+    for i in prange(n):
+        out[i] = np.nanstd(a[i : i + w])
+
+    return out
+
+
+def rolling_nanstd(a, w, welford=False):
+    """
+    Compute the rolling standard deviation over the last axis of `a` while ignoring
+    NaNs.
 
     This essentially replaces:
-
-        `np.nanstd(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+        `np.nanstd(rolling_window(a[..., start:stop], w), axis=a.ndim)`
 
     Parameters
     ----------
@@ -679,15 +703,26 @@ def rolling_nanstd(a, w):
     w : numpy.ndarray
         The rolling window size
 
+    welford : bool, default False
+        When False (default), the computation is parallelized and the stddev of
+        each subsequence is calculated on its own. When `welford==True`, the
+        welford method is used to reduce the computing time at the cost of slightly
+        reduced precision.
+
     Returns
     -------
-    output : numpy.ndarray
-        Rolling window nanstd.
+    out : numpy.ndarray
+        Rolling window nanstd
     """
     axis = a.ndim - 1  # Account for rolling
-    return np.apply_along_axis(
-        lambda a_row, w: welford_nanstd(a_row, w), axis=axis, arr=a, w=w
-    )
+    if welford:  # pragma nocover
+        return np.apply_along_axis(
+            lambda a_row, w: welford_nanstd(a_row, w), axis=axis, arr=a, w=w
+        )
+    else:
+        return np.apply_along_axis(
+            lambda a_row, w: _rolling_nanstd_1d(a_row, w), axis=axis, arr=a, w=w
+        )
 
 
 def _rolling_nanmin_1d(a, w=None):
@@ -696,7 +731,7 @@ def _rolling_nanmin_1d(a, w=None):
 
     This essentially replaces:
 
-        `np.nanmin(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+        `np.nanmin(rolling_window(a[..., start:stop], w), axis=a.ndim)`
 
     Parameters
     ----------
@@ -726,7 +761,7 @@ def _rolling_nanmax_1d(a, w=None):
 
     This essentially replaces:
 
-        `np.nanmax(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+        `np.nanmax(rolling_window(a[..., start:stop], w), axis=a.ndim)`
 
     Parameters
     ----------
@@ -758,7 +793,7 @@ def rolling_nanmin(a, w):
 
     This essentially replaces:
 
-        `np.nanmin(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+        `np.nanmin(rolling_window(a[..., start:stop], w), axis=a.ndim)`
 
     Parameters
     ----------
@@ -787,7 +822,7 @@ def rolling_nanmax(a, w):
 
     This essentially replaces:
 
-        `np.nanmax(rolling_window(T[..., start:stop], m), axis=T.ndim)`
+        `np.nanmax(rolling_window(a[..., start:stop], w), axis=a.ndim)`
 
     Parameters
     ----------
