@@ -100,8 +100,11 @@ def mstumped(dask_client, T, m, include=None, discords=False, normalize=True):
      array([[2, 4, 0, 1, 0],
             [4, 4, 0, 1, 0]]))
     """
-    T_A = T
+    T_A = core._preprocess(T)
     T_B = T_A
+
+    T_A_subseq_isconstant = core.rolling_isconstant(T_A, m)
+    T_B_subseq_isconstant = core.rolling_isconstant(T_B, m)
 
     T_A, M_T, Σ_T = core.preprocess(T_A, m)
     T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
@@ -170,6 +173,8 @@ def mstumped(dask_client, T, m, include=None, discords=False, normalize=True):
                 QT_first_futures[i],
                 μ_Q_future,
                 σ_Q_future,
+                T_B_subseq_isconstant,
+                T_A_subseq_isconstant,
                 k,
                 start + 1,
                 include,
