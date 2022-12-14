@@ -348,10 +348,10 @@ def _gpu_stump(
     Σ_T = np.load(Σ_T_fname, allow_pickle=False)
     μ_Q = np.load(μ_Q_fname, allow_pickle=False)
     σ_Q = np.load(σ_Q_fname, allow_pickle=False)
-    T_A_subseq_isconstant_fname = np.load(
+    T_A_subseq_isconstant = np.load(
         T_A_subseq_isconstant_fname, allow_pickle=False
     )
-    T_B_subseq_isconstant_fname = np.load(
+    T_B_subseq_isconstant = np.load(
         T_B_subseq_isconstant_fname, allow_pickle=False
     )
 
@@ -365,7 +365,7 @@ def _gpu_stump(
         device_QT_first = cuda.to_device(QT_first)
         device_μ_Q = cuda.to_device(μ_Q)
         device_σ_Q = cuda.to_device(σ_Q)
-        device_T_A_subseq_isconstant = cuda.to_device(T_A_subseq_isconstant_fname)
+        device_T_A_subseq_isconstant = cuda.to_device(T_A_subseq_isconstant)
 
         if ignore_trivial:
             device_T_B = device_T_A
@@ -376,7 +376,7 @@ def _gpu_stump(
             device_T_B = cuda.to_device(T_B)
             device_M_T = cuda.to_device(M_T)
             device_Σ_T = cuda.to_device(Σ_T)
-            device_T_B_subseq_isconstant = cuda.to_device(T_B_subseq_isconstant_fname)
+            device_T_B_subseq_isconstant = cuda.to_device(T_B_subseq_isconstant)
 
         profile = np.full((w, k), np.inf, dtype=np.float64)
         indices = np.full((w, k), -1, dtype=np.int64)
