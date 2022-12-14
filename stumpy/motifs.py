@@ -466,9 +466,9 @@ def match(
     m = Q.shape[1]
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    if T_subseq_isconstant is None:  # pragma: no cover
+    if T_subseq_isconstant is None:
         T_subseq_isconstant = core.rolling_isconstant(T, m)
-    if len(T_subseq_isconstant.shape) == 1:
+    if len(T_subseq_isconstant.shape) == 1:  # pragma: no cover
         T_subseq_isconstant = T_subseq_isconstant[np.newaxis, :]
 
     if M_T is None or Σ_T is None:  # pragma: no cover
