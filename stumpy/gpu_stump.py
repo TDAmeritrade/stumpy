@@ -437,6 +437,8 @@ def _gpu_stump(
                 device_Σ_T,
                 device_μ_Q,
                 device_σ_Q,
+                device_T_A_subseq_isconstant,
+                device_T_B_subseq_isconstant,
                 w,
                 ignore_trivial,
                 excl_zone,
