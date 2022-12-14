@@ -86,6 +86,12 @@ def _compute_and_update_PI_kernel(
     σ_Q : numpy.ndarray
         Standard deviation of the query sequence, `Q`
 
+    T_A_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_A` is constant (True)
+
+    T_B_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_B` is constant (True)
+
     w : int
         The total number of sliding windows to iterate over
 
