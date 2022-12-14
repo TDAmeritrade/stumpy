@@ -336,7 +336,14 @@ def motifs(
 
 @core.non_normalized(
     aamp_match,
-    exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "p"],
+    exclude=[
+        "normalize",
+        "M_T",
+        "Σ_T",
+        "T_subseq_isfinite",
+        "T_subseq_isconstant",
+        "p",
+    ],
     replace={"M_T": "T_subseq_isfinite", "Σ_T": None},
 )
 def match(
