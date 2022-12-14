@@ -171,18 +171,18 @@ def _compute_and_update_PI_kernel(
         if math.isinf(M_T[j]) or math.isinf(μ_Q[i]):
             p_norm = np.inf
         else:
-            if T_A_subseq_isconstant[i] and T_B_subseq_isconstant[j]:
+            if T_A_subseq_isconstant[j] and T_B_subseq_isconstant[i]:
                 p_norm = 0
-            elif T_A_subseq_isconstant[i] or T_B_subseq_isconstant[j]:
+            elif T_A_subseq_isconstant[j] or T_B_subseq_isconstant[i]:
                 p_norm = m
             else:
                 denom = m * σ_Q[i] * Σ_T[j]
                 if math.fabs(denom) < config.STUMPY_DENOM_THRESHOLD:  # pragma nocover
                     denom = config.STUMPY_DENOM_THRESHOLD
-                p_norm = abs(2 * m * (1.0 - (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom))
-
-                if p_norm < config.STUMPY_P_NORM_THRESHOLD:
-                    p_norm = 0
+                rho = (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom
+                if rho > 1.0:
+                    rho = 1.0
+                p_norm = 2 * m * (1.0 - rho)
 
         if ignore_trivial:
             if i <= zone_stop and i >= zone_start:

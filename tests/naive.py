@@ -13,7 +13,8 @@ def rolling_nanstd(a, w):
 
 def z_norm(a, axis=0, threshold=config.STUMPY_STDDEV_THRESHOLD):
     std = np.std(a, axis, keepdims=True)
-    std[np.less(std, threshold, where=~np.isnan(std))] = 1.0
+    std = np.where(std > 0, std, 1.0)
+    # std[np.less(std, threshold, where=~np.isnan(std))] = 1.0
 
     return (a - np.mean(a, axis, keepdims=True)) / std
 
