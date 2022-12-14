@@ -72,6 +72,9 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         T_B = T_A
         ignore_trivial = True
 
+    Q_subseq_isconstant = core.rolling_isconstant(T_A, m)
+    T_subseq_isconstant = core.rolling_isconstant(T_B, m)
+
     T_A, μ_Q, σ_Q = core.preprocess(T_A, m)
     T_B, M_T, Σ_T = core.preprocess(T_B, m)
 
@@ -99,10 +102,14 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         IR = -1
     else:
         if ignore_trivial:
-            P, I = stamp._mass_PI(T_A[:m], T_B, M_T, Σ_T, 0, excl_zone)
-            PR, IR = stamp._mass_PI(T_A[:m], T_B, M_T, Σ_T, 0, excl_zone, right=True)
+            P, I = stamp._mass_PI(
+                T_A[:m], T_B, M_T, Σ_T, T_subseq_isconstant, 0, excl_zone
+            )
+            PR, IR = stamp._mass_PI(
+                T_A[:m], T_B, M_T, Σ_T, T_subseq_isconstant, 0, excl_zone, right=True
+            )
         else:
-            P, I = stamp._mass_PI(T_A[:m], T_B, M_T, Σ_T)
+            P, I = stamp._mass_PI(T_A[:m], T_B, M_T, Σ_T, T_subseq_isconstant)
             IR = -1  # No left and right matrix profile available
 
     out[0] = P, I, -1, IR
@@ -118,7 +125,14 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         QT[0] = QT_first[i]
 
         D = core._calculate_squared_distance_profile(
-            m, QT, μ_Q[i].item(0), σ_Q[i].item(0), M_T, Σ_T
+            m,
+            QT,
+            μ_Q[i].item(0),
+            σ_Q[i].item(0),
+            M_T,
+            Σ_T,
+            Q_subseq_isconstant[i].item(0),
+            T_subseq_isconstant,
         )
         if ignore_trivial:
             core.apply_exclusion_zone(D, i, excl_zone, np.inf)

@@ -960,10 +960,11 @@ def _calculate_squared_distance(
         Sliding standard deviation of `T[i]`
 
     Q_subseq_isconstant : bool
-        True if `Q[i : i + m]` is constant. False otherwise.
+        A boolean value that indicates whether the subsequence `Q` is constant (True)
 
     T_subseq_isconstant : bool
-        True if `T[i : i + m]` is constant. False otherwise.
+        A boolean value that indicates whether the subsequence `T[i : i + m]`
+        is constant (True)
 
     Returns
     -------
@@ -1028,11 +1029,10 @@ def _calculate_squared_distance_profile(
         Sliding standard deviation of `T`
 
     Q_subseq_isconstant : bool
-        True if `Q[i : i + m]` is constant. False otherwise.
+        A boolean value that indicates whether the subsequence `Q` is constant (True)
 
     T_subseq_isconstant : numpy.ndarray
-        A boolean array. `T_subseq_isconstant[i]` is True if `T[i : i + m]` is constant.
-        False otherwise
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     Returns
     -------
@@ -1095,11 +1095,10 @@ def calculate_distance_profile(
         Sliding standard deviation of `T`
 
     Q_subseq_isconstant : bool
-        True if `Q[i : i + m]` is constant. False otherwise.
+        A boolean value that indicates whether the subsequence `Q` is constant (True)
 
     T_subseq_isconstant : numpy.ndarray
-        A boolean array. `T_subseq_isconstant[i]` is True if `T[i : i + m]` is constant.
-        False otherwise
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     Returns
     -------
@@ -1403,11 +1402,10 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconst
         Sliding standard deviation of `T`
 
     Q_subseq_isconstant : bool
-        True if `Q[i : i + m]` is constant. False otherwise.
+        A boolean value that indicates whether the subsequence `Q` is constant (True)
 
     T_subseq_isconstant : numpy.ndarray
-        A boolean array. `T_subseq_isconstant[i]` is True if `T[i : i + m]` is constant.
-        False otherwise
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     Returns
     -------
@@ -1435,7 +1433,14 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconst
 
 @non_normalized(
     mass_absolute,
-    exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "p"],
+    exclude=[
+        "normalize",
+        "M_T",
+        "Σ_T",
+        "T_subseq_isfinite",
+        "p",
+        "T_subseq_isconstant",
+    ],
     replace={"M_T": "T_subseq_isfinite", "Σ_T": None},
 )
 def mass(
@@ -1446,7 +1451,6 @@ def mass(
     normalize=True,
     p=2.0,
     T_subseq_isfinite=None,
-    Q_subseq_isconstant=None,
     T_subseq_isconstant=None,
 ):
     """
@@ -1482,12 +1486,8 @@ def mass(
         `np.nan`/`np.inf` value (False). This parameter is ignored when
         `normalize=True`.
 
-    Q_subseq_isconstant : bool, default None
-        True if `Q[i : i + m]` is constant. False otherwise.
-
     T_subseq_isconstant : numpy.ndarray, default None
-        A boolean array. `T_subseq_isconstant[i]` is True if `T[i : i + m]` is constant.
-        False otherwise
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     Returns
     -------
@@ -1549,18 +1549,15 @@ def mass(
     if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
-        if Q_subseq_isconstant is None:
-            Q_subseq_isconstant = rolling_window(Q, m)[
-                0
-            ]  # equivalent to: np.min(Q) == np.max(Q)
-
         if T_subseq_isconstant is None:
-            T_subseq_isconstant = rolling_window(T, m)
+            T_subseq_isconstant = rolling_isconstant(T, m)
 
         if M_T is None or Σ_T is None:
             T, M_T, Σ_T = preprocess(T, m)
 
         QT = sliding_dot_product(Q, T)
+        Q_subseq_isconstant = rolling_isconstant(Q, m)[0]
+        # equivalent to: np.min(Q) == np.max(Q)
         μ_Q, σ_Q = compute_mean_std(Q, m)
         μ_Q = μ_Q[0]
         σ_Q = σ_Q[0]
@@ -1613,6 +1610,12 @@ def _mass_distance_matrix(
     Σ_T : numpy.ndarray
         Sliding standard deviation of `T`
 
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `Q` is constant (True)
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
+
     Returns
     -------
         None
@@ -1663,8 +1666,7 @@ def mass_distance_matrix(
         Sliding standard deviation of `T`
 
     T_subseq_isconstant : numpy.ndarray, default None
-        A boolean array. `T_subseq_isconstant[i]` is True if `T[i : i + m]` is constant.
-        False otherwise.
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     Returns
     -------

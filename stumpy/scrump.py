@@ -54,6 +54,12 @@ def _preprocess_prescrump(T_A, m, T_B=None, s=None):
     Σ_T : numpy.ndarray
         Sliding window standard deviation for `T_B`
 
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `Q` is constant (True)
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
+
     indices : numpy.ndarray
         The subsequence indices to compute `prescrump` for
 
@@ -70,6 +76,9 @@ def _preprocess_prescrump(T_A, m, T_B=None, s=None):
     else:
         excl_zone = None
 
+    Q_subseq_isconstant = core.rolling_isconstant(T_A, m)
+    T_subseq_isconstant = core.rolling_isconstant(T_B, m)
+
     T_A, μ_Q, σ_Q = core.preprocess(T_A, m)
     T_B, M_T, Σ_T = core.preprocess(T_B, m)
 
@@ -84,7 +93,19 @@ def _preprocess_prescrump(T_A, m, T_B=None, s=None):
 
     indices = np.random.permutation(range(0, l, s)).astype(np.int64)
 
-    return (T_A, T_B, μ_Q, σ_Q, M_T, Σ_T, indices, s, excl_zone)
+    return (
+        T_A,
+        T_B,
+        μ_Q,
+        σ_Q,
+        M_T,
+        Σ_T,
+        Q_subseq_isconstant,
+        T_subseq_isconstant,
+        indices,
+        s,
+        excl_zone,
+    )
 
 
 @njit(fastmath=True)
@@ -96,6 +117,8 @@ def _compute_PI(
     σ_Q,
     M_T,
     Σ_T,
+    Q_subseq_isconstant,
+    T_subseq_isconstant,
     indices,
     start,
     stop,
@@ -133,6 +156,12 @@ def _compute_PI(
 
     Σ_T : numpy.ndarray
         Sliding window standard deviation for `T_B`
+
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_A` is constant (True)
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_B` is constant (True)
 
     indices : numpy.ndarray
         The subsequence indices to compute `prescrump` for
@@ -182,7 +211,17 @@ def _compute_PI(
     for i in indices[start:stop]:
         Q = T_A[i : i + m]
         QT[:] = core._sliding_dot_product(Q, T_B)
-        squared_distance_profile[:] = core._mass(Q, T_B, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
+        squared_distance_profile[:] = core._mass(
+            Q,
+            T_B,
+            QT,
+            μ_Q[i],
+            σ_Q[i],
+            M_T,
+            Σ_T,
+            Q_subseq_isconstant[i],
+            T_subseq_isconstant,
+        )
         squared_distance_profile[:] = np.square(squared_distance_profile)
         if excl_zone is not None:
             core._apply_exclusion_zone(squared_distance_profile, i, excl_zone, np.inf)
@@ -228,6 +267,8 @@ def _compute_PI(
                 Σ_T[j + g],
                 μ_Q[i + g],
                 σ_Q[i + g],
+                T_subseq_isconstant[j + g],
+                Q_subseq_isconstant[i + g],
             )
             if (
                 D_squared < P_squared[thread_idx, i + g, -1]
@@ -267,6 +308,8 @@ def _compute_PI(
                 Σ_T[j - g],
                 μ_Q[i - g],
                 σ_Q[i - g],
+                T_subseq_isconstant[j - g],
+                Q_subseq_isconstant[i - g],
             )
             if (
                 D_squared < P_squared[thread_idx, i - g, -1]
@@ -331,6 +374,8 @@ def _prescrump(
     σ_Q,
     M_T,
     Σ_T,
+    Q_subseq_isconstant,
+    T_subseq_isconstant,
     indices,
     s,
     excl_zone=None,
@@ -363,6 +408,11 @@ def _prescrump(
     Σ_T : numpy.ndarray
         Sliding window standard deviation for `T_B`
 
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_A` is constant (True)
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_B` is constant (True)
 
     indices : numpy.ndarray
         The subsequence indices to compute `prescrump` for
@@ -424,6 +474,8 @@ def _prescrump(
             σ_Q,
             M_T,
             Σ_T,
+            Q_subseq_isconstant,
+            T_subseq_isconstant,
             indices,
             idx_ranges[thread_idx, 0],
             idx_ranges[thread_idx, 1],
@@ -498,9 +550,19 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
 
     See Algorithm 2
     """
-    T_A, T_B, μ_Q, σ_Q, M_T, Σ_T, indices, s, excl_zone = _preprocess_prescrump(
-        T_A, m, T_B=T_B, s=s
-    )
+    (
+        T_A,
+        T_B,
+        μ_Q,
+        σ_Q,
+        M_T,
+        Σ_T,
+        Q_subseq_isconstant,
+        T_subseq_isconstant,
+        indices,
+        s,
+        excl_zone,
+    ) = _preprocess_prescrump(T_A, m, T_B=T_B, s=s)
 
     P, I = _prescrump(
         T_A,
@@ -510,6 +572,8 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
         σ_Q,
         M_T,
         Σ_T,
+        Q_subseq_isconstant,
+        T_subseq_isconstant,
         indices,
         s,
         excl_zone,
@@ -774,6 +838,8 @@ class scrump:
                     σ_Q,
                     M_T,
                     Σ_T,
+                    Q_subseq_isconstant,
+                    T_subseq_isconstant,
                     indices,
                     s,
                     excl_zone,
@@ -786,12 +852,28 @@ class scrump:
                     σ_Q,
                     M_T,
                     Σ_T,
+                    Q_subseq_isconstant,
+                    T_subseq_isconstant,
                     indices,
                     s,
                     excl_zone,
                 ) = _preprocess_prescrump(T_A, m, T_B=T_B, s=s)
 
-            P, I = _prescrump(T_A, T_B, m, μ_Q, σ_Q, M_T, Σ_T, indices, s, excl_zone, k)
+            P, I = _prescrump(
+                T_A,
+                T_B,
+                m,
+                μ_Q,
+                σ_Q,
+                M_T,
+                Σ_T,
+                Q_subseq_isconstant,
+                T_subseq_isconstant,
+                indices,
+                s,
+                excl_zone,
+                k,
+            )
             core._merge_topk_PI(self._P, P, self._I, I)
 
         if self._ignore_trivial:

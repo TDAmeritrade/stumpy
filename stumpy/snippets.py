@@ -96,6 +96,7 @@ def _get_all_profiles(
         percentage = np.clip(percentage, 0.0, 1.0)
         s = min(math.ceil(percentage * m), m)
 
+    T_subseq_isconstant = core.rolling_isconstant(T, s)
     M_T, Σ_T = core.compute_mean_std(T, s)
 
     # Iterate over non-overlapping subsequences, see Definition 3
@@ -111,6 +112,8 @@ def _get_all_profiles(
             Σ_T[start : start + s],
             M_T,
             Σ_T,
+            T_subseq_isconstant[start : start + s],
+            T_subseq_isconstant,
             percentage=mpdist_percentage,
             k=mpdist_k,
             custom_func=mpdist_custom_func,
