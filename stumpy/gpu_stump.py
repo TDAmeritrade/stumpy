@@ -348,12 +348,8 @@ def _gpu_stump(
     Σ_T = np.load(Σ_T_fname, allow_pickle=False)
     μ_Q = np.load(μ_Q_fname, allow_pickle=False)
     σ_Q = np.load(σ_Q_fname, allow_pickle=False)
-    T_A_subseq_isconstant = np.load(
-        T_A_subseq_isconstant_fname, allow_pickle=False
-    )
-    T_B_subseq_isconstant = np.load(
-        T_B_subseq_isconstant_fname, allow_pickle=False
-    )
+    T_A_subseq_isconstant = np.load(T_A_subseq_isconstant_fname, allow_pickle=False)
+    T_B_subseq_isconstant = np.load(T_B_subseq_isconstant_fname, allow_pickle=False)
 
     nlevel = np.floor(np.log2(k) + 1).astype(np.int64)
     # number of levels in binary search tree from which `bfs` is constructed.
