@@ -45,7 +45,11 @@
 STUMPY
 ======
 
-STUMPY is a powerful and scalable library that efficiently computes something called the `matrix profile <https://stumpy.readthedocs.io/en/latest/Tutorial_The_Matrix_Profile.html>`__, which can be used for a variety of time series data mining tasks such as:
+STUMPY is a powerful and scalable Python library that efficiently computes something called the `matrix profile <https://stumpy.readthedocs.io/en/latest/Tutorial_The_Matrix_Profile.html>`__, which is just an academic way of saying "for every (green) subsequence within your time series, automatically identify its corresponding nearest-neighbor (grey)":
+
+![](https://github.com/TDAmeritrade/stumpy/blob/main/docs/images/stumpy_medium.gif)
+
+What's important is that once you've computed your matrix profile (middle panel above) it can then be used for a variety of time series data mining tasks such as:
 
 * pattern/motif (approximately repeated subsequences within a longer time series) discovery
 * anomaly/novelty (discord) discovery
