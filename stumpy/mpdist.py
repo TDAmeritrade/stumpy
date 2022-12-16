@@ -399,12 +399,12 @@ def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, normalize=True, 
     --------
     >>> from dask.distributed import Client
     >>> if __name__ == "__main__":
-    ...     dask_client = Client()
-    ...     stumpy.mpdisted(
-    ...         dask_client,
-    ...         np.array([-11.1, 23.4, 79.5, 1001.0]),
-    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]),
-    ...         m=3)
+    ...     with Client() as dask_client:
+    ...         stumpy.mpdisted(
+    ...             dask_client,
+    ...             np.array([-11.1, 23.4, 79.5, 1001.0]),
+    ...             np.array([584., -11., 23., 79., 1001., 0., -19.]),
+    ...             m=3)
     0.00019935236191097894
     """
     MPdist = _mpdist(

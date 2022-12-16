@@ -90,11 +90,11 @@ def mstumped(dask_client, T, m, include=None, discords=False, normalize=True):
     --------
     >>> from dask.distributed import Client
     >>> if __name__ == "__main__":
-    ...     dask_client = Client()
-    ...     stumpy.mstumped(
-    ...         np.array([[584., -11., 23., 79., 1001., 0., -19.],
-    ...                   [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
-    ...         m=3)
+    ...     with Client() as dask_client:
+    ...         stumpy.mstumped(
+    ...             np.array([[584., -11., 23., 79., 1001., 0., -19.],
+    ...                       [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
+    ...             m=3)
     (array([[0.        , 1.43947142, 0.        , 2.69407392, 0.11633857],
             [0.777905  , 2.36179922, 1.50004632, 2.92246722, 0.777905  ]]),
      array([[2, 4, 0, 1, 0],

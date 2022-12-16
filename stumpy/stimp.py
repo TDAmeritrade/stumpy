@@ -544,12 +544,12 @@ class stimped(_stimp):
     --------
     >>> from dask.distributed import Client
     >>> if __name__ == "__main__":
-    ...     dask_client = Client()
-    ...     pmp = stumpy.stimped(
-    ...         dask_client,
-    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]))
-    ...     pmp.update()
-    ...     pmp.PAN_
+    ...     with Client() as dask_client:
+    ...         pmp = stumpy.stimped(
+    ...             dask_client,
+    ...             np.array([584., -11., 23., 79., 1001., 0., -19.]))
+    ...         pmp.update()
+    ...         pmp.PAN_
     array([[0., 1., 1., 1., 1., 1., 1.],
            [0., 1., 1., 1., 1., 1., 1.]])
     """

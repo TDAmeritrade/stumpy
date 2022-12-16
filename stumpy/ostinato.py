@@ -410,13 +410,13 @@ def ostinatoed(dask_client, Ts, m, normalize=True, p=2.0):
 
     >>> from dask.distributed import Client
     >>> if __name__ == "__main__":
-    ...     dask_client = Client()
-    ...     stumpy.ostinatoed(
-    ...         dask_client,
-    ...         [np.array([584., -11., 23., 79., 1001., 0., 19.]),
-    ...          np.array([600., -10., 23., 17.]),
-    ...          np.array([  1.,   9.,  6.,  0.])],
-    ...         m=3)
+    ...     with Client() as dask_client:
+    ...         stumpy.ostinatoed(
+    ...             dask_client,
+    ...             [np.array([584., -11., 23., 79., 1001., 0., 19.]),
+    ...              np.array([600., -10., 23., 17.]),
+    ...              np.array([  1.,   9.,  6.,  0.])],
+    ...             m=3)
     (1.2370237678153826, 0, 4)
     """
     if not isinstance(Ts, list):  # pragma: no cover
