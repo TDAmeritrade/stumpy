@@ -937,7 +937,8 @@ def _calculate_squared_distance(
 ):
     """
     Compute a single squared distance given all scalar inputs. This function serves as
-    the single source of truth for how all distances should be calculated.
+    the single source of truth for how all distances should be calculated. In this function,
+    Here, Q and T (in `QT`) are two subsequences, each with length `m`.
 
     Parameters
     ----------
@@ -945,26 +946,25 @@ def _calculate_squared_distance(
         Window size
 
     QT : float
-        Dot product between `Q[i]` and `T[i]`
+        Dot product between `Q` and `T`
 
     μ_Q : float
-        Mean of `Q[i]`   # why T[i]?
+        Mean of `Q`
 
     σ_Q : float
-        Standard deviation of `Q[i]`
+        Standard deviation of `Q`
 
     M_T : float
-        Sliding mean of `T[i]`
+        Mean of `T`
 
     Σ_T : float
-        Sliding standard deviation of `T[i]`
+        Standard deviation of `T`
 
     Q_subseq_isconstant : bool
         A boolean value that indicates whether the subsequence `Q` is constant (True)
 
     T_subseq_isconstant : bool
-        A boolean value that indicates whether the subsequence `T[i : i + m]`
-        is constant (True)
+        A boolean value that indicates whether the subsequence `T` is constant (True)
 
     Returns
     -------
