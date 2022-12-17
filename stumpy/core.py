@@ -937,8 +937,8 @@ def _calculate_squared_distance(
 ):
     """
     Compute a single squared distance given all scalar inputs. This function serves as
-    the single source of truth for how all distances should be calculated. In this function,
-    Here, Q and T (in `QT`) are two subsequences, each with length `m`.
+    the single source of truth for how all distances should be calculated.In this
+    function, Q and T (in `QT`) are two subsequences, each with length `m`.
 
     Parameters
     ----------
@@ -986,12 +986,11 @@ def _calculate_squared_distance(
         elif Q_subseq_isconstant or T_subseq_isconstant:
             D_squared = m
         else:
-            denom = m * σ_Q * Σ_T
-            if np.abs(denom) < config.STUMPY_DENOM_THRESHOLD:  # pragma nocover
-                denom = config.STUMPY_DENOM_THRESHOLD
-            D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
-            # note: instead of abs in previous line, we may do:
-            # if 1 - rho < 0, replace it with 0.
+            ρ = (QT - m * μ_Q * M_T) / (m * σ_Q * Σ_T)
+            if ρ > 1.0:
+                ρ = 1.0
+            D_squared = np.abs(2 * m * (1.0 - ρ))
+
             if D_squared < config.STUMPY_P_NORM_THRESHOLD:
                 D_squared = 0
 
