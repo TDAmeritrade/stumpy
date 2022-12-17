@@ -1556,10 +1556,7 @@ def mass(
 
         QT = sliding_dot_product(Q, T)
         Q_subseq_isconstant = rolling_isconstant(Q, m)[0]
-        # equivalent to: np.min(Q) == np.max(Q)
-        μ_Q, σ_Q = compute_mean_std(Q, m)
-        μ_Q = μ_Q[0]
-        σ_Q = σ_Q[0]
+        μ_Q, σ_Q = [arr[0] for arr in compute_mean_std(Q, m)]
         distance_profile[:] = _mass(
             Q, T, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
         )

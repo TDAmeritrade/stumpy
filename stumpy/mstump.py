@@ -119,10 +119,10 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, T_subseq_isconstant):
         Window size
 
     M_T : numpy.ndarray
-        Sliding mean for `T_A`
+        Sliding mean for `T`
 
     Σ_T : numpy.ndarray
-        Sliding standard deviation for `T_A`
+        Sliding standard deviation for `T`
 
     μ_Q : numpy.ndarray
         Mean value of `Q`

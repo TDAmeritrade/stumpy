@@ -236,11 +236,8 @@ class stumpi:
             σ_Q = np.nan
             Q_subseq_isconstant = False
         else:
-            Q_subseq_isconstant = core.rolling_isconstant(S, self._m)
-            μ_Q, σ_Q = core.compute_mean_std(S, self._m)
-            μ_Q = μ_Q[0]
-            σ_Q = σ_Q[0]
-            Q_subseq_isconstant = Q_subseq_isconstant[0]
+            Q_subseq_isconstant = core.rolling_isconstant(S, self._m)[0]
+            μ_Q, σ_Q = [arr[0] for arr in core.compute_mean_std(S, self._m)]
 
         self._M_T[:-1] = self._M_T[1:]
         self._Σ_T[:-1] = self._Σ_T[1:]
