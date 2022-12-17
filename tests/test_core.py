@@ -1023,8 +1023,7 @@ def test_rolling_isconstant():
     a[4:7] = 77.0
     a[9:12] = [77.0, np.nan, 77.0]
 
-    ref = np.zeros(len(a) - w + 1).astype(bool)
-    ref[4] = True
+    ref = naive.rolling_isconstant(a, w)
     comp = core.rolling_isconstant(a, w)
 
     npt.assert_almost_equal(ref, comp)
