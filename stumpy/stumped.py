@@ -133,11 +133,11 @@ def stumped(
     --------
     >>> from dask.distributed import Client
     >>> if __name__ == "__main__":
-    ...     dask_client = Client()
-    ...     stumpy.stumped(
-    ...         dask_client,
-    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]),
-    ...         m=3)
+    ...     with Client() as dask_client:
+    ...         stumpy.stumped(
+    ...             dask_client,
+    ...             np.array([584., -11., 23., 79., 1001., 0., -19.]),
+    ...             m=3)
     array([[0.11633857113691416, 4, -1, 4],
            [2.694073918063438, 3, -1, 3],
            [3.0000926340485923, 0, 0, 4],
