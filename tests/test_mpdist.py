@@ -2,7 +2,7 @@ from functools import partial
 import math
 import numpy as np
 import numpy.testing as npt
-from stumpy import core, mpdist, mpdisted
+from stumpy import mpdist, mpdisted
 from stumpy.mpdist import (
     _mpdist,
     _compute_P_ABBA,
@@ -68,8 +68,8 @@ def test_mpdist_vect(T_A, T_B):
     m = 3
     ref_mpdist_vect = naive.mpdist_vect(T_A, T_B, m)
 
-    Q_subseq_isconstant = core.rolling_isconstant(T_A, m)
-    T_subseq_isconstant = core.rolling_isconstant(T_B, m)
+    Q_subseq_isconstant = naive.rolling_isconstant(T_A, m)
+    T_subseq_isconstant = naive.rolling_isconstant(T_B, m)
     μ_Q, σ_Q = naive.compute_mean_std(T_A, m)
     M_T, Σ_T = naive.compute_mean_std(T_B, m)
     comp_mpdist_vect = _mpdist_vect(
@@ -85,8 +85,8 @@ def test_mpdist_vect_percentage(T_A, T_B, percentage):
     m = 3
     ref_mpdist_vect = naive.mpdist_vect(T_A, T_B, m, percentage=percentage)
 
-    Q_subseq_isconstant = core.rolling_isconstant(T_A, m)
-    T_subseq_isconstant = core.rolling_isconstant(T_B, m)
+    Q_subseq_isconstant = naive.rolling_isconstant(T_A, m)
+    T_subseq_isconstant = naive.rolling_isconstant(T_B, m)
     μ_Q, σ_Q = naive.compute_mean_std(T_A, m)
     M_T, Σ_T = naive.compute_mean_std(T_B, m)
     comp_mpdist_vect = _mpdist_vect(
@@ -111,8 +111,8 @@ def test_mpdist_vect_k(T_A, T_B, k):
     m = 3
     ref_mpdist_vect = naive.mpdist_vect(T_A, T_B, m, k=k)
 
-    Q_subseq_isconstant = core.rolling_isconstant(T_A, m)
-    T_subseq_isconstant = core.rolling_isconstant(T_B, m)
+    Q_subseq_isconstant = naive.rolling_isconstant(T_A, m)
+    T_subseq_isconstant = naive.rolling_isconstant(T_B, m)
     μ_Q, σ_Q = naive.compute_mean_std(T_A, m)
     M_T, Σ_T = naive.compute_mean_std(T_B, m)
     comp_mpdist_vect = _mpdist_vect(
