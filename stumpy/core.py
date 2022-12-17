@@ -986,7 +986,10 @@ def _calculate_squared_distance(
         elif Q_subseq_isconstant or T_subseq_isconstant:
             D_squared = m
         else:
-            ρ = (QT - m * μ_Q * M_T) / (m * σ_Q * Σ_T)
+            denom = m * σ_Q * Σ_T
+            if denom < STUMPY_DENOM_THRESHOLD:
+                denom = STUMPY_DENOM_THRESHOLD
+            ρ = (QT - m * μ_Q * M_T) / denom
             if ρ > 1.0:
                 ρ = 1.0
             D_squared = np.abs(2 * m * (1.0 - ρ))
