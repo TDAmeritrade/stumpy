@@ -1075,8 +1075,8 @@ def _mstump(
     QT_first,
     μ_Q,
     σ_Q,
-    Q_subseq_isconstant,
     T_subseq_isconstant,
+    Q_subseq_isconstant,
     k,
     range_start=1,
     include=None,
@@ -1124,12 +1124,12 @@ def _mstump(
         Standard deviation of the query sequence, `Q`, relative to the current
         sliding window
 
-    Q_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a query subsequence in `Q`
-        is constant (True)
-
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T`
+        is constant (True)
+
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a query subsequence in `Q`
         is constant (True)
 
     k : int
@@ -1363,8 +1363,8 @@ def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
         QT_first,
         μ_Q,
         σ_Q,
-        Q_subseq_isconstant,
         T_subseq_isconstant,
+        Q_subseq_isconstant,
         k,
         start + 1,
         include,
