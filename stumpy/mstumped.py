@@ -14,8 +14,9 @@ from . import core, config
 from .maamped import maamped
 
 
-@core.non_normalized(maamped)
-def mstumped(dask_client, T, m, include=None, discords=False, normalize=True):
+def _dask_mstumped(
+    dask_client, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
+):
     """
     Compute the multi-dimensional z-normalized matrix profile with a distributed
     dask cluster
@@ -27,6 +28,132 @@ def mstumped(dask_client, T, m, include=None, discords=False, normalize=True):
     Parameters
     ----------
     dask_client : client
+        A Dask Distributed client. Setting up a distributed cluster is beyond
+        the scope of this library. Please refer to the Dask Distributed
+        documentation.
+
+    T_A : numpy.ndarray
+        The time series or sequence for which to compute the multi-dimensional
+        matrix profile. Each row in `T_A` represents data from a different
+        dimension while each column in `T_A` represents data from the same
+        dimension.
+
+    T_B : numpy.ndarray
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
+        `None` which corresponds to a self-join.
+
+    m : int
+        Window size
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the current
+        sliding window
+
+    M_T : numpy.ndarray
+        Sliding mean of time series, `T`
+
+    Σ_T : numpy.ndarray
+        Sliding standard deviation of time series, `T`
+
+    μ_Q : numpy.ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window
+
+    σ_Q : numpy.ndarray
+        Standard deviation of the query sequence, `Q`, relative to the current
+        sliding window
+
+    include : numpy.ndarray
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    discords : bool
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
+    """
+    d, n = T_B.shape
+    k = n - m + 1
+    P = np.empty((d, k), dtype=np.float64)
+    I = np.empty((d, k), dtype=np.int64)
+
+    hosts = list(dask_client.ncores().keys())
+    nworkers = len(hosts)
+
+    step = 1 + k // nworkers
+
+    for i, start in enumerate(range(0, k, step)):
+        P[:, start], I[:, start] = _get_first_mstump_profile(
+            start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
+        )
+
+    # Scatter data to Dask cluster
+    T_A_future = dask_client.scatter(T_A, broadcast=True, hash=False)
+    M_T_future = dask_client.scatter(M_T, broadcast=True, hash=False)
+    Σ_T_future = dask_client.scatter(Σ_T, broadcast=True, hash=False)
+    μ_Q_future = dask_client.scatter(μ_Q, broadcast=True, hash=False)
+    σ_Q_future = dask_client.scatter(σ_Q, broadcast=True, hash=False)
+
+    QT_futures = []
+    QT_first_futures = []
+
+    for i, start in enumerate(range(0, k, step)):
+        QT, QT_first = _get_multi_QT(start, T_A, m)
+
+        QT_future = dask_client.scatter(QT, workers=[hosts[i]], hash=False)
+        QT_first_future = dask_client.scatter(QT_first, workers=[hosts[i]], hash=False)
+
+        QT_futures.append(QT_future)
+        QT_first_futures.append(QT_first_future)
+
+    futures = []
+    for i, start in enumerate(range(0, k, step)):
+        stop = min(k, start + step)
+
+        futures.append(
+            dask_client.submit(
+                _mstump,
+                T_A_future,
+                m,
+                stop,
+                excl_zone,
+                M_T_future,
+                Σ_T_future,
+                QT_futures[i],
+                QT_first_futures[i],
+                μ_Q_future,
+                σ_Q_future,
+                k,
+                start + 1,
+                include,
+                discords,
+            )
+        )
+
+    results = dask_client.gather(futures)
+    for i, start in enumerate(range(0, k, step)):
+        stop = min(k, start + step)
+        P[:, start + 1 : stop], I[:, start + 1 : stop] = results[i]
+
+    return P, I
+
+
+@core.non_normalized(maamped)
+def mstumped(client, T, m, include=None, discords=False, normalize=True):
+    """
+    Compute the multi-dimensional z-normalized matrix profile with a distributed
+    dask cluster
+
+    This is a highly distributed implementation around the Numba JIT-compiled
+    parallelized `_mstump` function which computes the multi-dimensional matrix
+    profile according to STOMP. Note that only self-joins are supported.
+
+    Parameters
+    ----------
+    client : client
         A Dask Distributed client that is connected to a Dask scheduler and
         Dask workers. Setting up a Dask distributed cluster is beyond the
         scope of this library. Please refer to the Dask Distributed
@@ -115,71 +242,14 @@ def mstumped(dask_client, T, m, include=None, discords=False, normalize=True):
     if include is not None:
         include = _preprocess_include(include)
 
-    d, n = T_B.shape
-    k = n - m + 1
     excl_zone = int(
         np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
     )  # See Definition 3 and Figure 3
 
-    P = np.empty((d, k), dtype=np.float64)
-    I = np.empty((d, k), dtype=np.int64)
+    _mstumped = core._client_to_func(client)
 
-    hosts = list(dask_client.ncores().keys())
-    nworkers = len(hosts)
-
-    step = 1 + k // nworkers
-
-    for i, start in enumerate(range(0, k, step)):
-        P[:, start], I[:, start] = _get_first_mstump_profile(
-            start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
-        )
-
-    # Scatter data to Dask cluster
-    T_A_future = dask_client.scatter(T_A, broadcast=True, hash=False)
-    M_T_future = dask_client.scatter(M_T, broadcast=True, hash=False)
-    Σ_T_future = dask_client.scatter(Σ_T, broadcast=True, hash=False)
-    μ_Q_future = dask_client.scatter(μ_Q, broadcast=True, hash=False)
-    σ_Q_future = dask_client.scatter(σ_Q, broadcast=True, hash=False)
-
-    QT_futures = []
-    QT_first_futures = []
-
-    for i, start in enumerate(range(0, k, step)):
-        QT, QT_first = _get_multi_QT(start, T_A, m)
-
-        QT_future = dask_client.scatter(QT, workers=[hosts[i]], hash=False)
-        QT_first_future = dask_client.scatter(QT_first, workers=[hosts[i]], hash=False)
-
-        QT_futures.append(QT_future)
-        QT_first_futures.append(QT_first_future)
-
-    futures = []
-    for i, start in enumerate(range(0, k, step)):
-        stop = min(k, start + step)
-
-        futures.append(
-            dask_client.submit(
-                _mstump,
-                T_A_future,
-                m,
-                stop,
-                excl_zone,
-                M_T_future,
-                Σ_T_future,
-                QT_futures[i],
-                QT_first_futures[i],
-                μ_Q_future,
-                σ_Q_future,
-                k,
-                start + 1,
-                include,
-                discords,
-            )
-        )
-
-    results = dask_client.gather(futures)
-    for i, start in enumerate(range(0, k, step)):
-        stop = min(k, start + step)
-        P[:, start + 1 : stop], I[:, start + 1 : stop] = results[i]
+    P, I = _mstumped(
+        client, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
+    )
 
     return P, I

@@ -131,7 +131,7 @@ def _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_T
     return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
 
 
-def _ostinato(Ts, m, M_Ts, Σ_Ts, dask_client=None, device_id=None, mp_func=stump):
+def _ostinato(Ts, m, M_Ts, Σ_Ts, client=None, device_id=None, mp_func=stump):
     """
     Find the consensus motif amongst a list of time series
 
@@ -149,10 +149,9 @@ def _ostinato(Ts, m, M_Ts, Σ_Ts, dask_client=None, device_id=None, mp_func=stum
     Σ_Ts : list
         A list of rolling window standard deviations for each time series in `Ts`
 
-    dask_client : client, default None
-        A Dask Distributed client that is connected to a Dask scheduler and
-        Dask workers. Setting up a Dask distributed cluster is beyond the
-        scope of this library. Please refer to the Dask Distributed
+    client : client, default None
+        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
+        the scope of this library. Please refer to the Dask or Ray Distributed
         documentation.
 
     device_id : int or list, default None
@@ -201,7 +200,7 @@ def _ostinato(Ts, m, M_Ts, Σ_Ts, dask_client=None, device_id=None, mp_func=stum
     bsf_subseq_idx = 0
 
     partial_mp_func = core._get_partial_mp_func(
-        mp_func, dask_client=dask_client, device_id=device_id
+        mp_func, client=client, device_id=device_id
     )
 
     k = len(Ts)
@@ -285,7 +284,7 @@ def ostinato(Ts, m, normalize=True, p=2.0):
     See Also
     --------
     stumpy.ostinatoed : Find the z-normalized consensus motif of multiple time series
-        with a distributed dask cluster
+        with a distributed cluster
     stumpy.gpu_ostinato : Find the z-normalized consensus motif of multiple time series
         with one or more GPU devices
 
@@ -338,10 +337,10 @@ def ostinato(Ts, m, normalize=True, p=2.0):
 
 
 @core.non_normalized(aamp_ostinatoed)
-def ostinatoed(dask_client, Ts, m, normalize=True, p=2.0):
+def ostinatoed(client, Ts, m, normalize=True, p=2.0):
     """
     Find the z-normalized consensus motif of multiple time series with a distributed
-    dask cluster
+    cluster
 
     This is a wrapper around the vanilla version of the ostinato algorithm
     which finds the best radius and a helper function that finds the most
@@ -349,10 +348,9 @@ def ostinatoed(dask_client, Ts, m, normalize=True, p=2.0):
 
     Parameters
     ----------
-    dask_client : client
-        A Dask Distributed client that is connected to a Dask scheduler and
-        Dask workers. Setting up a Dask distributed cluster is beyond the
-        scope of this library. Please refer to the Dask Distributed
+    client : client
+        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
+        the scope of this library. Please refer to the Dask or Ray Distributed
         documentation.
 
     Ts : list
@@ -428,7 +426,7 @@ def ostinatoed(dask_client, Ts, m, normalize=True, p=2.0):
         Ts[i], M_Ts[i], Σ_Ts[i] = core.preprocess(T, m)
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
-        Ts, m, M_Ts, Σ_Ts, dask_client=dask_client, mp_func=stumped
+        Ts, m, M_Ts, Σ_Ts, client=client, mp_func=stumped
     )
 
     (

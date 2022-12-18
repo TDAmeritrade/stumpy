@@ -1480,3 +1480,8 @@ def test_gpu_searchsorted():
         )
         comp_IDX = device_comp_IDX.copy_to_host()
         npt.assert_array_equal(ref_IDX, comp_IDX)
+
+
+def test_client_to_func():
+    with pytest.raises(NotImplementedError):
+        core._client_to_func(core)

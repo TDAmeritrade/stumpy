@@ -2161,7 +2161,7 @@ def rolling_isconstant(a, w):
     )
 
 
-def _get_partial_mp_func(mp_func, dask_client=None, device_id=None):
+def _get_partial_mp_func(mp_func, client=None, device_id=None):
     """
     A convenience function for creating a `functools.partial` matrix profile function
     for single server (parallel CPU), multi-server with Dask distributed (parallel CPU),
@@ -2172,10 +2172,9 @@ def _get_partial_mp_func(mp_func, dask_client=None, device_id=None):
     mp_func : object
         The matrix profile function to be used for computing a matrix profile
 
-    dask_client : client, default None
-        A Dask Distributed client that is connected to a Dask scheduler and
-        Dask workers. Setting up a Dask distributed cluster is beyond the
-        scope of this library. Please refer to the Dask Distributed
+    client : client, default None
+        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
+        the scope of this library. Please refer to the Dask or Ray Distributed
         documentation.
 
     device_id : int or list, default None
@@ -2187,11 +2186,11 @@ def _get_partial_mp_func(mp_func, dask_client=None, device_id=None):
     Returns
     -------
     partial_mp_func : object
-        A generic matrix profile function that wraps the `dask_client` or GPU
+        A generic matrix profile function that wraps the distributed `client` or GPU
         `device_id` into `functools.partial` function where possible
     """
-    if dask_client is not None:
-        partial_mp_func = functools.partial(mp_func, dask_client)
+    if client is not None:
+        partial_mp_func = functools.partial(mp_func, client)
     elif device_id is not None:
         partial_mp_func = functools.partial(mp_func, device_id=device_id)
     else:
@@ -3173,3 +3172,52 @@ def check_ignore_trivial(T_A, T_B, ignore_trivial):
         ignore_trivial = False
 
     return ignore_trivial
+
+
+def _client_to_func(client):
+    """
+    Based on the client information and the parent function calling this
+    function, infer the name of the client function to return
+
+    For example, if the parent function calling `_client_to_func` is called
+    `stumped` and the `client` is a Dask client, then `_dask_` will be
+    prepended to the string `calling_func` and the resulting function
+    called `_dask_stumped` will be returned. For a Ray client, the function
+    caled `_ray_stumped` will be returned. Note that it is the responsibility
+    of the caller to ensure that the resulting derived function exists. Otherwise,
+    this will likely result in a `ModuleNotFoundError`.
+
+    Parameters
+    ----------
+    client : client
+        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
+        the scope of this library. Please refer to the Dask or Ray Distributed
+        documentation.
+
+    Returns
+    -------
+    func : function
+        The correct function for a client
+    """
+    if client.__class__.__name__.startswith("Client"):
+        prefix = "_dask_"
+    # elif inspect.ismodule(client) and str(client).startswith(
+    #     "<module 'ray'"
+    # ):  # pragma: no cover
+    #     prefix = "_ray_"
+    else:
+        raise NotImplementedError(
+            f"Client `{client}` is unrecognized or has yet to be implemented"
+        )
+
+    calling_func = inspect.stack()[1].function
+    module = __import__(
+        calling_func,
+        globals(),
+        locals(),
+        level=1,
+        fromlist=[prefix + calling_func],
+    )
+    func = getattr(module, prefix + calling_func)
+
+    return func

@@ -9,9 +9,7 @@ from . import core, stump, stumped
 from .aampdist import aampdist, aampdisted
 
 
-def _compute_P_ABBA(
-    T_A, T_B, m, P_ABBA, dask_client=None, device_id=None, mp_func=stump
-):
+def _compute_P_ABBA(T_A, T_B, m, P_ABBA, client=None, device_id=None, mp_func=stump):
     """
     A convenience function for computing the (unsorted) concatenated matrix profiles
     from an AB-join and BA-join for the two time series, `T_A` and `T_B`. This result
@@ -38,10 +36,9 @@ def _compute_P_ABBA(
     P_ABBA : numpy.ndarray
         The output array to write the concatenated AB-join and BA-join results to
 
-    dask_client : client, default None
-        A Dask Distributed client that is connected to a Dask scheduler and
-        Dask workers. Setting up a Dask distributed cluster is beyond the
-        scope of this library. Please refer to the Dask Distributed
+    client : client, default None
+        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
+        the scope of this library. Please refer to the Dask or Ray Distributed
         documentation.
 
     device_id : int or list, default None
@@ -66,7 +63,7 @@ def _compute_P_ABBA(
     """
     n_A = T_A.shape[0]
     partial_mp_func = core._get_partial_mp_func(
-        mp_func, dask_client=dask_client, device_id=device_id
+        mp_func, client=client, device_id=device_id
     )
 
     P_ABBA[: n_A - m + 1] = partial_mp_func(T_A, m, T_B, ignore_trivial=False)[:, 0]
@@ -79,7 +76,7 @@ def _mpdist(
     m,
     percentage=0.05,
     k=None,
-    dask_client=None,
+    client=None,
     device_id=None,
     mp_func=stump,
     custom_func=None,
@@ -116,10 +113,9 @@ def _mpdist(
         is not `None`, then the `percentage` parameter is ignored. This parameter is
         ignored when `k_func` is not None.
 
-    dask_client : client, default None
-        A Dask Distributed client that is connected to a Dask scheduler and
-        Dask workers. Setting up a Dask distributed cluster is beyond the
-        scope of this library. Please refer to the Dask Distributed
+    client : client, default None
+        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
+        the scope of this library. Please refer to the Dask or Ray Distributed
         documentation.
 
     device_id : int or list, default None
@@ -154,7 +150,7 @@ def _mpdist(
     n_B = T_B.shape[0]
     P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
 
-    _compute_P_ABBA(T_A, T_B, m, P_ABBA, dask_client, device_id, mp_func)
+    _compute_P_ABBA(T_A, T_B, m, P_ABBA, client, device_id, mp_func)
 
     if k is not None:
         k = min(int(k), P_ABBA.shape[0] - 1)
@@ -330,7 +326,7 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True, p=2.0):
 
 
 @core.non_normalized(aampdisted)
-def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, normalize=True, p=2.0):
+def mpdisted(client, T_A, T_B, m, percentage=0.05, k=None, normalize=True, p=2.0):
     """
     Compute the z-normalized matrix profile distance (MPdist) measure between any two
     time series with a distributed dask cluster
@@ -344,10 +340,9 @@ def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, normalize=True, 
 
     Parameters
     ----------
-    dask_client : client
-        A Dask Distributed client that is connected to a Dask scheduler and
-        Dask workers. Setting up a Dask distributed cluster is beyond the
-        scope of this library. Please refer to the Dask Distributed
+    client : client
+        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
+        the scope of this library. Please refer to the Dask or Ray Distributed
         documentation.
 
     T_A : numpy.ndarray
@@ -407,8 +402,6 @@ def mpdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, normalize=True, 
     ...             m=3)
     0.00019935236191097894
     """
-    MPdist = _mpdist(
-        T_A, T_B, m, percentage, k, dask_client=dask_client, mp_func=stumped
-    )
+    MPdist = _mpdist(T_A, T_B, m, percentage, k, client=client, mp_func=stumped)
 
     return MPdist
