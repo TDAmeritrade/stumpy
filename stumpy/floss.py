@@ -561,7 +561,13 @@ class floss:
         if self._normalize:
             T_subseq_isconstant = core.rolling_isconstant(self._T, self._m)
             M_T, Σ_T = core.compute_mean_std(self._T, self._m)
-            D = core.mass(self._finite_Q, self._finite_T, M_T, Σ_T, T_subseq_isconstant=T_subseq_isconstant)
+            D = core.mass(
+                self._finite_Q,
+                self._finite_T,
+                M_T,
+                Σ_T,
+                T_subseq_isconstant=T_subseq_isconstant,
+            )
         else:
             D = core.mass_absolute(self._T[-self._m :], self._T)
 
