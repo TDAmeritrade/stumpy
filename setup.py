@@ -15,7 +15,7 @@ def get_extras_require():
         "coverage >= 4.5.3",
         "flake8 >= 3.7.7",
         "flake8-docstrings >= 1.5.0",
-        "black >= 19.3b0",
+        "black >= 22.1.0",
         "pytest >= 4.4.1",
         "codecov",
     ]
