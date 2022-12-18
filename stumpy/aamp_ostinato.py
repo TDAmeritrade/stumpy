@@ -307,11 +307,7 @@ def aamp_ostinato(Ts, m, p=2.0):
         Ts, m, Ts_subseq_isfinite, p
     )
 
-    (
-        central_radius,
-        central_Ts_idx,
-        central_subseq_idx,
-    ) = _get_aamp_central_motif(
+    (central_radius, central_Ts_idx, central_subseq_idx,) = _get_aamp_central_motif(
         Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, Ts_subseq_isfinite, p
     )
 
@@ -395,11 +391,7 @@ def aamp_ostinatoed(client, Ts, m, p=2.0):
         mp_func=aamped,
     )
 
-    (
-        central_radius,
-        central_Ts_idx,
-        central_subseq_idx,
-    ) = _get_aamp_central_motif(
+    (central_radius, central_Ts_idx, central_subseq_idx,) = _get_aamp_central_motif(
         Ts,
         bsf_radius,
         bsf_Ts_idx,
