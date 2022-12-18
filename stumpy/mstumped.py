@@ -103,11 +103,8 @@ def mstumped(dask_client, T, m, include=None, discords=False, normalize=True):
     T_A = core._preprocess(T)
     T_B = T_A
 
-    T_A_subseq_isconstant = core.rolling_isconstant(T_A, m)
-    T_B_subseq_isconstant = core.rolling_isconstant(T_B, m)
-
-    T_A, M_T, Σ_T = core.preprocess(T_A, m)
-    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
+    T_A, M_T, Σ_T, T_A_subseq_isconstant = core.preprocess(T_A, m)
+    T_B, μ_Q, σ_Q, T_B_subseq_isconstant = core.preprocess(T_B, m)
 
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
