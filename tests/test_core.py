@@ -817,20 +817,23 @@ def test_preprocess():
     m = 3
 
     ref_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
+    ref_subseq_isconstant = naive.rolling_isconstant(T, m)
     ref_M, ref_Σ = naive.compute_mean_std(T, m)
 
-    comp_T, comp_M, comp_Σ = core.preprocess(T, m)
+    comp_T, comp_M, comp_Σ, comp_subseq_isconstant = core.preprocess(T, m)
 
     npt.assert_almost_equal(ref_T, comp_T)
     npt.assert_almost_equal(ref_M, comp_M)
     npt.assert_almost_equal(ref_Σ, comp_Σ)
+    npt.assert_almost_equal(ref_subseq_isconstant, comp_subseq_isconstant)
 
     T = pd.Series(T)
-    comp_T, comp_M, comp_Σ = core.preprocess(T, m)
+    comp_T, comp_M, comp_Σ, comp_subseq_isconstant = core.preprocess(T, m)
 
     npt.assert_almost_equal(ref_T, comp_T)
     npt.assert_almost_equal(ref_M, comp_M)
     npt.assert_almost_equal(ref_Σ, comp_Σ)
+    npt.assert_almost_equal(ref_subseq_isconstant, comp_subseq_isconstant)
 
 
 def test_preprocess_non_normalized():

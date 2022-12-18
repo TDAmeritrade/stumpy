@@ -134,7 +134,7 @@ def mmotifs(
         warnings.warn(msg)
         max_motifs = 1
 
-    T, M_T, Σ_T = core.preprocess(T, m)
+    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T, m)
     P = P.copy()
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
@@ -187,6 +187,7 @@ def mmotifs(
             T=T[subspace_k],
             M_T=M_T[subspace_k],
             Σ_T=Σ_T[subspace_k],
+            T_subseq_isconstant=T_subseq_isconstant[subspace_k],
             max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,

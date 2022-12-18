@@ -76,11 +76,8 @@ def _preprocess_prescrump(T_A, m, T_B=None, s=None):
     else:
         excl_zone = None
 
-    Q_subseq_isconstant = core.rolling_isconstant(T_A, m)
-    T_subseq_isconstant = core.rolling_isconstant(T_B, m)
-
-    T_A, μ_Q, σ_Q = core.preprocess(T_A, m)
-    T_B, M_T, Σ_T = core.preprocess(T_B, m)
+    T_A, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(T_A, m)
+    T_B, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T_B, m)
 
     n_A = T_A.shape[0]
     l = n_A - m + 1

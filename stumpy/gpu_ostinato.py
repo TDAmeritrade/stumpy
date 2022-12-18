@@ -98,8 +98,7 @@ def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0):
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts_subseq_isconstant[i] = core.rolling_isconstant(T, m)
-        Ts[i], M_Ts[i], Σ_Ts[i] = core.preprocess(T, m)
+        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(T, m)
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
         Ts, m, M_Ts, Σ_Ts, Ts_subseq_isconstant, device_id=device_id, mp_func=gpu_stump

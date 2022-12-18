@@ -140,8 +140,9 @@ class stumpi:
         self._left_I = mp[:, 2 * self._k].astype(np.int64)
         self._left_P = np.full_like(self._left_I, np.inf, dtype=np.float64)
 
-        self._T_subseq_isconstant = core.rolling_isconstant(self._T, self._m)
-        self._T, self._M_T, self._Σ_T = core.preprocess(self._T, self._m)
+        self._T, self._M_T, self._Σ_T, self._T_subseq_isconstant = core.preprocess(
+            self._T, self._m
+        )
         # Retrieve the left matrix profile values
 
         # Since each (top-1) matrix profile value is the minimum between the left

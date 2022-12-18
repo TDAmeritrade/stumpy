@@ -1551,11 +1551,8 @@ def mass(
     if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
-        if T_subseq_isconstant is None:
-            T_subseq_isconstant = rolling_isconstant(T, m)
-
-        if M_T is None or Σ_T is None:
-            T, M_T, Σ_T = preprocess(T, m)
+        if M_T is None or Σ_T is None or T_subseq_isconstant is None:
+            T, M_T, Σ_T, T_subseq_isconstant = preprocess(T, m)
 
         QT = sliding_dot_product(Q, T)
         Q_subseq_isconstant = rolling_isconstant(Q, m)[0]
@@ -1671,13 +1668,9 @@ def mass_distance_matrix(
     -------
         None
     """
-    Q_subseq_isconstant = rolling_isconstant(Q, m)
-    Q, μ_Q, σ_Q = preprocess(Q, m)
-
-    if T_subseq_isconstant is None:
-        T_subseq_isconstant = rolling_isconstant(T, m)
-    if M_T is None or Σ_T is None:
-        T, M_T, Σ_T = preprocess(T, m)
+    Q, μ_Q, σ_Q, Q_subseq_isconstant = preprocess(Q, m)
+    if M_T is None or Σ_T is None or T_subseq_isconstant is None:
+        T, M_T, Σ_T, T_subseq_isconstant = preprocess(T, m)
 
     check_window_size(m, max_size=min(Q.shape[-1], T.shape[-1]))
 
@@ -1836,14 +1829,20 @@ def preprocess(T, m):
         Rolling mean
     Σ_T : numpy.ndarray
         Rolling standard deviation
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array, where `T_subseq_isconstant[i]` is True if all elements of
+        `T[i : i + m]` are finite and equal to each other.
     """
     T = _preprocess(T)
     check_window_size(m, max_size=T.shape[-1])
+    T_subseq_isconstant = rolling_isconstant(T, m)
+
     T[np.isinf(T)] = np.nan
     M_T, Σ_T = compute_mean_std(T, m)
     T[np.isnan(T)] = 0
 
-    return T, M_T, Σ_T
+    return T, M_T, Σ_T, T_subseq_isconstant
 
 
 def preprocess_non_normalized(T, m):

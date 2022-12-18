@@ -147,7 +147,9 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, T_subseq_isconstant):
         if np.isinf(μ_Q[i]):
             D[i, :] = np.inf
         else:
-            D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i], T_subseq_isconstant[i])
+            D[i, :] = core.mass(
+                Q[i], T[i], M_T[i], Σ_T[i], T_subseq_isconstant=T_subseq_isconstant[i]
+            )
 
     return D
 
@@ -318,9 +320,9 @@ def subspace(
         bins = _inverse_norm(n_bit)
         discretize_func = partial(_discretize, bins=bins)
 
-    subseqs, _, _ = core.preprocess(T[:, subseq_idx : subseq_idx + m], m)
+    subseqs, _, _, _ = core.preprocess(T[:, subseq_idx : subseq_idx + m], m)
     subseqs = core.z_norm(subseqs, axis=1)
-    neighbors, _, _ = core.preprocess(T[:, nn_idx : nn_idx + m], m)
+    neighbors, _, _, _ = core.preprocess(T[:, nn_idx : nn_idx + m], m)
     neighbors = core.z_norm(neighbors, axis=1)
 
     disc_subseqs = discretize_func(subseqs)
@@ -526,9 +528,9 @@ def mdl(
     bit_sizes = np.empty(T.shape[0])
     S = [None] * T.shape[0]
     for k in range(T.shape[0]):
-        subseqs, _, _ = core.preprocess(T[:, subseq_idx[k] : subseq_idx[k] + m], m)
+        subseqs, _, _, _ = core.preprocess(T[:, subseq_idx[k] : subseq_idx[k] + m], m)
         subseqs = core.z_norm(subseqs, axis=1)
-        neighbors, _, _ = core.preprocess(T[:, nn_idx[k] : nn_idx[k] + m], m)
+        neighbors, _, _, _ = core.preprocess(T[:, nn_idx[k] : nn_idx[k] + m], m)
         neighbors = core.z_norm(neighbors, axis=1)
 
         disc_subseqs = discretize_func(subseqs)
@@ -695,8 +697,7 @@ def multi_distance_profile(
         Multi-dimensional distance profile for the window with index equal to
         `query_idx`
     """
-    T_subseq_isconstant = core.rolling_isconstant(T, m)
-    T, M_T, Σ_T = core.preprocess(T, m)
+    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T, m)
 
     if T.ndim <= 1:  # pragma: no cover
         err = f"T is {T.ndim}-dimensional and must be at least 1-dimensional"
@@ -1308,11 +1309,8 @@ def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
     T_A = core._preprocess(T)
     T_B = T_A
 
-    T_subseq_isconstant = core.rolling_isconstant(T_A, m)
-    Q_subseq_isconstant = core.rolling_isconstant(T_B, m)
-
-    T_A, M_T, Σ_T = core.preprocess(T_A, m)
-    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
+    T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T_A, m)
+    T_B, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(T_B, m)
 
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"

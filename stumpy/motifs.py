@@ -312,8 +312,7 @@ def motifs(
         msg += f"(e.g., cutoff={suggested_cutoff})."
         warnings.warn(msg)
 
-    T_subseq_isconstant = core.rolling_isconstant(T[np.newaxis, :], m)
-    T, M_T, Σ_T = core.preprocess(T[np.newaxis, :], m)
+    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T[np.newaxis, :], m)
     P = P[np.newaxis, :].astype(np.float64)
 
     motif_distances, motif_indices = _motifs(
@@ -466,21 +465,18 @@ def match(
     m = Q.shape[1]
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    if T_subseq_isconstant is None:  # pragma: no cover
-        T_subseq_isconstant = core.rolling_isconstant(T, m)
-    if len(T_subseq_isconstant.shape) == 1:
-        T_subseq_isconstant = T_subseq_isconstant[np.newaxis, :]
-
-    if M_T is None or Σ_T is None:  # pragma: no cover
-        T, M_T, Σ_T = core.preprocess(T, m)
+    if M_T is None or Σ_T is None or T_subseq_isconstant is None:  # pragma: no cover
+        T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T, m)
     if len(M_T.shape) == 1:
         M_T = M_T[np.newaxis, :]
     if len(Σ_T.shape) == 1:
         Σ_T = Σ_T[np.newaxis, :]
+    if len(T_subseq_isconstant.shape) == 1:
+        T_subseq_isconstant = T_subseq_isconstant[np.newaxis, :]
 
     D = np.empty((d, n - m + 1))
     for i in range(d):
-        D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i], T_subseq_isconstant[i])
+        D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i], T_subseq_isconstant=T_subseq_isconstant[i])
     D = np.mean(D, axis=0)
 
     return core._find_matches(
