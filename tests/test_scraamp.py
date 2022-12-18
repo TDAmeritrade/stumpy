@@ -285,7 +285,6 @@ def test_scraamp_self_join_full(T_A, T_B):
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_scraamp_A_B_join_full(T_A, T_B):
-
     m = 3
 
     ref_mp = naive.aamp(T_A, m, T_B=T_B)
@@ -325,7 +324,6 @@ def test_scraamp_A_B_join_full(T_A, T_B):
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_scraamp_A_B_join_full_swap(T_A, T_B):
-
     m = 3
 
     ref_mp = naive.aamp(T_B, m, T_B=T_A)

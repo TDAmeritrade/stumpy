@@ -1382,7 +1382,7 @@ def test_shift_insert_at_index():
         values = np.random.rand(k + 1)
 
         # test shift = "right"
-        for (idx, v) in zip(indices, values):
+        for idx, v in zip(indices, values):
             ref[:] = a
             comp[:] = a
 
@@ -1394,7 +1394,7 @@ def test_shift_insert_at_index():
             npt.assert_almost_equal(ref, comp)
 
         # test shift = "left"
-        for (idx, v) in zip(indices, values):
+        for idx, v in zip(indices, values):
             ref[:] = a
             comp[:] = a
 

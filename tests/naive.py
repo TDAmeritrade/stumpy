@@ -1340,7 +1340,6 @@ def mpdist_snippets(
     mpdist_percentage=0.05,
     mpdist_k=None,
 ):
-
     D = get_all_mpdist_profiles(
         T,
         m,
@@ -1878,7 +1877,6 @@ def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_w
         or tile_lower_diag > max_tile_diag
         or tile_upper_diag > max_tile_diag
     ):
-
         return total_ndists
 
     if tile_lower_diag == min_tile_diag and tile_upper_diag == max_tile_diag:
