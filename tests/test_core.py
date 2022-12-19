@@ -1407,7 +1407,7 @@ def test_shift_insert_at_index():
         values = np.random.rand(k + 1)
 
         # test shift = "right"
-        for (idx, v) in zip(indices, values):
+        for idx, v in zip(indices, values):
             ref[:] = a
             comp[:] = a
 
@@ -1419,7 +1419,7 @@ def test_shift_insert_at_index():
             npt.assert_almost_equal(ref, comp)
 
         # test shift = "left"
-        for (idx, v) in zip(indices, values):
+        for idx, v in zip(indices, values):
             ref[:] = a
             comp[:] = a
 
@@ -1505,3 +1505,8 @@ def test_gpu_searchsorted():
         )
         comp_IDX = device_comp_IDX.copy_to_host()
         npt.assert_array_equal(ref_IDX, comp_IDX)
+
+
+def test_client_to_func():
+    with pytest.raises(NotImplementedError):
+        core._client_to_func(core)

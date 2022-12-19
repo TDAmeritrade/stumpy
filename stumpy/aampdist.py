@@ -128,7 +128,7 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None, p=2.0):
     return mpdist._mpdist(T_A, T_B, m, percentage, k, mp_func=partial_mp_func)
 
 
-def aampdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, p=2.0):
+def aampdisted(client, T_A, T_B, m, percentage=0.05, k=None, p=2.0):
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile distance
     (MPdist) measure between any two time series with a distributed dask cluster and
@@ -143,7 +143,7 @@ def aampdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, p=2.0):
 
     Parameters
     ----------
-    dask_client : client
+    client : client
         A Dask Distributed client that is connected to a Dask scheduler and
         Dask workers. Setting up a Dask distributed cluster is beyond the
         scope of this library. Please refer to the Dask Distributed
@@ -183,5 +183,5 @@ def aampdisted(dask_client, T_A, T_B, m, percentage=0.05, k=None, p=2.0):
     """
     partial_mp_func = functools.partial(aamped, p=p)
     return mpdist._mpdist(
-        T_A, T_B, m, percentage, k, dask_client=dask_client, mp_func=partial_mp_func
+        T_A, T_B, m, percentage, k, client=client, mp_func=partial_mp_func
     )
