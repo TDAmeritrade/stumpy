@@ -1017,7 +1017,7 @@ def _calculate_squared_distance(
             D_squared = m
         else:
             denom = m * σ_Q * Σ_T
-            if denom < config.STUMPY_DENOM_THRESHOLD:  # pragma: no cover
+            if np.abs(denom) < config.STUMPY_DENOM_THRESHOLD:  # pragma: no cover
                 denom = config.STUMPY_DENOM_THRESHOLD
             ρ = (QT - m * μ_Q * M_T) / denom
             if ρ > 1.0:
