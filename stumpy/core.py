@@ -1845,7 +1845,10 @@ def preprocess(T, m):
     for every subsequence. Every subsequence that contains at least
     one NaN or inf value, will have a mean of np.inf. For the standard
     deviation these values are ignored. If all values are illegal, the
-    standard deviation will be 0 (see `core.compute_mean_std`)
+    standard deviation will be 0 (see `core.compute_mean_std`). Also,
+    compute the rolling isconstant, a boolearn array that indicates if
+    a subsequence is constant (True) or False. A subsequence is constant
+    if it only contains finite values that are all the same.
 
     Parameters
     ----------
@@ -1863,16 +1866,15 @@ def preprocess(T, m):
         Rolling mean
     Σ_T : numpy.ndarray
         Rolling standard deviation
-
     T_subseq_isconstant : numpy.ndarray
-        A boolean array, where `T_subseq_isconstant[i]` is True if all elements of
-        `T[i : i + m]` are finite and equal to each other.
+        A boolean array that indicates whether a subsequence in `T`
+        is constant (True)
     """
     T = _preprocess(T)
     check_window_size(m, max_size=T.shape[-1])
-    T_subseq_isconstant = rolling_isconstant(T, m)
 
     T[np.isinf(T)] = np.nan
+    T_subseq_isconstant = rolling_isconstant(T, m)
     M_T, Σ_T = compute_mean_std(T, m)
     T[np.isnan(T)] = 0
 
