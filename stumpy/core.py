@@ -967,8 +967,8 @@ def _calculate_squared_distance(
 ):
     """
     Compute a single squared distance given all scalar inputs. This function serves as
-    the single source of truth for how all distances should be calculated.In this
-    function, Q and T (in `QT`) are two subsequences, each with length `m`.
+    the single source of truth for how all distances should be calculated.
+    In this function, Q and T (in `QT`) are two subsequences, each with length `m`.
 
     Parameters
     ----------
