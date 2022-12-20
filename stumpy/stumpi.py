@@ -160,8 +160,8 @@ class stumpi:
             D_square = core._calculate_squared_distance(
                 self._m,
                 QT,
-                self._M_T[i],  # μ_Q
-                self._Σ_T[i],  # σ_Q
+                self._M_T[i],
+                self._Σ_T[i],
                 self._M_T[j],
                 self._Σ_T[j],
                 self._T_subseq_isconstant[i],
