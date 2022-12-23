@@ -235,13 +235,15 @@ def test_match_mean_stddev(Q, T):
         max_distance=max_distance,
     )
 
-    M_T, Σ_T = core.compute_mean_std(T, len(Q))
+    T_subseq_isconstant = naive.rolling_isconstant(T, m)
+    M_T, Σ_T = naive.compute_mean_std(T, len(Q))
 
     right = match(
         Q,
         T,
         M_T,
         Σ_T,
+        T_subseq_isconstant,
         max_matches=None,
         max_distance=lambda D: max_distance,  # also test lambda functionality
     )
