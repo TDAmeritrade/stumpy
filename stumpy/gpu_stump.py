@@ -345,16 +345,16 @@ def _gpu_stump(
         device_QT_odd = cuda.to_device(QT)
         device_QT_even = cuda.to_device(QT)
         device_QT_first = cuda.to_device(QT_first)
-        device_μ_Q = cuda.to_device(μ_Q)
-        device_σ_Q = cuda.to_device(σ_Q)
+        device_M_T = cuda.to_device(M_T)
+        device_Σ_T = cuda.to_device(Σ_T)
         if ignore_trivial:
             device_T_B = device_T_A
-            device_M_T = device_μ_Q
-            device_Σ_T = device_σ_Q
+            device_μ_Q = device_M_T
+            device_σ_Q = device_Σ_T
         else:
             device_T_B = cuda.to_device(T_B)
-            device_M_T = cuda.to_device(M_T)
-            device_Σ_T = cuda.to_device(Σ_T)
+            device_μ_Q = cuda.to_device(μ_Q)
+            device_σ_Q = cuda.to_device(σ_Q)
 
         profile = np.full((w, k), np.inf, dtype=np.float64)
         indices = np.full((w, k), -1, dtype=np.int64)
