@@ -243,9 +243,10 @@ def test_match_mean_stddev(Q, T):
         T,
         M_T,
         Σ_T,
-        T_subseq_isconstant,
         max_matches=None,
         max_distance=lambda D: max_distance,  # also test lambda functionality
+        T_subseq_isconstant=T_subseq_isconstant,
+        T_subseq_isconstant=T_subseq_isconstant,
     )
 
     npt.assert_almost_equal(left, right)

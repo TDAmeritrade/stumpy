@@ -121,11 +121,11 @@ def _motifs(
             T,
             M_T=M_T,
             Σ_T=Σ_T,
-            T_subseq_isconstant=T_subseq_isconstant,
             max_matches=None,
             max_distance=max_distance,
             atol=atol,
             query_idx=candidate_idx,
+            T_subseq_isconstant=T_subseq_isconstant,
         )
 
         if len(query_matches) > min_neighbors:
@@ -350,7 +350,6 @@ def match(
     T,
     M_T=None,
     Σ_T=None,
-    T_subseq_isconstant=None,
     max_distance=None,
     max_matches=None,
     atol=1e-8,
@@ -358,6 +357,7 @@ def match(
     normalize=True,
     p=2.0,
     T_subseq_isfinite=None,
+    T_subseq_isconstant=None,
 ):
     """
     Find all matches of a query `Q` in a time series `T`
@@ -379,9 +379,6 @@ def match(
 
     Σ_T : numpy.ndarray, default None
         Sliding standard deviation of time series, `T`
-
-    T_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     max_distance : float or function, default None
         Maximum distance between `Q` and a subsequence `S` for `S` to be considered a
@@ -423,6 +420,9 @@ def match(
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False). This parameter is ignored when
         `normalize=True`.
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     Returns
     -------
