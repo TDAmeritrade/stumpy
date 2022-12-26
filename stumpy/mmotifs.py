@@ -187,13 +187,13 @@ def mmotifs(
             T=T[subspace_k],
             M_T=M_T[subspace_k],
             Σ_T=Σ_T[subspace_k],
-            T_subseq_isconstant=T_subseq_isconstant[subspace_k],
             max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,
             query_idx=motif_idx,
             normalize=normalize,
             p=p,
+            T_subseq_isconstant=T_subseq_isconstant[subspace_k],
         )
 
         if len(query_matches) > min_neighbors:
