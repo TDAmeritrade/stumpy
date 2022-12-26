@@ -465,8 +465,12 @@ def match(
     m = Q.shape[1]
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    if M_T is None or Σ_T is None or T_subseq_isconstant is None:  # pragma: no cover
-        T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T, m)
+    T[np.isinf(T)] = np.nan
+    if T_subseq_isconstant is None:  # pragma: no cover
+        T_subseq_isconstant = core.rolling_isconstant(T, m)  # pragma: no cover
+    if M_T is None or Σ_T is None:
+        M_T, Σ_T = core.compute_mean_std(T, m)
+    T[np.isnan(T)] = 0
 
     if len(M_T.shape) == 1:
         M_T = M_T[np.newaxis, :]
