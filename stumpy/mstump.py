@@ -131,7 +131,7 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, T_subseq_isconstant):
         Standard deviation of `Q`
 
     T_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `T_A` is constant (True)
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     Returns
     -------
