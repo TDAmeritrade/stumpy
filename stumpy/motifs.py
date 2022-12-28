@@ -466,8 +466,8 @@ def match(
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
     T[np.isinf(T)] = np.nan
-    if T_subseq_isconstant is None:  # pragma: no cover
-        T_subseq_isconstant = core.rolling_isconstant(T, m)  # pragma: no cover
+    if T_subseq_isconstant is None:
+        T_subseq_isconstant = core.rolling_isconstant(T, m)
     if M_T is None or Σ_T is None:
         M_T, Σ_T = core.compute_mean_std(T, m)
     T[np.isnan(T)] = 0
