@@ -433,10 +433,11 @@ def test_calculate_squared_distance_profile(Q, T):
         ** 2
     )
 
-    Q_subseq_isconstant = core.rolling_isconstant(Q, m)
-    T_subseq_isconstant = core.rolling_isconstant(T, m)
     QT = core.sliding_dot_product(Q, T)
+    Q_subseq_isconstant = core.rolling_isconstant(Q, m)[0]
     μ_Q, σ_Q = [arr[0] for arr in core.compute_mean_std(Q, m)]
+
+    T_subseq_isconstant = core.rolling_isconstant(T, m)
     M_T, Σ_T = core.compute_mean_std(T, m)
 
     comp = core._calculate_squared_distance_profile(
@@ -446,7 +447,7 @@ def test_calculate_squared_distance_profile(Q, T):
         σ_Q,
         M_T,
         Σ_T,
-        Q_subseq_isconstant.item(0),
+        Q_subseq_isconstant,
         T_subseq_isconstant,
     )
     npt.assert_almost_equal(ref, comp)
@@ -458,20 +459,22 @@ def test_calculate_distance_profile(Q, T):
     ref = np.linalg.norm(
         core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
     )
-    QT = core.sliding_dot_product(Q, T)
-    Q_subseq_isconstant = core.rolling_isconstant(Q, m)
-    T_subseq_isconstant = core.rolling_isconstant(T, m)
 
-    μ_Q, σ_Q = core.compute_mean_std(Q, m)
+    QT = core.sliding_dot_product(Q, T)
+    Q_subseq_isconstant = core.rolling_isconstant(Q, m)[0]
+    μ_Q, σ_Q = [arr[0] for arr in core.compute_mean_std(Q, m)]
+
+    T_subseq_isconstant = core.rolling_isconstant(T, m)
     M_T, Σ_T = core.compute_mean_std(T, m)
+
     comp = core.calculate_distance_profile(
         m,
         QT,
-        μ_Q.item(0),
-        σ_Q.item(0),
+        μ_Q,
+        σ_Q,
         M_T,
         Σ_T,
-        Q_subseq_isconstant.item(0),
+        Q_subseq_isconstant,
         T_subseq_isconstant,
     )
     npt.assert_almost_equal(ref, comp)
