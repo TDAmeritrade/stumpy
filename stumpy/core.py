@@ -3205,9 +3205,9 @@ def _client_to_func(client):
     # ):  # pragma: no cover
     #     prefix = "_ray_"
     else:
-        raise NotImplementedError(
-            f"Distributed client `{client}` is unrecognized or has yet to be implemented"
-        )
+        msg = f"Distributed client `{client}` is unrecognized or "
+        msg += "has yet to be implemented"
+        raise NotImplementedError(msg)
 
     calling_func = inspect.stack()[1].function
     module = __import__(
