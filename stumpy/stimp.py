@@ -474,7 +474,7 @@ class stimp(_stimp):
 )
 class stimped(_stimp):
     """
-    Compute the Pan Matrix Profile with a distributed dask cluster
+    Compute the Pan Matrix Profile with a distributed dask/ray cluster
 
     This is based on the SKIMP algorithm.
 

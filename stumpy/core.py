@@ -3206,7 +3206,7 @@ def _client_to_func(client):
     #     prefix = "_ray_"
     else:
         raise NotImplementedError(
-            f"Client `{client}` is unrecognized or has yet to be implemented"
+            f"Distributed client `{client}` is unrecognized or has yet to be implemented"
         )
 
     calling_func = inspect.stack()[1].function

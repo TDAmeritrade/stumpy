@@ -329,7 +329,7 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True, p=2.0):
 def mpdisted(client, T_A, T_B, m, percentage=0.05, k=None, normalize=True, p=2.0):
     """
     Compute the z-normalized matrix profile distance (MPdist) measure between any two
-    time series with a distributed dask cluster
+    time series with a distributed dask/ray cluster
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist

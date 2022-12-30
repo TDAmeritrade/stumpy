@@ -145,7 +145,7 @@ def _dask_mstumped(
 def mstumped(client, T, m, include=None, discords=False, normalize=True):
     """
     Compute the multi-dimensional z-normalized matrix profile with a distributed
-    dask cluster
+    dask/ray cluster
 
     This is a highly distributed implementation around the Numba JIT-compiled
     parallelized `_mstump` function which computes the multi-dimensional matrix
