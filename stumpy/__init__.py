@@ -27,6 +27,7 @@ from .snippets import snippets  # noqa: F401
 from .aampdist_snippets import aampdist_snippets  # noqa: F401
 from .stimp import stimp, stimped  # noqa: F401
 from .aamp_stimp import aamp_stimp, aamp_stimped  # noqa: F401
+from .dtw import dtwMP, lbKeogh_MP, lbKeogh_DSMP, paa, dtw_dist, lb_envelope_keogh, lb_dist
 from numba import cuda
 
 if cuda.is_available():
