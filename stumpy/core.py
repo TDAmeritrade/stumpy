@@ -938,7 +938,6 @@ def _calculate_squared_distance(
     """
     Compute a single squared distance given all scalar inputs. This function serves as
     the single source of truth for how all distances should be calculated.
-    In this function, Q and T (in `QT`) are two subsequences, each with length `m`.
 
     Parameters
     ----------
@@ -946,7 +945,7 @@ def _calculate_squared_distance(
         Window size
 
     QT : float
-        Dot product between `Q` and `T`
+        Pre-computed dot product between `Q` and `T`, each with length `m`.
 
     μ_Q : float
         Mean of `Q`
