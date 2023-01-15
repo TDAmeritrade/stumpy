@@ -979,22 +979,20 @@ def _calculate_squared_distance(
     """
     if np.isinf(M_T) or np.isinf(μ_Q):
         D_squared = np.inf
+    elif Q_subseq_isconstant and T_subseq_isconstant:
+        D_squared = 0
+    elif Q_subseq_isconstant or T_subseq_isconstant:
+        D_squared = m
     else:
-        if Q_subseq_isconstant and T_subseq_isconstant:
-            D_squared = 0
-        elif Q_subseq_isconstant or T_subseq_isconstant:
-            D_squared = m
-        else:
-            denom = m * σ_Q * Σ_T
-            if np.abs(denom) < config.STUMPY_DENOM_THRESHOLD:  # pragma: no cover
-                denom = config.STUMPY_DENOM_THRESHOLD
-            ρ = (QT - m * μ_Q * M_T) / denom
-            if ρ > 1.0:
-                ρ = 1.0
-            D_squared = np.abs(2 * m * (1.0 - ρ))
+        denom = m * σ_Q * Σ_T
+        denom = max(denom, config.STUMPY_DENOM_THRESHOLD)  # pragma: no cover
 
-            if D_squared < config.STUMPY_P_NORM_THRESHOLD:
-                D_squared = 0
+        ρ = (QT - m * μ_Q * M_T) / denom
+        ρ = min(ρ, 1.0)
+
+        D_squared = np.abs(2 * m * (1.0 - ρ))
+        # if D_squared < config.STUMPY_P_NORM_THRESHOLD:
+         # D_squared = 0
 
     return D_squared
 
