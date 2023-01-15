@@ -543,36 +543,6 @@ def sliding_dot_product(Q, T):
     return QT.real[m - 1 : n]
 
 
-@njit(parallel=True, fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
-def _parallel_rolling_func(a, w, func):
-    """
-    Compute the (embarrassingly parallel) rolling metric by applying a user defined
-    function on a 1-D array
-
-    Parameters
-    ----------
-    a : numpy.ndarray
-        The input array
-
-    w : int
-        The rolling window size
-
-    func : function
-        The numpy function to apply
-
-    Returns
-    -------
-    out : numpy.ndarray
-        Rolling window result when the `func` is applied to each window
-    """
-    l = a.shape[0] - w + 1
-    out = np.empty(l)
-    for i in prange(l):
-        out[i] = func(a[i : i + w])
-
-    return out
-
-
 @njit(
     # "f8[:](f8[:], i8, b1[:])",
     fastmath={"nsz", "arcp", "contract", "afn", "reassoc"}
@@ -2107,7 +2077,7 @@ def rolling_isfinite(a, w):
     )
 
 
-@njit(fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
+@njit(parallel=True, fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
 def _rolling_isconstant(a, w):
     """
     Compute the rolling isconstant for 1-D and 2-D arrays.
@@ -2129,7 +2099,10 @@ def _rolling_isconstant(a, w):
     output : numpy.ndarray
         Rolling window isconstant.
     """
-    out = _parallel_rolling_func(a, w, np.ptp)
+    l = a.shape[0] - w + 1
+    out = np.empty(l)
+    for i in prange(l):
+        out[i] = np.ptp(a[i : i + w])
 
     return np.where(out == 0.0, True, False)
 
