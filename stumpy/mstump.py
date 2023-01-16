@@ -1306,7 +1306,7 @@ def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
      array([[2, 4, 0, 1, 0],
             [4, 4, 0, 1, 0]]))
     """
-    T_A = core._preprocess(T)
+    T_A = T
     T_B = T_A
 
     T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T_A, m)
