@@ -2687,7 +2687,7 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
     return MPdist
 
 
-@njit
+@njit()
 def _merge_topk_PI(PA, PB, IA, IB):
     """
     Merge two top-k matrix profiles `PA` and `PB`, and update `PA` (in place).
@@ -2760,7 +2760,7 @@ def _merge_topk_PI(PA, PB, IA, IB):
             IA[i] = tmp_I
 
 
-@njit
+@njit()
 def _merge_topk_ρI(ρA, ρB, IA, IB):
     """
     Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place).
@@ -2834,7 +2834,7 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
             IA[i] = tmp_I
 
 
-@njit
+@njit()
 def _shift_insert_at_index(a, idx, v, shift="right"):
     """
     If `shift=right` (default), all elements in `a[idx:]` are shifted to the right by
