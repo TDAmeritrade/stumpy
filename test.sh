@@ -4,6 +4,7 @@ test_mode="all"
 print_mode="verbose"
 custom_testfiles=()
 max_iter=10
+site_pkgs=$(python -c 'import site; print(site.getsitepackages()[0])')
 
 # Parse command line arguments
 for var in "$@"
@@ -223,6 +224,9 @@ clean_up()
     echo "Cleaning Up"
     rm -rf "dask-worker-space"
     rm -rf "stumpy/__pycache__/"
+    if [ -d "$site_pkgs/stumpy/__pycache__" ]; then
+        rm -rf $site_pkgs/stumpy/__pycache__/*nb*
+    fi
 }
 
 ###########
