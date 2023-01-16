@@ -179,10 +179,9 @@ def _compute_and_update_PI_kernel(
                 denom = m * σ_Q[i] * Σ_T[j]
                 if math.fabs(denom) < config.STUMPY_DENOM_THRESHOLD:  # pragma nocover
                     denom = config.STUMPY_DENOM_THRESHOLD
-                rho = (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom
-                if rho > 1.0:
-                    rho = 1.0
-                p_norm = 2 * m * (1.0 - rho)
+                ρ = (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom
+                ρ = min(ρ, 1.0)
+                p_norm = 2 * m * (1.0 - ρ)
 
         if ignore_trivial:
             if i <= zone_stop and i >= zone_start:
