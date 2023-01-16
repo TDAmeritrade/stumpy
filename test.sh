@@ -4,6 +4,7 @@ test_mode="all"
 print_mode="verbose"
 custom_testfiles=()
 max_iter=10
+site_pkgs=$(python -c 'import site; print(site.getsitepackages()[0])')
 
 # Parse command line arguments
 for var in "$@"
@@ -209,7 +210,7 @@ test_coverage()
         coverage run --append --source=. -m pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
         check_errs $?
     done
-    coverage report -m --skip-covered --omit=setup.py,docstring.py
+    coverage report -m --skip-covered --omit=setup.py,docstring.py,stumpy/cache.py
 }
 
 check_links()
@@ -223,6 +224,9 @@ clean_up()
     echo "Cleaning Up"
     rm -rf "dask-worker-space"
     rm -rf "stumpy/__pycache__/"
+    if [ -d "$site_pkgs/stumpy/__pycache__" ]; then
+        rm -rf $site_pkgs/stumpy/__pycache__/*nb*
+    fi
 }
 
 ###########
