@@ -1787,22 +1787,27 @@ def apply_exclusion_zone(a, idx, excl_zone, val):
     _apply_exclusion_zone(a, idx, excl_zone, val)
 
 
-def _preprocess(T):
+def _preprocess(T, copy=True):
     """
-    Creates a copy of the time series, transposes all dataframes, converts to
-    `numpy.ndarray`, and checks the `dtype`
+    Creates a copy of the time series when `copy` is True, transposes all dataframes,
+    converts to `numpy.ndarray`, and checks the `dtype`
 
     Parameters
     ----------
     T : numpy.ndarray
         Time series or sequence
 
+    copy : bool, default True
+        A boolean value that indicates whether the process should be done on
+        input `T` (False) or its copy (True).
+
     Returns
     -------
     T : numpy.ndarray
         Modified time series
     """
-    T = T.copy()
+    if copy:
+        T = T.copy()
     T = transpose_dataframe(T)
     T = np.asarray(T)
     check_dtype(T)
