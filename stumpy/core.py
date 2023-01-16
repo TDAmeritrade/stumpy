@@ -1815,7 +1815,7 @@ def _preprocess(T, copy=True):
     return T
 
 
-def preprocess(T, m):
+def preprocess(T, m, copy=True, M_T=None, Σ_T=None, T_subseq_isconstant=None):
     """
     Creates a copy of the time series where all NaN and inf values
     are replaced with zero. Also computes mean and standard deviation
@@ -1823,7 +1823,7 @@ def preprocess(T, m):
     one NaN or inf value, will have a mean of np.inf. For the standard
     deviation these values are ignored. If all values are illegal, the
     standard deviation will be 0 (see `core.compute_mean_std`). Also,
-    compute the rolling isconstant, a boolearn array that indicates if
+    compute the rolling isconstant, a boolean array that indicates if
     a subsequence is constant (True) or False. A subsequence is constant
     if it only contains finite values that are all the same.
 
@@ -1834,6 +1834,20 @@ def preprocess(T, m):
 
     m : int
         Window size
+
+    copy : bool, default True
+        A boolean value that indicates whether the process should be done on
+        input `T` (False) or its copy (True).
+
+    M_T : numpy.ndarray, default None
+        Rolling mean
+
+    Σ_T : numpy.ndarray, default None
+        Rolling standard deviation
+
+    T_subseq_isconstant : numpy.ndarray, default None
+        A boolean array that indicates whether a subsequence in `T`
+        is constant (True)
 
     Returns
     -------
@@ -1847,12 +1861,14 @@ def preprocess(T, m):
         A boolean array that indicates whether a subsequence in `T`
         is constant (True)
     """
-    T = _preprocess(T)
+    T = _preprocess(T, copy)
     check_window_size(m, max_size=T.shape[-1])
 
     T[np.isinf(T)] = np.nan
-    T_subseq_isconstant = rolling_isconstant(T, m)
-    M_T, Σ_T = compute_mean_std(T, m)
+    if T_subseq_isconstant is None:
+        T_subseq_isconstant = rolling_isconstant(T, m)
+    if M_T is None or Σ_T is None:
+        M_T, Σ_T = compute_mean_std(T, m)
     T[np.isnan(T)] = 0
 
     return T, M_T, Σ_T, T_subseq_isconstant
