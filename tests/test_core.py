@@ -1,4 +1,5 @@
 import numpy as np
+from numba import cuda
 import numpy.testing as npt
 import pandas as pd
 from scipy.spatial.distance import cdist
@@ -9,6 +10,26 @@ import os
 import math
 
 import naive
+
+if cuda.is_available():
+
+    @cuda.jit("(f8[:, :], f8[:], i8[:], i8, b1, i8[:])")
+    def _gpu_searchsorted_kernel(a, v, bfs, nlevel, is_left, idx):
+        # A wrapper kernel for calling device function _gpu_searchsorted_left/right.
+        i = cuda.grid(1)
+        if i < a.shape[0]:
+            if is_left:
+                idx[i] = core._gpu_searchsorted_left(a[i], v[i], bfs, nlevel)
+            else:
+                idx[i] = core._gpu_searchsorted_right(a[i], v[i], bfs, nlevel)
+
+
+try:
+    from numba.errors import NumbaPerformanceWarning
+except ModuleNotFoundError:
+    from numba.core.errors import NumbaPerformanceWarning
+
+TEST_THREADS_PER_BLOCK = 10
 
 
 def naive_rolling_window_dot_product(Q, T):
@@ -44,7 +65,7 @@ def naive_idx_to_mp(I, T, m, normalize=True):
     I = I.astype(np.int64)
     T = T.copy()
     T_isfinite = np.isfinite(T)
-    T_subseqs_isfinite = np.all(core.rolling_window(T_isfinite, m), axis=1)
+    T_subseq_isfinite = np.all(core.rolling_window(T_isfinite, m), axis=1)
 
     T[~T_isfinite] = 0.0
     T_subseqs = core.rolling_window(T, m)
@@ -55,7 +76,7 @@ def naive_idx_to_mp(I, T, m, normalize=True):
         )
     else:
         P = naive.distance(T_subseqs, nn_subseqs, axis=1)
-    P[~T_subseqs_isfinite] = np.inf
+    P[~T_subseq_isfinite] = np.inf
     P[I < 0] = np.inf
 
     return P
@@ -220,6 +241,35 @@ def test_welford_nanstd():
     ref_var = np.nanstd(core.rolling_window(T, m), axis=1)
     comp_var = core.welford_nanstd(T, m)
     npt.assert_almost_equal(ref_var, comp_var)
+
+
+def test_rolling_std_1d():
+    a = np.random.rand(64)
+    for w in range(3, 6):
+        ref_std = naive.rolling_nanstd(a, w)
+
+        # welford = False (default)
+        comp_std = core.rolling_nanstd(a, w)
+        npt.assert_almost_equal(ref_std, comp_std)
+
+        # welford = True
+        comp_std = core.rolling_nanstd(a, w, welford=True)
+        npt.assert_almost_equal(ref_std, comp_std)
+
+
+def test_rolling_std_2d():
+    w = 5
+    for n_rows in range(1, 4):
+        a = np.random.rand(n_rows * 64).reshape(n_rows, 64)
+        ref_std = naive.rolling_nanstd(a, w)
+
+        # welford = False (default)
+        comp_std = core.rolling_nanstd(a, w)
+        npt.assert_almost_equal(ref_std, comp_std)
+
+        # welford = True
+        comp_std = core.rolling_nanstd(a, w, welford=True)
+        npt.assert_almost_equal(ref_std, comp_std)
 
 
 def test_rolling_nanmin_1d():
@@ -771,13 +821,13 @@ def test_preprocess_non_normalized():
 
     ref_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
 
-    comp_T, comp_T_subseq_isfinite = core.preprocess_non_normalized(T, m)
+    comp_T, comp_T_subseq_isfinite, _ = core.preprocess_non_normalized(T, m)
 
     npt.assert_almost_equal(ref_T, comp_T)
     npt.assert_almost_equal(ref_T_subseq_isfinite, comp_T_subseq_isfinite)
 
     T = pd.Series(T)
-    comp_T, comp_T_subseq_isfinite = core.preprocess_non_normalized(T, m)
+    comp_T, comp_T_subseq_isfinite, _ = core.preprocess_non_normalized(T, m)
 
     npt.assert_almost_equal(ref_T, comp_T)
     npt.assert_almost_equal(ref_T_subseq_isfinite, comp_T_subseq_isfinite)
@@ -937,6 +987,22 @@ def test_rolling_isfinite():
 
     ref = np.all(core.rolling_window(np.isfinite(a), w), axis=1)
     comp = core.rolling_isfinite(a, w)
+
+    npt.assert_almost_equal(ref, comp)
+
+
+def test_rolling_isconstant():
+    a = np.arange(12).astype(np.float64)
+    w = 3
+
+    a[:3] = 77.0
+    a[1] = np.inf
+    a[4:7] = 77.0
+    a[9:12] = [77.0, np.nan, 77.0]
+
+    ref = np.zeros(len(a) - w + 1).astype(bool)
+    ref[4] = True
+    comp = core.rolling_isconstant(a, w)
 
     npt.assert_almost_equal(ref, comp)
 
@@ -1316,7 +1382,7 @@ def test_shift_insert_at_index():
         values = np.random.rand(k + 1)
 
         # test shift = "right"
-        for (idx, v) in zip(indices, values):
+        for idx, v in zip(indices, values):
             ref[:] = a
             comp[:] = a
 
@@ -1328,7 +1394,7 @@ def test_shift_insert_at_index():
             npt.assert_almost_equal(ref, comp)
 
         # test shift = "left"
-        for (idx, v) in zip(indices, values):
+        for idx, v in zip(indices, values):
             ref[:] = a
             comp[:] = a
 
@@ -1365,3 +1431,57 @@ def test_find_matches_maxmatch():
         comp = core._find_matches(D, excl_zone, max_distance, max_matches)
 
         npt.assert_almost_equal(ref, comp)
+
+
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
+def test_gpu_searchsorted():
+    if not cuda.is_available():  # pragma: no cover
+        pytest.skip("Skipping Tests No GPUs Available")
+
+    n = 3 * config.STUMPY_THREADS_PER_BLOCK + 1
+    V = np.empty(n, dtype=np.float64)
+
+    threads_per_block = config.STUMPY_THREADS_PER_BLOCK
+    blocks_per_grid = math.ceil(n / threads_per_block)
+
+    for k in range(1, 32):
+        device_bfs = cuda.to_device(core._bfs_indices(k, fill_value=-1))
+        nlevel = np.floor(np.log2(k) + 1).astype(np.int64)
+
+        A = np.sort(np.random.rand(n, k), axis=1)
+        device_A = cuda.to_device(A)
+
+        V[:] = np.random.rand(n)
+        for i, idx in enumerate(np.random.choice(np.arange(n), size=k, replace=False)):
+            V[idx] = A[idx, i]  # create ties
+        device_V = cuda.to_device(V)
+
+        is_left = True  # test case
+        ref_IDX = [np.searchsorted(A[i], V[i], side="left") for i in range(n)]
+        ref_IDX = np.asarray(ref_IDX, dtype=np.int64)
+
+        comp_IDX = np.full(n, -1, dtype=np.int64)
+        device_comp_IDX = cuda.to_device(comp_IDX)
+        _gpu_searchsorted_kernel[blocks_per_grid, threads_per_block](
+            device_A, device_V, device_bfs, nlevel, is_left, device_comp_IDX
+        )
+        comp_IDX = device_comp_IDX.copy_to_host()
+        npt.assert_array_equal(ref_IDX, comp_IDX)
+
+        is_left = False  # test case
+        ref_IDX = [np.searchsorted(A[i], V[i], side="right") for i in range(n)]
+        ref_IDX = np.asarray(ref_IDX, dtype=np.int64)
+
+        comp_IDX = np.full(n, -1, dtype=np.int64)
+        device_comp_IDX = cuda.to_device(comp_IDX)
+        _gpu_searchsorted_kernel[blocks_per_grid, threads_per_block](
+            device_A, device_V, device_bfs, nlevel, is_left, device_comp_IDX
+        )
+        comp_IDX = device_comp_IDX.copy_to_host()
+        npt.assert_array_equal(ref_IDX, comp_IDX)
+
+
+def test_client_to_func():
+    with pytest.raises(NotImplementedError):
+        core._client_to_func(core)

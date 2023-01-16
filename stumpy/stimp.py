@@ -70,10 +70,9 @@ class _stimp:
         computing SCRIMP. If set to `True`, this is equivalent to computing
         SCRIMP++. This parameter is ignored when `percentage = 1.0`.
 
-    dask_client : client, default None
-        A Dask Distributed client that is connected to a Dask scheduler and
-        Dask workers. Setting up a Dask distributed cluster is beyond the
-        scope of this library. Please refer to the Dask Distributed
+    client : client, default None
+        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
+        the scope of this library. Please refer to the Dask or Ray Distributed
         documentation.
 
     device_id : int or list, default None
@@ -117,7 +116,7 @@ class _stimp:
         step=1,
         percentage=0.01,
         pre_scrump=True,
-        dask_client=None,
+        client=None,
         device_id=None,
         mp_func=stump,
     ):
@@ -152,10 +151,9 @@ class _stimp:
             computing SCRIMP. If set to `True`, this is equivalent to computing
             SCRIMP++. This parameter is ignored when `percentage = 1.0`.
 
-        dask_client : client, default None
-            A Dask Distributed client that is connected to a Dask scheduler and
-            Dask workers. Setting up a Dask distributed cluster is beyond the
-            scope of this library. Please refer to the Dask Distributed
+        client : client, default None
+            A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
+            the scope of this library. Please refer to the Dask or Ray Distributed
             documentation.
 
         device_id : int or list, default None
@@ -185,7 +183,7 @@ class _stimp:
         self._percentage = percentage
         self._pre_scrump = pre_scrump
         partial_mp_func = core._get_partial_mp_func(
-            mp_func, dask_client=dask_client, device_id=device_id
+            mp_func, client=client, device_id=device_id
         )
         self._mp_func = partial_mp_func
 
@@ -476,17 +474,16 @@ class stimp(_stimp):
 )
 class stimped(_stimp):
     """
-    Compute the Pan Matrix Profile with a distributed dask cluster
+    Compute the Pan Matrix Profile with a distributed dask/ray cluster
 
     This is based on the SKIMP algorithm.
 
     Parameters
     ----------
-    dask_client : client
-            A Dask Distributed client that is connected to a Dask scheduler and
-            Dask workers. Setting up a Dask distributed cluster is beyond the
-            scope of this library. Please refer to the Dask Distributed
-            documentation.
+    client : client
+        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
+        the scope of this library. Please refer to the Dask or Ray Distributed
+        documentation.
 
     T : numpy.ndarray
         The time series or sequence for which to compute the pan matrix profile
@@ -544,19 +541,19 @@ class stimped(_stimp):
     --------
     >>> from dask.distributed import Client
     >>> if __name__ == "__main__":
-    ...     dask_client = Client()
-    ...     pmp = stumpy.stimped(
-    ...         dask_client,
-    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]))
-    ...     pmp.update()
-    ...     pmp.PAN_
+    ...     with Client() as dask_client:
+    ...         pmp = stumpy.stimped(
+    ...             dask_client,
+    ...             np.array([584., -11., 23., 79., 1001., 0., -19.]))
+    ...         pmp.update()
+    ...         pmp.PAN_
     array([[0., 1., 1., 1., 1., 1., 1.],
            [0., 1., 1., 1., 1., 1., 1.]])
     """
 
     def __init__(
         self,
-        dask_client,
+        client,
         T,
         min_m=3,
         max_m=None,
@@ -569,10 +566,9 @@ class stimped(_stimp):
 
         Parameters
         ----------
-        dask_client : client
-            A Dask Distributed client that is connected to a Dask scheduler and
-            Dask workers. Setting up a Dask distributed cluster is beyond the
-            scope of this library. Please refer to the Dask Distributed
+        client : client
+            A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
+            the scope of this library. Please refer to the Dask or Ray Distributed
             documentation.
 
         T : numpy.ndarray
@@ -607,6 +603,6 @@ class stimped(_stimp):
             step=step,
             percentage=1.0,
             pre_scrump=False,
-            dask_client=dask_client,
+            client=client,
             mp_func=stumped,
         )

@@ -134,7 +134,7 @@ def _aamp_ostinato(
     m,
     Ts_subseq_isfinite,
     p=2.0,
-    dask_client=None,
+    client=None,
     device_id=None,
     mp_func=aamp,
 ):
@@ -155,10 +155,9 @@ def _aamp_ostinato(
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
 
-    dask_client : client, default None
-        A Dask Distributed client that is connected to a Dask scheduler and
-        Dask workers. Setting up a Dask distributed cluster is beyond the
-        scope of this library. Please refer to the Dask Distributed
+    client : client, default None
+        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
+        the scope of this library. Please refer to the Dask or Ray Distributed
         documentation.
 
     device_id : int or list, default None
@@ -207,7 +206,7 @@ def _aamp_ostinato(
     bsf_subseq_idx = 0
 
     partial_mp_func = core._get_partial_mp_func(
-        mp_func, dask_client=dask_client, device_id=device_id
+        mp_func, client=client, device_id=device_id
     )
 
     k = len(Ts)
@@ -298,7 +297,11 @@ def aamp_ostinato(Ts, m, p=2.0):
 
     Ts_subseq_isfinite = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], Ts_subseq_isfinite[i] = core.preprocess_non_normalized(T, m)
+        (
+            Ts[i],
+            Ts_subseq_isfinite[i],
+            _,
+        ) = core.preprocess_non_normalized(T, m)
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _aamp_ostinato(
         Ts, m, Ts_subseq_isfinite, p
@@ -311,7 +314,7 @@ def aamp_ostinato(Ts, m, p=2.0):
     return central_radius, central_Ts_idx, central_subseq_idx
 
 
-def aamp_ostinatoed(dask_client, Ts, m, p=2.0):
+def aamp_ostinatoed(client, Ts, m, p=2.0):
     """
     Find the non-normalized (i.e., without z-normalization) consensus motif of multiple
     time series with a distributed dask cluster
@@ -322,10 +325,9 @@ def aamp_ostinatoed(dask_client, Ts, m, p=2.0):
 
     Parameters
     ----------
-    dask_client : client
-        A Dask Distributed client that is connected to a Dask scheduler and
-        Dask workers. Setting up a Dask distributed cluster is beyond the
-        scope of this library. Please refer to the Dask Distributed
+    client : client
+        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
+        the scope of this library. Please refer to the Dask or Ray Distributed
         documentation.
 
     Ts : list
@@ -374,14 +376,18 @@ def aamp_ostinatoed(dask_client, Ts, m, p=2.0):
 
     Ts_subseq_isfinite = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], Ts_subseq_isfinite[i] = core.preprocess_non_normalized(T, m)
+        (
+            Ts[i],
+            Ts_subseq_isfinite[i],
+            _,
+        ) = core.preprocess_non_normalized(T, m)
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _aamp_ostinato(
         Ts,
         m,
         Ts_subseq_isfinite,
         p=p,
-        dask_client=dask_client,
+        client=client,
         mp_func=aamped,
     )
 

@@ -48,7 +48,7 @@ def test_gpu_aamp_self_join(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
     for p in [1.0, 2.0, 3.0]:
-        ref_mp = naive.aamp(T_B, m, exclusion_zone=zone, p=p)
+        ref_mp = naive.aamp(T_B, m, exclusion_zone=zone, p=p, row_wise=True)
         comp_mp = gpu_aamp(T_B, m, ignore_trivial=True, p=p)
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
@@ -88,7 +88,7 @@ def test_gpu_aamp_self_join_larger_window(T_A, T_B, m):
 def test_gpu_aamp_A_B_join(T_A, T_B):
     m = 3
     for p in [1.0, 2.0, 3.0]:
-        ref_mp = naive.aamp(T_B, m, T_B=T_A, p=p)
+        ref_mp = naive.aamp(T_B, m, T_B=T_A, p=p, row_wise=True)
         comp_mp = gpu_aamp(T_B, m, T_A, ignore_trivial=False, p=p)
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
@@ -369,3 +369,34 @@ def test_gpu_aamp_nan_zero_mean_self_join():
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
     npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_gpu_aamp_self_join_KNN(T_A, T_B):
+    m = 3
+    zone = int(np.ceil(m / 4))
+    for k in range(2, 4):
+        for p in [1.0, 2.0, 3.0]:
+            ref_mp = naive.aamp(T_B, m, exclusion_zone=zone, p=p, k=k)
+            comp_mp = gpu_aamp(T_B, m, ignore_trivial=True, p=p, k=k)
+            naive.replace_inf(ref_mp)
+            naive.replace_inf(comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)
+
+            comp_mp = gpu_aamp(pd.Series(T_B), m, ignore_trivial=True, p=p, k=k)
+            naive.replace_inf(comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_gpu_aamp_A_B_join_KNN(T_A, T_B):
+    m = 3
+    for k in range(2, 4):
+        for p in [1.0, 2.0, 3.0]:
+            ref_mp = naive.aamp(T_B, m, T_B=T_A, p=p, k=k)
+            comp_mp = gpu_aamp(T_B, m, T_A, ignore_trivial=False, p=p, k=k)
+            naive.replace_inf(ref_mp)
+            naive.replace_inf(comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)

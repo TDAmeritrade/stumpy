@@ -2,16 +2,12 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
-
 import numpy as np
 from numba import njit, prange
 import numba
 
 from . import core, scraamp, config
 from .stump import _stump
-
-logger = logging.getLogger(__name__)
 
 
 def _preprocess_prescrump(T_A, m, T_B=None, s=None):
@@ -745,19 +741,9 @@ class scrump:
             )
 
         core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
-
-        if self._ignore_trivial is False and core.are_arrays_equal(
-            self._T_A, self._T_B
-        ):  # pragma: no cover
-            logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
-            logger.warning("Try setting `ignore_trivial = True`.")
-
-        if (
-            self._ignore_trivial
-            and core.are_arrays_equal(self._T_A, self._T_B) is False
-        ):  # pragma: no cover
-            logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
-            logger.warning("Try setting `ignore_trivial = False`.")
+        self._ignore_trivial = core.check_ignore_trivial(
+            self._T_A, self._T_B, self._ignore_trivial
+        )
 
         self._n_A = self._T_A.shape[0]
         self._n_B = self._T_B.shape[0]

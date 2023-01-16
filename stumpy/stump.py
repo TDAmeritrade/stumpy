@@ -2,16 +2,12 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
-
 import numpy as np
 from numba import njit, prange
 import numba
 
 from . import core, config
 from .aamp import aamp
-
-logger = logging.getLogger(__name__)
 
 
 @njit(
@@ -141,11 +137,6 @@ def _compute_diagonal(
     ignore_trivial : bool
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
         `False`. Default is `True`.
-
-    k : int
-        The number of top `k` smallest distances used to construct the matrix profile.
-        Note that this will increase the total computational time and memory usage
-        when k > 1.
 
     Returns
     -------
@@ -345,22 +336,22 @@ def _stump(
 
     Returns
     -------
-    profile : numpy.ndarray
+    out1 : numpy.ndarray
         The (top-k) matrix profile
 
-    indices : numpy.ndarray
-        The (top-k) matrix profile indices
-
-    left profile : numpy.ndarray
+    out2 : numpy.ndarray
         The (top-1) left matrix profile
 
-    left indices : numpy.ndarray
-        The (top-1) left matrix profile indices
-
-    right profile : numpy.ndarray
+    out3 : numpy.ndarray
         The (top-1) right matrix profile
 
-    right indices : numpy.ndarray
+    out4 : numpy.ndarray
+        The (top-k) matrix profile indices
+
+    out5 : numpy.ndarray
+        The (top-1) left matrix profile indices
+
+    out6 : numpy.ndarray
         The (top-1) right matrix profile indices
 
     Notes
@@ -508,11 +499,14 @@ def _stump(
         if p_norm_R[i] < config.STUMPY_P_NORM_THRESHOLD:
             p_norm_R[i] = 0.0
 
-    P = np.sqrt(p_norm)
-    PL = np.sqrt(p_norm_L)
-    PR = np.sqrt(p_norm_R)
-
-    return P, PL, PR, I, IL[0], IR[0]
+    return (
+        np.sqrt(p_norm),
+        np.sqrt(p_norm_L),
+        np.sqrt(p_norm_R),
+        I,
+        IL[0],
+        IR[0],
+    )
 
 
 @core.non_normalized(aamp)
@@ -668,14 +662,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
         )
 
     core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
-
-    if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
-        logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
-        logger.warning("Try setting `ignore_trivial = True`.")
-
-    if ignore_trivial and core.are_arrays_equal(T_A, T_B) is False:  # pragma: no cover
-        logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
-        logger.warning("Try setting `ignore_trivial = False`.")
+    ignore_trivial = core.check_ignore_trivial(T_A, T_B, ignore_trivial)
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]

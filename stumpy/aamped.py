@@ -2,20 +2,28 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
-
+# import inspect
 import numpy as np
 
 from . import core, config
 from .aamp import _aamp
 
-logger = logging.getLogger(__name__)
 
-
-def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
-    # function needs to be revised to return top-k matrix profile
+def _dask_aamped(
+    dask_client,
+    T_A,
+    T_B,
+    m,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
+    p,
+    diags,
+    ignore_trivial,
+    k,
+):
     """
-    Compute the non-normalized (i.e., without z-normalization) matrix profile
+    Compute the non-normalized (i.e., without z-normalization) matrix profile with a
+    distributed dask cluster
 
     This is a highly distributed implementation around the Numba JIT-compiled
     parallelized `_aamp` function which computes the non-normalized matrix profile
@@ -24,86 +32,65 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
     Parameters
     ----------
     dask_client : client
-        A Dask Distributed client that is connected to a Dask scheduler and
-        Dask workers. Setting up a Dask distributed cluster is beyond the
-        scope of this library. Please refer to the Dask Distributed
+        A Dask Distributed client. Setting up a distributed cluster is beyond
+        the scope of this library. Please refer to the Dask Distributed
         documentation.
 
     T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
-    m : int
-        Window size
-
-    T_B : numpy.ndarray, default None
+    T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
         subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
         `None` which corresponds to a self-join.
+
+    m : int
+        Window size
+
+    T_A_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_A` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_B_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_B` contains a
+        `np.nan`/`np.inf` value (False)
+
+    p : float
+        The p-norm to apply for computing the Minkowski distance.
+
+    diags : numpy.ndarray
+        The diagonal indices
 
     ignore_trivial : bool, default True
         Set to `True` if this is a self-join. Otherwise, for AB-join, set this
         to `False`. Default is `True`.
 
-    p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
-
     k : int, default 1
         The number of top `k` smallest distances used to construct the matrix profile.
         Note that this will increase the total computational time and memory usage
-        when k > 1.
+        when k > 1. If you have access to a GPU device, then you may be able to
+        leverage `gpu_stump` for better performance and scalability.
 
     Returns
     -------
     out : numpy.ndarray
-        The first column consists of the matrix profile, the second column
-        consists of the matrix profile indices.
-
-    Notes
-    -----
-    `arXiv:1901.05708 \
-    <https://arxiv.org/pdf/1901.05708.pdf>`__
-
-    See Algorithm 1
-
-    Note that we have extended this algorithm for AB-joins as well.
+        When k = 1 (default), the first column consists of the matrix profile,
+        the second column consists of the matrix profile indices, the third column
+        consists of the left matrix profile indices, and the fourth column consists
+        of the right matrix profile indices. However, when k > 1, the output array
+        will contain exactly 2 * k + 2 columns. The first k columns (i.e., out[:, :k])
+        consists of the top-k matrix profile, the next set of k columns
+        (i.e., out[:, k:2k]) consists of the corresponding top-k matrix profile
+        indices, and the last two columns (i.e., out[:, 2k] and out[:, 2k+1] or,
+        equivalently, out[:, -2] and out[:, -1]) correspond to the top-1 left
+        matrix profile indices and the top-1 right matrix profile indices, respectively.
     """
-    if T_B is None:
-        T_B = T_A.copy()
-        ignore_trivial = True
-
-    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
-    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
-
-    if T_A.ndim != 1:  # pragma: no cover
-        raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
-
-    if T_B.ndim != 1:  # pragma: no cover
-        raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
-
-    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
-
-    if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
-        logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
-        logger.warning("Try setting `ignore_trivial = True`.")
-
-    if ignore_trivial and core.are_arrays_equal(T_A, T_B) is False:  # pragma: no cover
-        logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
-        logger.warning("Try setting `ignore_trivial = False`.")
-
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_A - m + 1
 
-    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-    out = np.empty((l, 4), dtype=object)
-
     hosts = list(dask_client.ncores().keys())
     nworkers = len(hosts)
-
-    if ignore_trivial:
-        diags = np.arange(excl_zone + 1, n_A - m + 1, dtype=np.int64)
-    else:
-        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
     ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, nworkers, False)
@@ -141,20 +128,140 @@ def aamped(dask_client, T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
                 p,
                 diags_futures[i],
                 ignore_trivial,
+                k,
             )
         )
 
     results = dask_client.gather(futures)
-    profile, indices = results[0]
+    profile, profile_L, profile_R, indices, indices_L, indices_R = results[0]
     for i in range(1, len(hosts)):
-        P, I = results[i]
-        for col in range(P.shape[1]):  # pragma: no cover
-            cond = P[:, col] < profile[:, col]
-            profile[:, col] = np.where(cond, P[:, col], profile[:, col])
-            indices[:, col] = np.where(cond, I[:, col], indices[:, col])
+        P, PL, PR, I, IL, IR = results[i]
+        # Update top-k matrix profile and matrix profile indices
+        core._merge_topk_PI(profile, P, indices, I)
 
-    out[:, 0] = profile[:, 0]
-    out[:, 1:4] = indices
+        # Update top-1 left matrix profile and matrix profile index
+        mask = PL < profile_L
+        profile_L[mask] = PL[mask]
+        indices_L[mask] = IL[mask]
+
+        # Update top-1 right matrix profile and matrix profile index
+        mask = PR < profile_R
+        profile_R[mask] = PR[mask]
+        indices_R[mask] = IR[mask]
+
+    out = np.empty((l, 2 * k + 2), dtype=object)
+    out[:, :k] = profile
+    out[:, k : 2 * k + 2] = np.column_stack((indices, indices_L, indices_R))
+
+    return out
+
+
+def aamped(client, T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
+    # function needs to be revised to return top-k matrix profile
+    """
+    Compute the non-normalized (i.e., without z-normalization) matrix profile
+
+    This is a highly distributed implementation around the Numba JIT-compiled
+    parallelized `_aamp` function which computes the non-normalized matrix profile
+    according to AAMP.
+
+    Parameters
+    ----------
+    client : client
+        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
+        the scope of this library. Please refer to the Dask or Ray Distributed
+        documentation.
+
+    T_A : numpy.ndarray
+        The time series or sequence for which to compute the matrix profile
+
+    m : int
+        Window size
+
+    T_B : numpy.ndarray, default None
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
+        `None` which corresponds to a self-join.
+
+    ignore_trivial : bool, default True
+        Set to `True` if this is a self-join. Otherwise, for AB-join, set this
+        to `False`. Default is `True`.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance.
+
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1.
+
+    Returns
+    -------
+    out : numpy.ndarray
+        When k = 1 (default), the first column consists of the matrix profile,
+        the second column consists of the matrix profile indices, the third column
+        consists of the left matrix profile indices, and the fourth column consists
+        of the right matrix profile indices. However, when k > 1, the output array
+        will contain exactly 2 * k + 2 columns. The first k columns (i.e., out[:, :k])
+        consists of the top-k matrix profile, the next set of k columns
+        (i.e., out[:, k:2k]) consists of the corresponding top-k matrix profile
+        indices, and the last two columns (i.e., out[:, 2k] and out[:, 2k+1] or,
+        equivalently, out[:, -2] and out[:, -1]) correspond to the top-1 left
+        matrix profile indices and the top-1 right matrix profile indices, respectively.
+
+    Notes
+    -----
+    `arXiv:1901.05708 \
+    <https://arxiv.org/pdf/1901.05708.pdf>`__
+
+    See Algorithm 1
+
+    Note that we have extended this algorithm for AB-joins as well.
+    """
+    if T_B is None:
+        T_B = T_A.copy()
+        ignore_trivial = True
+
+    T_A, T_A_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
+        T_A, m
+    )
+    T_B, T_B_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
+        T_B, m
+    )
+
+    if T_A.ndim != 1:  # pragma: no cover
+        raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
+
+    if T_B.ndim != 1:  # pragma: no cover
+        raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
+
+    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
+    ignore_trivial = core.check_ignore_trivial(T_A, T_B, ignore_trivial)
+
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+    if ignore_trivial:
+        diags = np.arange(excl_zone + 1, n_A - m + 1, dtype=np.int64)
+    else:
+        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
+
+    _aamped = core._client_to_func(client)
+
+    out = _aamped(
+        client,
+        T_A,
+        T_B,
+        m,
+        T_A_subseq_isfinite,
+        T_B_subseq_isfinite,
+        p,
+        diags,
+        ignore_trivial,
+        k,
+    )
 
     core._check_P(out[:, 0])
 
