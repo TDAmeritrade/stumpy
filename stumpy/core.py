@@ -1548,12 +1548,9 @@ def mass(
     if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
-        T[np.isinf(T)] = np.nan
-        if T_subseq_isconstant is None:
-            T_subseq_isconstant = rolling_isconstant(T, m)
-        if M_T is None or Σ_T is None:
-            M_T, Σ_T = compute_mean_std(T, m)
-        T[np.isnan(T)] = 0
+        T, M_T, Σ_T, T_subseq_isconstant = preprocess(
+            T, m, copy=False, M_T=M_T, Σ_T=Σ_T, T_subseq_isconstant=T_subseq_isconstant
+        )
 
         QT = sliding_dot_product(Q, T)
         Q_subseq_isconstant = rolling_isconstant(Q, m)[0]
