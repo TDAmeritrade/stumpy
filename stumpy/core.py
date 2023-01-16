@@ -992,7 +992,7 @@ def _calculate_squared_distance(
 
         D_squared = np.abs(2 * m * (1.0 - ρ))
         # if D_squared < config.STUMPY_P_NORM_THRESHOLD:
-         # D_squared = 0
+        # D_squared = 0
 
     return D_squared
 
