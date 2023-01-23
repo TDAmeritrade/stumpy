@@ -945,7 +945,8 @@ def _calculate_squared_distance(
         Window size
 
     QT : float
-        Pre-computed dot product between `Q` and `T`, each with length `m`.
+        Pre-computed dot product between `Q` and the ith subsequence in `T`, each with
+        length `m`
 
     μ_Q : float
         Mean of `Q`
@@ -954,10 +955,10 @@ def _calculate_squared_distance(
         Standard deviation of `Q`
 
     M_T : float
-        Mean of `T`
+        Mean of the ith subsequence in `T`
 
     Σ_T : float
-        Standard deviation of `T`
+        Standard deviation of the ith subsequence in `T`
 
     Q_subseq_isconstant : bool
         A boolean value that indicates whether the subsequence `Q` is constant (True)
