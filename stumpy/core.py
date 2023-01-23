@@ -1253,7 +1253,7 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
         distance_profile[:] = np.inf
     else:
         if T_subseq_isfinite is None:
-            T, T_subseq_isfinite, T_subseq_isconstant = preprocess_non_normalized(T, m)
+            T, T_subseq_isfinite = preprocess_non_normalized(T, m)
         distance_profile[:] = _mass_absolute(Q, T, p)
         distance_profile[~T_subseq_isfinite] = np.inf
 
@@ -1895,19 +1895,14 @@ def preprocess_non_normalized(T, m):
     T_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
-
-    T_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `T` is constant
-        (True)
     """
     T = _preprocess(T)
     check_window_size(m, max_size=T.shape[-1])
     T_subseq_isfinite = rolling_isfinite(T, m)
     T[~np.isfinite(T)] = np.nan
-    T_subseq_isconstant = rolling_isconstant(T, m)
     T[np.isnan(T)] = 0
 
-    return T, T_subseq_isfinite, T_subseq_isconstant
+    return T, T_subseq_isfinite
 
 
 def preprocess_diagonal(T, m):
@@ -1954,7 +1949,13 @@ def preprocess_diagonal(T, m):
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` is constant (True)
     """
-    T, T_subseq_isfinite, T_subseq_isconstant = preprocess_non_normalized(T, m)
+    T = _preprocess(T)
+    check_window_size(m, max_size=T.shape[-1])
+    T_subseq_isfinite = rolling_isfinite(T, m)
+    T[~np.isfinite(T)] = np.nan
+    T_subseq_isconstant = rolling_isconstant(T, m)
+    T[np.isnan(T)] = 0
+
     M_T, Σ_T = compute_mean_std(T, m)
     Σ_T[T_subseq_isconstant] = 1.0  # Avoid divide by zero in next inversion step
     Σ_T_inverse = 1.0 / Σ_T

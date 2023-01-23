@@ -111,7 +111,7 @@ class aampi:
         self._left_P[:] = np.inf
 
         self._T_isfinite = np.isfinite(self._T)
-        self._T, self._T_subseq_isfinite, _ = core.preprocess_non_normalized(
+        self._T, self._T_subseq_isfinite = core.preprocess_non_normalized(
             self._T, self._m
         )
 

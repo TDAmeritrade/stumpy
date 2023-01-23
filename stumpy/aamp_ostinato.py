@@ -300,7 +300,6 @@ def aamp_ostinato(Ts, m, p=2.0):
         (
             Ts[i],
             Ts_subseq_isfinite[i],
-            _,
         ) = core.preprocess_non_normalized(T, m)
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _aamp_ostinato(
@@ -379,7 +378,6 @@ def aamp_ostinatoed(client, Ts, m, p=2.0):
         (
             Ts[i],
             Ts_subseq_isfinite[i],
-            _,
         ) = core.preprocess_non_normalized(T, m)
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _aamp_ostinato(

@@ -850,13 +850,13 @@ def test_preprocess_non_normalized():
 
     ref_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
 
-    comp_T, comp_T_subseq_isfinite, _ = core.preprocess_non_normalized(T, m)
+    comp_T, comp_T_subseq_isfinite = core.preprocess_non_normalized(T, m)
 
     npt.assert_almost_equal(ref_T, comp_T)
     npt.assert_almost_equal(ref_T_subseq_isfinite, comp_T_subseq_isfinite)
 
     T = pd.Series(T)
-    comp_T, comp_T_subseq_isfinite, _ = core.preprocess_non_normalized(T, m)
+    comp_T, comp_T_subseq_isfinite = core.preprocess_non_normalized(T, m)
 
     npt.assert_almost_equal(ref_T, comp_T)
     npt.assert_almost_equal(ref_T_subseq_isfinite, comp_T_subseq_isfinite)

@@ -218,9 +218,7 @@ def test_aamp_match_T_subseq_isfinite(Q, T):
     m = Q.shape[0]
     excl_zone = int(np.ceil(m / 4))
     max_distance = 0.3
-    T, T_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
-        T, len(Q)
-    )
+    T, T_subseq_isfinite = core.preprocess_non_normalized(T, len(Q))
 
     for p in [1.0, 2.0, 3.0]:
         left = naive_aamp_match(

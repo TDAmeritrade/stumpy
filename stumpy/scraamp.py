@@ -66,12 +66,8 @@ def _preprocess_prescraamp(T_A, m, T_B=None, s=None):
     else:
         excl_zone = None
 
-    T_A, T_A_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
-        T_A, m
-    )
-    T_B, T_B_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
-        T_B, m
-    )
+    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
+    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
 
     n_A = T_A.shape[0]
     l = n_A - m + 1
@@ -633,12 +629,10 @@ class scraamp:
         (
             self._T_A,
             self._T_A_subseq_isfinite,
-            self._T_A_subseq_isconstant,
         ) = core.preprocess_non_normalized(T_A, self._m)
         (
             self._T_B,
             self._T_B_subseq_isfinite,
-            self.T_B_subseq_isconstant,
         ) = core.preprocess_non_normalized(T_B, self._m)
 
         if self._T_A.ndim != 1:  # pragma: no cover
