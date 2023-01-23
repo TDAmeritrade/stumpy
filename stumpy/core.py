@@ -1903,8 +1903,9 @@ def preprocess_non_normalized(T, m):
     T = _preprocess(T)
     check_window_size(m, max_size=T.shape[-1])
     T_subseq_isfinite = rolling_isfinite(T, m)
-    T[~np.isfinite(T)] = 0.0
-    T_subseq_isconstant = rolling_isconstant(T, m)  # POTENTIALLY: INCORRECT / USELESS
+    T[~np.isfinite(T)] = np.nan
+    T_subseq_isconstant = rolling_isconstant(T, m)
+    T[np.isnan(T)] = 0
 
     return T, T_subseq_isfinite, T_subseq_isconstant
 
