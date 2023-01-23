@@ -1819,7 +1819,7 @@ def preprocess(T, m, copy=True, M_T=None, Σ_T=None, T_subseq_isconstant=None):
     standard deviation will be 0 (see `core.compute_mean_std`). Also,
     compute the rolling isconstant, a boolean array that indicates if
     a subsequence is constant (True) or False. A subsequence is constant
-    if it only contains finite values that are all the same.
+    if it contains finite values that are identical.
 
     Parameters
     ----------
