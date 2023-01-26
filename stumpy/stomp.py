@@ -124,11 +124,11 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         D = core._calculate_squared_distance_profile(
             m,
             QT,
-            μ_Q[i].item(0),
-            σ_Q[i].item(0),
+            μ_Q[i],
+            σ_Q[i],
             M_T,
             Σ_T,
-            Q_subseq_isconstant[i].item(0),
+            Q_subseq_isconstant[i],
             T_subseq_isconstant,
         )
         if ignore_trivial:
