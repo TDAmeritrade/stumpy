@@ -987,7 +987,7 @@ def _calculate_squared_distance(
         D_squared = m
     else:
         denom = m * σ_Q * Σ_T
-        denom = max(denom, config.STUMPY_DENOM_THRESHOLD)  # pragma: no cover
+        denom = max(denom, config.STUMPY_DENOM_THRESHOLD)
 
         ρ = (QT - m * μ_Q * M_T) / denom
         ρ = min(ρ, 1.0)
