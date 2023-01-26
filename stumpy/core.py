@@ -964,7 +964,8 @@ def _calculate_squared_distance(
         A boolean value that indicates whether the subsequence `Q` is constant (True)
 
     T_subseq_isconstant : bool
-        A boolean value that indicates whether the subsequence `T` is constant (True)
+        A boolean value that indicates whether the ith subsequence in `T` is
+        constant (True)
 
     Returns
     -------
