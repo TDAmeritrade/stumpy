@@ -1,4 +1,6 @@
 #!/bin/bash
+
+MAMBA_NO_LOW_SPEED_LIMIT=0
 conda_env="$(conda info --envs | grep '*' | awk '{print $1}')"
 arch_name="$(uname -m)"
 if [[ $1 == "numba" ]] && [[ $arch_name == "arm64" ]]; then
