@@ -15,7 +15,19 @@ from .maamped import maamped
 
 
 def _dask_mstumped(
-    dask_client, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
+    dask_client,
+    T_A,
+    T_B,
+    m,
+    excl_zone,
+    M_T,
+    Σ_T,
+    μ_Q,
+    σ_Q,
+    T_subseq_isconstant,
+    Q_subseq_isconstant,
+    include,
+    discords,
 ):
     """
     Compute the multi-dimensional z-normalized matrix profile with a distributed
@@ -63,6 +75,12 @@ def _dask_mstumped(
         Standard deviation of the query sequence, `Q`, relative to the current
         sliding window
 
+    T_subseq_isconstant : numpy.ndarray
+        A boolearn array representing Rolling isconstant for `T`
+
+    Q_subseq_isconstant : numpy.ndarray
+        A boolearn array representing Rolling isconstant for `Q`
+
     include : numpy.ndarray
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
@@ -87,7 +105,18 @@ def _dask_mstumped(
 
     for i, start in enumerate(range(0, k, step)):
         P[:, start], I[:, start] = _get_first_mstump_profile(
-            start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
+            start,
+            T_A,
+            T_B,
+            m,
+            excl_zone,
+            M_T,
+            Σ_T,
+            μ_Q,
+            σ_Q,
+            T_subseq_isconstant,
+            include,
+            discords,
         )
 
     # Scatter data to Dask cluster
@@ -96,6 +125,12 @@ def _dask_mstumped(
     Σ_T_future = dask_client.scatter(Σ_T, broadcast=True, hash=False)
     μ_Q_future = dask_client.scatter(μ_Q, broadcast=True, hash=False)
     σ_Q_future = dask_client.scatter(σ_Q, broadcast=True, hash=False)
+    T_subseq_isconstant_future = dask_client.scatter(
+        T_subseq_isconstant, broadcast=True, hash=False
+    )
+    Q_subseq_isconstant_future = dask_client.scatter(
+        Q_subseq_isconstant, broadcast=True, hash=False
+    )
 
     QT_futures = []
     QT_first_futures = []
@@ -126,6 +161,8 @@ def _dask_mstumped(
                 QT_first_futures[i],
                 μ_Q_future,
                 σ_Q_future,
+                T_subseq_isconstant_future,
+                Q_subseq_isconstant_future,
                 k,
                 start + 1,
                 include,
@@ -230,8 +267,8 @@ def mstumped(client, T, m, include=None, discords=False, normalize=True):
     T_A = T
     T_B = T_A
 
-    T_A, M_T, Σ_T = core.preprocess(T_A, m)
-    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
+    T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T_A, m)
+    T_B, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(T_B, m)
 
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
@@ -249,7 +286,19 @@ def mstumped(client, T, m, include=None, discords=False, normalize=True):
     _mstumped = core._client_to_func(client)
 
     P, I = _mstumped(
-        client, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
+        client,
+        T_A,
+        T_B,
+        m,
+        excl_zone,
+        M_T,
+        Σ_T,
+        μ_Q,
+        σ_Q,
+        T_subseq_isconstant,
+        Q_subseq_isconstant,
+        include,
+        discords,
     )
 
     return P, I

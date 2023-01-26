@@ -102,7 +102,7 @@ def _apply_include(
     D[unrestricted_indices] = tmp_swap[mask]
 
 
-def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
+def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, T_subseq_isconstant):
     """
     A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
     (MASS) to compute multi-dimensional distance profile.
@@ -119,16 +119,19 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
         Window size
 
     M_T : numpy.ndarray
-        Sliding mean for `T_A`
+        Sliding mean for `T`
 
     Σ_T : numpy.ndarray
-        Sliding standard deviation for `T_A`
+        Sliding standard deviation for `T`
 
     μ_Q : numpy.ndarray
         Mean value of `Q`
 
     σ_Q : numpy.ndarray
         Standard deviation of `Q`
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     Returns
     -------
@@ -144,7 +147,9 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q):
         if np.isinf(μ_Q[i]):
             D[i, :] = np.inf
         else:
-            D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
+            D[i, :] = core.mass(
+                Q[i], T[i], M_T[i], Σ_T[i], T_subseq_isconstant=T_subseq_isconstant[i]
+            )
 
     return D
 
@@ -315,9 +320,9 @@ def subspace(
         bins = _inverse_norm(n_bit)
         discretize_func = partial(_discretize, bins=bins)
 
-    subseqs, _, _ = core.preprocess(T[:, subseq_idx : subseq_idx + m], m)
+    subseqs, _, _, _ = core.preprocess(T[:, subseq_idx : subseq_idx + m], m)
     subseqs = core.z_norm(subseqs, axis=1)
-    neighbors, _, _ = core.preprocess(T[:, nn_idx : nn_idx + m], m)
+    neighbors, _, _, _ = core.preprocess(T[:, nn_idx : nn_idx + m], m)
     neighbors = core.z_norm(neighbors, axis=1)
 
     disc_subseqs = discretize_func(subseqs)
@@ -523,9 +528,9 @@ def mdl(
     bit_sizes = np.empty(T.shape[0])
     S = [None] * T.shape[0]
     for k in range(T.shape[0]):
-        subseqs, _, _ = core.preprocess(T[:, subseq_idx[k] : subseq_idx[k] + m], m)
+        subseqs, _, _, _ = core.preprocess(T[:, subseq_idx[k] : subseq_idx[k] + m], m)
         subseqs = core.z_norm(subseqs, axis=1)
-        neighbors, _, _ = core.preprocess(T[:, nn_idx[k] : nn_idx[k] + m], m)
+        neighbors, _, _, _ = core.preprocess(T[:, nn_idx[k] : nn_idx[k] + m], m)
         neighbors = core.z_norm(neighbors, axis=1)
 
         disc_subseqs = discretize_func(subseqs)
@@ -549,6 +554,7 @@ def _multi_distance_profile(
     Σ_T,
     μ_Q,
     σ_Q,
+    T_subseq_isconstant,
     include=None,
     discords=False,
     excl_zone=None,
@@ -585,6 +591,9 @@ def _multi_distance_profile(
     σ_Q : numpy.ndarray
         Sliding standard deviation for the query subsequence `T_B`
 
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_A` is constant (True)
+
     include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
@@ -617,6 +626,7 @@ def _multi_distance_profile(
         Σ_T,
         μ_Q[:, query_idx],
         σ_Q[:, query_idx],
+        T_subseq_isconstant,
     )
 
     if include is not None:
@@ -687,7 +697,7 @@ def multi_distance_profile(
         Multi-dimensional distance profile for the window with index equal to
         `query_idx`
     """
-    T, M_T, Σ_T = core.preprocess(T, m)
+    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T, m)
 
     if T.ndim <= 1:  # pragma: no cover
         err = f"T is {T.ndim}-dimensional and must be at least 1-dimensional"
@@ -703,14 +713,36 @@ def multi_distance_profile(
     )  # See Definition 3 and Figure 3
 
     D = _multi_distance_profile(
-        query_idx, T, T, m, M_T, Σ_T, M_T, Σ_T, include, discords, excl_zone
+        query_idx,
+        T,
+        T,
+        m,
+        M_T,
+        Σ_T,
+        M_T,
+        Σ_T,
+        T_subseq_isconstant,
+        include,
+        discords,
+        excl_zone,
     )
 
     return D
 
 
 def _get_first_mstump_profile(
-    start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include=None, discords=False
+    start,
+    T_A,
+    T_B,
+    m,
+    excl_zone,
+    M_T,
+    Σ_T,
+    μ_Q,
+    σ_Q,
+    T_subseq_isconstant,
+    include=None,
+    discords=False,
 ):
     """
     Multi-dimensional wrapper to compute the multi-dimensional matrix profile
@@ -752,6 +784,9 @@ def _get_first_mstump_profile(
     σ_Q : numpy.ndarray
         Sliding standard deviation for `T_B`
 
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_A` is constant (True)
+
     include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
@@ -775,7 +810,18 @@ def _get_first_mstump_profile(
         equal to `start`
     """
     D = _multi_distance_profile(
-        start, T_A, T_B, m, M_T, Σ_T, μ_Q, σ_Q, include, discords, excl_zone
+        start,
+        T_A,
+        T_B,
+        m,
+        M_T,
+        Σ_T,
+        μ_Q,
+        σ_Q,
+        T_subseq_isconstant,
+        include,
+        discords,
+        excl_zone,
     )
 
     d = T_A.shape[0]
@@ -837,7 +883,22 @@ def _get_multi_QT(start, T, m):
     fastmath=True,
 )
 def _compute_multi_D(
-    d, k, idx, D, T, m, excl_zone, M_T, Σ_T, QT_even, QT_odd, QT_first, μ_Q, σ_Q
+    d,
+    k,
+    idx,
+    D,
+    T,
+    m,
+    excl_zone,
+    M_T,
+    Σ_T,
+    QT_even,
+    QT_odd,
+    QT_first,
+    μ_Q,
+    σ_Q,
+    Q_subseq_isconstant,
+    T_subseq_isconstant,
 ):
     """
     A Numba JIT-compiled version of mSTOMP for parallel computation of the
@@ -889,6 +950,14 @@ def _compute_multi_D(
         Standard deviation of the query sequence, `Q`, relative to the current
         sliding window
 
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a query subsequence in `Q`
+        is constant (True)
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T`
+        is constant (True)
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2017.66 \
@@ -922,12 +991,26 @@ def _compute_multi_D(
         if idx % 2 == 0:
             QT_even[i, 0] = QT_first[i, idx]
             D[i] = core._calculate_squared_distance_profile(
-                m, QT_even[i], μ_Q[i, idx], σ_Q[i, idx], M_T[i], Σ_T[i]
+                m,
+                QT_even[i],
+                μ_Q[i, idx],
+                σ_Q[i, idx],
+                M_T[i],
+                Σ_T[i],
+                Q_subseq_isconstant[i, idx],
+                T_subseq_isconstant[i],
             )
         else:
             QT_odd[i, 0] = QT_first[i, idx]
             D[i] = core._calculate_squared_distance_profile(
-                m, QT_odd[i], μ_Q[i, idx], σ_Q[i, idx], M_T[i], Σ_T[i]
+                m,
+                QT_odd[i],
+                μ_Q[i, idx],
+                σ_Q[i, idx],
+                M_T[i],
+                Σ_T[i],
+                Q_subseq_isconstant[i, idx],
+                T_subseq_isconstant[i],
             )
 
     core._apply_exclusion_zone(D, idx, excl_zone, np.inf)
@@ -993,6 +1076,8 @@ def _mstump(
     QT_first,
     μ_Q,
     σ_Q,
+    T_subseq_isconstant,
+    Q_subseq_isconstant,
     k,
     range_start=1,
     include=None,
@@ -1039,6 +1124,14 @@ def _mstump(
     σ_Q : numpy.ndarray
         Standard deviation of the query sequence, `Q`, relative to the current
         sliding window
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T`
+        is constant (True)
+
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a query subsequence in `Q`
+        is constant (True)
 
     k : int
         The total number of sliding windows to iterate over
@@ -1096,7 +1189,22 @@ def _mstump(
 
     for idx in range(range_start, range_stop):
         _compute_multi_D(
-            d, k, idx, D, T, m, excl_zone, M_T, Σ_T, QT_even, QT_odd, QT_first, μ_Q, σ_Q
+            d,
+            k,
+            idx,
+            D,
+            T,
+            m,
+            excl_zone,
+            M_T,
+            Σ_T,
+            QT_even,
+            QT_odd,
+            QT_first,
+            μ_Q,
+            σ_Q,
+            Q_subseq_isconstant,
+            T_subseq_isconstant,
         )
 
         # `include` processing must occur here since we are dealing with distances
@@ -1201,8 +1309,8 @@ def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
     T_A = T
     T_B = T_A
 
-    T_A, M_T, Σ_T = core.preprocess(T_A, m)
-    T_B, μ_Q, σ_Q = core.preprocess(T_B, m)
+    T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T_A, m)
+    T_B, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(T_B, m)
 
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
@@ -1226,7 +1334,18 @@ def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
     stop = k
 
     P[:, start], I[:, start] = _get_first_mstump_profile(
-        start, T_A, T_B, m, excl_zone, M_T, Σ_T, μ_Q, σ_Q, include, discords
+        start,
+        T_A,
+        T_B,
+        m,
+        excl_zone,
+        M_T,
+        Σ_T,
+        μ_Q,
+        σ_Q,
+        T_subseq_isconstant,
+        include,
+        discords,
     )
 
     QT, QT_first = _get_multi_QT(start, T_A, m)
@@ -1242,6 +1361,8 @@ def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
         QT_first,
         μ_Q,
         σ_Q,
+        T_subseq_isconstant,
+        Q_subseq_isconstant,
         k,
         start + 1,
         include,

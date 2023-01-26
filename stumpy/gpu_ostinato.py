@@ -94,19 +94,18 @@ def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0):
     if not isinstance(Ts, list):  # pragma: no cover
         raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
 
+    Ts_subseq_isconstant = [None] * len(Ts)
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], M_Ts[i], Σ_Ts[i] = core.preprocess(T, m)
+        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(T, m)
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
-        Ts, m, M_Ts, Σ_Ts, device_id=device_id, mp_func=gpu_stump
+        Ts, m, M_Ts, Σ_Ts, Ts_subseq_isconstant, device_id=device_id, mp_func=gpu_stump
     )
 
-    (
-        central_radius,
-        central_Ts_idx,
-        central_subseq_idx,
-    ) = _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts)
+    (central_radius, central_Ts_idx, central_subseq_idx,) = _get_central_motif(
+        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
+    )
 
     return central_radius, central_Ts_idx, central_subseq_idx

@@ -280,9 +280,7 @@ def aamp_motifs(
         msg += f"(e.g., cutoff={suggested_cutoff})."
         warnings.warn(msg)
 
-    T, T_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
-        T[np.newaxis, :], m
-    )
+    T, T_subseq_isfinite = core.preprocess_non_normalized(T[np.newaxis, :], m)
     P = P[np.newaxis, :].astype(np.float64)
 
     motif_distances, motif_indices = _aamp_motifs(
@@ -380,7 +378,7 @@ def aamp_match(
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
     if T_subseq_isfinite is None:
-        T, T_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(T, m)
+        T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
     if len(T_subseq_isfinite.shape) == 1:
         T_subseq_isfinite = T_subseq_isfinite[np.newaxis, :]
 

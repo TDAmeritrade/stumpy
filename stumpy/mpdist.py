@@ -171,6 +171,8 @@ def _mpdist_vect(
     σ_Q,
     M_T,
     Σ_T,
+    Q_subseq_isconstant,
+    T_subseq_isconstant,
     percentage=0.05,
     k=None,
     custom_func=None,
@@ -202,6 +204,12 @@ def _mpdist_vect(
 
     Σ_T : numpy.ndarray
         Sliding standard deviation of `T`
+
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `Q` is constant (True)
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     percentage : float, 0.05
         The percentage of distances that will be used to report `mpdist`. The value
@@ -239,7 +247,18 @@ def _mpdist_vect(
 
     k = min(int(k), P_ABBA.shape[0] - 1)
 
-    core._mass_distance_matrix(Q, T, m, distance_matrix, μ_Q, σ_Q, M_T, Σ_T)
+    core._mass_distance_matrix(
+        Q,
+        T,
+        m,
+        distance_matrix,
+        μ_Q,
+        σ_Q,
+        M_T,
+        Σ_T,
+        Q_subseq_isconstant,
+        T_subseq_isconstant,
+    )
 
     rolling_row_min = core.rolling_nanmin(distance_matrix, j)
     col_min = np.nanmin(distance_matrix, axis=0)

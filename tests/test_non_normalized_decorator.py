@@ -37,9 +37,7 @@ def test_mass():
 
     Q = np.random.rand(10)
     T = np.random.rand(20)
-    T, T_subseq_isfinite, T_subseq_isconstant = stumpy.core.preprocess_non_normalized(
-        T, 10
-    )
+    T, T_subseq_isfinite = stumpy.core.preprocess_non_normalized(T, 10)
     T_squared = np.sum(stumpy.core.rolling_window(T * T, Q.shape[0]), axis=-1)
     ref = stumpy.core.mass_absolute(Q, T)
     comp = stumpy.core.mass(Q, T, M_T=T_subseq_isfinite, normalize=False)

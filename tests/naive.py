@@ -6,14 +6,20 @@ from scipy.stats import norm
 from stumpy import core, config
 
 
+def rolling_isconstant(a, w):
+    return np.logical_and(
+        core.rolling_isfinite(a, w), np.ptp(core.rolling_window(a, w), axis=-1) == 0
+    )
+
+
 def rolling_nanstd(a, w):
     # a can be 1D, 2D, or more. The rolling occurs on last axis.
     return np.nanstd(core.rolling_window(a, w), axis=a.ndim)
 
 
-def z_norm(a, axis=0, threshold=config.STUMPY_STDDEV_THRESHOLD):
+def z_norm(a, axis=0):
     std = np.std(a, axis, keepdims=True)
-    std[np.less(std, threshold, where=~np.isnan(std))] = 1.0
+    std = np.where(std > 0, std, 1.0)
 
     return (a - np.mean(a, axis, keepdims=True)) / std
 

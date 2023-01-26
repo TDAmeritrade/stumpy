@@ -8,7 +8,9 @@ from . import core, stump, stumped
 from .aamp_ostinato import aamp_ostinato, aamp_ostinatoed
 
 
-def _across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, M_Ts, Σ_Ts):
+def _across_series_nearest_neighbors(
+    Ts, Ts_idx, subseq_idx, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
+):
     """
     For multiple time series find, per individual time series, the subsequences closest
     to a given query.
@@ -35,6 +37,9 @@ def _across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, M_Ts, Σ_Ts):
     Σ_Ts : list
         A list of rolling window standard deviations for each time series in `Ts`
 
+    Ts_subseq_isconstant : list
+        A list of rolling window isconstant for each time series in `Ts`
+
     Returns
     -------
     nns_radii : numpy.ndarray
@@ -60,6 +65,8 @@ def _across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, M_Ts, Σ_Ts):
             Σ_Ts[Ts_idx][subseq_idx],
             M_Ts[i],
             Σ_Ts[i],
+            Ts_subseq_isconstant[Ts_idx][subseq_idx],
+            Ts_subseq_isconstant[i],
         )
         nns_subseq_idx[i] = np.argmin(distance_profile)
         nns_radii[i] = distance_profile[nns_subseq_idx[i]]
@@ -67,7 +74,9 @@ def _across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, M_Ts, Σ_Ts):
     return nns_radii, nns_subseq_idx
 
 
-def _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts):
+def _get_central_motif(
+    Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
+):
     """
     Compare subsequences with the same radius and return the most central motif (i.e.,
     having the smallest average nearest neighbor radii)
@@ -95,6 +104,9 @@ def _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_T
     Σ_Ts : list
         A list of rolling window standard deviations for each time series in `Ts`
 
+    Ts_subseq_isconstant : list
+        A list of rolling window isconstant for each time series in `Ts`
+
     Returns
     -------
     bsf_radius : float
@@ -109,7 +121,7 @@ def _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_T
         the most central consensus motif
     """
     bsf_nns_radii, bsf_nns_subseq_idx = _across_series_nearest_neighbors(
-        Ts, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts
+        Ts, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
     )
     bsf_nns_mean_radii = bsf_nns_radii.mean()
 
@@ -118,7 +130,7 @@ def _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_T
 
     for Ts_idx, subseq_idx in zip(candidate_nns_Ts_idx, candidate_nns_subseq_idx):
         candidate_nns_radii, _ = _across_series_nearest_neighbors(
-            Ts, Ts_idx, subseq_idx, m, M_Ts, Σ_Ts
+            Ts, Ts_idx, subseq_idx, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
         )
         if (
             np.isclose(candidate_nns_radii.max(), bsf_radius)
@@ -131,7 +143,16 @@ def _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_T
     return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
 
 
-def _ostinato(Ts, m, M_Ts, Σ_Ts, client=None, device_id=None, mp_func=stump):
+def _ostinato(
+    Ts,
+    m,
+    M_Ts,
+    Σ_Ts,
+    Ts_subseq_isconstant,
+    client=None,
+    device_id=None,
+    mp_func=stump,
+):
     """
     Find the consensus motif amongst a list of time series
 
@@ -148,6 +169,9 @@ def _ostinato(Ts, m, M_Ts, Σ_Ts, client=None, device_id=None, mp_func=stump):
 
     Σ_Ts : list
         A list of rolling window standard deviations for each time series in `Ts`
+
+    Ts_subseq_isconstant : list
+        A list of rolling window isconstant for each time series in `Ts`
 
     client : client, default None
         A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
@@ -231,6 +255,8 @@ def _ostinato(Ts, m, M_Ts, Σ_Ts, client=None, device_id=None, mp_func=stump):
                                     Σ_Ts[j][q],
                                     M_Ts[i],
                                     Σ_Ts[i],
+                                    Ts_subseq_isconstant[j][q],
+                                    Ts_subseq_isconstant[i],
                                 )
                             ),
                         )
@@ -322,16 +348,17 @@ def ostinato(Ts, m, normalize=True, p=2.0):
 
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
+    Ts_subseq_isconstant = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], M_Ts[i], Σ_Ts[i] = core.preprocess(T, m)
+        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(T, m)
 
-    bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(Ts, m, M_Ts, Σ_Ts)
+    bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
+        Ts, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
+    )
 
-    (
-        central_radius,
-        central_Ts_idx,
-        central_subseq_idx,
-    ) = _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts)
+    (central_radius, central_Ts_idx, central_subseq_idx,) = _get_central_motif(
+        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
+    )
 
     return central_radius, central_Ts_idx, central_subseq_idx
 
@@ -422,17 +449,22 @@ def ostinatoed(client, Ts, m, normalize=True, p=2.0):
 
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
+    Ts_subseq_isconstant = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], M_Ts[i], Σ_Ts[i] = core.preprocess(T, m)
+        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(T, m)
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
-        Ts, m, M_Ts, Σ_Ts, client=client, mp_func=stumped
+        Ts,
+        m,
+        M_Ts,
+        Σ_Ts,
+        Ts_subseq_isconstant,
+        client=client,
+        mp_func=stumped,
     )
 
-    (
-        central_radius,
-        central_Ts_idx,
-        central_subseq_idx,
-    ) = _get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts)
+    (central_radius, central_Ts_idx, central_subseq_idx,) = _get_central_motif(
+        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
+    )
 
     return central_radius, central_Ts_idx, central_subseq_idx

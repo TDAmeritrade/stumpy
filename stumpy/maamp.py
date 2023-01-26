@@ -136,8 +136,8 @@ def maamp_subspace(
     T = core._preprocess(T)
     core.check_window_size(m, max_size=T.shape[-1])
 
-    subseqs, _, _ = core.preprocess_non_normalized(T[:, subseq_idx : subseq_idx + m], m)
-    neighbors, _, _ = core.preprocess_non_normalized(T[:, nn_idx : nn_idx + m], m)
+    subseqs, _ = core.preprocess_non_normalized(T[:, subseq_idx : subseq_idx + m], m)
+    neighbors, _ = core.preprocess_non_normalized(T[:, nn_idx : nn_idx + m], m)
 
     if discretize_func is None:
         T_isfinite = np.isfinite(T)
@@ -276,10 +276,10 @@ def maamp_mdl(
     bit_sizes = np.empty(T.shape[0])
     S = [None] * T.shape[0]
     for k in range(T.shape[0]):
-        subseqs, _, _ = core.preprocess_non_normalized(
+        subseqs, _ = core.preprocess_non_normalized(
             T[:, subseq_idx[k] : subseq_idx[k] + m], m
         )
-        neighbors, _, _ = core.preprocess_non_normalized(
+        neighbors, _ = core.preprocess_non_normalized(
             T[:, nn_idx[k] : nn_idx[k] + m], m
         )
 
@@ -425,7 +425,7 @@ def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False, 
         Multi-dimensional distance profile for the window with index equal to
         `query_idx`
     """
-    T, T_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(T, m)
+    T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
 
     if T.ndim <= 1:  # pragma: no cover
         err = f"T is {T.ndim}-dimensional and must be at least 1-dimensional"
@@ -902,12 +902,8 @@ def maamp(T, m, include=None, discords=False, p=2.0):
     T_A = T
     T_B = T_A
 
-    T_A, T_A_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
-        T_A, m
-    )
-    T_B, T_B_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
-        T_B, m
-    )
+    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
+    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
 
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"

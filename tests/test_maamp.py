@@ -32,7 +32,7 @@ def test_multi_mass_absolute_seeded():
 
     ref = naive.multi_mass_absolute(Q, T, m)
 
-    T, T_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(T, m)
+    T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
     comp = _multi_mass_absolute(
         Q, T, m, T_subseq_isfinite[:, trivial_idx], T_subseq_isfinite
     )
@@ -49,9 +49,7 @@ def test_multi_mass_absolute(T, m):
     for p in [1.0, 2.0, 3.0]:
         ref = naive.multi_mass_absolute(Q, T, m, p=p)
 
-        _T, T_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
-            T, m
-        )
+        _T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
         comp = _multi_mass_absolute(
             Q, _T, m, T_subseq_isfinite[:, trivial_idx], T_subseq_isfinite, p=p
         )
@@ -61,7 +59,7 @@ def test_multi_mass_absolute(T, m):
 
 @pytest.mark.parametrize("T, m", test_data)
 def test_maamp_multi_distance_profile(T, m):
-    _T, T_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(T, m)
+    _T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
     for p in [1.0, 2.0, 3.0]:
         for query_idx in range(_T.shape[0] - m + 1):
             ref_D = naive.maamp_multi_distance_profile(query_idx, _T, m, p=p)
@@ -81,9 +79,7 @@ def test_get_first_maamp_profile(T, m):
         ref_P = ref_P[:, start]
         ref_I = ref_I[:, start]
 
-        _T, T_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
-            T, m
-        )
+        _T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
         comp_P, comp_I = _get_first_maamp_profile(
             start, _T, _T, m, excl_zone, T_subseq_isfinite, p=p
         )

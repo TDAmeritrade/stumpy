@@ -432,11 +432,23 @@ def test_calculate_squared_distance_profile(Q, T):
         )
         ** 2
     )
+
     QT = core.sliding_dot_product(Q, T)
-    μ_Q, σ_Q = core.compute_mean_std(Q, m)
+    Q_subseq_isconstant = core.rolling_isconstant(Q, m)[0]
+    μ_Q, σ_Q = [arr[0] for arr in core.compute_mean_std(Q, m)]
+
+    T_subseq_isconstant = core.rolling_isconstant(T, m)
     M_T, Σ_T = core.compute_mean_std(T, m)
+
     comp = core._calculate_squared_distance_profile(
-        m, QT, μ_Q.item(0), σ_Q.item(0), M_T, Σ_T
+        m,
+        QT,
+        μ_Q,
+        σ_Q,
+        M_T,
+        Σ_T,
+        Q_subseq_isconstant,
+        T_subseq_isconstant,
     )
     npt.assert_almost_equal(ref, comp)
 
@@ -447,10 +459,24 @@ def test_calculate_distance_profile(Q, T):
     ref = np.linalg.norm(
         core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(Q), axis=1
     )
+
     QT = core.sliding_dot_product(Q, T)
-    μ_Q, σ_Q = core.compute_mean_std(Q, m)
+    Q_subseq_isconstant = core.rolling_isconstant(Q, m)[0]
+    μ_Q, σ_Q = [arr[0] for arr in core.compute_mean_std(Q, m)]
+
+    T_subseq_isconstant = core.rolling_isconstant(T, m)
     M_T, Σ_T = core.compute_mean_std(T, m)
-    comp = core.calculate_distance_profile(m, QT, μ_Q.item(0), σ_Q.item(0), M_T, Σ_T)
+
+    comp = core.calculate_distance_profile(
+        m,
+        QT,
+        μ_Q,
+        σ_Q,
+        M_T,
+        Σ_T,
+        Q_subseq_isconstant,
+        T_subseq_isconstant,
+    )
     npt.assert_almost_equal(ref, comp)
 
 
@@ -794,20 +820,23 @@ def test_preprocess():
     m = 3
 
     ref_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
+    ref_subseq_isconstant = naive.rolling_isconstant(T, m)
     ref_M, ref_Σ = naive.compute_mean_std(T, m)
 
-    comp_T, comp_M, comp_Σ = core.preprocess(T, m)
+    comp_T, comp_M, comp_Σ, comp_subseq_isconstant = core.preprocess(T, m)
 
     npt.assert_almost_equal(ref_T, comp_T)
     npt.assert_almost_equal(ref_M, comp_M)
     npt.assert_almost_equal(ref_Σ, comp_Σ)
+    npt.assert_almost_equal(ref_subseq_isconstant, comp_subseq_isconstant)
 
     T = pd.Series(T)
-    comp_T, comp_M, comp_Σ = core.preprocess(T, m)
+    comp_T, comp_M, comp_Σ, comp_subseq_isconstant = core.preprocess(T, m)
 
     npt.assert_almost_equal(ref_T, comp_T)
     npt.assert_almost_equal(ref_M, comp_M)
     npt.assert_almost_equal(ref_Σ, comp_Σ)
+    npt.assert_almost_equal(ref_subseq_isconstant, comp_subseq_isconstant)
 
 
 def test_preprocess_non_normalized():
@@ -821,13 +850,13 @@ def test_preprocess_non_normalized():
 
     ref_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
 
-    comp_T, comp_T_subseq_isfinite, _ = core.preprocess_non_normalized(T, m)
+    comp_T, comp_T_subseq_isfinite = core.preprocess_non_normalized(T, m)
 
     npt.assert_almost_equal(ref_T, comp_T)
     npt.assert_almost_equal(ref_T_subseq_isfinite, comp_T_subseq_isfinite)
 
     T = pd.Series(T)
-    comp_T, comp_T_subseq_isfinite, _ = core.preprocess_non_normalized(T, m)
+    comp_T, comp_T_subseq_isfinite = core.preprocess_non_normalized(T, m)
 
     npt.assert_almost_equal(ref_T, comp_T)
     npt.assert_almost_equal(ref_T_subseq_isfinite, comp_T_subseq_isfinite)
@@ -1000,8 +1029,7 @@ def test_rolling_isconstant():
     a[4:7] = 77.0
     a[9:12] = [77.0, np.nan, 77.0]
 
-    ref = np.zeros(len(a) - w + 1).astype(bool)
-    ref[4] = True
+    ref = naive.rolling_isconstant(a, w)
     comp = core.rolling_isconstant(a, w)
 
     npt.assert_almost_equal(ref, comp)

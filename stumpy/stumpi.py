@@ -140,7 +140,9 @@ class stumpi:
         self._left_I = mp[:, 2 * self._k].astype(np.int64)
         self._left_P = np.full_like(self._left_I, np.inf, dtype=np.float64)
 
-        self._T, self._M_T, self._Σ_T = core.preprocess(self._T, self._m)
+        self._T, self._M_T, self._Σ_T, self._T_subseq_isconstant = core.preprocess(
+            self._T, self._m
+        )
         # Retrieve the left matrix profile values
 
         # Since each (top-1) matrix profile value is the minimum between the left
@@ -162,6 +164,8 @@ class stumpi:
                 self._Σ_T[i],
                 self._M_T[j],
                 self._Σ_T[j],
+                self._T_subseq_isconstant[i],
+                self._T_subseq_isconstant[j],
             )
             self._left_P[i] = np.sqrt(D_square)
 
@@ -231,21 +235,31 @@ class stumpi:
         if np.any(~self._T_isfinite[-self._m :]):
             μ_Q = np.inf
             σ_Q = np.nan
+            Q_subseq_isconstant = False
         else:
-            μ_Q, σ_Q = core.compute_mean_std(S, self._m)
-            μ_Q = μ_Q[0]
-            σ_Q = σ_Q[0]
+            Q_subseq_isconstant = core.rolling_isconstant(S, self._m)[0]
+            μ_Q, σ_Q = [arr[0] for arr in core.compute_mean_std(S, self._m)]
 
         self._M_T[:-1] = self._M_T[1:]
         self._Σ_T[:-1] = self._Σ_T[1:]
+        self._T_subseq_isconstant[:-1] = self._T_subseq_isconstant[1:]
+
         self._M_T[-1] = μ_Q
         self._Σ_T[-1] = σ_Q
+        self._T_subseq_isconstant[-1] = Q_subseq_isconstant
 
         self._QT_new[1:] = self._QT[:l] - self._T[:l] * t_drop + self._T[self._m :] * t
         self._QT_new[0] = np.sum(self._T[: self._m] * S[: self._m])
 
         D = core.calculate_distance_profile(
-            self._m, self._QT_new, μ_Q, σ_Q, self._M_T, self._Σ_T
+            self._m,
+            self._QT_new,
+            μ_Q,
+            σ_Q,
+            self._M_T,
+            self._Σ_T,
+            Q_subseq_isconstant,
+            self._T_subseq_isconstant,
         )
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
@@ -307,18 +321,33 @@ class stumpi:
         if np.any(~self._T_isfinite[-self._m :]):
             μ_Q = np.inf
             σ_Q = np.nan
+            Q_subseq_isconstant = False
         else:
+            Q_subseq_isconstant = core.rolling_isconstant(S, self._m)
             μ_Q, σ_Q = core.compute_mean_std(S, self._m)
             μ_Q = μ_Q[0]
             σ_Q = σ_Q[0]
+            Q_subseq_isconstant = Q_subseq_isconstant[0]
 
         M_T_new = np.append(self._M_T, μ_Q)
         Σ_T_new = np.append(self._Σ_T, σ_Q)
+        T_subseq_isconstant_new = np.append(
+            self._T_subseq_isconstant, Q_subseq_isconstant
+        )
 
         QT_new[1:] = self._QT[:l] - T_new[:l] * t_drop + T_new[self._m :] * t
         QT_new[0] = np.sum(T_new[: self._m] * S[: self._m])
 
-        D = core.calculate_distance_profile(self._m, QT_new, μ_Q, σ_Q, M_T_new, Σ_T_new)
+        D = core.calculate_distance_profile(
+            self._m,
+            QT_new,
+            μ_Q,
+            σ_Q,
+            M_T_new,
+            Σ_T_new,
+            Q_subseq_isconstant,
+            T_subseq_isconstant_new,
+        )
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
 
@@ -351,6 +380,7 @@ class stumpi:
         self._QT = QT_new
         self._M_T = M_T_new
         self._Σ_T = Σ_T_new
+        self._T_subseq_isconstant = T_subseq_isconstant_new
 
     @property
     def P_(self):

@@ -235,7 +235,7 @@ def test_match_mean_stddev(Q, T):
         max_distance=max_distance,
     )
 
-    M_T, Σ_T = core.compute_mean_std(T, len(Q))
+    M_T, Σ_T = naive.compute_mean_std(T, len(Q))
 
     right = match(
         Q,
@@ -244,6 +244,61 @@ def test_match_mean_stddev(Q, T):
         Σ_T,
         max_matches=None,
         max_distance=lambda D: max_distance,  # also test lambda functionality
+    )
+
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_match_isconstant(Q, T):
+    m = Q.shape[0]
+    excl_zone = int(np.ceil(m / 4))
+    max_distance = 0.3
+
+    left = naive_match(
+        Q,
+        T,
+        excl_zone,
+        max_distance=max_distance,
+    )
+
+    T_subseq_isconstant = naive.rolling_isconstant(T, m)
+
+    right = match(
+        Q,
+        T,
+        max_matches=None,
+        max_distance=lambda D: max_distance,  # also test lambda functionality
+        T_subseq_isconstant=T_subseq_isconstant,
+    )
+
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_match_mean_stddev_isconstant(Q, T):
+    m = Q.shape[0]
+    excl_zone = int(np.ceil(m / 4))
+    max_distance = 0.3
+
+    left = naive_match(
+        Q,
+        T,
+        excl_zone,
+        max_distance=max_distance,
+    )
+
+    T_subseq_isconstant = naive.rolling_isconstant(T, m)
+    M_T, Σ_T = naive.compute_mean_std(T, len(Q))
+
+    right = match(
+        Q,
+        T,
+        M_T,
+        Σ_T,
+        max_matches=None,
+        max_distance=lambda D: max_distance,  # also test lambda functionality
+        T_subseq_isconstant=T_subseq_isconstant,
     )
 
     npt.assert_almost_equal(left, right)
