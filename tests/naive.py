@@ -178,7 +178,16 @@ def searchsorted_right(a, v):
         return len(a)
 
 
-def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
+def stump(
+    T_A,
+    m,
+    T_B=None,
+    exclusion_zone=None,
+    row_wise=False,
+    k=1,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
+):
     """
     Traverse distance matrix diagonally and update the top-k matrix profile and
     matrix profile indices if the parameter `row_wise` is set to `False`. If the
@@ -196,7 +205,21 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
             [distance_profile(Q, T_B, m) for Q in core.rolling_window(T_A, m)]
         )
 
+    if T_A_subseq_isconstant is None:
+        T_A_subseq_isconstant = rolling_isconstant(T_A, m)
+    if T_B_subseq_isconstant is None:
+        T_B_subseq_isconstant = rolling_isconstant(T_B, m)
+
     distance_matrix[np.isnan(distance_matrix)] = np.inf
+    for i in range(distance_matrix.shape[0]):
+        for j in range(distance_matrix.shape[1]):
+            if np.isfinite(distance_matrix[i, j]):
+                if T_A_subseq_isconstant[i] and T_B_subseq_isconstant[j]:
+                    distance_matrix[i, j] = 0.0
+                elif T_A_subseq_isconstant[i] or T_B_subseq_isconstant[j]:
+                    distance_matrix[i, j] = np.sqrt(m)
+                else:
+                    continue
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
