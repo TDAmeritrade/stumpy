@@ -511,7 +511,17 @@ def _stump(
 
 
 @core.non_normalized(aamp)
-def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
+def stump(
+    T_A,
+    m,
+    T_B=None,
+    ignore_trivial=True,
+    normalize=True,
+    p=2.0,
+    k=1,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
+):
     """
     Compute the z-normalized matrix profile
 
@@ -550,6 +560,12 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
         Note that this will increase the total computational time and memory usage
         when k > 1. If you have access to a GPU device, then you may be able to
         leverage `gpu_stump` for better performance and scalability.
+
+    T_A_subseq_isconstant : numpy.ndarray, default None
+        A boolean array that indicates whether a subsequence in `T_A` is constant (True)
+
+    T_B_subseq_isconstant : numpy.ndarray, default None
+        A boolean array that indicates whether a subsequence in `T_B` is constant (True)
 
     Returns
     -------
@@ -639,7 +655,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
         μ_Q_m_1,
         T_A_subseq_isfinite,
         T_A_subseq_isconstant,
-    ) = core.preprocess_diagonal(T_A, m)
+    ) = core.preprocess_diagonal(T_A, m, T_A_subseq_isconstant)
 
     (
         T_B,
@@ -648,7 +664,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
         M_T_m_1,
         T_B_subseq_isfinite,
         T_B_subseq_isconstant,
-    ) = core.preprocess_diagonal(T_B, m)
+    ) = core.preprocess_diagonal(T_B, m, T_B_subseq_isconstant)
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
