@@ -1904,7 +1904,7 @@ def preprocess_non_normalized(T, m):
     return T, T_subseq_isfinite
 
 
-def preprocess_diagonal(T, m):
+def preprocess_diagonal(T, m, T_subseq_isconstant=None):
     """
     Preprocess a time series that is to be used when traversing the diagonals of a
     distance matrix.
@@ -1926,6 +1926,9 @@ def preprocess_diagonal(T, m):
 
     m : int
         Window size
+
+    T_subseq_isconstant : numpy.ndarray, default None
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     Returns
     -------
@@ -1952,11 +1955,18 @@ def preprocess_diagonal(T, m):
     check_window_size(m, max_size=T.shape[-1])
     T_subseq_isfinite = rolling_isfinite(T, m)
     T[~np.isfinite(T)] = np.nan
-    T_subseq_isconstant = rolling_isconstant(T, m)
+    if T_subseq_isconstant is None:
+        T_subseq_isconstant = rolling_isconstant(T, m)
     T[np.isnan(T)] = 0
 
     M_T, Σ_T = compute_mean_std(T, m)
     Σ_T[T_subseq_isconstant] = 1.0  # Avoid divide by zero in next inversion step
+    if np.any(Σ_T == 0.0):  # pragma nocover
+        raise ValueError(
+            "The sliding standard deviation of input contains 0.0 at indices"
+            "where T_subseq_isconstant is False. Try to set those indices to"
+            "True in `T_subseq_isconstant`."
+        )
     Σ_T_inverse = 1.0 / Σ_T
     M_T_m_1, _ = compute_mean_std(T, m - 1)
 
