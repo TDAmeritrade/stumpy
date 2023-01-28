@@ -510,7 +510,10 @@ def _stump(
     )
 
 
-@core.non_normalized(aamp)
+@core.non_normalized(
+    aamp,
+    exclude=["normalize", "p", "T_A_subseq_isconstant", "T_B_subseq_isconstant"],
+)
 def stump(
     T_A,
     m,
