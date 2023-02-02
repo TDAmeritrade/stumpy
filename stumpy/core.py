@@ -2221,7 +2221,7 @@ def rolling_isfinite(a, w):
 @njit(parallel=True, fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
 def _rolling_isconstant(a, w):
     """
-    Compute the rolling isconstant for 1-D and 2-D arrays.
+    Compute the rolling isconstant for 1-D array.
 
     This is accomplished by comparing the min and max within each window and
     assigning `True` when the min and max are equal and `False` otherwise. If
@@ -2248,7 +2248,7 @@ def _rolling_isconstant(a, w):
     return np.where(out == 0.0, True, False)
 
 
-def rolling_isconstant(a, w):
+def rolling_isconstant(a, w, custom_func=None):
     """
     Compute the rolling isconstant for 1-D and 2-D arrays.
 
@@ -2264,14 +2264,28 @@ def rolling_isconstant(a, w):
     w : numpy.ndarray
         The rolling window size
 
+    custom_func : object, default None
+        A custom, user defined function that returns boolean numpy ndarray that indicate
+        if a subsequence is constant or not. This function takes 1-D array time series,
+        a window size, and keyword arguments.
+
     Returns
     -------
     output : numpy.ndarray
         Rolling window isconstant.
     """
+    rolling_isconstant_func = _rolling_isconstant
+    if custom_func is not None:
+        custom_func_args = set(inspect.signature(custom_func).parameters.keys())
+        if len(set(["a", "w"]).difference(custom_func_args)):
+            rolling_isconstant_func = custom_func
+        else:
+            msg = "Incompatible parameters found in `custom_func`"
+            warnings.warn(msg)
+
     axis = a.ndim - 1
     return np.apply_along_axis(
-        lambda a_row, w: _rolling_isconstant(a_row, w), axis=axis, arr=a, w=w
+        lambda a_row, w: rolling_isconstant_func(a_row, w), axis=axis, arr=a, w=w
     )
 
 
