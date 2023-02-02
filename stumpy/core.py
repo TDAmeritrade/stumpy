@@ -2278,10 +2278,10 @@ def rolling_isconstant(a, w, custom_func=None):
     if custom_func is not None:
         custom_func_args = set(inspect.signature(custom_func).parameters.keys())
         if len(set(["a", "w"]).difference(custom_func_args)):
-            rolling_isconstant_func = custom_func
-        else:
             msg = "Incompatible parameters found in `custom_func`"
             warnings.warn(msg)
+        else:
+            rolling_isconstant_func = custom_func
 
     axis = a.ndim - 1
     return np.apply_along_axis(
