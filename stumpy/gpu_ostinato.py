@@ -104,7 +104,11 @@ def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0):
         Ts, m, M_Ts, Σ_Ts, Ts_subseq_isconstant, device_id=device_id, mp_func=gpu_stump
     )
 
-    (central_radius, central_Ts_idx, central_subseq_idx,) = _get_central_motif(
+    (
+        central_radius,
+        central_Ts_idx,
+        central_subseq_idx,
+    ) = _get_central_motif(
         Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
     )
 
