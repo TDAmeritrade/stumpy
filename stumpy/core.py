@@ -1809,7 +1809,15 @@ def _preprocess(T, copy=True):
     return T
 
 
-def preprocess(T, m, copy=True, M_T=None, Σ_T=None, T_subseq_isconstant=None):
+def preprocess(
+    T,
+    m,
+    copy=True,
+    M_T=None,
+    Σ_T=None,
+    T_subseq_isconstant=None,
+    isconstant_custom_func=None,
+):
     """
     Creates a copy of the time series where all NaN and inf values
     are replaced with zero. Also computes mean and standard deviation
@@ -1843,6 +1851,13 @@ def preprocess(T, m, copy=True, M_T=None, Σ_T=None, T_subseq_isconstant=None):
         A boolean array that indicates whether a subsequence in `T`
         is constant (True)
 
+    isconstant_custom_func : object, default None
+        A custom, user-defined function that determines if a subsequence is
+        constant or not. It takes two arguments, `a`, a 1-D array, and `w`,
+        the window size, and may have keyword arguments if needed. When `None`,
+        this will be default to the function `core._rolling_isconstant`. This
+        parameter is used when `T_subseq_isconstant` is not provied.
+
     Returns
     -------
     T : numpy.ndarray
@@ -1860,7 +1875,7 @@ def preprocess(T, m, copy=True, M_T=None, Σ_T=None, T_subseq_isconstant=None):
 
     T[np.isinf(T)] = np.nan
     if T_subseq_isconstant is None:
-        T_subseq_isconstant = rolling_isconstant(T, m)
+        T_subseq_isconstant = rolling_isconstant(T, m, isconstant_custom_func)
     if M_T is None or Σ_T is None:
         M_T, Σ_T = compute_mean_std(T, m)
     T[np.isnan(T)] = 0
@@ -1904,7 +1919,7 @@ def preprocess_non_normalized(T, m):
     return T, T_subseq_isfinite
 
 
-def preprocess_diagonal(T, m, T_subseq_isconstant=None):
+def preprocess_diagonal(T, m, isconstant_custom_func=None):
     """
     Preprocess a time series that is to be used when traversing the diagonals of a
     distance matrix.
@@ -1927,8 +1942,12 @@ def preprocess_diagonal(T, m, T_subseq_isconstant=None):
     m : int
         Window size
 
-    T_subseq_isconstant : numpy.ndarray, default None
-        A boolean array that indicates whether a subsequence in `T` is constant (True)
+    isconstant_custom_func : object, default None
+        A custom, user-defined function that determines if a subsequence is
+        constant or not. It takes two arguments, `a`, a 1-D array, and `w`,
+        the window size, and may have keyword arguments if needed. When `None`,
+        this will be default to the function `core._rolling_isconstant`. This
+        parameter is used when `T_subseq_isconstant` is not provied.
 
     Returns
     -------
@@ -1955,8 +1974,7 @@ def preprocess_diagonal(T, m, T_subseq_isconstant=None):
     check_window_size(m, max_size=T.shape[-1])
     T_subseq_isfinite = rolling_isfinite(T, m)
     T[~np.isfinite(T)] = np.nan
-    if T_subseq_isconstant is None:
-        T_subseq_isconstant = rolling_isconstant(T, m)
+    T_subseq_isconstant = rolling_isconstant(T, m, isconstant_custom_func)
     T[np.isnan(T)] = 0
 
     M_T, Σ_T = compute_mean_std(T, m)
@@ -2266,8 +2284,8 @@ def rolling_isconstant(a, w, custom_func=None):
 
     custom_func : object, default None
         A custom, user defined function that returns boolean numpy ndarray that indicate
-        if a subsequence is constant or not. This function takes 1-D array time series,
-        a window size, and keyword arguments.
+        if a subsequence is constant or not. This function takes `a`, a 1-D array time
+        series, `w`, a window size, and it may also have keyword arguments.
 
     Returns
     -------
