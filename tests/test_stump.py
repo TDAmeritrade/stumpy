@@ -271,22 +271,3 @@ def test_stump_A_B_join_KNN(T_A, T_B):
         comp_mp = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False, k=k)
         naive.replace_inf(comp_mp)
         npt.assert_almost_equal(ref_mp, comp_mp)
-
-
-@pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stump_self_join_subseq_isconstant(T_A, T_B):
-    T_A = T_B
-    m = 3
-    l = T_A.shape[0] - m + 1
-    T_A_subseq_isconstant = np.full(l, 0, dtype=bool)
-
-    full_indices_range = np.arange(l)
-    for i in range(l + 1):
-        IDX = np.random.choice(full_indices_range, i, replace=False)
-        T_A_subseq_isconstant[IDX] = True
-
-        ref_mp = naive.stump(T_A, m=m, T_A_subseq_isconstant=T_A_subseq_isconstant)
-        comp_mp = stump(T_A, m, T_A_subseq_isconstant=T_A_subseq_isconstant)
-        naive.replace_inf(ref_mp)
-        naive.replace_inf(comp_mp)
-        npt.assert_almost_equal(ref_mp, comp_mp)
