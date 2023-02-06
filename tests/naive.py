@@ -6,9 +6,19 @@ from scipy.stats import norm
 from stumpy import core, config
 
 
-def rolling_isconstant(a, w):
+def ptp_1d(a, w):  # `a` is 1-D
+    return np.ptp(core.rolling_window(a, w), axis=1) == 0
+
+
+def rolling_isconstant(a, w, custom_func=None):
+    if custom_func is None:
+        custom_func = ptp_1d
+
     return np.logical_and(
-        core.rolling_isfinite(a, w), np.ptp(core.rolling_window(a, w), axis=-1) == 0
+        core.rolling_isfinite(a, w),
+        np.apply_along_axis(
+            lambda a_row, w: custom_func(a_row, w), axis=-1, arr=a, w=w
+        ),
     )
 
 
