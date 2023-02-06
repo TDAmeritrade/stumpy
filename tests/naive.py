@@ -195,8 +195,7 @@ def stump(
     exclusion_zone=None,
     row_wise=False,
     k=1,
-    T_A_subseq_isconstant=None,
-    T_B_subseq_isconstant=None,
+    isconstant_custom_func=None,
 ):
     """
     Traverse distance matrix diagonally and update the top-k matrix profile and
@@ -215,10 +214,8 @@ def stump(
             [distance_profile(Q, T_B, m) for Q in core.rolling_window(T_A, m)]
         )
 
-    if T_A_subseq_isconstant is None:
-        T_A_subseq_isconstant = rolling_isconstant(T_A, m)
-    if T_B_subseq_isconstant is None:
-        T_B_subseq_isconstant = rolling_isconstant(T_B, m)
+    T_A_subseq_isconstant = rolling_isconstant(T_A, m, isconstant_custom_func)
+    T_B_subseq_isconstant = rolling_isconstant(T_B, m, isconstant_custom_func)
 
     distance_matrix[np.isnan(distance_matrix)] = np.inf
     for i in range(distance_matrix.shape[0]):

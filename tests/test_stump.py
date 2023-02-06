@@ -4,6 +4,7 @@ import pandas as pd
 from stumpy import stump, config
 import pytest
 import naive
+import functools
 
 
 test_data = [
@@ -271,3 +272,21 @@ def test_stump_A_B_join_KNN(T_A, T_B):
         comp_mp = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False, k=k)
         naive.replace_inf(comp_mp)
         npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stump_self_join_custom_func(T_A, T_B):
+    m = 3
+    zone = int(np.ceil(m / 4))
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+    ref_mp = naive.stump(
+        T_B, m, exclusion_zone=zone, isconstant_custom_func=isconstant_custom_func
+    )
+    comp_mp = stump(
+        T_B, m, ignore_trivial=True, isconstant_custom_func=isconstant_custom_func
+    )
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
