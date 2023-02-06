@@ -8,6 +8,7 @@ import pytest
 from unittest.mock import patch
 import os
 import math
+import functools
 
 import naive
 
@@ -1033,6 +1034,19 @@ def test_rolling_isconstant():
     comp = core.rolling_isconstant(a, w)
 
     npt.assert_almost_equal(ref, comp)
+
+
+def test_rolling_isconstant_custom_func():
+    a = np.random.rand(100)
+    for w in range(3, 5):
+        for q in [0, 0.01, 0.05, 0.1]:
+            custom_func = functools.partial(
+                naive.isconstant_func_stddev_threshold, quantile_threshold=q
+            )
+            ref = naive.rolling_isconstant(a, w, custom_func)
+            comp = core.rolling_isconstant(a, w, custom_func)
+
+            npt.assert_almost_equal(ref, comp)
 
 
 def test_compare_parameters():
