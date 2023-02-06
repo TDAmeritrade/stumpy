@@ -1648,7 +1648,14 @@ def _mass_distance_matrix(
 
 
 def mass_distance_matrix(
-    Q, T, m, distance_matrix, M_T=None, Σ_T=None, T_subseq_isconstant=None
+    Q,
+    T,
+    m,
+    distance_matrix,
+    M_T=None,
+    Σ_T=None,
+    T_subseq_isconstant=None,
+    isconstant_custom_func=None,
 ):
     """
     Compute the full distance matrix between all of the subsequences of `Q` and `T`
