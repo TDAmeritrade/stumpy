@@ -1439,6 +1439,7 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconst
         "T_subseq_isfinite",
         "p",
         "T_subseq_isconstant",
+        "isconstant_custom_func",
     ],
     replace={"M_T": "T_subseq_isfinite", "Σ_T": None},
 )
@@ -1451,6 +1452,7 @@ def mass(
     p=2.0,
     T_subseq_isfinite=None,
     T_subseq_isconstant=None,
+    isconstant_custom_func=None,
 ):
     """
     Compute the distance profile using the MASS algorithm
@@ -1487,6 +1489,13 @@ def mass(
 
     T_subseq_isconstant : numpy.ndarray, default None
         A boolean array that indicates whether a subsequence in `T` is constant (True)
+
+    isconstant_custom_func : object, default None
+        A custom, user-defined function that determines if a subsequence is
+        constant or not. It takes two arguments, `a`, a 1-D array, and `w`,
+        the window size, and may have keyword arguments if needed. When `None`,
+        this will be default to the function `core._rolling_isconstant`. This
+        parameter is used when `T_subseq_isconstant` is not provied.
 
     Returns
     -------
@@ -1549,11 +1558,17 @@ def mass(
         distance_profile[:] = np.inf
     else:
         T, M_T, Σ_T, T_subseq_isconstant = preprocess(
-            T, m, copy=False, M_T=M_T, Σ_T=Σ_T, T_subseq_isconstant=T_subseq_isconstant
+            T,
+            m,
+            copy=False,
+            M_T=M_T,
+            Σ_T=Σ_T,
+            T_subseq_isconstant=T_subseq_isconstant,
+            isconstant_custom_func=isconstant_custom_func,
         )
 
         QT = sliding_dot_product(Q, T)
-        Q_subseq_isconstant = rolling_isconstant(Q, m)[0]
+        Q_subseq_isconstant = rolling_isconstant(Q, m, isconstant_custom_func)[0]
         μ_Q, σ_Q = [arr[0] for arr in compute_mean_std(Q, m)]
         distance_profile[:] = _mass(
             Q, T, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
@@ -1662,14 +1677,29 @@ def mass_distance_matrix(
     T_subseq_isconstant : numpy.ndarray, default None
         A boolean array that indicates whether a subsequence in `T` is constant (True)
 
+    isconstant_custom_func : object, default None
+        A custom, user-defined function that determines if a subsequence is
+        constant or not. It takes two arguments, `a`, a 1-D array, and `w`,
+        the window size, and may have keyword arguments if needed. When `None`,
+        this will be default to the function `core._rolling_isconstant`. This
+        does not recompute `T_subseq_isconstant` if it is already provided.
+
     Returns
     -------
         None
     """
-    Q, μ_Q, σ_Q, Q_subseq_isconstant = preprocess(Q, m)
+    Q, μ_Q, σ_Q, Q_subseq_isconstant = preprocess(
+        Q, m, isconstant_custom_func=isconstant_custom_func
+    )
 
     T, M_T, Σ_T, T_subseq_isconstant = preprocess(
-        T, m, copy=True, M_T=M_T, Σ_T=Σ_T, T_subseq_isconstant=T_subseq_isconstant
+        T,
+        m,
+        copy=True,
+        M_T=M_T,
+        Σ_T=Σ_T,
+        T_subseq_isconstant=T_subseq_isconstant,
+        isconstant_custom_func=isconstant_custom_func,
     )
 
     check_window_size(m, max_size=min(Q.shape[-1], T.shape[-1]))
