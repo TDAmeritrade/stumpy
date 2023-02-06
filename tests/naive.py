@@ -2065,3 +2065,12 @@ def find_matches(D, excl_zone, max_distance, max_matches=None):
         matches = [x for x in matches if x < idx - excl_zone or x > idx + excl_zone]
 
     return np.array(result[:max_matches], dtype=object)
+
+
+def isconstant_func_stddev_threshold(a, w, quantile_threshold=0):
+    sliding_stddev = rolling_nanstd(a, w)
+    if quantile_threshold == 0:
+        return sliding_stddev == 0
+    else:
+        stddev_threshold = np.quantile(sliding_stddev, quantile_threshold)
+        return sliding_stddev <= stddev_threshold
