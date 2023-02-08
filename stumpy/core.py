@@ -1492,9 +1492,9 @@ def mass(
 
     isconstant_custom_func : object, default None
         A custom, user-defined function that returns boolean numpy ndarray that indicate
-        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array, 
+        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array,
         and `w`, the window size, and may have default arguments if needed. When `None`,
-        this will be default to the function `core._rolling_isconstant`. This parameter 
+        this will be default to the function `core._rolling_isconstant`. This parameter
         does not recompute `T_subseq_isconstant`.
 
     Returns
@@ -1686,9 +1686,9 @@ def mass_distance_matrix(
 
     isconstant_custom_func : object, default None
         A custom, user-defined function that returns boolean numpy ndarray that indicate
-        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array, 
+        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array,
         and `w`, the window size, and may have default arguments if needed. When `None`,
-        this will be default to the function `core._rolling_isconstant`. This parameter 
+        this will be default to the function `core._rolling_isconstant`. This parameter
         does not recompute `T_subseq_isconstant`.
 
     Returns
@@ -1890,9 +1890,9 @@ def preprocess(
 
     isconstant_custom_func : object, default None
         A custom, user-defined function that returns boolean numpy ndarray that indicate
-        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array, 
+        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array,
         and `w`, the window size, and may have default arguments if needed. When `None`,
-        this will be default to the function `core._rolling_isconstant`. This parameter 
+        this will be default to the function `core._rolling_isconstant`. This parameter
         does not recompute `T_subseq_isconstant`.
 
     Returns
@@ -1981,7 +1981,7 @@ def preprocess_diagonal(T, m, isconstant_custom_func=None):
 
     isconstant_custom_func : object, default None
         A custom, user-defined function that returns boolean numpy ndarray that indicate
-        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array, 
+        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array,
         and `w`, the window size, and may have default arguments if needed. When `None`,
         this will be default to the function `core._rolling_isconstant`.
 
@@ -2320,7 +2320,7 @@ def rolling_isconstant(a, w, custom_func=None):
 
     custom_func : object, default None
         A custom, user-defined function that returns boolean numpy ndarray that indicate
-        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array, 
+        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array,
         and `w`, the window size, and may have default arguments if needed. When `None`,
         this will be default to the function `core._rolling_isconstant`.
 

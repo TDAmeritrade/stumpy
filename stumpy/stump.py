@@ -565,7 +565,7 @@ def stump(
 
     isconstant_custom_func : object, default None
         A custom, user-defined function that returns boolean numpy ndarray that indicate
-        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array, 
+        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array,
         and `w`, the window size, and may have default arguments if needed. When `None`,
         this will be default to the function `core._rolling_isconstant`.
 
