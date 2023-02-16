@@ -193,7 +193,7 @@ def test_naive_match_exclusion_zone():
             max_distance=0.1,
         )
     )
-    # To avoid sorting errors we first sort based on disance and then based on indices
+    # To avoid sorting errors we first sort based on distance and then based on indices
     right.sort(key=lambda x: (x[1], x[0]))
 
     npt.assert_almost_equal(left, right)

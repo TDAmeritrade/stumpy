@@ -143,10 +143,10 @@ def _compute_diagonal(
             if T_A_subseq_isfinite[uint64_i] and T_B_subseq_isfinite[uint64_j]:
                 # Neither subsequence contains NaNs
 
-                # `P[thread_idx, i, :]` is sorted ascendingly and MUST be updated
+                # `P[thread_idx, i, :]` is sorted in ascending order and MUST be updated
                 # when the newly-calculated `p_norm` value becomes smaller than the
                 # last (i.e. greatest) element in this array. Note that the goal
-                # is to have top-k smallest distancs for each subsequence.
+                # is to have top-k smallest distances for each subsequence.
                 if p_norm < P[thread_idx, uint64_i, -1]:
                     idx = np.searchsorted(P[thread_idx, uint64_i], p_norm)
                     core._shift_insert_at_index(
