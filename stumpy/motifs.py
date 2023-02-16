@@ -330,6 +330,12 @@ def motifs(
         atol=atol,
     )
 
+    if motif_distances.shape[1] == 0:
+        msg = "No motifs were found. You may consider increasing the `cutoff` "
+        msg += f"(e.g., cutoff={2. * cutoff}) and/or increasing the `max_distance `"
+        msg += f"(e.g., max_distance=np.inf)."
+        warnings.warn(msg)
+
     return motif_distances, motif_indices
 
 
