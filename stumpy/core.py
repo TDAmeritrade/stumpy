@@ -1960,10 +1960,6 @@ def preprocess(
             T, m, custom_func=isconstant_custom_func
         )
 
-    # Enforced subseqs with a non-finite value correspond to
-    # `False` regarding being constant.
-    T_subseq_isconstant[~np.isfinite(T_subseq_isconstant)] = (False,)
-
     if M_T is None or Σ_T is None:
         M_T, Σ_T = compute_mean_std(T, m)
     T[np.isnan(T)] = 0

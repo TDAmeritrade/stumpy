@@ -512,7 +512,7 @@ def _stump(
 
 @core.non_normalized(
     aamp,
-    exclude=["normalize", "p", "isconstant_custom_func"],
+    exclude=["normalize", "p", "T_A_subseq_isconstant", "T_B_subseq_isconstant"],
 )
 def stump(
     T_A,
@@ -522,7 +522,8 @@ def stump(
     normalize=True,
     p=2.0,
     k=1,
-    isconstant_custom_func=None,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
 ):
     """
     Compute the z-normalized matrix profile
@@ -563,11 +564,27 @@ def stump(
         when k > 1. If you have access to a GPU device, then you may be able to
         leverage `gpu_stump` for better performance and scalability.
 
-    isconstant_custom_func : object, default None
-        A custom, user-defined function that returns boolean numpy ndarray that indicate
-        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array,
-        and `w`, the window size, and may have default arguments if needed. When `None`,
-        this will be default to the function `core._rolling_isconstant`.
+    T_A_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one nan/inf value will be enforced to have
+        the corresponding value `False` in this boolean array.
+
+    T_B_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one nan/inf value will be enforced to have
+        the corresponding value `False` in this boolean array. When
+        `T_A_subseq_isconstant` is provided by the user, `T_B_subseq_isconstant`
+        must be provided as well unless T_B is None.
 
     Returns
     -------
@@ -647,8 +664,18 @@ def stump(
            [0.11633857113691416, 0, 0, -1]], dtype=object)
     """
     if T_B is None:
-        T_B = T_A
         ignore_trivial = True
+        T_B = T_A
+    else:
+        if T_A_subseq_isconstant is not None and T_B_subseq_isconstant is None:
+            msg = (
+                "`T_B_subseq_isconstant` is not provided. For details, see"
+                + "the docstring."
+            )
+            raise ValueError(msg)
+
+    if T_B_subseq_isconstant is None:
+        T_B_subseq_isconstant = T_A_subseq_isconstant
 
     (
         T_A,
@@ -657,7 +684,7 @@ def stump(
         μ_Q_m_1,
         T_A_subseq_isfinite,
         T_A_subseq_isconstant,
-    ) = core.preprocess_diagonal(T_A, m, isconstant_custom_func)
+    ) = core.preprocess_diagonal(T_A, m, T_A_subseq_isconstant)
 
     (
         T_B,
@@ -666,7 +693,7 @@ def stump(
         M_T_m_1,
         T_B_subseq_isfinite,
         T_B_subseq_isconstant,
-    ) = core.preprocess_diagonal(T_B, m, isconstant_custom_func)
+    ) = core.preprocess_diagonal(T_B, m, T_B_subseq_isconstant)
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
