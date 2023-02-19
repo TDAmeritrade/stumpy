@@ -210,7 +210,7 @@ def _compute_diagonal(
                     if pearson > 1.0:
                         pearson = 1.0
 
-                # `ρ[thread_idx, i, :]` is sorted ascendingly and MUST be updated
+                # `ρ[thread_idx, i, :]` is sorted in ascending order and MUST be updated
                 # when the newly-calculated `pearson` value becomes greater than the
                 # first (i.e. smallest) element in this array. Note that a higher
                 # pearson value corresponds to a lower distance.

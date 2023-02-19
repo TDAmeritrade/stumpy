@@ -881,12 +881,12 @@ def test_prescrump_self_join_KNN_no_overlap():
     # This test is particularly designed to raise error in a rare case described
     # as follows: Let's denote `I[i]` as the array with length `k` that contains
     # the start indices of the best-so-far top-k nearest neighbors of `subseq i`,
-    # (`S_i`). Also, we denote `P[i]` as their corresponding ascendingly-sorted
-    # distances. Let's denote `d` as the distane betweeen `S_i` and `S_j`. P[i] and
-    # I[i] must be updated if (1) `j` is not in I[i] and (2) `d` < P[i,-1]. Regarding
-    # the former condition, one needs to check the whole array I[i]. Checking the
-    # array I[i, :idx], where `idx = np.searchsorted(P[i], 'd', side='right')` is
-    # not completly correct and that is due to imprecision in numerical calculation.
+    # (`S_i`). Also, we denote `P[i]` as their corresponding distances sorted in
+    # ascending order. Let's denote `d` as the distance between `S_i` and `S_j`. P[i]
+    # and I[i] must be updated if (1) `j` is not in I[i] and (2) `d` < P[i,-1].
+    # Regarding the former condition, one needs to check the whole array I[i]. Checking
+    # the array I[i, :idx], where `idx = np.searchsorted(P[i], 'd', side='right')` is
+    # not completely correct and that is due to imprecision in numerical calculation.
     # It may happen that `j` is not in `I[i, :idx]`, but it is in fact at `I[i, idx]`
     # (or any other position in array I[i]). And, its corresponding distance, i.e
     # P[i, idx], is d + 1e-5, for instance. In theory, this should be exactly `d`.

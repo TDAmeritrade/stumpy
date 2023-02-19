@@ -587,7 +587,7 @@ def test_p_norm_distance_profile(Q, T):
 
 
 @pytest.mark.parametrize("Q, T", test_data)
-def test_mass_asbolute(Q, T):
+def test_mass_absolute(Q, T):
     Q = Q.copy()
     T = T.copy()
     m = Q.shape[0]
@@ -1083,13 +1083,13 @@ def test_jagged_list_to_array_empty():
 
 
 def test_get_mask_slices():
-    bool_lst = [False, True]
+    bool_list = [False, True]
     mask_cases = [
         [x, y, z, w]
-        for x in bool_lst
-        for y in bool_lst
-        for z in bool_lst
-        for w in bool_lst
+        for x in bool_list
+        for y in bool_list
+        for z in bool_list
+        for w in bool_list
     ]
 
     for mask in mask_cases:

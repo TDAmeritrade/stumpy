@@ -176,13 +176,13 @@ def motifs(
     truncation in the number of rows (i.e., motifs)  may be the result of insufficient
     candidate motifs with matches greater than or equal to `min_neighbors` or that the
     matrix profile value for the candidate motif was larger than `cutoff`. Similarly,
-    any truncationin in the number of columns (i.e., matches) may be the result of
+    any truncation in the number of columns (i.e., matches) may be the result of
     insufficient matches being found with distances (to their corresponding candidate
     motif) that are equal to or less than `max_distance`. Only motifs and matches that
     satisfy all of these constraints will be returned.
 
     If you must return a shape of `(max_motifs, max_matches)`, then you may consider
-    specifying a smaller `min_neighors`, a larger `max_distance`, and/or a larger
+    specifying a smaller `min_neighbors`, a larger `max_distance`, and/or a larger
     `cutoff`. For example, while it is ill advised, setting `min_neighbors=1`,
     `max_distance=np.inf`, and `cutoff=np.inf` will ensure that the shape of the output
     arrays will be `(max_motifs, max_matches)`. However, given the lack of constraints,
@@ -329,6 +329,12 @@ def motifs(
         max_motifs,
         atol=atol,
     )
+
+    if motif_distances.shape[1] == 0:  # pragma: no cover
+        msg = "No motifs were found. You may consider increasing the `cutoff` "
+        msg += f"(e.g., cutoff={2. * cutoff}) and/or increasing the `max_distance `"
+        msg += "(e.g., max_distance=np.inf)."
+        warnings.warn(msg)
 
     return motif_distances, motif_indices
 
