@@ -1440,6 +1440,7 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconst
         "T_subseq_isfinite",
         "p",
         "T_subseq_isconstant",
+        "Q_subseq_isconstant",
     ],
     replace={"M_T": "T_subseq_isfinite", "Σ_T": None},
 )
