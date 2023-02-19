@@ -4,7 +4,6 @@ import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.stats import norm
 from stumpy import core, config
-import types
 
 
 def is_ptp_zero_1d(a, w):  # `a` is 1-D
@@ -220,28 +219,27 @@ def stump(
         distance_matrix = np.array(
             [distance_profile(Q, T_B, m) for Q in core.rolling_window(T_A, m)]
         )
-        if T_A_subseq_isconstant is not None:
+        if T_A_subseq_isconstant is not None and T_B_subseq_isconstant is None:
             msg = (
                 "T_B_subseq_isconstant must be provided when T_B is not None"
                 + " and T_A_subseq_isconstant is provided."
             )
             raise ValueError(msg)
 
-    if T_A_subseq_isconstant is None or isinstance(
-        T_A_subseq_isconstant, types.FunctionType
-    ):
+    if T_A_subseq_isconstant is None or callable(T_A_subseq_isconstant):
         T_A_subseq_isconstant = rolling_isconstant(T_A, m, T_A_subseq_isconstant)
 
-    if T_B_subseq_isconstant is None or isinstance(
-        T_B_subseq_isconstant, types.FunctionType
-    ):
-        T_B_subseq_isconstant = rolling_isconstant(T_A, m, T_B_subseq_isconstant)
+    if T_B_subseq_isconstant is None or callable(T_B_subseq_isconstant):
+        T_B_subseq_isconstant = rolling_isconstant(T_B, m, T_B_subseq_isconstant)
 
     distance_matrix[np.isnan(distance_matrix)] = np.inf
     for i in range(distance_matrix.shape[0]):
         for j in range(distance_matrix.shape[1]):
             if np.isfinite(distance_matrix[i, j]):
-                if T_A_subseq_isconstant[i] and T_B_subseq_isconstant[j]:
+                if (
+                    T_A_subseq_isconstant[i]  # a comment to make line longer
+                    and T_B_subseq_isconstant[j]
+                ):
                     distance_matrix[i, j] = 0.0
                 elif T_A_subseq_isconstant[i] or T_B_subseq_isconstant[j]:
                     distance_matrix[i, j] = np.sqrt(m)

@@ -1943,19 +1943,21 @@ def preprocess(
 
     isconstant_custom_func = None
     if T_subseq_isconstant is not None:
-        if type(T_subseq_isconstant) not in {np.ndarray, types.FunctionType}:
+        if type(T_subseq_isconstant) not in {
+            np.ndarray,
+            types.FunctionType,
+            functools.partial,
+        }:
             msg = (
                 "The acceptable types for `T_subseq_isconstant`"
-                + " are np.ndarray or function."
+                + " are np.ndarray, function, or functools.partial"
             )
             raise ValueError(msg)
 
-        if isinstance(T_subseq_isconstant, types.FunctionType):
+        if callable(T_subseq_isconstant):
             isconstant_custom_func = T_subseq_isconstant
 
-    if T_subseq_isconstant is None or isinstance(
-        T_subseq_isconstant, types.FunctionType
-    ):
+    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
         T_subseq_isconstant = rolling_isconstant(
             T, m, custom_func=isconstant_custom_func
         )

@@ -666,6 +666,7 @@ def stump(
     if T_B is None:
         ignore_trivial = True
         T_B = T_A
+        T_B_subseq_isconstant = T_A_subseq_isconstant
     else:
         if T_A_subseq_isconstant is not None and T_B_subseq_isconstant is None:
             msg = (
@@ -673,9 +674,6 @@ def stump(
                 + "the docstring."
             )
             raise ValueError(msg)
-
-    if T_B_subseq_isconstant is None:
-        T_B_subseq_isconstant = T_A_subseq_isconstant
 
     (
         T_A,
