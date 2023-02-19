@@ -7,7 +7,7 @@ from stumpy import core, config
 
 
 def is_ptp_zero_1d(a, w):  # `a` is 1-D
-    n = a - w + 1
+    n = len(a) - w + 1
     out = np.empty(n)
     for i in range(n):
         out[i] = np.max(a[i : i + w]) - np.min(a[i : i + w])
