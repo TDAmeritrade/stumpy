@@ -6,13 +6,17 @@ from scipy.stats import norm
 from stumpy import core, config
 
 
-def ptp_1d(a, w):  # `a` is 1-D
-    return np.ptp(core.rolling_window(a, w), axis=1) == 0
+def is_ptp_zero_1d(a, w):  # `a` is 1-D
+    n = a - w + 1
+    out = np.empty(n)
+    for i in range(n):
+        out[i] = np.max(a[i : i + w]) - np.min(a[i : i + w])
+    return out == 0
 
 
 def rolling_isconstant(a, w, custom_func=None):
     if custom_func is None:
-        custom_func = ptp_1d
+        custom_func = is_ptp_zero_1d
 
     return np.logical_and(
         core.rolling_isfinite(a, w),
