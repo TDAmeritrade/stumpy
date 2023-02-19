@@ -282,10 +282,10 @@ def test_stump_self_join_custom_func(T_A, T_B):
         naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
     )
     ref_mp = naive.stump(
-        T_B, m, exclusion_zone=zone, isconstant_custom_func=isconstant_custom_func
+        T_B, m, exclusion_zone=zone, T_A_subseq_isconstant=isconstant_custom_func
     )
     comp_mp = stump(
-        T_B, m, ignore_trivial=True, isconstant_custom_func=isconstant_custom_func
+        T_B, m, ignore_trivial=True, T_A_subseq_isconstant=isconstant_custom_func
     )
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)

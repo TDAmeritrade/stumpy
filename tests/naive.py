@@ -4,6 +4,7 @@ import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.stats import norm
 from stumpy import core, config
+import types
 
 
 def is_ptp_zero_1d(a, w):  # `a` is 1-D
@@ -199,7 +200,8 @@ def stump(
     exclusion_zone=None,
     row_wise=False,
     k=1,
-    isconstant_custom_func=None,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
 ):
     """
     Traverse distance matrix diagonally and update the top-k matrix profile and
@@ -212,14 +214,28 @@ def stump(
             [distance_profile(Q, T_A, m) for Q in core.rolling_window(T_A, m)]
         )
         T_B = T_A.copy()
+        T_B_subseq_isconstant = T_A_subseq_isconstant
     else:
         ignore_trivial = False
         distance_matrix = np.array(
             [distance_profile(Q, T_B, m) for Q in core.rolling_window(T_A, m)]
         )
+        if T_A_subseq_isconstant is not None:
+            msg = (
+                "T_B_subseq_isconstant must be provided when T_B is not None"
+                + " and T_A_subseq_isconstant is provided."
+            )
+            raise ValueError(msg)
 
-    T_A_subseq_isconstant = rolling_isconstant(T_A, m, isconstant_custom_func)
-    T_B_subseq_isconstant = rolling_isconstant(T_B, m, isconstant_custom_func)
+    if T_A_subseq_isconstant is None or isinstance(
+        T_A_subseq_isconstant, types.FunctionType
+    ):
+        T_A_subseq_isconstant = rolling_isconstant(T_A, m, T_A_subseq_isconstant)
+
+    if T_B_subseq_isconstant is None or isinstance(
+        T_B_subseq_isconstant, types.FunctionType
+    ):
+        T_B_subseq_isconstant = rolling_isconstant(T_A, m, T_B_subseq_isconstant)
 
     distance_matrix[np.isnan(distance_matrix)] = np.inf
     for i in range(distance_matrix.shape[0]):
