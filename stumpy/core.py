@@ -5,6 +5,7 @@
 import warnings
 import functools
 import inspect
+import types
 
 import numpy as np
 from numba import njit, cuda, prange
@@ -1439,7 +1440,6 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconst
         "T_subseq_isfinite",
         "p",
         "T_subseq_isconstant",
-        "isconstant_custom_func",
     ],
     replace={"M_T": "T_subseq_isfinite", "Σ_T": None},
 )
@@ -1452,7 +1452,7 @@ def mass(
     p=2.0,
     T_subseq_isfinite=None,
     T_subseq_isconstant=None,
-    isconstant_custom_func=None,
+    Q_subseq_isconstant=None,
 ):
     """
     Compute the distance profile using the MASS algorithm
@@ -1487,15 +1487,25 @@ def mass(
         `np.nan`/`np.inf` value (False). This parameter is ignored when
         `normalize=True`.
 
-    T_subseq_isconstant : numpy.ndarray, default None
-        A boolean array that indicates whether a subsequence in `T` is constant (True)
+    T_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one nan/inf value will be enforced to have
+        the corresponding value `False` in this boolean array.
 
-    isconstant_custom_func : object, default None
-        A custom, user-defined function that returns boolean numpy ndarray that indicate
-        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array,
-        and `w`, the window size, and may have default arguments if needed. When `None`,
-        this will be default to the function `core._rolling_isconstant`. This parameter
-        does not recompute `T_subseq_isconstant`.
+    Q_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `Q` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `Q` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one nan/inf value will be enforced to have
+        the corresponding value `False` in this boolean array.
 
     Returns
     -------
@@ -1564,14 +1574,26 @@ def mass(
             M_T=M_T,
             Σ_T=Σ_T,
             T_subseq_isconstant=T_subseq_isconstant,
-            isconstant_custom_func=isconstant_custom_func,
         )
 
         QT = sliding_dot_product(Q, T)
-        Q_subseq_isconstant = rolling_isconstant(Q, m, isconstant_custom_func)[0]
-        μ_Q, σ_Q = [arr[0] for arr in compute_mean_std(Q, m)]
+        Q, μ_Q, σ_Q, Q_subseq_isconstant = preprocess(
+            Q,
+            m,
+            copy=False,
+            T_subseq_isconstant=Q_subseq_isconstant,
+        )
+
         distance_profile[:] = _mass(
-            Q, T, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
+            Q,
+            T,
+            QT,
+            μ_Q[0],
+            σ_Q[0],
+            M_T,
+            Σ_T,
+            Q_subseq_isconstant[0],
+            T_subseq_isconstant,
         )
 
     return distance_profile
@@ -1655,7 +1677,7 @@ def mass_distance_matrix(
     M_T=None,
     Σ_T=None,
     T_subseq_isconstant=None,
-    isconstant_custom_func=None,
+    Q_subseq_isconstant=None,
 ):
     """
     Compute the full distance matrix between all of the subsequences of `Q` and `T`
@@ -1681,32 +1703,41 @@ def mass_distance_matrix(
     Σ_T : numpy.ndarray, default None
         Sliding standard deviation of `T`
 
-    T_subseq_isconstant : numpy.ndarray, default None
-        A boolean array that indicates whether a subsequence in `T` is constant (True)
+    T_subseq_isconstant : numpy.ndarray, function, default None
+        A boolean array that indicates whether a subsequence in `T` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one nan/inf value will be enforced to have
+        the corresponding value `False` in this boolean array.
 
-    isconstant_custom_func : object, default None
-        A custom, user-defined function that returns boolean numpy ndarray that indicate
-        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array,
-        and `w`, the window size, and may have default arguments if needed. When `None`,
-        this will be default to the function `core._rolling_isconstant`. This parameter
-        does not recompute `T_subseq_isconstant`.
+    Q_subseq_isconstant : numpy.ndarray, function, default None
+        A boolean array that indicates whether a subsequence in `Q` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `Q` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one nan/inf value will be enforced to have
+        the corresponding value `False` in this boolean array.
 
     Returns
     -------
         None
     """
     Q, μ_Q, σ_Q, Q_subseq_isconstant = preprocess(
-        Q, m, isconstant_custom_func=isconstant_custom_func
+        Q, m, T_subseq_isconstant=Q_subseq_isconstant
     )
 
     T, M_T, Σ_T, T_subseq_isconstant = preprocess(
         T,
         m,
-        copy=True,
+        copy=True,  # TEMP comment: to be consitent with Q, remove this.
         M_T=M_T,
         Σ_T=Σ_T,
         T_subseq_isconstant=T_subseq_isconstant,
-        isconstant_custom_func=isconstant_custom_func,
     )
 
     check_window_size(m, max_size=min(Q.shape[-1], T.shape[-1]))
@@ -1853,7 +1884,6 @@ def preprocess(
     M_T=None,
     Σ_T=None,
     T_subseq_isconstant=None,
-    isconstant_custom_func=None,
 ):
     """
     Creates a copy of the time series where all NaN and inf values
@@ -1884,16 +1914,15 @@ def preprocess(
     Σ_T : numpy.ndarray, default None
         Rolling standard deviation
 
-    T_subseq_isconstant : numpy.ndarray, default None
-        A boolean array that indicates whether a subsequence in `T`
-        is constant (True)
-
-    isconstant_custom_func : object, default None
-        A custom, user-defined function that returns boolean numpy ndarray that indicate
-        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array,
-        and `w`, the window size, and may have default arguments if needed. When `None`,
-        this will be default to the function `core._rolling_isconstant`. This parameter
-        does not recompute `T_subseq_isconstant`.
+    T_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one nan/inf value will be enforced to have
+        the corresponding value `False` in this boolean array.
 
     Returns
     -------
@@ -1911,8 +1940,30 @@ def preprocess(
     check_window_size(m, max_size=T.shape[-1])
 
     T[np.isinf(T)] = np.nan
-    if T_subseq_isconstant is None:
-        T_subseq_isconstant = rolling_isconstant(T, m, isconstant_custom_func)
+
+    isconstant_custom_func = None
+    if T_subseq_isconstant is not None:
+        if type(T_subseq_isconstant) not in {np.ndarray, types.FunctionType}:
+            msg = (
+                "The acceptable types for `T_subseq_isconstant`"
+                + " are np.ndarray or function."
+            )
+            raise ValueError(msg)
+
+        if isinstance(T_subseq_isconstant, types.FunctionType):
+            isconstant_custom_func = T_subseq_isconstant
+
+    if T_subseq_isconstant is None or isinstance(
+        T_subseq_isconstant, types.FunctionType
+    ):
+        T_subseq_isconstant = rolling_isconstant(
+            T, m, custom_func=isconstant_custom_func
+        )
+
+    # Enforced subseqs with a non-finite value correspond to
+    # `False` regarding being constant.
+    T_subseq_isconstant[~np.isfinite(T_subseq_isconstant)] = (False,)
+
     if M_T is None or Σ_T is None:
         M_T, Σ_T = compute_mean_std(T, m)
     T[np.isnan(T)] = 0
