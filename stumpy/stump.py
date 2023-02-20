@@ -667,14 +667,7 @@ def stump(
         ignore_trivial = True
         T_B = T_A
         T_B_subseq_isconstant = T_A_subseq_isconstant
-    else:
-        if T_A_subseq_isconstant is not None and T_B_subseq_isconstant is None:
-            msg = (
-                "`T_B_subseq_isconstant` is not provided. For details, see"
-                + "the docstring."
-            )
-            raise ValueError(msg)
-
+        
     (
         T_A,
         μ_Q,
