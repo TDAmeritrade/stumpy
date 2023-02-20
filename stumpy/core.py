@@ -2064,7 +2064,10 @@ def preprocess_diagonal(T, m, T_subseq_isconstant=None):
     check_window_size(m, max_size=T.shape[-1])
     T_subseq_isfinite = rolling_isfinite(T, m)
     T[~np.isfinite(T)] = np.nan
-    T_subseq_isconstant = rolling_isconstant(T, m, isconstant_custom_func)
+    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
+        T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
+    else:
+        T_subseq_isconstant = np.logical_and(T_subseq_isconstant, T_subseq_isfinite)
     T[np.isnan(T)] = 0
 
     M_T, Σ_T = compute_mean_std(T, m)
