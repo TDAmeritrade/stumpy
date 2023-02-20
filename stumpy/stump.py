@@ -582,9 +582,7 @@ def stump(
         and `w`, the window size, while additional arguments may be specified
         by currying the user-defined function using `functools.partial`. Any
         subsequence with at least one nan/inf value will be enforced to have
-        the corresponding value `False` in this boolean array. When
-        `T_A_subseq_isconstant` is provided by the user, `T_B_subseq_isconstant`
-        must be provided as well unless T_B is None.
+        the corresponding value `False` in this boolean array.
 
     Returns
     -------
