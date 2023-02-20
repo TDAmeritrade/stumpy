@@ -2006,7 +2006,7 @@ def preprocess_non_normalized(T, m):
     return T, T_subseq_isfinite
 
 
-def preprocess_diagonal(T, m, isconstant_custom_func=None):
+def preprocess_diagonal(T, m, T_subseq_isconstant=None):
     """
     Preprocess a time series that is to be used when traversing the diagonals of a
     distance matrix.
@@ -2029,11 +2029,15 @@ def preprocess_diagonal(T, m, isconstant_custom_func=None):
     m : int
         Window size
 
-    isconstant_custom_func : object, default None
-        A custom, user-defined function that returns boolean numpy ndarray that indicate
-        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array,
-        and `w`, the window size, and may have default arguments if needed. When `None`,
-        this will be default to the function `core._rolling_isconstant`.
+    T_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one nan/inf value will be enforced to have
+        the corresponding value `False` in this boolean array.
 
     Returns
     -------
