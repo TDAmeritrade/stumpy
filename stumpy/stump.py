@@ -667,7 +667,7 @@ def stump(
         ignore_trivial = True
         T_B = T_A
         T_B_subseq_isconstant = T_A_subseq_isconstant
-        
+
     (
         T_A,
         μ_Q,
