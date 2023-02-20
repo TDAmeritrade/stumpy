@@ -230,10 +230,7 @@ def stump(
     for i in range(distance_matrix.shape[0]):
         for j in range(distance_matrix.shape[1]):
             if np.isfinite(distance_matrix[i, j]):
-                if (
-                    T_A_subseq_isconstant[i]  # a comment to make line longer
-                    and T_B_subseq_isconstant[j]
-                ):
+                if T_A_subseq_isconstant[i] and T_B_subseq_isconstant[j]:
                     distance_matrix[i, j] = 0.0
                 elif T_A_subseq_isconstant[i] or T_B_subseq_isconstant[j]:
                     distance_matrix[i, j] = np.sqrt(m)
