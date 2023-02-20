@@ -2389,7 +2389,7 @@ def rolling_isconstant(a, w, custom_func=None):
     rolling_isconstant_func = _rolling_isconstant
     if custom_func is not None:
         custom_func_args = set(inspect.signature(custom_func).parameters.keys())
-        if len(set(["a", "w"]).difference(custom_func_args)):
+        if len(set(["a", "w"]).difference(custom_func_args)):  # pragma: no cover
             msg = "Incompatible parameters found in `custom_func`"
             warnings.warn(msg)
         else:
