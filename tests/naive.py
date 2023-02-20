@@ -219,12 +219,6 @@ def stump(
         distance_matrix = np.array(
             [distance_profile(Q, T_B, m) for Q in core.rolling_window(T_A, m)]
         )
-        if T_A_subseq_isconstant is not None and T_B_subseq_isconstant is None:
-            msg = (
-                "T_B_subseq_isconstant must be provided when T_B is not None"
-                + " and T_A_subseq_isconstant is provided."
-            )
-            raise ValueError(msg)
 
     if T_A_subseq_isconstant is None or callable(T_A_subseq_isconstant):
         T_A_subseq_isconstant = rolling_isconstant(T_A, m, T_A_subseq_isconstant)
