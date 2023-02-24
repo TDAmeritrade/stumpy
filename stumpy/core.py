@@ -1729,13 +1729,13 @@ def mass_distance_matrix(
         None
     """
     Q, μ_Q, σ_Q, Q_subseq_isconstant = preprocess(
-        Q, m, T_subseq_isconstant=Q_subseq_isconstant
+        T=Q, m=m, copy=True, T_subseq_isconstant=Q_subseq_isconstant
     )
 
     T, M_T, Σ_T, T_subseq_isconstant = preprocess(
         T,
         m,
-        copy=True,  # TEMP comment: to be consitent with Q, remove this.
+        copy=True,
         M_T=M_T,
         Σ_T=Σ_T,
         T_subseq_isconstant=T_subseq_isconstant,
