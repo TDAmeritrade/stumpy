@@ -571,8 +571,8 @@ def stump(
         (True). The function must only take two arguments, `a`, a 1-D array,
         and `w`, the window size, while additional arguments may be specified
         by currying the user-defined function using `functools.partial`. Any
-        subsequence with at least one nan/inf value will be enforced to have
-        the corresponding value `False` in this boolean array.
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
 
     T_B_subseq_isconstant : numpy.ndarray or function, default None
         A boolean array that indicates whether a subsequence in `T_B` is constant
@@ -581,8 +581,8 @@ def stump(
         (True). The function must only take two arguments, `a`, a 1-D array,
         and `w`, the window size, while additional arguments may be specified
         by currying the user-defined function using `functools.partial`. Any
-        subsequence with at least one nan/inf value will be enforced to have
-        the corresponding value `False` in this boolean array.
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
 
     Returns
     -------
