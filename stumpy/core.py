@@ -2364,7 +2364,6 @@ def rolling_isconstant(a, w, custom=None):
     output : numpy.ndarray
         Rolling window isconstant
     """
-
     if custom is None:
         custom = _rolling_isconstant
 
