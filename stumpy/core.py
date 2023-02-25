@@ -5,7 +5,7 @@
 import warnings
 import functools
 import inspect
-import types
+from inspect import Parameter
 
 import numpy as np
 from numba import njit, cuda, prange
@@ -1942,26 +1942,7 @@ def preprocess(
 
     T[np.isinf(T)] = np.nan
 
-    isconstant_custom_func = None
-    if T_subseq_isconstant is not None:
-        if type(T_subseq_isconstant) not in {
-            np.ndarray,
-            types.FunctionType,
-            functools.partial,
-        }:
-            msg = (
-                "The acceptable types for `T_subseq_isconstant`"
-                + " are np.ndarray, function, or functools.partial"
-            )
-            raise ValueError(msg)
-
-        if callable(T_subseq_isconstant):
-            isconstant_custom_func = T_subseq_isconstant
-
-    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
-        T_subseq_isconstant = rolling_isconstant(
-            T, m, custom_func=isconstant_custom_func
-        )
+    T_subseq_isconstant = rolling_isconstant(T, m, custom=T_subseq_isconstant)
 
     if M_T is None or Σ_T is None:
         M_T, Σ_T = compute_mean_std(T, m)
@@ -2064,10 +2045,7 @@ def preprocess_diagonal(T, m, T_subseq_isconstant=None):
     check_window_size(m, max_size=T.shape[-1])
     T_subseq_isfinite = rolling_isfinite(T, m)
     T[~np.isfinite(T)] = np.nan
-    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
-        T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
-    else:
-        T_subseq_isconstant = np.logical_and(T_subseq_isconstant, T_subseq_isfinite)
+    T_subseq_isconstant = rolling_isconstant(T, m, custom=T_subseq_isconstant)
     T[np.isnan(T)] = 0
 
     M_T, Σ_T = compute_mean_std(T, m)
@@ -2359,7 +2337,7 @@ def _rolling_isconstant(a, w):
     return np.where(out == 0.0, True, False)
 
 
-def rolling_isconstant(a, w, custom_func=None):
+def rolling_isconstant(a, w, custom=None):
     """
     Compute the rolling isconstant for 1-D and 2-D arrays.
 
@@ -2375,7 +2353,7 @@ def rolling_isconstant(a, w, custom_func=None):
     w : numpy.ndarray
         The rolling window size
 
-    custom_func : object, default None
+    custom : np.ndarray or function, default None
         A custom, user-defined function that returns boolean numpy ndarray that indicate
         if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array,
         and `w`, the window size, and may have default arguments if needed. When `None`,
@@ -2384,21 +2362,50 @@ def rolling_isconstant(a, w, custom_func=None):
     Returns
     -------
     output : numpy.ndarray
-        Rolling window isconstant.
+        Rolling window isconstant
     """
-    rolling_isconstant_func = _rolling_isconstant
-    if custom_func is not None:
-        custom_func_args = set(inspect.signature(custom_func).parameters.keys())
-        if len(set(["a", "w"]).difference(custom_func_args)):  # pragma: no cover
-            msg = "Incompatible parameters found in `custom_func`"
-            warnings.warn(msg)
-        else:
-            rolling_isconstant_func = custom_func
 
-    axis = a.ndim - 1
-    return np.apply_along_axis(
-        lambda a_row, w: rolling_isconstant_func(a_row, w), axis=axis, arr=a, w=w
-    )
+    if custom is None:
+        custom = _rolling_isconstant
+
+    if not (isinstance(custom, np.ndarray) or callable(custom)):
+        msg = (
+            "The `custom` must be of type `np.ndarray` or a callable object. "
+            + f"Found {type(custom)} instead."
+        )
+        raise ValueError(msg)
+
+    if isinstance(custom, np.ndarray):
+        if not issubclass(custom.dtype.type, np.bool_):
+            msg = (
+                f"the dtype of `custom` is {custom.dtype}"
+                + " but dtype `np.bool` was expected"
+            )
+            raise ValueError(msg)
+
+        out = custom
+
+    else:
+        custom_args = []
+        for arg_name, arg in inspect.signature(custom).parameters.items():
+            if arg.default == Parameter.empty:
+                custom_args.append(arg_name)
+
+        incomp_args = set(custom_args).difference({"a", "w"})
+        if len(incomp_args) > 0:
+            msg = (
+                f"Incompatible arguments {incomp_args} found in `custom_func`. "
+                + "Please provide a `custom_func` with arguments `a`, a 1-D array, "
+                + "and `w`, the window size."
+            )
+            raise ValueError(msg)
+
+        axis = a.ndim - 1
+        out = np.apply_along_axis(
+            lambda a_row, w: custom(a_row, w), axis=axis, arr=a, w=w
+        )
+
+    return out
 
 
 def _get_partial_mp_func(mp_func, client=None, device_id=None):
