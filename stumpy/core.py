@@ -2354,10 +2354,13 @@ def rolling_isconstant(a, w, custom=None):
         The rolling window size
 
     custom : np.ndarray or function, default None
-        A custom, user-defined function that returns boolean numpy ndarray that indicate
-        if a subsequence is constant or not. It takes two arguments, `a`, a 1-D array,
-        and `w`, the window size, and may have default arguments if needed. When `None`,
-        this will be default to the function `core._rolling_isconstant`.
+        A boolean array that indicates whether a subsequence in `T` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. When 
+        None, this defaults to `_rolling_isconstant`.
 
     Returns
     -------
