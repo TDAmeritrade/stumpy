@@ -2361,7 +2361,7 @@ def rolling_isconstant(a, w, custom=None):
 
     Returns
     -------
-    output : numpy.ndarray
+    T_subseq_isconstant : numpy.ndarray
         Rolling window isconstant
     """
     if custom is None:
@@ -2383,19 +2383,12 @@ def rolling_isconstant(a, w, custom=None):
             raise ValueError(msg)
 
         axis = a.ndim - 1
-        out = np.apply_along_axis(
+        T_subseq_isconstant = np.apply_along_axis(
             lambda a_row, w: custom(a_row, w), axis=axis, arr=a, w=w
         )
 
     elif isinstance(custom, np.ndarray):
-        if not issubclass(custom.dtype.type, np.bool_):
-            msg = (
-                f"the dtype of `custom` is {custom.dtype}"
-                + " but dtype `np.bool` was expected"
-            )
-            raise ValueError(msg)
-
-        out = custom
+        T_subseq_isconstant = custom
 
     else:
         msg = (
@@ -2404,7 +2397,14 @@ def rolling_isconstant(a, w, custom=None):
         )
         raise ValueError(msg)
 
-    return out
+    if not issubclass(T_subseq_isconstant.dtype.type, np.bool_):
+        msg = (
+            f"The dtype of `T_subseq_isconstant` is {T_subseq_isconstant.dtype} "
+            + "but dtype `np.bool` was expected"
+        )
+        raise ValueError(msg)
+
+    return T_subseq_isconstant
 
 
 def fix_isconstant_isfinite_conflicts(
