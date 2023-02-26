@@ -2359,7 +2359,7 @@ def rolling_isconstant(a, w, custom=None):
         boolean array that indicates whether a subsequence in `T` is constant
         (True). The function must only take two arguments, `a`, a 1-D array,
         and `w`, the window size, while additional arguments may be specified
-        by currying the user-defined function using `functools.partial`. When 
+        by currying the user-defined function using `functools.partial`. When
         None, this defaults to `_rolling_isconstant`.
 
     Returns
@@ -2370,24 +2370,7 @@ def rolling_isconstant(a, w, custom=None):
     if custom is None:
         custom = _rolling_isconstant
 
-    if not (isinstance(custom, np.ndarray) or callable(custom)):
-        msg = (
-            "The `custom` must be of type `np.ndarray` or a callable object. "
-            + f"Found {type(custom)} instead."
-        )
-        raise ValueError(msg)
-
-    if isinstance(custom, np.ndarray):
-        if not issubclass(custom.dtype.type, np.bool_):
-            msg = (
-                f"the dtype of `custom` is {custom.dtype}"
-                + " but dtype `np.bool` was expected"
-            )
-            raise ValueError(msg)
-
-        out = custom
-
-    else:
+    if callable(custom):
         custom_args = []
         for arg_name, arg in inspect.signature(custom).parameters.items():
             if arg.default == Parameter.empty:
@@ -2406,6 +2389,24 @@ def rolling_isconstant(a, w, custom=None):
         out = np.apply_along_axis(
             lambda a_row, w: custom(a_row, w), axis=axis, arr=a, w=w
         )
+
+    elif isinstance(custom, np.ndarray):
+        if not issubclass(custom.dtype.type, np.bool_):
+            msg = (
+                f"the dtype of `custom` is {custom.dtype}"
+                + " but dtype `np.bool` was expected"
+            )
+            raise ValueError(msg)
+
+        out = custom
+
+    else:
+        if not (isinstance(custom, np.ndarray) or callable(custom)):
+            msg = (
+                "The `custom` must be of type `np.ndarray` or a callable object. "
+                + f"Found {type(custom)} instead."
+            )
+            raise ValueError(msg)
 
     return out
 
