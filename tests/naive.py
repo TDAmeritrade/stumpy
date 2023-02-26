@@ -235,7 +235,7 @@ def stump(
                 elif T_A_subseq_isconstant[i] or T_B_subseq_isconstant[j]:
                     distance_matrix[i, j] = np.sqrt(m)
                 else:
-                    continue
+                    pass
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]

@@ -2374,7 +2374,7 @@ def rolling_isconstant(a, w, custom=None):
                 custom_args.append(arg_name)
 
         incomp_args = set(custom_args).difference({"a", "w"})
-        if len(incomp_args) > 0:
+        if len(incomp_args) > 0:  # pragma: no cover
             msg = (
                 f"Incompatible arguments {incomp_args} found in `custom_func`. "
                 + "Please provide a `custom_func` with arguments `a`, a 1-D array, "
@@ -2390,14 +2390,14 @@ def rolling_isconstant(a, w, custom=None):
     elif isinstance(custom, np.ndarray):
         T_subseq_isconstant = custom
 
-    else:
+    else:  # pragma: no cover
         msg = (
             "The `custom` must be of type `np.ndarray` or a callable object. "
             + f"Found {type(custom)} instead."
         )
         raise ValueError(msg)
 
-    if not issubclass(T_subseq_isconstant.dtype.type, np.bool_):
+    if not issubclass(T_subseq_isconstant.dtype.type, np.bool_):  # pragma: no cover
         msg = (
             f"The dtype of `T_subseq_isconstant` is {T_subseq_isconstant.dtype} "
             + "but dtype `np.bool` was expected"
