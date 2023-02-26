@@ -1943,7 +1943,7 @@ def preprocess(
     T[np.isinf(T)] = np.nan
 
     T_subseq_isconstant = rolling_isconstant(T, m, custom=T_subseq_isconstant)
-
+    T_subseq_isconstant = fix_isconstant_isfinite_conflicts(T, m, T_subseq_isconstant)
     if M_T is None or Σ_T is None:
         M_T, Σ_T = compute_mean_std(T, m)
     T[np.isnan(T)] = 0
@@ -2046,6 +2046,9 @@ def preprocess_diagonal(T, m, T_subseq_isconstant=None):
     T_subseq_isfinite = rolling_isfinite(T, m)
     T[~np.isfinite(T)] = np.nan
     T_subseq_isconstant = rolling_isconstant(T, m, custom=T_subseq_isconstant)
+    T_subseq_isconstant = fix_isconstant_isfinite_conflicts(
+        T, m, T_subseq_isconstant, T_subseq_isfinite
+    )
     T[np.isnan(T)] = 0
 
     M_T, Σ_T = compute_mean_std(T, m)
@@ -2414,6 +2417,32 @@ def rolling_isconstant(a, w, custom=None):
 def fix_isconstant_isfinite_conflicts(
     T, m, T_subseq_isconstant, T_subseq_isfinite=None
 ):
+    """
+    Fix `T_subseq_isconstant` by setting its element to False if their
+    corresponding value in `T_subseq_isfinite` is False.
+
+    Parameters
+    ----------
+    T : numpy.ndarray
+        Time series
+
+    m : int
+        Subsequence window size
+
+    T_subseq_isconstant : numpy.ndarray
+        A numpy array `dtype` of boolean that indicates whether a subsequence
+        is constant (True)  or not (False).
+
+        T_subseq_isfinite : numpy.ndarray, default None
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False)
+
+    Returns
+    -------
+    fixed : numpy.ndarray
+        The same as input `T_subseq_isconstant` but with indices set to False
+        if their corresponding subsequence are not finite.
+    """
     if T_subseq_isfinite is None:
         T_subseq_isfinite = rolling_isfinite(T, m)
 
