@@ -1527,3 +1527,22 @@ def test_gpu_searchsorted():
 def test_client_to_func():
     with pytest.raises(NotImplementedError):
         core._client_to_func(core)
+
+
+def test_fix_isconstant_isfinite_conflicts():
+    T = np.full(12, 0.0, dtype=np.float64)
+    nan_indices = [1, 5, 9]
+    for idx in nan_indices:
+        T[idx] = np.nan
+
+    m = 3
+
+    n = len(T) - m + 1
+    T_subseq_isconstant = np.full(n, 1, dtype=bool)
+
+    ref = T_subseq_isconstant.copy()
+    ref[~core.rolling_isfinite(T, m)] = False
+
+    comp = core.fix_isconstant_isfinite_conflicts(T, m, T_subseq_isconstant)
+
+    npt.assert_almost_equal(ref, comp)
