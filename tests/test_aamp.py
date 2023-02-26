@@ -236,3 +236,37 @@ def test_aamp_nan_zero_mean_self_join():
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
     npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_aamp_self_join_KNN(T_A, T_B):
+    m = 3
+    for k in range(2, 4):
+        for p in [1.0, 2.0, 3.0]:
+            ref_mp = naive.aamp(T_B, m, p=p, k=k)
+            comp_mp = aamp(T_B, m, p=p, k=k)
+            naive.replace_inf(ref_mp)
+            naive.replace_inf(comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)
+
+            comp_mp = aamp(pd.Series(T_B), m, p=p, k=k)
+            naive.replace_inf(comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_aamp_A_B_join_KNN(T_A, T_B):
+    m = 3
+    for k in range(2, 4):
+        for p in [1.0, 2.0, 3.0]:
+            ref_mp = naive.aamp(T_A, m, T_B=T_B, p=p, k=k)
+            comp_mp = aamp(T_A, m, T_B, ignore_trivial=False, p=p, k=k)
+            naive.replace_inf(ref_mp)
+            naive.replace_inf(comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)
+
+            comp_mp = aamp(
+                pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False, p=p, k=k
+            )
+            naive.replace_inf(comp_mp)
+            npt.assert_almost_equal(ref_mp, comp_mp)

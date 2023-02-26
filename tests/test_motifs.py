@@ -7,26 +7,11 @@ from stumpy import core, motifs, match
 import naive
 
 
-def naive_match(Q, T, excl_zone, max_distance):
+def naive_match(Q, T, excl_zone, max_distance, max_matches=None):
     m = Q.shape[0]
     D = naive.distance_profile(Q, T, m)
 
-    matches = []
-    for i in range(D.size):
-        dist = D[i]
-        if dist <= max_distance:
-            matches.append(i)
-
-    # Removes indices that are inside the exclusion zone of some occurrence with
-    # a smaller distance to the query
-    matches.sort(key=lambda x: D[x])
-    result = []
-    while len(matches) > 0:
-        o = matches[0]
-        result.append([D[o], o])
-        matches = [x for x in matches if x < o - excl_zone or x > o + excl_zone]
-
-    return np.array(result, dtype=object)
+    return naive.find_matches(D, excl_zone, max_distance, max_matches)
 
 
 test_data = [
@@ -208,7 +193,7 @@ def test_naive_match_exclusion_zone():
             max_distance=0.1,
         )
     )
-    # To avoid sorting errors we first sort based on disance and then based on indices
+    # To avoid sorting errors we first sort based on distance and then based on indices
     right.sort(key=lambda x: (x[1], x[0]))
 
     npt.assert_almost_equal(left, right)
@@ -250,7 +235,7 @@ def test_match_mean_stddev(Q, T):
         max_distance=max_distance,
     )
 
-    M_T, Σ_T = core.compute_mean_std(T, len(Q))
+    M_T, Σ_T = naive.compute_mean_std(T, len(Q))
 
     right = match(
         Q,
@@ -259,6 +244,61 @@ def test_match_mean_stddev(Q, T):
         Σ_T,
         max_matches=None,
         max_distance=lambda D: max_distance,  # also test lambda functionality
+    )
+
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_match_isconstant(Q, T):
+    m = Q.shape[0]
+    excl_zone = int(np.ceil(m / 4))
+    max_distance = 0.3
+
+    left = naive_match(
+        Q,
+        T,
+        excl_zone,
+        max_distance=max_distance,
+    )
+
+    T_subseq_isconstant = naive.rolling_isconstant(T, m)
+
+    right = match(
+        Q,
+        T,
+        max_matches=None,
+        max_distance=lambda D: max_distance,  # also test lambda functionality
+        T_subseq_isconstant=T_subseq_isconstant,
+    )
+
+    npt.assert_almost_equal(left, right)
+
+
+@pytest.mark.parametrize("Q, T", test_data)
+def test_match_mean_stddev_isconstant(Q, T):
+    m = Q.shape[0]
+    excl_zone = int(np.ceil(m / 4))
+    max_distance = 0.3
+
+    left = naive_match(
+        Q,
+        T,
+        excl_zone,
+        max_distance=max_distance,
+    )
+
+    T_subseq_isconstant = naive.rolling_isconstant(T, m)
+    M_T, Σ_T = naive.compute_mean_std(T, len(Q))
+
+    right = match(
+        Q,
+        T,
+        M_T,
+        Σ_T,
+        max_matches=None,
+        max_distance=lambda D: max_distance,  # also test lambda functionality
+        T_subseq_isconstant=T_subseq_isconstant,
     )
 
     npt.assert_almost_equal(left, right)

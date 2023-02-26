@@ -2,14 +2,12 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
+import warnings
 
 import numpy as np
 
 from .aamp_mmotifs import aamp_mmotifs
 from . import core, config, mdl, match
-
-logger = logging.getLogger(__name__)
 
 
 @core.non_normalized(aamp_mmotifs)
@@ -33,13 +31,13 @@ def mmotifs(
 
     Parameters
     ----------
-    T: numpy.ndarray
+    T : numpy.ndarray
         The multi-dimensional time series or sequence
 
-    P: numpy.ndarray
+    P : numpy.ndarray
         Multi-dimensional Matrix Profile of T
 
-    I: numpy.ndarray
+    I : numpy.ndarray
         Multi-dimensional Matrix Profile indices
 
     min_neighbors : int, default 1
@@ -47,37 +45,37 @@ def mmotifs(
         to be considered a motif. This defaults to `1`, which means that a subsequence
         must have at least one similar match in order to be considered a motif.
 
-    max_distance: flaot, default None
+    max_distance : flaot, default None
         Maximal distance that is allowed between a query subsequence
         (a candidate motif) and all subsequences in T to be considered as a match.
         If None, this defaults to
         `np.nanmax([np.nanmean(D) - 2 * np.nanstd(D), np.nanmin(D)])`
         (i.e. at least the closest match will be returned).
 
-    cutoffs: numpy.ndarray or float, default None
+    cutoffs : numpy.ndarray or float, default None
         The largest matrix profile value (distance) for each dimension of the
         multidimensional matrix profile that a multidimenisonal candidate motif is
         allowed to have. If `cutoffs` is a scalar value, then this value will be
         applied to every dimension.
 
-    max_matches: int, default 10
+    max_matches : int, default 10
         The maximum number of similar matches (nearest neighbors) to return for each
         motif. The first match is always the self/trivial-match for each motif.
 
-    max_motifs: int, default 1
+    max_motifs : int, default 1
         The maximum number of motifs to return
 
     atol : float, default 1e-8
         The absolute tolerance parameter. This value will be added to `max_distance`
         when comparing distances between subsequences.
 
-    k: int, default None
+    k : int, default None
         The number of dimensions (`k + 1`) required for discovering all motifs. This
         value is available for doing guided search or, together with `include`, for
         constrained search. If `k is None`, then this will be automatically be computed
         for each motif using MDL (unconstrained search).
 
-    include: numpy.ndarray, default None
+    include : numpy.ndarray, default None
         A list of (zero based) indices corresponding to the dimensions in T that must be
         included in the constrained multidimensional motif search.
 
@@ -130,14 +128,13 @@ def mmotifs(
     reset_k = False
 
     if max_motifs < 1:  # pragma: no cover
-        logger.warning(
-            "The maximum number of motifs, `max_motifs`, "
-            "must be greater than or equal to 1"
-        )
-        logger.warning("`max_motifs` has been set to `1`")
+        msg = "The maximum number of motifs, `max_motifs`, "
+        msg += "must be greater than or equal to 1.\n"
+        msg += "`max_motifs` has been set to `1`"
+        warnings.warn(msg)
         max_motifs = 1
 
-    T, M_T, Σ_T = core.preprocess(T, m)
+    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T, m)
     P = P.copy()
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
@@ -196,6 +193,7 @@ def mmotifs(
             query_idx=motif_idx,
             normalize=normalize,
             p=p,
+            T_subseq_isconstant=T_subseq_isconstant[subspace_k],
         )
 
         if len(query_matches) > min_neighbors:

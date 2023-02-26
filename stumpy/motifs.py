@@ -2,14 +2,12 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
+import warnings
 
 import numpy as np
 
 from .aamp_motifs import aamp_motifs, aamp_match
 from . import core, config
-
-logger = logging.getLogger(__name__)
 
 
 def _motifs(
@@ -17,6 +15,7 @@ def _motifs(
     P,
     M_T,
     Σ_T,
+    T_subseq_isconstant,
     excl_zone,
     min_neighbors,
     max_distance,
@@ -45,6 +44,9 @@ def _motifs(
 
     Σ_T : numpy.ndarray
         Sliding standard deviation of time series, `T`
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     excl_zone : int
         Size of the exclusion zone
@@ -96,7 +98,10 @@ def _motifs(
     motif_distances = []
 
     candidate_idx = np.argmin(P[-1])
-    while len(motif_indices) < max_motifs:
+    for _ in range(l):
+        if len(motif_indices) >= max_motifs:
+            break
+
         profile_value = P[-1, candidate_idx]
         if profile_value > cutoff or not np.isfinite(profile_value):  # pragma: no cover
             break
@@ -120,11 +125,15 @@ def _motifs(
             max_distance=max_distance,
             atol=atol,
             query_idx=candidate_idx,
+            T_subseq_isconstant=T_subseq_isconstant,
         )
 
         if len(query_matches) > min_neighbors:
             motif_distances.append(query_matches[:max_matches, 0])
             motif_indices.append(query_matches[:max_matches, 1])
+
+        if len(query_matches) == 0:  # pragma: no cover
+            query_matches = np.array([[np.nan, candidate_idx]])
 
         for idx in query_matches[:, 1]:
             core.apply_exclusion_zone(P, int(idx), excl_zone, np.inf)
@@ -167,13 +176,13 @@ def motifs(
     truncation in the number of rows (i.e., motifs)  may be the result of insufficient
     candidate motifs with matches greater than or equal to `min_neighbors` or that the
     matrix profile value for the candidate motif was larger than `cutoff`. Similarly,
-    any truncationin in the number of columns (i.e., matches) may be the result of
+    any truncation in the number of columns (i.e., matches) may be the result of
     insufficient matches being found with distances (to their corresponding candidate
     motif) that are equal to or less than `max_distance`. Only motifs and matches that
     satisfy all of these constraints will be returned.
 
     If you must return a shape of `(max_motifs, max_matches)`, then you may consider
-    specifying a smaller `min_neighors`, a larger `max_distance`, and/or a larger
+    specifying a smaller `min_neighbors`, a larger `max_distance`, and/or a larger
     `cutoff`. For example, while it is ill advised, setting `min_neighbors=1`,
     `max_distance=np.inf`, and `cutoff=np.inf` will ensure that the shape of the output
     arrays will be `(max_motifs, max_matches)`. However, given the lack of constraints,
@@ -266,11 +275,10 @@ def motifs(
     T = core._preprocess(T)
 
     if max_motifs < 1:  # pragma: no cover
-        logger.warn(
-            "The maximum number of motifs, `max_motifs`, "
-            "must be greater than or equal to 1"
-        )
-        logger.warn("`max_motifs` has been set to `1`")
+        msg = "The maximum number of motifs, `max_motifs`, "
+        msg += "must be greater than or equal to 1.\n"
+        msg += "`max_motifs` has been set to `1`"
+        warnings.warn(msg)
         max_motifs = 1
 
     if T.ndim != 1:  # pragma: no cover
@@ -296,7 +304,15 @@ def motifs(
             [np.nanmean(P_copy) - 2.0 * np.nanstd(P_copy), np.nanmin(P_copy)]
         )
 
-    T, M_T, Σ_T = core.preprocess(T[np.newaxis, :], m)
+    if cutoff == 0.0:  # pragma: no cover
+        suggested_cutoff = np.partition(P, 1)[1]
+        msg = "The `cutoff` has been set to 0.0 and may result in little/no candidate "
+        msg += "motifs being identified.\n"
+        msg += "You may consider relaxing the constraint by increasing the `cutoff` "
+        msg += f"(e.g., cutoff={suggested_cutoff})."
+        warnings.warn(msg)
+
+    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T[np.newaxis, :], m)
     P = P[np.newaxis, :].astype(np.float64)
 
     motif_distances, motif_indices = _motifs(
@@ -304,6 +320,7 @@ def motifs(
         P,
         M_T,
         Σ_T,
+        T_subseq_isconstant,
         excl_zone,
         min_neighbors,
         max_distance,
@@ -313,12 +330,25 @@ def motifs(
         atol=atol,
     )
 
+    if motif_distances.shape[1] == 0:  # pragma: no cover
+        msg = "No motifs were found. You may consider increasing the `cutoff` "
+        msg += f"(e.g., cutoff={2. * cutoff}) and/or increasing the `max_distance `"
+        msg += "(e.g., max_distance=np.inf)."
+        warnings.warn(msg)
+
     return motif_distances, motif_indices
 
 
 @core.non_normalized(
     aamp_match,
-    exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "p"],
+    exclude=[
+        "normalize",
+        "M_T",
+        "Σ_T",
+        "T_subseq_isfinite",
+        "T_subseq_isconstant",
+        "p",
+    ],
     replace={"M_T": "T_subseq_isfinite", "Σ_T": None},
 )
 def match(
@@ -332,6 +362,8 @@ def match(
     query_idx=None,
     normalize=True,
     p=2.0,
+    T_subseq_isfinite=None,
+    T_subseq_isconstant=None,
 ):
     """
     Find all matches of a query `Q` in a time series `T`
@@ -390,6 +422,14 @@ def match(
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
 
+    T_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False). This parameter is ignored when
+        `normalize=True`.
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
+
     Returns
     -------
     out : numpy.ndarray
@@ -419,6 +459,9 @@ def match(
     Q = core._preprocess(Q)
     T = core._preprocess(T)
 
+    if np.any(np.isnan(Q)) or np.any(np.isinf(Q)):  # pragma: no cover
+        raise ValueError("Q contains illegal values (NaN or inf)")
+
     if len(Q.shape) == 1:
         Q = Q[np.newaxis, :]
     if len(T.shape) == 1:
@@ -426,52 +469,34 @@ def match(
 
     d, n = T.shape
     m = Q.shape[1]
-
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-    if max_matches is None:  # pragma: no cover
-        max_matches = np.inf
 
-    if np.any(np.isnan(Q)) or np.any(np.isinf(Q)):  # pragma: no cover
-        raise ValueError("Q contains illegal values (NaN or inf)")
+    T[np.isinf(T)] = np.nan
+    if T_subseq_isconstant is None:
+        T_subseq_isconstant = core.rolling_isconstant(T, m)
+    if M_T is None or Σ_T is None:
+        M_T, Σ_T = core.compute_mean_std(T, m)
+    T[np.isnan(T)] = 0
 
-    if max_distance is None:  # pragma: no cover
-
-        def max_distance(D):
-            D_copy = D.copy().astype(np.float64)
-            D_copy[np.isinf(D_copy)] = np.nan
-            return np.nanmax(
-                [np.nanmean(D_copy) - 2.0 * np.nanstd(D_copy), np.nanmin(D_copy)]
-            )
-
-    if M_T is None or Σ_T is None:  # pragma: no cover
-        T, M_T, Σ_T = core.preprocess(T, m)
     if len(M_T.shape) == 1:
         M_T = M_T[np.newaxis, :]
     if len(Σ_T.shape) == 1:
         Σ_T = Σ_T[np.newaxis, :]
+    if len(T_subseq_isconstant.shape) == 1:
+        T_subseq_isconstant = T_subseq_isconstant[np.newaxis, :]
 
     D = np.empty((d, n - m + 1))
     for i in range(d):
-        D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
-
+        D[i, :] = core.mass(
+            Q[i], T[i], M_T[i], Σ_T[i], T_subseq_isconstant=T_subseq_isconstant[i]
+        )
     D = np.mean(D, axis=0)
-    if not isinstance(max_distance, float):
-        max_distance = max_distance(D)
 
-    matches = []
-
-    if query_idx is not None:
-        candidate_idx = query_idx
-    else:
-        candidate_idx = np.argmin(D)
-
-    while (
-        D[candidate_idx] <= atol + max_distance
-        and np.isfinite(D[candidate_idx])
-        and len(matches) < max_matches
-    ):
-        matches.append([D[candidate_idx], candidate_idx])
-        core.apply_exclusion_zone(D, candidate_idx, excl_zone, np.inf)
-        candidate_idx = np.argmin(D)
-
-    return np.array(matches, dtype=object)
+    return core._find_matches(
+        D,
+        excl_zone,
+        max_distance=max_distance,
+        max_matches=max_matches,
+        query_idx=query_idx,
+        atol=atol,
+    )

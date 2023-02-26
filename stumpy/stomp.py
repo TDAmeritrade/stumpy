@@ -2,13 +2,11 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import logging
+import warnings
 
 import numpy as np
 
 from . import core, stamp, config
-
-logger = logging.getLogger(__name__)
 
 
 def _stomp(T_A, m, T_B=None, ignore_trivial=True):
@@ -66,19 +64,16 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-    logger.warning(
-        "stumpy.stomp._stomp is not supported and only provided for reference."
-    )
-    logger.warning(
-        "Please use the Numba JIT-compiled stumpy.stump or stumpy.gpu_stump instead."
-    )
+    msg = "stumpy.stomp._stomp is not supported and only provided for reference.\n"
+    msg += "Please use the Numba JIT-compiled stumpy.stump or stumpy.gpu_stump instead."
+    warnings.warn(msg)
 
     if T_B is None:
         T_B = T_A
         ignore_trivial = True
 
-    T_A, μ_Q, σ_Q = core.preprocess(T_A, m)
-    T_B, M_T, Σ_T = core.preprocess(T_B, m)
+    T_A, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(T_A, m)
+    T_B, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T_B, m)
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
@@ -87,14 +82,7 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
 
     core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
-
-    if ignore_trivial is False and core.are_arrays_equal(T_A, T_B):  # pragma: no cover
-        logger.warning("Arrays T_A, T_B are equal, which implies a self-join.")
-        logger.warning("Try setting `ignore_trivial = True`.")
-
-    if ignore_trivial and core.are_arrays_equal(T_A, T_B) is False:  # pragma: no cover
-        logger.warning("Arrays T_A, T_B are not equal, which implies an AB-join.")
-        logger.warning("Try setting `ignore_trivial = False`.")
+    ignore_trivial = core.check_ignore_trivial(T_A, T_B, ignore_trivial)
 
     n = T_A.shape[0]
     l = n - m + 1
@@ -111,10 +99,14 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         IR = -1
     else:
         if ignore_trivial:
-            P, I = stamp._mass_PI(T_A[:m], T_B, M_T, Σ_T, 0, excl_zone)
-            PR, IR = stamp._mass_PI(T_A[:m], T_B, M_T, Σ_T, 0, excl_zone, right=True)
+            P, I = stamp._mass_PI(
+                T_A[:m], T_B, M_T, Σ_T, T_subseq_isconstant, 0, excl_zone
+            )
+            PR, IR = stamp._mass_PI(
+                T_A[:m], T_B, M_T, Σ_T, T_subseq_isconstant, 0, excl_zone, right=True
+            )
         else:
-            P, I = stamp._mass_PI(T_A[:m], T_B, M_T, Σ_T)
+            P, I = stamp._mass_PI(T_A[:m], T_B, M_T, Σ_T, T_subseq_isconstant)
             IR = -1  # No left and right matrix profile available
 
     out[0] = P, I, -1, IR
@@ -130,7 +122,14 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
         QT[0] = QT_first[i]
 
         D = core._calculate_squared_distance_profile(
-            m, QT, μ_Q[i].item(0), σ_Q[i].item(0), M_T, Σ_T
+            m,
+            QT,
+            μ_Q[i],
+            σ_Q[i],
+            M_T,
+            Σ_T,
+            Q_subseq_isconstant[i],
+            T_subseq_isconstant,
         )
         if ignore_trivial:
             core.apply_exclusion_zone(D, i, excl_zone, np.inf)
@@ -159,9 +158,6 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
 
         out[i] = P, I, IL, IR
 
-    threshold = 10e-6
-    if core.are_distances_too_small(out[:, 0], threshold=threshold):  # pragma: no cover
-        logger.warning(f"A large number of values are smaller than {threshold}.")
-        logger.warning("For a self-join, try setting `ignore_trivial = True`.")
+    core._check_P(out[:, 0])
 
     return out

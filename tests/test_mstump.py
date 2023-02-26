@@ -58,8 +58,11 @@ def test_multi_mass_seeded():
 
     ref = naive.multi_mass(Q, T, m)
 
+    T_subseq_isconstant = core.rolling_isconstant(T, m)
     M_T, Σ_T = core.compute_mean_std(T, m)
-    comp = _multi_mass(Q, T, m, M_T, Σ_T, M_T[:, trivial_idx], Σ_T[:, trivial_idx])
+    comp = _multi_mass(
+        Q, T, m, M_T, Σ_T, M_T[:, trivial_idx], Σ_T[:, trivial_idx], T_subseq_isconstant
+    )
 
     npt.assert_almost_equal(ref, comp, decimal=config.STUMPY_TEST_PRECISION)
 
@@ -72,8 +75,11 @@ def test_multi_mass(T, m):
 
     ref = naive.multi_mass(Q, T, m)
 
+    T_subseq_isconstant = core.rolling_isconstant(T, m)
     M_T, Σ_T = core.compute_mean_std(T, m)
-    comp = _multi_mass(Q, T, m, M_T, Σ_T, M_T[:, trivial_idx], Σ_T[:, trivial_idx])
+    comp = _multi_mass(
+        Q, T, m, M_T, Σ_T, M_T[:, trivial_idx], Σ_T[:, trivial_idx], T_subseq_isconstant
+    )
 
     npt.assert_almost_equal(ref, comp, decimal=config.STUMPY_TEST_PRECISION)
 
@@ -98,9 +104,10 @@ def test_get_first_mstump_profile(T, m):
     ref_P = ref_P[:, start]
     ref_I = ref_I[:, start]
 
+    T_subseq_isconstant = core.rolling_isconstant(T, m)
     M_T, Σ_T = core.compute_mean_std(T, m)
     comp_P, comp_I = _get_first_mstump_profile(
-        start, T, T, m, excl_zone, M_T, Σ_T, M_T, Σ_T
+        start, T, T, m, excl_zone, M_T, Σ_T, M_T, Σ_T, T_subseq_isconstant
     )
 
     npt.assert_almost_equal(ref_P, comp_P)
@@ -197,7 +204,7 @@ def test_naive_mstump():
 
     zone = int(np.ceil(m / 4))
 
-    ref_mp = naive.stamp(T[0], m, exclusion_zone=zone)
+    ref_mp = naive.stump(T[0], m, exclusion_zone=zone, row_wise=True)
     ref_P = ref_mp[np.newaxis, :, 0]
     ref_I = ref_mp[np.newaxis, :, 1]
 

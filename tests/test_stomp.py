@@ -30,7 +30,7 @@ def test_stomp_int_input():
 def test_stomp_self_join(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
-    ref_mp = naive.stamp(T_B, m, exclusion_zone=zone)
+    ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True)
     comp_mp = stomp._stomp(T_B, m, ignore_trivial=True)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -42,7 +42,7 @@ def test_stomp_self_join(T_A, T_B):
 def test_stump_self_join_larger_window(T_A, T_B, m):
     if len(T_B) > m:
         zone = int(np.ceil(m / 4))
-        ref_mp = naive.stamp(T_B, m, exclusion_zone=zone)
+        ref_mp = naive.stump(T_B, m, exclusion_zone=zone, row_wise=True)
         comp_mp = stomp._stomp(T_B, m, ignore_trivial=True)
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
@@ -53,7 +53,7 @@ def test_stump_self_join_larger_window(T_A, T_B, m):
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stomp_A_B_join(T_A, T_B):
     m = 3
-    ref_mp = naive.stamp(T_A, m, T_B=T_B)
+    ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True)
     comp_mp = stomp._stomp(T_A, m, T_B, ignore_trivial=False)
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
@@ -73,7 +73,7 @@ def test_stomp_nan_inf_self_join(T_A, T_B, substitute_B, substitution_locations)
         T_B_sub[substitution_location_B] = substitute_B
 
         zone = int(np.ceil(m / 4))
-        ref_mp = naive.stamp(T_B_sub, m, exclusion_zone=zone)
+        ref_mp = naive.stump(T_B_sub, m, exclusion_zone=zone, row_wise=True)
         comp_mp = stomp._stomp(T_B_sub, m, ignore_trivial=True)
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
@@ -99,7 +99,7 @@ def test_stomp_nan_inf_A_B_join(
             T_A_sub[substitution_location_A] = substitute_A
             T_B_sub[substitution_location_B] = substitute_B
 
-            ref_mp = naive.stamp(T_A_sub, m, T_B=T_B_sub)
+            ref_mp = naive.stump(T_A_sub, m, T_B=T_B_sub, row_wise=True)
             comp_mp = stomp._stomp(T_A_sub, m, T_B_sub, ignore_trivial=False)
             naive.replace_inf(ref_mp)
             naive.replace_inf(comp_mp)
@@ -111,7 +111,7 @@ def test_stomp_nan_zero_mean_self_join():
     m = 3
 
     zone = int(np.ceil(m / 4))
-    ref_mp = naive.stamp(T, m, exclusion_zone=zone)
+    ref_mp = naive.stump(T, m, exclusion_zone=zone, row_wise=True)
     comp_mp = stomp._stomp(T, m, ignore_trivial=True)
 
     naive.replace_inf(ref_mp)
