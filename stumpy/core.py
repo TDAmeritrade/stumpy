@@ -5,7 +5,6 @@
 import warnings
 import functools
 import inspect
-from inspect import Parameter
 
 import numpy as np
 from numba import njit, cuda, prange
@@ -2370,7 +2369,7 @@ def rolling_isconstant(a, w, custom=None):
     if callable(custom):
         custom_args = []
         for arg_name, arg in inspect.signature(custom).parameters.items():
-            if arg.default == Parameter.empty:
+            if arg.default == inspect.Parameter.empty:
                 custom_args.append(arg_name)
 
         incomp_args = set(custom_args).difference({"a", "w"})
