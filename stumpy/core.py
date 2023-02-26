@@ -2398,12 +2398,11 @@ def rolling_isconstant(a, w, custom=None):
         out = custom
 
     else:
-        if not (isinstance(custom, np.ndarray) or callable(custom)):
-            msg = (
-                "The `custom` must be of type `np.ndarray` or a callable object. "
-                + f"Found {type(custom)} instead."
-            )
-            raise ValueError(msg)
+        msg = (
+            "The `custom` must be of type `np.ndarray` or a callable object. "
+            + f"Found {type(custom)} instead."
+        )
+        raise ValueError(msg)
 
     return out
 
