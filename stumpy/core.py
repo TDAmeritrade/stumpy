@@ -2053,12 +2053,6 @@ def preprocess_diagonal(T, m, T_subseq_isconstant=None):
 
     M_T, Σ_T = compute_mean_std(T, m)
     Σ_T[T_subseq_isconstant] = 1.0  # Avoid divide by zero in next inversion step
-    if np.any(Σ_T == 0.0):  # pragma nocover
-        raise ValueError(
-            "The sliding standard deviation of input contains 0.0 at indices"
-            "where T_subseq_isconstant is False. Try to set those indices to"
-            "True in `T_subseq_isconstant`."
-        )
     Σ_T_inverse = 1.0 / Σ_T
     M_T_m_1, _ = compute_mean_std(T, m - 1)
 
