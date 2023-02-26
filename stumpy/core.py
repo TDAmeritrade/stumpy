@@ -2411,6 +2411,24 @@ def rolling_isconstant(a, w, custom=None):
     return out
 
 
+def fix_isconstant_isfinite_conflicts(
+    T, m, T_subseq_isconstant, T_subseq_isfinite=None
+):
+    if T_subseq_isfinite is None:
+        T_subseq_isfinite = rolling_isfinite(T, m)
+
+    fixed = np.logical_and(T_subseq_isconstant, T_subseq_isfinite)
+    msg = (
+        "Found indices where T_subseq_isconstant is True for subsequence "
+        + "with at least one np.nan/np.inf. Their corresponding value in "
+        + "T_subseq_isconstant is changed to False. The indices are: \n "
+        + f"{np.where(fixed != T_subseq_isconstant)}"
+    )
+    warnings.warn(msg)
+
+    return fixed
+
+
 def _get_partial_mp_func(mp_func, client=None, device_id=None):
     """
     A convenience function for creating a `functools.partial` matrix profile function
