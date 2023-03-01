@@ -2449,10 +2449,10 @@ def fix_isconstant_isfinite_conflicts(
     conflicts = fixed != T_subseq_isconstant
     if np.any(conflicts):
         msg = (
-            "Found indices where T_subseq_isconstant is True for subsequence "
-            + "with at least one np.nan/np.inf. Their corresponding value in "
-            + "T_subseq_isconstant is changed to False. The affected indices "
-            + f" are: \n {np.nonzero(conflicts)}"
+            f"Subsequences located at indices {np.nonzero(conflicts)} contain one "
+            + "or more np.nan/np.inf and so their corresponding values in "
+            + "`T_subseq_isconstant` have been automatically switched from True "
+            + " to False."
         )
         warnings.warn(msg)
 
