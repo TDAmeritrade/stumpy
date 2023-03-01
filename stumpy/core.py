@@ -1941,7 +1941,7 @@ def preprocess(
 
     T[np.isinf(T)] = np.nan
 
-    T_subseq_isconstant = rolling_isconstant(T, m, custom=T_subseq_isconstant)
+    T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
     T_subseq_isconstant = fix_isconstant_isfinite_conflicts(T, m, T_subseq_isconstant)
     if M_T is None or Σ_T is None:
         M_T, Σ_T = compute_mean_std(T, m)
@@ -2044,7 +2044,7 @@ def preprocess_diagonal(T, m, T_subseq_isconstant=None):
     check_window_size(m, max_size=T.shape[-1])
     T_subseq_isfinite = rolling_isfinite(T, m)
     T[~np.isfinite(T)] = np.nan
-    T_subseq_isconstant = rolling_isconstant(T, m, custom=T_subseq_isconstant)
+    T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
     T_subseq_isconstant = fix_isconstant_isfinite_conflicts(
         T, m, T_subseq_isconstant, T_subseq_isfinite
     )
@@ -2333,7 +2333,7 @@ def _rolling_isconstant(a, w):
     return np.where(out == 0.0, True, False)
 
 
-def rolling_isconstant(a, w, custom=None):
+def rolling_isconstant(a, w, T_subseq_isconstant=None):
     """
     Compute the rolling isconstant for 1-D and 2-D arrays.
 
@@ -2349,7 +2349,7 @@ def rolling_isconstant(a, w, custom=None):
     w : numpy.ndarray
         The rolling window size
 
-    custom : np.ndarray or function, default None
+    T_subseq_isconstant : np.ndarray or function, default None
         A boolean array that indicates whether a subsequence in `T` is constant
         (True). Alternatively, a custom, user-defined function that returns a
         boolean array that indicates whether a subsequence in `T` is constant
@@ -2363,42 +2363,48 @@ def rolling_isconstant(a, w, custom=None):
     T_subseq_isconstant : numpy.ndarray
         Rolling window isconstant
     """
-    if custom is None:
-        custom = _rolling_isconstant
+    if T_subseq_isconstant is None:
+        T_subseq_isconstant = _rolling_isconstant
 
-    if callable(custom):
-        custom_args = []
-        for arg_name, arg in inspect.signature(custom).parameters.items():
+    isconstant_func = None
+    if callable(T_subseq_isconstant):
+        non_default_args = []
+        for arg_name, arg in inspect.signature(T_subseq_isconstant).parameters.items():
+            # inspect.signature(functools.partial(f)) returns all arguments
+            # including the ones with default values. the following if block
+            # is to find non-default arguments.
             if arg.default == inspect.Parameter.empty:
-                custom_args.append(arg_name)
+                non_default_args.append(arg_name)
 
-        incomp_args = set(custom_args).difference({"a", "w"})
+        incomp_args = set(non_default_args).difference({"a", "w"})
         if len(incomp_args) > 0:  # pragma: no cover
             msg = (
-                f"Incompatible arguments {incomp_args} found in `custom_func`. "
-                + "Please provide a `custom_func` with arguments `a`, a 1-D array, "
-                + "and `w`, the window size."
+                f"Incompatible arguments {incomp_args} found in `T_subseq_isconstant`. "
+                + "Please provide the custom function `T_subseq_isconstant` with "
+                + "arguments `a`, a 1-D array, and `w`, the window size."
             )
             raise ValueError(msg)
 
-        axis = a.ndim - 1
-        T_subseq_isconstant = np.apply_along_axis(
-            lambda a_row, w: custom(a_row, w), axis=axis, arr=a, w=w
-        )
+        isconstant_func = T_subseq_isconstant
 
-    elif isinstance(custom, np.ndarray):
-        T_subseq_isconstant = custom
-
+    elif isinstance(T_subseq_isconstant, np.ndarray):
+        isconstant_func = None
     else:  # pragma: no cover
         msg = (
-            "The `custom` must be of type `np.ndarray` or a callable object. "
-            + f"Found {type(custom)} instead."
+            "`T_subseq_isconstant` must be of type `np.ndarray` or a callable "
+            + f"function. Found {type(T_subseq_isconstant)} instead."
         )
         raise ValueError(msg)
 
+    if isconstant_func is not None:
+        axis = a.ndim - 1
+        T_subseq_isconstant = np.apply_along_axis(
+            lambda a_row, w: isconstant_func(a_row, w), axis=axis, arr=a, w=w
+        )
+
     if not issubclass(T_subseq_isconstant.dtype.type, np.bool_):  # pragma: no cover
         msg = (
-            f"The dtype of `T_subseq_isconstant` is {T_subseq_isconstant.dtype} "
+            f"The output dtype of `T_subseq_isconstant` is {T_subseq_isconstant.dtype} "
             + "but dtype `np.bool` was expected"
         )
         raise ValueError(msg)
