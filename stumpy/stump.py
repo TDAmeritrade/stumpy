@@ -201,15 +201,16 @@ def _compute_diagonal(
 
             if T_B_subseq_isfinite[uint64_j] and T_A_subseq_isfinite[uint64_i]:
                 # Neither subsequence contains NaNs
-                if T_B_subseq_isconstant[uint64_j] or T_A_subseq_isconstant[uint64_i]:
+                if T_B_subseq_isconstant[uint64_j] and T_A_subseq_isconstant[uint64_i]:
+                    pearson = 1.0
+                elif T_B_subseq_isconstant[uint64_j] or T_A_subseq_isconstant[uint64_i]:
                     pearson = 0.5
                 else:
                     pearson = cov * Σ_T_inverse[uint64_j] * σ_Q_inverse[uint64_i]
+                    if pearson > 1.0:
+                        pearson = 1.0
 
-                if T_B_subseq_isconstant[uint64_j] and T_A_subseq_isconstant[uint64_i]:
-                    pearson = 1.0
-
-                # `ρ[thread_idx, i, :]` is sorted ascendingly and MUST be updated
+                # `ρ[thread_idx, i, :]` is sorted in ascending order and MUST be updated
                 # when the newly-calculated `pearson` value becomes greater than the
                 # first (i.e. smallest) element in this array. Note that a higher
                 # pearson value corresponds to a lower distance.

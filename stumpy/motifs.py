@@ -15,6 +15,7 @@ def _motifs(
     P,
     M_T,
     Σ_T,
+    T_subseq_isconstant,
     excl_zone,
     min_neighbors,
     max_distance,
@@ -43,6 +44,9 @@ def _motifs(
 
     Σ_T : numpy.ndarray
         Sliding standard deviation of time series, `T`
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     excl_zone : int
         Size of the exclusion zone
@@ -121,6 +125,7 @@ def _motifs(
             max_distance=max_distance,
             atol=atol,
             query_idx=candidate_idx,
+            T_subseq_isconstant=T_subseq_isconstant,
         )
 
         if len(query_matches) > min_neighbors:
@@ -171,13 +176,13 @@ def motifs(
     truncation in the number of rows (i.e., motifs)  may be the result of insufficient
     candidate motifs with matches greater than or equal to `min_neighbors` or that the
     matrix profile value for the candidate motif was larger than `cutoff`. Similarly,
-    any truncationin in the number of columns (i.e., matches) may be the result of
+    any truncation in the number of columns (i.e., matches) may be the result of
     insufficient matches being found with distances (to their corresponding candidate
     motif) that are equal to or less than `max_distance`. Only motifs and matches that
     satisfy all of these constraints will be returned.
 
     If you must return a shape of `(max_motifs, max_matches)`, then you may consider
-    specifying a smaller `min_neighors`, a larger `max_distance`, and/or a larger
+    specifying a smaller `min_neighbors`, a larger `max_distance`, and/or a larger
     `cutoff`. For example, while it is ill advised, setting `min_neighbors=1`,
     `max_distance=np.inf`, and `cutoff=np.inf` will ensure that the shape of the output
     arrays will be `(max_motifs, max_matches)`. However, given the lack of constraints,
@@ -307,7 +312,7 @@ def motifs(
         msg += f"(e.g., cutoff={suggested_cutoff})."
         warnings.warn(msg)
 
-    T, M_T, Σ_T = core.preprocess(T[np.newaxis, :], m)
+    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T[np.newaxis, :], m)
     P = P[np.newaxis, :].astype(np.float64)
 
     motif_distances, motif_indices = _motifs(
@@ -315,6 +320,7 @@ def motifs(
         P,
         M_T,
         Σ_T,
+        T_subseq_isconstant,
         excl_zone,
         min_neighbors,
         max_distance,
@@ -324,12 +330,25 @@ def motifs(
         atol=atol,
     )
 
+    if motif_distances.shape[1] == 0:  # pragma: no cover
+        msg = "No motifs were found. You may consider increasing the `cutoff` "
+        msg += f"(e.g., cutoff={2. * cutoff}) and/or increasing the `max_distance `"
+        msg += "(e.g., max_distance=np.inf)."
+        warnings.warn(msg)
+
     return motif_distances, motif_indices
 
 
 @core.non_normalized(
     aamp_match,
-    exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "p"],
+    exclude=[
+        "normalize",
+        "M_T",
+        "Σ_T",
+        "T_subseq_isfinite",
+        "T_subseq_isconstant",
+        "p",
+    ],
     replace={"M_T": "T_subseq_isfinite", "Σ_T": None},
 )
 def match(
@@ -344,6 +363,7 @@ def match(
     normalize=True,
     p=2.0,
     T_subseq_isfinite=None,
+    T_subseq_isconstant=None,
 ):
     """
     Find all matches of a query `Q` in a time series `T`
@@ -407,6 +427,9 @@ def match(
         `np.nan`/`np.inf` value (False). This parameter is ignored when
         `normalize=True`.
 
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
+
     Returns
     -------
     out : numpy.ndarray
@@ -448,16 +471,25 @@ def match(
     m = Q.shape[1]
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    if M_T is None or Σ_T is None:  # pragma: no cover
-        T, M_T, Σ_T = core.preprocess(T, m)
+    T[np.isinf(T)] = np.nan
+    if T_subseq_isconstant is None:
+        T_subseq_isconstant = core.rolling_isconstant(T, m)
+    if M_T is None or Σ_T is None:
+        M_T, Σ_T = core.compute_mean_std(T, m)
+    T[np.isnan(T)] = 0
+
     if len(M_T.shape) == 1:
         M_T = M_T[np.newaxis, :]
     if len(Σ_T.shape) == 1:
         Σ_T = Σ_T[np.newaxis, :]
+    if len(T_subseq_isconstant.shape) == 1:
+        T_subseq_isconstant = T_subseq_isconstant[np.newaxis, :]
 
     D = np.empty((d, n - m + 1))
     for i in range(d):
-        D[i, :] = core.mass(Q[i], T[i], M_T[i], Σ_T[i])
+        D[i, :] = core.mass(
+            Q[i], T[i], M_T[i], Σ_T[i], T_subseq_isconstant=T_subseq_isconstant[i]
+        )
     D = np.mean(D, axis=0)
 
     return core._find_matches(

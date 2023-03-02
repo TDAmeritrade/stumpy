@@ -932,7 +932,9 @@ def compute_mean_std(T, m):
     # "f8(i8, f8, f8, f8, f8, f8)",
     fastmath=True
 )
-def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
+def _calculate_squared_distance(
+    m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
+):
     """
     Compute a single squared distance given all scalar inputs. This function serves as
     the single source of truth for how all distances should be calculated.
@@ -943,19 +945,27 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
         Window size
 
     QT : float
-        Dot product between `Q[i]` and `T[i]`
+        Pre-computed dot product between `Q` and the ith subsequence in `T`, each with
+        length `m`
 
     μ_Q : float
-        Mean of `Q[i]`
+        Mean of `Q`
 
     σ_Q : float
-        Standard deviation of `Q[i]`
+        Standard deviation of `Q`
 
     M_T : float
-        Sliding mean of `T[i]`
+        Mean of the ith subsequence in `T`
 
     Σ_T : float
-        Sliding standard deviation of `T[i]`
+        Standard deviation of the ith subsequence in `T`
+
+    Q_subseq_isconstant : bool
+        A boolean value that indicates whether the subsequence `Q` is constant (True)
+
+    T_subseq_isconstant : bool
+        A boolean value that indicates whether the ith subsequence in `T` is
+        constant (True)
 
     Returns
     -------
@@ -971,20 +981,18 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     if np.isinf(M_T) or np.isinf(μ_Q):
         D_squared = np.inf
+    elif Q_subseq_isconstant and T_subseq_isconstant:
+        D_squared = 0
+    elif Q_subseq_isconstant or T_subseq_isconstant:
+        D_squared = m
     else:
-        if σ_Q < config.STUMPY_STDDEV_THRESHOLD or Σ_T < config.STUMPY_STDDEV_THRESHOLD:
-            D_squared = m
-        else:
-            denom = m * σ_Q * Σ_T
-            if np.abs(denom) < config.STUMPY_DENOM_THRESHOLD:  # pragma nocover
-                denom = config.STUMPY_DENOM_THRESHOLD
-            D_squared = np.abs(2 * m * (1.0 - (QT - m * μ_Q * M_T) / denom))
+        denom = m * σ_Q * Σ_T
+        denom = max(denom, config.STUMPY_DENOM_THRESHOLD)
 
-        if (
-            σ_Q < config.STUMPY_STDDEV_THRESHOLD
-            and Σ_T < config.STUMPY_STDDEV_THRESHOLD
-        ) or D_squared < config.STUMPY_P_NORM_THRESHOLD:
-            D_squared = 0
+        ρ = (QT - m * μ_Q * M_T) / denom
+        ρ = min(ρ, 1.0)
+
+        D_squared = np.abs(2 * m * (1.0 - ρ))
 
     return D_squared
 
@@ -993,7 +1001,9 @@ def _calculate_squared_distance(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
     fastmath=True,
 )
-def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
+def _calculate_squared_distance_profile(
+    m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
+):
     """
     Compute the squared distance profile
 
@@ -1017,6 +1027,12 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     Σ_T : numpy.ndarray
         Sliding standard deviation of `T`
 
+    Q_subseq_isconstant : bool
+        A boolean value that indicates whether the subsequence `Q` is constant (True)
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
+
     Returns
     -------
     D_squared : numpy.ndarray
@@ -1033,7 +1049,16 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     D_squared = np.empty(k, dtype=np.float64)
 
     for i in range(k):
-        D_squared[i] = _calculate_squared_distance(m, QT[i], μ_Q, σ_Q, M_T[i], Σ_T[i])
+        D_squared[i] = _calculate_squared_distance(
+            m,
+            QT[i],
+            μ_Q,
+            σ_Q,
+            M_T[i],
+            Σ_T[i],
+            Q_subseq_isconstant,
+            T_subseq_isconstant[i],
+        )
 
     return D_squared
 
@@ -1042,7 +1067,9 @@ def _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
     fastmath=True,
 )
-def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
+def calculate_distance_profile(
+    m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
+):
     """
     Compute the distance profile
 
@@ -1066,6 +1093,12 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
     Σ_T : numpy.ndarray
         Sliding standard deviation of `T`
 
+    Q_subseq_isconstant : bool
+        A boolean value that indicates whether the subsequence `Q` is constant (True)
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
+
     Returns
     -------
     output : numpy.ndarray
@@ -1078,7 +1111,9 @@ def calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T):
 
     See Equation on Page 4
     """
-    D_squared = _calculate_squared_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
+    D_squared = _calculate_squared_distance_profile(
+        m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
+    )
 
     return np.sqrt(D_squared)
 
@@ -1217,7 +1252,7 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
         distance_profile[:] = np.inf
     else:
         if T_subseq_isfinite is None:
-            T, T_subseq_isfinite, T_subseq_isconstant = preprocess_non_normalized(T, m)
+            T, T_subseq_isfinite = preprocess_non_normalized(T, m)
         distance_profile[:] = _mass_absolute(Q, T, p)
         distance_profile[~T_subseq_isfinite] = np.inf
 
@@ -1331,7 +1366,7 @@ def mueen_calculate_distance_profile(Q, T):
     # "f8[:](f8[:], f8[:], f8[:], f8, f8, f8[:], f8[:])",
     fastmath=True
 )
-def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
+def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant):
     """
     A Numba JIT compiled algorithm for computing the distance profile using the MASS
     algorithm.
@@ -1365,6 +1400,12 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
     Σ_T : numpy.ndarray
         Sliding standard deviation of `T`
 
+    Q_subseq_isconstant : bool
+        A boolean value that indicates whether the subsequence `Q` is constant (True)
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
+
     Returns
     -------
     output : numpy.ndarray
@@ -1384,12 +1425,21 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T):
     """
     m = Q.shape[0]
 
-    return calculate_distance_profile(m, QT, μ_Q, σ_Q, M_T, Σ_T)
+    return calculate_distance_profile(
+        m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
+    )
 
 
 @non_normalized(
     mass_absolute,
-    exclude=["normalize", "M_T", "Σ_T", "T_subseq_isfinite", "p"],
+    exclude=[
+        "normalize",
+        "M_T",
+        "Σ_T",
+        "T_subseq_isfinite",
+        "p",
+        "T_subseq_isconstant",
+    ],
     replace={"M_T": "T_subseq_isfinite", "Σ_T": None},
 )
 def mass(
@@ -1400,6 +1450,7 @@ def mass(
     normalize=True,
     p=2.0,
     T_subseq_isfinite=None,
+    T_subseq_isconstant=None,
 ):
     """
     Compute the distance profile using the MASS algorithm
@@ -1429,10 +1480,13 @@ def mass(
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
 
-    T_subseq_isfinite : numpy.ndarray
+    T_subseq_isfinite : numpy.ndarray, default None
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False). This parameter is ignored when
         `normalize=True`.
+
+    T_subseq_isconstant : numpy.ndarray, default None
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     Returns
     -------
@@ -1494,19 +1548,32 @@ def mass(
     if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
-        if M_T is None or Σ_T is None:
-            T, M_T, Σ_T = preprocess(T, m)
+        T, M_T, Σ_T, T_subseq_isconstant = preprocess(
+            T, m, copy=False, M_T=M_T, Σ_T=Σ_T, T_subseq_isconstant=T_subseq_isconstant
+        )
 
         QT = sliding_dot_product(Q, T)
-        μ_Q, σ_Q = compute_mean_std(Q, m)
-        μ_Q = μ_Q[0]
-        σ_Q = σ_Q[0]
-        distance_profile[:] = _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T)
+        Q_subseq_isconstant = rolling_isconstant(Q, m)[0]
+        μ_Q, σ_Q = [arr[0] for arr in compute_mean_std(Q, m)]
+        distance_profile[:] = _mass(
+            Q, T, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
+        )
 
     return distance_profile
 
 
-def _mass_distance_matrix(Q, T, m, distance_matrix, μ_Q, σ_Q, M_T, Σ_T):
+def _mass_distance_matrix(
+    Q,
+    T,
+    m,
+    distance_matrix,
+    μ_Q,
+    σ_Q,
+    M_T,
+    Σ_T,
+    Q_subseq_isconstant,
+    T_subseq_isconstant,
+):
     """
     Compute the full distance matrix between all of the subsequences of `Q` and `T`
     using the MASS algorithm
@@ -1537,6 +1604,12 @@ def _mass_distance_matrix(Q, T, m, distance_matrix, μ_Q, σ_Q, M_T, Σ_T):
     Σ_T : numpy.ndarray
         Sliding standard deviation of `T`
 
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `Q` is constant (True)
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
+
     Returns
     -------
         None
@@ -1546,10 +1619,22 @@ def _mass_distance_matrix(Q, T, m, distance_matrix, μ_Q, σ_Q, M_T, Σ_T):
             distance_matrix[i, :] = np.inf
         else:
             QT = _sliding_dot_product(Q[i : i + m], T)
-            distance_matrix[i, :] = _mass(Q[i : i + m], T, QT, μ_Q[i], σ_Q[i], M_T, Σ_T)
+            distance_matrix[i, :] = _mass(
+                Q[i : i + m],
+                T,
+                QT,
+                μ_Q[i],
+                σ_Q[i],
+                M_T,
+                Σ_T,
+                Q_subseq_isconstant[i],
+                T_subseq_isconstant,
+            )
 
 
-def mass_distance_matrix(Q, T, m, distance_matrix, M_T=None, Σ_T=None):
+def mass_distance_matrix(
+    Q, T, m, distance_matrix, M_T=None, Σ_T=None, T_subseq_isconstant=None
+):
     """
     Compute the full distance matrix between all of the subsequences of `Q` and `T`
     using the MASS algorithm
@@ -1574,18 +1659,33 @@ def mass_distance_matrix(Q, T, m, distance_matrix, M_T=None, Σ_T=None):
     Σ_T : numpy.ndarray, default None
         Sliding standard deviation of `T`
 
+    T_subseq_isconstant : numpy.ndarray, default None
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
+
     Returns
     -------
         None
     """
-    Q, μ_Q, σ_Q = preprocess(Q, m)
+    Q, μ_Q, σ_Q, Q_subseq_isconstant = preprocess(Q, m)
 
-    if M_T is None or Σ_T is None:
-        T, M_T, Σ_T = preprocess(T, m)
+    T, M_T, Σ_T, T_subseq_isconstant = preprocess(
+        T, m, copy=True, M_T=M_T, Σ_T=Σ_T, T_subseq_isconstant=T_subseq_isconstant
+    )
 
     check_window_size(m, max_size=min(Q.shape[-1], T.shape[-1]))
 
-    return _mass_distance_matrix(Q, T, m, distance_matrix, μ_Q, σ_Q, M_T, Σ_T)
+    return _mass_distance_matrix(
+        Q,
+        T,
+        m,
+        distance_matrix,
+        μ_Q,
+        σ_Q,
+        M_T,
+        Σ_T,
+        Q_subseq_isconstant,
+        T_subseq_isconstant,
+    )
 
 
 def _get_QT(start, T_A, T_B, m):
@@ -1681,22 +1781,27 @@ def apply_exclusion_zone(a, idx, excl_zone, val):
     _apply_exclusion_zone(a, idx, excl_zone, val)
 
 
-def _preprocess(T):
+def _preprocess(T, copy=True):
     """
-    Creates a copy of the time series, transposes all dataframes, converts to
-    `numpy.ndarray`, and checks the `dtype`
+    Creates a copy of the time series when `copy` is True, transposes all dataframes,
+    converts to `numpy.ndarray`, and checks the `dtype`
 
     Parameters
     ----------
     T : numpy.ndarray
         Time series or sequence
 
+    copy : bool, default True
+        A boolean value that indicates whether the process should be done on
+        input `T` (False) or its copy (True).
+
     Returns
     -------
     T : numpy.ndarray
         Modified time series
     """
-    T = T.copy()
+    if copy:
+        T = T.copy()
     T = transpose_dataframe(T)
     T = np.asarray(T)
     check_dtype(T)
@@ -1704,14 +1809,17 @@ def _preprocess(T):
     return T
 
 
-def preprocess(T, m):
+def preprocess(T, m, copy=True, M_T=None, Σ_T=None, T_subseq_isconstant=None):
     """
     Creates a copy of the time series where all NaN and inf values
     are replaced with zero. Also computes mean and standard deviation
     for every subsequence. Every subsequence that contains at least
     one NaN or inf value, will have a mean of np.inf. For the standard
     deviation these values are ignored. If all values are illegal, the
-    standard deviation will be 0 (see `core.compute_mean_std`)
+    standard deviation will be 0 (see `core.compute_mean_std`). Also,
+    compute the rolling isconstant, a boolean array that indicates if
+    a subsequence is constant (True) or False. A subsequence is constant
+    if it contains finite values that are identical.
 
     Parameters
     ----------
@@ -1721,6 +1829,20 @@ def preprocess(T, m):
     m : int
         Window size
 
+    copy : bool, default True
+        A boolean value that indicates whether the process should be done on
+        input `T` (False) or its copy (True).
+
+    M_T : numpy.ndarray, default None
+        Rolling mean
+
+    Σ_T : numpy.ndarray, default None
+        Rolling standard deviation
+
+    T_subseq_isconstant : numpy.ndarray, default None
+        A boolean array that indicates whether a subsequence in `T`
+        is constant (True)
+
     Returns
     -------
     T : numpy.ndarray
@@ -1729,14 +1851,21 @@ def preprocess(T, m):
         Rolling mean
     Σ_T : numpy.ndarray
         Rolling standard deviation
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T`
+        is constant (True)
     """
-    T = _preprocess(T)
+    T = _preprocess(T, copy)
     check_window_size(m, max_size=T.shape[-1])
+
     T[np.isinf(T)] = np.nan
-    M_T, Σ_T = compute_mean_std(T, m)
+    if T_subseq_isconstant is None:
+        T_subseq_isconstant = rolling_isconstant(T, m)
+    if M_T is None or Σ_T is None:
+        M_T, Σ_T = compute_mean_std(T, m)
     T[np.isnan(T)] = 0
 
-    return T, M_T, Σ_T
+    return T, M_T, Σ_T, T_subseq_isconstant
 
 
 def preprocess_non_normalized(T, m):
@@ -1765,18 +1894,14 @@ def preprocess_non_normalized(T, m):
     T_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
-
-    T_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `T` is constant
-        (True)
     """
     T = _preprocess(T)
     check_window_size(m, max_size=T.shape[-1])
     T_subseq_isfinite = rolling_isfinite(T, m)
-    T[~np.isfinite(T)] = 0.0
-    T_subseq_isconstant = rolling_isconstant(T, m)
+    T[~np.isfinite(T)] = np.nan
+    T[np.isnan(T)] = 0
 
-    return T, T_subseq_isfinite, T_subseq_isconstant
+    return T, T_subseq_isfinite
 
 
 def preprocess_diagonal(T, m):
@@ -1823,7 +1948,13 @@ def preprocess_diagonal(T, m):
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` is constant (True)
     """
-    T, T_subseq_isfinite, T_subseq_isconstant = preprocess_non_normalized(T, m)
+    T = _preprocess(T)
+    check_window_size(m, max_size=T.shape[-1])
+    T_subseq_isfinite = rolling_isfinite(T, m)
+    T[~np.isfinite(T)] = np.nan
+    T_subseq_isconstant = rolling_isconstant(T, m)
+    T[np.isnan(T)] = 0
+
     M_T, Σ_T = compute_mean_std(T, m)
     Σ_T[T_subseq_isconstant] = 1.0  # Avoid divide by zero in next inversion step
     Σ_T_inverse = 1.0 / Σ_T

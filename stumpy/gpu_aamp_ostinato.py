@@ -72,7 +72,6 @@ def gpu_aamp_ostinato(Ts, m, device_id=0, p=2.0):
         (
             Ts[i],
             Ts_subseq_isfinite[i],
-            _,
         ) = core.preprocess_non_normalized(T, m)
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _aamp_ostinato(
@@ -84,7 +83,11 @@ def gpu_aamp_ostinato(Ts, m, device_id=0, p=2.0):
         mp_func=gpu_aamp,
     )
 
-    (central_radius, central_Ts_idx, central_subseq_idx,) = _get_aamp_central_motif(
+    (
+        central_radius,
+        central_Ts_idx,
+        central_subseq_idx,
+    ) = _get_aamp_central_motif(
         Ts,
         bsf_radius,
         bsf_Ts_idx,

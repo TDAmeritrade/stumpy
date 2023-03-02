@@ -146,7 +146,7 @@ def test_aamp_naive_match_exact():
                 max_distance=0.001,  # Small max_distance as matches are identical
             )
         )
-        # To avoid sorting errors we first sort based on disance and then based on
+        # To avoid sorting errors we first sort based on distance and then based on
         # indices
         right.sort(key=lambda x: (x[1], x[0]))
 
@@ -180,7 +180,7 @@ def test_aamp_naive_match_exclusion_zone():
                 max_distance=0.2,
             )
         )
-        # To avoid sorting errors we first sort based on disance and then based on
+        # To avoid sorting errors we first sort based on distance and then based on
         # indices
         right.sort(key=lambda x: (x[0], x[1]))
 
@@ -218,9 +218,7 @@ def test_aamp_match_T_subseq_isfinite(Q, T):
     m = Q.shape[0]
     excl_zone = int(np.ceil(m / 4))
     max_distance = 0.3
-    T, T_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
-        T, len(Q)
-    )
+    T, T_subseq_isfinite = core.preprocess_non_normalized(T, len(Q))
 
     for p in [1.0, 2.0, 3.0]:
         left = naive_aamp_match(

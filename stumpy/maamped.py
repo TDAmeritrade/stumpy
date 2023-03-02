@@ -227,12 +227,8 @@ def maamped(client, T, m, include=None, discords=False, p=2.0):
     T_A = T
     T_B = T_A
 
-    T_A, T_A_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
-        T_A, m
-    )
-    T_B, T_B_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
-        T_B, m
-    )
+    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
+    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
 
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"

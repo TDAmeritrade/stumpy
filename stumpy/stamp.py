@@ -7,7 +7,17 @@ import numpy as np
 from . import core
 
 
-def _mass_PI(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=False):
+def _mass_PI(
+    Q,
+    T,
+    M_T,
+    Σ_T,
+    T_subseq_isconstant,
+    trivial_idx=None,
+    excl_zone=0,
+    left=False,
+    right=False,
+):
     """
     Compute "Mueen's Algorithm for Similarity Search" (MASS)
 
@@ -24,6 +34,9 @@ def _mass_PI(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=F
 
     Σ_T : numpy.ndarray
         Sliding standard deviation for `T`
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     trivial_idx : int, default None
         Index for the start of the trivial self-join
@@ -47,7 +60,7 @@ def _mass_PI(Q, T, M_T, Σ_T, trivial_idx=None, excl_zone=0, left=False, right=F
     I : numpy.ndarray
         Matrix profile indices
     """
-    D = core.mass(Q, T, M_T, Σ_T)
+    D = core.mass(Q, T, M_T, Σ_T, T_subseq_isconstant=T_subseq_isconstant)
 
     if trivial_idx is not None:
         core.apply_exclusion_zone(D, trivial_idx, excl_zone, np.inf)
@@ -126,7 +139,8 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     the closest subsequence in T_B. Thus, the array returned will have length
     T_A.shape[0]-m+1
     """
-    T_B, M_T, Σ_T = core.preprocess(T_B, m)
+    T_B, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T_B, m)
+
     T_A = T_A.copy()
     T_A[np.isinf(T_A)] = np.nan
 
@@ -144,11 +158,14 @@ def stamp(T_A, T_B, m, ignore_trivial=False):
     # Add exclusionary zone
     if ignore_trivial:
         out = [
-            _mass_PI(subseq, T_B, M_T, Σ_T, i, excl_zone)
+            _mass_PI(subseq, T_B, M_T, Σ_T, T_subseq_isconstant, i, excl_zone)
             for i, subseq in enumerate(subseq_T_A)
         ]
     else:
-        out = [_mass_PI(subseq, T_B, M_T, Σ_T) for subseq in subseq_T_A]
+        out = [
+            _mass_PI(subseq, T_B, M_T, Σ_T, T_subseq_isconstant)
+            for subseq in subseq_T_A
+        ]
     out = np.array(out, dtype=object)
 
     return out

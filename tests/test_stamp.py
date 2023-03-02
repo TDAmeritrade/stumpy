@@ -25,25 +25,40 @@ def test_stamp_mass_PI(T_A, T_B):
     trivial_idx = 2
     zone = int(np.ceil(m / 2))
     Q = T_B[trivial_idx : trivial_idx + m]
+    T_subseq_isconstant = core.rolling_isconstant(T_B, m)
     M_T, Σ_T = core.compute_mean_std(T_B, m)
     ref_P, ref_I, ref_left_I, ref_right_I = naive.mass_PI(
         Q, T_B, m, trivial_idx=trivial_idx, excl_zone=zone, ignore_trivial=True
     )
     comp_P, comp_I = stamp._mass_PI(
-        Q, T_B, M_T, Σ_T, trivial_idx=trivial_idx, excl_zone=zone
+        Q, T_B, M_T, Σ_T, T_subseq_isconstant, trivial_idx=trivial_idx, excl_zone=zone
     )
 
     npt.assert_almost_equal(ref_P, comp_P)
     npt.assert_almost_equal(ref_I, comp_I)
 
     comp_left_P, comp_left_I = stamp._mass_PI(
-        Q, T_B, M_T, Σ_T, trivial_idx=trivial_idx, excl_zone=zone, left=True
+        Q,
+        T_B,
+        M_T,
+        Σ_T,
+        T_subseq_isconstant,
+        trivial_idx=trivial_idx,
+        excl_zone=zone,
+        left=True,
     )
 
     npt.assert_almost_equal(ref_left_I, comp_left_I)
 
     comp_right_P, comp_right_I = stamp._mass_PI(
-        Q, T_B, M_T, Σ_T, trivial_idx=trivial_idx, excl_zone=zone, right=True
+        Q,
+        T_B,
+        M_T,
+        Σ_T,
+        T_subseq_isconstant,
+        trivial_idx=trivial_idx,
+        excl_zone=zone,
+        right=True,
     )
 
     npt.assert_almost_equal(ref_right_I, comp_right_I)

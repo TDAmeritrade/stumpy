@@ -111,7 +111,7 @@ class aampi:
         self._left_P[:] = np.inf
 
         self._T_isfinite = np.isfinite(self._T)
-        self._T, self._T_subseq_isfinite, _ = core.preprocess_non_normalized(
+        self._T, self._T_subseq_isfinite = core.preprocess_non_normalized(
             self._T, self._m
         )
 
@@ -228,8 +228,8 @@ class aampi:
             )
             # D.shape[0] is base-1
 
-        # Calculate the (top-k) matrix profile values/indices for the last susequence
-        # by using its correspondng distance profile `D`
+        # Calculate the (top-k) matrix profile values/indices for the last subsequence
+        # by using its corresponding distance profile `D`
         self._P[-1] = np.inf
         self._I[-1] = -1
         for i, d in enumerate(D):
@@ -301,7 +301,7 @@ class aampi:
             core._shift_insert_at_index(self._I[i], idx, l)
 
         # Calculating top-k matrix profile and (top-1) left matrix profile (and their
-        # corresponding indices) for new subsequence whose distance profie is `D`
+        # corresponding indices) for new subsequence whose distance profile is `D`
         P_new = np.full(self._k, np.inf, dtype=np.float64)
         I_new = np.full(self._k, -1, dtype=np.int64)
         for i, d in enumerate(D):

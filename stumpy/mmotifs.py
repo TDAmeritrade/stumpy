@@ -134,7 +134,7 @@ def mmotifs(
         warnings.warn(msg)
         max_motifs = 1
 
-    T, M_T, Σ_T = core.preprocess(T, m)
+    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T, m)
     P = P.copy()
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
@@ -193,6 +193,7 @@ def mmotifs(
             query_idx=motif_idx,
             normalize=normalize,
             p=p,
+            T_subseq_isconstant=T_subseq_isconstant[subspace_k],
         )
 
         if len(query_matches) > min_neighbors:

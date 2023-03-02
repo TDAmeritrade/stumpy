@@ -6,14 +6,20 @@ from scipy.stats import norm
 from stumpy import core, config
 
 
+def rolling_isconstant(a, w):
+    return np.logical_and(
+        core.rolling_isfinite(a, w), np.ptp(core.rolling_window(a, w), axis=-1) == 0
+    )
+
+
 def rolling_nanstd(a, w):
     # a can be 1D, 2D, or more. The rolling occurs on last axis.
     return np.nanstd(core.rolling_window(a, w), axis=a.ndim)
 
 
-def z_norm(a, axis=0, threshold=config.STUMPY_STDDEV_THRESHOLD):
+def z_norm(a, axis=0):
     std = np.std(a, axis, keepdims=True)
-    std[np.less(std, threshold, where=~np.isnan(std))] = 1.0
+    std = np.where(std > 0, std, 1.0)
 
     return (a - np.mean(a, axis, keepdims=True)) / std
 
@@ -208,7 +214,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
                 apply_exclusion_zone(distance_matrix[i], i, exclusion_zone, np.inf)
 
         for i, D in enumerate(distance_matrix):  # D: distance profile
-            # self-join / AB-join: matrix proifle and indices
+            # self-join / AB-join: matrix profile and indices
             indices = np.argsort(D)[:k]
             P[i, :k] = D[indices]
             indices[P[i, :k] == np.inf] = -1
@@ -313,7 +319,7 @@ def aamp(T_A, m, T_B=None, exclusion_zone=None, p=2.0, row_wise=False, k=1):
                 apply_exclusion_zone(distance_matrix[i], i, exclusion_zone, np.inf)
 
         for i, D in enumerate(distance_matrix):  # D: distance profile
-            # self-join / AB-join: matrix proifle and indices
+            # self-join / AB-join: matrix profile and indices
             indices = np.argsort(D)[:k]
             P[i, :k] = D[indices]
             indices[P[i, :k] == np.inf] = -1
@@ -1960,8 +1966,8 @@ def merge_topk_ρI(ρA, ρB, IA, IB):
     # This function merges two pearson profiles `ρA` and `ρB`, and updates `ρA`
     # and `IA` accordingly. When the inputs are 1D, `ρA[i]` is updated if
     #  `ρA[i] < ρB[i]` and IA[i] != IB[i]. When the inputs are 2D, each row in
-    #  `ρA` and `ρB` is sorted ascendingly. we want to keep top-k largest values in
-    # merging row `ρA[i]` and `ρB[i]`.
+    #  `ρA` and `ρB` is sorted in ascending order. we want to keep top-k largest
+    # values in merging row `ρA[i]` and `ρB[i]`.
 
     # In case of ties between `ρA` and `ρB`, the priority is with `ρA`. In case
     # of ties within `ρA, the priority is with an element with greater index.
@@ -1975,9 +1981,9 @@ def merge_topk_ρI(ρA, ρB, IA, IB):
     # `merge_topk_PI` but with swapping `ρA` and `ρB`
 
     # For the same example:
-    # merging `ρB` and `ρA` ascendingly while choosing `ρB` over `ρA` in case of
-    # ties: [0_B, 0_A, 0'_A, 1_B, 1'_B, 1_A], and the second half of this array
-    # is the desribale outcome.
+    # merging `ρB` and `ρA` in ascending order while choosing `ρB` over `ρA` in
+    # case of ties: [0_B, 0_A, 0'_A, 1_B, 1'_B, 1_A], and the second half of this array
+    # is the desirable outcome.
     if ρA.ndim == 1:
         for i in range(ρA.shape[0]):
             if ρB[i] > ρA[i] and IB[i] != IA[i]:

@@ -143,10 +143,10 @@ def _compute_diagonal(
             if T_A_subseq_isfinite[uint64_i] and T_B_subseq_isfinite[uint64_j]:
                 # Neither subsequence contains NaNs
 
-                # `P[thread_idx, i, :]` is sorted ascendingly and MUST be updated
+                # `P[thread_idx, i, :]` is sorted in ascending order and MUST be updated
                 # when the newly-calculated `p_norm` value becomes smaller than the
                 # last (i.e. greatest) element in this array. Note that the goal
-                # is to have top-k smallest distancs for each subsequence.
+                # is to have top-k smallest distances for each subsequence.
                 if p_norm < P[thread_idx, uint64_i, -1]:
                     idx = np.searchsorted(P[thread_idx, uint64_i], p_norm)
                     core._shift_insert_at_index(
@@ -386,12 +386,8 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
         T_B = T_A.copy()
         ignore_trivial = True
 
-    T_A, T_A_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
-        T_A, m
-    )
-    T_B, T_B_subseq_isfinite, T_subseq_isconstant = core.preprocess_non_normalized(
-        T_B, m
-    )
+    T_A, T_A_subseq_isfinite = core.preprocess_non_normalized(T_A, m)
+    T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. ")
