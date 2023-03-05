@@ -4,7 +4,6 @@
 import math
 import multiprocessing as mp
 import os
-
 import numpy as np
 from numba import cuda
 
@@ -477,7 +476,16 @@ def _gpu_stump(
 
 @core.non_normalized(gpu_aamp)
 def gpu_stump(
-    T_A, m, T_B=None, ignore_trivial=True, device_id=0, normalize=True, p=2.0, k=1
+    T_A,
+    m,
+    T_B=None,
+    ignore_trivial=True,
+    device_id=0,
+    normalize=True,
+    p=2.0,
+    k=1,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
 ):
     """
     Compute the z-normalized matrix profile with one or more GPU devices
@@ -524,6 +532,26 @@ def gpu_stump(
         The number of top `k` smallest distances used to construct the matrix profile.
         Note that this will increase the total computational time and memory usage
         when k > 1.
+
+    T_A_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
+
+    T_B_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
 
     Returns
     -------
@@ -592,9 +620,10 @@ def gpu_stump(
     if T_B is None:  # Self join!
         T_B = T_A
         ignore_trivial = True
+        T_B_subseq_isconstant = T_A_subseq_isconstant
 
-    T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T_A, m)
-    T_B, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(T_B, m)
+    T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T_A, m, T_A_subseq_isconstant)
+    T_B, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(T_B, m, T_B_subseq_isconstant)
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
