@@ -673,7 +673,7 @@ def stump(
         μ_Q_m_1,
         T_A_subseq_isfinite,
         T_A_subseq_isconstant,
-    ) = core.preprocess_diagonal(T_A, m, T_A_subseq_isconstant)
+    ) = core.preprocess_diagonal(T_A, m, T_subseq_isconstant=T_A_subseq_isconstant)
 
     (
         T_B,
@@ -682,7 +682,7 @@ def stump(
         M_T_m_1,
         T_B_subseq_isfinite,
         T_B_subseq_isconstant,
-    ) = core.preprocess_diagonal(T_B, m, T_B_subseq_isconstant)
+    ) = core.preprocess_diagonal(T_B, m, T_subseq_isconstant=T_B_subseq_isconstant)
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(

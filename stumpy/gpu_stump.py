@@ -622,8 +622,12 @@ def gpu_stump(
         ignore_trivial = True
         T_B_subseq_isconstant = T_A_subseq_isconstant
 
-    T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T_A, m, T_A_subseq_isconstant)
-    T_B, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(T_B, m, T_B_subseq_isconstant)
+    T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
+        T_A, m, T_subseq_isconstant=T_A_subseq_isconstant
+    )
+    T_B, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(
+        T_B, m, T_subseq_isconstant=T_B_subseq_isconstant
+    )
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
