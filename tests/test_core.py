@@ -1546,3 +1546,39 @@ def test_fix_isconstant_isfinite_conflicts():
     comp = core.fix_isconstant_isfinite_conflicts(T, m, T_subseq_isconstant)
 
     npt.assert_almost_equal(ref, comp)
+
+
+def test_is_signature_compatible():
+    required_args = ("x", "y")
+
+    def func_case1(x, y):
+        pass
+
+    assert core.is_signature_compatible(func_case1, required_args)
+
+    def func_case2(x, y=None):
+        pass
+
+    assert core.is_signature_compatible(func_case2, required_args)
+
+    def func_case3(x=None, y=None):
+        pass
+
+    assert core.is_signature_compatible(func_case3, required_args)
+
+    def func_case4(x, y, z=None):
+        pass
+
+    assert core.is_signature_compatible(func_case4, required_args)
+
+    def func_case5(x, y, z):
+        pass
+
+    assert core.is_signature_compatible(
+        functools.partial(func_case5, z=None), required_args
+    )
+
+    def func_case6(x, y, z):
+        pass
+
+    assert not core.is_signature_compatible(func_case6, required_args)

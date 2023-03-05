@@ -3518,3 +3518,36 @@ def _client_to_func(client):
     func = getattr(module, prefix + calling_func)
 
     return func
+
+
+def is_signature_compatible(func, required_args):
+    """
+    For a given `func` and `requried_args`, return True if the non-default
+    arguments in `func` is a subset of `required_args`
+
+    Parameters
+    ----------
+    func : object, callable
+        A callable object
+
+    required_args : set
+        A set of strings, containing the name of required arguments
+
+    Returns
+    -------
+    out : bool
+        True if the non-default arguments in `func` is a subset of
+        required arguments
+    """
+    if not isinstance(required_args, list):
+        required_args = list(required_args)
+
+    non_default_args = []
+    for arg_name, arg in inspect.signature(func).parameters.items():
+        # inspect.signature(functools.partial(func)) returns all arguments
+        # including the ones with default values. the following if block
+        # is to find non-default arguments.
+        if arg.default == inspect.Parameter.empty:
+            non_default_args.append(arg_name)
+
+    return set(non_default_args).issubset(set(required_args))
