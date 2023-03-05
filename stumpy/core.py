@@ -2368,15 +2368,7 @@ def rolling_isconstant(a, w, T_subseq_isconstant=None):
 
     isconstant_func = None
     if callable(T_subseq_isconstant):
-        non_default_args = []
-        for arg_name, arg in inspect.signature(T_subseq_isconstant).parameters.items():
-            # inspect.signature(functools.partial(f)) returns all arguments
-            # including the ones with default values. the following if block
-            # is to find non-default arguments.
-            if arg.default == inspect.Parameter.empty:
-                non_default_args.append(arg_name)
-
-        incomp_args = set(non_default_args).difference({"a", "w"})
+        incomp_args = find_incompatible_args(T_subseq_isconstant, ["a", "w"])
         if len(incomp_args) > 0:  # pragma: no cover
             msg = (
                 f"Incompatible arguments {incomp_args} found in `T_subseq_isconstant`. "
@@ -3520,24 +3512,24 @@ def _client_to_func(client):
     return func
 
 
-def is_signature_compatible(func, required_args):
+def find_incompatible_args(func, required_args):
     """
-    For a given `func` and `requried_args`, return True if the non-default
-    arguments in `func` is a subset of `required_args`
+    For a given `func` and `requried_args`, return non-default
+    arguments in `func` that are not in `required_args`
 
     Parameters
     ----------
     func : object, callable
         A callable object
 
-    required_args : set
-        A set of strings, containing the name of required arguments
+    required_args : list
+        A lis containing the name of required arguments.
 
     Returns
     -------
-    out : bool
-        True if the non-default arguments in `func` is a subset of
-        required arguments
+    out : set
+        A set of non-default arguments in `func` which are not in
+        required_args
     """
     if not isinstance(required_args, list):
         required_args = list(required_args)
@@ -3550,4 +3542,4 @@ def is_signature_compatible(func, required_args):
         if arg.default == inspect.Parameter.empty:
             non_default_args.append(arg_name)
 
-    return set(non_default_args).issubset(set(required_args))
+    return set(non_default_args).difference(set(required_args))

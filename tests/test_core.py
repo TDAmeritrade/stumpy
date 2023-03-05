@@ -1548,37 +1548,44 @@ def test_fix_isconstant_isfinite_conflicts():
     npt.assert_almost_equal(ref, comp)
 
 
-def test_is_signature_compatible():
-    required_args = ("x", "y")
-
+def test_find_incompatible_args():
+    # case1: having exact required argument
     def func_case1(x, y):
-        pass
+        return
 
-    assert core.is_signature_compatible(func_case1, required_args)
+    assert core.find_incompatible_args(func_case1, required_args=("x", "y")) == set()
 
+    # case2: one argument has default value.
     def func_case2(x, y=None):
-        pass
+        return
 
-    assert core.is_signature_compatible(func_case2, required_args)
+    assert core.find_incompatible_args(func_case2, required_args=("x", "y")) == set()
 
+    # case3: both argument has default values.
     def func_case3(x=None, y=None):
-        pass
+        return
 
-    assert core.is_signature_compatible(func_case3, required_args)
+    assert core.find_incompatible_args(func_case3, required_args=("x", "y")) == set()
 
-    def func_case4(x, y, z=None):
-        pass
+    # case4: having one extra argument `z`
+    def func_case4(x, y, z):
+        return
 
-    assert core.is_signature_compatible(func_case4, required_args)
+    assert core.find_incompatible_args(func_case4, required_args=("x", "y")) == {"z"}
 
-    def func_case5(x, y, z):
-        pass
+    # case5:  having one extra argument `z`, but with default
+    def func_case5(x, y, z=None):
+        return
 
-    assert core.is_signature_compatible(
-        functools.partial(func_case5, z=None), required_args
-    )
+    assert core.find_incompatible_args(func_case5, required_args=("x", "y")) == set()
 
+    # case6: one extra argument `z`, and using functools.partial
     def func_case6(x, y, z):
-        pass
+        return
 
-    assert not core.is_signature_compatible(func_case6, required_args)
+    assert (
+        core.find_incompatible_args(
+            functools.partial(func_case6, z=None), required_args=("x", "y")
+        )
+        == set()
+    )
