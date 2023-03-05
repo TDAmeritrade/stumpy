@@ -1,10 +1,12 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import stump, config
-import pytest
-import naive
 import functools
+import pytest
+
+from stumpy import stump, config
+import naive
+
 
 test_data = [
     (
@@ -289,6 +291,9 @@ def test_stump_self_join_custom_isconstant(T_A, T_B):
     comp_mp = stump(
         T_B, m, ignore_trivial=True, T_A_subseq_isconstant=T_B_subseq_isconstant
     )
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
 
     # case 2: custom isconstant is func
     ref_mp = naive.stump(
