@@ -274,32 +274,23 @@ def test_stump_A_B_join_KNN(T_A, T_B):
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stump_self_join_custom_isconstant_as_arr(T_A, T_B):
-    m = 3
-    zone = int(np.ceil(m / 4))
-
-    subseq_isconstant = np.random.choice(
-        [True, False], size=len(T_B) - m + 1, replace=True
-    )
-
-    ref_mp = naive.stump(
-        T_A=T_B, m=m, exclusion_zone=zone, T_A_subseq_isconstant=subseq_isconstant
-    )
-    comp_mp = stump(
-        T_A=T_B, m=m, ignore_trivial=True, T_A_subseq_isconstant=subseq_isconstant
-    )
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp, comp_mp)
-
-
-@pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stump_self_join_custom_isconstant_as_func(T_A, T_B):
+def test_stump_self_join_custom_isconstant(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
     isconstant_custom_func = functools.partial(
         naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
     )
+
+    # case 1: custom isconstant is a boolean array
+    T_B_subseq_isconstant = naive.rolling_isconstant(T_B, m, isconstant_custom_func)
+    ref_mp = naive.stump(
+        T_B, m, exclusion_zone=zone, T_A_subseq_isconstant=T_B_subseq_isconstant
+    )
+    comp_mp = stump(
+        T_B, m, ignore_trivial=True, T_A_subseq_isconstant=T_B_subseq_isconstant
+    )
+
+    # case 2: custom isconstant is func
     ref_mp = naive.stump(
         T_B, m, exclusion_zone=zone, T_A_subseq_isconstant=isconstant_custom_func
     )
@@ -309,12 +300,3 @@ def test_stump_self_join_custom_isconstant_as_func(T_A, T_B):
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
     npt.assert_almost_equal(ref_mp, comp_mp)
-
-    # testing when `subseq_isconstant` being passed as boolean array
-    T_B_subseq_isconstant = naive.rolling_isconstant(T_B, m, isconstant_custom_func)
-    ref_mp = naive.stump(
-        T_B, m, exclusion_zone=zone, T_A_subseq_isconstant=T_B_subseq_isconstant
-    )
-    comp_mp = stump(
-        T_B, m, ignore_trivial=True, T_A_subseq_isconstant=T_B_subseq_isconstant
-    )
