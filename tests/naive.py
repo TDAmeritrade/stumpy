@@ -254,7 +254,7 @@ def stump(
 
         for i, D in enumerate(distance_matrix):  # D: distance profile
             # self-join / AB-join: matrix profile and indices
-            indices = np.argsort(D)[:k]
+            indices = np.argsort(D, kind="mergesort")[:k]
             P[i, :k] = D[indices]
             indices[P[i, :k] == np.inf] = -1
             I[i, :k] = indices
