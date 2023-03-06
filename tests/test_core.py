@@ -61,7 +61,7 @@ def naive_compute_mean_std_multidimensional(T, m):
     return M_T, Σ_T
 
 
-def naive_idx_to_mp(I, T, m, normalize=True):
+def naive_idx_to_mp(I, T, m, normalize=True, p=2.0):
     I = I.astype(np.int64)
     T = T.copy()
     T_isfinite = np.isfinite(T)
@@ -75,7 +75,7 @@ def naive_idx_to_mp(I, T, m, normalize=True):
             naive.z_norm(T_subseqs, axis=1), naive.z_norm(nn_subseqs, axis=1), axis=1
         )
     else:
-        P = naive.distance(T_subseqs, nn_subseqs, axis=1)
+        P = naive.distance(T_subseqs, nn_subseqs, axis=1, p=p)
     P[~T_subseq_isfinite] = np.inf
     P[I < 0] = np.inf
 
@@ -1097,9 +1097,10 @@ def test_idx_to_mp():
     cmp_mp = core._idx_to_mp(I, T, m)
     npt.assert_almost_equal(ref_mp, cmp_mp)
 
-    ref_mp = naive_idx_to_mp(I, T, m, normalize=False)
-    cmp_mp = core._idx_to_mp(I, T, m, normalize=False)
-    npt.assert_almost_equal(ref_mp, cmp_mp)
+    for p in range(1, 4):
+        ref_mp = naive_idx_to_mp(I, T, m, normalize=False, p=p)
+        cmp_mp = core._idx_to_mp(I, T, m, normalize=False, p=p)
+        npt.assert_almost_equal(ref_mp, cmp_mp)
 
 
 def test_total_diagonal_ndists():
