@@ -1107,18 +1107,18 @@ def test_idx_to_mp():
     l = n - m + 1
     I = np.random.randint(0, l, l)
 
-    # normalize == False, and `T_subseq_isconstant` is None (default)
+    # `normalize == True` and `T_subseq_isconstant` is None (default)
     ref_mp = naive_idx_to_mp(I, T, m)
     cmp_mp = core._idx_to_mp(I, T, m)
     npt.assert_almost_equal(ref_mp, cmp_mp)
 
-    # normalize == False, and `T_subseq_isconstant` is provided
+    # `normalize == True` and `T_subseq_isconstant` is provided
     T_subseq_isconstant = np.random.choice([True, False], l, replace=True)
     ref_mp = naive_idx_to_mp(I, T, m, T_subseq_isconstant=T_subseq_isconstant)
     cmp_mp = core._idx_to_mp(I, T, m, T_subseq_isconstant=T_subseq_isconstant)
     npt.assert_almost_equal(ref_mp, cmp_mp)
 
-    # normalize == True
+    # `normalize == False`
     for p in range(1, 4):
         ref_mp = naive_idx_to_mp(I, T, m, normalize=False, p=p)
         cmp_mp = core._idx_to_mp(I, T, m, normalize=False, p=p)
