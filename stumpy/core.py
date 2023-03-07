@@ -2371,7 +2371,7 @@ def _get_mask_slices(mask):
     return slices
 
 
-def _idx_to_mp(I, T, m, normalize=True):
+def _idx_to_mp(I, T, m, normalize=True, p=2.0):
     """
     Convert a set of matrix profile indices (including left and right indices) to its
     corresponding matrix profile distances
@@ -2390,6 +2390,10 @@ def _idx_to_mp(I, T, m, normalize=True):
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == True`.
+
     Returns
     -------
     P : numpy.ndarray
@@ -2406,7 +2410,7 @@ def _idx_to_mp(I, T, m, normalize=True):
     if normalize:
         P = linalg.norm(z_norm(T_subseqs, axis=1) - z_norm(nn_subseqs, axis=1), axis=1)
     else:
-        P = linalg.norm(T_subseqs - nn_subseqs, axis=1)
+        P = linalg.norm(T_subseqs - nn_subseqs, axis=1, ord=p)
     P[~T_subseq_isfinite] = np.inf
     P[I < 0] = np.inf
 

@@ -407,6 +407,7 @@ class floss:
         n_samples=1000,
         custom_iac=None,
         normalize=True,
+        p=2.0,
     ):
         """
         Initialize the FLOSS object
@@ -456,6 +457,10 @@ class floss:
         normalize : bool, default True
             When set to `True`, this z-normalizes subsequences prior to computing
             distances
+
+        p : float, default 2.0
+            The p-norm to apply for computing the Minkowski distance. This parameter is
+            ignored when `normalize == True`.
         """
         self._mp = copy.deepcopy(np.asarray(mp))
         self._T = copy.deepcopy(np.asarray(T))
@@ -466,6 +471,8 @@ class floss:
         self._n_samples = n_samples
         self._custom_iac = custom_iac
         self._normalize = normalize
+        self._p = p
+
         self._k = self._mp.shape[0]
         self._n = self._T.shape[0]
         self._last_idx = self._n - self._m + 1  # Depends on the changing length of `T`
@@ -507,6 +514,7 @@ class floss:
             self._mp[:, 0] = np.linalg.norm(
                 core.rolling_window(self._T, self._m) - right_nn,
                 axis=1,
+                ord=self._p,
             )
         inf_indices = np.argwhere(self._mp[:, 3] < 0).flatten()
         self._mp[inf_indices, 0] = np.inf
@@ -569,7 +577,7 @@ class floss:
                 T_subseq_isconstant=T_subseq_isconstant,
             )
         else:
-            D = core.mass_absolute(self._T[-self._m :], self._T)
+            D = core.mass_absolute(self._T[-self._m :], self._T, p=self._p)
 
         D[zone_start:] = np.inf
 
