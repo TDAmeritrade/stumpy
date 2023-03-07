@@ -43,11 +43,11 @@ def naive_cac(I, L, excl_factor, custom_iac=None):
     return CAC
 
 
-def naive_right_mp(data, m, normalize=True):
+def naive_right_mp(data, m, normalize=True, p=2.0):
     if normalize:
         mp = stump(data, m)
     else:
-        mp = aamp(data, m)
+        mp = aamp(data, m, p=p)
     k = mp.shape[0]
     right_nn = np.zeros((k, m))
     right_indices = [np.arange(IR, IR + m) for IR in mp[:, 3].tolist()]
@@ -58,7 +58,9 @@ def naive_right_mp(data, m, normalize=True):
             axis=1,
         )
     else:
-        mp[:, 0] = np.linalg.norm(core.rolling_window(data, m) - right_nn, axis=1)
+        mp[:, 0] = np.linalg.norm(
+            core.rolling_window(data, m) - right_nn, axis=1, ord=p
+        )
     inf_indices = np.argwhere(mp[:, 3] < 0).flatten()
     mp[inf_indices, 0] = np.inf
     mp[inf_indices, 3] = inf_indices
@@ -203,59 +205,67 @@ def test_aamp_floss():
     n = 30
     old_data = data[:n]
 
-    mp = naive_right_mp(old_data, m, normalize=False)
-    comp_mp = aamp(old_data, m)
-    k = mp.shape[0]
+    for p in range(1, 4):
+        mp = naive_right_mp(old_data, m, normalize=False, p=p)
+        comp_mp = aamp(old_data, m, p=p)
+        k = mp.shape[0]
 
-    rolling_Ts = core.rolling_window(data[1:], n)
-    L = 5
-    excl_factor = 1
-    custom_iac = _iac(k, bidirectional=False)
-    stream = floss(
-        comp_mp, old_data, m, L, excl_factor, custom_iac=custom_iac, normalize=False
-    )
-    last_idx = n - m + 1
-    excl_zone = int(np.ceil(m / 4))
-    zone_start = max(0, k - excl_zone)
-    for i, ref_T in enumerate(rolling_Ts):
-        mp[:, 1] = -1
-        mp[:, 2] = -1
-        mp[:] = np.roll(mp, -1, axis=0)
-        mp[-1, 0] = np.inf
-        mp[-1, 3] = last_idx + i
-
-        D = naive.aamp_distance_profile(ref_T[-m:], ref_T, m)
-        D[zone_start:] = np.inf
-
-        update_idx = np.argwhere(D < mp[:, 0]).flatten()
-        mp[update_idx, 0] = D[update_idx]
-        mp[update_idx, 3] = last_idx + i
-
-        ref_cac_1d = _cac(
-            mp[:, 3] - i - 1,
+        rolling_Ts = core.rolling_window(data[1:], n)
+        L = 5
+        excl_factor = 1
+        custom_iac = _iac(k, bidirectional=False)
+        stream = floss(
+            comp_mp,
+            old_data,
+            m,
             L,
-            bidirectional=False,
-            excl_factor=excl_factor,
+            excl_factor,
             custom_iac=custom_iac,
+            normalize=False,
+            p=p,
         )
+        last_idx = n - m + 1
+        excl_zone = int(np.ceil(m / 4))
+        zone_start = max(0, k - excl_zone)
+        for i, ref_T in enumerate(rolling_Ts):
+            mp[:, 1] = -1
+            mp[:, 2] = -1
+            mp[:] = np.roll(mp, -1, axis=0)
+            mp[-1, 0] = np.inf
+            mp[-1, 3] = last_idx + i
 
-        ref_mp = mp.copy()
-        ref_P = ref_mp[:, 0]
-        ref_I = ref_mp[:, 3]
+            D = naive.aamp_distance_profile(ref_T[-m:], ref_T, m, p=p)
+            D[zone_start:] = np.inf
 
-        stream.update(ref_T[-1])
-        comp_cac_1d = stream.cac_1d_
-        comp_P = stream.P_
-        comp_I = stream.I_
-        comp_T = stream.T_
+            update_idx = np.argwhere(D < mp[:, 0]).flatten()
+            mp[update_idx, 0] = D[update_idx]
+            mp[update_idx, 3] = last_idx + i
 
-        naive.replace_inf(ref_P)
-        naive.replace_inf(comp_P)
+            ref_cac_1d = _cac(
+                mp[:, 3] - i - 1,
+                L,
+                bidirectional=False,
+                excl_factor=excl_factor,
+                custom_iac=custom_iac,
+            )
 
-        npt.assert_almost_equal(ref_cac_1d, comp_cac_1d)
-        npt.assert_almost_equal(ref_P, comp_P)
-        npt.assert_almost_equal(ref_I, comp_I)
-        npt.assert_almost_equal(ref_T, comp_T)
+            ref_mp = mp.copy()
+            ref_P = ref_mp[:, 0]
+            ref_I = ref_mp[:, 3]
+
+            stream.update(ref_T[-1])
+            comp_cac_1d = stream.cac_1d_
+            comp_P = stream.P_
+            comp_I = stream.I_
+            comp_T = stream.T_
+
+            naive.replace_inf(ref_P)
+            naive.replace_inf(comp_P)
+
+            npt.assert_almost_equal(ref_cac_1d, comp_cac_1d)
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
+            npt.assert_almost_equal(ref_T, comp_T)
 
 
 @pytest.mark.parametrize("substitute", substitution_values)
