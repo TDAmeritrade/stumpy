@@ -15,6 +15,7 @@ def is_ptp_zero_1d(a, w):  # `a` is 1-D
 
 
 def rolling_isconstant(a, w, a_subseq_isconstant=None):
+    # a_subseq_isconstant can be numpy.ndarray or function
     if a_subseq_isconstant is None:
         a_subseq_isconstant = is_ptp_zero_1d
 
