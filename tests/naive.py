@@ -228,10 +228,10 @@ def stump(
             [distance_profile(Q, T_B, m) for Q in core.rolling_window(T_A, m)]
         )
 
-    if T_A_subseq_isconstant is None or callable(T_A_subseq_isconstant):
+    if T_A_subseq_isconstant is None:
         T_A_subseq_isconstant = rolling_isconstant(T_A, m, T_A_subseq_isconstant)
 
-    if T_B_subseq_isconstant is None or callable(T_B_subseq_isconstant):
+    if T_B_subseq_isconstant is None:
         T_B_subseq_isconstant = rolling_isconstant(T_B, m, T_B_subseq_isconstant)
 
     distance_matrix[np.isnan(distance_matrix)] = np.inf

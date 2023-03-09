@@ -2333,7 +2333,7 @@ def _rolling_isconstant(a, w):
     return np.where(out == 0.0, True, False)
 
 
-def rolling_isconstant(a, w, T_subseq_isconstant=None):
+def rolling_isconstant(a, w, a_subseq_isconstant=None):
     """
     Compute the rolling isconstant for 1-D and 2-D arrays.
 
@@ -2349,10 +2349,10 @@ def rolling_isconstant(a, w, T_subseq_isconstant=None):
     w : numpy.ndarray
         The rolling window size
 
-    T_subseq_isconstant : np.ndarray or function, default None
-        A boolean array that indicates whether a subsequence in `T` is constant
+    a_subseq_isconstant : np.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `a` is constant
         (True). Alternatively, a custom, user-defined function that returns a
-        boolean array that indicates whether a subsequence in `T` is constant
+        boolean array that indicates whether a subsequence in `a` is constant
         (True). The function must only take two arguments, `a`, a 1-D array,
         and `w`, the window size, while additional arguments may be specified
         by currying the user-defined function using `functools.partial`. When
@@ -2360,15 +2360,15 @@ def rolling_isconstant(a, w, T_subseq_isconstant=None):
 
     Returns
     -------
-    T_subseq_isconstant : numpy.ndarray
+    a_subseq_isconstant : numpy.ndarray
         Rolling window isconstant
     """
-    if T_subseq_isconstant is None:
-        T_subseq_isconstant = _rolling_isconstant
+    if a_subseq_isconstant is None:
+        a_subseq_isconstant = _rolling_isconstant
 
     isconstant_func = None
-    if callable(T_subseq_isconstant):
-        incomp_args = find_incompatible_args(T_subseq_isconstant, ["a", "w"])
+    if callable(a_subseq_isconstant):
+        incomp_args = find_incompatible_args(a_subseq_isconstant, ["a", "w"])
         if len(incomp_args) > 0:  # pragma: no cover
             msg = (
                 f"Incompatible arguments {incomp_args} found in `T_subseq_isconstant`. "
@@ -2377,31 +2377,31 @@ def rolling_isconstant(a, w, T_subseq_isconstant=None):
             )
             raise ValueError(msg)
 
-        isconstant_func = T_subseq_isconstant
+        isconstant_func = a_subseq_isconstant
 
-    elif isinstance(T_subseq_isconstant, np.ndarray):
+    elif isinstance(a_subseq_isconstant, np.ndarray):
         isconstant_func = None
     else:  # pragma: no cover
         msg = (
             "`T_subseq_isconstant` must be of type `np.ndarray` or a callable "
-            + f"function. Found {type(T_subseq_isconstant)} instead."
+            + f"function. Found {type(a_subseq_isconstant)} instead."
         )
         raise ValueError(msg)
 
     if isconstant_func is not None:
         axis = a.ndim - 1
-        T_subseq_isconstant = np.apply_along_axis(
+        a_subseq_isconstant = np.apply_along_axis(
             lambda a_row, w: isconstant_func(a_row, w), axis=axis, arr=a, w=w
         )
 
-    if not issubclass(T_subseq_isconstant.dtype.type, np.bool_):  # pragma: no cover
+    if not issubclass(a_subseq_isconstant.dtype.type, np.bool_):  # pragma: no cover
         msg = (
-            f"The output dtype of `T_subseq_isconstant` is {T_subseq_isconstant.dtype} "
+            f"The output dtype of `T_subseq_isconstant` is {a_subseq_isconstant.dtype} "
             + "but dtype `np.bool` was expected"
         )
         raise ValueError(msg)
 
-    return T_subseq_isconstant
+    return a_subseq_isconstant
 
 
 def fix_isconstant_isfinite_conflicts(
