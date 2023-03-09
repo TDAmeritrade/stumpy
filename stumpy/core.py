@@ -2592,8 +2592,8 @@ def _idx_to_mp(I, T, m, normalize=True, p=2.0, T_subseq_isconstant=None):
     I = I.astype(np.int64)
     T = T.copy()
 
-    if normalize and T_subseq_isconstant is None:
-        T_subseq_isconstant = rolling_isconstant(T, m)
+    if normalize:
+        T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
 
     T_isfinite = np.isfinite(T)
     T_subseq_isfinite = np.all(rolling_window(T_isfinite, m), axis=1)
