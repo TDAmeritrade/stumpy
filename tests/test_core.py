@@ -62,9 +62,14 @@ def naive_compute_mean_std_multidimensional(T, m):
     return M_T, Σ_T
 
 
-def naive_idx_to_mp(I, T, m, normalize=True, p=2.0):
+def naive_idx_to_mp(I, T, m, normalize=True, p=2.0, T_subseq_isconstant=None):
     I = I.astype(np.int64)
     T = T.copy()
+
+    if normalize:
+        if T_subseq_isconstant is None:
+            T_subseq_isconstant = naive.rolling_isconstant(T, m)
+
     T_isfinite = np.isfinite(T)
     T_subseq_isfinite = np.all(core.rolling_window(T_isfinite, m), axis=1)
 
@@ -75,8 +80,16 @@ def naive_idx_to_mp(I, T, m, normalize=True, p=2.0):
         P = naive.distance(
             naive.z_norm(T_subseqs, axis=1), naive.z_norm(nn_subseqs, axis=1), axis=1
         )
+        for i, nn_i in enumerate(I):
+            if T_subseq_isconstant[i] and T_subseq_isconstant[nn_i]:
+                P[i] = 0
+            elif T_subseq_isconstant[i] or T_subseq_isconstant[nn_i]:
+                P[i] = np.sqrt(m)
+            else:
+                continue
     else:
         P = naive.distance(T_subseqs, nn_subseqs, axis=1, p=p)
+
     P[~T_subseq_isfinite] = np.inf
     P[I < 0] = np.inf
 
@@ -1105,12 +1118,21 @@ def test_idx_to_mp():
     # T[1] = np.nan
     # T[8] = np.inf
     # T[:] = 1.0
-    I = np.random.randint(0, n - m + 1, n - m + 1)
+    l = n - m + 1
+    I = np.random.randint(0, l, l)
 
+    # `normalize == True` and `T_subseq_isconstant` is None (default)
     ref_mp = naive_idx_to_mp(I, T, m)
     cmp_mp = core._idx_to_mp(I, T, m)
     npt.assert_almost_equal(ref_mp, cmp_mp)
 
+    # `normalize == True` and `T_subseq_isconstant` is provided
+    T_subseq_isconstant = np.random.choice([True, False], l, replace=True)
+    ref_mp = naive_idx_to_mp(I, T, m, T_subseq_isconstant=T_subseq_isconstant)
+    cmp_mp = core._idx_to_mp(I, T, m, T_subseq_isconstant=T_subseq_isconstant)
+    npt.assert_almost_equal(ref_mp, cmp_mp)
+
+    # `normalize == False`
     for p in range(1, 4):
         ref_mp = naive_idx_to_mp(I, T, m, normalize=False, p=p)
         cmp_mp = core._idx_to_mp(I, T, m, normalize=False, p=p)
