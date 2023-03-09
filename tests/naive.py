@@ -14,16 +14,23 @@ def is_ptp_zero_1d(a, w):  # `a` is 1-D
     return out == 0
 
 
-def rolling_isconstant(a, w, custom_func=None):
-    if custom_func is None:
-        custom_func = is_ptp_zero_1d
+def rolling_isconstant(a, w, a_subseq_isconstant=None):
+    if a_subseq_isconstant is None:
+        a_subseq_isconstant = is_ptp_zero_1d
 
-    return np.logical_and(
-        core.rolling_isfinite(a, w),
-        np.apply_along_axis(
-            lambda a_row, w: custom_func(a_row, w), axis=-1, arr=a, w=w
-        ),
-    )
+    custom_func = None
+    if callable(a_subseq_isconstant):
+        custom_func = a_subseq_isconstant
+
+    if custom_func is not None:
+        a_subseq_isconstant = np.logical_and(
+            core.rolling_isfinite(a, w),
+            np.apply_along_axis(
+                lambda a_row, w: custom_func(a_row, w), axis=-1, arr=a, w=w
+            ),
+        )
+
+    return a_subseq_isconstant
 
 
 def rolling_nanstd(a, w):
