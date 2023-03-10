@@ -1576,38 +1576,38 @@ def test_find_incompatible_args():
     def func_case1(x, y):
         return
 
-    assert core.find_incompatible_args(func_case1, required_args=("x", "y")) == set()
+    assert core._find_incompatible_args(func_case1, required_args=("x", "y")) == set()
 
     # case2: one argument has default value.
     def func_case2(x, y=None):
         return
 
-    assert core.find_incompatible_args(func_case2, required_args=("x", "y")) == set()
+    assert core._find_incompatible_args(func_case2, required_args=("x", "y")) == set()
 
     # case3: both argument has default values.
     def func_case3(x=None, y=None):
         return
 
-    assert core.find_incompatible_args(func_case3, required_args=("x", "y")) == set()
+    assert core._find_incompatible_args(func_case3, required_args=("x", "y")) == set()
 
     # case4: having one extra argument `z`
     def func_case4(x, y, z):
         return
 
-    assert core.find_incompatible_args(func_case4, required_args=("x", "y")) == {"z"}
+    assert core._find_incompatible_args(func_case4, required_args=("x", "y")) == {"z"}
 
     # case5:  having one extra argument `z`, but with default
     def func_case5(x, y, z=None):
         return
 
-    assert core.find_incompatible_args(func_case5, required_args=("x", "y")) == set()
+    assert core._find_incompatible_args(func_case5, required_args=("x", "y")) == set()
 
     # case6: one extra argument `z`, and using functools.partial
     def func_case6(x, y, z):
         return
 
     assert (
-        core.find_incompatible_args(
+        core._find_incompatible_args(
             functools.partial(func_case6, z=None), required_args=("x", "y")
         )
         == set()

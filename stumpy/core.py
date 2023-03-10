@@ -2368,7 +2368,7 @@ def rolling_isconstant(a, w, a_subseq_isconstant=None):
 
     isconstant_func = None
     if callable(a_subseq_isconstant):
-        incomp_args = find_incompatible_args(a_subseq_isconstant, ["a", "w"])
+        incomp_args = _find_incompatible_args(a_subseq_isconstant, ["a", "w"])
         if len(incomp_args) > 0:  # pragma: no cover
             msg = (
                 f"Incompatible arguments {incomp_args} found in `T_subseq_isconstant`. "
@@ -3531,7 +3531,7 @@ def _client_to_func(client):
     return func
 
 
-def find_incompatible_args(func, required_args):
+def _find_incompatible_args(func, required_args):
     """
     For a given `func` and `requried_args`, return non-default
     arguments in `func` that are not in `required_args`
