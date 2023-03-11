@@ -84,8 +84,8 @@ def naive_idx_to_mp(I, T, m, normalize=True, p=2.0, T_subseq_isconstant=None):
                 P[i] = 0
             elif T_subseq_isconstant[i] or T_subseq_isconstant[nn_i]:
                 P[i] = np.sqrt(m)
-            else:
-                continue
+            else:  # pragma: no cover
+                pass
     else:
         P = naive.distance(T_subseqs, nn_subseqs, axis=1, p=p)
 
