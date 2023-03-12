@@ -239,7 +239,7 @@ def stump(
                     distance_matrix[i, j] = 0.0
                 elif T_A_subseq_isconstant[i] or T_B_subseq_isconstant[j]:
                     distance_matrix[i, j] = np.sqrt(m)
-                else:
+                else:  # pragma: no cover
                     pass
 
     n_A = T_A.shape[0]

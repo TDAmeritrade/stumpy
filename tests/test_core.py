@@ -1573,37 +1573,37 @@ def test_fix_isconstant_isfinite_conflicts():
 
 def test_find_incompatible_args():
     # case1: having exact required argument
-    def func_case1(x, y):
+    def func_case1(x, y):  # pragma: no cover
         return
 
     assert core._find_incompatible_args(func_case1, required_args=("x", "y")) == set()
 
     # case2: one argument has default value.
-    def func_case2(x, y=None):
+    def func_case2(x, y=None):  # pragma: no cover
         return
 
     assert core._find_incompatible_args(func_case2, required_args=("x", "y")) == set()
 
     # case3: both argument has default values.
-    def func_case3(x=None, y=None):
+    def func_case3(x=None, y=None):  # pragma: no cover
         return
 
     assert core._find_incompatible_args(func_case3, required_args=("x", "y")) == set()
 
     # case4: having one extra argument `z`
-    def func_case4(x, y, z):
+    def func_case4(x, y, z):  # pragma: no cover
         return
 
     assert core._find_incompatible_args(func_case4, required_args=("x", "y")) == {"z"}
 
     # case5:  having one extra argument `z`, but with default
-    def func_case5(x, y, z=None):
+    def func_case5(x, y, z=None):  # pragma: no cover
         return
 
     assert core._find_incompatible_args(func_case5, required_args=("x", "y")) == set()
 
     # case6: one extra argument `z`, and using functools.partial
-    def func_case6(x, y, z):
+    def func_case6(x, y, z):  # pragma: no cover
         return
 
     assert (
