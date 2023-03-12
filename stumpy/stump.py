@@ -510,8 +510,21 @@ def _stump(
     )
 
 
-@core.non_normalized(aamp)
-def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
+@core.non_normalized(
+    aamp,
+    exclude=["normalize", "p", "T_A_subseq_isconstant", "T_B_subseq_isconstant"],
+)
+def stump(
+    T_A,
+    m,
+    T_B=None,
+    ignore_trivial=True,
+    normalize=True,
+    p=2.0,
+    k=1,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
+):
     """
     Compute the z-normalized matrix profile
 
@@ -550,6 +563,26 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
         Note that this will increase the total computational time and memory usage
         when k > 1. If you have access to a GPU device, then you may be able to
         leverage `gpu_stump` for better performance and scalability.
+
+    T_A_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
+
+    T_B_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
 
     Returns
     -------
@@ -629,8 +662,9 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
            [0.11633857113691416, 0, 0, -1]], dtype=object)
     """
     if T_B is None:
-        T_B = T_A
         ignore_trivial = True
+        T_B = T_A
+        T_B_subseq_isconstant = T_A_subseq_isconstant
 
     (
         T_A,
@@ -639,7 +673,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
         μ_Q_m_1,
         T_A_subseq_isfinite,
         T_A_subseq_isconstant,
-    ) = core.preprocess_diagonal(T_A, m)
+    ) = core.preprocess_diagonal(T_A, m, T_subseq_isconstant=T_A_subseq_isconstant)
 
     (
         T_B,
@@ -648,7 +682,7 @@ def stump(T_A, m, T_B=None, ignore_trivial=True, normalize=True, p=2.0, k=1):
         M_T_m_1,
         T_B_subseq_isfinite,
         T_B_subseq_isconstant,
-    ) = core.preprocess_diagonal(T_B, m)
+    ) = core.preprocess_diagonal(T_B, m, T_subseq_isconstant=T_B_subseq_isconstant)
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(

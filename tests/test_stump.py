@@ -1,8 +1,10 @@
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import stump, config
+import functools
 import pytest
+
+from stumpy import stump, config
 import naive
 
 
@@ -271,3 +273,35 @@ def test_stump_A_B_join_KNN(T_A, T_B):
         comp_mp = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False, k=k)
         naive.replace_inf(comp_mp)
         npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stump_self_join_custom_isconstant(T_A, T_B):
+    m = 3
+    zone = int(np.ceil(m / 4))
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    # case 1: custom isconstant is a boolean array
+    T_B_subseq_isconstant = naive.rolling_isconstant(T_B, m, isconstant_custom_func)
+    ref_mp = naive.stump(
+        T_B, m, exclusion_zone=zone, T_A_subseq_isconstant=T_B_subseq_isconstant
+    )
+    comp_mp = stump(
+        T_B, m, ignore_trivial=True, T_A_subseq_isconstant=T_B_subseq_isconstant
+    )
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
+
+    # case 2: custom isconstant is func
+    ref_mp = naive.stump(
+        T_B, m, exclusion_zone=zone, T_A_subseq_isconstant=isconstant_custom_func
+    )
+    comp_mp = stump(
+        T_B, m, ignore_trivial=True, T_A_subseq_isconstant=isconstant_custom_func
+    )
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)

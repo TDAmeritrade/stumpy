@@ -6,10 +6,32 @@ from scipy.stats import norm
 from stumpy import core, config
 
 
-def rolling_isconstant(a, w):
-    return np.logical_and(
-        core.rolling_isfinite(a, w), np.ptp(core.rolling_window(a, w), axis=-1) == 0
-    )
+def is_ptp_zero_1d(a, w):  # `a` is 1-D
+    n = len(a) - w + 1
+    out = np.empty(n)
+    for i in range(n):
+        out[i] = np.max(a[i : i + w]) - np.min(a[i : i + w])
+    return out == 0
+
+
+def rolling_isconstant(a, w, a_subseq_isconstant=None):
+    # a_subseq_isconstant can be numpy.ndarray or function
+    if a_subseq_isconstant is None:
+        a_subseq_isconstant = is_ptp_zero_1d
+
+    custom_func = None
+    if callable(a_subseq_isconstant):
+        custom_func = a_subseq_isconstant
+
+    if custom_func is not None:
+        a_subseq_isconstant = np.logical_and(
+            core.rolling_isfinite(a, w),
+            np.apply_along_axis(
+                lambda a_row, w: custom_func(a_row, w), axis=-1, arr=a, w=w
+            ),
+        )
+
+    return a_subseq_isconstant
 
 
 def rolling_nanstd(a, w):
@@ -178,7 +200,16 @@ def searchsorted_right(a, v):
         return len(a)
 
 
-def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
+def stump(
+    T_A,
+    m,
+    T_B=None,
+    exclusion_zone=None,
+    row_wise=False,
+    k=1,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
+):
     """
     Traverse distance matrix diagonally and update the top-k matrix profile and
     matrix profile indices if the parameter `row_wise` is set to `False`. If the
@@ -190,13 +221,26 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
             [distance_profile(Q, T_A, m) for Q in core.rolling_window(T_A, m)]
         )
         T_B = T_A.copy()
+        T_B_subseq_isconstant = T_A_subseq_isconstant
     else:
         ignore_trivial = False
         distance_matrix = np.array(
             [distance_profile(Q, T_B, m) for Q in core.rolling_window(T_A, m)]
         )
 
+    T_A_subseq_isconstant = rolling_isconstant(T_A, m, T_A_subseq_isconstant)
+    T_B_subseq_isconstant = rolling_isconstant(T_B, m, T_B_subseq_isconstant)
+
     distance_matrix[np.isnan(distance_matrix)] = np.inf
+    for i in range(distance_matrix.shape[0]):
+        for j in range(distance_matrix.shape[1]):
+            if np.isfinite(distance_matrix[i, j]):
+                if T_A_subseq_isconstant[i] and T_B_subseq_isconstant[j]:
+                    distance_matrix[i, j] = 0.0
+                elif T_A_subseq_isconstant[i] or T_B_subseq_isconstant[j]:
+                    distance_matrix[i, j] = np.sqrt(m)
+                else:  # pragma: no cover
+                    pass
 
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
@@ -215,7 +259,7 @@ def stump(T_A, m, T_B=None, exclusion_zone=None, row_wise=False, k=1):
 
         for i, D in enumerate(distance_matrix):  # D: distance profile
             # self-join / AB-join: matrix profile and indices
-            indices = np.argsort(D)[:k]
+            indices = np.argsort(D, kind="mergesort")[:k]
             P[i, :k] = D[indices]
             indices[P[i, :k] == np.inf] = -1
             I[i, :k] = indices
@@ -2032,3 +2076,12 @@ def find_matches(D, excl_zone, max_distance, max_matches=None):
         matches = [x for x in matches if x < idx - excl_zone or x > idx + excl_zone]
 
     return np.array(result[:max_matches], dtype=object)
+
+
+def isconstant_func_stddev_threshold(a, w, quantile_threshold=0):
+    sliding_stddev = rolling_nanstd(a, w)
+    if quantile_threshold == 0:
+        return sliding_stddev == 0
+    else:
+        stddev_threshold = np.quantile(sliding_stddev, quantile_threshold)
+        return sliding_stddev <= stddev_threshold
