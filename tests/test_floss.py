@@ -302,10 +302,7 @@ def test_floss_inf_nan(substitute, substitution_locations):
             D = naive.distance_profile(ref_T[-m:], ref_T, m)
             D[zone_start:] = np.inf
 
-            ref_T_isfinite = np.isfinite(ref_T)
-            ref_T_subseq_isfinite = np.all(
-                core.rolling_window(ref_T_isfinite, m), axis=1
-            )
+            ref_T_subseq_isfinite = core.rolling_isfinite(ref_T, m)
 
             D[~ref_T_subseq_isfinite] = np.inf
             update_idx = np.argwhere(D < mp[:, 0]).flatten()
@@ -375,10 +372,7 @@ def test_aamp_floss_inf_nan(substitute, substitution_locations):
             D = naive.aamp_distance_profile(ref_T[-m:], ref_T, m)
             D[zone_start:] = np.inf
 
-            ref_T_isfinite = np.isfinite(ref_T)
-            ref_T_subseq_isfinite = np.all(
-                core.rolling_window(ref_T_isfinite, m), axis=1
-            )
+            ref_T_subseq_isfinite = core.rolling_isfinite(ref_T, m)
 
             D[~ref_T_subseq_isfinite] = np.inf
             update_idx = np.argwhere(D < mp[:, 0]).flatten()
