@@ -570,8 +570,8 @@ class floss:
             T_subseq_isconstant = core.rolling_isconstant(self._T, self._m)
             M_T, Σ_T = core.compute_mean_std(self._T, self._m)
             D = core.mass(
-                self._finite_Q,
-                self._finite_T,
+                self._T[-self._m :],
+                self._T,
                 M_T,
                 Σ_T,
                 T_subseq_isconstant=T_subseq_isconstant,
@@ -580,12 +580,6 @@ class floss:
             D = core.mass_absolute(self._T[-self._m :], self._T, p=self._p)
 
         D[zone_start:] = np.inf
-
-        T_subseq_isfinite = core.rolling_isfinite(self._T, self._m)
-
-        D[~T_subseq_isfinite] = np.inf
-        if not T_subseq_isfinite[-1]:
-            D[:] = np.inf
 
         # Update nearest neighbor for old data if any old subsequences
         # are closer to the newly arrived subsequence
