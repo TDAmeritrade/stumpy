@@ -1033,6 +1033,10 @@ def test_rolling_isfinite():
 
     npt.assert_almost_equal(ref, comp)
 
+    # pass `a` as a boolean value
+    comp = core.rolling_isfinite(np.isfinite(a), w)
+    npt.assert_almost_equal(ref, comp)
+
 
 def test_rolling_isconstant():
     a = np.arange(12).astype(np.float64)
