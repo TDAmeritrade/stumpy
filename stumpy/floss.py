@@ -581,7 +581,7 @@ class floss:
 
         D[zone_start:] = np.inf
 
-        T_subseq_isfinite = core.rolling_isfinite(self._T_isfinite, self._m)
+        T_subseq_isfinite = core.rolling_isfinite(self._T, self._m)
 
         D[~T_subseq_isfinite] = np.inf
         if not T_subseq_isfinite[-1]:
