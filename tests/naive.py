@@ -2080,7 +2080,7 @@ def find_matches(D, excl_zone, max_distance, max_matches=None):
 
 def isconstant_func_stddev_threshold(a, w, quantile_threshold=0):
     sliding_stddev = rolling_nanstd(a, w)
-    if quantile_threshold == 0:
+    if quantile_threshold == 0:  # pragma: no cover
         return sliding_stddev == 0
     else:
         stddev_threshold = np.quantile(sliding_stddev, quantile_threshold)
