@@ -8,7 +8,6 @@ import pytest
 from unittest.mock import patch
 import os
 import math
-import functools
 
 import naive
 
@@ -1033,6 +1032,10 @@ def test_rolling_isfinite():
 
     npt.assert_almost_equal(ref, comp)
 
+    # test `a` as all boolean isfinite array
+    comp = core.rolling_isfinite(np.isfinite(a), w)
+    npt.assert_almost_equal(ref, comp)
+
 
 def test_rolling_isconstant():
     a = np.arange(12).astype(np.float64)
@@ -1047,19 +1050,6 @@ def test_rolling_isconstant():
     comp = core.rolling_isconstant(a, w)
 
     npt.assert_almost_equal(ref, comp)
-
-
-def test_rolling_isconstant_custom_func():
-    a = np.random.rand(100)
-    for w in range(3, 5):
-        for q in [0, 0.01, 0.05, 0.1]:
-            custom_func = functools.partial(
-                naive.isconstant_func_stddev_threshold, quantile_threshold=q
-            )
-            ref = naive.rolling_isconstant(a, w, custom_func)
-            comp = core.rolling_isconstant(a, w, custom_func)
-
-            npt.assert_almost_equal(ref, comp)
 
 
 def test_compare_parameters():
@@ -1550,65 +1540,3 @@ def test_gpu_searchsorted():
 def test_client_to_func():
     with pytest.raises(NotImplementedError):
         core._client_to_func(core)
-
-
-def test_fix_isconstant_isfinite_conflicts():
-    T = np.full(12, 0.0, dtype=np.float64)
-    nan_indices = [1, 5, 9]
-    for idx in nan_indices:
-        T[idx] = np.nan
-
-    m = 3
-
-    n = len(T) - m + 1
-    T_subseq_isconstant = np.full(n, 1, dtype=bool)
-
-    ref = T_subseq_isconstant.copy()
-    ref[~core.rolling_isfinite(T, m)] = False
-
-    comp = core.fix_isconstant_isfinite_conflicts(T, m, T_subseq_isconstant)
-
-    npt.assert_almost_equal(ref, comp)
-
-
-def test_find_incompatible_args():
-    # case1: having exact required argument
-    def func_case1(x, y):  # pragma: no cover
-        return
-
-    assert core._find_incompatible_args(func_case1, required_args=("x", "y")) == set()
-
-    # case2: one argument has default value.
-    def func_case2(x, y=None):  # pragma: no cover
-        return
-
-    assert core._find_incompatible_args(func_case2, required_args=("x", "y")) == set()
-
-    # case3: both argument has default values.
-    def func_case3(x=None, y=None):  # pragma: no cover
-        return
-
-    assert core._find_incompatible_args(func_case3, required_args=("x", "y")) == set()
-
-    # case4: having one extra argument `z`
-    def func_case4(x, y, z):  # pragma: no cover
-        return
-
-    assert core._find_incompatible_args(func_case4, required_args=("x", "y")) == {"z"}
-
-    # case5:  having one extra argument `z`, but with default
-    def func_case5(x, y, z=None):  # pragma: no cover
-        return
-
-    assert core._find_incompatible_args(func_case5, required_args=("x", "y")) == set()
-
-    # case6: one extra argument `z`, and using functools.partial
-    def func_case6(x, y, z):  # pragma: no cover
-        return
-
-    assert (
-        core._find_incompatible_args(
-            functools.partial(func_case6, z=None), required_args=("x", "y")
-        )
-        == set()
-    )

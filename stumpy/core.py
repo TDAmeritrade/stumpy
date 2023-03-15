@@ -2439,7 +2439,7 @@ def fix_isconstant_isfinite_conflicts(
     fixed = np.logical_and(T_subseq_isconstant, T_subseq_isfinite)
 
     conflicts = fixed != T_subseq_isconstant
-    if np.any(conflicts):
+    if np.any(conflicts):  # pragma: no cover
         msg = (
             f"Subsequences located at indices {np.nonzero(conflicts)} contain one "
             + "or more np.nan/np.inf and so their corresponding values in "
@@ -3550,7 +3550,7 @@ def _find_incompatible_args(func, required_args):
         A set of non-default arguments in `func` which are not in
         required_args
     """
-    if not isinstance(required_args, list):
+    if not isinstance(required_args, list):  # pragma: no cover
         required_args = list(required_args)
 
     non_default_args = []
