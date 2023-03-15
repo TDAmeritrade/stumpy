@@ -19,7 +19,7 @@ def get_extras_require():
         "black >= 22.1.0",
         "pytest >= 4.4.1",
         "codecov",
-        "isort >= 5.12.0",
+        "isort >= 5.11.0",
     ]
 
     if "linux" in sys.platform:
