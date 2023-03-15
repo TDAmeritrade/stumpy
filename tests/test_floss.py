@@ -45,7 +45,9 @@ def naive_cac(I, L, excl_factor, custom_iac=None):
 
 
 def naive_right_mp(T, m, normalize=True, p=2.0, T_subseq_isconstant=None):
+    # computing `T_subseq_isconstant` boolean array
     T_subseq_isconstant = naive.rolling_isconstant(T, m, T_subseq_isconstant)
+
     if normalize:
         mp = stump(T_A=T, m=m, T_A_subseq_isconstant=T_subseq_isconstant)
     else:
@@ -59,10 +61,10 @@ def naive_right_mp(T, m, normalize=True, p=2.0, T_subseq_isconstant=None):
             core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(right_nn, 1),
             axis=1,
         )
-        for i, idx in enumerate(mp[:, 3]):
-            if T_subseq_isconstant[i] and T_subseq_isconstant[idx]:
+        for i, nn_i in enumerate(mp[:, 3]):
+            if T_subseq_isconstant[i] and T_subseq_isconstant[nn_i]:
                 mp[:, 3] = 0
-            elif T_subseq_isconstant[i] or T_subseq_isconstant[idx]:
+            elif T_subseq_isconstant[i] or T_subseq_isconstant[nn_i]:
                 mp[:, 3] = np.sqrt(m)
             else:
                 pass
@@ -420,18 +422,17 @@ def test_aamp_floss_inf_nan(substitute, substitution_locations):
 
 
 def test_floss_with_isconstant():
-    data = np.random.uniform(-1000, 1000, [64])
-
-    isconstant_custom_func = functools.partial(
+    custom_func = functools.partial(
         naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
     )
 
+    data = np.random.uniform(-1000, 1000, [64])
     m = 5
     n = 30
     old_data = data[:n]
 
-    mp = naive_right_mp(old_data, m, isconstant_custom_func)
-    comp_mp = stump(old_data, m)
+    mp = naive_right_mp(T=old_data, m=m, T_subseq_isconstant=custom_func)
+    comp_mp = stump(T_A=old_data, m=m, T_A_subseq_isconstant=custom_func)
     k = mp.shape[0]
 
     rolling_Ts = core.rolling_window(data[1:], n)
@@ -445,7 +446,7 @@ def test_floss_with_isconstant():
         L,
         excl_factor,
         custom_iac=custom_iac,
-        T_subseq_isconstant=isconstant_custom_func,
+        T_subseq_isconstant=custom_func,
     )
     last_idx = n - m + 1
     excl_zone = int(np.ceil(m / 4))
@@ -457,15 +458,15 @@ def test_floss_with_isconstant():
         mp[-1, 0] = np.inf
         mp[-1, 3] = last_idx + i
 
-        Q = ref_T[-m:]
-        Q_isconstant = isconstant_custom_func(Q, m)[0]
-        ref_T_isconstant = isconstant_custom_func(ref_T, m)
-        D = naive.distance_profile(Q, ref_T, m)
-        for i in range(len(D)):
-            if Q_isconstant and ref_T_isconstant[i]:
-                D[i] = 0
-            elif Q_isconstant or ref_T_isconstant[i]:
-                D[i] = np.sqrt(m)
+        ref_Q = ref_T[-m:]
+        ref_Q_isconstant = custom_func(ref_Q, m)[0]
+        ref_T_subseq_isconstant = custom_func(ref_T, m)
+        D = naive.distance_profile(ref_Q, ref_T, m)
+        for j in range(len(D)):
+            if ref_Q_isconstant and ref_T_subseq_isconstant[j]:
+                D[j] = 0
+            elif ref_Q_isconstant or ref_T_subseq_isconstant[j]:
+                D[j] = np.sqrt(m)
             else:
                 pass
         D[zone_start:] = np.inf
