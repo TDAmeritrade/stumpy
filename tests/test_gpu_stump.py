@@ -1,18 +1,20 @@
+import functools
+from unittest.mock import patch
+
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import gpu_stump
-from stumpy import config
 from numba import cuda
-from unittest.mock import patch
-import functools
+
+from stumpy import config, gpu_stump
 
 try:
     from numba.errors import NumbaPerformanceWarning
 except ModuleNotFoundError:
     from numba.core.errors import NumbaPerformanceWarning
-import pytest
+
 import naive
+import pytest
 
 TEST_THREADS_PER_BLOCK = 10
 

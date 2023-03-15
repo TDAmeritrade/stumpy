@@ -1,12 +1,12 @@
+import functools
+
+import naive
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-import functools
 import pytest
 
-from stumpy import stump, config
-import naive
-
+from stumpy import config, stump
 
 test_data = [
     (

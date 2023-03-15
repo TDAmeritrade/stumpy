@@ -1,9 +1,10 @@
+import naive
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import config, aamp
 import pytest
-import naive
+
+from stumpy import aamp, config
 
 test_data = [
     (

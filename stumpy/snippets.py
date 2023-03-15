@@ -3,11 +3,13 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import math
+
 import numpy as np
+
 from . import core
-from .core import check_window_size, _get_mask_slices
-from .mpdist import _mpdist_vect
 from .aampdist_snippets import aampdist_snippets
+from .core import _get_mask_slices, check_window_size
+from .mpdist import _mpdist_vect
 
 
 def _get_all_profiles(
@@ -218,6 +220,8 @@ def snippets(
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> stumpy.snippets(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3, k=2)
     (array([[ 584.,  -11.,   23.],
             [  79., 1001.,    0.]]),

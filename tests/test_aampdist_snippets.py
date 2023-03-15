@@ -1,10 +1,9 @@
-import numpy as np
-
-import numpy.testing as npt
-from stumpy import config, aampdist_snippets
-import pytest
 import naive
+import numpy as np
+import numpy.testing as npt
+import pytest
 
+from stumpy import aampdist_snippets, config
 
 test_data = [np.random.uniform(-1000, 1000, [64]).astype(np.float64)]
 s = [6, 7, 8]

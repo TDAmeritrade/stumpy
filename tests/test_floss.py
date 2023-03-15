@@ -1,9 +1,10 @@
+import naive
 import numpy as np
 import numpy.testing as npt
-from stumpy import fluss, stump, aamp, core, floss
-from stumpy.floss import _nnmark, _iac, _cac, _rea
 import pytest
-import naive
+
+from stumpy import aamp, core, floss, fluss, stump
+from stumpy.floss import _cac, _iac, _nnmark, _rea
 
 
 def naive_nnmark(I):

@@ -4,9 +4,8 @@
 
 import numpy as np
 
-from .maamp import _maamp, _get_first_maamp_profile, _get_multi_p_norm
-from .mstump import _preprocess_include
-from . import core, config
+from . import config, core
+from .maamp import _get_first_maamp_profile, _get_multi_p_norm, _maamp
 
 
 def _dask_maamped(
@@ -237,7 +236,7 @@ def maamped(client, T, m, include=None, discords=False, p=2.0):
     core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]))
 
     if include is not None:
-        include = _preprocess_include(include)
+        include = core._preprocess_include(include)
 
     excl_zone = int(
         np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)

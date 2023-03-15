@@ -1,4 +1,4 @@
-from stumpy import core, config
+from stumpy import config, core
 
 
 def test_change_excl_zone_denom():

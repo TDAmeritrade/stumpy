@@ -1,9 +1,9 @@
+import naive
 import numpy as np
 import numpy.testing as npt
-from stumpy import stomp
 import pytest
-import naive
 
+from stumpy import stomp
 
 test_data = [
     (

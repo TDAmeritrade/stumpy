@@ -5,9 +5,9 @@
 # import inspect
 import numpy as np
 
-from . import core, config
-from .stump import _stump
+from . import config, core
 from .aamped import aamped
+from .stump import _stump
 
 
 def _dask_stumped(
@@ -355,6 +355,8 @@ def stumped(
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> from dask.distributed import Client
     >>> if __name__ == "__main__":
     ...     with Client() as dask_client:

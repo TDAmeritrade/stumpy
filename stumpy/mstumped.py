@@ -4,14 +4,9 @@
 
 import numpy as np
 
-from .mstump import (
-    _mstump,
-    _get_first_mstump_profile,
-    _get_multi_QT,
-    _preprocess_include,
-)
-from . import core, config
+from . import config, core
 from .maamped import maamped
+from .mstump import _get_first_mstump_profile, _get_multi_QT, _mstump
 
 
 def _dask_mstumped(
@@ -252,6 +247,8 @@ def mstumped(client, T, m, include=None, discords=False, normalize=True):
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> from dask.distributed import Client
     >>> if __name__ == "__main__":
     ...     with Client() as dask_client:
@@ -277,7 +274,7 @@ def mstumped(client, T, m, include=None, discords=False, normalize=True):
     core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]))
 
     if include is not None:
-        include = _preprocess_include(include)
+        include = core._preprocess_include(include)
 
     excl_zone = int(
         np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)

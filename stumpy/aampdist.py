@@ -2,11 +2,14 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import numpy as np
-import math
 import functools
+import math
 
-from . import core, aamp, aamped, mpdist
+import numpy as np
+
+from . import core
+from .aamp import aamp
+from .aamped import aamped
 
 
 def _aampdist_vect(
@@ -125,7 +128,7 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None, p=2.0):
     See Section III
     """
     partial_mp_func = functools.partial(aamp, p=p)
-    return mpdist._mpdist(T_A, T_B, m, percentage, k, mp_func=partial_mp_func)
+    return core._mpdist(T_A, T_B, m, partial_mp_func, percentage, k)
 
 
 def aampdisted(client, T_A, T_B, m, percentage=0.05, k=None, p=2.0):
@@ -182,6 +185,4 @@ def aampdisted(client, T_A, T_B, m, percentage=0.05, k=None, p=2.0):
     See Section III
     """
     partial_mp_func = functools.partial(aamped, p=p)
-    return mpdist._mpdist(
-        T_A, T_B, m, percentage, k, client=client, mp_func=partial_mp_func
-    )
+    return core._mpdist(T_A, T_B, m, partial_mp_func, percentage, k, client=client)

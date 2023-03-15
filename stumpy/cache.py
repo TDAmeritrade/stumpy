@@ -3,12 +3,11 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import ast
-import pkgutil
-import pathlib
-import warnings
 import importlib
+import pathlib
+import pkgutil
 import site
-
+import warnings
 
 CACHE_WARNING = "Caching `numba` functions is purely for experimental purposes "
 CACHE_WARNING += "and should never be used or depended upon as it is not supported! "

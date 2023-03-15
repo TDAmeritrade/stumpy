@@ -49,6 +49,13 @@ check_black()
     check_errs $?
 }
 
+check_isort()
+{
+    echo "Checking iSort Import Formatting"
+    isort --profile black --check-only ./
+    check_errs $?
+}
+
 check_docstrings()
 {
     echo "Checking Missing Docstrings"
@@ -235,6 +242,7 @@ clean_up()
 
 clean_up
 check_black
+check_isort
 check_flake
 check_docstrings
 check_print
