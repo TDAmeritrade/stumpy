@@ -63,9 +63,9 @@ def naive_right_mp(T, m, normalize=True, p=2.0, T_subseq_isconstant=None):
         )
         for i, nn_i in enumerate(mp[:, 3]):
             if T_subseq_isconstant[i] and T_subseq_isconstant[nn_i]:
-                mp[:, 3] = 0
+                mp[i, 0] = 0
             elif T_subseq_isconstant[i] or T_subseq_isconstant[nn_i]:
-                mp[:, 3] = np.sqrt(m)
+                mp[i, 0] = np.sqrt(m)
             else:
                 pass
     else:
