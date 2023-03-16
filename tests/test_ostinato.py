@@ -1,9 +1,10 @@
+import naive
 import numpy as np
 import numpy.testing as npt
-from dask.distributed import Client, LocalCluster
-import stumpy
-import naive
 import pytest
+from dask.distributed import Client, LocalCluster
+
+import stumpy
 
 
 @pytest.fixture(scope="module")

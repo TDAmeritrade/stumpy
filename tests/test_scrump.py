@@ -1,10 +1,10 @@
+import naive
 import numpy as np
 import numpy.testing as npt
-from stumpy import scrump, stump, config
-from stumpy.scrump import prescrump
 import pytest
-import naive
 
+from stumpy import config, scrump, stump
+from stumpy.scrump import prescrump
 
 test_data = [
     (

@@ -1,10 +1,9 @@
+import naive
 import numpy as np
 import numpy.testing as npt
 import pytest
 
-from stumpy import core, motifs, match
-
-import naive
+from stumpy import core, match, motifs
 
 
 def naive_match(Q, T, excl_zone, max_distance, max_matches=None):

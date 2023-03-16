@@ -1,12 +1,13 @@
+import functools
+
+import naive
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-import functools
 import pytest
 from dask.distributed import Client, LocalCluster
 
 from stumpy import config, stumped
-import naive
 
 
 @pytest.fixture(scope="module")

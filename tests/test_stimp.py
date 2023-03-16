@@ -1,11 +1,10 @@
+import naive
 import numpy as np
 import numpy.testing as npt
-from stumpy import stimp, stimped
-
-from dask.distributed import Client, LocalCluster
 import pytest
-import naive
+from dask.distributed import Client, LocalCluster
 
+from stumpy import stimp, stimped
 
 T = [
     np.array([584, -11, 23, 79, 1001, 0, -19], dtype=np.float64),

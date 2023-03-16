@@ -3,9 +3,11 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import math
+
 import numpy as np
-from .core import check_window_size, _get_mask_slices
+
 from .aampdist import _aampdist_vect
+from .core import _get_mask_slices, check_window_size
 
 
 def _get_all_aampdist_profiles(

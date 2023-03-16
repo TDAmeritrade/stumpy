@@ -1,10 +1,9 @@
+import naive
 import numpy as np
 import numpy.testing as npt
 import pytest
 
-from stumpy import core, aamp_motifs, aamp_match
-
-import naive
+from stumpy import aamp_match, aamp_motifs, core
 
 test_data = [
     (

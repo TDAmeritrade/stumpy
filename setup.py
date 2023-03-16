@@ -1,5 +1,6 @@
-from setuptools import setup
 import sys
+
+from setuptools import setup
 
 
 def readme():
@@ -18,6 +19,7 @@ def get_extras_require():
         "black >= 22.1.0",
         "pytest >= 4.4.1",
         "codecov",
+        "isort >= 5.11.0",
     ]
 
     if "linux" in sys.platform:

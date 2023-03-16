@@ -1,16 +1,15 @@
-from functools import partial
 import math
+from functools import partial
+
+import naive
 import numpy as np
 import numpy.testing as npt
-from stumpy import mpdist, mpdisted
-from stumpy.mpdist import (
-    _mpdist,
-    _compute_P_ABBA,
-    _mpdist_vect,
-)
-from dask.distributed import Client, LocalCluster
 import pytest
-import naive
+from dask.distributed import Client, LocalCluster
+
+from stumpy import mpdist, mpdisted, stump
+from stumpy.core import _compute_P_ABBA, _mpdist
+from stumpy.mpdist import _mpdist_vect
 
 
 def some_func(P_ABBA, m, percentage, n_A, n_B):
@@ -58,7 +57,7 @@ def test_compute_P_ABBA(T_A, T_B):
 
     ref_P_ABBA[: n_A - m + 1] = naive.stump(T_A, m, T_B)[:, 0]
     ref_P_ABBA[n_A - m + 1 :] = naive.stump(T_B, m, T_A)[:, 0]
-    _compute_P_ABBA(T_A, T_B, m, comp_P_ABBA)
+    _compute_P_ABBA(T_A, T_B, m, comp_P_ABBA, stump)
 
     npt.assert_almost_equal(ref_P_ABBA, comp_P_ABBA)
 
@@ -162,7 +161,7 @@ def test_mpdist_custom_func(T_A, T_B, k):
 
     partial_k_func = partial(some_func, m=m, percentage=percentage, n_A=n_A, n_B=n_B)
     ref_mpdist = naive.mpdist(T_A, T_B, m)
-    comp_mpdist = _mpdist(T_A, T_B, m, custom_func=partial_k_func)
+    comp_mpdist = _mpdist(T_A, T_B, m, stump, custom_func=partial_k_func)
 
     npt.assert_almost_equal(ref_mpdist, comp_mpdist)
 

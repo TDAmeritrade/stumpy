@@ -2,11 +2,11 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
+import numba
 import numpy as np
 from numba import njit, prange
-import numba
 
-from . import core, config
+from . import config, core
 from .aamp import aamp
 
 
@@ -654,6 +654,7 @@ def stump(
     Examples
     --------
     >>> import stumpy
+    >>> import numpy as np
     >>> stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
     array([[0.11633857113691416, 4, -1, 4],
            [2.694073918063438, 3, -1, 3],

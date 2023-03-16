@@ -1,10 +1,9 @@
+import naive
 import numpy as np
 import numpy.testing as npt
-import naive
 import pytest
 
 from stumpy import config, mmotifs
-
 
 test_data = [
     np.array(

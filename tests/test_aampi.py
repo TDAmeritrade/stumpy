@@ -1,9 +1,10 @@
+import naive
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import aampi, core, config
 import pytest
-import naive
+
+from stumpy import aampi, config, core
 
 substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 substitution_values = [np.nan, np.inf]

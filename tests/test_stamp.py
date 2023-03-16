@@ -1,8 +1,9 @@
+import naive
 import numpy as np
 import numpy.testing as npt
-from stumpy import stamp, core
 import pytest
-import naive
+
+from stumpy import core, stamp
 
 test_data = [
     (

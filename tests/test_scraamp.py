@@ -1,10 +1,10 @@
+import naive
 import numpy as np
 import numpy.testing as npt
-from stumpy import scraamp, aamp, config
-from stumpy.scraamp import prescraamp
 import pytest
-import naive
 
+from stumpy import aamp, config, scraamp
+from stumpy.scraamp import prescraamp
 
 test_data = [
     (

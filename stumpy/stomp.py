@@ -6,7 +6,7 @@ import warnings
 
 import numpy as np
 
-from . import core, stamp, config
+from . import config, core, stamp
 
 
 def _stomp(T_A, m, T_B=None, ignore_trivial=True):

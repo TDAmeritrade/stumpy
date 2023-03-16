@@ -4,10 +4,11 @@
 import math
 import multiprocessing as mp
 import os
+
 import numpy as np
 from numba import cuda
 
-from . import core, config
+from . import config, core
 from .gpu_aamp import gpu_aamp
 
 
@@ -604,6 +605,8 @@ def gpu_stump(
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> from numba import cuda
     >>> if __name__ == "__main__":
     ...     all_gpu_devices = [device.id for device in cuda.list_devices()]

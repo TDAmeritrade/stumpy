@@ -5,7 +5,7 @@
 import functools
 
 from . import gpu_aamp
-from .mpdist import _mpdist
+from .core import _mpdist
 
 
 def gpu_aampdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0, p=2.0):
@@ -62,6 +62,4 @@ def gpu_aampdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0, p=2.0):
     See Section III
     """
     partial_mp_func = functools.partial(gpu_aamp, p=p)
-    return _mpdist(
-        T_A, T_B, m, percentage, k, device_id=device_id, mp_func=partial_mp_func
-    )
+    return _mpdist(T_A, T_B, m, partial_mp_func, percentage, k, device_id=device_id)

@@ -1,9 +1,11 @@
-import math
 import functools
+import math
+
 import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.stats import norm
-from stumpy import core, config
+
+from stumpy import config, core
 
 
 def is_ptp_zero_1d(a, w):  # `a` is 1-D
