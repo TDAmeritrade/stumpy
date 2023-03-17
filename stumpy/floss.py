@@ -600,8 +600,10 @@ class floss:
         if not np.isfinite(t):
             self._finite_T[-1] = 0.0
         self._finite_Q[-1] = self._finite_T[-1]
-        self._Q_isconstant = self._isconstant_func(self._T[-self._m :], self._m)
-        self._T_subseq_isconstant[-1] = self._Q_isconstant
+        self._Q_subseq_isconstant = core.rolling_isconstant(
+            self._T[-self._m :], self._m, self._isconstant_func
+        )
+        self._T_subseq_isconstant[-1] = self._Q_subseq_isconstant
 
         excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
         # Note that the start of the exclusion zone is relative to
@@ -624,9 +626,12 @@ class floss:
                 M_T,
                 Σ_T,
                 T_subseq_isconstant=self._T_subseq_isconstant,
+                Q_subseq_isconstant=self._Q_subseq_isconstant,
             )
-            D[self._Q_isconstant & self._T_subseq_isconstant] = 0
-            D[np.logical_xor(self._Q_isconstant, self._T_subseq_isconstant)] = 0
+            D[self._Q_subseq_isconstant & self._T_subseq_isconstant] = 0
+            D[
+                np.logical_xor(self._Q_subseq_isconstant, self._T_subseq_isconstant)
+            ] = np.sqrt(self._m)
         else:
             D = core.mass_absolute(self._T[-self._m :], self._T, p=self._p)
 
