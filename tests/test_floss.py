@@ -425,7 +425,7 @@ def test_floss_with_isconstant():
     def custom_func(a, w):
         _, Σ_a = core.compute_mean_std(a, w)
 
-        return Σ_a < 0.05
+        return Σ_a < 0.5
 
     data = np.random.uniform(-1, 1, [64])
     m = 5
