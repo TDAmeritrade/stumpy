@@ -2,7 +2,6 @@ import naive
 import numpy as np
 import numpy.testing as npt
 import pytest
-import functools
 from stumpy import aamp, core, floss, fluss, stump
 from stumpy.floss import _cac, _iac, _nnmark, _rea
 
@@ -422,11 +421,12 @@ def test_aamp_floss_inf_nan(substitute, substitution_locations):
 
 
 def test_floss_with_isconstant():
-    custom_func = functools.partial(
-        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
-    )
+    def custom_func(a, w):
+        _, Σ_a = core.compute_mean_std(a, w)
 
-    data = np.random.uniform(-1000, 1000, [64])
+        return Σ_a < 0.05
+
+    data = np.random.uniform(-1, 1, [64])
     m = 5
     n = 30
     old_data = data[:n]

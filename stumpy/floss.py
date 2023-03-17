@@ -347,6 +347,14 @@ class floss:
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances
 
+    T_subseq_isconstant : function, default None
+        A custom, user-defined function that returns a boolean array that indicates
+        whether a subsequence in `T` is constant (True). The function must only take
+        two arguments, `a`, a 1-D array, and `w`, the window size, while additional
+        arguments may be specified by currying the user-defined function using
+        `functools.partial`. Any subsequence with at least one np.nan/np.inf will
+        automatically have its corresponding value set to False in this boolean array.
+
     Attributes
     ----------
     cac_1d_ : numpy.ndarray
@@ -412,6 +420,7 @@ class floss:
         custom_iac=None,
         normalize=True,
         p=2.0,
+        T_subseq_isconstant=None,
     ):
         """
         Initialize the FLOSS object
@@ -465,6 +474,15 @@ class floss:
         p : float, default 2.0
             The p-norm to apply for computing the Minkowski distance. This parameter is
             ignored when `normalize == True`.
+
+        T_subseq_isconstant : function, default None
+            A custom, user-defined function that returns a boolean array that indicates
+            whether a subsequence in `T` is constant (True). The function must only take
+            two arguments, `a`, a 1-D array, and `w`, the window size, while additional
+            arguments may be specified by currying the user-defined function using
+            `functools.partial`. Any subsequence with at least one np.nan/np.inf will
+            automatically have its corresponding value set to False in this boolean
+            array.
         """
         self._mp = copy.deepcopy(np.asarray(mp))
         self._T = copy.deepcopy(np.asarray(T))
@@ -476,6 +494,16 @@ class floss:
         self._custom_iac = custom_iac
         self._normalize = normalize
         self._p = p
+        if T_subseq_isconstant is None:
+            T_subseq_isconstant = core._rolling_isconstant
+        if not callable(T_subseq_isconstant):
+            msg = (
+                "The parameter `T_subseq_isconstant` must be "
+                + "callabel. For details, see the docstring."
+            )
+            raise ValueError(msg)
+        else:
+            self._isconstant_func = T_subseq_isconstant
 
         self._k = self._mp.shape[0]
         self._n = self._T.shape[0]
@@ -485,7 +513,9 @@ class floss:
         self._finite_T = self._T.copy()
         self._finite_T[~np.isfinite(self._finite_T)] = 0.0
         self._finite_Q = self._finite_T[-self._m :].copy()
-
+        self._T_subseq_isconstant = core.rolling_isconstant(
+            self._T, self._m, self._isconstant_func
+        )
         if self._custom_iac is None:  # pragma: no cover
             self._custom_iac = _iac(
                 self._k,
@@ -514,6 +544,15 @@ class floss:
                 - core.z_norm(right_nn, 1),
                 axis=1,
             )
+            nn_subseq_isconstant = self._T_subseq_isconstant[self._mp[:, 3]]
+            # subseq and its nn are both constant
+            mask = T_subseq_isconstant & nn_subseq_isconstant
+            self._mp[mask, 0] = 0
+
+            # Of a subseq and its nn, only one is constant.
+            mask = np.logical_xor(T_subseq_isconstant & nn_subseq_isconstant)
+            self._mp[mask, 0] = np.sqrt(m)
+
         else:
             self._mp[:, 0] = np.linalg.norm(
                 core.rolling_window(self._T, self._m) - right_nn,
@@ -551,12 +590,17 @@ class floss:
         self._T_isfinite[:-1] = self._T_isfinite[1:]
         self._finite_T[:-1] = self._finite_T[1:]
         self._finite_Q[:-1] = self._finite_Q[1:]
+        self._T_subseq_isconstant[:-1] = self._T_subseq_isconstant[1:]
+
         self._T[-1] = t
         self._T_isfinite[-1] = np.isfinite(t)
         self._finite_T[-1] = t
         if not np.isfinite(t):
             self._finite_T[-1] = 0.0
         self._finite_Q[-1] = self._finite_T[-1]
+        self._Q_isconstant = self._isconstant_func(self._T[: -self._m], self._m)
+        self._T_subseq_isconstant[:-1] = self._Q_isconstant
+
         excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
         # Note that the start of the exclusion zone is relative to
         # the unchanging length of the matrix profile index
@@ -571,15 +615,16 @@ class floss:
 
         # Ingress
         if self._normalize:
-            T_subseq_isconstant = core.rolling_isconstant(self._T, self._m)
             M_T, Σ_T = core.compute_mean_std(self._T, self._m)
             D = core.mass(
                 self._finite_Q,
                 self._finite_T,
                 M_T,
                 Σ_T,
-                T_subseq_isconstant=T_subseq_isconstant,
+                T_subseq_isconstant=self._T_subseq_isconstant,
             )
+            D[self._Q_isconstant & self._T_subseq_isconstant] = 0
+            D[np.logical_xor(self._Q_isconstant, self._T_subseq_isconstant)] = 0
         else:
             D = core.mass_absolute(self._T[-self._m :], self._T, p=self._p)
 
