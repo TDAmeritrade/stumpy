@@ -544,13 +544,15 @@ class floss:
                 - core.z_norm(right_nn, 1),
                 axis=1,
             )
-            nn_subseq_isconstant = self._T_subseq_isconstant[self._mp[:, 3]]
+            nn_subseq_isconstant = self._T_subseq_isconstant[
+                self._mp[:, 3].astype(np.int64)
+            ]
             # subseq and its nn are both constant
-            mask = T_subseq_isconstant & nn_subseq_isconstant
+            mask = self._T_subseq_isconstant & nn_subseq_isconstant
             self._mp[mask, 0] = 0
 
             # Of a subseq and its nn, only one is constant.
-            mask = np.logical_xor(T_subseq_isconstant & nn_subseq_isconstant)
+            mask = np.logical_xor(self._T_subseq_isconstant, nn_subseq_isconstant)
             self._mp[mask, 0] = np.sqrt(m)
 
         else:
@@ -598,8 +600,8 @@ class floss:
         if not np.isfinite(t):
             self._finite_T[-1] = 0.0
         self._finite_Q[-1] = self._finite_T[-1]
-        self._Q_isconstant = self._isconstant_func(self._T[: -self._m], self._m)
-        self._T_subseq_isconstant[:-1] = self._Q_isconstant
+        self._Q_isconstant = self._isconstant_func(self._T[-self._m :], self._m)
+        self._T_subseq_isconstant[-1] = self._Q_isconstant
 
         excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
         # Note that the start of the exclusion zone is relative to

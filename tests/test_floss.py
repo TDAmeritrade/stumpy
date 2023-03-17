@@ -2,6 +2,7 @@ import naive
 import numpy as np
 import numpy.testing as npt
 import pytest
+
 from stumpy import aamp, core, floss, fluss, stump
 from stumpy.floss import _cac, _iac, _nnmark, _rea
 
