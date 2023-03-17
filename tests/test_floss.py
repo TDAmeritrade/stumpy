@@ -66,7 +66,7 @@ def naive_right_mp(T, m, normalize=True, p=2.0, T_subseq_isconstant=None):
                 mp[i, 0] = 0
             elif T_subseq_isconstant[i] or T_subseq_isconstant[nn_i]:
                 mp[i, 0] = np.sqrt(m)
-            else:
+            else:  # pragma: no cover
                 pass
     else:
         mp[:, 0] = np.linalg.norm(core.rolling_window(T, m) - right_nn, axis=1, ord=p)

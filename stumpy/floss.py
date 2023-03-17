@@ -496,7 +496,7 @@ class floss:
         self._p = p
         if T_subseq_isconstant is None:
             T_subseq_isconstant = core._rolling_isconstant
-        if not callable(T_subseq_isconstant):
+        if not callable(T_subseq_isconstant):  # pragma: no cover
             msg = (
                 "The parameter `T_subseq_isconstant` must be "
                 + "callabel. For details, see the docstring."
