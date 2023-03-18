@@ -434,7 +434,6 @@ def test_floss_with_isconstant():
     stddev_threshold = np.quantile(sliding_stddev, quantile_threshold)
     isconstant_custom_func = functools.partial(
         naive.isconstant_func_stddev_threshold,
-        quantile_threshold=quantile_threshold,
         stddev_threshold=stddev_threshold,
     )
 
