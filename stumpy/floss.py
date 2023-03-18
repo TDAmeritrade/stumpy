@@ -502,12 +502,11 @@ class floss:
             T_subseq_isconstant_func = core._rolling_isconstant
         if not callable(T_subseq_isconstant_func):  # pragma: no cover
             msg = (
-                "The parameter `T_subseq_isconstant` must be "
-                + "callabel. For details, see the docstring."
+                "`T_subseq_isconstant_func` was expected to be a callable function "
+                + f"but {type(T_subseq_isconstant_func)} was found."
             )
             raise ValueError(msg)
-        else:
-            self._T_subseq_isconstant_func = T_subseq_isconstant_func
+        self._T_subseq_isconstant_func = T_subseq_isconstant_func
 
         self._k = self._mp.shape[0]
         self._n = self._T.shape[0]
