@@ -556,7 +556,7 @@ class floss:
             mask = self._T_subseq_isconstant & nn_subseq_isconstant
             self._mp[mask, 0] = 0
 
-            # Of a subseq and its nn, only one is constant.
+            # Only the subseq OR its nn is constant but not both
             mask = np.logical_xor(self._T_subseq_isconstant, nn_subseq_isconstant)
             self._mp[mask, 0] = np.sqrt(m)
 
