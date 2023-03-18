@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -422,18 +424,22 @@ def test_aamp_floss_inf_nan(substitute, substitution_locations):
 
 
 def test_floss_with_isconstant():
-    def custom_func(a, w):
-        _, Σ_a = core.compute_mean_std(a, w)
-
-        return Σ_a < 0.5
-
     data = np.random.uniform(-1, 1, [64])
     m = 5
     n = 30
     old_data = data[:n]
 
-    mp = naive_right_mp(T=old_data, m=m, T_subseq_isconstant=custom_func)
-    comp_mp = stump(T_A=old_data, m=m, T_A_subseq_isconstant=custom_func)
+    quantile_threshold = 0.05
+    sliding_stddev = naive.rolling_nanstd(old_data, m)
+    stddev_threshold = np.quantile(sliding_stddev, quantile_threshold)
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold,
+        quantile_threshold=quantile_threshold,
+        stddev_threshold=stddev_threshold,
+    )
+
+    mp = naive_right_mp(T=old_data, m=m, T_subseq_isconstant=isconstant_custom_func)
+    comp_mp = stump(T_A=old_data, m=m, T_A_subseq_isconstant=isconstant_custom_func)
     k = mp.shape[0]
 
     rolling_Ts = core.rolling_window(data[1:], n)
@@ -447,7 +453,7 @@ def test_floss_with_isconstant():
         L,
         excl_factor,
         custom_iac=custom_iac,
-        T_subseq_isconstant_func=custom_func,
+        T_subseq_isconstant_func=isconstant_custom_func,
     )
     last_idx = n - m + 1
     excl_zone = int(np.ceil(m / 4))
@@ -460,8 +466,8 @@ def test_floss_with_isconstant():
         mp[-1, 3] = last_idx + i
 
         ref_Q = ref_T[-m:]
-        ref_Q_isconstant = custom_func(ref_Q, m)[0]
-        ref_T_subseq_isconstant = custom_func(ref_T, m)
+        ref_Q_isconstant = isconstant_custom_func(ref_Q, m)[0]
+        ref_T_subseq_isconstant = isconstant_custom_func(ref_T, m)
         D = naive.distance_profile(ref_Q, ref_T, m)
         for j in range(len(D)):
             if ref_Q_isconstant and ref_T_subseq_isconstant[j]:
