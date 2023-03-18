@@ -914,7 +914,7 @@ class stumpi_egress(object):
         self._m = m
         self._k = k
         if T_subseq_isconstant_func is None:
-            T_subseq_isconstant_func = is_ptp_zero_1d
+            T_subseq_isconstant_func = core._rolling_isconstant
         self._T_subseq_isconstant_func = T_subseq_isconstant_func
         self._T_subseq_isconstant = rolling_isconstant(
             self._T, self._m, self._T_subseq_isconstant_func
@@ -958,17 +958,17 @@ class stumpi_egress(object):
     def update(self, t):
         self._T[:] = np.roll(self._T, -1)
         self._T_isfinite[:] = np.roll(self._T_isfinite, -1)
-        self._T_subseq_isconstant[:] = np.roll(self._T_subseq_isconstant, -1)
         if np.isfinite(t):
             self._T_isfinite[-1] = True
             self._T[-1] = t
-            self._T_subseq_isconstant[-1] = rolling_isconstant(
-                self._T[-self._m :], self._m, self._T_subseq_isconstant_func
-            )
         else:
             self._T_isfinite[-1] = False
             self._T[-1] = 0
-            self._T_subseq_isconstant[-1] = False
+
+        self._T_subseq_isconstant[:] = np.roll(self._T_subseq_isconstant, -1)
+        self._T_subseq_isconstant[-1] = rolling_isconstant(
+            self._T[-self._m :], self._m, self._T_subseq_isconstant_func
+        ) & np.all(self._T_isfinite[-self._m :])
 
         self._n_appended += 1
 
