@@ -513,9 +513,11 @@ class floss:
         self._finite_T = self._T.copy()
         self._finite_T[~np.isfinite(self._finite_T)] = 0.0
         self._finite_Q = self._finite_T[-self._m :].copy()
-        self._T_subseq_isconstant = core.rolling_isconstant(
-            self._T, self._m, self._T_subseq_isconstant_func
-        )
+
+        if self._normalize:
+            self._T_subseq_isconstant = core.rolling_isconstant(
+                self._T, self._m, self._T_subseq_isconstant_func
+            )
         if self._custom_iac is None:  # pragma: no cover
             self._custom_iac = _iac(
                 self._k,
