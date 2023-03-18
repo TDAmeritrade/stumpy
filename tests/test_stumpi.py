@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -1061,3 +1063,86 @@ def test_stumpi_self_join_egress_KNN():
             npt.assert_almost_equal(ref_I, comp_I)
             npt.assert_almost_equal(ref_left_P, comp_left_P)
             npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+
+def test_stumpi_self_join_with_isconstant():
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    seed = np.random.randint(100000)
+    np.random.seed(seed)
+
+    T = np.random.rand(30)
+    quantile_threshold = 0.25
+    sliding_stddev = naive.rolling_nanstd(T, m)
+    stddev_threshold = np.quantile(sliding_stddev, quantile_threshold)
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold,
+        stddev_threshold=stddev_threshold,
+    )
+
+    stream = stumpi(T, m, egress=False, T_subseq_isconstant_func=isconstant_custom_func)
+    for i in range(34):
+        t = np.random.rand()
+        stream.update(t)
+
+    comp_P = stream.P_
+    comp_I = stream.I_
+    comp_left_P = stream.left_P_
+    comp_left_I = stream.left_I_
+
+    T_subseq_isconstant = naive.rolling_isconstant(stream.T_, m, isconstant_custom_func)
+    ref_mp = naive.stump(
+        T_A=stream.T_,
+        m=m,
+        exclusion_zone=zone,
+        row_wise=True,
+        T_A_subseq_isconstant=T_subseq_isconstant,
+    )
+    ref_P = ref_mp[:, 0]
+    ref_I = ref_mp[:, 1]
+    ref_left_I = ref_mp[:, 2].astype(np.int64)
+    ref_left_P = np.full_like(ref_left_I, np.inf, dtype=np.float64)
+    for i, nn_i in enumerate(ref_left_I):  # nn_i is left nn of i
+        if nn_i < 0:
+            continue
+
+        if T_subseq_isconstant[i] and T_subseq_isconstant[nn_i]:
+            D = 0
+        elif T_subseq_isconstant[i] or T_subseq_isconstant[nn_i]:
+            D = np.sqrt(m)
+        else:
+            D = core.mass(stream.T_[i : i + m], stream.T_[nn_i : nn_i + m])[0]
+
+        ref_left_P[i] = D
+
+    naive.replace_inf(ref_P)
+    naive.replace_inf(ref_left_P)
+    naive.replace_inf(comp_P)
+    naive.replace_inf(comp_left_P)
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
+    npt.assert_almost_equal(ref_left_P, comp_left_P)
+    npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+    np.random.seed(seed)
+    T = np.random.rand(30)
+    T = pd.Series(T)
+    stream = stumpi(T, m, egress=False)
+    for i in range(34):
+        t = np.random.rand()
+        stream.update(t)
+
+    comp_P = stream.P_
+    comp_I = stream.I_
+    comp_left_P = stream.left_P_
+    comp_left_I = stream.left_I_
+
+    naive.replace_inf(comp_P)
+    naive.replace_inf(comp_left_P)
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
+    npt.assert_almost_equal(ref_left_P, comp_left_P)
+    npt.assert_almost_equal(ref_left_I, comp_left_I)
