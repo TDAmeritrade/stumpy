@@ -429,7 +429,7 @@ def test_floss_with_isconstant():
     n = 30
     old_data = data[:n]
 
-    quantile_threshold = 0.05
+    quantile_threshold = 0.5
     sliding_stddev = naive.rolling_nanstd(old_data, m)
     stddev_threshold = np.quantile(sliding_stddev, quantile_threshold)
     isconstant_custom_func = functools.partial(
