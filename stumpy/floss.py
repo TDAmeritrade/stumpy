@@ -521,6 +521,8 @@ class floss:
             self._T_subseq_isconstant = core.rolling_isconstant(
                 self._T, self._m, self._T_subseq_isconstant_func
             )
+            self._M_T, self._Σ_T = core.compute_mean_std(self._T, self._m)
+
         if self._custom_iac is None:  # pragma: no cover
             self._custom_iac = _iac(
                 self._k,
@@ -623,13 +625,18 @@ class floss:
                 self._T[-self._m :], self._m, self._T_subseq_isconstant_func
             )
             self._T_subseq_isconstant[-1] = self._Q_subseq_isconstant
-            M_T, Σ_T = core.compute_mean_std(self._T, self._m)
+
+            self._M_T[:-1] = self._M_T[1:]
+            self._Σ_T[:-1] = self._Σ_T[1:]
+            self._M_T[-1], self._Σ_T[-1] = core.compute_mean_std(
+                self._T[-self._m :], self._m
+            )
 
             D = core.mass(
                 self._finite_Q,
                 self._finite_T,
-                M_T,
-                Σ_T,
+                self._M_T,
+                self._Σ_T,
                 T_subseq_isconstant=self._T_subseq_isconstant,
                 Q_subseq_isconstant=self._Q_subseq_isconstant,
             )
