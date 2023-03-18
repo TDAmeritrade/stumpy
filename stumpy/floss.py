@@ -347,6 +347,10 @@ class floss:
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == True`.
+
     T_subseq_isconstant_func : function, default None
         A custom, user-defined function that returns a boolean array that indicates
         whether a subsequence in `T` is constant (True). The function must only take
