@@ -447,7 +447,7 @@ def test_floss_with_isconstant():
         L,
         excl_factor,
         custom_iac=custom_iac,
-        T_subseq_isconstant=custom_func,
+        T_subseq_isconstant_func=custom_func,
     )
     last_idx = n - m + 1
     excl_zone = int(np.ceil(m / 4))

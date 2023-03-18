@@ -347,7 +347,7 @@ class floss:
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances
 
-    T_subseq_isconstant : function, default None
+    T_subseq_isconstant_func : function, default None
         A custom, user-defined function that returns a boolean array that indicates
         whether a subsequence in `T` is constant (True). The function must only take
         two arguments, `a`, a 1-D array, and `w`, the window size, while additional
@@ -420,7 +420,7 @@ class floss:
         custom_iac=None,
         normalize=True,
         p=2.0,
-        T_subseq_isconstant=None,
+        T_subseq_isconstant_func=None,
     ):
         """
         Initialize the FLOSS object
@@ -475,7 +475,7 @@ class floss:
             The p-norm to apply for computing the Minkowski distance. This parameter is
             ignored when `normalize == True`.
 
-        T_subseq_isconstant : function, default None
+        T_subseq_isconstant_func : function, default None
             A custom, user-defined function that returns a boolean array that indicates
             whether a subsequence in `T` is constant (True). The function must only take
             two arguments, `a`, a 1-D array, and `w`, the window size, while additional
@@ -494,16 +494,16 @@ class floss:
         self._custom_iac = custom_iac
         self._normalize = normalize
         self._p = p
-        if T_subseq_isconstant is None:
-            T_subseq_isconstant = core._rolling_isconstant
-        if not callable(T_subseq_isconstant):  # pragma: no cover
+        if T_subseq_isconstant_func is None:
+            T_subseq_isconstant_func = core._rolling_isconstant
+        if not callable(T_subseq_isconstant_func):  # pragma: no cover
             msg = (
                 "The parameter `T_subseq_isconstant` must be "
                 + "callabel. For details, see the docstring."
             )
             raise ValueError(msg)
         else:
-            self._isconstant_func = T_subseq_isconstant
+            self._T_subseq_isconstant_func = T_subseq_isconstant_func
 
         self._k = self._mp.shape[0]
         self._n = self._T.shape[0]
@@ -514,7 +514,7 @@ class floss:
         self._finite_T[~np.isfinite(self._finite_T)] = 0.0
         self._finite_Q = self._finite_T[-self._m :].copy()
         self._T_subseq_isconstant = core.rolling_isconstant(
-            self._T, self._m, self._isconstant_func
+            self._T, self._m, self._T_subseq_isconstant_func
         )
         if self._custom_iac is None:  # pragma: no cover
             self._custom_iac = _iac(
@@ -601,7 +601,7 @@ class floss:
             self._finite_T[-1] = 0.0
         self._finite_Q[-1] = self._finite_T[-1]
         self._Q_subseq_isconstant = core.rolling_isconstant(
-            self._T[-self._m :], self._m, self._isconstant_func
+            self._T[-self._m :], self._m, self._T_subseq_isconstant_func
         )
         self._T_subseq_isconstant[-1] = self._Q_subseq_isconstant
 
