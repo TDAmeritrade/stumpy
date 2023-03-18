@@ -597,7 +597,6 @@ class floss:
         self._T_isfinite[:-1] = self._T_isfinite[1:]
         self._finite_T[:-1] = self._finite_T[1:]
         self._finite_Q[:-1] = self._finite_Q[1:]
-        self._T_subseq_isconstant[:-1] = self._T_subseq_isconstant[1:]
 
         self._T[-1] = t
         self._T_isfinite[-1] = np.isfinite(t)
@@ -605,11 +604,6 @@ class floss:
         if not np.isfinite(t):
             self._finite_T[-1] = 0.0
         self._finite_Q[-1] = self._finite_T[-1]
-        self._Q_subseq_isconstant = core.rolling_isconstant(
-            self._T[-self._m :], self._m, self._T_subseq_isconstant_func
-        )
-        self._T_subseq_isconstant[-1] = self._Q_subseq_isconstant
-
         excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
         # Note that the start of the exclusion zone is relative to
         # the unchanging length of the matrix profile index
@@ -624,7 +618,13 @@ class floss:
 
         # Ingress
         if self._normalize:
+            self._T_subseq_isconstant[:-1] = self._T_subseq_isconstant[1:]
+            self._Q_subseq_isconstant = core.rolling_isconstant(
+                self._T[-self._m :], self._m, self._T_subseq_isconstant_func
+            )
+            self._T_subseq_isconstant[-1] = self._Q_subseq_isconstant
             M_T, Σ_T = core.compute_mean_std(self._T, self._m)
+
             D = core.mass(
                 self._finite_Q,
                 self._finite_T,
