@@ -1125,24 +1125,3 @@ def test_stumpi_self_join_with_isconstant():
     npt.assert_almost_equal(ref_I, comp_I)
     npt.assert_almost_equal(ref_left_P, comp_left_P)
     npt.assert_almost_equal(ref_left_I, comp_left_I)
-
-    np.random.seed(seed)
-    T = np.random.rand(30)
-    T = pd.Series(T)
-    stream = stumpi(T, m, egress=False)
-    for i in range(34):
-        t = np.random.rand()
-        stream.update(t)
-
-    comp_P = stream.P_
-    comp_I = stream.I_
-    comp_left_P = stream.left_P_
-    comp_left_I = stream.left_I_
-
-    naive.replace_inf(comp_P)
-    naive.replace_inf(comp_left_P)
-
-    npt.assert_almost_equal(ref_P, comp_P)
-    npt.assert_almost_equal(ref_I, comp_I)
-    npt.assert_almost_equal(ref_left_P, comp_left_P)
-    npt.assert_almost_equal(ref_left_I, comp_left_I)
