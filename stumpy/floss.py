@@ -647,10 +647,6 @@ class floss:
                 T_subseq_isconstant=self._T_subseq_isconstant,
                 Q_subseq_isconstant=self._Q_subseq_isconstant,
             )
-            D[self._Q_subseq_isconstant & self._T_subseq_isconstant] = 0
-            D[
-                np.logical_xor(self._Q_subseq_isconstant, self._T_subseq_isconstant)
-            ] = np.sqrt(self._m)
         else:
             D = core.mass_absolute(self._T[-self._m :], self._T, p=self._p)
 
