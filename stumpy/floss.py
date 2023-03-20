@@ -694,13 +694,13 @@ class floss:
         """
         Get the updated (right) matrix profile indices
 
-        Note1: In contrast to the output of `stump`, any invalid index `-1`
-        in this (right) matrix profile indices is replaced with the start
-        index of the corresponding subsequence.
-        Note2: The indices stored in `self.I_` reflect the starting index of
+        The indices stored in `self.I_` reflect the starting index of
         subsequneces with respect to the original time series.
         """
-        return self._mp[:, 3].astype(np.int64)
+        I = self._mp[:, 3].astype(np.int64).copy()
+        I[self._mp[:, 0] == np.inf] = -1
+
+        return I
 
     @property
     def T_(self):
