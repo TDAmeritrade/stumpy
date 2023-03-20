@@ -568,15 +568,13 @@ class floss:
                 axis=1,
                 ord=self._p,
             )
-        # Technically, a negative index value has no meaning (i.e., it is an
-        # invalid index). However, in numpy, a negative value corresponds to the last
-        # position of an array and so we can't "trust" that negative index value anymore
-        # and we need to replace it with something else that is not -1. In the following
-        # lines, if subsequence `S_i` has no valid right nearest neigbor
-        # (i.e. self._mp[i, 3]==3), then `self._mp[i, 3]` will be set to `i`. This
-        # modification results in having distance 0 (instead of np.inf) between
-        # `S_i` and its nearest neighbor. This can be resolveed by applying a
-        # post-processing step after computing distances.
+        # Note that a negative matrix profile index (e.g. -1) represents a null index.
+        # However, in numpy, negative indices are interpreted as counting from the end
+        # of the array. To resolve this, we temporarily replace a negative index with
+        # a self index. So, if subsequence S_i has no valid right nearest neighbor, then
+        # self._mp[i, 3] will be set to i and its corresponding matrix profile distance
+        # is set to 0.0. This temporary resolution is later resolved (by setting them
+        # back to -1 and np.inf, respectively) in a post-processing step.
         inf_indices = np.argwhere(self._mp[:, 3] < 0).flatten()
         self._mp[inf_indices, 0] = np.inf
         self._mp[inf_indices, 3] = inf_indices
