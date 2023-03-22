@@ -1157,7 +1157,7 @@ def test_aampi_self_join_egress_passing_mp():
 
         n = 30
         T = np.random.rand(n)
-        mp = naive.stump(T, m, p=p)
+        mp = naive.aamp(T, m, p=p)
 
         ref_mp = naive.aampi_egress(T, m, p=p, mp=mp)
         ref_P = ref_mp.P_.copy()
