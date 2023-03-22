@@ -921,6 +921,8 @@ class stumpi_egress(object):
         self._l = self._T.shape[0] - m + 1
         if mp is None:
             mp = stump(T, m, exclusion_zone=self._excl_zone, k=self._k)
+        else:
+            mp = mp.copy()
         self._P = mp[:, :k].astype(np.float64)
         self._I = mp[:, k : 2 * k].astype(np.int64)
 
