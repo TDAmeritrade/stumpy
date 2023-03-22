@@ -129,7 +129,7 @@ class aampi:
             2 * self._k + 2,
         ):  # pragma: no cover
             msg = (
-                "The shape of `mp` must match `(len(T)-m+1, 2 * k + 2)`"
+                f"The shape of `mp` must match ({len(T)-m+1}, {2 * k + 2})"
                 + f"Found {mp.shape} instead."
             )
             raise ValueError(msg)
