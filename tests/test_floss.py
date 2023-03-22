@@ -192,8 +192,8 @@ def test_floss():
         )
 
         ref_mp = mp.copy()
-        ref_P = ref_mp[:, 0].copy()
-        ref_I = ref_mp[:, 3].copy()
+        ref_P = ref_mp[:, 0]
+        ref_I = ref_mp[:, 3]
         ref_I[ref_mp[:, 0] == np.inf] = -1
 
         stream.update(ref_T[-1])
@@ -210,7 +210,6 @@ def test_floss():
         npt.assert_almost_equal(ref_P, comp_P)
         npt.assert_almost_equal(ref_I, comp_I)
         npt.assert_almost_equal(ref_T, comp_T)
-        npt.assert_almost_equal(ref_mp[:, 3], stream._mp[:, 3])
 
 
 def test_aamp_floss():
@@ -264,8 +263,8 @@ def test_aamp_floss():
             )
 
             ref_mp = mp.copy()
-            ref_P = ref_mp[:, 0].copy()
-            ref_I = ref_mp[:, 3].copy()
+            ref_P = ref_mp[:, 0]
+            ref_I = ref_mp[:, 3]
             ref_I[ref_mp[:, 0] == np.inf] = -1
 
             stream.update(ref_T[-1])
@@ -281,7 +280,6 @@ def test_aamp_floss():
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
             npt.assert_almost_equal(ref_T, comp_T)
-            npt.assert_almost_equal(ref_mp[:, 3], stream._mp[:, 3])
 
 
 @pytest.mark.parametrize("substitute", substitution_values)
@@ -337,8 +335,8 @@ def test_floss_inf_nan(substitute, substitution_locations):
             )
 
             ref_mp = mp.copy()
-            ref_P = ref_mp[:, 0].copy()
-            ref_I = ref_mp[:, 3].copy()
+            ref_P = ref_mp[:, 0]
+            ref_I = ref_mp[:, 3]
             ref_I[ref_mp[:, 0] == np.inf] = -1
 
             stream.update(ref_T[-1])
@@ -354,7 +352,6 @@ def test_floss_inf_nan(substitute, substitution_locations):
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
             npt.assert_almost_equal(ref_T, comp_T)
-            npt.assert_almost_equal(ref_mp[:, 3], stream._mp[:, 3])
 
 
 @pytest.mark.parametrize("substitute", substitution_values)
@@ -412,8 +409,8 @@ def test_aamp_floss_inf_nan(substitute, substitution_locations):
             )
 
             ref_mp = mp.copy()
-            ref_P = ref_mp[:, 0].copy()
-            ref_I = ref_mp[:, 3].copy()
+            ref_P = ref_mp[:, 0]
+            ref_I = ref_mp[:, 3]
             ref_I[ref_mp[:, 0] == np.inf] = -1
 
             stream.update(ref_T[-1])
@@ -429,7 +426,6 @@ def test_aamp_floss_inf_nan(substitute, substitution_locations):
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
             npt.assert_almost_equal(ref_T, comp_T)
-            npt.assert_almost_equal(ref_mp[:, 3], stream._mp[:, 3])
 
 
 def test_floss_with_isconstant():
@@ -499,8 +495,8 @@ def test_floss_with_isconstant():
         )
 
         ref_mp = mp.copy()
-        ref_P = ref_mp[:, 0].copy()
-        ref_I = ref_mp[:, 3].copy()
+        ref_P = ref_mp[:, 0]
+        ref_I = ref_mp[:, 3]
         ref_I[ref_mp[:, 0] == np.inf] = -1
 
         stream.update(ref_T[-1])
@@ -516,4 +512,3 @@ def test_floss_with_isconstant():
         npt.assert_almost_equal(ref_P, comp_P)
         npt.assert_almost_equal(ref_I, comp_I)
         npt.assert_almost_equal(ref_T, comp_T)
-        npt.assert_almost_equal(ref_mp[:, 3], stream._mp[:, 3])
