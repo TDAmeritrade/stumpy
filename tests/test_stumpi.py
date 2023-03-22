@@ -1061,3 +1061,61 @@ def test_stumpi_self_join_egress_KNN():
             npt.assert_almost_equal(ref_I, comp_I)
             npt.assert_almost_equal(ref_left_P, comp_left_P)
             npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+
+def test_stumpi_self_join_egress_passing_mp():
+    m = 3
+
+    seed = np.random.randint(100000)
+    np.random.seed(seed)
+    n = 30
+    T = np.random.rand(n)
+    mp = naive.stump(T, m)
+
+    ref_mp = naive.stumpi_egress(T, m, mp=mp)
+    ref_P = ref_mp.P_.copy()
+    ref_I = ref_mp.I_
+    ref_left_P = ref_mp.left_P_.copy()
+    ref_left_I = ref_mp.left_I_
+
+    stream = stumpi(T, m, egress=True, mp=mp)
+
+    comp_P = stream.P_.copy()
+    comp_I = stream.I_
+    comp_left_P = stream.left_P_.copy()
+    comp_left_I = stream.left_I_
+
+    naive.replace_inf(ref_P)
+    naive.replace_inf(ref_left_P)
+    naive.replace_inf(comp_P)
+    naive.replace_inf(comp_left_P)
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
+    npt.assert_almost_equal(ref_left_P, comp_left_P)
+    npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+    for i in range(34):
+        t = np.random.rand()
+        ref_mp.update(t)
+        stream.update(t)
+
+        comp_P = stream.P_.copy()
+        comp_I = stream.I_
+        comp_left_P = stream.left_P_.copy()
+        comp_left_I = stream.left_I_
+
+        ref_P = ref_mp.P_.copy()
+        ref_I = ref_mp.I_
+        ref_left_P = ref_mp.left_P_.copy()
+        ref_left_I = ref_mp.left_I_
+
+        naive.replace_inf(ref_P)
+        naive.replace_inf(ref_left_P)
+        naive.replace_inf(comp_P)
+        naive.replace_inf(comp_left_P)
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_left_P, comp_left_P)
+        npt.assert_almost_equal(ref_left_I, comp_left_I)
