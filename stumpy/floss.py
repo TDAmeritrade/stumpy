@@ -697,6 +697,11 @@ class floss:
         The indices stored in `self.I_` reflect the starting index of
         subsequneces with respect to the original time series.
         """
+        # Comparing the right matrix profile index value with the self index
+        # position (i.e., self._mp[:, 3] == np.arange(len(self._mp)) is avoided
+        # because things are constantly being shifted (ingress+egress) to the left
+        # and so the aforementioned check is all `False` as soon as we start using
+        # `.update()`.
         I = self._mp[:, 3].astype(np.int64).copy()
         I[self._mp[:, 0] == np.inf] = -1
 
