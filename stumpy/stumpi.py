@@ -153,7 +153,10 @@ class stumpi:
         if mp is None:
             mp = stump(self._T, self._m, k=self._k)
 
-        if mp.shape != (len(self._T) - self._m + 1, 2 * self._k + 2):
+        if mp.shape != (
+            len(self._T) - self._m + 1,
+            2 * self._k + 2,
+        ):  # pragma: no cover
             msg = (
                 "The shape of `mp` must match `(len(T)-m+1, 2 * k + 2)`"
                 + f"Found {mp.shape} instead."
