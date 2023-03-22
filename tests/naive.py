@@ -907,7 +907,7 @@ class aampi_egress(object):
 
 
 class stumpi_egress(object):
-    def __init__(self, T, m, excl_zone=None, k=1):
+    def __init__(self, T, m, excl_zone=None, k=1, mp=None):
         self._T = np.asarray(T)
         self._T = self._T.copy()
         self._T_isfinite = np.isfinite(self._T)
@@ -919,7 +919,8 @@ class stumpi_egress(object):
             self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
-        mp = stump(T, m, exclusion_zone=self._excl_zone, k=self._k)
+        if mp is None:
+            mp = stump(T, m, exclusion_zone=self._excl_zone, k=self._k)
         self._P = mp[:, :k].astype(np.float64)
         self._I = mp[:, k : 2 * k].astype(np.int64)
 
