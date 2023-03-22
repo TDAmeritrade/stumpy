@@ -36,10 +36,11 @@ class aampi:
         when k > 1.
 
     mp : numpy.ndarry, default None
-        A 2D array of shape `(len(T) - m + 1, 2 * k + 2)`, where the first k columns
-        are top-k matrix profile, and the next k columns are their corresponding
-        indices. The last two columns correspond to the top-1 left and top-1 right
-        matrix profile indices. When None (default), this array is computed
+        A pre-computed matrix profile (and corresponding matrix profile indices).
+        This is a 2D array of shape `(len(T) - m + 1, 2 * k + 2)`, where the first `k`
+        columns are top-k matrix profile, and the next `k` columns are their
+        corresponding indices. The last two columns correspond to the top-1 left and
+        top-1 right matrix profile indices. When None (default), this array is computed
         internally using `stumpy.aamp`.
 
     Attributes
@@ -102,11 +103,12 @@ class aampi:
             memory usage when k > 1.
 
         mp : numpy.ndarry, default None
-            A 2D array of shape `(len(T) - m + 1, 2 * k + 2)`, where the first k columns
-            are top-k matrix profile, and the next k columns are their corresponding
-            indices. The last two columns correspond to the top-1 left and top-1 right
-            matrix profile indices. When None (default), this array is computed
-            internally using `stumpy.aamp`.
+            A pre-computed matrix profile (and corresponding matrix profile indices).
+            This is a 2D array of shape `(len(T) - m + 1, 2 * k + 2)`, where the first
+            `k` columns are top-k matrix profile, and the next `k` columns are their
+            corresponding indices. The last two columns correspond to the top-1 left
+            and top-1 right matrix profile indices. When None (default), this array is
+            computed internally using `stumpy.aamp`.
         """
         self._T = core._preprocess(T)
         core.check_window_size(m, max_size=self._T.shape[-1])
