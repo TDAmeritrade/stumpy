@@ -78,7 +78,7 @@ class aampi:
 
     def __init__(self, T, m, egress=True, p=2.0, k=1, mp=None):
         """
-        Initialize the `stumpi` object
+        Initialize the `aampi` object
 
         Parameters
         ----------
