@@ -152,6 +152,8 @@ class stumpi:
 
         if mp is None:
             mp = stump(self._T, self._m, k=self._k)
+        else:
+            mp = mp.copy()
 
         if mp.shape != (
             len(self._T) - self._m + 1,
@@ -162,7 +164,6 @@ class stumpi:
                 + f"Found {mp.shape} instead."
             )
             raise ValueError(msg)
-        mp = mp.copy()
 
         self._P = mp[:, : self._k].astype(np.float64)
         self._I = mp[:, self._k : 2 * self._k].astype(np.int64)
