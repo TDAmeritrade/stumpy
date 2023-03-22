@@ -820,7 +820,7 @@ class aampi_egress(object):
 
         self._l = self._T.shape[0] - m + 1
         if mp is None:
-            mp = aamp(T, m, exclusion_zone=self._excl_zone, p=p, k=self._k)
+            mp = aamp(self._, self._m, exclusion_zone=self._excl_zone, p=p, k=self._k)
         else:
             mp = mp.copy()
         self._P = mp[:, :k].astype(np.float64)
@@ -923,7 +923,7 @@ class stumpi_egress(object):
 
         self._l = self._T.shape[0] - m + 1
         if mp is None:
-            mp = stump(T, m, exclusion_zone=self._excl_zone, k=self._k)
+            mp = stump(self._T, self._m, exclusion_zone=self._excl_zone, k=self._k)
         else:
             mp = mp.copy()
         self._P = mp[:, :k].astype(np.float64)
