@@ -695,7 +695,8 @@ class floss:
         Get the updated (right) matrix profile indices
 
         The indices stored in `self.I_` reflect the starting index of
-        subsequneces with respect to the original time series.
+        subsequneces with respect to the full time series (i.e., including
+        all egressed data points).
         """
         # Comparing the right matrix profile index value with the self index
         # position (i.e., self._mp[:, 3] == np.arange(len(self._mp)) is avoided
