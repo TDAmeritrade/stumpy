@@ -2371,7 +2371,7 @@ def _get_mask_slices(mask):
     return slices
 
 
-def _idx_to_mp(I, T, m, normalize=True):
+def _idx_to_mp(I, T, m, normalize=True, p=2.0, T_subseq_isconstant=None):
     """
     Convert a set of matrix profile indices (including left and right indices) to its
     corresponding matrix profile distances
@@ -2390,6 +2390,14 @@ def _idx_to_mp(I, T, m, normalize=True):
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == True`.
+
+    T_subseq_isconstant : bool, default None
+        A boolean value that indicates whether the ith subsequence in `T` is
+        constant (True). When `None`, it is computed by `rolling_isconstant`
+
     Returns
     -------
     P : numpy.ndarray
@@ -2397,6 +2405,10 @@ def _idx_to_mp(I, T, m, normalize=True):
     """
     I = I.astype(np.int64)
     T = T.copy()
+
+    if normalize and T_subseq_isconstant is None:
+        T_subseq_isconstant = rolling_isconstant(T, m)
+
     T_isfinite = np.isfinite(T)
     T_subseq_isfinite = np.all(rolling_window(T_isfinite, m), axis=1)
 
@@ -2405,8 +2417,15 @@ def _idx_to_mp(I, T, m, normalize=True):
     nn_subseqs = T_subseqs[I]
     if normalize:
         P = linalg.norm(z_norm(T_subseqs, axis=1) - z_norm(nn_subseqs, axis=1), axis=1)
+        nn_subseq_isconstant = T_subseq_isconstant[I]
+        P[
+            T_subseq_isconstant & nn_subseq_isconstant
+        ] = 0  # both subsequences are constant
+        P[np.logical_xor(T_subseq_isconstant, nn_subseq_isconstant)] = np.sqrt(
+            m
+        )  # only one subsequence is constant
     else:
-        P = linalg.norm(T_subseqs - nn_subseqs, axis=1)
+        P = linalg.norm(T_subseqs - nn_subseqs, axis=1, ord=p)
     P[~T_subseq_isfinite] = np.inf
     P[I < 0] = np.inf
 
