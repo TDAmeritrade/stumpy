@@ -1,10 +1,13 @@
+import functools
+
+import naive
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import config, stumped
-from dask.distributed import Client, LocalCluster
 import pytest
-import naive
+from dask.distributed import Client, LocalCluster
+
+from stumpy import config, stumped
 
 
 @pytest.fixture(scope="module")
@@ -641,3 +644,54 @@ def test_stumped_A_B_join_KNN(T_A, T_B, dask_cluster):
             naive.replace_inf(ref_mp)
             naive.replace_inf(comp_mp)
             npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stumped_self_join_custom_isconstant(T_A, T_B, dask_cluster):
+    m = 3
+    zone = int(np.ceil(m / 4))
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    with Client(dask_cluster) as dask_client:
+        # case 1: custom isconstant is a boolean array
+        T_B_subseq_isconstant = naive.rolling_isconstant(T_B, m, isconstant_custom_func)
+        ref_mp = naive.stump(
+            T_A=T_B,
+            m=m,
+            exclusion_zone=zone,
+            T_A_subseq_isconstant=T_B_subseq_isconstant,
+        )
+        comp_mp = stumped(
+            dask_client,
+            T_A=T_B,
+            m=m,
+            ignore_trivial=True,
+            T_A_subseq_isconstant=T_B_subseq_isconstant,
+        )
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
+
+        # case 2: custom isconstant is func
+        ref_mp = naive.stump(
+            T_A=T_B,
+            m=m,
+            exclusion_zone=zone,
+            T_A_subseq_isconstant=isconstant_custom_func,
+        )
+        comp_mp = stumped(
+            dask_client,
+            T_A=T_B,
+            m=m,
+            ignore_trivial=True,
+            T_A_subseq_isconstant=isconstant_custom_func,
+        )
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)

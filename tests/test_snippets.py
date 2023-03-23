@@ -1,11 +1,10 @@
+import naive
 import numpy as np
-
 import numpy.testing as npt
+import pytest
+
 from stumpy import config, snippets
 from stumpy.snippets import _get_all_profiles
-import pytest
-import naive
-
 
 test_data = [np.random.uniform(-1000, 1000, [64]).astype(np.float64)]
 s = [6, 7, 8]

@@ -6,11 +6,13 @@ try:
     from numba.errors import NumbaPerformanceWarning
 except ModuleNotFoundError:
     from numba.core.errors import NumbaPerformanceWarning
-from stumpy import gpu_ostinato
-import naive
-import pytest
+
 from unittest.mock import patch
 
+import naive
+import pytest
+
+from stumpy import gpu_ostinato
 
 TEST_THREADS_PER_BLOCK = 10
 

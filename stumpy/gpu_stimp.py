@@ -2,8 +2,9 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-from . import core, gpu_stump
+from . import core
 from .gpu_aamp_stimp import gpu_aamp_stimp
+from .gpu_stump import gpu_stump
 from .stimp import _stimp
 
 
@@ -80,6 +81,8 @@ class gpu_stimp(_stimp):
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> from numba import cuda
     >>> if __name__ == "__main__":
     ...     all_gpu_devices = [device.id for device in cuda.list_devices()]

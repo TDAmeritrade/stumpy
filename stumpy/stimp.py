@@ -3,8 +3,11 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from . import core, stump, scrump, stumped
+
+from . import core, scrump
 from .aamp_stimp import aamp_stimp, aamp_stimped
+from .stump import stump
+from .stumped import stumped
 
 
 def _normalize_pan(pan, ms, bfs_indices, n_processed):
@@ -397,6 +400,8 @@ class stimp(_stimp):
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> pmp = stumpy.stimp(np.array([584., -11., 23., 79., 1001., 0., -19.]))
     >>> pmp.update()
     >>> pmp.PAN_
@@ -539,6 +544,8 @@ class stimped(_stimp):
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> from dask.distributed import Client
     >>> if __name__ == "__main__":
     ...     with Client() as dask_client:

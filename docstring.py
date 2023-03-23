@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import pathlib
 import ast
+import pathlib
 import re
 
 

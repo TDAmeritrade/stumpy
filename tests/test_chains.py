@@ -1,7 +1,8 @@
 import numpy as np
 import numpy.testing as npt
-from stumpy import atsc, allc
 import pytest
+
+from stumpy import allc, atsc
 
 test_data = [
     (

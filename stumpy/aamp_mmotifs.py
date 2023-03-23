@@ -6,9 +6,9 @@ import warnings
 
 import numpy as np
 
-from . import core, config
-from .maamp import maamp_mdl
+from . import config, core
 from .aamp_motifs import aamp_match
+from .maamp import maamp_mdl
 
 
 def aamp_mmotifs(

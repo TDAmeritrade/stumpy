@@ -4,7 +4,9 @@
 
 import numpy as np
 
-from . import core, aamp, aamped
+from . import core
+from .aamp import aamp
+from .aamped import aamped
 
 
 def _aamp_across_series_nearest_neighbors(

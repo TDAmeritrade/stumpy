@@ -1,10 +1,11 @@
+import naive
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import config, aamped
-from dask.distributed import Client, LocalCluster
 import pytest
-import naive
+from dask.distributed import Client, LocalCluster
+
+from stumpy import aamped, config
 
 
 @pytest.fixture(scope="module")

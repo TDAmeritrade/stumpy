@@ -1,56 +1,57 @@
-from pkg_resources import get_distribution, DistributionNotFound
 import os.path
+
+from numba import cuda
+from pkg_resources import DistributionNotFound, get_distribution
+
+from .aamp import aamp  # noqa: F401
+from .aamp_mmotifs import aamp_mmotifs  # noqa: F401
+from .aamp_motifs import aamp_match, aamp_motifs  # noqa: F401
+from .aamp_ostinato import aamp_ostinato, aamp_ostinatoed  # noqa: F401
+from .aamp_stimp import aamp_stimp, aamp_stimped  # noqa: F401
+from .aampdist import aampdist, aampdisted  # noqa: F401
+from .aampdist_snippets import aampdist_snippets  # noqa: F401
+from .aamped import aamped  # noqa: F401
+from .aampi import aampi  # noqa: F401
+from .chains import allc, atsc  # noqa: F401
 from .core import mass  # noqa: F401
+from .floss import floss, fluss  # noqa: F401
+from .maamp import maamp, maamp_mdl, maamp_subspace  # noqa: F401
+from .maamped import maamped  # noqa: F401
+from .mmotifs import mmotifs  # noqa: F401
+from .motifs import match, motifs  # noqa: F401
+from .mpdist import mpdist, mpdisted  # noqa: F401
+from .mstump import mdl, mstump, subspace  # noqa: F401
+from .mstumped import mstumped  # noqa: F401
+from .ostinato import ostinato, ostinatoed  # noqa: F401
+from .scraamp import prescraamp, scraamp  # noqa: F401
+from .scrump import prescrump, scrump  # noqa: F401
+from .snippets import snippets  # noqa: F401
+from .stimp import stimp, stimped  # noqa: F401
 from .stump import stump  # noqa: F401
 from .stumped import stumped  # noqa: F401
-from .mstump import mstump, subspace, mdl  # noqa: F401
-from .mstumped import mstumped  # noqa: F401
-from .aamp import aamp  # noqa: F401
-from .aamped import aamped  # noqa: F401
-from .maamp import maamp, maamp_subspace, maamp_mdl  # noqa: F401
-from .maamped import maamped  # noqa: F401
-from .aampi import aampi  # noqa: F401
-from .chains import atsc, allc  # noqa: F401
-from .floss import floss, fluss  # noqa: F401
-from .ostinato import ostinato, ostinatoed  # noqa: F401
-from .aamp_ostinato import aamp_ostinato, aamp_ostinatoed  # noqa: F401
-from .scrump import scrump, prescrump  # noqa: F401
-from .scraamp import scraamp, prescraamp  # noqa: F401
 from .stumpi import stumpi  # noqa: F401
-from .mpdist import mpdist, mpdisted  # noqa: F401
-from .aampdist import aampdist, aampdisted  # noqa: F401
-from .motifs import motifs, match  # noqa: F401
-from .aamp_motifs import aamp_motifs, aamp_match  # noqa: F401
-from .mmotifs import mmotifs  # noqa: F401
-from .aamp_mmotifs import aamp_mmotifs  # noqa: F401
-from .snippets import snippets  # noqa: F401
-from .aampdist_snippets import aampdist_snippets  # noqa: F401
-from .stimp import stimp, stimped  # noqa: F401
-from .aamp_stimp import aamp_stimp, aamp_stimped  # noqa: F401
-from numba import cuda
 
 if cuda.is_available():
-    from .gpu_stump import gpu_stump  # noqa: F401
     from .gpu_aamp import gpu_aamp  # noqa: F401
-    from .gpu_ostinato import gpu_ostinato  # noqa: F401
     from .gpu_aamp_ostinato import gpu_aamp_ostinato  # noqa: F401
-    from .gpu_mpdist import gpu_mpdist  # noqa: F401
-    from .gpu_aampdist import gpu_aampdist  # noqa: F401
-    from .gpu_stimp import gpu_stimp  # noqa: F401
     from .gpu_aamp_stimp import gpu_aamp_stimp  # noqa: F401
+    from .gpu_aampdist import gpu_aampdist  # noqa: F401
+    from .gpu_mpdist import gpu_mpdist  # noqa: F401
+    from .gpu_ostinato import gpu_ostinato  # noqa: F401
+    from .gpu_stimp import gpu_stimp  # noqa: F401
+    from .gpu_stump import gpu_stump  # noqa: F401
 else:  # pragma: no cover
-    from .core import _gpu_stump_driver_not_found as gpu_stump  # noqa: F401
-    from .core import _gpu_aamp_driver_not_found as gpu_aamp  # noqa: F401
-    from .core import _gpu_ostinato_driver_not_found as gpu_ostinato  # noqa: F401
-    from .core import (
-        _gpu_aamp_ostinato_driver_not_found as gpu_aamp_ostinato,
-    )  # noqa: F401
-    from .core import _gpu_mpdist_driver_not_found as gpu_mpdist  # noqa: F401
-    from .core import _gpu_aampdist_driver_not_found as gpu_aampdist  # noqa: F401
-    from .core import _gpu_stimp_driver_not_found as gpu_stimp  # noqa: F401
-    from .core import _gpu_aamp_stimp_driver_not_found as gpu_aamp_stimp  # noqa: F401
-
     from . import core
+    from .core import _gpu_aamp_driver_not_found as gpu_aamp  # noqa: F401
+    from .core import (  # noqa: F401
+        _gpu_aamp_ostinato_driver_not_found as gpu_aamp_ostinato,
+    )
+    from .core import _gpu_aamp_stimp_driver_not_found as gpu_aamp_stimp  # noqa: F401
+    from .core import _gpu_aampdist_driver_not_found as gpu_aampdist  # noqa: F401
+    from .core import _gpu_mpdist_driver_not_found as gpu_mpdist  # noqa: F401
+    from .core import _gpu_ostinato_driver_not_found as gpu_ostinato  # noqa: F401
+    from .core import _gpu_stimp_driver_not_found as gpu_stimp  # noqa: F401
+    from .core import _gpu_stump_driver_not_found as gpu_stump  # noqa: F401
 
     core._gpu_searchsorted_left = core._gpu_searchsorted_left_driver_not_found
     core._gpu_searchsorted_right = core._gpu_searchsorted_right_driver_not_found

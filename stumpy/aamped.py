@@ -5,7 +5,7 @@
 # import inspect
 import numpy as np
 
-from . import core, config
+from . import config, core
 from .aamp import _aamp
 
 

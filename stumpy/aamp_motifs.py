@@ -6,7 +6,7 @@ import warnings
 
 import numpy as np
 
-from . import core, config
+from . import config, core
 
 
 def _aamp_motifs(

@@ -1,15 +1,18 @@
+from unittest.mock import patch
+
 import numpy as np
 import numpy.testing as npt
-from stumpy import gpu_aamp_stimp
 from numba import cuda
-from unittest.mock import patch
+
+from stumpy import gpu_aamp_stimp
 
 try:
     from numba.errors import NumbaPerformanceWarning
 except ModuleNotFoundError:
     from numba.core.errors import NumbaPerformanceWarning
-import pytest
+
 import naive
+import pytest
 
 TEST_THREADS_PER_BLOCK = 10
 

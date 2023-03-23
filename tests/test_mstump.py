@@ -1,17 +1,16 @@
+import naive
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import core, config
-from stumpy import mstump, subspace, mdl
+import pytest
+
+from stumpy import config, core, mdl, mstump, subspace
 from stumpy.mstump import (
-    _multi_mass,
-    multi_distance_profile,
     _get_first_mstump_profile,
     _get_multi_QT,
-    _apply_include,
+    _multi_mass,
+    multi_distance_profile,
 )
-import pytest
-import naive
 
 
 def naive_rolling_window_dot_product(Q, T):
@@ -29,22 +28,6 @@ test_data = [
 
 substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 substitution_values = [np.nan, np.inf]
-
-
-def test_apply_include():
-    D = np.random.uniform(-1000, 1000, [10, 20]).astype(np.float64)
-    ref_D = np.empty(D.shape)
-    comp_D = np.empty(D.shape)
-    for width in range(D.shape[0]):
-        for i in range(D.shape[0] - width):
-            ref_D[:, :] = D[:, :]
-            comp_D[:, :] = D[:, :]
-            include = np.asarray(range(i, i + width + 1))
-
-            naive.apply_include(D, include)
-            _apply_include(D, include)
-
-            npt.assert_almost_equal(ref_D, comp_D)
 
 
 def test_multi_mass_seeded():

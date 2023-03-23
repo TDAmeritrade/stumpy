@@ -2,11 +2,12 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import numpy as np
-from numba import njit, prange
 from functools import partial
 
-from . import core, config, mstump
+import numpy as np
+from numba import njit, prange
+
+from . import config, core
 
 
 def _multi_mass_absolute(Q, T, m, Q_subseq_isfinite, T_subseq_isfinite, p=2.0):
@@ -152,7 +153,7 @@ def maamp_subspace(
 
     D = np.linalg.norm(disc_subseqs - disc_neighbors, axis=1, ord=p)
 
-    S = mstump._subspace(D, k, include=include, discords=discords)
+    S = core._subspace(D, k, include=include, discords=discords)
 
     return S
 
@@ -288,8 +289,8 @@ def maamp_mdl(
 
         D = np.linalg.norm(disc_subseqs - disc_neighbors, axis=1, ord=p)
 
-        S[k] = mstump._subspace(D, k, include=include, discords=discords)
-        bit_sizes[k] = mstump._mdl(disc_subseqs, disc_neighbors, S[k], n_bit=n_bit)
+        S[k] = core._subspace(D, k, include=include, discords=discords)
+        bit_sizes[k] = core._mdl(disc_subseqs, disc_neighbors, S[k], n_bit=n_bit)
 
     return bit_sizes, S
 
@@ -367,7 +368,7 @@ def _maamp_multi_distance_profile(
     )
 
     if include is not None:
-        mstump._apply_include(D, include)
+        core._apply_include(D, include)
         start_row_idx = include.shape[0]
 
     if discords:
@@ -434,7 +435,7 @@ def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False, 
     core.check_window_size(m, max_size=T.shape[1])
 
     if include is not None:  # pragma: no cover
-        include = mstump._preprocess_include(include)
+        include = core._preprocess_include(include)
 
     excl_zone = int(
         np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
@@ -823,7 +824,7 @@ def _maamp(
 
         # `include` processing must occur here since we are dealing with distances
         if include is not None:
-            mstump._apply_include(
+            core._apply_include(
                 p_norm,
                 include,
                 restricted_indices,
@@ -838,7 +839,7 @@ def _maamp(
         else:
             p_norm[start_row_idx:].sort(axis=0)
 
-        mstump._compute_PI(d, idx, p_norm, p_norm_prime, range_start, P, I, p)
+        core._compute_multi_PI(d, idx, p_norm, p_norm_prime, range_start, P, I, p)
 
     return P, I
 
@@ -912,7 +913,7 @@ def maamp(T, m, include=None, discords=False, p=2.0):
     core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]))
 
     if include is not None:
-        include = mstump._preprocess_include(include)
+        include = core._preprocess_include(include)
 
     d, n = T_B.shape
     k = n - m + 1
