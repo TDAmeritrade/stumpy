@@ -29,11 +29,11 @@ def _compare_parameters(norm, non_norm, exclude=None):
 
     Parameters
     ----------
-    norm : object
+    norm : function
         The normalized function (or class) that is complementary to the
         non-normalized function (or class)
 
-    non_norm : object
+    non_norm : function
         The non-normalized function (or class) that is complementary to the
         z-normalized function (or class)
 
@@ -98,7 +98,7 @@ def non_normalized(non_norm, exclude=None, replace=None):
 
     Parameters
     ----------
-    non_norm : object
+    non_norm : function
         The non-normalized function (or class) that is complementary to the
         z-normalized function (or class)
 
@@ -117,7 +117,7 @@ def non_normalized(non_norm, exclude=None, replace=None):
 
     Returns
     -------
-    outer_wrapper : object
+    outer_wrapper : function
         The desired z-normalized/non-normalized function (or class)
     """
     if exclude is None:
@@ -2461,7 +2461,7 @@ def _get_partial_mp_func(mp_func, client=None, device_id=None):
 
     Parameters
     ----------
-    mp_func : object
+    mp_func : function
         The matrix profile function to be used for computing a matrix profile
 
     client : client, default None
@@ -2477,7 +2477,7 @@ def _get_partial_mp_func(mp_func, client=None, device_id=None):
 
     Returns
     -------
-    partial_mp_func : object
+    partial_mp_func : function
         A generic matrix profile function that wraps the distributed `client` or GPU
         `device_id` into `functools.partial` function where possible
     """
@@ -2999,7 +2999,7 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
         Specify the `k`th value in the concatenated matrix profiles to return. This
         parameter is ignored when `custom_func` is not None.
 
-    custom_func : object, default None
+    custom_func : function, default None
         A custom user defined function for selecting the desired value from the
         unsorted `P_ABBA` array. This function may need to leverage `functools.partial`
         and should take `P_ABBA` as its only input parameter and return a single
@@ -3540,11 +3540,11 @@ def _find_incompatible_args(func, required_args):
 
     Parameters
     ----------
-    func : object, callable
-        A callable object
+    func : function
+        A function
 
     required_args : list
-        A lis containing the name of required arguments.
+        A list containing the name of required arguments.
 
     Returns
     -------
@@ -3818,7 +3818,7 @@ def _compute_P_ABBA(T_A, T_B, m, P_ABBA, mp_func, client=None, device_id=None):
     P_ABBA : numpy.ndarray
         The output array to write the concatenated AB-join and BA-join results to
 
-    mp_func : object
+    mp_func : function
         Specify a custom matrix profile function to use for computing matrix profiles
 
     client : client, default None
@@ -3883,7 +3883,7 @@ def _mpdist(
     m : int
         Window size
 
-    mp_func : object
+    mp_func : function
         Specify a custom matrix profile function to use for computing matrix profiles
 
     percentage : float, 0.05
@@ -3907,7 +3907,7 @@ def _mpdist(
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
-    custom_func : object, default None
+    custom_func : function, default None
         A custom user defined function for selecting the desired value from the
         unsorted `P_ABBA` array. This function may need to leverage `functools.partial`
         and should take `P_ABBA` as its only input parameter and return a single

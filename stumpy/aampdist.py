@@ -39,14 +39,14 @@ def _aampdist_vect(
     percentage : float, 0.05
         The percentage of distances that will be used to report `mpdist`. The value
         is between 0.0 and 1.0. This parameter is ignored when `k` is not `None` or when
-        `k_func` is not None.
+        `custom_func` is not None.
 
     k : int, default None
         Specify the `k`th value in the concatenated matrix profiles to return. When `k`
         is not `None`, then the `percentage` parameter is ignored. This parameter is
         ignored when `custom_func` is not None.
 
-    custom_func : object, default None
+    custom_func : function, default None
         A custom user defined function for selecting the desired value from the
         unsorted `P_ABBA` array. This function may need to leverage `functools.partial`
         and should take `P_ABBA` as its only input parameter and return a single
