@@ -498,6 +498,10 @@ class floss:
         self._custom_iac = custom_iac
         self._normalize = normalize
         self._p = p
+        self._T_subseq_isconstant = None
+        self._M_T = None
+        self._Σ_T = None
+
         if T_subseq_isconstant_func is None:
             T_subseq_isconstant_func = core._rolling_isconstant
         if not callable(T_subseq_isconstant_func):  # pragma: no cover
