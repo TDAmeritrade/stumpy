@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -44,24 +46,32 @@ def naive_cac(I, L, excl_factor, custom_iac=None):
     return CAC
 
 
-def naive_right_mp(data, m, normalize=True, p=2.0):
+def naive_right_mp(T, m, normalize=True, p=2.0, T_subseq_isconstant=None):
+    # computing `T_subseq_isconstant` boolean array
+    T_subseq_isconstant = naive.rolling_isconstant(T, m, T_subseq_isconstant)
+
     if normalize:
-        mp = stump(data, m)
+        mp = stump(T_A=T, m=m, T_A_subseq_isconstant=T_subseq_isconstant)
     else:
-        mp = aamp(data, m, p=p)
+        mp = aamp(T, m, p=p)
     k = mp.shape[0]
     right_nn = np.zeros((k, m))
     right_indices = [np.arange(IR, IR + m) for IR in mp[:, 3].tolist()]
-    right_nn[:] = data[np.array(right_indices)]
+    right_nn[:] = T[np.array(right_indices)]
     if normalize:
         mp[:, 0] = np.linalg.norm(
-            core.z_norm(core.rolling_window(data, m), 1) - core.z_norm(right_nn, 1),
+            core.z_norm(core.rolling_window(T, m), 1) - core.z_norm(right_nn, 1),
             axis=1,
         )
+        for i, nn_i in enumerate(mp[:, 3]):
+            if T_subseq_isconstant[i] and T_subseq_isconstant[nn_i]:
+                mp[i, 0] = 0
+            elif T_subseq_isconstant[i] or T_subseq_isconstant[nn_i]:
+                mp[i, 0] = np.sqrt(m)
+            else:  # pragma: no cover
+                pass
     else:
-        mp[:, 0] = np.linalg.norm(
-            core.rolling_window(data, m) - right_nn, axis=1, ord=p
-        )
+        mp[:, 0] = np.linalg.norm(core.rolling_window(T, m) - right_nn, axis=1, ord=p)
     inf_indices = np.argwhere(mp[:, 3] < 0).flatten()
     mp[inf_indices, 0] = np.inf
     mp[inf_indices, 3] = inf_indices
@@ -184,10 +194,12 @@ def test_floss():
         ref_mp = mp.copy()
         ref_P = ref_mp[:, 0]
         ref_I = ref_mp[:, 3]
+        ref_I[ref_mp[:, 0] == np.inf] = -1
 
         stream.update(ref_T[-1])
         comp_cac_1d = stream.cac_1d_
         comp_P = stream.P_
+
         comp_I = stream.I_
         comp_T = stream.T_
 
@@ -253,6 +265,7 @@ def test_aamp_floss():
             ref_mp = mp.copy()
             ref_P = ref_mp[:, 0]
             ref_I = ref_mp[:, 3]
+            ref_I[ref_mp[:, 0] == np.inf] = -1
 
             stream.update(ref_T[-1])
             comp_cac_1d = stream.cac_1d_
@@ -324,6 +337,7 @@ def test_floss_inf_nan(substitute, substitution_locations):
             ref_mp = mp.copy()
             ref_P = ref_mp[:, 0]
             ref_I = ref_mp[:, 3]
+            ref_I[ref_mp[:, 0] == np.inf] = -1
 
             stream.update(ref_T[-1])
             comp_cac_1d = stream.cac_1d_
@@ -397,6 +411,7 @@ def test_aamp_floss_inf_nan(substitute, substitution_locations):
             ref_mp = mp.copy()
             ref_P = ref_mp[:, 0]
             ref_I = ref_mp[:, 3]
+            ref_I[ref_mp[:, 0] == np.inf] = -1
 
             stream.update(ref_T[-1])
             comp_cac_1d = stream.cac_1d_
@@ -411,3 +426,89 @@ def test_aamp_floss_inf_nan(substitute, substitution_locations):
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
             npt.assert_almost_equal(ref_T, comp_T)
+
+
+def test_floss_with_isconstant():
+    data = np.random.uniform(-1, 1, [64])
+    m = 5
+    n = 30
+    old_data = data[:n]
+
+    quantile_threshold = 0.5
+    sliding_stddev = naive.rolling_nanstd(old_data, m)
+    stddev_threshold = np.quantile(sliding_stddev, quantile_threshold)
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold,
+        stddev_threshold=stddev_threshold,
+    )
+
+    mp = naive_right_mp(T=old_data, m=m, T_subseq_isconstant=isconstant_custom_func)
+    comp_mp = stump(T_A=old_data, m=m, T_A_subseq_isconstant=isconstant_custom_func)
+    k = mp.shape[0]
+
+    rolling_Ts = core.rolling_window(data[1:], n)
+    L = 5
+    excl_factor = 1
+    custom_iac = _iac(k, bidirectional=False)
+    stream = floss(
+        comp_mp,
+        old_data,
+        m,
+        L,
+        excl_factor,
+        custom_iac=custom_iac,
+        T_subseq_isconstant_func=isconstant_custom_func,
+    )
+    last_idx = n - m + 1
+    excl_zone = int(np.ceil(m / 4))
+    zone_start = max(0, k - excl_zone)
+    for i, ref_T in enumerate(rolling_Ts):
+        mp[:, 1] = -1
+        mp[:, 2] = -1
+        mp[:] = np.roll(mp, -1, axis=0)
+        mp[-1, 0] = np.inf
+        mp[-1, 3] = last_idx + i
+
+        ref_Q = ref_T[-m:]
+        ref_Q_isconstant = isconstant_custom_func(ref_Q, m)[0]
+        ref_T_subseq_isconstant = isconstant_custom_func(ref_T, m)
+        D = naive.distance_profile(ref_Q, ref_T, m)
+        for j in range(len(D)):
+            if ref_Q_isconstant and ref_T_subseq_isconstant[j]:
+                D[j] = 0
+            elif ref_Q_isconstant or ref_T_subseq_isconstant[j]:
+                D[j] = np.sqrt(m)
+            else:
+                pass
+        D[zone_start:] = np.inf
+
+        update_idx = np.argwhere(D < mp[:, 0]).flatten()
+        mp[update_idx, 0] = D[update_idx]
+        mp[update_idx, 3] = last_idx + i
+
+        ref_cac_1d = _cac(
+            mp[:, 3] - i - 1,
+            L,
+            bidirectional=False,
+            excl_factor=excl_factor,
+            custom_iac=custom_iac,
+        )
+
+        ref_mp = mp.copy()
+        ref_P = ref_mp[:, 0]
+        ref_I = ref_mp[:, 3]
+        ref_I[ref_mp[:, 0] == np.inf] = -1
+
+        stream.update(ref_T[-1])
+        comp_cac_1d = stream.cac_1d_
+        comp_P = stream.P_
+        comp_I = stream.I_
+        comp_T = stream.T_
+
+        naive.replace_inf(ref_P)
+        naive.replace_inf(comp_P)
+
+        npt.assert_almost_equal(ref_cac_1d, comp_cac_1d)
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_T, comp_T)
