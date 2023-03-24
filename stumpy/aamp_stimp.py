@@ -93,7 +93,7 @@ class _aamp_stimp:
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
-    mp_func : object, default stump
+    mp_func : function, default stump
         The matrix profile function to use when `percentage = 1.0`
 
     p : float, default 2.0
@@ -178,7 +178,7 @@ class _aamp_stimp:
             computation. A list of all valid device ids can be obtained by
             executing `[device.id for device in numba.cuda.list_devices()]`.
 
-        mp_func : object, default stump
+        mp_func : function, default stump
             The matrix profile function to use when `percentage = 1.0`
 
         p : float, default 2.0
