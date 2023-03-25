@@ -126,7 +126,6 @@ def non_normalized(non_norm, exclude=None, replace=None):
             "p",
             "T_A_subseq_isconstant",
             "T_B_subseq_isconstant",
-            "T_subseq_isconstant_func",
         ]
 
     @functools.wraps(non_norm)

@@ -8,7 +8,13 @@ from . import config, core, stump
 from .aampi import aampi
 
 
-@core.non_normalized(aampi)
+@core.non_normalized(
+    aampi,
+    exclude=[
+        "normalize",
+        "T_subseq_isconstant_func",
+    ],
+)
 class stumpi:
     """
     Compute an incremental z-normalized matrix profile for streaming data
