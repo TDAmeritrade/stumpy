@@ -151,7 +151,7 @@ def mass_PI(
             D[i] = 0
         elif Q_subseq_isconstant or T_subseq_isconstant[i]:
             D[i] = np.sqrt(m)
-        else:
+        else:  # pragma: no cover
             pass
 
     if ignore_trivial:
