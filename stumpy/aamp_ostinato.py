@@ -168,7 +168,7 @@ def _aamp_ostinato(
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
-    mp_func : object, default stump
+    mp_func : function, default stump
         Specify a custom matrix profile function to use for computing matrix profiles
 
     Returns

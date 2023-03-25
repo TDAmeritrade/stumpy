@@ -347,6 +347,18 @@ class floss:
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. This parameter is
+        ignored when `normalize == True`.
+
+    T_subseq_isconstant_func : function, default None
+        A custom, user-defined function that returns a boolean array that indicates
+        whether a subsequence in `T` is constant (True). The function must only take
+        two arguments, `a`, a 1-D array, and `w`, the window size, while additional
+        arguments may be specified by currying the user-defined function using
+        `functools.partial`. Any subsequence with at least one np.nan/np.inf will
+        automatically have its corresponding value set to False in this boolean array.
+
     Attributes
     ----------
     cac_1d_ : numpy.ndarray
@@ -412,6 +424,7 @@ class floss:
         custom_iac=None,
         normalize=True,
         p=2.0,
+        T_subseq_isconstant_func=None,
     ):
         """
         Initialize the FLOSS object
@@ -465,6 +478,15 @@ class floss:
         p : float, default 2.0
             The p-norm to apply for computing the Minkowski distance. This parameter is
             ignored when `normalize == True`.
+
+        T_subseq_isconstant_func : function, default None
+            A custom, user-defined function that returns a boolean array that indicates
+            whether a subsequence in `T` is constant (True). The function must only take
+            two arguments, `a`, a 1-D array, and `w`, the window size, while additional
+            arguments may be specified by currying the user-defined function using
+            `functools.partial`. Any subsequence with at least one np.nan/np.inf will
+            automatically have its corresponding value set to False in this boolean
+            array.
         """
         self._mp = copy.deepcopy(np.asarray(mp))
         self._T = copy.deepcopy(np.asarray(T))
@@ -476,6 +498,19 @@ class floss:
         self._custom_iac = custom_iac
         self._normalize = normalize
         self._p = p
+        self._T_subseq_isconstant = None
+        self._M_T = None
+        self._Σ_T = None
+
+        if T_subseq_isconstant_func is None:
+            T_subseq_isconstant_func = core._rolling_isconstant
+        if not callable(T_subseq_isconstant_func):  # pragma: no cover
+            msg = (
+                "`T_subseq_isconstant_func` was expected to be a callable function "
+                + f"but {type(T_subseq_isconstant_func)} was found."
+            )
+            raise ValueError(msg)
+        self._T_subseq_isconstant_func = T_subseq_isconstant_func
 
         self._k = self._mp.shape[0]
         self._n = self._T.shape[0]
@@ -485,6 +520,12 @@ class floss:
         self._finite_T = self._T.copy()
         self._finite_T[~np.isfinite(self._finite_T)] = 0.0
         self._finite_Q = self._finite_T[-self._m :].copy()
+
+        if self._normalize:
+            self._T_subseq_isconstant = core.rolling_isconstant(
+                self._T, self._m, self._T_subseq_isconstant_func
+            )
+            self._M_T, self._Σ_T = core.compute_mean_std(self._T, self._m)
 
         if self._custom_iac is None:  # pragma: no cover
             self._custom_iac = _iac(
@@ -514,12 +555,30 @@ class floss:
                 - core.z_norm(right_nn, 1),
                 axis=1,
             )
+            nn_subseq_isconstant = self._T_subseq_isconstant[
+                self._mp[:, 3].astype(np.int64)
+            ]
+            # subseq and its nn are both constant
+            mask = self._T_subseq_isconstant & nn_subseq_isconstant
+            self._mp[mask, 0] = 0
+
+            # Only the subseq OR its nn is constant but not both
+            mask = np.logical_xor(self._T_subseq_isconstant, nn_subseq_isconstant)
+            self._mp[mask, 0] = np.sqrt(m)
+
         else:
             self._mp[:, 0] = np.linalg.norm(
                 core.rolling_window(self._T, self._m) - right_nn,
                 axis=1,
                 ord=self._p,
             )
+        # Note that a negative matrix profile index (e.g. -1) represents a null index.
+        # However, in numpy, negative indices are interpreted as counting from the end
+        # of the array. To resolve this, we temporarily replace a negative index with
+        # a self index. So, if subsequence S_i has no valid right nearest neighbor, then
+        # self._mp[i, 3] will be set to i and its corresponding matrix profile distance
+        # is set to 0.0. This temporary resolution is later resolved (by setting them
+        # back to -1 and np.inf, respectively) in a post-processing step.
         inf_indices = np.argwhere(self._mp[:, 3] < 0).flatten()
         self._mp[inf_indices, 0] = np.inf
         self._mp[inf_indices, 3] = inf_indices
@@ -551,6 +610,7 @@ class floss:
         self._T_isfinite[:-1] = self._T_isfinite[1:]
         self._finite_T[:-1] = self._finite_T[1:]
         self._finite_Q[:-1] = self._finite_Q[1:]
+
         self._T[-1] = t
         self._T_isfinite[-1] = np.isfinite(t)
         self._finite_T[-1] = t
@@ -571,14 +631,25 @@ class floss:
 
         # Ingress
         if self._normalize:
-            T_subseq_isconstant = core.rolling_isconstant(self._T, self._m)
-            M_T, Σ_T = core.compute_mean_std(self._T, self._m)
+            self._T_subseq_isconstant[:-1] = self._T_subseq_isconstant[1:]
+            self._Q_subseq_isconstant = core.rolling_isconstant(
+                self._T[-self._m :], self._m, self._T_subseq_isconstant_func
+            )
+            self._T_subseq_isconstant[-1] = self._Q_subseq_isconstant
+
+            self._M_T[:-1] = self._M_T[1:]
+            self._Σ_T[:-1] = self._Σ_T[1:]
+            self._M_T[-1], self._Σ_T[-1] = core.compute_mean_std(
+                self._T[-self._m :], self._m
+            )
+
             D = core.mass(
                 self._finite_Q,
                 self._finite_T,
-                M_T,
-                Σ_T,
-                T_subseq_isconstant=T_subseq_isconstant,
+                self._M_T,
+                self._Σ_T,
+                T_subseq_isconstant=self._T_subseq_isconstant,
+                Q_subseq_isconstant=self._Q_subseq_isconstant,
             )
         else:
             D = core.mass_absolute(self._T[-self._m :], self._T, p=self._p)
@@ -626,8 +697,20 @@ class floss:
     def I_(self):
         """
         Get the updated (right) matrix profile indices
+
+        The indices stored in `self.I_` reflect the starting index of
+        subsequneces with respect to the full time series (i.e., including
+        all egressed data points).
         """
-        return self._mp[:, 3].astype(np.int64)
+        # Comparing the right matrix profile index value with the self index
+        # position (i.e., self._mp[:, 3] == np.arange(len(self._mp)) is avoided
+        # because things are constantly being shifted (ingress+egress) to the left
+        # and so the aforementioned check is all `False` as soon as we start using
+        # `.update()`.
+        I = self._mp[:, 3].astype(np.int64).copy()
+        I[self._mp[:, 0] == np.inf] = -1
+
+        return I
 
     @property
     def T_(self):

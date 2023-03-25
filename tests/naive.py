@@ -806,7 +806,7 @@ def get_array_ranges(a, n_chunks, truncate):
 
 
 class aampi_egress(object):
-    def __init__(self, T, m, excl_zone=None, p=2.0, k=1):
+    def __init__(self, T, m, excl_zone=None, p=2.0, k=1, mp=None):
         self._T = np.asarray(T)
         self._T = self._T.copy()
         self._T_isfinite = np.isfinite(self._T)
@@ -819,7 +819,10 @@ class aampi_egress(object):
             self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
-        mp = aamp(T, m, exclusion_zone=self._excl_zone, p=p, k=self._k)
+        if mp is None:
+            mp = aamp(self._T, self._m, exclusion_zone=self._excl_zone, p=p, k=self._k)
+        else:
+            mp = mp.copy()
         self._P = mp[:, :k].astype(np.float64)
         self._I = mp[:, k : 2 * k].astype(np.int64)
 
@@ -907,7 +910,7 @@ class aampi_egress(object):
 
 
 class stumpi_egress(object):
-    def __init__(self, T, m, excl_zone=None, k=1, T_subseq_isconstant_func=None):
+    def __init__(self, T, m, excl_zone=None, k=1, mp=None, T_subseq_isconstant_func=None):
         self._T = np.asarray(T)
         self._T = self._T.copy()
         self._T_isfinite = np.isfinite(self._T)
@@ -925,13 +928,12 @@ class stumpi_egress(object):
             self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
-        mp = stump(
-            T_A=self._T,
-            m=self._m,
-            exclusion_zone=self._excl_zone,
-            k=self._k,
-            T_A_subseq_isconstant=self._T_subseq_isconstant,
-        )
+
+        if mp is None:
+            mp = stump(self._T, self._m, exclusion_zone=self._excl_zone, k=self._k, T_A_subseq_isconstant=self._T_subseq_isconstant)
+        else:
+            mp = mp.copy()
+
         self._P = mp[:, :k].astype(np.float64)
         self._I = mp[:, k : 2 * k].astype(np.int64)
 
@@ -2111,10 +2113,11 @@ def find_matches(D, excl_zone, max_distance, max_matches=None):
     return np.array(result[:max_matches], dtype=object)
 
 
-def isconstant_func_stddev_threshold(a, w, quantile_threshold=0):
+def isconstant_func_stddev_threshold(a, w, quantile_threshold=0, stddev_threshold=None):
     sliding_stddev = rolling_nanstd(a, w)
-    if quantile_threshold == 0:  # pragma: no cover
-        return sliding_stddev == 0
-    else:
+    if stddev_threshold is None:
         stddev_threshold = np.quantile(sliding_stddev, quantile_threshold)
-        return sliding_stddev <= stddev_threshold
+        if quantile_threshold == 0:  # pragma: no cover
+            stddev_threshold = 0
+
+    return sliding_stddev <= stddev_threshold

@@ -57,7 +57,7 @@ def _get_all_profiles(
         Specify the `k`th value in the concatenated matrix profiles to return. When
         `mpdist_k` is not `None`, then the `mpdist_percentage` parameter is ignored.
 
-    mpdist_custom_func : object, default None
+    mpdist_custom_func : func, default None
         A custom user defined function for selecting the desired value from the
         sorted `P_ABBA` array. This function may need to leverage `functools.partial`
         and should take `P_ABBA` as its only input parameter and return a single
