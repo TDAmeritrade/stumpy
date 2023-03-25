@@ -81,7 +81,14 @@ def _mass_PI(
     I : numpy.ndarray
         Matrix profile indices
     """
-    D = core.mass(Q, T, M_T, Σ_T, T_subseq_isconstant=T_subseq_isconstant, Q_subseq_isconstant=Q_subseq_isconstant)
+    D = core.mass(
+        Q,
+        T,
+        M_T,
+        Σ_T,
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
+    )
 
     if trivial_idx is not None:
         core.apply_exclusion_zone(D, trivial_idx, excl_zone, np.inf)
@@ -120,7 +127,14 @@ def _mass_PI(
     return P, I
 
 
-def stamp(T_A, T_B, m, ignore_trivial=False, T_A_subseq_isconstant=None, T_B_subseq_isconstant=None):
+def stamp(
+    T_A,
+    T_B,
+    m,
+    ignore_trivial=False,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
+):
     """
     Compute matrix profile and indices using the "Scalable Time series
     Anytime Matrix Profile" (STAMP) algorithm and MASS (2017 - with FFT).
@@ -181,7 +195,9 @@ def stamp(T_A, T_B, m, ignore_trivial=False, T_A_subseq_isconstant=None, T_B_sub
     T_A.shape[0]-m+1
     """
     T_A_subseq_isconstant = core.rolling_isconstant(T_A, m, T_A_subseq_isconstant)
-    T_B, M_T, Σ_T, T_B_subseq_isconstant = core.preprocess(T_B, m, T_subseq_isconstant=T_B_subseq_isconstant)
+    T_B, M_T, Σ_T, T_B_subseq_isconstant = core.preprocess(
+        T_B, m, T_subseq_isconstant=T_B_subseq_isconstant
+    )
 
     T_A = T_A.copy()
     T_A[np.isinf(T_A)] = np.nan
@@ -200,13 +216,29 @@ def stamp(T_A, T_B, m, ignore_trivial=False, T_A_subseq_isconstant=None, T_B_sub
     # Add exclusionary zone
     if ignore_trivial:
         out = [
-            _mass_PI(subseq, T_B, M_T, Σ_T, i, excl_zone, T_subseq_isconstant=T_B_subseq_isconstant, Q_subseq_isconstant=T_A_subseq_isconstant[[i]])
+            _mass_PI(
+                subseq,
+                T_B,
+                M_T,
+                Σ_T,
+                i,
+                excl_zone,
+                T_subseq_isconstant=T_B_subseq_isconstant,
+                Q_subseq_isconstant=T_A_subseq_isconstant[[i]],
+            )
             for i, subseq in enumerate(subseq_T_A)
         ]
     else:
         out = [
-            _mass_PI(subseq, T_B, M_T, Σ_T, T_subseq_isconstant=T_B_subseq_isconstant, Q_subseq_isconstant=T_A_subseq_isconstant[[i]])
-            for subseq in subseq_T_A
+            _mass_PI(
+                subseq,
+                T_B,
+                M_T,
+                Σ_T,
+                T_subseq_isconstant=T_B_subseq_isconstant,
+                Q_subseq_isconstant=T_A_subseq_isconstant[[i]],
+            )
+            for i, subseq in enumerate(subseq_T_A)
         ]
     out = np.array(out, dtype=object)
 

@@ -129,11 +129,31 @@ def aamp_distance_matrix(T_A, T_B, m, p):
     return distance_matrix
 
 
-def mass_PI(Q, T, m, trivial_idx=None, excl_zone=0, ignore_trivial=False):
+def mass_PI(
+    Q,
+    T,
+    m,
+    trivial_idx=None,
+    excl_zone=0,
+    ignore_trivial=False,
+    T_subseq_isconstant=None,
+    Q_subseq_isconstant=None,
+):
     Q = np.asarray(Q)
     T = np.asarray(T)
 
+    Q_subseq_isconstant = rolling_isconstant(Q, m, Q_subseq_isconstant)[0]
+    T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
+
     D = distance_profile(Q, T, m)
+    for i in range(len(T) - m + 1):
+        if Q_subseq_isconstant and T_subseq_isconstant[i]:
+            D[i] = 0
+        elif Q_subseq_isconstant or T_subseq_isconstant[i]:
+            D[i] = np.sqrt(m)
+        else:
+            pass
+
     if ignore_trivial:
         apply_exclusion_zone(D, trivial_idx, excl_zone, np.inf)
         start = max(0, trivial_idx - excl_zone)
