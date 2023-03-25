@@ -121,7 +121,13 @@ def non_normalized(non_norm, exclude=None, replace=None):
         The desired z-normalized/non-normalized function (or class)
     """
     if exclude is None:
-        exclude = ["normalize", "p", "T_A_subseq_isconstant", "T_B_subseq_isconstant"]
+        exclude = [
+            "normalize",
+            "p",
+            "T_A_subseq_isconstant",
+            "T_B_subseq_isconstant",
+            "T_subseq_isconstant_func",
+        ]
 
     @functools.wraps(non_norm)
     def outer_wrapper(norm):
