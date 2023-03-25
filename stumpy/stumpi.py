@@ -111,7 +111,6 @@ class stumpi:
     array([-1,  0,  1,  2])
     """
 
-
     def __init__(
         self,
         T,
@@ -120,7 +119,7 @@ class stumpi:
         normalize=True,
         p=2.0,
         k=1,
-        mp=None
+        mp=None,
         T_subseq_isconstant_func=None,
     ):
         """
@@ -195,7 +194,12 @@ class stumpi:
         )
 
         if mp is None:
-            mp = stump(self._T, self._m, k=self._k, T_A_subseq_isconstant=self._T_subseq_isconstant)
+            mp = stump(
+                self._T,
+                self._m,
+                k=self._k,
+                T_A_subseq_isconstant=self._T_subseq_isconstant,
+            )
         else:
             mp = mp.copy()
 
@@ -209,7 +213,6 @@ class stumpi:
             )
             raise ValueError(msg)
 
->>>>>>> main
         self._P = mp[:, : self._k].astype(np.float64)
         self._I = mp[:, self._k : 2 * self._k].astype(np.int64)
 
