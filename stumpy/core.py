@@ -105,7 +105,8 @@ def non_normalized(non_norm, exclude=None, replace=None):
     exclude : list, default None
         A list of function (or class) parameter names to exclude when comparing the
         function (or class) signatures. When `exlcude is None`, this parameter is
-        automatically set to `exclude = ["normalize", "p"]` by default.
+        automatically set to `exclude = ["normalize", "p", "T_A_subseq_isconstant",
+        T_B_subseq_isconstant]` by default.
 
     replace : dict, default None
         A dictionary of function (or class) parameter key-value pairs. Each key that
