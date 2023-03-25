@@ -1302,8 +1302,8 @@ def test_stumpi_self_join_egress_with_isconstant():
         naive.replace_inf(comp_P)
         naive.replace_inf(comp_left_P)
 
-        # We are allowed to compare the matrix profile indices
-        # as both the naive and the performant version follow
+        # Comparing the matrix profile indices is allowed as
+        # both the naive and the performant versions follow
         # the same approach in updating the matrix profile (indices)
         # arrays.
         npt.assert_almost_equal(ref_P, comp_P)
