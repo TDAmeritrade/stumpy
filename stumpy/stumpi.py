@@ -42,6 +42,14 @@ class stumpi:
         Note that this will increase the total computational time and memory usage
         when k > 1.
 
+    mp : numpy.ndarry, default None
+        A pre-computed matrix profile (and corresponding matrix profile indices).
+        This is a 2D array of shape `(len(T) - m + 1, 2 * k + 2)`, where the first `k`
+        columns are top-k matrix profile, and the next `k` columns are their
+        corresponding indices. The last two columns correspond to the top-1 left and
+        top-1 right matrix profile indices. When None (default), this array is computed
+        internally using `stumpy.stump`.
+
     Attributes
     ----------
     P_ : numpy.ndarray
@@ -95,7 +103,7 @@ class stumpi:
     array([-1,  0,  1,  2])
     """
 
-    def __init__(self, T, m, egress=True, normalize=True, p=2.0, k=1):
+    def __init__(self, T, m, egress=True, normalize=True, p=2.0, k=1, mp=None):
         """
         Initialize the `stumpi` object
 
@@ -125,6 +133,14 @@ class stumpi:
             The number of top `k` smallest distances used to construct the matrix
             profile. Note that this will increase the total computational time and
             memory usage when `k > 1`.
+
+        mp : numpy.ndarry, default None
+            A pre-computed matrix profile (and corresponding matrix profile indices).
+            This is a 2D array of shape `(len(T) - m + 1, 2 * k + 2)`, where the first
+            `k` columns are top-k matrix profile, and the next `k` columns are their
+            corresponding indices. The last two columns correspond to the top-1 left
+            and top-1 right matrix profile indices. When None (default), this array is
+            computed internally using `stumpy.stump`.
         """
         self._T = core._preprocess(T)
         core.check_window_size(m, max_size=self._T.shape[-1])
@@ -136,7 +152,21 @@ class stumpi:
         self._T_isfinite = np.isfinite(self._T)
         self._egress = egress
 
-        mp = stump(self._T, self._m, k=self._k)
+        if mp is None:
+            mp = stump(self._T, self._m, k=self._k)
+        else:
+            mp = mp.copy()
+
+        if mp.shape != (
+            len(self._T) - self._m + 1,
+            2 * self._k + 2,
+        ):  # pragma: no cover
+            msg = (
+                f"The shape of `mp` must match ({len(T)-m+1}, {2 * k + 2}) but "
+                + f"found {mp.shape} instead."
+            )
+            raise ValueError(msg)
+
         self._P = mp[:, : self._k].astype(np.float64)
         self._I = mp[:, self._k : 2 * self._k].astype(np.int64)
 
