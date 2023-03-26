@@ -313,3 +313,33 @@ def test_stamp_self_join_with_isconstant(T_A, T_B):
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
     npt.assert_almost_equal(ref_mp[:, :2], comp_mp)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stamp_A_B_join_with_isconstant(T_A, T_B):
+    m = 3
+    T_A_subseq_isconstant = np.random.choice(
+        [True, False], size=len(T_A) - m + 1, replace=True
+    )
+    T_B_subseq_isconstant = np.random.choice(
+        [True, False], size=len(T_B) - m + 1, replace=True
+    )
+
+    ref_mp = naive.stump(
+        T_A,
+        m,
+        T_B=T_B,
+        row_wise=True,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
+    comp_mp = stamp.stamp(
+        T_A,
+        T_B,
+        m,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, :2], comp_mp)
