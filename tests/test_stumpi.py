@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -1115,6 +1117,195 @@ def test_stumpi_self_join_egress_passing_mp():
         naive.replace_inf(comp_P)
         naive.replace_inf(comp_left_P)
 
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_left_P, comp_left_P)
+        npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+
+def test_stumpi_self_join_with_isconstant():
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    seed = np.random.randint(100000)
+    np.random.seed(seed)
+
+    T = np.random.rand(30)
+
+    quantile_threshold = 0.5
+    sliding_stddev = naive.rolling_nanstd(T, m)
+    stddev_threshold = np.quantile(sliding_stddev, quantile_threshold)
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold,
+        stddev_threshold=stddev_threshold,
+    )
+
+    stream = stumpi(T, m, egress=False, T_subseq_isconstant_func=isconstant_custom_func)
+    for i in range(34):
+        t = np.random.rand()
+        stream.update(t)
+
+    comp_P = stream.P_
+    comp_I = stream.I_
+    comp_left_P = stream.left_P_
+    comp_left_I = stream.left_I_
+
+    ref_mp = naive.stump(
+        stream.T_,
+        m,
+        exclusion_zone=zone,
+        row_wise=True,
+        T_A_subseq_isconstant=isconstant_custom_func,
+    )
+    ref_P = ref_mp[:, 0]
+    ref_I = ref_mp[:, 1]
+    ref_left_I = ref_mp[:, 2].astype(np.int64)
+    ref_left_P = np.full(len(ref_P), np.inf, dtype=np.float64)
+    for i, j in enumerate(ref_left_I):
+        if j >= 0:
+            D = core.mass(
+                stream.T_[i : i + m],
+                stream.T_[j : j + m],
+                T_subseq_isconstant=isconstant_custom_func,
+                Q_subseq_isconstant=isconstant_custom_func,
+            )
+            ref_left_P[i] = D[0]
+
+    naive.replace_inf(ref_P)
+    naive.replace_inf(ref_left_P)
+    naive.replace_inf(comp_P)
+    naive.replace_inf(comp_left_P)
+
+    # comparing matrix profile indices are avoided as, in this case,
+    # the performant version computes matrix profile in a diagonal
+    # manner, which is different than how the naive version computes
+    # the full data (i.e. original `T` including egressed points).
+    # which is in a `row_wise==True` manner
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    # npt.assert_almost_equal(ref_I, comp_I)
+    npt.assert_almost_equal(ref_left_P, comp_left_P)
+    # npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+    # with passing `mp`
+    T = np.random.rand(30)
+
+    quantile_threshold = 0.5
+    sliding_stddev = naive.rolling_nanstd(T, m)
+    stddev_threshold = np.quantile(sliding_stddev, quantile_threshold)
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold,
+        stddev_threshold=stddev_threshold,
+    )
+
+    mp = naive.stump(T, m, row_wise=True, T_A_subseq_isconstant=isconstant_custom_func)
+    stream = stumpi(
+        T, m, egress=False, mp=mp, T_subseq_isconstant_func=isconstant_custom_func
+    )
+    for i in range(34):
+        t = np.random.rand()
+        stream.update(t)
+
+    comp_P = stream.P_
+    comp_I = stream.I_
+    comp_left_P = stream.left_P_
+    comp_left_I = stream.left_I_
+
+    ref_mp = naive.stump(
+        stream.T_,
+        m,
+        exclusion_zone=zone,
+        row_wise=True,
+        T_A_subseq_isconstant=isconstant_custom_func,
+    )
+    ref_P = ref_mp[:, 0]
+    ref_I = ref_mp[:, 1]
+    ref_left_I = ref_mp[:, 2].astype(np.int64)
+    ref_left_P = np.full(len(ref_P), np.inf, dtype=np.float64)
+    for i, j in enumerate(ref_left_I):
+        if j >= 0:
+            D = core.mass(
+                stream.T_[i : i + m],
+                stream.T_[j : j + m],
+                T_subseq_isconstant=isconstant_custom_func,
+                Q_subseq_isconstant=isconstant_custom_func,
+            )
+            ref_left_P[i] = D[0]
+
+    naive.replace_inf(ref_P)
+    naive.replace_inf(ref_left_P)
+    naive.replace_inf(comp_P)
+    naive.replace_inf(comp_left_P)
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
+    npt.assert_almost_equal(ref_left_P, comp_left_P)
+    npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+
+def test_stumpi_self_join_egress_with_isconstant():
+    m = 3
+
+    seed = np.random.randint(100000)
+    np.random.seed(seed)
+    n = 30
+    T = np.random.rand(n)
+
+    quantile_threshold = 0.5
+    sliding_stddev = naive.rolling_nanstd(T, m)
+    stddev_threshold = np.quantile(sliding_stddev, quantile_threshold)
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold,
+        stddev_threshold=stddev_threshold,
+    )
+
+    ref_mp = naive.stumpi_egress(T, m, T_subseq_isconstant_func=isconstant_custom_func)
+    ref_P = ref_mp.P_.copy()
+    ref_I = ref_mp.I_
+    ref_left_P = ref_mp.left_P_.copy()
+    ref_left_I = ref_mp.left_I_
+
+    stream = stumpi(T, m, egress=True, T_subseq_isconstant_func=isconstant_custom_func)
+
+    comp_P = stream.P_.copy()
+    comp_I = stream.I_
+    comp_left_P = stream.left_P_.copy()
+    comp_left_I = stream.left_I_
+
+    naive.replace_inf(ref_P)
+    naive.replace_inf(ref_left_P)
+    naive.replace_inf(comp_P)
+    naive.replace_inf(comp_left_P)
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
+    npt.assert_almost_equal(ref_left_P, comp_left_P)
+    npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+    for i in range(34):
+        t = np.random.rand()
+        ref_mp.update(t)
+        stream.update(t)
+
+        comp_P = stream.P_.copy()
+        comp_I = stream.I_
+        comp_left_P = stream.left_P_.copy()
+        comp_left_I = stream.left_I_
+
+        ref_P = ref_mp.P_.copy()
+        ref_I = ref_mp.I_
+        ref_left_P = ref_mp.left_P_.copy()
+        ref_left_I = ref_mp.left_I_
+
+        naive.replace_inf(ref_P)
+        naive.replace_inf(ref_left_P)
+        naive.replace_inf(comp_P)
+        naive.replace_inf(comp_left_P)
+
+        # Comparing the matrix profile indices is allowed as
+        # both the naive and the performant versions follow
+        # the same approach in updating the matrix profile (indices)
+        # arrays.
         npt.assert_almost_equal(ref_P, comp_P)
         npt.assert_almost_equal(ref_I, comp_I)
         npt.assert_almost_equal(ref_left_P, comp_left_P)

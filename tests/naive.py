@@ -910,22 +910,38 @@ class aampi_egress(object):
 
 
 class stumpi_egress(object):
-    def __init__(self, T, m, excl_zone=None, k=1, mp=None):
+    def __init__(
+        self, T, m, excl_zone=None, k=1, mp=None, T_subseq_isconstant_func=None
+    ):
         self._T = np.asarray(T)
         self._T = self._T.copy()
         self._T_isfinite = np.isfinite(self._T)
         self._m = m
         self._k = k
+        if T_subseq_isconstant_func is None:
+            T_subseq_isconstant_func = core._rolling_isconstant
+        self._T_subseq_isconstant_func = T_subseq_isconstant_func
+        self._T_subseq_isconstant = rolling_isconstant(
+            self._T, self._m, self._T_subseq_isconstant_func
+        )
 
         self._excl_zone = excl_zone
         if self._excl_zone is None:
             self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
 
         self._l = self._T.shape[0] - m + 1
+
         if mp is None:
-            mp = stump(self._T, self._m, exclusion_zone=self._excl_zone, k=self._k)
+            mp = stump(
+                self._T,
+                self._m,
+                exclusion_zone=self._excl_zone,
+                k=self._k,
+                T_A_subseq_isconstant=self._T_subseq_isconstant,
+            )
         else:
             mp = mp.copy()
+
         self._P = mp[:, :k].astype(np.float64)
         self._I = mp[:, k : 2 * k].astype(np.int64)
 
@@ -934,10 +950,18 @@ class stumpi_egress(object):
 
         for idx, nn_idx in enumerate(self._left_I):
             if nn_idx >= 0:
-                D = distance_profile(
-                    self._T[idx : idx + self._m], self._T[nn_idx : nn_idx + self._m], m
-                )
-                self._left_P[idx] = D[0]
+                if self._T_subseq_isconstant[idx] and self._T_subseq_isconstant[nn_idx]:
+                    self._left_P[idx] = 0
+                elif (
+                    self._T_subseq_isconstant[idx] or self._T_subseq_isconstant[nn_idx]
+                ):
+                    self._left_P[idx] = np.sqrt(self._m)
+                else:
+                    self._left_P[idx] = distance_profile(
+                        self._T[idx : idx + self._m],
+                        self._T[nn_idx : nn_idx + self._m],
+                        m,
+                    )[0]
 
         self._n_appended = 0
 
@@ -950,6 +974,12 @@ class stumpi_egress(object):
         else:
             self._T_isfinite[-1] = False
             self._T[-1] = 0
+
+        self._T_subseq_isconstant[:] = np.roll(self._T_subseq_isconstant, -1)
+        self._T_subseq_isconstant[-1] = rolling_isconstant(
+            self._T[-self._m :], self._m, self._T_subseq_isconstant_func
+        ) & np.all(self._T_isfinite[-self._m :])
+
         self._n_appended += 1
 
         self._P = np.roll(self._P, -1, axis=0)
@@ -957,7 +987,12 @@ class stumpi_egress(object):
         self._left_P[:] = np.roll(self._left_P, -1)
         self._left_I[:] = np.roll(self._left_I, -1)
 
-        D = core.mass(self._T[-self._m :], self._T)
+        D = core.mass(
+            self._T[-self._m :],
+            self._T,
+            T_subseq_isconstant=self._T_subseq_isconstant,
+            Q_subseq_isconstant=self._T_subseq_isconstant[[-1]],
+        )
         T_subseq_isfinite = np.all(
             core.rolling_window(self._T_isfinite, self._m), axis=1
         )

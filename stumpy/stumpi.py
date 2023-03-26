@@ -8,7 +8,13 @@ from . import config, core, stump
 from .aampi import aampi
 
 
-@core.non_normalized(aampi)
+@core.non_normalized(
+    aampi,
+    exclude=[
+        "normalize",
+        "T_subseq_isconstant_func",
+    ],
+)
 class stumpi:
     """
     Compute an incremental z-normalized matrix profile for streaming data
@@ -49,6 +55,14 @@ class stumpi:
         corresponding indices. The last two columns correspond to the top-1 left and
         top-1 right matrix profile indices. When None (default), this array is computed
         internally using `stumpy.stump`.
+
+    T_subseq_isconstant_func : function, default None
+        A custom, user-defined function that returns a boolean array that indicates
+        whether a subsequence in `T` is constant (True). The function must only take
+        two arguments, `a`, a 1-D array, and `w`, the window size, while additional
+        arguments may be specified by currying the user-defined function using
+        `functools.partial`. Any subsequence with at least one np.nan/np.inf will
+        automatically have its corresponding value set to False in this boolean array.
 
     Attributes
     ----------
@@ -103,7 +117,17 @@ class stumpi:
     array([-1,  0,  1,  2])
     """
 
-    def __init__(self, T, m, egress=True, normalize=True, p=2.0, k=1, mp=None):
+    def __init__(
+        self,
+        T,
+        m,
+        egress=True,
+        normalize=True,
+        p=2.0,
+        k=1,
+        mp=None,
+        T_subseq_isconstant_func=None,
+    ):
         """
         Initialize the `stumpi` object
 
@@ -141,19 +165,47 @@ class stumpi:
             corresponding indices. The last two columns correspond to the top-1 left
             and top-1 right matrix profile indices. When None (default), this array is
             computed internally using `stumpy.stump`.
+
+        T_subseq_isconstant_func : function, default None
+            A custom, user-defined function that returns a boolean array that indicates
+            whether a subsequence in `T` is constant (True). The function must only take
+            two arguments, `a`, a 1-D array, and `w`, the window size, while additional
+            arguments may be specified by currying the user-defined function using
+            `functools.partial`. Any subsequence with at least one np.nan/np.inf will
+            automatically have its corresponding value set to False in this boolean
+            array.
         """
         self._T = core._preprocess(T)
         core.check_window_size(m, max_size=self._T.shape[-1])
         self._m = m
         self._k = k
 
+        if T_subseq_isconstant_func is None:
+            T_subseq_isconstant_func = core._rolling_isconstant
+        if not callable(T_subseq_isconstant_func):  # pragma: no cover
+            msg = (
+                "`T_subseq_isconstant_func` was expected to be a callable function "
+                + f"but {type(T_subseq_isconstant_func)} was found."
+            )
+            raise ValueError(msg)
+        self._T_subseq_isconstant_func = T_subseq_isconstant_func
+
         self._n = self._T.shape[0]
         self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
         self._T_isfinite = np.isfinite(self._T)
         self._egress = egress
 
+        self._T_subseq_isconstant = core.rolling_isconstant(
+            self._T, self._m, self._T_subseq_isconstant_func
+        )
+
         if mp is None:
-            mp = stump(self._T, self._m, k=self._k)
+            mp = stump(
+                self._T,
+                self._m,
+                k=self._k,
+                T_A_subseq_isconstant=self._T_subseq_isconstant,
+            )
         else:
             mp = mp.copy()
 
@@ -174,7 +226,7 @@ class stumpi:
         self._left_P = np.full_like(self._left_I, np.inf, dtype=np.float64)
 
         self._T, self._M_T, self._Σ_T, self._T_subseq_isconstant = core.preprocess(
-            self._T, self._m
+            self._T, self._m, T_subseq_isconstant=self._T_subseq_isconstant
         )
         # Retrieve the left matrix profile values
 
@@ -270,7 +322,9 @@ class stumpi:
             σ_Q = np.nan
             Q_subseq_isconstant = False
         else:
-            Q_subseq_isconstant = core.rolling_isconstant(S, self._m)[0]
+            Q_subseq_isconstant = core.rolling_isconstant(
+                S, self._m, self._T_subseq_isconstant_func
+            )[0]
             μ_Q, σ_Q = [arr[0] for arr in core.compute_mean_std(S, self._m)]
 
         self._M_T[:-1] = self._M_T[1:]
@@ -356,11 +410,10 @@ class stumpi:
             σ_Q = np.nan
             Q_subseq_isconstant = False
         else:
-            Q_subseq_isconstant = core.rolling_isconstant(S, self._m)
-            μ_Q, σ_Q = core.compute_mean_std(S, self._m)
-            μ_Q = μ_Q[0]
-            σ_Q = σ_Q[0]
-            Q_subseq_isconstant = Q_subseq_isconstant[0]
+            Q_subseq_isconstant = core.rolling_isconstant(
+                S, self._m, self._T_subseq_isconstant_func
+            )[0]
+            μ_Q, σ_Q = [arr[0] for arr in core.compute_mean_std(S, self._m)]
 
         M_T_new = np.append(self._M_T, μ_Q)
         Σ_T_new = np.append(self._Σ_T, σ_Q)
