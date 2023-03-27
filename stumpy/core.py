@@ -3797,7 +3797,17 @@ def _compute_multi_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
             I[i, pos] = -1
 
 
-def _compute_P_ABBA(T_A, T_B, m, P_ABBA, mp_func, client=None, device_id=None):
+def _compute_P_ABBA(
+    T_A,
+    T_B,
+    m,
+    P_ABBA,
+    mp_func,
+    client=None,
+    device_id=None,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
+):
     """
     A convenience function for computing the (unsorted) concatenated matrix profiles
     from an AB-join and BA-join for the two time series, `T_A` and `T_B`. This result
@@ -3838,6 +3848,26 @@ def _compute_P_ABBA(T_A, T_B, m, P_ABBA, mp_func, client=None, device_id=None):
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
+    T_A_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
+
+    T_B_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
+
     Returns
     -------
     None
@@ -3852,8 +3882,22 @@ def _compute_P_ABBA(T_A, T_B, m, P_ABBA, mp_func, client=None, device_id=None):
     n_A = T_A.shape[0]
     partial_mp_func = _get_partial_mp_func(mp_func, client=client, device_id=device_id)
 
-    P_ABBA[: n_A - m + 1] = partial_mp_func(T_A, m, T_B, ignore_trivial=False)[:, 0]
-    P_ABBA[n_A - m + 1 :] = partial_mp_func(T_B, m, T_A, ignore_trivial=False)[:, 0]
+    P_ABBA[: n_A - m + 1] = partial_mp_func(
+        T_A,
+        m,
+        T_B,
+        ignore_trivial=False,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )[:, 0]
+    P_ABBA[n_A - m + 1 :] = partial_mp_func(
+        T_B,
+        m,
+        T_A,
+        ignore_trivial=False,
+        T_A_subseq_isconstant=T_B_subseq_isconstant,
+        T_B_subseq_isconstant=T_A_subseq_isconstant,
+    )[:, 0]
 
 
 def _mpdist(
