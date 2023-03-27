@@ -1,17 +1,20 @@
+import functools
+from unittest.mock import patch
+
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import gpu_stump
-from stumpy import config
 from numba import cuda
-from unittest.mock import patch
+
+from stumpy import config, gpu_stump
 
 try:
     from numba.errors import NumbaPerformanceWarning
 except ModuleNotFoundError:
     from numba.core.errors import NumbaPerformanceWarning
-import pytest
+
 import naive
+import pytest
 
 TEST_THREADS_PER_BLOCK = 10
 
@@ -393,6 +396,60 @@ def test_gpu_stump_A_B_join_KNN(T_A, T_B):
     for k in range(2, 4):
         ref_mp = naive.stump(T_A, m, T_B=T_B, row_wise=True, k=k)
         comp_mp = gpu_stump(T_A, m, T_B, ignore_trivial=False, k=k)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
+
+
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@pytest.mark.parametrize("T_A, T_B", test_data)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
+def test_gpu_stump_self_join_custom_isconstant(T_A, T_B):
+    m = 3
+    zone = int(np.ceil(m / 4))
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    # case 1: custom isconstant is a boolean array
+    T_B_subseq_isconstant = naive.rolling_isconstant(T_B, m, isconstant_custom_func)
+    for k in range(2, 4):
+        ref_mp = naive.stump(
+            T_A=T_B,
+            m=m,
+            exclusion_zone=zone,
+            row_wise=True,
+            k=k,
+            T_A_subseq_isconstant=T_B_subseq_isconstant,
+        )
+        comp_mp = gpu_stump(
+            T_A=T_B,
+            m=m,
+            ignore_trivial=True,
+            k=k,
+            T_A_subseq_isconstant=T_B_subseq_isconstant,
+        )
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(ref_mp, comp_mp)
+
+    # case 2: custom isconstant is func
+    for k in range(2, 4):
+        ref_mp = naive.stump(
+            T_A=T_B,
+            m=m,
+            exclusion_zone=zone,
+            row_wise=True,
+            k=k,
+            T_A_subseq_isconstant=isconstant_custom_func,
+        )
+        comp_mp = gpu_stump(
+            T_A=T_B,
+            m=m,
+            ignore_trivial=True,
+            k=k,
+            T_A_subseq_isconstant=isconstant_custom_func,
+        )
         naive.replace_inf(ref_mp)
         naive.replace_inf(comp_mp)
         npt.assert_almost_equal(ref_mp, comp_mp)

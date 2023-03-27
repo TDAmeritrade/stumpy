@@ -2,104 +2,14 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import warnings
-
-import numpy as np
-from scipy.stats import norm
-from numba import njit, prange
 from functools import lru_cache, partial
 
-from . import core, config
-from .maamp import maamp_multi_distance_profile, maamp, maamp_subspace, maamp_mdl
+import numpy as np
+from numba import njit, prange
+from scipy.stats import norm
 
-
-def _preprocess_include(include):
-    """
-    A utility function for processing the `include` input
-
-    Parameters
-    ----------
-    include : numpy.ndarray
-        A list of (zero-based) indices corresponding to the dimensions in `T` that
-        must be included in the constrained multidimensional motif search.
-        For more information, see Section IV D in:
-
-        `DOI: 10.1109/ICDM.2017.66 \
-        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
-
-    Returns
-    -------
-    include : numpy.ndarray
-        Process `include` and remove any redundant index values
-    """
-    include = np.asarray(include)
-    _, idx = np.unique(include, return_index=True)
-    if include.shape[0] != idx.shape[0]:  # pragma: no cover
-        warnings.warn("Removed repeating indices in `include`")
-        include = include[np.sort(idx)]
-
-    return include
-
-
-def _apply_include(
-    D,
-    include,
-    restricted_indices=None,
-    unrestricted_indices=None,
-    mask=None,
-    tmp_swap=None,
-):
-    """
-    Apply a transformation to the multi-dimensional distance profile so that specific
-    dimensions are always included. Essentially, it is swapping rows within the distance
-    profile.
-
-    Parameters
-    ----------
-    D : numpy.ndarray
-        The multi-dimensional distance profile
-
-    include : numpy.ndarray
-        A list of (zero-based) indices corresponding to the dimensions in `T` that
-        must be included in the constrained multidimensional motif search.
-        For more information, see Section IV D in:
-
-        `DOI: 10.1109/ICDM.2017.66 \
-        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
-
-    restricted_indices : numpy.ndarray, default None
-        A list of indices specified in `include` that reside in the first
-        `include.shape[0]` rows
-
-    unrestricted_indices : numpy.ndarray, default None
-        A list of indices specified in `include` that do not reside in the first
-        `include.shape[0]` rows
-
-    mask : numpy.ndarray, default None
-        A boolean mask to select for unrestricted indices
-
-    tmp_swap : numpy.ndarray, default None
-        A reusable array to aid in array element swapping
-    """
-    include = _preprocess_include(include)
-
-    if restricted_indices is None:
-        restricted_indices = include[include < include.shape[0]]
-
-    if unrestricted_indices is None:
-        unrestricted_indices = include[include >= include.shape[0]]
-
-    if mask is None:
-        mask = np.ones(include.shape[0], dtype=bool)
-        mask[restricted_indices] = False
-
-    if tmp_swap is None:
-        tmp_swap = D[: include.shape[0]].copy()
-    else:
-        tmp_swap[:] = D[: include.shape[0]]
-
-    D[: include.shape[0]] = D[include]
-    D[unrestricted_indices] = tmp_swap[mask]
+from . import config, core
+from .maamp import maamp, maamp_mdl, maamp_multi_distance_profile, maamp_subspace
 
 
 def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, T_subseq_isconstant):
@@ -152,59 +62,6 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, T_subseq_isconstant):
             )
 
     return D
-
-
-def _subspace(D, k, include=None, discords=False):
-    """
-    Compute the k-dimensional matrix profile subspace for a given subsequence index and
-    its nearest neighbor index
-
-    Parameters
-    ----------
-    D : numpy.ndarray
-        The multi-dimensional distance profile
-
-    k : int
-        The subset number of dimensions out of `D = T.shape[0]`-dimensions to return
-        the subspace for. Note that zero-based indexing is used.
-
-    include : numpy.ndarray, default None
-        A list of (zero-based) indices corresponding to the dimensions in `T` that
-        must be included in the constrained multidimensional motif search.
-        For more information, see Section IV D in:
-
-        `DOI: 10.1109/ICDM.2017.66 \
-        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
-
-    discords : bool, default False
-        When set to `True`, this reverses the distance profile to favor discords rather
-        than motifs. Note that indices in `include` are still maintained and respected.
-
-    Returns
-    -------
-        S : numpy.ndarray
-        An array that contains the `k`th-dimensional subspace for the subsequence. Note
-        that `k+1` rows will be returned.
-    """
-    if discords:
-        sorted_idx = D[::-1].argsort(axis=0, kind="mergesort")
-    else:
-        sorted_idx = D.argsort(axis=0, kind="mergesort")
-
-    # `include` processing occur here since we are dealing with indices, not distances
-    if include is not None:
-        include = _preprocess_include(include)
-        mask = np.in1d(sorted_idx, include)
-        include_idx = mask.nonzero()[0]
-        exclude_idx = (~mask).nonzero()[0]
-        sorted_idx[: include_idx.shape[0]], sorted_idx[include_idx.shape[0] :] = (
-            sorted_idx[include_idx],
-            sorted_idx[exclude_idx],
-        )
-
-    S = sorted_idx[: k + 1]
-
-    return S
 
 
 @core.non_normalized(maamp_subspace)
@@ -299,18 +156,21 @@ def subspace(
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> mps, indices = stumpy.mstump(
     ...     np.array([[584., -11., 23., 79., 1001., 0., -19.],
     ...               [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
     ...     m=3)
     >>> motifs_idx = np.argsort(mps, axis=1)[:, :2]
+    >>> k = 1
     >>> stumpy.subspace(
     ...     np.array([[584., -11., 23., 79., 1001., 0., -19.],
     ...               [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
     ...     m=3,
     ...     subseq_idx=motifs_idx[k][0],
     ...     nn_idx=indices[k][motifs_idx[k][0]],
-    ...     k=1)
+    ...     k=k)
     array([0, 1])
     """
     T = core._preprocess(T)
@@ -330,7 +190,7 @@ def subspace(
 
     D = np.linalg.norm(disc_subseqs - disc_neighbors, axis=1)
 
-    S = _subspace(D, k, include=include, discords=discords)
+    S = core._subspace(D, k, include=include, discords=discords)
 
     return S
 
@@ -379,40 +239,6 @@ def _discretize(a, bins, right=True):  # pragma: no cover
         Discretized array
     """
     return np.digitize(a, bins, right=right)
-
-
-def _mdl(disc_subseqs, disc_neighbors, S, n_bit=8):
-    """
-    Compute the number of bits needed to compress one array with another
-    using the minimum description length (MDL)
-
-    Parameters
-    ----------
-    disc_subseqs : numpy.ndarray
-        The discretized array to be compressed
-
-    disc_neighbors : numpy.ndarray
-        The discretized array that will be used as a hypothesis for compression
-
-    S : numpy.ndarray
-        An array that contains the `k`th-dimensional subspace to be used
-
-    n_bit : int, default 8
-        The number of bits to use for computing the bit size
-
-    Returns
-    -------
-    bit_size : float
-        The total number of bits computed from MDL for representing both input arrays
-    """
-    ndim = disc_subseqs.shape[0]
-    sub_dims, m = disc_subseqs[S].shape
-
-    n_val = len(np.unique(disc_subseqs[S] - disc_neighbors[S]))
-    bit_size = n_bit * (2 * ndim * m - sub_dims * m)
-    bit_size = bit_size + sub_dims * m * np.log2(n_val) + n_val * n_bit
-
-    return bit_size
 
 
 @core.non_normalized(maamp_mdl)
@@ -505,6 +331,8 @@ def mdl(
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> mps, indices = stumpy.mstump(
     ...     np.array([[584., -11., 23., 79., 1001., 0., -19.],
     ...               [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
@@ -538,9 +366,9 @@ def mdl(
 
         D = np.linalg.norm(disc_subseqs - disc_neighbors, axis=1)
 
-        S[k] = _subspace(D, k, include=include, discords=discords)
+        S[k] = core._subspace(D, k, include=include, discords=discords)
 
-        bit_sizes[k] = _mdl(disc_subseqs, disc_neighbors, S[k], n_bit=n_bit)
+        bit_sizes[k] = core._mdl(disc_subseqs, disc_neighbors, S[k], n_bit=n_bit)
 
     return bit_sizes, S
 
@@ -630,7 +458,7 @@ def _multi_distance_profile(
     )
 
     if include is not None:
-        _apply_include(D, include)
+        core._apply_include(D, include)
         start_row_idx = include.shape[0]
 
     if discords:
@@ -706,7 +534,7 @@ def multi_distance_profile(
     core.check_window_size(m, max_size=T.shape[1])
 
     if include is not None:  # pragma: no cover
-        include = _preprocess_include(include)
+        include = core._preprocess_include(include)
 
     excl_zone = int(
         np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
@@ -1016,55 +844,6 @@ def _compute_multi_D(
     core._apply_exclusion_zone(D, idx, excl_zone, np.inf)
 
 
-@njit(
-    # "(i8, i8, f8[:, :], f8[:], i8, f8[:, :], i8[:, :], f8)",
-    parallel=True,
-    fastmath=True,
-)
-def _compute_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
-    """
-    A Numba JIT-compiled version of mSTOMP for updating the matrix profile and matrix
-    profile indices
-
-    Parameters
-    ----------
-    d : int
-        The total number of dimensions in `T`
-
-    idx : int
-        The row index in `T`
-
-    D : numpy.ndarray
-        The distance profile
-
-    D_prime : numpy.ndarray
-        A reusable array for storing the column-wise cumulative sum of `D`
-
-    range_start : int
-        The starting index value along `T` for which to start the matrix
-        profile calculation
-
-    P : numpy.ndarray
-        The matrix profile
-
-    I : numpy.ndarray
-        The matrix profile indices
-
-    p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
-    """
-    D_prime[:] = 0.0
-    for i in range(d):
-        D_prime = D_prime + np.power(D[i], 1.0 / p)
-
-        min_index = np.argmin(D_prime)
-        pos = idx - range_start
-        I[i, pos] = min_index
-        P[i, pos] = D_prime[min_index] / (i + 1)
-        if np.isinf(P[i, pos]):  # pragma nocover
-            I[i, pos] = -1
-
-
 def _mstump(
     T,
     m,
@@ -1209,7 +988,7 @@ def _mstump(
 
         # `include` processing must occur here since we are dealing with distances
         if include is not None:
-            _apply_include(
+            core._apply_include(
                 D, include, restricted_indices, unrestricted_indices, mask, tmp_swap
             )
             start_row_idx = include.shape[0]
@@ -1219,7 +998,7 @@ def _mstump(
         else:
             D[start_row_idx:].sort(axis=0)
 
-        _compute_PI(d, idx, D, D_prime, range_start, P, I)
+        core._compute_multi_PI(d, idx, D, D_prime, range_start, P, I)
 
     return P, I
 
@@ -1319,7 +1098,7 @@ def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
     core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]))
 
     if include is not None:
-        include = _preprocess_include(include)
+        include = core._preprocess_include(include)
 
     d, n = T_B.shape
     k = n - m + 1

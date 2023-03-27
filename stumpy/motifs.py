@@ -6,8 +6,8 @@ import warnings
 
 import numpy as np
 
-from .aamp_motifs import aamp_motifs, aamp_match
-from . import core, config
+from . import config, core
+from .aamp_motifs import aamp_match, aamp_motifs
 
 
 def _motifs(
@@ -265,6 +265,8 @@ def motifs(
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
     >>> stumpy.motifs(
     ...     np.array([584., -11., 23., 79., 1001., 0., -19.]),
@@ -450,6 +452,8 @@ def match(
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> stumpy.match(
     ...     np.array([-11.1, 23.4, 79.5, 1001.0]),
     ...     np.array([584., -11., 23., 79., 1001., 0., -19.])

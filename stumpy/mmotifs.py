@@ -6,8 +6,10 @@ import warnings
 
 import numpy as np
 
+from . import config, core
 from .aamp_mmotifs import aamp_mmotifs
-from . import core, config, mdl, match
+from .motifs import match
+from .mstump import mdl
 
 
 @core.non_normalized(aamp_mmotifs)
@@ -122,6 +124,22 @@ def mmotifs(
     <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
     For more information on `include` and search types, see Section IV D and IV E
+
+    Examples
+    --------
+    >>> import stumpy
+    >>> import numpy as np
+    >>> mps, indices = stumpy.mstump(
+    ...     np.array([[584., -11., 23., 79., 1001., 0., -19.],
+    ...               [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
+    ...     m=3)
+    >>> stumpy.mmotifs(
+    ...     np.array([[584., -11., 23., 79., 1001., 0., -19.],
+    ...               [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
+    ...     mps,
+    ...     indices)
+    (array([[4.47034836e-08, 4.47034836e-08]]),  array([[0, 2]]), [array([1])],
+     [array([ 80.      , 111.509775])])
     """
     T = core._preprocess(T)
     m = T.shape[-1] - P.shape[-1] + 1

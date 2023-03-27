@@ -1,10 +1,9 @@
+import naive
 import numpy as np
 import numpy.testing as npt
-import naive
 import pytest
 
-from stumpy import config, aamp_mmotifs
-
+from stumpy import aamp_mmotifs, config
 
 test_data = [
     np.array(

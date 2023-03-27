@@ -3,7 +3,8 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from . import core, stump, config
+
+from . import config, core, stump
 from .aampi import aampi
 
 
@@ -82,6 +83,8 @@ class stumpi:
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> stream = stumpy.stumpi(
     ...     np.array([584., -11., 23., 79., 1001., 0.]),
     ...     m=3)

@@ -3,7 +3,11 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from . import core, aamp, scraamp, aamped
+
+from . import core
+from .aamp import aamp
+from .aamped import aamped
+from .scraamp import scraamp
 
 
 def _normalize_pan(pan, ms, bfs_indices, n_processed, T_min, T_max, p=2.0):

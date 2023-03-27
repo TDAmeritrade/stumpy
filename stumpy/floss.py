@@ -7,7 +7,7 @@ import copy
 import numpy as np
 import scipy.stats
 
-from . import core, config
+from . import config, core
 
 
 def _nnmark(I):
@@ -285,6 +285,8 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
     >>> stumpy.fluss(mp[:, 0], 3, 2)
     (array([1., 1., 1., 1., 1.]), array([0]))
@@ -376,7 +378,7 @@ class floss:
 
     Notes
     -----
-    DOI: 10.1109/ICDM.2017.21 <https://www.cs.ucr.edu/~eamonn/Segmentation_ICDM.pdf>`__
+    `DOI: 10.1109/ICDM.2017.21 <https://www.cs.ucr.edu/~eamonn/Segmentation_ICDM.pdf>`__
 
     See Section C
 
@@ -385,6 +387,8 @@ class floss:
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0.]), m=3)
     >>> stream = stumpy.floss(
     ...     mp,

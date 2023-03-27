@@ -1,15 +1,16 @@
-import numpy as np
-from numba import cuda
-import numpy.testing as npt
-import pandas as pd
-from scipy.spatial.distance import cdist
-from stumpy import core, config
-import pytest
-from unittest.mock import patch
-import os
 import math
+import os
+from unittest.mock import patch
 
 import naive
+import numpy as np
+import numpy.testing as npt
+import pandas as pd
+import pytest
+from numba import cuda
+from scipy.spatial.distance import cdist
+
+from stumpy import config, core
 
 if cuda.is_available():
 
@@ -1032,6 +1033,10 @@ def test_rolling_isfinite():
 
     npt.assert_almost_equal(ref, comp)
 
+    # test `a` as all boolean isfinite array
+    comp = core.rolling_isfinite(np.isfinite(a), w)
+    npt.assert_almost_equal(ref, comp)
+
 
 def test_rolling_isconstant():
     a = np.arange(12).astype(np.float64)
@@ -1536,3 +1541,19 @@ def test_gpu_searchsorted():
 def test_client_to_func():
     with pytest.raises(NotImplementedError):
         core._client_to_func(core)
+
+
+def test_apply_include():
+    D = np.random.uniform(-1000, 1000, [10, 20]).astype(np.float64)
+    ref_D = np.empty(D.shape)
+    comp_D = np.empty(D.shape)
+    for width in range(D.shape[0]):
+        for i in range(D.shape[0] - width):
+            ref_D[:, :] = D[:, :]
+            comp_D[:, :] = D[:, :]
+            include = np.asarray(range(i, i + width + 1))
+
+            naive.apply_include(D, include)
+            core._apply_include(D, include)
+
+            npt.assert_almost_equal(ref_D, comp_D)

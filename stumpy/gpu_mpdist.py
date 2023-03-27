@@ -5,9 +5,9 @@
 # import numpy as np
 # import math
 
-from . import core, gpu_stump
-from .mpdist import _mpdist
+from . import core
 from .gpu_aampdist import gpu_aampdist
+from .gpu_stump import gpu_stump
 
 
 @core.non_normalized(gpu_aampdist)
@@ -73,6 +73,8 @@ def gpu_mpdist(
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> from numba import cuda
     >>> if __name__ == "__main__":
     ...     all_gpu_devices = [device.id for device in cuda.list_devices()]
@@ -83,6 +85,6 @@ def gpu_mpdist(
     ...         device_id=all_gpu_devices)
     0.00019935236191097894
     """
-    MPdist = _mpdist(T_A, T_B, m, percentage, k, device_id=device_id, mp_func=gpu_stump)
+    MPdist = core._mpdist(T_A, T_B, m, gpu_stump, percentage, k, device_id=device_id)
 
     return MPdist

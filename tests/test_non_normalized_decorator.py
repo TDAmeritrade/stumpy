@@ -1,17 +1,18 @@
+import naive
 import numpy as np
 import numpy.testing as npt
-import stumpy
-from stumpy.mstump import multi_distance_profile
-from stumpy.maamp import maamp_multi_distance_profile
 from dask.distributed import Client, LocalCluster
 from numba import cuda
 
-import naive
+import stumpy
+from stumpy.maamp import maamp_multi_distance_profile
+from stumpy.mstump import multi_distance_profile
 
 try:
     from numba.errors import NumbaPerformanceWarning
 except ModuleNotFoundError:
     from numba.core.errors import NumbaPerformanceWarning
+
 import pytest
 
 

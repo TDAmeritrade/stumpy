@@ -47,6 +47,8 @@ def atsc(IL, IR, j):
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
     >>> stumpy.atsc(mp[:, 2], mp[:, 3], 1)
     array([1, 3])
@@ -111,6 +113,8 @@ def allc(IL, IR):
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
     >>> stumpy.allc(mp[:, 2], mp[:, 3])
     ([array([1, 3]), array([2]), array([0, 4])], array([0, 4]))

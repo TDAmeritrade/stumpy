@@ -2,11 +2,12 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
+import numba
 import numpy as np
 from numba import njit, prange
-import numba
 
-from . import core, scraamp, config
+from . import config, core
+from .scraamp import prescraamp, scraamp
 from .stump import _stump
 
 
@@ -490,7 +491,7 @@ def _prescrump(
     return np.sqrt(P_squared[0]), I[0]
 
 
-@core.non_normalized(scraamp.prescraamp)
+@core.non_normalized(prescraamp)
 def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
     """
     A convenience wrapper around the Numba JIT-compiled parallelized
@@ -584,7 +585,7 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
 
 
 @core.non_normalized(
-    scraamp.scraamp,
+    scraamp,
     exclude=["normalize", "pre_scrump", "pre_scraamp", "p"],
     replace={"pre_scrump": "pre_scraamp"},
 )
@@ -686,22 +687,16 @@ class scrump:
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> approx_mp = stumpy.scrump(
     ...     np.array([584., -11., 23., 79., 1001., 0., -19.]),
     ...     m=3)
     >>> approx_mp.update()
-    >>> approx_mp._P
-    array([[2.982409  ,        inf, 2.982409  ],
-           [3.28412702,        inf, 3.28412702],
-           [       inf,        inf,        inf],
-           [2.982409  , 2.982409  ,        inf],
-           [3.28412702, 3.28412702,        inf]])
-    >>> approx_mp._I
-    array([[ 3, -1,  3],
-           [ 4, -1,  4],
-           [-1, -1, -1],
-           [ 0,  0, -1],
-           [ 1,  1, -1]])
+    >>> approx_mp.P_
+    array([2.982409  , 3.28412702,        inf, 2.982409  , 3.28412702])
+    >>> approx_mp.I_
+    array([ 3,  4, -1,  0,  1])
     """
 
     def __init__(

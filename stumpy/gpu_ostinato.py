@@ -2,9 +2,10 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-from . import core, gpu_stump
-from .ostinato import _ostinato, _get_central_motif
+from . import core
 from .gpu_aamp_ostinato import gpu_aamp_ostinato
+from .gpu_stump import gpu_stump
+from .ostinato import _get_central_motif, _ostinato
 
 
 @core.non_normalized(gpu_aamp_ostinato)
@@ -80,6 +81,8 @@ def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0):
 
     Examples
     --------
+    >>> import stumpy
+    >>> import numpy as np
     >>> from numba import cuda
     >>> if __name__ == "__main__":
     ...     all_gpu_devices = [device.id for device in cuda.list_devices()]

@@ -1,16 +1,15 @@
+import naive
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-from stumpy import core, config
-from stumpy import maamp, maamp_subspace, maamp_mdl
+import pytest
+
+from stumpy import config, core, maamp, maamp_mdl, maamp_subspace
 from stumpy.maamp import (
+    _get_first_maamp_profile,
     _multi_mass_absolute,
     maamp_multi_distance_profile,
-    _get_first_maamp_profile,
 )
-import pytest
-import naive
-
 
 test_data = [
     (np.array([[584, -11, 23, 79, 1001, 0, -19]], dtype=np.float64), 3),
