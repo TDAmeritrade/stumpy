@@ -121,7 +121,17 @@ def _mpdist_vect(
 
 
 @core.non_normalized(aampdist)
-def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True, p=2.0):
+def mpdist(
+    T_A,
+    T_B,
+    m,
+    percentage=0.05,
+    k=None,
+    normalize=True,
+    p=2.0,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
+):
     """
     Compute the z-normalized matrix profile distance (MPdist) measure between any two
     time series
@@ -161,6 +171,26 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True, p=2.0):
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
 
+    T_A_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
+
+    T_B_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
+
     Returns
     -------
     MPdist : float
@@ -190,7 +220,16 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None, normalize=True, p=2.0):
     ...     m=3)
     0.00019935236191097894
     """
-    MPdist = core._mpdist(T_A, T_B, m, stump, percentage, k)
+    MPdist = core._mpdist(
+        T_A,
+        T_B,
+        m,
+        stump,
+        percentage,
+        k,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
 
     return MPdist
 

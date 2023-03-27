@@ -3910,6 +3910,8 @@ def _mpdist(
     client=None,
     device_id=None,
     custom_func=None,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
 ):
     """
     A convenience function for computing the matrix profile distance (MPdist) measure
@@ -3964,6 +3966,26 @@ def _mpdist(
         `MPdist` value. The `percentage` and `k` parameters are ignored when
         `custom_func` is not None.
 
+    T_A_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
+
+    T_B_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
+
     Returns
     -------
     MPdist : float
@@ -3980,7 +4002,17 @@ def _mpdist(
     n_B = T_B.shape[0]
     P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
 
-    _compute_P_ABBA(T_A, T_B, m, P_ABBA, mp_func, client, device_id)
+    _compute_P_ABBA(
+        T_A,
+        T_B,
+        m,
+        P_ABBA,
+        mp_func,
+        client,
+        device_id,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
 
     if k is not None:
         k = min(int(k), P_ABBA.shape[0] - 1)
