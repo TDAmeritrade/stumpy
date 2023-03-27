@@ -63,6 +63,45 @@ def test_compute_P_ABBA(T_A, T_B):
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
+def test_compute_P_ABBA_with_isconstant(T_A, T_B):
+    m = 3
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+
+    T_A_subseq_isconstant = np.random.choice([True, False], n_A - m + 1, replace=True)
+    T_B_subseq_isconstant = np.random.choice([True, False], n_B - m + 1, replace=True)
+
+    ref_P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
+    comp_P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
+
+    ref_P_ABBA[: n_A - m + 1] = naive.stump(
+        T_A,
+        m,
+        T_B,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )[:, 0]
+    ref_P_ABBA[n_A - m + 1 :] = naive.stump(
+        T_B,
+        m,
+        T_A,
+        T_A_subseq_isconstant=T_B_subseq_isconstant,
+        T_B_subseq_isconstant=T_A_subseq_isconstant,
+    )[:, 0]
+    _compute_P_ABBA(
+        T_A,
+        T_B,
+        m,
+        comp_P_ABBA,
+        stump,
+        ubseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
+
+    npt.assert_almost_equal(ref_P_ABBA, comp_P_ABBA)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
 def test_mpdist_vect(T_A, T_B):
     m = 3
     ref_mpdist_vect = naive.mpdist_vect(T_A, T_B, m)
