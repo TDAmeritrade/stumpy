@@ -244,3 +244,36 @@ def test_mpdisted(T_A, T_B, dask_cluster):
         comp_mpdist = mpdisted(dask_client, T_A, T_B, m)
 
         npt.assert_almost_equal(ref_mpdist, comp_mpdist)
+
+
+@pytest.mark.filterwarnings("ignore:numpy.dtype size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ufunc size changed")
+@pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_mpdisted_with_isconstant(T_A, T_B, dask_cluster):
+    with Client(dask_cluster) as dask_client:
+        m = 3
+        T_A_subseq_isconstant = np.random.choice(
+            [True, False], size=len(T_A) - m + 1, replace=True
+        )
+        T_B_subseq_isconstant = np.random.choice(
+            [True, False], size=len(T_B) - m + 1, replace=True
+        )
+        ref_mpdist = naive.mpdist(
+            T_A,
+            T_B,
+            m,
+            T_A_subseq_isconstant=T_A_subseq_isconstant,
+            T_B_subseq_isconstant=T_B_subseq_isconstant,
+        )
+        comp_mpdist = mpdisted(
+            dask_client,
+            T_A,
+            T_B,
+            m,
+            T_A_subseq_isconstant=T_A_subseq_isconstant,
+            T_B_subseq_isconstant=T_B_subseq_isconstant,
+        )
+
+        npt.assert_almost_equal(ref_mpdist, comp_mpdist)
