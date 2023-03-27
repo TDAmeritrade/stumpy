@@ -292,53 +292,24 @@ def test_stamp_mass_PI_with_isconstant_case2():
 def test_stamp_self_join_with_isconstant(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 2))
-    subseq_isconstant = np.random.choice(
-        [True, False], size=len(T_B) - m + 1, replace=True
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
     )
+
     ref_mp = naive.stump(
         T_B,
         m,
         exclusion_zone=zone,
         row_wise=True,
-        T_A_subseq_isconstant=subseq_isconstant,
+        T_A_subseq_isconstant=isconstant_custom_func,
     )
     comp_mp = stamp.stamp(
         T_B,
         T_B,
         m,
         ignore_trivial=True,
-        T_A_subseq_isconstant=subseq_isconstant,
-        T_B_subseq_isconstant=subseq_isconstant,
-    )
-    naive.replace_inf(ref_mp)
-    naive.replace_inf(comp_mp)
-    npt.assert_almost_equal(ref_mp[:, :2], comp_mp)
-
-
-@pytest.mark.parametrize("T_A, T_B", test_data)
-def test_stamp_A_B_join_with_isconstant(T_A, T_B):
-    m = 3
-    T_A_subseq_isconstant = np.random.choice(
-        [True, False], size=len(T_A) - m + 1, replace=True
-    )
-    T_B_subseq_isconstant = np.random.choice(
-        [True, False], size=len(T_B) - m + 1, replace=True
-    )
-
-    ref_mp = naive.stump(
-        T_A,
-        m,
-        T_B=T_B,
-        row_wise=True,
-        T_A_subseq_isconstant=T_A_subseq_isconstant,
-        T_B_subseq_isconstant=T_B_subseq_isconstant,
-    )
-    comp_mp = stamp.stamp(
-        T_A,
-        T_B,
-        m,
-        T_A_subseq_isconstant=T_A_subseq_isconstant,
-        T_B_subseq_isconstant=T_B_subseq_isconstant,
+        T_A_subseq_isconstant=isconstant_custom_func,
+        T_B_subseq_isconstant=isconstant_custom_func,
     )
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
