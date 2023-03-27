@@ -170,6 +170,33 @@ def test_mpdist(T_A, T_B):
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
+def test_mpdist_with_isconstant(T_A, T_B):
+    m = 3
+    T_A_subseq_isconstant = np.random.choice(
+        [True, False], size=len(T_A) - m + 1, replace=True
+    )
+    T_B_subseq_isconstant = np.random.choice(
+        [True, False], size=len(T_B) - m + 1, replace=True
+    )
+    ref_mpdist = naive.mpdist(
+        T_A,
+        T_B,
+        m,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
+    comp_mpdist = mpdist(
+        T_A,
+        T_B,
+        m,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
+
+    npt.assert_almost_equal(ref_mpdist, comp_mpdist)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
 @pytest.mark.parametrize("percentage", percentage)
 def test_mpdist_percentage(T_A, T_B, percentage):
     m = 3
