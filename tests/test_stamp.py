@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -26,13 +28,12 @@ def test_stamp_mass_PI(T_A, T_B):
     trivial_idx = 2
     zone = int(np.ceil(m / 2))
     Q = T_B[trivial_idx : trivial_idx + m]
-    T_subseq_isconstant = core.rolling_isconstant(T_B, m)
     M_T, Σ_T = core.compute_mean_std(T_B, m)
     ref_P, ref_I, ref_left_I, ref_right_I = naive.mass_PI(
         Q, T_B, m, trivial_idx=trivial_idx, excl_zone=zone, ignore_trivial=True
     )
     comp_P, comp_I = stamp._mass_PI(
-        Q, T_B, M_T, Σ_T, T_subseq_isconstant, trivial_idx=trivial_idx, excl_zone=zone
+        Q, T_B, M_T, Σ_T, trivial_idx=trivial_idx, excl_zone=zone
     )
 
     npt.assert_almost_equal(ref_P, comp_P)
@@ -43,7 +44,6 @@ def test_stamp_mass_PI(T_A, T_B):
         T_B,
         M_T,
         Σ_T,
-        T_subseq_isconstant,
         trivial_idx=trivial_idx,
         excl_zone=zone,
         left=True,
@@ -56,7 +56,6 @@ def test_stamp_mass_PI(T_A, T_B):
         T_B,
         M_T,
         Σ_T,
-        T_subseq_isconstant,
         trivial_idx=trivial_idx,
         excl_zone=zone,
         right=True,
@@ -146,6 +145,172 @@ def test_stamp_nan_zero_mean_self_join():
     ref_mp = naive.stump(T, m, exclusion_zone=zone, row_wise=True)
     comp_mp = stamp.stamp(T, T, m, ignore_trivial=True)
 
+    naive.replace_inf(ref_mp)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp[:, :2], comp_mp)
+
+
+def test_stamp_mass_PI_with_isconstant_case1():
+    # case1: The query `Q` is not constant
+    T_B = np.random.uniform(-1, 1, [64])
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, stddev_threshold=0.5
+    )
+
+    m = 3
+    zone = int(np.ceil(m / 2))
+
+    T_B_subseq_isconstant = naive.rolling_isconstant(T_B, m, isconstant_custom_func)
+    M_T, Σ_T = core.compute_mean_std(T_B, m)
+
+    trivial_idx = np.random.choice(np.flatnonzero(~T_B_subseq_isconstant))
+    Q = T_B[trivial_idx : trivial_idx + m]
+
+    ref_P, ref_I, ref_left_I, ref_right_I = naive.mass_PI(
+        Q,
+        T_B,
+        m,
+        trivial_idx=trivial_idx,
+        excl_zone=zone,
+        ignore_trivial=True,
+        T_subseq_isconstant=isconstant_custom_func,
+        Q_subseq_isconstant=isconstant_custom_func,
+    )
+    comp_P, comp_I = stamp._mass_PI(
+        Q,
+        T_B,
+        M_T,
+        Σ_T,
+        trivial_idx=trivial_idx,
+        excl_zone=zone,
+        T_subseq_isconstant=isconstant_custom_func,
+        Q_subseq_isconstant=isconstant_custom_func,
+    )
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
+
+    comp_left_P, comp_left_I = stamp._mass_PI(
+        Q,
+        T_B,
+        M_T,
+        Σ_T,
+        trivial_idx=trivial_idx,
+        excl_zone=zone,
+        left=True,
+        T_subseq_isconstant=isconstant_custom_func,
+        Q_subseq_isconstant=isconstant_custom_func,
+    )
+
+    npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+    comp_right_P, comp_right_I = stamp._mass_PI(
+        Q,
+        T_B,
+        M_T,
+        Σ_T,
+        trivial_idx=trivial_idx,
+        excl_zone=zone,
+        right=True,
+        T_subseq_isconstant=isconstant_custom_func,
+        Q_subseq_isconstant=isconstant_custom_func,
+    )
+
+    npt.assert_almost_equal(ref_right_I, comp_right_I)
+
+
+def test_stamp_mass_PI_with_isconstant_case2():
+    # case2: The query `Q` is constant
+    T_B = np.random.uniform(-1, 1, [64])
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, stddev_threshold=0.5
+    )
+
+    m = 3
+    zone = int(np.ceil(m / 2))
+
+    T_B_subseq_isconstant = naive.rolling_isconstant(T_B, m, isconstant_custom_func)
+    M_T, Σ_T = core.compute_mean_std(T_B, m)
+
+    trivial_idx = np.random.choice(np.flatnonzero(T_B_subseq_isconstant))
+    Q = T_B[trivial_idx : trivial_idx + m]
+
+    ref_P, ref_I, ref_left_I, ref_right_I = naive.mass_PI(
+        Q,
+        T_B,
+        m,
+        trivial_idx=trivial_idx,
+        excl_zone=zone,
+        ignore_trivial=True,
+        T_subseq_isconstant=isconstant_custom_func,
+        Q_subseq_isconstant=isconstant_custom_func,
+    )
+    comp_P, comp_I = stamp._mass_PI(
+        Q,
+        T_B,
+        M_T,
+        Σ_T,
+        trivial_idx=trivial_idx,
+        excl_zone=zone,
+        T_subseq_isconstant=isconstant_custom_func,
+        Q_subseq_isconstant=isconstant_custom_func,
+    )
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
+
+    comp_left_P, comp_left_I = stamp._mass_PI(
+        Q,
+        T_B,
+        M_T,
+        Σ_T,
+        trivial_idx=trivial_idx,
+        excl_zone=zone,
+        left=True,
+        T_subseq_isconstant=isconstant_custom_func,
+        Q_subseq_isconstant=isconstant_custom_func,
+    )
+
+    npt.assert_almost_equal(ref_left_I, comp_left_I)
+
+    comp_right_P, comp_right_I = stamp._mass_PI(
+        Q,
+        T_B,
+        M_T,
+        Σ_T,
+        trivial_idx=trivial_idx,
+        excl_zone=zone,
+        right=True,
+        T_subseq_isconstant=isconstant_custom_func,
+        Q_subseq_isconstant=isconstant_custom_func,
+    )
+
+    npt.assert_almost_equal(ref_right_I, comp_right_I)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_stamp_self_join_with_isconstant(T_A, T_B):
+    m = 3
+    zone = int(np.ceil(m / 2))
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    ref_mp = naive.stump(
+        T_B,
+        m,
+        exclusion_zone=zone,
+        row_wise=True,
+        T_A_subseq_isconstant=isconstant_custom_func,
+    )
+    comp_mp = stamp.stamp(
+        T_B,
+        T_B,
+        m,
+        ignore_trivial=True,
+        T_A_subseq_isconstant=isconstant_custom_func,
+        T_B_subseq_isconstant=isconstant_custom_func,
+    )
     naive.replace_inf(ref_mp)
     naive.replace_inf(comp_mp)
     npt.assert_almost_equal(ref_mp[:, :2], comp_mp)

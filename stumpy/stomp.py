@@ -100,13 +100,35 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
     else:
         if ignore_trivial:
             P, I = stamp._mass_PI(
-                T_A[:m], T_B, M_T, Σ_T, T_subseq_isconstant, 0, excl_zone
+                T_A[:m],
+                T_B,
+                M_T,
+                Σ_T,
+                0,
+                excl_zone,
+                T_subseq_isconstant=T_subseq_isconstant,
+                Q_subseq_isconstant=Q_subseq_isconstant[[0]],
             )
             PR, IR = stamp._mass_PI(
-                T_A[:m], T_B, M_T, Σ_T, T_subseq_isconstant, 0, excl_zone, right=True
+                T_A[:m],
+                T_B,
+                M_T,
+                Σ_T,
+                0,
+                excl_zone,
+                right=True,
+                T_subseq_isconstant=T_subseq_isconstant,
+                Q_subseq_isconstant=Q_subseq_isconstant[[0]],
             )
         else:
-            P, I = stamp._mass_PI(T_A[:m], T_B, M_T, Σ_T, T_subseq_isconstant)
+            P, I = stamp._mass_PI(
+                T_A[:m],
+                T_B,
+                M_T,
+                Σ_T,
+                T_subseq_isconstant=T_subseq_isconstant,
+                Q_subseq_isconstant=Q_subseq_isconstant[[0]],
+            )
             IR = -1  # No left and right matrix profile available
 
     out[0] = P, I, -1, IR
