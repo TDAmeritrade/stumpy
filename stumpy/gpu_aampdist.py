@@ -3,7 +3,7 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 from . import gpu_aamp
-from .core import _aampdist
+from .core import _mpdist
 
 
 def gpu_aampdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0, p=2.0):
@@ -59,4 +59,4 @@ def gpu_aampdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0, p=2.0):
 
     See Section III
     """
-    return _aampdist(T_A, T_B, m, gpu_aamp, percentage, k, device_id=device_id, p=p)
+    return _mpdist(T_A, T_B, m, gpu_aamp, percentage, k, device_id=device_id, p=p)

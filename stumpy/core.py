@@ -3797,91 +3797,6 @@ def _compute_multi_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
             I[i, pos] = -1
 
 
-def _aacompute_P_ABBA(
-    T_A,
-    T_B,
-    m,
-    P_ABBA,
-    mp_func,
-    client=None,
-    device_id=None,
-    p=2.0,
-):
-    """
-    A convenience function for computing the (unsorted) concatenated matrix profiles
-    from an AB-join and BA-join for the two time series, `T_A` and `T_B`. This result
-    can then be used to compute the matrix profile distance (MPdist) measure.
-
-    The MPdist distance measure considers two time series to be similar if they share
-    many subsequences, regardless of the order of matching subsequences. MPdist
-    concatenates the output of an AB-join and a BA-join and returns the `k`th smallest
-    value as the reported distance. Note that MPdist is a measure and not a metric.
-    Therefore, it does not obey the triangular inequality but the method is highly
-    scalable.
-
-    Parameters
-    ----------
-    T_A : numpy.ndarray
-        The first time series or sequence for which to compute the matrix profile
-
-    T_B : numpy.ndarray
-        The second time series or sequence for which to compute the matrix profile
-
-    m : int
-        Window size
-
-    P_ABBA : numpy.ndarray
-        The output array to write the concatenated AB-join and BA-join results to
-
-    mp_func : function
-        Specify a custom matrix profile function to use for computing matrix profiles
-
-    client : client, default None
-        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
-        the scope of this library. Please refer to the Dask or Ray Distributed
-        documentation.
-
-    device_id : int or list, default None
-        The (GPU) device number to use. The default value is `0`. A list of
-        valid device ids (int) may also be provided for parallel GPU-STUMP
-        computation. A list of all valid device ids can be obtained by
-        executing `[device.id for device in numba.cuda.list_devices()]`.
-
-    p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == True`.
-
-    Returns
-    -------
-    None
-
-    Notes
-    -----
-    `DOI: 10.1109/ICDM.2018.00119 \
-    <https://www.cs.ucr.edu/~eamonn/MPdist_Expanded.pdf>`__
-
-    See Section III
-    """
-    n_A = T_A.shape[0]
-    partial_mp_func = _get_partial_mp_func(mp_func, client=client, device_id=device_id)
-
-    P_ABBA[: n_A - m + 1] = partial_mp_func(
-        T_A,
-        m,
-        T_B,
-        ignore_trivial=False,
-        p=p,
-    )[:, 0]
-    P_ABBA[n_A - m + 1 :] = partial_mp_func(
-        T_B,
-        m,
-        T_A,
-        ignore_trivial=False,
-        p=p,
-    )[:, 0]
-
-
-@non_normalized(_aacompute_P_ABBA)
 def _compute_P_ABBA(
     T_A,
     T_B,
@@ -3978,123 +3893,36 @@ def _compute_P_ABBA(
     n_A = T_A.shape[0]
     partial_mp_func = _get_partial_mp_func(mp_func, client=client, device_id=device_id)
 
-    P_ABBA[: n_A - m + 1] = partial_mp_func(
-        T_A,
-        m,
-        T_B,
-        ignore_trivial=False,
-        T_A_subseq_isconstant=T_A_subseq_isconstant,
-        T_B_subseq_isconstant=T_B_subseq_isconstant,
-    )[:, 0]
-    P_ABBA[n_A - m + 1 :] = partial_mp_func(
-        T_B,
-        m,
-        T_A,
-        ignore_trivial=False,
-        T_A_subseq_isconstant=T_B_subseq_isconstant,
-        T_B_subseq_isconstant=T_A_subseq_isconstant,
-    )[:, 0]
-
-
-def _aampdist(
-    T_A,
-    T_B,
-    m,
-    mp_func,
-    percentage=0.05,
-    k=None,
-    client=None,
-    device_id=None,
-    custom_func=None,
-    p=2.0,
-):
-    """
-    A convenience function for computing the matrix profile distance (MPdist) measure
-    between any two time series.
-
-    The MPdist distance measure considers two time series to be similar if they share
-    many subsequences, regardless of the order of matching subsequences. MPdist
-    concatenates the output of an AB-join and a BA-join and returns the `k`th smallest
-    value as the reported distance. Note that MPdist is a measure and not a metric.
-    Therefore, it does not obey the triangular inequality but the method is highly
-    scalable.
-
-    Parameters
-    ----------
-    T_A : numpy.ndarray
-        The first time series or sequence for which to compute the matrix profile
-
-    T_B : numpy.ndarray
-        The second time series or sequence for which to compute the matrix profile
-
-    m : int
-        Window size
-
-    mp_func : function
-        Specify a custom matrix profile function to use for computing matrix profiles
-
-    percentage : float, 0.05
-       The percentage of distances that will be used to report `mpdist`. The value
-        is between 0.0 and 1.0. This parameter is ignored when `k` is not `None` or when
-        `k_func` is not None.
-
-    k : int, default None
-        Specify the `k`th value in the concatenated matrix profiles to return. When `k`
-        is not `None`, then the `percentage` parameter is ignored. This parameter is
-        ignored when `k_func` is not None.
-
-    client : client, default None
-        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
-        the scope of this library. Please refer to the Dask or Ray Distributed
-        documentation.
-
-    device_id : int or list, default None
-        The (GPU) device number to use. The default value is `0`. A list of
-        valid device ids (int) may also be provided for parallel GPU-STUMP
-        computation. A list of all valid device ids can be obtained by
-        executing `[device.id for device in numba.cuda.list_devices()]`.
-
-    custom_func : function, default None
-        A custom user defined function for selecting the desired value from the
-        unsorted `P_ABBA` array. This function may need to leverage `functools.partial`
-        and should take `P_ABBA` as its only input parameter and return a single
-        `MPdist` value. The `percentage` and `k` parameters are ignored when
-        `custom_func` is not None.
-
-    p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == True`.
-
-    Returns
-    -------
-    MPdist : float
-        The matrix profile distance
-
-    Notes
-    -----
-    `DOI: 10.1109/ICDM.2018.00119 \
-    <https://www.cs.ucr.edu/~eamonn/MPdist_Expanded.pdf>`__
-
-    See Section III
-    """
-    n_A = T_A.shape[0]
-    n_B = T_B.shape[0]
-    P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
-
-    _aacompute_P_ABBA(T_A, T_B, m, P_ABBA, mp_func, client, device_id, p=p)
-
-    if k is not None:
-        k = min(int(k), P_ABBA.shape[0] - 1)
+    if inspect.signature(mp_func).parameters.get("normalize") is not None:
+        P_ABBA[: n_A - m + 1] = partial_mp_func(
+            T_A,
+            m,
+            T_B,
+            ignore_trivial=False,
+            T_A_subseq_isconstant=T_A_subseq_isconstant,
+            T_B_subseq_isconstant=T_B_subseq_isconstant,
+        )[:, 0]
+        P_ABBA[n_A - m + 1 :] = partial_mp_func(
+            T_B,
+            m,
+            T_A,
+            ignore_trivial=False,
+            T_A_subseq_isconstant=T_B_subseq_isconstant,
+            T_B_subseq_isconstant=T_A_subseq_isconstant,
+        )[:, 0]
     else:
-        percentage = np.clip(percentage, 0.0, 1.0)
-        k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
+        P_ABBA[: n_A - m + 1] = partial_mp_func(T_A, m, T_B, ignore_trivial=False, p=p)[
+            :, 0
+        ]
+        P_ABBA[n_A - m + 1 :] = partial_mp_func(
+            T_B,
+            m,
+            T_A,
+            ignore_trivial=False,
+            p=p,
+        )[:, 0]
 
-    MPdist = _select_P_ABBA_value(P_ABBA, k, custom_func)
 
-    return MPdist
-
-
-@non_normalized(_aampdist)
 def _mpdist(
     T_A,
     T_B,
@@ -4105,7 +3933,6 @@ def _mpdist(
     client=None,
     device_id=None,
     custom_func=None,
-    normalize=True,
     p=2.0,
     T_A_subseq_isconstant=None,
     T_B_subseq_isconstant=None,
@@ -4163,11 +3990,6 @@ def _mpdist(
         `MPdist` value. The `percentage` and `k` parameters are ignored when
         `custom_func` is not None.
 
-    normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
-
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
@@ -4216,6 +4038,7 @@ def _mpdist(
         mp_func,
         client,
         device_id,
+        p=p,
         T_A_subseq_isconstant=T_A_subseq_isconstant,
         T_B_subseq_isconstant=T_B_subseq_isconstant,
     )

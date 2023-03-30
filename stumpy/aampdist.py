@@ -126,7 +126,7 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None, p=2.0):
 
     See Section III
     """
-    return core._aampdist(T_A, T_B, m, aamp, percentage, k, p=p)
+    return core._mpdist(T_A, T_B, m, aamp, percentage, k, p=p)
 
 
 def aampdisted(client, T_A, T_B, m, percentage=0.05, k=None, p=2.0):
@@ -182,4 +182,4 @@ def aampdisted(client, T_A, T_B, m, percentage=0.05, k=None, p=2.0):
 
     See Section III
     """
-    return core._aampdist(T_A, T_B, m, aamped, percentage, k, client=client, p=p)
+    return core._mpdist(T_A, T_B, m, aamped, percentage, k, client=client, p=p)
