@@ -3,6 +3,7 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import math
+from functools import partial
 
 import numpy as np
 
@@ -220,15 +221,18 @@ def mpdist(
     ...     m=3)
     0.00019935236191097894
     """
+    mp_func = partial(
+        stump,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
     MPdist = core._mpdist(
         T_A,
         T_B,
         m,
-        stump,
+        mp_func,
         percentage,
         k,
-        T_A_subseq_isconstant=T_A_subseq_isconstant,
-        T_B_subseq_isconstant=T_B_subseq_isconstant,
     )
 
     return MPdist
@@ -344,16 +348,19 @@ def mpdisted(
     ...             m=3)
     0.00019935236191097894
     """
+    mp_func = partial(
+        stumped,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
     MPdist = core._mpdist(
         T_A,
         T_B,
         m,
-        stumped,
+        mp_func,
         percentage,
         k,
         client=client,
-        T_A_subseq_isconstant=T_A_subseq_isconstant,
-        T_B_subseq_isconstant=T_B_subseq_isconstant,
     )
 
     return MPdist

@@ -88,14 +88,18 @@ def test_compute_P_ABBA_with_isconstant(T_A, T_B):
         T_A_subseq_isconstant=T_B_subseq_isconstant,
         T_B_subseq_isconstant=T_A_subseq_isconstant,
     )[:, 0]
+
+    mp_func = partial(
+        stump,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
     _compute_P_ABBA(
         T_A,
         T_B,
         m,
         comp_P_ABBA,
-        stump,
-        T_A_subseq_isconstant=T_A_subseq_isconstant,
-        T_B_subseq_isconstant=T_B_subseq_isconstant,
+        mp_func,
     )
 
     npt.assert_almost_equal(ref_P_ABBA, comp_P_ABBA)
