@@ -2149,3 +2149,16 @@ def isconstant_func_stddev_threshold(a, w, quantile_threshold=0, stddev_threshol
             stddev_threshold = 0
 
     return sliding_stddev <= stddev_threshold
+
+
+def select_mpdist(P_ABBA, m, percentage, n_A, n_B):
+    percentage = min(percentage, 1.0)
+    percentage = max(percentage, 0.0)
+    k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
+    P_ABBA.sort()
+    MPdist = P_ABBA[k]
+    if ~np.isfinite(MPdist):  # pragma: no cover
+        k = np.count_nonzero(np.isfinite(P_ABBA[:k])) - 1
+        MPdist = P_ABBA[k]
+
+    return MPdist
