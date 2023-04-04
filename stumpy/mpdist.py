@@ -2,8 +2,8 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
+import functools
 import math
-from functools import partial
 
 import numpy as np
 
@@ -221,7 +221,7 @@ def mpdist(
     ...     m=3)
     0.00019935236191097894
     """
-    mp_func = partial(
+    mp_func = functools.partial(
         stump,
         T_A_subseq_isconstant=T_A_subseq_isconstant,
         T_B_subseq_isconstant=T_B_subseq_isconstant,
@@ -348,7 +348,7 @@ def mpdisted(
     ...             m=3)
     0.00019935236191097894
     """
-    mp_func = partial(
+    mp_func = functools.partial(
         stumped,
         T_A_subseq_isconstant=T_A_subseq_isconstant,
         T_B_subseq_isconstant=T_B_subseq_isconstant,

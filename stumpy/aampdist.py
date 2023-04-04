@@ -2,8 +2,8 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
+import functools
 import math
-from functools import partial
 
 import numpy as np
 
@@ -127,7 +127,7 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None, p=2.0):
 
     See Section III
     """
-    mp_func = partial(aamp, p=p)
+    mp_func = functools.partial(aamp, p=p)
     return core._mpdist(T_A, T_B, m, mp_func, percentage, k)
 
 
@@ -184,5 +184,5 @@ def aampdisted(client, T_A, T_B, m, percentage=0.05, k=None, p=2.0):
 
     See Section III
     """
-    mp_func = partial(aamped, p=p)
+    mp_func = functools.partial(aamped, p=p)
     return core._mpdist(T_A, T_B, m, mp_func, percentage, k, client=client)

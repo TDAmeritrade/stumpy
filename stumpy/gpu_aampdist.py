@@ -2,7 +2,7 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-from functools import partial
+import functools
 
 from . import gpu_aamp
 from .core import _mpdist
@@ -61,5 +61,5 @@ def gpu_aampdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0, p=2.0):
 
     See Section III
     """
-    mp_func = partial(gpu_aamp, p=p)
+    mp_func = functools.partial(gpu_aamp, p=p)
     return _mpdist(T_A, T_B, m, mp_func, percentage, k, device_id=device_id)
