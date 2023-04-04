@@ -185,10 +185,9 @@ class _stimp:
         percentage = np.clip(percentage, 0.0, 1.0)
         self._percentage = percentage
         self._pre_scrump = pre_scrump
-        partial_mp_func = core._get_partial_mp_func(
+        self._partial_mp_func = core._get_partial_mp_func(
             mp_func, client=client, device_id=device_id
         )
-        self._mp_func = partial_mp_func
 
         self._PAN = np.full(
             (self._M.shape[0], self._T.shape[0]), fill_value=np.inf, dtype=np.float64
@@ -222,7 +221,7 @@ class _stimp:
                     self._bfs_indices[self._n_processed], : approx.P_.shape[0]
                 ] = approx.P_
             else:
-                out = self._mp_func(
+                out = self._partial_mp_func(
                     self._T,
                     m,
                     ignore_trivial=True,

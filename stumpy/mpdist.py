@@ -221,7 +221,7 @@ def mpdist(
     ...     m=3)
     0.00019935236191097894
     """
-    mp_func = functools.partial(
+    partial_mp_func = functools.partial(
         stump,
         T_A_subseq_isconstant=T_A_subseq_isconstant,
         T_B_subseq_isconstant=T_B_subseq_isconstant,
@@ -230,7 +230,7 @@ def mpdist(
         T_A,
         T_B,
         m,
-        mp_func,
+        partial_mp_func,
         percentage,
         k,
     )
@@ -348,7 +348,7 @@ def mpdisted(
     ...             m=3)
     0.00019935236191097894
     """
-    mp_func = functools.partial(
+    partial_mp_func = functools.partial(
         stumped,
         T_A_subseq_isconstant=T_A_subseq_isconstant,
         T_B_subseq_isconstant=T_B_subseq_isconstant,
@@ -357,7 +357,7 @@ def mpdisted(
         T_A,
         T_B,
         m,
-        mp_func,
+        partial_mp_func,
         percentage,
         k,
         client=client,

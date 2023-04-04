@@ -127,8 +127,8 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None, p=2.0):
 
     See Section III
     """
-    mp_func = functools.partial(aamp, p=p)
-    return core._mpdist(T_A, T_B, m, mp_func, percentage, k)
+    partial_mp_func = functools.partial(aamp, p=p)
+    return core._mpdist(T_A, T_B, m, partial_mp_func, percentage, k)
 
 
 def aampdisted(client, T_A, T_B, m, percentage=0.05, k=None, p=2.0):
@@ -184,5 +184,5 @@ def aampdisted(client, T_A, T_B, m, percentage=0.05, k=None, p=2.0):
 
     See Section III
     """
-    mp_func = functools.partial(aamped, p=p)
-    return core._mpdist(T_A, T_B, m, mp_func, percentage, k, client=client)
+    partial_mp_func = functools.partial(aamped, p=p)
+    return core._mpdist(T_A, T_B, m, partial_mp_func, percentage, k, client=client)
