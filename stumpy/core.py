@@ -2483,16 +2483,18 @@ def _get_partial_mp_func(mp_func, client=None, device_id=None):
 
     Returns
     -------
-    partial_mp_func : function
+    partial_mp_func : functools.partial
         A generic matrix profile function that wraps the distributed `client` or GPU
-        `device_id` into `functools.partial` function where possible
+        `device_id` into `functools.partial` function
     """
     if client is not None:
         partial_mp_func = functools.partial(mp_func, client)
     elif device_id is not None:
         partial_mp_func = functools.partial(mp_func, device_id=device_id)
-    else:
+    elif type(mp_func) != functools.partial:
         partial_mp_func = functools.partial(mp_func)
+    else:
+        partial_mp_func = mp_func
 
     return partial_mp_func
 
@@ -3802,7 +3804,7 @@ def _compute_P_ABBA(
     T_B,
     m,
     P_ABBA,
-    mp_func,
+    partial_mp_func,
     client=None,
     device_id=None,
 ):
@@ -3832,8 +3834,9 @@ def _compute_P_ABBA(
     P_ABBA : numpy.ndarray
         The output array to write the concatenated AB-join and BA-join results to
 
-    mp_func : function
-        Specify a custom matrix profile function to use for computing matrix profiles
+    partial_mp_func : function
+        A generic matrix profile function that wraps extra parameters into
+        `functools.partial` function where possible
 
     client : client, default None
         A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
@@ -3858,7 +3861,9 @@ def _compute_P_ABBA(
     See Section III
     """
     n_A = T_A.shape[0]
-    partial_mp_func = _get_partial_mp_func(mp_func, client=client, device_id=device_id)
+    partial_mp_func = _get_partial_mp_func(
+        partial_mp_func, client=client, device_id=device_id
+    )
 
     if inspect.signature(partial_mp_func).parameters.get("normalize") is not None:
         # Normalized (stump-like)
@@ -3895,7 +3900,7 @@ def _mpdist(
     T_A,
     T_B,
     m,
-    mp_func,
+    partial_mp_func,
     percentage=0.05,
     k=None,
     client=None,
@@ -3924,8 +3929,9 @@ def _mpdist(
     m : int
         Window size
 
-    mp_func : function
-        Specify a custom matrix profile function to use for computing matrix profiles
+    partial_mp_func : function
+        A generic matrix profile function that wraps extra parameters into
+        `functools.partial` function where possible.
 
     percentage : float, 0.05
        The percentage of distances that will be used to report `mpdist`. The value
@@ -3976,7 +3982,7 @@ def _mpdist(
         T_B,
         m,
         P_ABBA,
-        mp_func,
+        partial_mp_func,
         client,
         device_id,
     )
