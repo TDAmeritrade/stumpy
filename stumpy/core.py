@@ -3861,6 +3861,9 @@ def _compute_P_ABBA(
     partial_mp_func = _get_partial_mp_func(mp_func, client=client, device_id=device_id)
 
     if inspect.signature(partial_mp_func).parameters.get("normalize") is not None:
+        # Normalized (stump-like)
+        # Only normalized mp funcs can have a "normalize" parameter in its function
+        # signature
         params = partial_mp_func.keywords
         T_A_subseq_isconstant = params.get("T_A_subseq_isconstant")
         T_B_subseq_isconstant = params.get("T_B_subseq_isconstant")
@@ -3881,6 +3884,9 @@ def _compute_P_ABBA(
             T_B_subseq_isconstant=T_A_subseq_isconstant,
         )[:, 0]
     else:
+        # Non-normalized (aamp-like)
+        # Ignore/omit `T_A_subseq_isconstant` and `T_B_subseq_isconstant` parameters
+        # for all non-normalized mp funcs
         P_ABBA[: n_A - m + 1] = partial_mp_func(T_A, m, T_B, ignore_trivial=False)[:, 0]
         P_ABBA[n_A - m + 1 :] = partial_mp_func(T_B, m, T_A, ignore_trivial=False)[:, 0]
 
