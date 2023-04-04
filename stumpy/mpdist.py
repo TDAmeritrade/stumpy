@@ -226,6 +226,7 @@ def mpdist(
         T_A_subseq_isconstant=T_A_subseq_isconstant,
         T_B_subseq_isconstant=T_B_subseq_isconstant,
     )
+
     MPdist = core._mpdist(
         T_A,
         T_B,
