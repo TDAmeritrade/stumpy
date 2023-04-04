@@ -1,5 +1,5 @@
+import functools
 import math
-from functools import partial
 
 import naive
 import numpy as np
@@ -57,7 +57,9 @@ def test_compute_P_ABBA(T_A, T_B):
 
     ref_P_ABBA[: n_A - m + 1] = naive.stump(T_A, m, T_B)[:, 0]
     ref_P_ABBA[n_A - m + 1 :] = naive.stump(T_B, m, T_A)[:, 0]
-    _compute_P_ABBA(T_A, T_B, m, comp_P_ABBA, stump)
+
+    partial_stump = functools.partial(stump)
+    _compute_P_ABBA(T_A, T_B, m, comp_P_ABBA, partial_stump)
 
     npt.assert_almost_equal(ref_P_ABBA, comp_P_ABBA)
 
@@ -89,7 +91,7 @@ def test_compute_P_ABBA_with_isconstant(T_A, T_B):
         T_B_subseq_isconstant=T_A_subseq_isconstant,
     )[:, 0]
 
-    mp_func = partial(
+    mp_func = functools.partial(
         stump,
         T_A_subseq_isconstant=T_A_subseq_isconstant,
         T_B_subseq_isconstant=T_B_subseq_isconstant,
@@ -229,9 +231,13 @@ def test_mpdist_custom_func(T_A, T_B, k):
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
 
-    partial_k_func = partial(some_func, m=m, percentage=percentage, n_A=n_A, n_B=n_B)
+    partial_k_func = functools.partial(
+        some_func, m=m, percentage=percentage, n_A=n_A, n_B=n_B
+    )
     ref_mpdist = naive.mpdist(T_A, T_B, m)
-    comp_mpdist = _mpdist(T_A, T_B, m, stump, custom_func=partial_k_func)
+
+    partial_stump = functools.partial(stump)
+    comp_mpdist = _mpdist(T_A, T_B, m, partial_stump, custom_func=partial_k_func)
 
     npt.assert_almost_equal(ref_mpdist, comp_mpdist)
 

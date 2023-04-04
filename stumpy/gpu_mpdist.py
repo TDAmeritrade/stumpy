@@ -5,6 +5,8 @@
 # import numpy as np
 # import math
 
+import functools
+
 from . import core
 from .gpu_aampdist import gpu_aampdist
 from .gpu_stump import gpu_stump
@@ -85,6 +87,9 @@ def gpu_mpdist(
     ...         device_id=all_gpu_devices)
     0.00019935236191097894
     """
-    MPdist = core._mpdist(T_A, T_B, m, gpu_stump, percentage, k, device_id=device_id)
+    partial_gpu_stump = functools.partial(gpu_stump)
+    MPdist = core._mpdist(
+        T_A, T_B, m, partial_gpu_stump, percentage, k, device_id=device_id
+    )
 
     return MPdist

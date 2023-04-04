@@ -3834,9 +3834,9 @@ def _compute_P_ABBA(
     P_ABBA : numpy.ndarray
         The output array to write the concatenated AB-join and BA-join results to
 
-    partial_mp_func : function
+    partial_mp_func : functools.partial
         A generic matrix profile function that wraps extra parameters into
-        `functools.partial` function where possible
+        `functools.partial` function
 
     client : client, default None
         A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
@@ -3860,11 +3860,11 @@ def _compute_P_ABBA(
 
     See Section III
     """
-    n_A = T_A.shape[0]
     partial_mp_func = _get_partial_mp_func(
         partial_mp_func, client=client, device_id=device_id
     )
 
+    n_A = T_A.shape[0]
     if inspect.signature(partial_mp_func).parameters.get("normalize") is not None:
         # Normalized (stump-like)
         # Only normalized mp funcs can have a "normalize" parameter in its function
@@ -3929,9 +3929,9 @@ def _mpdist(
     m : int
         Window size
 
-    partial_mp_func : function
+    partial_mp_func : functools.partial
         A generic matrix profile function that wraps extra parameters into
-        `functools.partial` function where possible.
+        `functools.partial` function.
 
     percentage : float, 0.05
        The percentage of distances that will be used to report `mpdist`. The value
