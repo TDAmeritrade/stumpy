@@ -1572,7 +1572,7 @@ def test_mpdist_custom_func(T_A, T_B):
 
     partial_stump = functools.partial(stump)
     partial_k_func = functools.partial(
-        naive.select_mpdist, m=m, percentage=percentage, n_A=n_A, n_B=n_B
+        naive.mpdist_custom_func, m=m, percentage=percentage, n_A=n_A, n_B=n_B
     )
     comp_mpdist = core._mpdist(T_A, T_B, m, partial_stump, custom_func=partial_k_func)
 
