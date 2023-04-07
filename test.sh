@@ -9,7 +9,9 @@ site_pkgs=$(python -c 'import site; print(site.getsitepackages()[0])')
 # Parse command line arguments
 for var in "$@"
 do
-    if [[ $var == "unit" ]]; then
+    if [[ $var == "check_notebooks" ]]; then
+        test_mode="check_notebooks"
+    elif [[ $var == "unit" ]]; then
         test_mode="unit"
     elif [[ $var == "coverage" ]]; then
         test_mode="coverage"
@@ -236,6 +238,15 @@ clean_up()
     fi
 }
 
+test_notebooks()
+{
+    echo "Testing notebooks"
+    for testfile in docs/Tutorial_*.ipynb
+    do
+        jupyter nbconvert --to notebook --execute "$testfile"
+        check_errs $?
+    done
+}
 ###########
 #   Main  #
 ###########
@@ -248,7 +259,10 @@ check_docstrings
 check_print
 check_naive
 
-if [[ $test_mode == "unit" ]]; then
+if [[ $test_mode == "check_notebooks" ]]; then
+    echo "Executing Tutorials notebook Only"
+    test_notebooks
+elif [[ $test_mode == "unit" ]]; then
     echo "Executing Unit Tests Only"
     test_unit
 elif [[ $test_mode == "coverage" ]]; then
@@ -268,7 +282,7 @@ else
     echo "Executing Unit Tests And Code Coverage"
     test_unit
     clean_up
-    test_coverage
+    test_coverage    
 fi
 
 clean_up
