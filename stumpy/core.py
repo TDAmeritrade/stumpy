@@ -942,8 +942,7 @@ def _calculate_squared_distance(
     m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
 ):
     """
-    Compute a single squared distance given all scalar inputs. This function serves as
-    the single source of truth for how all distances should be calculated.
+    Compute a single squared distance given all scalar inputs.
 
     Parameters
     ----------
