@@ -1,3 +1,4 @@
+import functools
 import math
 import os
 from unittest.mock import patch
@@ -10,7 +11,7 @@ import pytest
 from numba import cuda
 from scipy.spatial.distance import cdist
 
-from stumpy import config, core
+from stumpy import config, core, stump
 
 if cuda.is_available():
 
@@ -1557,3 +1558,114 @@ def test_apply_include():
             core._apply_include(D, include)
 
             npt.assert_almost_equal(ref_D, comp_D)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_mpdist_custom_func(T_A, T_B):
+    m = 3
+
+    percentage = 0.05
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+
+    ref_mpdist = naive.mpdist(T_A, T_B, m)
+
+    partial_stump = functools.partial(stump)
+    partial_k_func = functools.partial(
+        naive.mpdist_custom_func, m=m, percentage=percentage, n_A=n_A, n_B=n_B
+    )
+    comp_mpdist = core._mpdist(T_A, T_B, m, partial_stump, custom_func=partial_k_func)
+
+    npt.assert_almost_equal(ref_mpdist, comp_mpdist)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_mpdist_with_isconstant(T_A, T_B):
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    m = 3
+    T_A_subseq_isconstant = isconstant_custom_func
+    T_B_subseq_isconstant = isconstant_custom_func
+
+    ref_mpdist = naive.mpdist(
+        T_A,
+        T_B,
+        m,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
+
+    partial_stump = functools.partial(
+        stump,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
+    comp_mpdist = core._mpdist(T_A, T_B, m, partial_stump)
+
+    npt.assert_almost_equal(ref_mpdist, comp_mpdist)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_compute_P_ABBA(T_A, T_B):
+    m = 3
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    ref_P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
+    comp_P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
+
+    ref_P_ABBA[: n_A - m + 1] = naive.stump(T_A, m, T_B)[:, 0]
+    ref_P_ABBA[n_A - m + 1 :] = naive.stump(T_B, m, T_A)[:, 0]
+
+    partial_stump = functools.partial(stump)
+    core._compute_P_ABBA(T_A, T_B, m, comp_P_ABBA, partial_stump)
+
+    npt.assert_almost_equal(ref_P_ABBA, comp_P_ABBA)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_compute_P_ABBA_with_isconstant(T_A, T_B):
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    m = 3
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+
+    T_A_subseq_isconstant = isconstant_custom_func
+    T_B_subseq_isconstant = isconstant_custom_func
+
+    ref_P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
+    comp_P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
+
+    ref_P_ABBA[: n_A - m + 1] = naive.stump(
+        T_A,
+        m,
+        T_B,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )[:, 0]
+    ref_P_ABBA[n_A - m + 1 :] = naive.stump(
+        T_B,
+        m,
+        T_A,
+        T_A_subseq_isconstant=T_B_subseq_isconstant,
+        T_B_subseq_isconstant=T_A_subseq_isconstant,
+    )[:, 0]
+
+    mp_func = functools.partial(
+        stump,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
+    core._compute_P_ABBA(
+        T_A,
+        T_B,
+        m,
+        comp_P_ABBA,
+        mp_func,
+    )
+
+    npt.assert_almost_equal(ref_P_ABBA, comp_P_ABBA)

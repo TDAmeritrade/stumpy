@@ -2482,14 +2482,16 @@ def _get_partial_mp_func(mp_func, client=None, device_id=None):
 
     Returns
     -------
-    partial_mp_func : function
+    partial_mp_func : functools.partial
         A generic matrix profile function that wraps the distributed `client` or GPU
-        `device_id` into `functools.partial` function where possible
+        `device_id` into `functools.partial` function
     """
     if client is not None:
         partial_mp_func = functools.partial(mp_func, client)
     elif device_id is not None:
         partial_mp_func = functools.partial(mp_func, device_id=device_id)
+    elif type(mp_func) != functools.partial:
+        partial_mp_func = functools.partial(mp_func)
     else:
         partial_mp_func = mp_func
 
@@ -3796,7 +3798,15 @@ def _compute_multi_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
             I[i, pos] = -1
 
 
-def _compute_P_ABBA(T_A, T_B, m, P_ABBA, mp_func, client=None, device_id=None):
+def _compute_P_ABBA(
+    T_A,
+    T_B,
+    m,
+    P_ABBA,
+    partial_mp_func,
+    client=None,
+    device_id=None,
+):
     """
     A convenience function for computing the (unsorted) concatenated matrix profiles
     from an AB-join and BA-join for the two time series, `T_A` and `T_B`. This result
@@ -3823,8 +3833,9 @@ def _compute_P_ABBA(T_A, T_B, m, P_ABBA, mp_func, client=None, device_id=None):
     P_ABBA : numpy.ndarray
         The output array to write the concatenated AB-join and BA-join results to
 
-    mp_func : function
-        Specify a custom matrix profile function to use for computing matrix profiles
+    partial_mp_func : functools.partial
+        A generic matrix profile function that wraps extra parameters into
+        `functools.partial` function
 
     client : client, default None
         A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
@@ -3848,18 +3859,47 @@ def _compute_P_ABBA(T_A, T_B, m, P_ABBA, mp_func, client=None, device_id=None):
 
     See Section III
     """
-    n_A = T_A.shape[0]
-    partial_mp_func = _get_partial_mp_func(mp_func, client=client, device_id=device_id)
+    partial_mp_func = _get_partial_mp_func(
+        partial_mp_func, client=client, device_id=device_id
+    )
 
-    P_ABBA[: n_A - m + 1] = partial_mp_func(T_A, m, T_B, ignore_trivial=False)[:, 0]
-    P_ABBA[n_A - m + 1 :] = partial_mp_func(T_B, m, T_A, ignore_trivial=False)[:, 0]
+    n_A = T_A.shape[0]
+    if inspect.signature(partial_mp_func).parameters.get("normalize") is not None:
+        # Normalized (stump-like)
+        # Only normalized mp funcs can have a "normalize" parameter in its function
+        # signature
+        params = partial_mp_func.keywords
+        T_A_subseq_isconstant = params.get("T_A_subseq_isconstant")
+        T_B_subseq_isconstant = params.get("T_B_subseq_isconstant")
+        P_ABBA[: n_A - m + 1] = partial_mp_func(
+            T_A,
+            m,
+            T_B,
+            ignore_trivial=False,
+            T_A_subseq_isconstant=T_A_subseq_isconstant,
+            T_B_subseq_isconstant=T_B_subseq_isconstant,
+        )[:, 0]
+        P_ABBA[n_A - m + 1 :] = partial_mp_func(
+            T_B,
+            m,
+            T_A,
+            ignore_trivial=False,
+            T_A_subseq_isconstant=T_B_subseq_isconstant,
+            T_B_subseq_isconstant=T_A_subseq_isconstant,
+        )[:, 0]
+    else:
+        # Non-normalized (aamp-like)
+        # Ignore/omit `T_A_subseq_isconstant` and `T_B_subseq_isconstant` parameters
+        # for all non-normalized mp funcs
+        P_ABBA[: n_A - m + 1] = partial_mp_func(T_A, m, T_B, ignore_trivial=False)[:, 0]
+        P_ABBA[n_A - m + 1 :] = partial_mp_func(T_B, m, T_A, ignore_trivial=False)[:, 0]
 
 
 def _mpdist(
     T_A,
     T_B,
     m,
-    mp_func,
+    partial_mp_func,
     percentage=0.05,
     k=None,
     client=None,
@@ -3888,8 +3928,9 @@ def _mpdist(
     m : int
         Window size
 
-    mp_func : function
-        Specify a custom matrix profile function to use for computing matrix profiles
+    partial_mp_func : functools.partial
+        A generic matrix profile function that wraps extra parameters into
+        `functools.partial` function.
 
     percentage : float, 0.05
        The percentage of distances that will be used to report `mpdist`. The value
@@ -3935,7 +3976,15 @@ def _mpdist(
     n_B = T_B.shape[0]
     P_ABBA = np.empty(n_A - m + 1 + n_B - m + 1, dtype=np.float64)
 
-    _compute_P_ABBA(T_A, T_B, m, P_ABBA, mp_func, client, device_id)
+    _compute_P_ABBA(
+        T_A,
+        T_B,
+        m,
+        P_ABBA,
+        partial_mp_func,
+        client,
+        device_id,
+    )
 
     if k is not None:
         k = min(int(k), P_ABBA.shape[0] - 1)
