@@ -13,6 +13,8 @@ do
         test_mode="unit"
     elif [[ $var == "coverage" ]]; then
         test_mode="coverage"
+    elif [[ $var == "notebooks" ]]; then
+        test_mode="notebooks"
     elif [[ $var == "custom" ]]; then
         test_mode="custom"
     elif [[ $var == "silent" || $var == "print" ]]; then
@@ -236,6 +238,16 @@ clean_up()
     fi
 }
 
+convert_notebooks()
+{
+    echo "testing notebooks"
+    for notebook in `grep ipynb docs/tutorials.rst | sed -e 's/^[ \t]*//'`
+    do
+    jupyter nbconvert --to notebook --execute "$notebook"
+    check_errs $?
+    done
+}
+
 ###########
 #   Main  #
 ###########
@@ -248,7 +260,10 @@ check_docstrings
 check_print
 check_naive
 
-if [[ $test_mode == "unit" ]]; then
+if [[ $test_mode == "notebooks" ]]; then
+    echo "Executing Tutorial Notebooks Only"
+    convert_notebooks
+elif [[ $test_mode == "unit" ]]; then
     echo "Executing Unit Tests Only"
     test_unit
 elif [[ $test_mode == "coverage" ]]; then
