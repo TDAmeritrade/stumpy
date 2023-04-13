@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -190,3 +192,32 @@ def test_mpdisted_with_isconstant(T_A, T_B, dask_cluster):
         )
 
         npt.assert_almost_equal(ref_mpdist, comp_mpdist)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_mpdist_vect_with_isconstant(T_A, T_B):
+    m = 3
+
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+    T_A_subseq_isconstant = naive.rolling_isconstant(T_A, m, isconstant_custom_func)
+    T_B_subseq_isconstant = naive.rolling_isconstant(T_B, m, isconstant_custom_func)
+
+    ref_mpdist_vect = naive.mpdist_vect(
+        T_A,
+        T_B,
+        m,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
+
+    Q_subseq_isconstant = T_A_subseq_isconstant
+    T_subseq_isconstant = T_B_subseq_isconstant
+    μ_Q, σ_Q = naive.compute_mean_std(T_A, m)
+    M_T, Σ_T = naive.compute_mean_std(T_B, m)
+    comp_mpdist_vect = _mpdist_vect(
+        T_A, T_B, m, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
+    )
+
+    npt.assert_almost_equal(ref_mpdist_vect, comp_mpdist_vect)
