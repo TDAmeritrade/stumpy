@@ -18,7 +18,6 @@ def get_extras_require():
         "flake8-docstrings >= 1.5.0",
         "black >= 22.1.0",
         "pytest >= 4.4.1",
-        "codecov",
         "isort >= 5.11.0",
     ]
 
