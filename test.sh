@@ -243,9 +243,9 @@ convert_notebooks()
     echo "testing notebooks"
     for notebook in `grep ipynb docs/tutorials.rst | sed -e 's/^[ \t]*//'`
     do
-    jupyter nbconvert --to notebook --execute "docs/$notebook"
-    check_errs $?
-    rm docs/*.nbconvert.ipynb
+        jupyter nbconvert --to notebook --execute "docs/$notebook"
+        check_errs $?
+        rm docs/*.nbconvert.ipynb
     done
 }
 
