@@ -38,7 +38,7 @@ check_errs()
 {
   # Function. Parameter 1 is the return code
   if [[ $1 -ne "0" && $1 -ne "5" ]]; then
-    echo "Error: pytest encountered exit code $1"
+    echo "Error: Test execution encountered exit code $1"
     # as a bonus, make our script exit with the right error code.
     exit $1
   fi
