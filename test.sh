@@ -247,7 +247,6 @@ convert_notebooks()
     do
         jupyter nbconvert --to notebook --execute "docs/$notebook"
         check_errs $?
-        rm docs/*.nbconvert.ipynb
     done
 }
 
