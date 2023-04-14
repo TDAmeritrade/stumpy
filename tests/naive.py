@@ -1449,13 +1449,15 @@ def get_all_mpdist_profiles(
     s=None,
     mpdist_percentage=0.05,
     mpdist_k=None,
-    mpdist_vect_func=mpdist_vect,
+    T_subseq_isconstant=None
 ):
+    T_subseq_isconstant = rolling_isconstant(T, s, T_subseq_isconstant)
     right_pad = 0
     if T.shape[0] % m != 0:
         right_pad = int(m * np.ceil(T.shape[0] / m) - T.shape[0])
         pad_width = (0, right_pad)
         T = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
+        T_subseq_isconstant = np.pad(T_subseq_isconstant, pad_width, mode="constant", constant_values=False)
 
     n_padded = T.shape[0]
     D = np.empty(((n_padded // m) - 1, n_padded - m + 1))
@@ -1472,12 +1474,15 @@ def get_all_mpdist_profiles(
         start = i * m
         stop = (i + 1) * m
         S_i = T[start:stop]
-        D[i, :] = mpdist_vect_func(
+        S_i_subseq_isconstant = T_subseq_isconstant[start:stop-s+1]
+        D[i, :] = mpdist_vect(
             S_i,
             T,
             s,
             percentage=mpdist_percentage,
             k=mpdist_k,
+            T_A_subseq_isconstant=S_i_subseq_isconstant,
+            T_B_subseq_isconstant=T_subseq_isconstant,
         )
 
     stop_idx = n_padded - m + 1 - right_pad
@@ -1494,6 +1499,7 @@ def mpdist_snippets(
     s=None,
     mpdist_percentage=0.05,
     mpdist_k=None,
+    T_subseq_isconstant=None
 ):
     D = get_all_mpdist_profiles(
         T,
@@ -1502,6 +1508,7 @@ def mpdist_snippets(
         s,
         mpdist_percentage,
         mpdist_k,
+        T_subseq_isconstant=T_subseq_isconstant,
     )
 
     pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
@@ -1570,6 +1577,51 @@ def mpdist_snippets(
     )
 
 
+def get_all_aampdist_profiles(
+    T,
+    m,
+    percentage=1.0,
+    s=None,
+    mpdist_percentage=0.05,
+    mpdist_k=None,
+    p=2.0,
+):
+    right_pad = 0
+    if T.shape[0] % m != 0:
+        right_pad = int(m * np.ceil(T.shape[0] / m) - T.shape[0])
+        pad_width = (0, right_pad)
+        T = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
+
+    n_padded = T.shape[0]
+    D = np.empty(((n_padded // m) - 1, n_padded - m + 1))
+
+    if s is not None:
+        s = min(int(s), m)
+    else:
+        percentage = min(percentage, 1.0)
+        percentage = max(percentage, 0.0)
+        s = min(math.ceil(percentage * m), m)
+
+    # Iterate over non-overlapping subsequences, see Definition 3
+    for i in range((n_padded // m) - 1):
+        start = i * m
+        stop = (i + 1) * m
+        S_i = T[start:stop]
+        D[i, :] = aampdist_vect(
+            S_i,
+            T,
+            s,
+            percentage=mpdist_percentage,
+            k=mpdist_k,
+            p=p,
+        )
+
+    stop_idx = n_padded - m + 1 - right_pad
+    D = D[:, :stop_idx]
+
+    return D
+
+
 def aampdist_snippets(
     T,
     m,
@@ -1580,15 +1632,14 @@ def aampdist_snippets(
     mpdist_k=None,
     p=2.0,
 ):
-    partial_mpdist_vect_func = functools.partial(aampdist_vect, p=p)
-    D = get_all_mpdist_profiles(
+    D = get_all_aampdist_profiles(
         T,
         m,
         percentage,
         s,
         mpdist_percentage,
         mpdist_k,
-        partial_mpdist_vect_func,
+        p=p
     )
 
     pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
