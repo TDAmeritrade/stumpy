@@ -1450,6 +1450,13 @@ def get_all_mpdist_profiles(
     mpdist_k=None,
     T_subseq_isconstant=None,
 ):
+    if s is not None:
+        s = min(int(s), m)
+    else:
+        percentage = min(percentage, 1.0)
+        percentage = max(percentage, 0.0)
+        s = min(math.ceil(percentage * m), m)
+
     T_subseq_isconstant = rolling_isconstant(T, s, T_subseq_isconstant)
     right_pad = 0
     if T.shape[0] % m != 0:
@@ -1462,13 +1469,6 @@ def get_all_mpdist_profiles(
 
     n_padded = T.shape[0]
     D = np.empty(((n_padded // m) - 1, n_padded - m + 1))
-
-    if s is not None:
-        s = min(int(s), m)
-    else:
-        percentage = min(percentage, 1.0)
-        percentage = max(percentage, 0.0)
-        s = min(math.ceil(percentage * m), m)
 
     # Iterate over non-overlapping subsequences, see Definition 3
     for i in range((n_padded // m) - 1):
