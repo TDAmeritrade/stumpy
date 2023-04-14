@@ -1,4 +1,3 @@
-import functools
 import math
 
 import numpy as np
@@ -1449,7 +1448,7 @@ def get_all_mpdist_profiles(
     s=None,
     mpdist_percentage=0.05,
     mpdist_k=None,
-    T_subseq_isconstant=None
+    T_subseq_isconstant=None,
 ):
     T_subseq_isconstant = rolling_isconstant(T, s, T_subseq_isconstant)
     right_pad = 0
@@ -1457,7 +1456,9 @@ def get_all_mpdist_profiles(
         right_pad = int(m * np.ceil(T.shape[0] / m) - T.shape[0])
         pad_width = (0, right_pad)
         T = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
-        T_subseq_isconstant = np.pad(T_subseq_isconstant, pad_width, mode="constant", constant_values=False)
+        T_subseq_isconstant = np.pad(
+            T_subseq_isconstant, pad_width, mode="constant", constant_values=False
+        )
 
     n_padded = T.shape[0]
     D = np.empty(((n_padded // m) - 1, n_padded - m + 1))
@@ -1474,7 +1475,7 @@ def get_all_mpdist_profiles(
         start = i * m
         stop = (i + 1) * m
         S_i = T[start:stop]
-        S_i_subseq_isconstant = T_subseq_isconstant[start:stop-s+1]
+        S_i_subseq_isconstant = T_subseq_isconstant[start : stop - s + 1]
         D[i, :] = mpdist_vect(
             S_i,
             T,
@@ -1499,7 +1500,7 @@ def mpdist_snippets(
     s=None,
     mpdist_percentage=0.05,
     mpdist_k=None,
-    T_subseq_isconstant=None
+    T_subseq_isconstant=None,
 ):
     D = get_all_mpdist_profiles(
         T,
@@ -1632,15 +1633,7 @@ def aampdist_snippets(
     mpdist_k=None,
     p=2.0,
 ):
-    D = get_all_aampdist_profiles(
-        T,
-        m,
-        percentage,
-        s,
-        mpdist_percentage,
-        mpdist_k,
-        p=p
-    )
+    D = get_all_aampdist_profiles(T, m, percentage, s, mpdist_percentage, mpdist_k, p=p)
 
     pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
     T_padded = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
