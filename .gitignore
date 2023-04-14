@@ -20,3 +20,4 @@ docs/_build
 .mypy_cache
 .directory
 test.py
+*.nbconvert.ipynb

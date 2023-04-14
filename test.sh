@@ -13,6 +13,8 @@ do
         test_mode="unit"
     elif [[ $var == "coverage" ]]; then
         test_mode="coverage"
+    elif [[ $var == "notebooks" ]]; then
+        test_mode="notebooks"
     elif [[ $var == "custom" ]]; then
         test_mode="custom"
     elif [[ $var == "silent" || $var == "print" ]]; then
@@ -36,7 +38,7 @@ check_errs()
 {
   # Function. Parameter 1 is the return code
   if [[ $1 -ne "0" && $1 -ne "5" ]]; then
-    echo "Error: pytest encountered exit code $1"
+    echo "Error: Test execution encountered exit code $1"
     # as a bonus, make our script exit with the right error code.
     exit $1
   fi
@@ -231,9 +233,21 @@ clean_up()
     echo "Cleaning Up"
     rm -rf "dask-worker-space"
     rm -rf "stumpy/__pycache__/"
+    rm -f "docs/*.nbconvert.ipynb"
     if [ -d "$site_pkgs/stumpy/__pycache__" ]; then
         rm -rf $site_pkgs/stumpy/__pycache__/*nb*
     fi
+
+}
+
+convert_notebooks()
+{
+    echo "testing notebooks"
+    for notebook in `grep ipynb docs/tutorials.rst | sed -e 's/^[ \t]*//'`
+    do
+        jupyter nbconvert --to notebook --execute "docs/$notebook"
+        check_errs $?
+    done
 }
 
 ###########
@@ -248,7 +262,10 @@ check_docstrings
 check_print
 check_naive
 
-if [[ $test_mode == "unit" ]]; then
+if [[ $test_mode == "notebooks" ]]; then
+    echo "Executing Tutorial Notebooks Only"
+    convert_notebooks
+elif [[ $test_mode == "unit" ]]; then
     echo "Executing Unit Tests Only"
     test_unit
 elif [[ $test_mode == "coverage" ]]; then
