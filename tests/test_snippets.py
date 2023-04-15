@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -42,6 +44,22 @@ def test_get_all_mpdist_profiles_percentage(T, m, percentage):
 def test_get_all_mpdist_profiles_s(T, m, s):
     ref_profiles = naive.get_all_mpdist_profiles(T, m, s=s)
     cmp_profiles = _get_all_profiles(T, m, s=s)
+
+    npt.assert_almost_equal(
+        ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
+    )
+
+
+@pytest.mark.parametrize("T", test_data)
+@pytest.mark.parametrize("m", m)
+def test_get_all_mpdist_profiles_with_isconstant(T, m):
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+    ref_profiles = naive.get_all_mpdist_profiles(
+        T, m, T_subseq_isconstant=isconstant_custom_func
+    )
+    cmp_profiles = _get_all_profiles(T, m, T_subseq_isconstant=isconstant_custom_func)
 
     npt.assert_almost_equal(
         ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
