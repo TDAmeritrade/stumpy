@@ -2566,7 +2566,9 @@ def _get_mask_slices(mask):
     return slices
 
 
-def _idx_to_mp(I, T, m, normalize=True, p=2.0, T_subseq_isconstant=None):
+def _idx_to_mp(
+    I, T, m, normalize=True, p=2.0, T_subseq_isconstant=None, check_neg=True
+):
     """
     Convert a set of matrix profile indices (including left and right indices) to its
     corresponding matrix profile distances
@@ -2593,6 +2595,9 @@ def _idx_to_mp(I, T, m, normalize=True, p=2.0, T_subseq_isconstant=None):
         A boolean value that indicates whether the ith subsequence in `T` is
         constant (True). When `None`, it is computed by `rolling_isconstant`
 
+    check_neg : bool, default True
+        Check for the existence of negative indices
+
     Returns
     -------
     P : numpy.ndarray
@@ -2600,6 +2605,14 @@ def _idx_to_mp(I, T, m, normalize=True, p=2.0, T_subseq_isconstant=None):
     """
     I = I.astype(np.int64)
     T = T.copy()
+
+    if check_neg:
+        neg_idx = np.where(I < 0)[0]
+        if neg_idx.size > 0:  # pragma: no cover
+            msg = f"A negative index value ({I[neg_idx[0]]}) was found "
+            msg += f"at I[{neg_idx[0]}] where a positive index value was "
+            msg += "expected (i.e., a negative index is considered null)."
+            warnings.warn(msg)
 
     if normalize:
         T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
