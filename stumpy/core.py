@@ -1666,6 +1666,9 @@ def _mass_distance_matrix(
     -------
         None
     """
+    if query_idx is not None:
+        query_idx = int(query_idx)
+
     for i in range(distance_matrix.shape[0]):
         if np.any(~np.isfinite(Q[i : i + m])):  # pragma: no cover
             distance_matrix[i, :] = np.inf
