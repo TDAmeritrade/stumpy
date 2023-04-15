@@ -26,6 +26,7 @@ def _mpdist_vect(
     percentage=0.05,
     k=None,
     custom_func=None,
+    query_idx=None,
 ):
     """
     Compute the matrix profile distance measure vector between `Q` and each subsequence,
@@ -78,6 +79,13 @@ def _mpdist_vect(
         `MPdist` value. The `percentage` and `k` parameters are ignored when
         `custom_func` is not None.
 
+    query_idx : int, default None
+        This is the index position along the time series, `T`, where the query
+        subsequence, `Q`, is located. `query_idx` should be set to None if `Q`
+        is not a subsequence of `T`. If `Q` is a subsequence of `T`, provding
+        this argument is optional. If provided, the precision of computation
+        can be slightly improved.
+
     Returns
     -------
     MPdist_vect : numpy.ndarray
@@ -108,6 +116,7 @@ def _mpdist_vect(
         Σ_T,
         Q_subseq_isconstant,
         T_subseq_isconstant,
+        query_idx=query_idx,
     )
 
     rolling_row_min = core.rolling_nanmin(distance_matrix, j)

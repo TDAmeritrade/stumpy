@@ -133,6 +133,7 @@ def _get_all_profiles(
             percentage=mpdist_percentage,
             k=mpdist_k,
             custom_func=mpdist_custom_func,
+            query_idx=start,
         )
 
     stop_idx = n_padded - m + 1 - right_pad
