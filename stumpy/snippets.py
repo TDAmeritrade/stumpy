@@ -20,6 +20,7 @@ def _get_all_profiles(
     mpdist_percentage=0.05,
     mpdist_k=None,
     mpdist_custom_func=None,
+    T_subseq_isconstant=None,
 ):
     """
     For each non-overlapping subsequence, `S[i]`, in `T`, compute the matrix profile
@@ -64,6 +65,16 @@ def _get_all_profiles(
         `MPdist` value. The `percentage` and `k` parameters are ignored when
         `mpdist_custom_func` is not None.
 
+    T_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence (of length `s`) in `T`
+        is constant (True). Alternatively, a custom, user-defined function that
+        returns a boolean array that indicates whether a subsequence in `T` is
+        constant (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
+
     Returns
     -------
     D : numpy.ndarray
@@ -83,22 +94,25 @@ def _get_all_profiles(
             f"Please try `m <= len(T) // 2`."
         )
 
-    right_pad = 0
-    if T.shape[0] % m != 0:
-        right_pad = int(m * np.ceil(T.shape[0] / m) - T.shape[0])
-        pad_width = (0, right_pad)
-        T = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
-
-    n_padded = T.shape[0]
-    D = np.empty(((n_padded // m) - 1, n_padded - m + 1), dtype=np.float64)
-
     if s is not None:
         s = min(int(s), m)
     else:
         percentage = np.clip(percentage, 0.0, 1.0)
         s = min(math.ceil(percentage * m), m)
 
-    T_subseq_isconstant = core.rolling_isconstant(T, s)
+    right_pad = 0
+    T_subseq_isconstant = core.rolling_isconstant(T, s, T_subseq_isconstant)
+    if T.shape[0] % m != 0:
+        right_pad = int(m * np.ceil(T.shape[0] / m) - T.shape[0])
+        pad_width = (0, right_pad)
+        T = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
+        T_subseq_isconstant = np.pad(
+            T_subseq_isconstant, pad_width, mode="constant", constant_values=False
+        )
+
+    n_padded = T.shape[0]
+    D = np.empty(((n_padded // m) - 1, n_padded - m + 1), dtype=np.float64)
+
     M_T, Σ_T = core.compute_mean_std(T, s)
 
     # Iterate over non-overlapping subsequences, see Definition 3
@@ -127,7 +141,13 @@ def _get_all_profiles(
     return D
 
 
-@core.non_normalized(aampdist_snippets)
+@core.non_normalized(
+    aampdist_snippets,
+    exclude=[
+        "normalize",
+        "T_subseq_isconstant",
+    ],
+)
 def snippets(
     T,
     m,
@@ -138,6 +158,7 @@ def snippets(
     mpdist_k=None,
     normalize=True,
     p=2.0,
+    T_subseq_isconstant=None,
 ):
     """
     Identify the top `k` snippets that best represent the time series, `T`
@@ -186,6 +207,16 @@ def snippets(
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
+
+    T_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence (of length `s`) in `T`
+        is constant (True). Alternatively, a custom, user-defined function that
+        returns a boolean array that indicates whether a subsequence in `T` is
+        constant (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
 
     Returns
     -------
@@ -253,6 +284,7 @@ def snippets(
         s=s,
         mpdist_percentage=mpdist_percentage,
         mpdist_k=mpdist_k,
+        T_subseq_isconstant=T_subseq_isconstant,
     )
 
     pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
