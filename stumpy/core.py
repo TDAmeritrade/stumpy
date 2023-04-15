@@ -1617,6 +1617,7 @@ def _mass_distance_matrix(
     Σ_T,
     Q_subseq_isconstant,
     T_subseq_isconstant,
+    query_idx=None,
 ):
     """
     Compute the full distance matrix between all of the subsequences of `Q` and `T`
@@ -1654,6 +1655,13 @@ def _mass_distance_matrix(
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` is constant (True)
 
+    query_idx : int, default None
+        This is the index position along the time series, `T`, where the query
+        subsequence, `Q`, is located. `query_idx` should be set to None if `Q`
+        is not a subsequence of `T`. If `Q` is a subsequence of `T`, provding
+        this argument is optional. If provided, the precision of computation
+        can be slightly improved.
+
     Returns
     -------
         None
@@ -1674,6 +1682,9 @@ def _mass_distance_matrix(
                 Q_subseq_isconstant[i],
                 T_subseq_isconstant,
             )
+
+            if query_idx is not None:
+                distance_matrix[i, query_idx + i] = 0.0
 
 
 def mass_distance_matrix(
