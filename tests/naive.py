@@ -1308,7 +1308,15 @@ def aamp_ostinato(Ts, m, p=2.0):
     return radius, Ts_idx, subseq_idx
 
 
-def mpdist_vect(T_A, T_B, m, percentage=0.05, k=None):
+def mpdist_vect(
+    T_A,
+    T_B,
+    m,
+    percentage=0.05,
+    k=None,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
+):
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     j = n_A - m + 1  # `k` is reserved for `P_ABBA` selection
@@ -1322,9 +1330,23 @@ def mpdist_vect(T_A, T_B, m, percentage=0.05, k=None):
 
     k = min(int(k), P_ABBA.shape[0] - 1)
 
+    T_A_subseq_isconstant = rolling_isconstant(T_A, m, T_A_subseq_isconstant)
+    T_B_subseq_isconstant = rolling_isconstant(T_B, m, T_B_subseq_isconstant)
     for i in range(n_B - n_A + 1):
-        P_ABBA[:j] = stump(T_A, m, T_B[i : i + n_A])[:, 0]
-        P_ABBA[j:] = stump(T_B[i : i + n_A], m, T_A)[:, 0]
+        P_ABBA[:j] = stump(
+            T_A,
+            m,
+            T_B[i : i + n_A],
+            T_A_subseq_isconstant=T_A_subseq_isconstant,
+            T_B_subseq_isconstant=T_B_subseq_isconstant[i : i + n_A - m + 1],
+        )[:, 0]
+        P_ABBA[j:] = stump(
+            T_B[i : i + n_A],
+            m,
+            T_A,
+            T_A_subseq_isconstant=T_B_subseq_isconstant[i : i + n_A - m + 1],
+            T_B_subseq_isconstant=T_A_subseq_isconstant,
+        )[:, 0]
         P_ABBA.sort()
         MPdist_vect[i] = P_ABBA[min(k, P_ABBA.shape[0] - 1)]
 
@@ -1354,7 +1376,15 @@ def aampdist_vect(T_A, T_B, m, percentage=0.05, k=None, p=2.0):
     return aaMPdist_vect
 
 
-def mpdist(T_A, T_B, m, percentage=0.05, k=None):
+def mpdist(
+    T_A,
+    T_B,
+    m,
+    percentage=0.05,
+    k=None,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
+):
     percentage = min(percentage, 1.0)
     percentage = max(percentage, 0.0)
     n_A = T_A.shape[0]
@@ -1365,8 +1395,20 @@ def mpdist(T_A, T_B, m, percentage=0.05, k=None):
     else:
         k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
 
-    P_ABBA[: n_A - m + 1] = stump(T_A, m, T_B)[:, 0]
-    P_ABBA[n_A - m + 1 :] = stump(T_B, m, T_A)[:, 0]
+    P_ABBA[: n_A - m + 1] = stump(
+        T_A,
+        m,
+        T_B,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )[:, 0]
+    P_ABBA[n_A - m + 1 :] = stump(
+        T_B,
+        m,
+        T_A,
+        T_A_subseq_isconstant=T_B_subseq_isconstant,
+        T_B_subseq_isconstant=T_A_subseq_isconstant,
+    )[:, 0]
 
     P_ABBA.sort()
     MPdist = P_ABBA[k]
@@ -2149,3 +2191,16 @@ def isconstant_func_stddev_threshold(a, w, quantile_threshold=0, stddev_threshol
             stddev_threshold = 0
 
     return sliding_stddev <= stddev_threshold
+
+
+def mpdist_custom_func(P_ABBA, m, percentage, n_A, n_B):
+    percentage = min(percentage, 1.0)
+    percentage = max(percentage, 0.0)
+    k = min(math.ceil(percentage * (n_A + n_B)), n_A - m + 1 + n_B - m + 1 - 1)
+    P_ABBA.sort()
+    MPdist = P_ABBA[k]
+    if ~np.isfinite(MPdist):  # pragma: no cover
+        k = np.count_nonzero(np.isfinite(P_ABBA[:k])) - 1
+        MPdist = P_ABBA[k]
+
+    return MPdist
