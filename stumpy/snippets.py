@@ -110,15 +110,16 @@ def _get_all_profiles(
             S_i,
             T,
             s,
-            M_T[start : start + s],
-            Σ_T[start : start + s],
+            M_T[start : stop - s + 1],
+            Σ_T[start : stop - s + 1],
             M_T,
             Σ_T,
-            T_subseq_isconstant[start : start + s],
+            T_subseq_isconstant[start : stop - s + 1],
             T_subseq_isconstant,
             percentage=mpdist_percentage,
             k=mpdist_k,
             custom_func=mpdist_custom_func,
+            query_idx=start,
         )
 
     stop_idx = n_padded - m + 1 - right_pad
