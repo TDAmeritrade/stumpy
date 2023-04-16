@@ -146,7 +146,7 @@ def _get_all_profiles(
     aampdist_snippets,
     exclude=[
         "normalize",
-        "T_subseq_isconstant",
+        "mpdist_T_subseq_isconstant",
     ],
 )
 def snippets(
