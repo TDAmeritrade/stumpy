@@ -1500,7 +1500,7 @@ def mpdist_snippets(
     s=None,
     mpdist_percentage=0.05,
     mpdist_k=None,
-    T_subseq_isconstant=None,
+    mpdist_T_subseq_isconstant=None,
 ):
     D = get_all_mpdist_profiles(
         T,
@@ -1509,7 +1509,7 @@ def mpdist_snippets(
         s,
         mpdist_percentage,
         mpdist_k,
-        T_subseq_isconstant=T_subseq_isconstant,
+        T_subseq_isconstant=mpdist_T_subseq_isconstant,
     )
 
     pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))

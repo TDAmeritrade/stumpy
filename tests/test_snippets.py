@@ -194,7 +194,9 @@ def test_mpdist_snippets_s_with_isconstant(T, m, k, s):
         ref_fractions,
         ref_areas,
         ref_regimes,
-    ) = naive.mpdist_snippets(T, m, k, s=s, T_subseq_isconstant=isconstant_custom_func)
+    ) = naive.mpdist_snippets(
+        T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
+    )
     (
         cmp_snippets,
         cmp_indices,
@@ -202,7 +204,7 @@ def test_mpdist_snippets_s_with_isconstant(T, m, k, s):
         cmp_fractions,
         cmp_areas,
         cmp_regimes,
-    ) = snippets(T, m, k, s=s, T_subseq_isconstant=isconstant_custom_func)
+    ) = snippets(T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func)
 
     npt.assert_almost_equal(
         ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION

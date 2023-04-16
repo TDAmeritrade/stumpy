@@ -159,7 +159,7 @@ def snippets(
     mpdist_k=None,
     normalize=True,
     p=2.0,
-    T_subseq_isconstant=None,
+    mpdist_T_subseq_isconstant=None,
 ):
     """
     Identify the top `k` snippets that best represent the time series, `T`
@@ -209,7 +209,7 @@ def snippets(
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
 
-    T_subseq_isconstant : numpy.ndarray or function, default None
+    mpdist_T_subseq_isconstant : numpy.ndarray or function, default None
         A boolean array that indicates whether a subsequence (of length `s`) in `T`
         is constant (True). Alternatively, a custom, user-defined function that
         returns a boolean array that indicates whether a subsequence in `T` is
@@ -285,7 +285,7 @@ def snippets(
         s=s,
         mpdist_percentage=mpdist_percentage,
         mpdist_k=mpdist_k,
-        T_subseq_isconstant=T_subseq_isconstant,
+        T_subseq_isconstant=mpdist_T_subseq_isconstant,
     )
 
     pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
