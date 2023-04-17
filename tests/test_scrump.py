@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -90,6 +92,37 @@ def test_prescrump_self_join_larger_window(T_A, T_B, m):
 
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_prescrump_self_join_with_isconstant(T_A, T_B):
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    m = 3
+    zone = int(np.ceil(m / 4))
+    for s in range(1, zone + 1):
+        seed = np.random.randint(100000)
+
+        np.random.seed(seed)
+        ref_P, ref_I = naive.prescrump(
+            T_B,
+            m,
+            T_B,
+            s=s,
+            exclusion_zone=zone,
+            T_A_subseq_isconstant=isconstant_custom_func,
+            T_B_subseq_isconstant=isconstant_custom_func,
+        )
+
+        np.random.seed(seed)
+        comp_P, comp_I = prescrump(
+            T_B, m, s=s, T_A_subseq_isconstant=isconstant_custom_func
+        )
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
 
 
 def test_scrump_int_input():
