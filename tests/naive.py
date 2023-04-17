@@ -161,7 +161,6 @@ def mass_PI(
         apply_exclusion_zone(D, trivial_idx, excl_zone, np.inf)
         start = max(0, trivial_idx - excl_zone)
         stop = min(D.shape[0], trivial_idx + excl_zone + 1)
-    
 
     I = np.argmin(D)
     P = D[I]
@@ -1660,8 +1659,30 @@ def aampdist_snippets(
     )
 
 
-def prescrump(T_A, m, T_B, s, exclusion_zone=None, k=1):
+def prescrump(
+    T_A,
+    m,
+    T_B,
+    s,
+    exclusion_zone=None,
+    k=1,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
+):
+    T_A_subseq_isconstant = rolling_isconstant(T_A, m, T_A_subseq_isconstant)
+    T_B_subseq_isconstant = rolling_isconstant(T_B, m, T_B_subseq_isconstant)
+
     dist_matrix = distance_matrix(T_A, T_B, m)
+    dist_matrix[np.isnan(dist_matrix)] = np.inf
+    for i in range(dist_matrix.shape[0]):
+        for j in range(dist_matrix.shape[1]):
+            if np.isfinite(dist_matrix[i, j]):
+                if T_A_subseq_isconstant[i] and T_B_subseq_isconstant[j]:
+                    dist_matrix[i, j] = 0.0
+                elif T_A_subseq_isconstant[i] or T_B_subseq_isconstant[j]:
+                    dist_matrix[i, j] = np.sqrt(m)
+                else:  # pragma: no cover
+                    pass
 
     l = T_A.shape[0] - m + 1  # matrix profile length
     w = T_B.shape[0] - m + 1  # distance profile length
