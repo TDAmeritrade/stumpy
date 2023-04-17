@@ -146,8 +146,11 @@ def mass_PI(
     T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
 
     D = distance_profile(Q, T, m)
+    D_isfinite = np.isfinite(D)
     for i in range(len(T) - m + 1):
-        if Q_subseq_isconstant and T_subseq_isconstant[i]:
+        if not D_isfinite:
+            D[i] = np.inf
+        elif Q_subseq_isconstant and T_subseq_isconstant[i]:
             D[i] = 0
         elif Q_subseq_isconstant or T_subseq_isconstant[i]:
             D[i] = np.sqrt(m)
@@ -158,7 +161,7 @@ def mass_PI(
         apply_exclusion_zone(D, trivial_idx, excl_zone, np.inf)
         start = max(0, trivial_idx - excl_zone)
         stop = min(D.shape[0], trivial_idx + excl_zone + 1)
-    D[np.isnan(D)] = np.inf
+    
 
     I = np.argmin(D)
     P = D[I]
