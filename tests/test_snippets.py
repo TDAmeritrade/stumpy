@@ -57,9 +57,11 @@ def test_get_all_mpdist_profiles_with_isconstant(T, m):
         naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
     )
     ref_profiles = naive.get_all_mpdist_profiles(
-        T, m, T_subseq_isconstant=isconstant_custom_func
+        T, m, mpdist_T_subseq_isconstant=isconstant_custom_func
     )
-    cmp_profiles = _get_all_profiles(T, m, T_subseq_isconstant=isconstant_custom_func)
+    cmp_profiles = _get_all_profiles(
+        T, m, mpdist_T_subseq_isconstant=isconstant_custom_func
+    )
 
     npt.assert_almost_equal(
         ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
