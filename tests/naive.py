@@ -1448,7 +1448,7 @@ def get_all_mpdist_profiles(
     s=None,
     mpdist_percentage=0.05,
     mpdist_k=None,
-    T_subseq_isconstant=None,
+    mpdist_T_subseq_isconstant=None,
 ):
     if s is not None:
         s = min(int(s), m)
@@ -1457,7 +1457,7 @@ def get_all_mpdist_profiles(
         percentage = max(percentage, 0.0)
         s = min(math.ceil(percentage * m), m)
 
-    T_subseq_isconstant = rolling_isconstant(T, s, T_subseq_isconstant)
+    T_subseq_isconstant = rolling_isconstant(T, s, mpdist_T_subseq_isconstant)
     right_pad = 0
     if T.shape[0] % m != 0:
         right_pad = int(m * np.ceil(T.shape[0] / m) - T.shape[0])
@@ -1509,7 +1509,7 @@ def mpdist_snippets(
         s,
         mpdist_percentage,
         mpdist_k,
-        T_subseq_isconstant=mpdist_T_subseq_isconstant,
+        mpdist_T_subseq_isconstant=mpdist_T_subseq_isconstant,
     )
 
     pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
