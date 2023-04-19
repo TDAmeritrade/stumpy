@@ -20,7 +20,7 @@ def _get_all_profiles(
     mpdist_percentage=0.05,
     mpdist_k=None,
     mpdist_custom_func=None,
-    T_subseq_isconstant=None,
+    mpdist_T_subseq_isconstant=None,
 ):
     """
     For each non-overlapping subsequence, `S[i]`, in `T`, compute the matrix profile
@@ -65,7 +65,7 @@ def _get_all_profiles(
         `MPdist` value. The `percentage` and `k` parameters are ignored when
         `mpdist_custom_func` is not None.
 
-    T_subseq_isconstant : numpy.ndarray or function, default None
+    mpdist_T_subseq_isconstant : numpy.ndarray or function, default None
         A boolean array that indicates whether a subsequence (of length `s`) in `T`
         is constant (True). Alternatively, a custom, user-defined function that
         returns a boolean array that indicates whether a subsequence in `T` is
@@ -101,7 +101,7 @@ def _get_all_profiles(
         s = min(math.ceil(percentage * m), m)
 
     right_pad = 0
-    T_subseq_isconstant = core.rolling_isconstant(T, s, T_subseq_isconstant)
+    T_subseq_isconstant = core.rolling_isconstant(T, s, mpdist_T_subseq_isconstant)
     if T.shape[0] % m != 0:
         right_pad = int(m * np.ceil(T.shape[0] / m) - T.shape[0])
         pad_width = (0, right_pad)
@@ -285,7 +285,7 @@ def snippets(
         s=s,
         mpdist_percentage=mpdist_percentage,
         mpdist_k=mpdist_k,
-        T_subseq_isconstant=mpdist_T_subseq_isconstant,
+        mpdist_T_subseq_isconstant=mpdist_T_subseq_isconstant,
     )
 
     pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
