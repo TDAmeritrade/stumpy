@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -42,6 +44,24 @@ def test_get_all_mpdist_profiles_percentage(T, m, percentage):
 def test_get_all_mpdist_profiles_s(T, m, s):
     ref_profiles = naive.get_all_mpdist_profiles(T, m, s=s)
     cmp_profiles = _get_all_profiles(T, m, s=s)
+
+    npt.assert_almost_equal(
+        ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
+    )
+
+
+@pytest.mark.parametrize("T", test_data)
+@pytest.mark.parametrize("m", m)
+def test_get_all_mpdist_profiles_with_isconstant(T, m):
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+    ref_profiles = naive.get_all_mpdist_profiles(
+        T, m, mpdist_T_subseq_isconstant=isconstant_custom_func
+    )
+    cmp_profiles = _get_all_profiles(
+        T, m, mpdist_T_subseq_isconstant=isconstant_custom_func
+    )
 
     npt.assert_almost_equal(
         ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
@@ -144,6 +164,49 @@ def test_mpdist_snippets_s(T, m, k, s):
         cmp_areas,
         cmp_regimes,
     ) = snippets(T, m, k, s=s)
+
+    npt.assert_almost_equal(
+        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
+    npt.assert_almost_equal(ref_regimes, cmp_regimes)
+
+
+@pytest.mark.parametrize("T", test_data)
+@pytest.mark.parametrize("m", m)
+@pytest.mark.parametrize("k", k)
+@pytest.mark.parametrize("s", s)
+def test_mpdist_snippets_s_with_isconstant(T, m, k, s):
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+    (
+        ref_snippets,
+        ref_indices,
+        ref_profiles,
+        ref_fractions,
+        ref_areas,
+        ref_regimes,
+    ) = naive.mpdist_snippets(
+        T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
+    )
+    (
+        cmp_snippets,
+        cmp_indices,
+        cmp_profiles,
+        cmp_fractions,
+        cmp_areas,
+        cmp_regimes,
+    ) = snippets(T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func)
 
     npt.assert_almost_equal(
         ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION

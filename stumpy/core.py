@@ -1686,6 +1686,7 @@ def _mass_distance_matrix(
                 T_subseq_isconstant,
             )
 
+            # this is to fix slight loss-of-precision
             if query_idx is not None:
                 distance_matrix[i, query_idx + i] = 0.0
 
