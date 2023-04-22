@@ -11,7 +11,9 @@ from .scraamp import prescraamp, scraamp
 from .stump import _stump
 
 
-def _preprocess_prescrump(T_A, m, T_B=None, s=None):
+def _preprocess_prescrump(
+    T_A, m, T_B=None, s=None, T_A_subseq_isconstant=None, T_B_subseq_isconstant=None
+):
     """
     Performs several preprocessings and returns outputs that are needed for the
     prescrump algorithm.
@@ -31,6 +33,26 @@ def _preprocess_prescrump(T_A, m, T_B=None, s=None):
     s : int, default None
         The sampling interval that defaults to
         `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
+
+    T_A_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
+
+    T_B_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
 
     Returns
     -------
@@ -73,12 +95,17 @@ def _preprocess_prescrump(T_A, m, T_B=None, s=None):
     """
     if T_B is None:
         T_B = T_A
+        T_B_subseq_isconstant = T_A_subseq_isconstant
         excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     else:
         excl_zone = None
 
-    T_A, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(T_A, m)
-    T_B, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T_B, m)
+    T_A, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(
+        T_A, m, T_subseq_isconstant=T_A_subseq_isconstant
+    )
+    T_B, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
+        T_B, m, T_subseq_isconstant=T_B_subseq_isconstant
+    )
 
     n_A = T_A.shape[0]
     l = n_A - m + 1
@@ -244,10 +271,7 @@ def _compute_PI(
             continue
 
         j = nn_i
-        # Given the squared distance, work backwards and compute QT
-        QT_j = (m - P_squared[thread_idx, i, 0] / 2.0) * (Σ_T[j] * σ_Q[i]) + (
-            m * M_T[j] * μ_Q[i]
-        )
+        QT_j = QT[j]
         QT_j_prime = QT_j
         # Update top-k for both subsequences `S[i+g] = T[i+g:i+g+m]`` and
         # `S[j+g] = T[j+g:j+g+m]` (i.e., the right neighbors of `T[i : i+m]` and
@@ -492,7 +516,17 @@ def _prescrump(
 
 
 @core.non_normalized(prescraamp)
-def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
+def prescrump(
+    T_A,
+    m,
+    T_B=None,
+    s=None,
+    normalize=True,
+    p=2.0,
+    k=1,
+    T_A_subseq_isconstant=None,
+    T_B_subseq_isconstant=None,
+):
     """
     A convenience wrapper around the Numba JIT-compiled parallelized
     `_prescrump` function which computes the approximate (top-k) matrix
@@ -528,6 +562,26 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
         Note that this will increase the total computational time and memory usage
         when k > 1.
 
+    T_A_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
+
+    T_B_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
+
     Returns
     -------
     P : numpy.ndarray
@@ -560,7 +614,14 @@ def prescrump(T_A, m, T_B=None, s=None, normalize=True, p=2.0, k=1):
         indices,
         s,
         excl_zone,
-    ) = _preprocess_prescrump(T_A, m, T_B=T_B, s=s)
+    ) = _preprocess_prescrump(
+        T_A,
+        m,
+        T_B=T_B,
+        s=s,
+        T_A_subseq_isconstant=T_A_subseq_isconstant,
+        T_B_subseq_isconstant=T_B_subseq_isconstant,
+    )
 
     P, I = _prescrump(
         T_A,
@@ -849,7 +910,12 @@ class scrump:
                     indices,
                     s,
                     excl_zone,
-                ) = _preprocess_prescrump(T_A, m, T_B=T_B, s=s)
+                ) = _preprocess_prescrump(
+                    T_A,
+                    m,
+                    T_B=T_B,
+                    s=s,
+                )
 
             P, I = _prescrump(
                 T_A,
