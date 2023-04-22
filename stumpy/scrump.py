@@ -439,10 +439,6 @@ def _prescrump(
     indices : numpy.ndarray
         The subsequence indices to compute `prescrump` for
 
-    idx_ranges : numpy.ndarray
-        The (inclusive) start indices and (exclusive) stop indices referenced
-        in the `indices` array
-
     s : int
         The sampling interval that defaults to
         `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
