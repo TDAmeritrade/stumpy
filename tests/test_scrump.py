@@ -294,7 +294,6 @@ def test_scrump_self_join_with_isconstant(T_A, T_B, percentages):
             percentage=percentage,
             pre_scrump=False,
             T_A_subseq_isconstant=isconstant_custom_func,
-            T_B_subseq_isconstant=isconstant_custom_func,
         )
         approx.update()
         comp_P = approx.P_

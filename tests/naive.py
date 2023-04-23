@@ -1819,7 +1819,7 @@ def scrump(
     dist_matrix[np.isnan(dist_matrix)] = np.inf
     for i in range(n_A - m + 1):
         for j in range(n_B - m + 1):
-            if not np.isfinite(dist_matrix[i, j]):
+            if np.isfinite(dist_matrix[i, j]):
                 if T_A_subseq_isconstant[i] and T_B_subseq_isconstant[j]:
                     dist_matrix[i, j] = 0
                 elif T_A_subseq_isconstant[i] or T_B_subseq_isconstant[j]:

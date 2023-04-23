@@ -643,7 +643,14 @@ def prescrump(
 
 @core.non_normalized(
     scraamp,
-    exclude=["normalize", "pre_scrump", "pre_scraamp", "p"],
+    exclude=[
+        "normalize",
+        "pre_scrump",
+        "pre_scraamp",
+        "p",
+        "T_A_subseq_isconstant",
+        "T_B_subseq_isconstant",
+    ],
     replace={"pre_scrump": "pre_scraamp"},
 )
 class scrump:
@@ -696,6 +703,26 @@ class scrump:
         The number of top `k` smallest distances used to construct the matrix profile.
         Note that this will increase the total computational time and memory usage
         when k > 1.
+
+    T_A_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_A` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
+
+    T_B_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T_B` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
 
     Attributes
     ----------
@@ -768,6 +795,8 @@ class scrump:
         normalize=True,
         p=2.0,
         k=1,
+        T_A_subseq_isconstant=None,
+        T_B_subseq_isconstant=None,
     ):
         """
         Initialize the `scrump` object
@@ -815,12 +844,33 @@ class scrump:
             The number of top `k` smallest distances used to construct the matrix
             profile. Note that this will increase the total computational time and
             memory usage when k > 1.
+
+        T_A_subseq_isconstant : numpy.ndarray or function, default None
+            A boolean array that indicates whether a subsequence in `T_A` is constant
+            (True). Alternatively, a custom, user-defined function that returns a
+            boolean array that indicates whether a subsequence in `T_A` is constant
+            (True). The function must only take two arguments, `a`, a 1-D array,
+            and `w`, the window size, while additional arguments may be specified
+            by currying the user-defined function using `functools.partial`. Any
+            subsequence with at least one np.nan/np.inf will automatically have its
+            corresponding value set to False in this boolean array.
+
+        T_B_subseq_isconstant : numpy.ndarray or function, default None
+            A boolean array that indicates whether a subsequence in `T_B` is constant
+            (True). Alternatively, a custom, user-defined function that returns a
+            boolean array that indicates whether a subsequence in `T_B` is constant
+            (True). The function must only take two arguments, `a`, a 1-D array,
+            and `w`, the window size, while additional arguments may be specified
+            by currying the user-defined function using `functools.partial`. Any
+            subsequence with at least one np.nan/np.inf will automatically have its
+            corresponding value set to False in this boolean array.
         """
         self._ignore_trivial = ignore_trivial
 
         if T_B is None:
             T_B = T_A
             self._ignore_trivial = True
+            T_B_subseq_isconstant = T_A_subseq_isconstant
 
         self._m = m
         (
@@ -830,7 +880,9 @@ class scrump:
             self._μ_Q_m_1,
             self._T_A_subseq_isfinite,
             self._T_A_subseq_isconstant,
-        ) = core.preprocess_diagonal(T_A, self._m)
+        ) = core.preprocess_diagonal(
+            T_A, self._m, T_subseq_isconstant=T_A_subseq_isconstant
+        )
 
         (
             self._T_B,
@@ -839,7 +891,9 @@ class scrump:
             self._M_T_m_1,
             self._T_B_subseq_isfinite,
             self._T_B_subseq_isconstant,
-        ) = core.preprocess_diagonal(T_B, self._m)
+        ) = core.preprocess_diagonal(
+            T_B, self._m, T_subseq_isconstant=T_B_subseq_isconstant
+        )
 
         if self._T_A.ndim != 1:  # pragma: no cover
             raise ValueError(
@@ -892,7 +946,9 @@ class scrump:
                     indices,
                     s,
                     excl_zone,
-                ) = _preprocess_prescrump(T_A, m, s=s)
+                ) = _preprocess_prescrump(
+                    T_A, m, s=s, T_A_subseq_isconstant=T_A_subseq_isconstant
+                )
             else:
                 (
                     T_A,
@@ -911,6 +967,8 @@ class scrump:
                     m,
                     T_B=T_B,
                     s=s,
+                    T_A_subseq_isconstant=T_A_subseq_isconstant,
+                    T_B_subseq_isconstant=T_B_subseq_isconstant,
                 )
 
             P, I = _prescrump(
