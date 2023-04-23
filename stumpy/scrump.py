@@ -635,7 +635,7 @@ def prescrump(
     )
 
     if k == 1:
-        return (P.flatten().astype(np.float64), I.flatten().astype(np.int64))
+        return P.flatten().astype(np.float64), I.flatten().astype(np.int64)
     else:
         return P, I
 
