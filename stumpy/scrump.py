@@ -504,13 +504,10 @@ def _prescrump(
             k,
         )
 
-    P_squared_full = P_squared.copy()
-    I_full = I.copy()
-
     for thread_idx in range(1, n_threads):
         core._merge_topk_PI(P_squared[0], P_squared[thread_idx], I[0], I[thread_idx])
 
-    return np.sqrt(P_squared[0]), I[0], P_squared_full, I_full
+    return np.sqrt(P_squared[0]), I[0]
 
 
 @core.non_normalized(prescraamp)
@@ -621,7 +618,7 @@ def prescrump(
         T_B_subseq_isconstant=T_B_subseq_isconstant,
     )
 
-    P, I, P_squared_full, I_full = _prescrump(
+    P, I = _prescrump(
         T_A,
         T_B,
         m,
@@ -638,14 +635,9 @@ def prescrump(
     )
 
     if k == 1:
-        return (
-            P.flatten().astype(np.float64),
-            I.flatten().astype(np.int64),
-            P_squared_full,
-            I_full,
-        )
+        return (P.flatten().astype(np.float64), I.flatten().astype(np.int64))
     else:
-        return P, I, P_squared_full, I_full
+        return P, I
 
 
 @core.non_normalized(
