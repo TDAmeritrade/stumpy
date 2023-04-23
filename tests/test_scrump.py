@@ -261,6 +261,56 @@ def test_scrump_self_join_larger_window(T_A, T_B, m, percentages):
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
+@pytest.mark.parametrize("percentages", percentages)
+def test_scrump_self_join_with_isconstant(T_A, T_B, percentages):
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    for percentage in percentages:
+        seed = np.random.randint(100000)
+
+        np.random.seed(seed)
+        ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(
+            T_B,
+            m,
+            T_B,
+            percentage,
+            zone,
+            False,
+            None,
+            T_A_subseq_isconstant=isconstant_custom_func,
+            T_B_subseq_isconstant=isconstant_custom_func,
+        )
+
+        np.random.seed(seed)
+        approx = scrump(
+            T_B,
+            m,
+            ignore_trivial=True,
+            percentage=percentage,
+            pre_scrump=False,
+            T_A_subseq_isconstant=isconstant_custom_func,
+            T_B_subseq_isconstant=isconstant_custom_func,
+        )
+        approx.update()
+        comp_P = approx.P_
+        comp_I = approx.I_
+        comp_left_I = approx.left_I_
+        comp_right_I = approx.right_I_
+
+        naive.replace_inf(ref_P)
+        naive.replace_inf(comp_P)
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_left_I, comp_left_I)
+        npt.assert_almost_equal(ref_right_I, comp_right_I)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
 def test_scrump_self_join_full(T_A, T_B):
     m = 3
     zone = int(np.ceil(m / 4))
