@@ -236,9 +236,8 @@ def _compute_PI(
     for i in indices[start:stop]:
         Q = T_A[i : i + m]
         QT[:] = core._sliding_dot_product(Q, T_B)
-        squared_distance_profile[:] = core._mass(
-            Q,
-            T_B,
+        squared_distance_profile[:] = core._calculate_squared_distance_profile(
+            m,
             QT,
             μ_Q[i],
             σ_Q[i],
@@ -247,7 +246,7 @@ def _compute_PI(
             Q_subseq_isconstant[i],
             T_subseq_isconstant,
         )
-        squared_distance_profile[:] = np.square(squared_distance_profile)
+
         if excl_zone is not None:
             core._apply_exclusion_zone(squared_distance_profile, i, excl_zone, np.inf)
 
@@ -505,10 +504,13 @@ def _prescrump(
             k,
         )
 
+    P_squared_full = P_squared.copy()
+    I_full = I.copy()
+
     for thread_idx in range(1, n_threads):
         core._merge_topk_PI(P_squared[0], P_squared[thread_idx], I[0], I[thread_idx])
 
-    return np.sqrt(P_squared[0]), I[0]
+    return np.sqrt(P_squared[0]), I[0], P_squared_full, I_full
 
 
 @core.non_normalized(prescraamp)
@@ -619,7 +621,7 @@ def prescrump(
         T_B_subseq_isconstant=T_B_subseq_isconstant,
     )
 
-    P, I = _prescrump(
+    P, I, P_squared_full, I_full = _prescrump(
         T_A,
         T_B,
         m,
@@ -636,9 +638,14 @@ def prescrump(
     )
 
     if k == 1:
-        return P.flatten().astype(np.float64), I.flatten().astype(np.int64)
+        return (
+            P.flatten().astype(np.float64),
+            I.flatten().astype(np.int64),
+            P_squared_full,
+            I_full,
+        )
     else:
-        return P, I
+        return P, I, P_squared_full, I_full
 
 
 @core.non_normalized(
