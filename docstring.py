@@ -10,7 +10,9 @@ def get_docstring_args(fd):
     Extract docstring parameters from function definition
     """
     docstring = ast.get_docstring(fd)
-    args = re.findall(r"(\w+)\s+\:", docstring)
+    params_section = re.findall(r"(?<=Parameter(.*)(?=Return", docstring, re.DOTALL)[0]
+
+    args = re.findall(r"(\w+)\s+\:", params_section)
     args = set([a for a in args])
     return args
 
