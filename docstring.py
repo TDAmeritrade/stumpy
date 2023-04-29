@@ -42,6 +42,16 @@ def check_args(doc_args, sig_args, file_name, func_name, class_name=None):
         msg += f"parameter(s): {diff_args}\n"
         raise RuntimeError(msg)
 
+    diff_args = docstring_args.difference(signature_args)
+    if len(diff_args) > 0:
+        msg = "Found one or more unsupported arguments/parameters with docstring in \n"
+        msg += f"file: {file_name}\n"
+        if class_name is not None:
+            msg += f"class: {class_name}\n"
+        msg += f"function/method: {func_name}\n"
+        msg += f"parameter(s): {diff_args}\n"
+        raise RuntimeError(msg)
+
 
 ignore = ["__init__.py", "__pycache__"]
 
