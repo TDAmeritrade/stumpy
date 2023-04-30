@@ -926,10 +926,7 @@ class scrump:
 
         self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
         if s is None:
-            if self._excl_zone is not None:  # self-join
-                s = self._excl_zone
-            else:  # pragma: no cover  # AB-join
-                s = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
+            s = self._excl_zone
 
         if pre_scrump:
             if self._ignore_trivial:
