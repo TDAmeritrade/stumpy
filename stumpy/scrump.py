@@ -877,8 +877,8 @@ class scrump:
             self._μ_Q,
             self._σ_Q_inverse,
             self._μ_Q_m_1,
-            self._T_A_subseq_isfinite,
-            self._T_A_subseq_isconstant,
+            self._Q_subseq_isfinite,
+            self._Q_subseq_isconstant,
         ) = core.preprocess_diagonal(
             T_A, self._m, T_subseq_isconstant=T_A_subseq_isconstant
         )
@@ -888,8 +888,8 @@ class scrump:
             self._M_T,
             self._Σ_T_inverse,
             self._M_T_m_1,
-            self._T_B_subseq_isfinite,
-            self._T_B_subseq_isconstant,
+            self._T_subseq_isfinite,
+            self._T_subseq_isconstant,
         ) = core.preprocess_diagonal(
             T_B, self._m, T_subseq_isconstant=T_B_subseq_isconstant
         )
@@ -1030,10 +1030,10 @@ class scrump:
                 self._σ_Q_inverse,
                 self._M_T_m_1,
                 self._μ_Q_m_1,
-                self._T_A_subseq_isfinite,
-                self._T_B_subseq_isfinite,
-                self._T_A_subseq_isconstant,
-                self._T_B_subseq_isconstant,
+                self._Q_subseq_isfinite,
+                self._T_subseq_isfinite,
+                self._Q_subseq_isconstant,
+                self._T_subseq_isconstant,
                 self._diags[start_idx:stop_idx],
                 self._ignore_trivial,
                 self._k,
