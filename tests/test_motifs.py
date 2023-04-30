@@ -6,9 +6,31 @@ import pytest
 from stumpy import core, match, motifs
 
 
-def naive_match(Q, T, excl_zone, max_distance, max_matches=None):
+def naive_match(
+    Q,
+    T,
+    excl_zone,
+    max_distance,
+    max_matches=None,
+    T_subseq_isconstant=None,
+    Q_subseq_isconstant=None,
+):
+    # Q_subseq_isconstant is a boolean array of size 1
+    # this does not support multi-dim T, and Q
     m = Q.shape[0]
+    T_subseq_isconstant = naive.rolling_isconstant(T, m, T_subseq_isconstant)
+    Q_subseq_isconstant = naive.rolling_isconstant(Q, m, Q_subseq_isconstant)[0]
+
     D = naive.distance_profile(Q, T, m)
+    D[np.isnan(D)] = np.inf
+    for i in range(len(D)):
+        if np.isfinite(D[i]):
+            if T_subseq_isconstant[i] and Q_subseq_isconstant:
+                D[i] = 0
+            elif T_subseq_isconstant[i] or Q_subseq_isconstant:
+                D[i] = np.sqrt(m)
+            else:
+                pass
 
     return naive.find_matches(D, excl_zone, max_distance, max_matches)
 
