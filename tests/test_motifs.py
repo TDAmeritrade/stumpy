@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -276,14 +278,17 @@ def test_match_isconstant(Q, T):
     excl_zone = int(np.ceil(m / 4))
     max_distance = 0.3
 
+    T_subseq_isconstant = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
     left = naive_match(
         Q,
         T,
         excl_zone,
         max_distance=max_distance,
+        T_subseq_isconstant=T_subseq_isconstant,
     )
-
-    T_subseq_isconstant = naive.rolling_isconstant(T, m)
 
     right = match(
         Q,
