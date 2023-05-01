@@ -300,6 +300,28 @@ def test_match_isconstant(Q, T):
 
     npt.assert_almost_equal(left, right)
 
+    # Test for when Q is constant
+    Q_subseq_isconstant = np.array([True])
+    left = naive_match(
+        Q,
+        T,
+        excl_zone,
+        max_distance=max_distance,
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
+    )
+
+    right = match(
+        Q,
+        T,
+        max_matches=None,
+        max_distance=lambda D: max_distance,  # also test lambda functionality
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
+    )
+
+    npt.assert_almost_equal(left, right)
+
 
 @pytest.mark.parametrize("Q, T", test_data)
 def test_match_mean_stddev_isconstant(Q, T):
