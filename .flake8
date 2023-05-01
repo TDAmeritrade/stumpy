@@ -18,3 +18,4 @@ per-file-ignores =
     stumpy/__init__.py:D104
     stumpy/stumpi.py:E743
     tests/*:D101,D102,D103
+    stumpy/cache.py:D414
