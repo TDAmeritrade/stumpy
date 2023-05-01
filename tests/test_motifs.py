@@ -31,7 +31,7 @@ def naive_match(
                 D[i] = 0
             elif T_subseq_isconstant[i] or Q_subseq_isconstant:
                 D[i] = np.sqrt(m)
-            else:
+            else:  # pragma: no cover
                 pass
 
     return naive.find_matches(D, excl_zone, max_distance, max_matches)
