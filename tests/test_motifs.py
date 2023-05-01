@@ -302,6 +302,7 @@ def test_match_isconstant(Q, T):
 
     # Test for when Q is constant
     Q_subseq_isconstant = np.array([True])
+
     left = naive_match(
         Q,
         T,

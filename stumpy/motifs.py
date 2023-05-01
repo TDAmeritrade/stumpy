@@ -484,17 +484,23 @@ def match(
     if np.any(np.isnan(Q)) or np.any(np.isinf(Q)):  # pragma: no cover
         raise ValueError("Q contains illegal values (NaN or inf)")
 
-    if len(Q.shape) == 1:
-        Q = Q[np.newaxis, :]
-    if len(T.shape) == 1:
-        T = T[np.newaxis, :]
-
-    d, n = T.shape
-    m = Q.shape[1]
+    m = Q.shape[-1]
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    T[np.isinf(T)] = np.nan
+    Q_subseq_isconstant = core.rolling_isconstant(Q, m, Q_subseq_isconstant)
     T_subseq_isconstant = core.rolling_isconstant(T, m, T_subseq_isconstant)
+
+    if Q.ndim == 1:
+        Q = Q[np.newaxis, :]
+    if Q_subseq_isconstant.ndim == 1:
+        Q_subseq_isconstant = Q_subseq_isconstant[np.newaxis, :]
+
+    if T.ndim == 1:
+        T = T[np.newaxis, :]
+    if T_subseq_isconstant.ndim == 1:
+        T_subseq_isconstant = T_subseq_isconstant[np.newaxis, :]
+
+    T[np.isinf(T)] = np.nan
     if M_T is None or Σ_T is None:
         M_T, Σ_T = core.compute_mean_std(T, m)
     T[np.isnan(T)] = 0
@@ -503,10 +509,8 @@ def match(
         M_T = M_T[np.newaxis, :]
     if len(Σ_T.shape) == 1:
         Σ_T = Σ_T[np.newaxis, :]
-    if len(T_subseq_isconstant.shape) == 1:
-        T_subseq_isconstant = T_subseq_isconstant[np.newaxis, :]
 
-    Q_subseq_isconstant = core.rolling_isconstant(Q, m, Q_subseq_isconstant)
+    d, n = T.shape
     D = np.empty((d, n - m + 1))
     for i in range(d):
         D[i, :] = core.mass(
