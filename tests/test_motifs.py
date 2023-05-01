@@ -8,6 +8,39 @@ import pytest
 from stumpy import core, match, motifs
 
 
+def naive_match_multi(
+    Q,
+    T,
+    excl_zone,
+    max_distance,
+    max_matches=None,
+    T_subseq_isconstant=None,
+    Q_subseq_isconstant=None,
+):
+    m = Q.shape[-1]
+    T_subseq_isconstant = naive.rolling_isconstant(T, m, T_subseq_isconstant)
+    Q_subseq_isconstant = naive.rolling_isconstant(Q, m, Q_subseq_isconstant)
+
+    d, n = T.shape
+    D_total = np.zeros(n - m + 1, np.float64)
+    for i in range(d):
+        D = naive.distance_profile(Q[i], T[i], m)
+        D[np.isnan(D)] = np.inf
+        for j in range(len(D)):
+            if np.isfinite(D[j]):
+                if T_subseq_isconstant[i, j] and Q_subseq_isconstant[i]:
+                    D[j] = 0
+                elif T_subseq_isconstant[i, j] or Q_subseq_isconstant[i]:
+                    D[j] = np.sqrt(m)
+                else:  # pragma: no cover
+                    pass
+        D_total[:] = D_total + D
+
+    D_mean = D_total / d
+
+    return naive.find_matches(D_mean, excl_zone, max_distance, max_matches)
+
+
 def naive_match(
     Q,
     T,
@@ -348,6 +381,46 @@ def test_match_mean_stddev_isconstant(Q, T):
         max_matches=None,
         max_distance=lambda D: max_distance,  # also test lambda functionality
         T_subseq_isconstant=T_subseq_isconstant,
+    )
+
+    npt.assert_almost_equal(left, right)
+
+
+def test_match_isconstant_multi():
+    T = np.random.rand(2, 64)
+    Q = np.random.rand(2, 8)
+
+    m = Q.shape[-1]
+    excl_zone = int(np.ceil(m / 4))
+    max_distance = 0.3
+
+    T_subseq_isconstant = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    Q_subseq_isconstant = np.array(
+        [
+            [True],
+            [False],
+        ]
+    )
+
+    left = naive_match_multi(
+        Q,
+        T,
+        excl_zone,
+        max_distance=max_distance,
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
+    )
+
+    right = match(
+        Q,
+        T,
+        max_matches=None,
+        max_distance=lambda D: max_distance,  # also test lambda functionality
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
     )
 
     npt.assert_almost_equal(left, right)
