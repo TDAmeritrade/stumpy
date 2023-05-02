@@ -349,8 +349,8 @@ def test_motifs_four_matches_three_motifs():
             naive.apply_exclusion_zone(excluded_as_trival, nn, excl_zone, True)
             naive.apply_exclusion_zone(P[:, 0], nn, excl_zone, np.inf)
 
-    ref_motifs_distances[i] = dist
-    ref_motifs_indices[i] = indices
+        ref_motifs_distances[i] = dist
+        ref_motifs_indices[i] = indices
 
     naive.apply_exclusion_zone(P[:, 0], idx, excl_zone, np.inf)
 
