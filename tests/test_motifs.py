@@ -386,6 +386,31 @@ def test_match_mean_stddev_isconstant(Q, T):
     npt.assert_almost_equal(left, right)
 
 
+def test_multi_match():
+    T = np.random.uniform(-1000, 1000, size=(2, 64))
+    Q = np.random.uniform(-1000, 1000, size=(2, 64))
+
+    m = Q.shape[-1]
+    excl_zone = int(np.ceil(m / 4))
+    max_distance = 0.3
+
+    left = naive_multi_match(
+        Q,
+        T,
+        excl_zone,
+        max_distance=max_distance,
+    )
+
+    right = match(
+        Q,
+        T,
+        max_matches=None,
+        max_distance=lambda D: max_distance,  # also test lambda functionality
+    )
+
+    npt.assert_almost_equal(left, right)
+
+
 def test_multi_match_isconstant():
     T = np.random.rand(2, 64)
     Q = np.random.rand(2, 8)
