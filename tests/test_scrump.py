@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -90,6 +92,37 @@ def test_prescrump_self_join_larger_window(T_A, T_B, m):
 
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_prescrump_self_join_with_isconstant(T_A, T_B):
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    m = 3
+    zone = int(np.ceil(m / 4))
+    for s in range(1, zone + 1):
+        seed = np.random.randint(100000)
+
+        np.random.seed(seed)
+        ref_P, ref_I = naive.prescrump(
+            T_B,
+            m,
+            T_B,
+            s=s,
+            exclusion_zone=zone,
+            T_A_subseq_isconstant=isconstant_custom_func,
+            T_B_subseq_isconstant=isconstant_custom_func,
+        )
+
+        np.random.seed(seed)
+        comp_P, comp_I = prescrump(
+            T_B, m, s=s, T_A_subseq_isconstant=isconstant_custom_func
+        )
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
 
 
 def test_scrump_int_input():
@@ -225,6 +258,55 @@ def test_scrump_self_join_larger_window(T_A, T_B, m, percentages):
             npt.assert_almost_equal(ref_I, comp_I)
             npt.assert_almost_equal(ref_left_I, comp_left_I)
             npt.assert_almost_equal(ref_right_I, comp_right_I)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+@pytest.mark.parametrize("percentages", percentages)
+def test_scrump_self_join_with_isconstant(T_A, T_B, percentages):
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    for percentage in percentages:
+        seed = np.random.randint(100000)
+
+        np.random.seed(seed)
+        ref_P, ref_I, ref_left_I, ref_right_I = naive.scrump(
+            T_B,
+            m,
+            T_B,
+            percentage,
+            zone,
+            False,
+            None,
+            T_A_subseq_isconstant=isconstant_custom_func,
+            T_B_subseq_isconstant=isconstant_custom_func,
+        )
+
+        np.random.seed(seed)
+        approx = scrump(
+            T_B,
+            m,
+            ignore_trivial=True,
+            percentage=percentage,
+            pre_scrump=False,
+            T_A_subseq_isconstant=isconstant_custom_func,
+        )
+        approx.update()
+        comp_P = approx.P_
+        comp_I = approx.I_
+        comp_left_I = approx.left_I_
+        comp_right_I = approx.right_I_
+
+        naive.replace_inf(ref_P)
+        naive.replace_inf(comp_P)
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+        npt.assert_almost_equal(ref_left_I, comp_left_I)
+        npt.assert_almost_equal(ref_right_I, comp_right_I)
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
@@ -977,6 +1059,41 @@ def test_prescrump_self_join_KNN_no_overlap():
             np.random.seed(seed)
             ref_P, ref_I = naive.prescrump(T, m, T, s=1, exclusion_zone=zone, k=k)
             comp_P, comp_I = prescrump(T, m, s=1, k=k)
+
+            npt.assert_almost_equal(ref_P, comp_P)
+            npt.assert_almost_equal(ref_I, comp_I)
+
+
+@pytest.mark.parametrize("T_A, T_B", test_data)
+def test_prescrump_self_join_larger_window_m_5_k_5_with_isconstant(T_A, T_B):
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    m = 5
+    k = 5
+    zone = int(np.ceil(m / 4))
+
+    if len(T_B) > m:
+        for s in range(1, zone + 1):
+            seed = np.random.randint(100000)
+
+            np.random.seed(seed)
+            ref_P, ref_I = naive.prescrump(
+                T_B,
+                m,
+                T_B,
+                s=s,
+                exclusion_zone=zone,
+                k=k,
+                T_A_subseq_isconstant=isconstant_custom_func,
+                T_B_subseq_isconstant=isconstant_custom_func,
+            )
+
+            np.random.seed(seed)
+            comp_P, comp_I = prescrump(
+                T_B, m, s=s, k=k, T_A_subseq_isconstant=isconstant_custom_func
+            )
 
             npt.assert_almost_equal(ref_P, comp_P)
             npt.assert_almost_equal(ref_I, comp_I)
