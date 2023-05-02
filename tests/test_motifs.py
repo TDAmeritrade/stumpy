@@ -8,7 +8,7 @@ import pytest
 from stumpy import core, match, motifs
 
 
-def naive_match_multi(
+def naive_multi_match(
     Q,
     T,
     excl_zone,
@@ -386,7 +386,7 @@ def test_match_mean_stddev_isconstant(Q, T):
     npt.assert_almost_equal(left, right)
 
 
-def test_match_isconstant_multi():
+def test_multi_match_isconstant():
     T = np.random.rand(2, 64)
     Q = np.random.rand(2, 8)
 
@@ -405,7 +405,7 @@ def test_match_isconstant_multi():
         ]
     )
 
-    left = naive_match_multi(
+    left = naive_multi_match(
         Q,
         T,
         excl_zone,
