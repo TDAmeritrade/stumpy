@@ -3780,7 +3780,7 @@ def _mdl(disc_subseqs, disc_neighbors, S, n_bit=8):
 @njit(
     # "(i8, i8, f8[:, :], f8[:], i8, f8[:, :], i8[:, :], f8)",
     parallel=True,
-    fastmath=True,
+    fastmath={"nsz", "arcp", "contract", "afn", "reassoc"},
 )
 def _compute_multi_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
     """
