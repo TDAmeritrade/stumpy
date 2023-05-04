@@ -325,9 +325,9 @@ def check_dtype(a, dtype=np.float64):  # pragma: no cover
     TypeError
         If the array type does not match `dtype`
     """
-    if dtype == int:
+    if dtype == "int":
         dtype = np.int64
-    if dtype == float:
+    if dtype == "float":
         dtype = np.float64
     if not np.issubdtype(a.dtype, dtype):
         msg = f"{dtype} dtype expected but found {a.dtype} in input array\n"
@@ -1867,7 +1867,7 @@ def apply_exclusion_zone(a, idx, excl_zone, val):
     val : float or bool
         The elements within the exclusion zone will be set to this value
     """
-    check_dtype(a, dtype=type(val))
+    check_dtype(a, dtype=np.dtype(type(val)).type)
     _apply_exclusion_zone(a, idx, excl_zone, val)
 
 
@@ -2352,7 +2352,7 @@ def _rolling_isconstant(a, w):
     for i in prange(l):
         out[i] = np.ptp(a[i : i + w])
 
-    return np.where(out == 0.0, True, False)
+    return out == 0
 
 
 def rolling_isconstant(a, w, a_subseq_isconstant=None):
