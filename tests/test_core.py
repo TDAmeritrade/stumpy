@@ -792,7 +792,7 @@ def test_apply_exclusion_zone_int():
 
 
 def test_apply_exclusion_zone_bool():
-    T = np.ones(10, dtype=np.dtype(bool).type)
+    T = np.ones(10, dtype=bool)
     ref = np.empty(T.shape, dtype=bool)
     comp = np.empty(T.shape, dtype=bool)
     exclusion_zone = 2
