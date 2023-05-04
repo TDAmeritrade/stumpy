@@ -325,9 +325,9 @@ def check_dtype(a, dtype=np.float64):  # pragma: no cover
     TypeError
         If the array type does not match `dtype`
     """
-    if dtype == "int":
+    if dtype == int:
         dtype = np.int64
-    if dtype == "float":
+    if dtype == float:
         dtype = np.float64
     if not np.issubdtype(a.dtype, dtype):
         msg = f"{dtype} dtype expected but found {a.dtype} in input array\n"
