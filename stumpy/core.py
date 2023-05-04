@@ -1867,7 +1867,7 @@ def apply_exclusion_zone(a, idx, excl_zone, val):
     val : float or bool
         The elements within the exclusion zone will be set to this value
     """
-    check_dtype(a, dtype=np.dtype(type(val)).type)
+    check_dtype(a, dtype=type(val))
     _apply_exclusion_zone(a, idx, excl_zone, val)
 
 
