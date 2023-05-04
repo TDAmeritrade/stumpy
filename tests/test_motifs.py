@@ -108,12 +108,15 @@ def test_motifs_two_motifs():
     np.random.seed(None)
 
 
-def test_motifs_max_matches():
+def test_motifs_max_motifs_max_matches():
     # This test covers the following:
 
-    # A time series contains motif A at four locations and motif B at two.
-    # If `max_motifs=2` the result should contain only the top two matches of motif A
-    # and the top two matches of motif B as two separate motifs.
+    # A time series contains motif A at four locations and motif B at two,
+    # and they are all not in the trivial neighbors of each other.
+    # If `max_motifs=3`, `max_matches=2`, and `max_distance=np.inf`,
+    # then the result should contain only the top two matches of motif A,
+    # and another two matches of motif A, and the top two matches of motif B
+    # as three separate motifs.
     T = np.array(
         [
             0.0,  # motif A
@@ -131,20 +134,23 @@ def test_motifs_max_matches():
             -1.03,
             -2.0,
             -0.5,
-            2.0,  # motif A
-            3.0,
-            2.04,
+            0.0,  # motif A
+            1.0,
+            0.0,
             2.3,
-            2.0,  # motif A
-            3.0,
-            2.02,
+            0.0,  # motif A
+            1.0,
+            0.0,
         ]
     )
     m = 3
     max_motifs = 3
+    max_matches = 2
+    max_distance = np.inf
 
-    left_indices = [[0, 7], [4, 11]]
+    left_indices = [[0, 7], [15, 19], [4, 11]]
     left_profile_values = [
+        [0.0, 0.0],
         [0.0, 0.0],
         [
             0.0,
@@ -155,14 +161,14 @@ def test_motifs_max_matches():
         ],
     ]
 
-    mp = naive.stump(T, m)
+    mp = naive.stump(T, m, row_wise=True)
     right_distance_values, right_indices = motifs(
         T,
         mp[:, 0],
         max_motifs=max_motifs,
-        max_distance=0.1,
+        max_distance=max_distance,
         cutoff=np.inf,
-        max_matches=2,
+        max_matches=max_matches,
     )
 
     # We ignore indices because of sorting ambiguities for equal distances.
