@@ -350,8 +350,6 @@ def test_motifs_four_matches_three_motifs():
         ref_motifs_distances[i] = dist
         ref_motifs_indices[i] = indices
 
-    naive.apply_exclusion_zone(P[:, 0], idx, excl_zone, np.inf)
-
     # performant version
     mp = naive.stump(T, m, row_wise=True)
     P = mp[:, 0].astype(np.float64)
