@@ -10,7 +10,7 @@ from stumpy.floss import _cac, _iac, _nnmark, _rea
 
 
 def naive_nnmark(I):
-    nnmark = np.zeros(I.shape[0], dtype=np.int)
+    nnmark = np.zeros(I.shape[0], dtype=np.int64)
     for i in range(nnmark.shape[0]):
         j = I[i]
         nnmark[min(i, j)] = nnmark[min(i, j)] + 1
@@ -89,10 +89,10 @@ def naive_rea(cac, n_regimes, L, excl_factor):
         for excl in range(excl_start, excl_stop):
             cac_list[excl] = 1.0
 
-    return np.array(loc_regimes, dtype=np.int)
+    return np.array(loc_regimes, dtype=np.int64)
 
 
-test_data = [(np.random.randint(0, 50, size=50, dtype=np.int))]
+test_data = [(np.random.randint(0, 50, size=50, dtype=np.int64))]
 
 substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 substitution_values = [np.nan, np.inf]

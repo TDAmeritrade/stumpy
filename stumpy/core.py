@@ -329,6 +329,8 @@ def check_dtype(a, dtype=np.float64):  # pragma: no cover
         dtype = np.int64
     if dtype == float:
         dtype = np.float64
+    if dtype == bool:
+        dtype = np.bool_
     if not np.issubdtype(a.dtype, dtype):
         msg = f"{dtype} dtype expected but found {a.dtype} in input array\n"
         msg += "Please change your input `dtype` with `.astype(dtype)`"
@@ -2352,7 +2354,7 @@ def _rolling_isconstant(a, w):
     for i in prange(l):
         out[i] = np.ptp(a[i : i + w])
 
-    return np.where(out == 0.0, True, False)
+    return out == 0
 
 
 def rolling_isconstant(a, w, a_subseq_isconstant=None):
@@ -3780,7 +3782,7 @@ def _mdl(disc_subseqs, disc_neighbors, S, n_bit=8):
 @njit(
     # "(i8, i8, f8[:, :], f8[:], i8, f8[:, :], i8[:, :], f8)",
     parallel=True,
-    fastmath=True,
+    fastmath={"nsz", "arcp", "contract", "afn", "reassoc"},
 )
 def _compute_multi_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
     """
