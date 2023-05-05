@@ -74,17 +74,14 @@ jobs:
       - name: Link OpenMP
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
-                  brew doctor
-                  brew prune
                   brew link --force libomp
-                  brew info libomp | grep Cellar | awk '{print $1"/lib/libomp.dylib"}' | xargs -I {} bash -c 'ln -s {} /usr/lib/libomp.dylib'
+                  export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
              fi
         shell: bash
       - name: Check OpenMP Library Exists
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
                   ls /usr/local/lib | grep libomp.dylib
-                  ls /usr/lib
              fi
         shell: bash
       - name: Check Numba OpenMP Access
