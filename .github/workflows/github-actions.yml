@@ -75,8 +75,7 @@ jobs:
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
                   brew link --force libomp
-                  export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
-                  echo $DYLD_LIBRARY_PATH
+                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so
              fi
         shell: bash
       - name: Check OpenMP Library Exists
