@@ -75,6 +75,7 @@ jobs:
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
                   brew link --force libomp
+                  brew info libomp | grep Cellar | awk '{print $1"/lib/libomp.dylib"}' | xargs -I {} bash -c 'ln -s {} /usr/lib/libomp.dylib'
              fi
         shell: bash
       - name: Check OpenMP Library Exists
