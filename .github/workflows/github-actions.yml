@@ -77,10 +77,15 @@ jobs:
                   brew link --force libomp
              fi
         shell: bash
-      - name: Check OpenMP
+      - name: Check OpenMP Library Exists
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
                   ls /usr/local/lib | grep libomp.dylib
+             fi
+        shell: bash
+      - name: Check Numba OpenMP Access
+        run: |
+             if [ "$RUNNER_OS" == "macOS" ]; then
                   python -c "from numba.np.ufunc import omppool"
              fi
         shell: bash
