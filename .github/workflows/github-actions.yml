@@ -74,20 +74,14 @@ jobs:
       - name: Link OpenMP
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
+                  echo "Linking OpenMP into /usr/local/lib"
                   brew link --force libomp
-                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib /usr/local/lib/libomp.dylib 
-             fi
-        shell: bash
-      - name: Check OpenMP Library Exists
-        run: |
-             if [ "$RUNNER_OS" == "macOS" ]; then
+                  echo "Checking /usr/local/lib for OpenMP"
                   ls /usr/local/lib | grep libomp.dylib
-             fi
-        shell: bash
-      - name: Check Numba OpenMP Access
-        run: |
-             if [ "$RUNNER_OS" == "macOS" ]; then
-                  python -c "from numba.np.ufunc import omppool"
+                  echo "Changing  @rpath for the omppool.cpython-x-darwin.so shared object to look in /usr/local/lib"
+                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib /usr/local/lib/libomp.dylib 
+                  echo "Checking Numba OpenMP Access"
+                  python -c "from numba.np.ufunc import omppool" 
              fi
         shell: bash
       - name: Show Full Numba Environment
