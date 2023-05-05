@@ -74,6 +74,8 @@ jobs:
       - name: Link OpenMP
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
+                  brew doctor
+                  brew prune
                   brew link --force libomp
                   brew info libomp | grep Cellar | awk '{print $1"/lib/libomp.dylib"}' | xargs -I {} bash -c 'ln -s {} /usr/lib/libomp.dylib'
              fi
