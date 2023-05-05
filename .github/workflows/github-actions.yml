@@ -75,7 +75,7 @@ jobs:
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
                   brew link --force libomp
-                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so
+                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib /usr/local/lib/libomp.dylib 
              fi
         shell: bash
       - name: Check OpenMP Library Exists
