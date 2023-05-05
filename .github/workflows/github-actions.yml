@@ -76,7 +76,7 @@ jobs:
              if [ "$RUNNER_OS" == "macOS" ]; then
                   brew link --force libomp
                   export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
-                  python -c 'import site; print(site.getsitepackages())'
+                  echo $DYLD_LIBRARY_PATH
              fi
         shell: bash
       - name: Check OpenMP Library Exists
