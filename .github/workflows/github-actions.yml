@@ -81,6 +81,7 @@ jobs:
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
                   ls /usr/local/lib | grep libomp.dylib
+                  ls /usr/lib | grep libomp.dylib
              fi
         shell: bash
       - name: Check Numba OpenMP Access
