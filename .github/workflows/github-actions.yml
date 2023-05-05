@@ -80,7 +80,8 @@ jobs:
       - name: Check OpenMP
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
-                  ls /usr/local/lib
+                  ls /usr/local/lib | grep libomp.dylib
+                  python -c "from numba.np.ufunc import omppool"
              fi
         shell: bash
       - name: Show Full Numba Environment
