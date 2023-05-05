@@ -41,12 +41,6 @@ jobs:
                   brew link --force libomp
              fi
         shell: bash
-      - name: Check OpenMP
-        run: |
-             if [ "$RUNNER_OS" == "macOS" ]; then
-                  ls /usr/local/lib
-             fi
-        shell: bash
       - name: Show Full Numba Environment
         run: python -m numba -s
         shell: bash
@@ -81,6 +75,12 @@ jobs:
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
                   brew link --force libomp
+             fi
+        shell: bash
+      - name: Check OpenMP
+        run: |
+             if [ "$RUNNER_OS" == "macOS" ]; then
+                  ls /usr/local/lib
              fi
         shell: bash
       - name: Show Full Numba Environment
