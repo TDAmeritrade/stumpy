@@ -1268,7 +1268,7 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0, query_idx=None):
         if T_subseq_isfinite is None:
             T, T_subseq_isfinite = preprocess_non_normalized(T, m)
         distance_profile[:] = _mass_absolute(Q, T, p)
-        if query_idx is not None:
+        if query_idx is not None:  # pragma: no cover
             query_idx = int(query_idx)
             distance_profile[query_idx] = 0.0
 
