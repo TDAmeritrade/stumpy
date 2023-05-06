@@ -234,7 +234,7 @@ def test_motifs_max_matches_max_distances_inf():
     )
 
     npt.assert_almost_equal(left_profile_values, right_distance_values, decimal=4)
-    npt.assert_almost_equal(left_profile_values, right_distance_values, decimal=4)
+    npt.assert_almost_equal(left_indices, right_indices)
 
 
 def test_naive_match_exclusion_zone():
