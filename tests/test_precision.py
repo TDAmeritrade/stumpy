@@ -51,7 +51,7 @@ def test_distace_profile():
         Q = T[i : i + m]
         D_ref = naive.distance_profile(Q, T, m)
         D_comp = core.mass(
-            Q, T, M_T=M_T, Σ_T=Σ_T, T_subseq_isconstant=T_subseq_isconstant
+            Q, T, M_T=M_T, Σ_T=Σ_T, T_subseq_isconstant=T_subseq_isconstant, query_idx=i
         )
 
         npt.assert_almost_equal(D_ref, D_comp)
