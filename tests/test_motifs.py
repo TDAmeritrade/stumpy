@@ -176,8 +176,8 @@ def test_motifs_max_matches_max_distances_inf():
     # This test covers the following:
 
     # A time series contains motif A at two locations and motif B at two.
-    # If `max_moitf=2` and `max_matches=2`, the result should contain 
-    # (at most) two sets of motifs and each motif set should contain 
+    # If `max_moitf=2` and `max_matches=2`, the result should contain
+    # (at most) two sets of motifs and each motif set should contain
     # (at most) two matches.
     T = np.array(
         [
