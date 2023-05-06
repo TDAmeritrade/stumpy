@@ -3,7 +3,7 @@ import numpy as np
 import numpy.testing as npt
 
 import stumpy
-from stumpy import config
+from stumpy import config, core
 
 
 def test_mpdist_snippets_s():
@@ -38,3 +38,20 @@ def test_mpdist_snippets_s():
     npt.assert_almost_equal(
         ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
     )
+
+
+def test_distace_profile():
+    # This test function raises an error when the distance profile between
+    # the query `Q = T[i: i+m]`  and `T` becomes non-zero at index `i`.
+    T = np.random.rand(64)
+    m = 3
+    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T, m)
+
+    for i in range(len(T) - m + 1):
+        Q = T[i : i + m]
+        D_ref = naive.distance_profile(Q, T, m)
+        D_comp = core.mass(
+            Q, T, M_T=M_T, Σ_T=Σ_T, T_subseq_isconstant=T_subseq_isconstant
+        )
+
+        npt.assert_almost_equal(D_ref, D_comp)
