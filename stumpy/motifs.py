@@ -121,7 +121,7 @@ def _motifs(
             T,
             M_T=M_T,
             Σ_T=Σ_T,
-            max_matches=None,
+            max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,
             query_idx=candidate_idx,
