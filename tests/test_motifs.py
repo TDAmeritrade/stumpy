@@ -112,8 +112,8 @@ def test_motifs_max_matches():
     # This test covers the following:
 
     # A time series contains motif A at four locations and motif B at two.
-    # If `max_motifs=2` the result should contain only the top two matches of motif A
-    # and the top two matches of motif B as two separate motifs.
+    # If `max_moitf=2` and `max_matches=2`, the result should contain two
+    # sets of motifs. Each motif set contains top two matches
     T = np.array(
         [
             0.0,  # motif A
@@ -141,7 +141,7 @@ def test_motifs_max_matches():
         ]
     )
     m = 3
-    max_motifs = 3
+    max_motifs = 2
 
     left_indices = [[0, 7], [4, 11]]
     left_profile_values = [
