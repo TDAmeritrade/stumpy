@@ -1196,7 +1196,7 @@ def _mass_absolute(Q, T, p=2.0):
     ).flatten()
 
 
-def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
+def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0, query_idx=None):
     """
     Compute the non-normalized distance profile (i.e., without z-normalization) using
     the "MASS absolute" algorithm. This is a convenience wrapper around the Numba JIT
@@ -1216,6 +1216,13 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
+
+    query_idx : int, default None
+        This is the index position along the time series, `T`, where the query
+        subsequence, `Q`, is located. `query_idx` should be set to None if `Q`
+        is not a subsequence of `T`. If `Q` is a subsequence of `T`, provding
+        this argument is optional. If provided, the precision of computation
+        can be slightly improved.
 
     Returns
     -------
@@ -1261,6 +1268,10 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
         if T_subseq_isfinite is None:
             T, T_subseq_isfinite = preprocess_non_normalized(T, m)
         distance_profile[:] = _mass_absolute(Q, T, p)
+        if query_idx is not None:
+            query_idx = int(query_idx)
+            distance_profile[query_idx] = 0.0
+
         distance_profile[~T_subseq_isfinite] = np.inf
 
     return distance_profile
