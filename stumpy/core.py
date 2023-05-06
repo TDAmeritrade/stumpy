@@ -1460,6 +1460,7 @@ def mass(
     T_subseq_isfinite=None,
     T_subseq_isconstant=None,
     Q_subseq_isconstant=None,
+    query_idx=None,
 ):
     """
     Compute the distance profile using the MASS algorithm
@@ -1513,6 +1514,13 @@ def mass(
         by currying the user-defined function using `functools.partial`. Any
         subsequence with at least one np.nan/np.inf will automatically have its
         corresponding value set to False in this boolean array.
+
+    query_idx : int, default None
+        This is the index position along the time series, `T`, where the query
+        subsequence, `Q`, is located. `query_idx` should be set to None if `Q`
+        is not a subsequence of `T`. If `Q` is a subsequence of `T`, provding
+        this argument is optional. If provided, the precision of computation
+        can be slightly improved.
 
     Returns
     -------
@@ -1604,6 +1612,11 @@ def mass(
             Q_subseq_isconstant[0],
             T_subseq_isconstant,
         )
+
+        if query_idx is not None:
+            query_idx = int(query_idx)
+            if np.isfinite(M_T[query_idx]) and np.isfinite(μ_Q[0]):
+                distance_profile[query_idx] = 0
 
     return distance_profile
 
