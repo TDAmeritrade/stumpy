@@ -112,8 +112,9 @@ def test_motifs_max_matches():
     # This test covers the following:
 
     # A time series contains motif A at four locations and motif B at two.
-    # If `max_moitf=2` and `max_matches=2`, the result should contain two
-    # sets of motifs. Each motif set contains top two matches
+    # If `max_moitf=2` and `max_matches=3`, the result should contain
+    # (at most) two sets of motifs and each motif set should contain
+    # (at most) the top three matches
     T = np.array(
         [
             0.0,  # motif A
@@ -142,6 +143,7 @@ def test_motifs_max_matches():
     )
     m = 3
     max_motifs = 2
+    max_matches = 3
 
     left_indices = [[0, 7], [4, 11]]
     left_profile_values = [
@@ -160,9 +162,9 @@ def test_motifs_max_matches():
         T,
         mp[:, 0],
         max_motifs=max_motifs,
-        max_distance=0.1,
+        max_matches=max_matches,
+        max_distance=0.05,
         cutoff=np.inf,
-        max_matches=2,
     )
 
     # We ignore indices because of sorting ambiguities for equal distances.
@@ -174,10 +176,9 @@ def test_motifs_max_matches_max_distances_inf():
     # This test covers the following:
 
     # A time series contains motif A at two locations and motif B at two.
-    # If `max_moitf=2` and `max_matches=2`, and `max_distance=inf`, the
-    # result should contain two motifs, each containing top-two matches.
-    # Hence, two out of the three motifs are from A, and the other is from
-    # B.
+    # If `max_moitf=2` and `max_matches=2`, the result should contain 
+    # (at most) two sets of motifs and each motif set should contain 
+    # (at most) two matches.
     T = np.array(
         [
             0.0,  # motif A
