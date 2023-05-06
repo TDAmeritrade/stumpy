@@ -367,3 +367,69 @@ def test_match_mean_stddev_isconstant(Q, T):
     )
 
     npt.assert_almost_equal(left, right)
+
+
+def test_motif_random_input():
+    T = np.random.rand(64)
+    m = 3
+    excl_zone = int(np.ceil(m / 4))
+
+    max_motifs = 3
+    max_matches = 4
+    max_distance = np.inf
+    cutoff = np.inf
+
+    # since len(T) is greater than m * max_motifs * max_matches,
+    # the shape of output is defiitely `(max_motifs, max_matches)`
+    output_shape = (max_motifs, max_matches)
+
+    # naive approach
+    ref_distances = np.full(output_shape, np.NINF, dtype=np.float64)
+    ref_indices = np.full(output_shape, -1, dtype=np.int64)
+
+    k = 10  # set k that is the greater than m * (max_matches - 1)
+    mp = naive.stump(T, m, row_wise=True, k=k)
+    P = mp[:, :k].astype(np.float64)
+    I = mp[:, k : 2 * k].astype(np.int64)
+
+    for i in range(max_motifs):
+        distances = []
+        indices = []
+
+        idx = np.argmin(P[:, 0])
+        distances.append(0)  # self match
+        indices.append(idx)  # self match
+
+        # explorig top-k neighbors of motif `idx`
+        excluded_as_trivial = np.full(len(T) - m + 1, 0, dtype=bool)
+        for j in range(k):
+            if len(distances) >= max_matches:
+                break
+
+            nn = I[idx, j]
+            if excluded_as_trivial[nn]:
+                continue
+
+            distances.append(P[idx, j])
+            indices.append(nn)
+            naive.apply_exclusion_zone(P[:, 0], nn, excl_zone, np.inf)
+            naive.apply_exclusion_zone(excluded_as_trivial, nn, excl_zone, True)
+
+        ref_distances[i] = distances
+        ref_indices[i] = indices
+        naive.apply_exclusion_zone(P[:, 0], idx, excl_zone, np.inf)
+
+    # performant
+    mp = naive.stump(T, m, row_wise=True)
+    comp_distance, comp_indices = motifs(
+        T,
+        mp[:, 0].astype(np.float64),
+        min_neighbors=1,
+        max_distance=max_distance,
+        cutoff=cutoff,
+        max_matches=max_matches,
+        max_motifs=max_motifs,
+    )
+
+    npt.assert_almost_equal(ref_indices, comp_indices)
+    npt.assert_almost_equal(ref_distances, comp_distance)
