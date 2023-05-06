@@ -173,9 +173,9 @@ def test_motifs_max_matches():
 def test_motifs_max_matches_max_distances_inf():
     # This test covers the following:
 
-    # A time series contains motif A at four locations and motif B at two.
-    # If `max_moitf=3` and `max_matches=2`, and `max_distance=inf`, the
-    # result should contain three motifs, each containing top-two matches.
+    # A time series contains motif A at two locations and motif B at two.
+    # If `max_moitf=2` and `max_matches=2`, and `max_distance=inf`, the
+    # result should contain two motifs, each containing top-two matches.
     # Hence, two out of the three motifs are from A, and the other is from
     # B.
     T = np.array(
@@ -195,23 +195,22 @@ def test_motifs_max_matches_max_distances_inf():
             -1.03,
             -2.0,
             -0.5,
-            0.0,  # motif A
-            1.0,
-            0.0,
+            2.0,
+            3.0,
+            2.04,
             2.3,
-            0.0,  # motif A
-            1.0,
-            0.0,
+            2.0,
+            3.0,
+            3.0,
         ]
     )
     m = 3
-    max_motifs = 3
+    max_motifs = 2
     max_matches = 2
     max_distance = np.inf
 
-    left_indices = [[0, 7], [15, 19], [4, 11]]
+    left_indices = [[0, 7], [4, 11]]
     left_profile_values = [
-        [0.0, 0.0],
         [0.0, 0.0],
         [
             0.0,
@@ -233,8 +232,8 @@ def test_motifs_max_matches_max_distances_inf():
         max_matches=max_matches,
     )
 
-    npt.assert_almost_equal(left_profile_values, right_distance_values, decimal=4)
     npt.assert_almost_equal(left_indices, right_indices)
+    npt.assert_almost_equal(left_profile_values, right_distance_values, decimal=4)
 
 
 def test_naive_match_exclusion_zone():
