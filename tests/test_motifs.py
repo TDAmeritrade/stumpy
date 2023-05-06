@@ -137,7 +137,7 @@ def test_motifs_max_matches():
             2.3,
             2.0,  # motif A
             3.0,
-            2.02,
+            3.0,
         ]
     )
     m = 3
