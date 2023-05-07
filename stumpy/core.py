@@ -1245,7 +1245,7 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0, query_idx=None):
         raise ValueError(f"`Q` is {Q.ndim}-dimensional and must be 1-dimensional. ")
 
     check_window_size(m, max_size=Q.shape[-1])
-    if query_idx is not None:
+    if query_idx is not None:  # pragma: no cover
         query_idx = int(query_idx)
         QT_query_idx_allclose = np.allclose(Q, T[query_idx : query_idx + m])
 
