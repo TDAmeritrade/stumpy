@@ -1265,11 +1265,20 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0, query_idx=None):
     if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
+        if query_idx is not None:
+            query_idx = int(query_idx)
+            if not np.allclose(Q, T[query_idx : query_idx + m]):
+                msg = (
+                    "Subsequences `Q` and `T[query_idx:query_idx+m]` are "
+                    + "different but were expected to be identical. Please "
+                    + "verify that `query_idx` is correct."
+                )
+                warnings.warn(msg)
+
         if T_subseq_isfinite is None:
             T, T_subseq_isfinite = preprocess_non_normalized(T, m)
         distance_profile[:] = _mass_absolute(Q, T, p)
         if query_idx is not None:  # pragma: no cover
-            query_idx = int(query_idx)
             distance_profile[query_idx] = 0.0
 
         distance_profile[~T_subseq_isfinite] = np.inf
@@ -1595,6 +1604,16 @@ def mass(
     if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
+        if query_idx is not None:
+            query_idx = int(query_idx)
+            if not np.allclose(Q, T[query_idx : query_idx + m]):
+                msg = (
+                    "Subsequences `Q` and `T[query_idx:query_idx+m]` are "
+                    + "different but were expected to be identical. Please "
+                    + "verify that `query_idx` is correct."
+                )
+                warnings.warn(msg)
+
         T, M_T, Σ_T, T_subseq_isconstant = preprocess(
             T,
             m,
@@ -1625,9 +1644,7 @@ def mass(
         )
 
         if query_idx is not None:
-            query_idx = int(query_idx)
-            if np.isfinite(M_T[query_idx]) and np.isfinite(μ_Q[0]):
-                distance_profile[query_idx] = 0
+            distance_profile[query_idx] = 0
 
     return distance_profile
 
