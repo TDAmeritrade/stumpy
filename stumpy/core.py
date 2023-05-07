@@ -1265,7 +1265,7 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0, query_idx=None):
     if np.any(~np.isfinite(Q)):
         distance_profile[:] = np.inf
     else:
-        if query_idx is not None:
+        if query_idx is not None:  # pragma: no cover
             query_idx = int(query_idx)
             if not np.allclose(Q, T[query_idx : query_idx + m]):
                 msg = (
@@ -1606,7 +1606,7 @@ def mass(
     else:
         if query_idx is not None:
             query_idx = int(query_idx)
-            if not np.allclose(Q, T[query_idx : query_idx + m]):
+            if not np.allclose(Q, T[query_idx : query_idx + m]):  # pragma: no cover
                 msg = (
                     "Subsequences `Q` and `T[query_idx:query_idx+m]` are "
                     + "different but were expected to be identical. Please "
