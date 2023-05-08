@@ -1243,11 +1243,21 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0, query_idx=None):
 
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"`Q` is {Q.ndim}-dimensional and must be 1-dimensional. ")
+    Q_isfinite = np.isfinite(Q)
 
     check_window_size(m, max_size=Q.shape[-1])
     if query_idx is not None:  # pragma: no cover
         query_idx = int(query_idx)
-        QT_query_idx_allclose = np.allclose(Q, T[query_idx : query_idx + m])
+        T_isfinite_idx = np.isfinite(T[query_idx : query_idx + m])
+        if not np.all(Q_isfinite == T_isfinite_idx) or not np.allclose(
+            Q[Q_isfinite], T[query_idx : query_idx + m][T_isfinite_idx]
+        ):
+            msg = (
+                "Subsequences `Q` and `T[query_idx:query_idx+m]` are "
+                + "different but were expected to be identical. Please "
+                + "verify that `query_idx` is correct."
+            )
+            warnings.warn(msg)
 
     T = _preprocess(T)
     n = T.shape[0]
@@ -1265,20 +1275,13 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0, query_idx=None):
         )
 
     distance_profile = np.empty(n - m + 1, dtype=np.float64)
-    if np.any(~np.isfinite(Q)):
+    if np.any(~Q_isfinite):
         distance_profile[:] = np.inf
     else:
         if T_subseq_isfinite is None:
             T, T_subseq_isfinite = preprocess_non_normalized(T, m)
         distance_profile[:] = _mass_absolute(Q, T, p)
         if query_idx is not None:  # pragma: no cover
-            if not QT_query_idx_allclose:
-                msg = (
-                    "Subsequences `Q` and `T[query_idx:query_idx+m]` are "
-                    + "different but were expected to be identical. Please "
-                    + "verify that `query_idx` is correct."
-                )
-                warnings.warn(msg)
             distance_profile[query_idx] = 0.0
 
         distance_profile[~T_subseq_isfinite] = np.inf
@@ -1582,11 +1585,22 @@ def mass(
 
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
+    Q_isfinite = np.isfinite(Q)
 
     check_window_size(m, max_size=Q.shape[-1])
     if query_idx is not None:
         query_idx = int(query_idx)
-        QT_query_idx_allclose = np.allclose(Q, T[query_idx : query_idx + m])
+        T_isfinite_idx = np.isfinite(T[query_idx : query_idx + m])
+
+        if not np.all(Q_isfinite == T_isfinite_idx) or not np.allclose(
+            Q[Q_isfinite], T[query_idx : query_idx + m][T_isfinite_idx]
+        ):  # pragma: no cover
+            msg = (
+                "Subsequences `Q` and `T[query_idx:query_idx+m]` are "
+                + "different but were expected to be identical. Please "
+                + "verify that `query_idx` is correct."
+            )
+            warnings.warn(msg)
 
     T = _preprocess(T)
     n = T.shape[0]
@@ -1604,7 +1618,7 @@ def mass(
         )
 
     distance_profile = np.empty(n - m + 1, dtype=np.float64)
-    if np.any(~np.isfinite(Q)):
+    if np.any(~Q_isfinite):
         distance_profile[:] = np.inf
     else:
         T, M_T, Σ_T, T_subseq_isconstant = preprocess(
@@ -1637,13 +1651,6 @@ def mass(
         )
 
         if query_idx is not None:
-            if not QT_query_idx_allclose:  # pragma: no cover
-                msg = (
-                    "Subsequences `Q` and `T[query_idx:query_idx+m]` are "
-                    + "different but were expected to be identical. Please "
-                    + "verify that `query_idx` is correct."
-                )
-                warnings.warn(msg)
             distance_profile[query_idx] = 0
 
     return distance_profile
