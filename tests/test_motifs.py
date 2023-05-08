@@ -408,13 +408,11 @@ def test_motif_random_input():
                 break
 
             nn = I[idx, j]
-            if excluded_as_trivial[nn]:
-                continue
-
-            distances.append(P[idx, j])
-            indices.append(nn)
-            naive.apply_exclusion_zone(P[:, 0], nn, excl_zone, np.inf)
-            naive.apply_exclusion_zone(excluded_as_trivial, nn, excl_zone, True)
+            if not excluded_as_trivial[nn]:
+                distances.append(P[idx, j])
+                indices.append(nn)
+                naive.apply_exclusion_zone(P[:, 0], nn, excl_zone, np.inf)
+                naive.apply_exclusion_zone(excluded_as_trivial, nn, excl_zone, True)
 
         ref_distances[i] = distances
         ref_indices[i] = indices
