@@ -1221,8 +1221,8 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0, query_idx=None):
         This is the index position along the time series, `T`, where the query
         subsequence, `Q`, is located. `query_idx` should be set to None if `Q`
         is not a subsequence of `T`. If `Q` is a subsequence of `T`, provding
-        this argument is optional. If provided, the precision of computation
-        can be slightly improved.
+        this argument is optional. If query_idx is provided, the distance between
+        Q and T[query_idx : query_idx + m] will automatically be set to zero.
 
     Returns
     -------
@@ -1542,8 +1542,9 @@ def mass(
         This is the index position along the time series, `T`, where the query
         subsequence, `Q`, is located. `query_idx` should be set to None if `Q`
         is not a subsequence of `T`. If `Q` is a subsequence of `T`, provding
-        this argument is optional. If provided, the precision of computation
-        can be slightly improved.
+        this argument is optional. If query_idx is provided, the distance
+        between Q and `T[query_idx : query_idx + m]` will automatically be set to
+        zero.
 
     Returns
     -------
