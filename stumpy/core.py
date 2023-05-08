@@ -1196,7 +1196,7 @@ def _mass_absolute(Q, T, p=2.0):
     ).flatten()
 
 
-def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
+def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0, query_idx=None):
     """
     Compute the non-normalized distance profile (i.e., without z-normalization) using
     the "MASS absolute" algorithm. This is a convenience wrapper around the Numba JIT
@@ -1217,6 +1217,13 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
 
+    query_idx : int, default None
+        This is the index position along the time series, `T`, where the query
+        subsequence, `Q`, is located. `query_idx` should be set to None if `Q`
+        is not a subsequence of `T`. If `Q` is a subsequence of `T`, provding
+        this argument is optional. If query_idx is provided, the distance between
+        Q and T[query_idx : query_idx + m] will automatically be set to zero.
+
     Returns
     -------
     output : numpy.ndarray
@@ -1236,8 +1243,22 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
 
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"`Q` is {Q.ndim}-dimensional and must be 1-dimensional. ")
+    Q_isfinite = np.isfinite(Q)
 
     check_window_size(m, max_size=Q.shape[-1])
+
+    if query_idx is not None:  # pragma: no cover
+        query_idx = int(query_idx)
+        T_isfinite_idx = np.isfinite(T[query_idx : query_idx + m])
+        if not np.all(Q_isfinite == T_isfinite_idx) or not np.allclose(
+            Q[Q_isfinite], T[query_idx : query_idx + m][T_isfinite_idx]
+        ):
+            msg = (
+                "Subsequences `Q` and `T[query_idx:query_idx+m]` are "
+                + "different but were expected to be identical. Please "
+                + "verify that `query_idx` is correct."
+            )
+            warnings.warn(msg)
 
     T = _preprocess(T)
     n = T.shape[0]
@@ -1255,12 +1276,15 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0):
         )
 
     distance_profile = np.empty(n - m + 1, dtype=np.float64)
-    if np.any(~np.isfinite(Q)):
+    if np.any(~Q_isfinite):
         distance_profile[:] = np.inf
     else:
         if T_subseq_isfinite is None:
             T, T_subseq_isfinite = preprocess_non_normalized(T, m)
         distance_profile[:] = _mass_absolute(Q, T, p)
+        if query_idx is not None:  # pragma: no cover
+            distance_profile[query_idx] = 0.0
+
         distance_profile[~T_subseq_isfinite] = np.inf
 
     return distance_profile
@@ -1460,6 +1484,7 @@ def mass(
     T_subseq_isfinite=None,
     T_subseq_isconstant=None,
     Q_subseq_isconstant=None,
+    query_idx=None,
 ):
     """
     Compute the distance profile using the MASS algorithm
@@ -1514,6 +1539,14 @@ def mass(
         subsequence with at least one np.nan/np.inf will automatically have its
         corresponding value set to False in this boolean array.
 
+    query_idx : int, default None
+        This is the index position along the time series, `T`, where the query
+        subsequence, `Q`, is located. `query_idx` should be set to None if `Q`
+        is not a subsequence of `T`. If `Q` is a subsequence of `T`, provding
+        this argument is optional. If query_idx is provided, the distance
+        between Q and `T[query_idx : query_idx + m]` will automatically be set to
+        zero.
+
     Returns
     -------
     distance_profile : numpy.ndarray
@@ -1554,8 +1587,22 @@ def mass(
 
     if Q.ndim != 1:  # pragma: no cover
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
+    Q_isfinite = np.isfinite(Q)
 
     check_window_size(m, max_size=Q.shape[-1])
+
+    if query_idx is not None:
+        query_idx = int(query_idx)
+        T_isfinite_idx = np.isfinite(T[query_idx : query_idx + m])
+        if not np.all(Q_isfinite == T_isfinite_idx) or not np.allclose(
+            Q[Q_isfinite], T[query_idx : query_idx + m][T_isfinite_idx]
+        ):  # pragma: no cover
+            msg = (
+                "Subsequences `Q` and `T[query_idx:query_idx+m]` are "
+                + "different but were expected to be identical. Please "
+                + "verify that `query_idx` is correct."
+            )
+            warnings.warn(msg)
 
     T = _preprocess(T)
     n = T.shape[0]
@@ -1573,7 +1620,7 @@ def mass(
         )
 
     distance_profile = np.empty(n - m + 1, dtype=np.float64)
-    if np.any(~np.isfinite(Q)):
+    if np.any(~Q_isfinite):
         distance_profile[:] = np.inf
     else:
         T, M_T, Σ_T, T_subseq_isconstant = preprocess(
@@ -1604,6 +1651,9 @@ def mass(
             Q_subseq_isconstant[0],
             T_subseq_isconstant,
         )
+
+        if query_idx is not None:
+            distance_profile[query_idx] = 0
 
     return distance_profile
 
