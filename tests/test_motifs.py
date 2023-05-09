@@ -381,11 +381,8 @@ def test_motifs():
     max_distance = np.inf
     cutoff = np.inf
 
-    # since len(T) is greater than m * max_motifs * max_matches,
-    # the shape of output is defiitely `(max_motifs, max_matches)`
-    output_shape = (max_motifs, max_matches)
-
     # naive approach
+    output_shape = (max_motifs, max_matches)
     ref_distances = np.full(output_shape, np.NINF, dtype=np.float64)
     ref_indices = np.full(output_shape, -1, dtype=np.int64)
 
@@ -398,11 +395,14 @@ def test_motifs():
         indices = []
 
         idx = np.argmin(P)
-        distances.append(0)  # self match
-        indices.append(idx)  # self match
+
+        # self match
+        distances.append(0)
+        indices.append(idx)
         naive.apply_exclusion_zone(P, idx, excl_zone, np.inf)
 
         # Explore distance profile D[idx] till `max_matches` are found.
+        naive.apply_exclusion_zone(D[idx], idx, excl_zone, np.inf)
         for _ in range(l):
             if len(distances) >= max_matches:
                 break
