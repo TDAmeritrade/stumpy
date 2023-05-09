@@ -107,7 +107,7 @@ def test_motifs_one_motif():
     )
 
     npt.assert_array_equal(left_indices, right_indices)
-    npt.assert_almost_equal(left_profile_values, right_distance_values, decimal=4)
+    npt.assert_almost_equal(left_profile_values, right_distance_values)
 
 
 def test_motifs_two_motifs():
@@ -164,7 +164,7 @@ def test_motifs_two_motifs():
 
     # We ignore indices because of sorting ambiguities for equal distances.
     # As long as the distances are correct, the indices will be too.
-    npt.assert_almost_equal(left_profile_values, right_distance_values, decimal=6)
+    npt.assert_almost_equal(left_profile_values, right_distance_values)
 
     # Reset seed
     np.random.seed(None)
@@ -231,7 +231,7 @@ def test_motifs_max_matches():
 
     # We ignore indices because of sorting ambiguities for equal distances.
     # As long as the distances are correct, the indices will be too.
-    npt.assert_almost_equal(left_profile_values, right_distance_values, decimal=4)
+    npt.assert_almost_equal(left_profile_values, right_distance_values)
 
 
 def test_motifs_max_matches_max_distances_inf():
@@ -296,7 +296,7 @@ def test_motifs_max_matches_max_distances_inf():
     )
 
     npt.assert_almost_equal(left_indices, right_indices)
-    npt.assert_almost_equal(left_profile_values, right_distance_values, decimal=4)
+    npt.assert_almost_equal(left_profile_values, right_distance_values)
 
 
 def test_naive_match_exclusion_zone():
