@@ -374,6 +374,7 @@ def test_motif_random_input():
     T = np.random.rand(64)
     m = 3
     excl_zone = int(np.ceil(m / 4))
+    l = len(T) - m + 1
 
     max_motifs = 3
     max_matches = 4
@@ -388,35 +389,42 @@ def test_motif_random_input():
     ref_distances = np.full(output_shape, np.NINF, dtype=np.float64)
     ref_indices = np.full(output_shape, -1, dtype=np.int64)
 
-    k = 10  # set k that is the greater than m * (max_matches - 1)
-    mp = naive.stump(T, m, row_wise=True, k=k)
-    P = mp[:, :k].astype(np.float64)
-    I = mp[:, k : 2 * k].astype(np.int64)
+    D = naive.distance_matrix(T, T, m)
+    np.fill_diagonal(D, val=np.inf)
+    P = np.min(D, axis=1)
 
     for i in range(max_motifs):
         distances = []
         indices = []
 
-        idx = np.argmin(P[:, 0])
+        idx = np.argmin(P)
         distances.append(0)  # self match
         indices.append(idx)  # self match
+        naive.apply_exclusion_zone(P, idx, excl_zone, np.inf)
 
-        # explorig top-k neighbors of motif `idx`
-        excluded_as_trivial = np.full(len(T) - m + 1, 0, dtype=bool)
-        for j in range(k):
+        # Explore distance profile D[idx] till `max_matches` are found.
+        for _ in range(l):
             if len(distances) >= max_matches:
                 break
 
-            nn = I[idx, j]
-            if not excluded_as_trivial[nn]:
-                distances.append(P[idx, j])
-                indices.append(nn)
-                naive.apply_exclusion_zone(P[:, 0], nn, excl_zone, np.inf)
-                naive.apply_exclusion_zone(excluded_as_trivial, nn, excl_zone, True)
+            nn = np.argmin(D[idx])
+            distances.append(D[idx, nn])
+            indices.append(nn)
+
+            # Update D[idx] to avoid finding matches that are trivial to
+            # each other.
+            naive.apply_exclusion_zone(D[idx], nn, excl_zone, np.inf)
+
+            # Update P after the discovery of each match so that the
+            # match cannot be selected as the motif next time.
+            naive.apply_exclusion_zone(P, nn, excl_zone, np.inf)
+
+            # Note: that a discovered match cannot be selected as motif
+            # but it can still be selected again as a match for another
+            # motif.
 
         ref_distances[i] = distances
         ref_indices[i] = indices
-        naive.apply_exclusion_zone(P[:, 0], idx, excl_zone, np.inf)
 
     # performant
     mp = naive.stump(T, m, row_wise=True)
