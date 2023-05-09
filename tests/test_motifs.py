@@ -370,7 +370,7 @@ def test_match_mean_stddev_isconstant(Q, T):
     npt.assert_almost_equal(left, right)
 
 
-def test_motif_random_input():
+def test_motifs():
     T = np.random.rand(64)
     m = 3
     excl_zone = int(np.ceil(m / 4))
