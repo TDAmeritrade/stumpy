@@ -6,6 +6,68 @@ import pytest
 from stumpy import core, match, motifs
 
 
+def naive_motifs(T, m, max_motifs, max_matches):
+    # To avoid complexity, this naive function is written
+    # such that each array in the ouput has shape
+    # (max_motif, max_matches).
+
+    # To this end, the following items are considered:
+    # 1. `max_distance` and `cutoff` are both hardcoded and
+    # set to np.inf
+    # 2. If the number of subsequence, i.e. `len(T)-m+1`, is
+    # not less than `m * max_motifs * max_matches`, then the
+    # output definitely has the shape (max_motif, max_matches).
+
+    l = len(T) - m + 1
+    excl_zone = int(np.ceil(m / 4))
+
+    output_shape = (max_motifs, max_matches)
+    motif_distances = np.full(output_shape, np.NINF, dtype=np.float64)
+    motif_indices = np.full(output_shape, -1, dtype=np.int64)
+
+    D = naive.distance_matrix(T, T, m)
+    for i in range(D.shape[0]):
+        naive.apply_exclusion_zone(D[i], i, excl_zone, np.inf)
+
+    P = np.min(D, axis=1)
+    for i in range(max_motifs):
+        distances = []
+        indices = []
+
+        idx = np.argmin(P)
+
+        # self match
+        distances.append(0)
+        indices.append(idx)
+        naive.apply_exclusion_zone(P, idx, excl_zone, np.inf)
+
+        # Explore distance profile D[idx] till `max_matches` are found.
+        naive.apply_exclusion_zone(D[idx], idx, excl_zone, np.inf)
+        for _ in range(l):
+            if len(distances) >= max_matches:
+                break
+
+            nn = np.argmin(D[idx])
+            distances.append(D[idx, nn])
+            indices.append(nn)
+
+            # Update D[idx] to avoid finding matches that are trivial to
+            # each other.
+            naive.apply_exclusion_zone(D[idx], nn, excl_zone, np.inf)
+
+            # Update P after the discovery of each match so that the
+            # match cannot be selected as the motif next time.
+            naive.apply_exclusion_zone(P, nn, excl_zone, np.inf)
+
+            # Note that a discovered match cannot be selected as motif but
+            # it can still be selected again as a match for another motif.
+
+        motif_distances[i] = distances
+        motif_indices[i] = indices
+
+    return motif_distances, motif_indices
+
+
 def naive_match(Q, T, excl_zone, max_distance, max_matches=None):
     m = Q.shape[0]
     D = naive.distance_profile(Q, T, m)
@@ -373,60 +435,15 @@ def test_match_mean_stddev_isconstant(Q, T):
 def test_motifs():
     T = np.random.rand(64)
     m = 3
-    excl_zone = int(np.ceil(m / 4))
-    l = len(T) - m + 1
 
     max_motifs = 3
     max_matches = 4
     max_distance = np.inf
     cutoff = np.inf
 
-    # naive approach
-    output_shape = (max_motifs, max_matches)
-    ref_distances = np.full(output_shape, np.NINF, dtype=np.float64)
-    ref_indices = np.full(output_shape, -1, dtype=np.int64)
-
-    D = naive.distance_matrix(T, T, m)
-    for i in range(D.shape[0]):
-        naive.apply_exclusion_zone(D[i], i, excl_zone, np.inf)
-
-    P = np.min(D, axis=1)
-
-    for i in range(max_motifs):
-        distances = []
-        indices = []
-
-        idx = np.argmin(P)
-
-        # self match
-        distances.append(0)
-        indices.append(idx)
-        naive.apply_exclusion_zone(P, idx, excl_zone, np.inf)
-
-        # Explore distance profile D[idx] till `max_matches` are found.
-        naive.apply_exclusion_zone(D[idx], idx, excl_zone, np.inf)
-        for _ in range(l):
-            if len(distances) >= max_matches:
-                break
-
-            nn = np.argmin(D[idx])
-            distances.append(D[idx, nn])
-            indices.append(nn)
-
-            # Update D[idx] to avoid finding matches that are trivial to
-            # each other.
-            naive.apply_exclusion_zone(D[idx], nn, excl_zone, np.inf)
-
-            # Update P after the discovery of each match so that the
-            # match cannot be selected as the motif next time.
-            naive.apply_exclusion_zone(P, nn, excl_zone, np.inf)
-
-            # Note: that a discovered match cannot be selected as motif
-            # but it can still be selected again as a match for another
-            # motif.
-
-        ref_distances[i] = distances
-        ref_indices[i] = indices
+    # naive
+    # `max_distance` and `cutoff` are hard-coded, and set to np.inf.
+    ref_distances, ref_indices = naive_motifs(T, m, max_motifs, max_matches)
 
     # performant
     mp = naive.stump(T, m, row_wise=True)
