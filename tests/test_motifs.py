@@ -387,7 +387,9 @@ def test_motifs():
     ref_indices = np.full(output_shape, -1, dtype=np.int64)
 
     D = naive.distance_matrix(T, T, m)
-    np.fill_diagonal(D, val=np.inf)
+    for i in range(D.shape[0]):
+        naive.apply_exclusion_zone(D[i], i, excl_zone, np.inf)
+
     P = np.min(D, axis=1)
 
     for i in range(max_motifs):
