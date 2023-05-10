@@ -654,5 +654,5 @@ def test_motifs_with_isconstant():
         T_subseq_isconstant=isconstant_custom_func,
     )
 
-    npt.assert_almost_equal(ref_indices, comp_indices)
     npt.assert_almost_equal(ref_distances, comp_distance)
+    npt.assert_almost_equal(ref_indices, comp_indices)
