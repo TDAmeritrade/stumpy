@@ -8,7 +8,7 @@ import pytest
 from stumpy import core, match, motifs
 
 
-def naive_motifs(T, m, max_motifs, max_matches):
+def naive_motifs(T, m, max_motifs, max_matches, T_subseq_isconstant=None):
     # To avoid complexity, this naive function is written
     # such that each array in the ouput has shape
     # (max_motif, max_matches).
@@ -22,12 +22,24 @@ def naive_motifs(T, m, max_motifs, max_matches):
 
     l = len(T) - m + 1
     excl_zone = int(np.ceil(m / 4))
+    T_subseq_isconstant = naive.rolling_isconstant(T, m, T_subseq_isconstant)
 
     output_shape = (max_motifs, max_matches)
     motif_distances = np.full(output_shape, np.NINF, dtype=np.float64)
     motif_indices = np.full(output_shape, -1, dtype=np.int64)
 
     D = naive.distance_matrix(T, T, m)
+    D[np.isnan(D)] = np.inf
+    for i in range(D.shape[0]):
+        for j in range(D.shape[1]):
+            if np.isfinite(D[i, j]):
+                if T_subseq_isconstant[i] and T_subseq_isconstant[j]:
+                    D[i, j] = 0.0
+                elif T_subseq_isconstant[i] or T_subseq_isconstant[j]:
+                    D[i, j] = np.sqrt(m)
+                else:  # pragma: no cover
+                    pass
+
     for i in range(D.shape[0]):
         naive.apply_exclusion_zone(D[i], i, excl_zone, np.inf)
 
@@ -608,4 +620,3 @@ def test_motifs():
 
     npt.assert_almost_equal(ref_indices, comp_indices)
     npt.assert_almost_equal(ref_distances, comp_distance)
-
