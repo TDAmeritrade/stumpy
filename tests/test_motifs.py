@@ -620,3 +620,39 @@ def test_motifs():
 
     npt.assert_almost_equal(ref_indices, comp_indices)
     npt.assert_almost_equal(ref_distances, comp_distance)
+
+
+def test_motifs_with_isconstant():
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    T = np.random.rand(64)
+    m = 3
+
+    max_motifs = 3
+    max_matches = 4
+    max_distance = np.inf
+    cutoff = np.inf
+
+    # naive
+    # `max_distance` and `cutoff` are hard-coded, and set to np.inf.
+    ref_distances, ref_indices = naive_motifs(
+        T, m, max_motifs, max_matches, T_subseq_isconstant=isconstant_custom_func
+    )
+
+    # performant
+    mp = naive.stump(T, m, row_wise=True, T_A_subseq_isconstant=isconstant_custom_func)
+    comp_distance, comp_indices = motifs(
+        T,
+        mp[:, 0].astype(np.float64),
+        min_neighbors=1,
+        max_distance=max_distance,
+        cutoff=cutoff,
+        max_matches=max_matches,
+        max_motifs=max_motifs,
+        T_subseq_isconstant=isconstant_custom_func,
+    )
+
+    npt.assert_almost_equal(ref_indices, comp_indices)
+    npt.assert_almost_equal(ref_distances, comp_distance)
