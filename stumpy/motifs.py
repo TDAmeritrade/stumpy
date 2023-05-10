@@ -126,6 +126,7 @@ def _motifs(
             atol=atol,
             query_idx=candidate_idx,
             T_subseq_isconstant=T_subseq_isconstant,
+            Q_subseq_isconstant=T_subseq_isconstant[:, [candidate_idx]],
         )
 
         if len(query_matches) > min_neighbors:
@@ -162,6 +163,7 @@ def motifs(
     atol=1e-8,
     normalize=True,
     p=2.0,
+    T_subseq_isconstant=None,
 ):
     """
     Discover the top motifs for time series `T`
@@ -240,6 +242,18 @@ def motifs(
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
 
+    T_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array. Note that it is
+        the responsibility of user to ensure that the provided matrix profile `P`
+        is computed while considering `T_subseq_isconstant`.
+
     Return
     ------
     motif_distances : numpy.ndarray
@@ -314,7 +328,10 @@ def motifs(
         msg += f"(e.g., cutoff={suggested_cutoff})."
         warnings.warn(msg)
 
-    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T[np.newaxis, :], m)
+    T_subseq_isconstant = core.rolling_isconstant(T, m, T_subseq_isconstant)
+    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
+        T[np.newaxis, :], m, T_subseq_isconstant=T_subseq_isconstant[np.newaxis, :]
+    )
     P = P[np.newaxis, :].astype(np.float64)
 
     motif_distances, motif_indices = _motifs(
