@@ -6,6 +6,68 @@ import pytest
 from stumpy import core, match, motifs
 
 
+def naive_motifs(T, m, max_motifs, max_matches):
+    # To avoid complexity, this naive function is written
+    # such that each array in the ouput has shape
+    # (max_motif, max_matches).
+
+    # To this end, the following items are considered:
+    # 1. `max_distance` and `cutoff` are both hardcoded and
+    # set to np.inf
+    # 2. If the number of subsequence, i.e. `len(T)-m+1`, is
+    # not less than `m * max_motifs * max_matches`, then the
+    # output definitely has the shape (max_motif, max_matches).
+
+    l = len(T) - m + 1
+    excl_zone = int(np.ceil(m / 4))
+
+    output_shape = (max_motifs, max_matches)
+    motif_distances = np.full(output_shape, np.NINF, dtype=np.float64)
+    motif_indices = np.full(output_shape, -1, dtype=np.int64)
+
+    D = naive.distance_matrix(T, T, m)
+    for i in range(D.shape[0]):
+        naive.apply_exclusion_zone(D[i], i, excl_zone, np.inf)
+
+    P = np.min(D, axis=1)
+    for i in range(max_motifs):
+        distances = []
+        indices = []
+
+        idx = np.argmin(P)
+
+        # self match
+        distances.append(0)
+        indices.append(idx)
+        naive.apply_exclusion_zone(P, idx, excl_zone, np.inf)
+
+        # Explore distance profile D[idx] till `max_matches` are found.
+        naive.apply_exclusion_zone(D[idx], idx, excl_zone, np.inf)
+        for _ in range(l):
+            if len(distances) >= max_matches:
+                break
+
+            nn = np.argmin(D[idx])
+            distances.append(D[idx, nn])
+            indices.append(nn)
+
+            # Update D[idx] to avoid finding matches that are trivial to
+            # each other.
+            naive.apply_exclusion_zone(D[idx], nn, excl_zone, np.inf)
+
+            # Update P after the discovery of each match so that the
+            # match cannot be selected as the motif next time.
+            naive.apply_exclusion_zone(P, nn, excl_zone, np.inf)
+
+            # Note that a discovered match cannot be selected as motif but
+            # it can still be selected again as a match for another motif.
+
+        motif_distances[i] = distances
+        motif_indices[i] = indices
+
+    return motif_distances, motif_indices
+
+
 def naive_match(Q, T, excl_zone, max_distance, max_matches=None):
     m = Q.shape[0]
     D = naive.distance_profile(Q, T, m)
@@ -45,7 +107,7 @@ def test_motifs_one_motif():
     )
 
     npt.assert_array_equal(left_indices, right_indices)
-    npt.assert_almost_equal(left_profile_values, right_distance_values, decimal=4)
+    npt.assert_almost_equal(left_profile_values, right_distance_values)
 
 
 def test_motifs_two_motifs():
@@ -102,7 +164,7 @@ def test_motifs_two_motifs():
 
     # We ignore indices because of sorting ambiguities for equal distances.
     # As long as the distances are correct, the indices will be too.
-    npt.assert_almost_equal(left_profile_values, right_distance_values, decimal=6)
+    npt.assert_almost_equal(left_profile_values, right_distance_values)
 
     # Reset seed
     np.random.seed(None)
@@ -112,8 +174,9 @@ def test_motifs_max_matches():
     # This test covers the following:
 
     # A time series contains motif A at four locations and motif B at two.
-    # If `max_motifs=2` the result should contain only the top two matches of motif A
-    # and the top two matches of motif B as two separate motifs.
+    # If `max_moitf=2` and `max_matches=3`, the result should contain
+    # (at most) two sets of motifs and each motif set should contain
+    # (at most) the top three matches
     T = np.array(
         [
             0.0,  # motif A
@@ -137,11 +200,12 @@ def test_motifs_max_matches():
             2.3,
             2.0,  # motif A
             3.0,
-            2.02,
+            3.0,
         ]
     )
     m = 3
-    max_motifs = 3
+    max_motifs = 2
+    max_matches = 3
 
     left_indices = [[0, 7], [4, 11]]
     left_profile_values = [
@@ -160,14 +224,79 @@ def test_motifs_max_matches():
         T,
         mp[:, 0],
         max_motifs=max_motifs,
-        max_distance=0.1,
+        max_matches=max_matches,
+        max_distance=0.05,
         cutoff=np.inf,
-        max_matches=2,
     )
 
     # We ignore indices because of sorting ambiguities for equal distances.
     # As long as the distances are correct, the indices will be too.
-    npt.assert_almost_equal(left_profile_values, right_distance_values, decimal=4)
+    npt.assert_almost_equal(left_profile_values, right_distance_values)
+
+
+def test_motifs_max_matches_max_distances_inf():
+    # This test covers the following:
+
+    # A time series contains motif A at two locations and motif B at two.
+    # If `max_moitf=2` and `max_matches=2`, the result should contain
+    # (at most) two sets of motifs and each motif set should contain
+    # (at most) two matches.
+    T = np.array(
+        [
+            0.0,  # motif A
+            1.0,
+            0.0,
+            2.3,
+            -1.0,  # motif B
+            -1.0,
+            -2.0,
+            0.0,  # motif A
+            1.0,
+            0.0,
+            -2.0,
+            -1.0,  # motif B
+            -1.03,
+            -2.0,
+            -0.5,
+            2.0,
+            3.0,
+            2.04,
+            2.3,
+            2.0,
+            3.0,
+            3.0,
+        ]
+    )
+    m = 3
+    max_motifs = 2
+    max_matches = 2
+    max_distance = np.inf
+
+    left_indices = [[0, 7], [4, 11]]
+    left_profile_values = [
+        [0.0, 0.0],
+        [
+            0.0,
+            naive.distance(
+                core.z_norm(T[left_indices[1][0] : left_indices[1][0] + m]),
+                core.z_norm(T[left_indices[1][1] : left_indices[1][1] + m]),
+            ),
+        ],
+    ]
+
+    # set `row_wise` to True so that we can compare the indices of motifs as well
+    mp = naive.stump(T, m, row_wise=True)
+    right_distance_values, right_indices = motifs(
+        T,
+        mp[:, 0],
+        max_motifs=max_motifs,
+        max_distance=max_distance,
+        cutoff=np.inf,
+        max_matches=max_matches,
+    )
+
+    npt.assert_almost_equal(left_indices, right_indices)
+    npt.assert_almost_equal(left_profile_values, right_distance_values)
 
 
 def test_naive_match_exclusion_zone():
@@ -301,3 +430,32 @@ def test_match_mean_stddev_isconstant(Q, T):
     )
 
     npt.assert_almost_equal(left, right)
+
+
+def test_motifs():
+    T = np.random.rand(64)
+    m = 3
+
+    max_motifs = 3
+    max_matches = 4
+    max_distance = np.inf
+    cutoff = np.inf
+
+    # naive
+    # `max_distance` and `cutoff` are hard-coded, and set to np.inf.
+    ref_distances, ref_indices = naive_motifs(T, m, max_motifs, max_matches)
+
+    # performant
+    mp = naive.stump(T, m, row_wise=True)
+    comp_distance, comp_indices = motifs(
+        T,
+        mp[:, 0].astype(np.float64),
+        min_neighbors=1,
+        max_distance=max_distance,
+        cutoff=cutoff,
+        max_matches=max_matches,
+        max_motifs=max_motifs,
+    )
+
+    npt.assert_almost_equal(ref_indices, comp_indices)
+    npt.assert_almost_equal(ref_distances, comp_distance)

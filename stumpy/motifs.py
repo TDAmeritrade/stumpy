@@ -121,7 +121,7 @@ def _motifs(
             T,
             M_T=M_T,
             Σ_T=Σ_T,
-            max_matches=None,
+            max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,
             query_idx=candidate_idx,
@@ -492,7 +492,12 @@ def match(
     D = np.empty((d, n - m + 1))
     for i in range(d):
         D[i, :] = core.mass(
-            Q[i], T[i], M_T[i], Σ_T[i], T_subseq_isconstant=T_subseq_isconstant[i]
+            Q[i],
+            T[i],
+            M_T[i],
+            Σ_T[i],
+            T_subseq_isconstant=T_subseq_isconstant[i],
+            query_idx=query_idx,
         )
     D = np.mean(D, axis=0)
 
