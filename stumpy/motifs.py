@@ -521,7 +521,6 @@ def match(
             T_subseq_isconstant=T_subseq_isconstant[i],
             Q_subseq_isconstant=Q_subseq_isconstant[i],
             query_idx=query_idx,
-
         )
     D = np.mean(D, axis=0)
 
