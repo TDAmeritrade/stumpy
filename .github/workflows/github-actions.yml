@@ -52,7 +52,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
       - uses: actions/checkout@v3
       - name: Set Up Python
@@ -74,7 +74,14 @@ jobs:
       - name: Link OpenMP
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
+                  echo "Linking OpenMP into /usr/local/lib"
                   brew link --force libomp
+                  echo "Checking /usr/local/lib for OpenMP"
+                  ls /usr/local/lib | grep libomp.dylib
+                  echo "Changing  @rpath for the omppool.cpython-x-darwin.so shared object to look in /usr/local/lib"
+                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib /usr/local/lib/libomp.dylib 
+                  echo "Checking Numba OpenMP Access"
+                  python -c "from numba.np.ufunc import omppool" 
              fi
         shell: bash
       - name: Show Full Numba Environment
@@ -88,7 +95,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
       - uses: actions/checkout@v3
       - name: Set Up Python
