@@ -257,9 +257,7 @@ def motifs(
         and `w`, the window size, while additional arguments may be specified
         by currying the user-defined function using `functools.partial`. Any
         subsequence with at least one np.nan/np.inf will automatically have its
-        corresponding value set to False in this boolean array. Note that it is
-        the responsibility of user to ensure that the provided matrix profile `P`
-        is computed while considering `T_subseq_isconstant`.
+        corresponding value set to False in this boolean array.
 
     Return
     ------
