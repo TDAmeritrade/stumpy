@@ -115,6 +115,7 @@ def _motifs(
             break
 
         Q = T[:, candidate_idx : candidate_idx + m]
+        Q_subseq_isconstant = np.atleast_2d(T_subseq_isconstant[:, candidate_idx])
 
         query_matches = match(
             Q,
@@ -126,7 +127,7 @@ def _motifs(
             atol=atol,
             query_idx=candidate_idx,
             T_subseq_isconstant=T_subseq_isconstant,
-            Q_subseq_isconstant=T_subseq_isconstant[:, [candidate_idx]],
+            Q_subseq_isconstant=Q_subseq_isconstant,
         )
 
         if len(query_matches) > min_neighbors:
