@@ -2455,6 +2455,13 @@ def rolling_isconstant(a, w, a_subseq_isconstant=None):
 
     elif isinstance(a_subseq_isconstant, np.ndarray):
         isconstant_func = None
+        if a.ndim != a_subseq_isconstant.ndim:  # pragma: no cover
+            msg = (
+                "The arrays `a` and `a_subseq_isconstant` must have same "
+                + "number of dimensions, {a.ndim} != {a_subseq_isconstant.ndim}"
+            )
+            raise ValueError(msg)
+
     else:  # pragma: no cover
         msg = (
             "`T_subseq_isconstant` must be of type `np.ndarray` or a callable "

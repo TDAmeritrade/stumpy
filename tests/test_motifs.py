@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -6,7 +8,7 @@ import pytest
 from stumpy import core, match, motifs
 
 
-def naive_motifs(T, m, max_motifs, max_matches):
+def naive_motifs(T, m, max_motifs, max_matches, T_subseq_isconstant=None):
     # To avoid complexity, this naive function is written
     # such that each array in the ouput has shape
     # (max_motif, max_matches).
@@ -20,12 +22,24 @@ def naive_motifs(T, m, max_motifs, max_matches):
 
     l = len(T) - m + 1
     excl_zone = int(np.ceil(m / 4))
+    T_subseq_isconstant = naive.rolling_isconstant(T, m, T_subseq_isconstant)
 
     output_shape = (max_motifs, max_matches)
     motif_distances = np.full(output_shape, np.NINF, dtype=np.float64)
     motif_indices = np.full(output_shape, -1, dtype=np.int64)
 
     D = naive.distance_matrix(T, T, m)
+    D[np.isnan(D)] = np.inf
+    for i in range(D.shape[0]):
+        for j in range(D.shape[1]):
+            if np.isfinite(D[i, j]):
+                if T_subseq_isconstant[i] and T_subseq_isconstant[j]:
+                    D[i, j] = 0.0
+                elif T_subseq_isconstant[i] or T_subseq_isconstant[j]:
+                    D[i, j] = np.sqrt(m)
+                else:  # pragma: no cover
+                    pass
+
     for i in range(D.shape[0]):
         naive.apply_exclusion_zone(D[i], i, excl_zone, np.inf)
 
@@ -68,9 +82,65 @@ def naive_motifs(T, m, max_motifs, max_matches):
     return motif_distances, motif_indices
 
 
-def naive_match(Q, T, excl_zone, max_distance, max_matches=None):
+def naive_multi_match(
+    Q,
+    T,
+    excl_zone,
+    max_distance,
+    max_matches=None,
+    T_subseq_isconstant=None,
+    Q_subseq_isconstant=None,
+):
+    m = Q.shape[-1]
+    T_subseq_isconstant = naive.rolling_isconstant(T, m, T_subseq_isconstant)
+    Q_subseq_isconstant = naive.rolling_isconstant(Q, m, Q_subseq_isconstant)
+
+    d, n = T.shape
+    D_total = np.zeros(n - m + 1, np.float64)
+    for i in range(d):
+        D = naive.distance_profile(Q[i], T[i], m)
+        D[np.isnan(D)] = np.inf
+        for j in range(len(D)):
+            if np.isfinite(D[j]):
+                if T_subseq_isconstant[i, j] and Q_subseq_isconstant[i]:
+                    D[j] = 0
+                elif T_subseq_isconstant[i, j] or Q_subseq_isconstant[i]:
+                    D[j] = np.sqrt(m)
+                else:  # pragma: no cover
+                    pass
+        D_total[:] = D_total + D
+
+    D_mean = D_total / d
+
+    return naive.find_matches(D_mean, excl_zone, max_distance, max_matches)
+
+
+def naive_match(
+    Q,
+    T,
+    excl_zone,
+    max_distance,
+    max_matches=None,
+    T_subseq_isconstant=None,
+    Q_subseq_isconstant=None,
+):
+    # Q_subseq_isconstant is a boolean array of size 1
+    # this does not support multi-dim T, and Q
+
     m = Q.shape[0]
+    T_subseq_isconstant = naive.rolling_isconstant(T, m, T_subseq_isconstant)
+    Q_subseq_isconstant = naive.rolling_isconstant(Q, m, Q_subseq_isconstant)[0]
+
     D = naive.distance_profile(Q, T, m)
+    D[np.isnan(D)] = np.inf
+    for i in range(len(D)):
+        if np.isfinite(D[i]):
+            if T_subseq_isconstant[i] and Q_subseq_isconstant:
+                D[i] = 0
+            elif T_subseq_isconstant[i] or Q_subseq_isconstant:
+                D[i] = np.sqrt(m)
+            else:  # pragma: no cover
+                pass
 
     return naive.find_matches(D, excl_zone, max_distance, max_matches)
 
@@ -383,14 +453,17 @@ def test_match_isconstant(Q, T):
     excl_zone = int(np.ceil(m / 4))
     max_distance = 0.3
 
+    T_subseq_isconstant = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
     left = naive_match(
         Q,
         T,
         excl_zone,
         max_distance=max_distance,
+        T_subseq_isconstant=T_subseq_isconstant,
     )
-
-    T_subseq_isconstant = naive.rolling_isconstant(T, m)
 
     right = match(
         Q,
@@ -398,6 +471,29 @@ def test_match_isconstant(Q, T):
         max_matches=None,
         max_distance=lambda D: max_distance,  # also test lambda functionality
         T_subseq_isconstant=T_subseq_isconstant,
+    )
+
+    npt.assert_almost_equal(left, right)
+
+    # Test for when Q is constant
+    Q_subseq_isconstant = np.array([True])
+
+    left = naive_match(
+        Q,
+        T,
+        excl_zone,
+        max_distance=max_distance,
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
+    )
+
+    right = match(
+        Q,
+        T,
+        max_matches=None,
+        max_distance=lambda D: max_distance,  # also test lambda functionality
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
     )
 
     npt.assert_almost_equal(left, right)
@@ -432,6 +528,71 @@ def test_match_mean_stddev_isconstant(Q, T):
     npt.assert_almost_equal(left, right)
 
 
+def test_multi_match():
+    T = np.random.uniform(-1000, 1000, size=(2, 64))
+    Q = np.random.uniform(-1000, 1000, size=(2, 64))
+
+    m = Q.shape[-1]
+    excl_zone = int(np.ceil(m / 4))
+    max_distance = 0.3
+
+    left = naive_multi_match(
+        Q,
+        T,
+        excl_zone,
+        max_distance=max_distance,
+    )
+
+    right = match(
+        Q,
+        T,
+        max_matches=None,
+        max_distance=lambda D: max_distance,  # also test lambda functionality
+    )
+
+    npt.assert_almost_equal(left, right)
+
+
+def test_multi_match_isconstant():
+    T = np.random.rand(2, 64)
+    Q = np.random.rand(2, 8)
+
+    m = Q.shape[-1]
+    excl_zone = int(np.ceil(m / 4))
+    max_distance = 0.3
+
+    T_subseq_isconstant = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    Q_subseq_isconstant = np.array(
+        [
+            [True],
+            [False],
+        ]
+    )
+
+    left = naive_multi_match(
+        Q,
+        T,
+        excl_zone,
+        max_distance=max_distance,
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
+    )
+
+    right = match(
+        Q,
+        T,
+        max_matches=None,
+        max_distance=lambda D: max_distance,  # also test lambda functionality
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
+    )
+
+    npt.assert_almost_equal(left, right)
+
+
 def test_motifs():
     T = np.random.rand(64)
     m = 3
@@ -459,3 +620,39 @@ def test_motifs():
 
     npt.assert_almost_equal(ref_indices, comp_indices)
     npt.assert_almost_equal(ref_distances, comp_distance)
+
+
+def test_motifs_with_isconstant():
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    T = np.random.rand(64)
+    m = 3
+
+    max_motifs = 3
+    max_matches = 4
+    max_distance = np.inf
+    cutoff = np.inf
+
+    # naive
+    # `max_distance` and `cutoff` are hard-coded, and set to np.inf.
+    ref_distances, ref_indices = naive_motifs(
+        T, m, max_motifs, max_matches, T_subseq_isconstant=isconstant_custom_func
+    )
+
+    # performant
+    mp = naive.stump(T, m, row_wise=True, T_A_subseq_isconstant=isconstant_custom_func)
+    comp_distance, comp_indices = motifs(
+        T,
+        mp[:, 0].astype(np.float64),
+        min_neighbors=1,
+        max_distance=max_distance,
+        cutoff=cutoff,
+        max_matches=max_matches,
+        max_motifs=max_motifs,
+        T_subseq_isconstant=isconstant_custom_func,
+    )
+
+    npt.assert_almost_equal(ref_distances, comp_distance)
+    npt.assert_almost_equal(ref_indices, comp_indices)
