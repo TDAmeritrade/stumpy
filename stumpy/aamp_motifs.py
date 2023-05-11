@@ -280,8 +280,8 @@ def aamp_motifs(
         msg += f"(e.g., cutoff={suggested_cutoff})."
         warnings.warn(msg)
 
-    T, T_subseq_isfinite = core.preprocess_non_normalized(T[np.newaxis, :], m)
-    P = P[np.newaxis, :].astype(np.float64)
+    T, T_subseq_isfinite = core.preprocess_non_normalized(np.expand_dims(T, 0), m)
+    P = np.expand_dims(P, 0).astype(np.float64)
 
     motif_distances, motif_indices = _aamp_motifs(
         T,
@@ -375,9 +375,9 @@ def aamp_match(
         raise ValueError("Q contains illegal values (NaN or inf)")
 
     if len(Q.shape) == 1:
-        Q = Q[np.newaxis, :]
+        Q = np.expand_dims(Q, 0)
     if len(T.shape) == 1:
-        T = T[np.newaxis, :]
+        T = np.expand_dims(T, 0)
 
     d, n = T.shape
     m = Q.shape[1]
@@ -386,7 +386,7 @@ def aamp_match(
     if T_subseq_isfinite is None:
         T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
     if len(T_subseq_isfinite.shape) == 1:
-        T_subseq_isfinite = T_subseq_isfinite[np.newaxis, :]
+        T_subseq_isfinite = np.expand_dims(T_subseq_isfinite, 0)
 
     D = np.empty((d, n - m + 1))
     for i in range(d):

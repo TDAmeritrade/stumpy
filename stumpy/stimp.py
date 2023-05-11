@@ -36,7 +36,7 @@ def _normalize_pan(pan, ms, bfs_indices, n_processed):
     """
     idx = bfs_indices[:n_processed]
     norm = 1.0 / (2.0 * np.sqrt(ms[:n_processed]))
-    pan[idx] = np.minimum(1.0, pan[idx] * norm[:, np.newaxis])
+    pan[idx] = np.minimum(1.0, pan[idx] * np.expand_dims(norm, 1))
 
 
 class _stimp:

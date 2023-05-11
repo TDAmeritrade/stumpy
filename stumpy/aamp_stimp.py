@@ -45,7 +45,7 @@ def _normalize_pan(pan, ms, bfs_indices, n_processed, T_min, T_max, p=2.0):
     """
     idx = bfs_indices[:n_processed]
     norm = 1.0 / (np.abs(T_max - T_min) * np.power(ms[:n_processed], 1.0 / p))
-    pan[idx] = np.minimum(1.0, pan[idx] * norm[:, np.newaxis])
+    pan[idx] = np.minimum(1.0, pan[idx] * np.expand_dims(norm, 1))
 
 
 class _aamp_stimp:

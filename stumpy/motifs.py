@@ -335,9 +335,11 @@ def motifs(
 
     T_subseq_isconstant = core.rolling_isconstant(T, m, T_subseq_isconstant)
     T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
-        T[np.newaxis, :], m, T_subseq_isconstant=T_subseq_isconstant[np.newaxis, :]
+        np.expand_dims(T, 0),
+        m,
+        T_subseq_isconstant=np.expand_dims(T_subseq_isconstant, 0),
     )
-    P = P[np.newaxis, :].astype(np.float64)
+    P = np.expand_dims(P, 0).astype(np.float64)
 
     motif_distances, motif_indices = _motifs(
         T,
@@ -514,14 +516,14 @@ def match(
     T_subseq_isconstant = core.rolling_isconstant(T, m, T_subseq_isconstant)
 
     if Q.ndim == 1:
-        Q = Q[np.newaxis, :]
+        Q = np.expand_dims(Q, 0)
     if Q_subseq_isconstant.ndim == 1:
-        Q_subseq_isconstant = Q_subseq_isconstant[np.newaxis, :]
+        Q_subseq_isconstant = np.expand_dims(Q_subseq_isconstant, 0)
 
     if T.ndim == 1:
-        T = T[np.newaxis, :]
+        T = np.expand_dims(T, 0)
     if T_subseq_isconstant.ndim == 1:
-        T_subseq_isconstant = T_subseq_isconstant[np.newaxis, :]
+        T_subseq_isconstant = np.expand_dims(T_subseq_isconstant, 0)
 
     T[np.isinf(T)] = np.nan
     if M_T is None or Σ_T is None:
@@ -529,9 +531,9 @@ def match(
     T[np.isnan(T)] = 0
 
     if len(M_T.shape) == 1:
-        M_T = M_T[np.newaxis, :]
+        M_T = np.expand_dims(M_T, 0)
     if len(Σ_T.shape) == 1:
-        Σ_T = Σ_T[np.newaxis, :]
+        Σ_T = np.expand_dims(Σ_T, 0)
 
     d, n = T.shape
     D = np.empty((d, n - m + 1))
