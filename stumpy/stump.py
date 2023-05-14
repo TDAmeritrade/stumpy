@@ -207,7 +207,7 @@ def _compute_diagonal(
                     pearson = 0.5
                 else:
                     pearson = cov * Σ_T_inverse[uint64_j] * σ_Q_inverse[uint64_i]
-                    min(1.0, pearson)
+                    pearson = min(1.0, pearson)
 
                 # `ρ[thread_idx, i, :]` is sorted in ascending order and MUST be updated
                 # when the newly-calculated `pearson` value becomes greater than the
