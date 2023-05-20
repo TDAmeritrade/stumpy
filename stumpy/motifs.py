@@ -260,7 +260,7 @@ def motifs(
         corresponding value set to False in this boolean array.
 
     Returns
-    ------
+    -------
     motif_distances : numpy.ndarray
         The distances corresponding to a set of subsequence matches for each motif.
         Note that the first column always corresponds to the distance for the
