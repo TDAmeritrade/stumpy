@@ -55,6 +55,12 @@ def _aampdist_vect(
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
+
+    Returns
+    -------
+    MPdist_vect : numpy.ndarray
+        The non-normalized (i.e., without z-normalization) matrix profile distance
+        measure vector
     """
     j = Q.shape[0] - m + 1  # `k` is reserved for `P_ABBA` selection
     l = T.shape[0] - m + 1

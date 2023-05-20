@@ -87,6 +87,17 @@ def _dask_mstumped(
     discords : bool
         When set to `True`, this reverses the distance profile to favor discords rather
         than motifs. Note that indices in `include` are still maintained and respected.
+
+    Returns
+    -------
+    P : numpy.ndarray
+        The multi-dimensional matrix profile. Each row of the array corresponds
+        to each matrix profile for a given dimension (i.e., the first row is
+        the 1-D matrix profile and the second row is the 2-D matrix profile).
+
+    I : numpy.ndarray
+        The multi-dimensional matrix profile index where each row of the array
+        corresponds to each matrix profile index for a given dimension.
     """
     d, n = T_B.shape
     k = n - m + 1

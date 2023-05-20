@@ -646,6 +646,10 @@ def _compute_multi_p_norm(
     p_norm_first : numpy.ndarray
         The p-norm between the first query sequence,`Q`, and time series, `T`
 
+    Returns
+    -------
+    None
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2017.66 \

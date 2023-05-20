@@ -155,6 +155,14 @@ def non_normalized(non_norm, exclude=None, replace=None):
 def driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Helper function to raise CudaSupportError driver not found error.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
     """
     _raise_driver_not_found()
 
@@ -162,6 +170,14 @@ def driver_not_found(*args, **kwargs):  # pragma: no cover
 def _gpu_stump_driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Dummy function to raise CudaSupportError driver not found error.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
     """
     driver_not_found()
 
@@ -169,6 +185,14 @@ def _gpu_stump_driver_not_found(*args, **kwargs):  # pragma: no cover
 def _gpu_aamp_driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Dummy function to raise CudaSupportError driver not found error.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
     """
     driver_not_found()
 
@@ -176,6 +200,14 @@ def _gpu_aamp_driver_not_found(*args, **kwargs):  # pragma: no cover
 def _gpu_ostinato_driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Dummy function to raise CudaSupportError driver not found error.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
     """
     driver_not_found()
 
@@ -183,6 +215,14 @@ def _gpu_ostinato_driver_not_found(*args, **kwargs):  # pragma: no cover
 def _gpu_aamp_ostinato_driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Dummy function to raise CudaSupportError driver not found error.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
     """
     driver_not_found()
 
@@ -190,6 +230,14 @@ def _gpu_aamp_ostinato_driver_not_found(*args, **kwargs):  # pragma: no cover
 def _gpu_mpdist_driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Dummy function to raise CudaSupportError driver not found error.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
     """
     driver_not_found()
 
@@ -197,6 +245,14 @@ def _gpu_mpdist_driver_not_found(*args, **kwargs):  # pragma: no cover
 def _gpu_aampdist_driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Dummy function to raise CudaSupportError driver not found error.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
     """
     driver_not_found()
 
@@ -204,6 +260,14 @@ def _gpu_aampdist_driver_not_found(*args, **kwargs):  # pragma: no cover
 def _gpu_stimp_driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Dummy function to raise CudaSupportError driver not found error.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
     """
     driver_not_found()
 
@@ -211,6 +275,14 @@ def _gpu_stimp_driver_not_found(*args, **kwargs):  # pragma: no cover
 def _gpu_aamp_stimp_driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Dummy function to raise CudaSupportError driver not found error.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
     """
     driver_not_found()
 
@@ -218,6 +290,14 @@ def _gpu_aamp_stimp_driver_not_found(*args, **kwargs):  # pragma: no cover
 def _gpu_searchsorted_left_driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Dummy function to raise CudaSupportError driver not found error.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
     """
     driver_not_found()
 
@@ -225,6 +305,14 @@ def _gpu_searchsorted_left_driver_not_found(*args, **kwargs):  # pragma: no cove
 def _gpu_searchsorted_right_driver_not_found(*args, **kwargs):  # pragma: no cover
     """
     Dummy function to raise CudaSupportError driver not found error.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
     """
     driver_not_found()
 
@@ -232,6 +320,14 @@ def _gpu_searchsorted_right_driver_not_found(*args, **kwargs):  # pragma: no cov
 def get_pkg_name():  # pragma: no cover
     """
     Return package name.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
     """
     return __name__.split(".")[0]
 
@@ -296,6 +392,10 @@ def check_nan(a):  # pragma: no cover
     a : numpy.ndarray
         NumPy array
 
+    Returns
+    -------
+    None
+
     Raises
     ------
     ValueError
@@ -319,6 +419,10 @@ def check_dtype(a, dtype=np.float64):  # pragma: no cover
 
     dtype : dtype, default np.float64
         NumPy `dtype`
+
+    Returns
+    -------
+    None
 
     Raises
     ------
@@ -378,7 +482,7 @@ def are_arrays_equal(a, b):  # pragma: no cover
     Returns
     -------
     output : bool
-        Returns `True` if the arrays are equal and `False` otherwise.
+        This is `True` if the arrays are equal and `False` otherwise.
     """
     if id(a) == id(b):
         return True
@@ -410,7 +514,7 @@ def are_distances_too_small(a, threshold=10e-6):  # pragma: no cover
     Returns
     -------
     output : bool
-        Returns `True` if the matrix profile distances are all below the
+        This is `True` if the matrix profile distances are all below the
         threshold and `False` if they are all above the threshold.
     """
     if a.mean() < threshold or np.all(a < threshold):
@@ -1838,6 +1942,10 @@ def _apply_exclusion_zone(a, idx, excl_zone, val):
 
     val : float or bool
         The elements within the exclusion zone will be set to this value
+
+    Returns
+    -------
+    None
     """
     zone_start = max(0, idx - excl_zone)
     zone_stop = min(a.shape[-1], idx + excl_zone)
@@ -1866,6 +1974,10 @@ def apply_exclusion_zone(a, idx, excl_zone, val):
 
     val : float or bool
         The elements within the exclusion zone will be set to this value
+
+    Returns
+    -------
+    None
     """
     check_dtype(a, dtype=type(val))
     _apply_exclusion_zone(a, idx, excl_zone, val)
@@ -2098,8 +2210,8 @@ def replace_distance(D, search_val, replace_val, epsilon=0.0):
     epsilon : float, default 0.0
         Threshold below `search_val` in which to still allow for a replacement
 
-    Return
-    ------
+    Returns
+    -------
     None
     """
     D[D == search_val - epsilon] = replace_val
@@ -2277,8 +2389,8 @@ def _rolling_isfinite_1d(a, w):
     w : int
         The length of the rolling window
 
-    Return
-    ------
+    Returns
+    -------
     output : numpy.ndarray
         A boolean array of length `a.shape[0] - w + 1` that records whether each
         rolling window subsequence contain all finite values
@@ -2534,8 +2646,8 @@ def _jagged_list_to_array(a, fill_value, dtype):
     dtype : dtype
         The desired data-type for the array.
 
-    Return
-    ------
+    Returns
+    -------
     out : numpy.ndarray
         The resulting array of dtype `dtype`.
     """
@@ -3668,6 +3780,10 @@ def _apply_include(
 
     tmp_swap : numpy.ndarray, default None
         A reusable array to aid in array element swapping
+
+    Returns
+    -------
+    None
     """
     include = _preprocess_include(include)
 
@@ -3813,6 +3929,10 @@ def _compute_multi_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
+
+    Returns
+    -------
+    None
     """
     D_prime[:] = 0.0
     for i in range(d):

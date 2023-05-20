@@ -683,6 +683,14 @@ class floss:
     def cac_1d_(self):
         """
         Get the updated 1-dimensional corrected arc curve (CAC_1D)
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
         """
         return self._cac.astype(np.float64)
 
@@ -690,6 +698,14 @@ class floss:
     def P_(self):
         """
         Get the updated matrix profile
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
         """
         return self._mp[:, 0].astype(np.float64)
 
@@ -701,6 +717,14 @@ class floss:
         The indices stored in `self.I_` reflect the starting index of
         subsequneces with respect to the full time series (i.e., including
         all egressed data points).
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
         """
         # Comparing the right matrix profile index value with the self index
         # position (i.e., self._mp[:, 3] == np.arange(len(self._mp)) is avoided
@@ -716,5 +740,13 @@ class floss:
     def T_(self):
         """
         Get the updated time series, `T`
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
         """
         return self._T.astype(np.float64)

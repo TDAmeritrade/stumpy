@@ -19,6 +19,10 @@ def get_njit_funcs():
     """
     Identify all njit functions
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     out : list
@@ -52,6 +56,10 @@ def _enable():
     """
     Enable numba caching
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -68,6 +76,10 @@ def _clear():
     """
     Clear numba cache
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     None
@@ -81,6 +93,10 @@ def _clear():
 def _get_cache():
     """
     Retrieve a list of cached numba functions
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------

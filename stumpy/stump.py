@@ -86,10 +86,6 @@ def _compute_diagonal(
     cov_d : numpy.ndarray
         The fourth covariance term relating T_B[i - 1] and μ_Q_m_1[i]
 
-    μ_Q_m_1 : numpy.ndarray
-        Mean of the query sequence, `Q`, relative to the current sliding window and
-        using a window size of `m-1`
-
     T_A_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
         `np.nan`/`np.inf` value (False)
