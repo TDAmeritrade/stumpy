@@ -115,17 +115,19 @@ def _motifs(
             break
 
         Q = T[:, candidate_idx : candidate_idx + m]
+        Q_subseq_isconstant = np.atleast_2d(T_subseq_isconstant[:, candidate_idx])
 
         query_matches = match(
             Q,
             T,
             M_T=M_T,
             Σ_T=Σ_T,
-            max_matches=None,
+            max_matches=max_matches,
             max_distance=max_distance,
             atol=atol,
             query_idx=candidate_idx,
             T_subseq_isconstant=T_subseq_isconstant,
+            Q_subseq_isconstant=Q_subseq_isconstant,
         )
 
         if len(query_matches) > min_neighbors:
@@ -150,7 +152,13 @@ def _motifs(
     return motif_distances, motif_indices
 
 
-@core.non_normalized(aamp_motifs)
+@core.non_normalized(
+    aamp_motifs,
+    exclude=[
+        "normalize",
+        "T_subseq_isconstant",
+    ],
+)
 def motifs(
     T,
     P,
@@ -162,6 +170,7 @@ def motifs(
     atol=1e-8,
     normalize=True,
     p=2.0,
+    T_subseq_isconstant=None,
 ):
     """
     Discover the top motifs for time series `T`
@@ -240,8 +249,18 @@ def motifs(
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
 
+    T_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence in `T` is constant
+        (True). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in `T` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array,
+        and `w`, the window size, while additional arguments may be specified
+        by currying the user-defined function using `functools.partial`. Any
+        subsequence with at least one np.nan/np.inf will automatically have its
+        corresponding value set to False in this boolean array.
+
     Returns
-    -------
+    ------
     motif_distances : numpy.ndarray
         The distances corresponding to a set of subsequence matches for each motif.
         Note that the first column always corresponds to the distance for the
@@ -314,8 +333,13 @@ def motifs(
         msg += f"(e.g., cutoff={suggested_cutoff})."
         warnings.warn(msg)
 
-    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T[np.newaxis, :], m)
-    P = P[np.newaxis, :].astype(np.float64)
+    T_subseq_isconstant = core.rolling_isconstant(T, m, T_subseq_isconstant)
+    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
+        np.expand_dims(T, 0),
+        m,
+        T_subseq_isconstant=np.expand_dims(T_subseq_isconstant, 0),
+    )
+    P = np.expand_dims(P, 0).astype(np.float64)
 
     motif_distances, motif_indices = _motifs(
         T,
@@ -349,6 +373,7 @@ def motifs(
         "Σ_T",
         "T_subseq_isfinite",
         "T_subseq_isconstant",
+        "Q_subseq_isconstant",
         "p",
     ],
     replace={"M_T": "T_subseq_isfinite", "Σ_T": None},
@@ -366,6 +391,7 @@ def match(
     p=2.0,
     T_subseq_isfinite=None,
     T_subseq_isconstant=None,
+    Q_subseq_isconstant=None,
 ):
     """
     Find all matches of a query `Q` in a time series `T`
@@ -429,8 +455,25 @@ def match(
         `np.nan`/`np.inf` value (False). This parameter is ignored when
         `normalize=True`.
 
-    T_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `T` is constant (True)
+    T_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array that indicates whether a subsequence (of length Q) in `T` is
+        constant (True). Alternatively, a custom, user-defined function that returns
+        a boolean array that indicates whether a subsequence in `T` is constant
+        (True). The function must only take two arguments, `a`, a 1-D array, and `w`,
+        the window size, while additional arguments may be specified by currying the
+        user-defined function using `functools.partial`. Any subsequence with at least
+        one np.nan/np.inf will automatically have its corresponding value set to False
+        in this boolean array.
+
+    Q_subseq_isconstant : numpy.ndarray or function, default None
+        A boolean array (of size 1) that indicates whether Q is constant (True).
+        Alternatively, a custom, user-defined function that returns a boolean
+        array that indicates whether a subsequence in `Q` is constant (True).
+        The function must only take two arguments, `a`, a 1-D array, and `w`,
+        the window size, while additional arguments may be specified by currying
+        the user-defined function using `functools.partial`. Any subsequence with
+        at least one np.nan/np.inf will automatically have its corresponding value
+        set to False in this boolean array.
 
     Returns
     -------
@@ -466,33 +509,43 @@ def match(
     if np.any(np.isnan(Q)) or np.any(np.isinf(Q)):  # pragma: no cover
         raise ValueError("Q contains illegal values (NaN or inf)")
 
-    if len(Q.shape) == 1:
-        Q = Q[np.newaxis, :]
-    if len(T.shape) == 1:
-        T = T[np.newaxis, :]
-
-    d, n = T.shape
-    m = Q.shape[1]
+    m = Q.shape[-1]
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
+    Q_subseq_isconstant = core.rolling_isconstant(Q, m, Q_subseq_isconstant)
+    T_subseq_isconstant = core.rolling_isconstant(T, m, T_subseq_isconstant)
+
+    if Q.ndim == 1:
+        Q = np.expand_dims(Q, 0)
+    if Q_subseq_isconstant.ndim == 1:
+        Q_subseq_isconstant = np.expand_dims(Q_subseq_isconstant, 0)
+
+    if T.ndim == 1:
+        T = np.expand_dims(T, 0)
+    if T_subseq_isconstant.ndim == 1:
+        T_subseq_isconstant = np.expand_dims(T_subseq_isconstant, 0)
+
     T[np.isinf(T)] = np.nan
-    if T_subseq_isconstant is None:
-        T_subseq_isconstant = core.rolling_isconstant(T, m)
     if M_T is None or Σ_T is None:
         M_T, Σ_T = core.compute_mean_std(T, m)
     T[np.isnan(T)] = 0
 
     if len(M_T.shape) == 1:
-        M_T = M_T[np.newaxis, :]
+        M_T = np.expand_dims(M_T, 0)
     if len(Σ_T.shape) == 1:
-        Σ_T = Σ_T[np.newaxis, :]
-    if len(T_subseq_isconstant.shape) == 1:
-        T_subseq_isconstant = T_subseq_isconstant[np.newaxis, :]
+        Σ_T = np.expand_dims(Σ_T, 0)
 
+    d, n = T.shape
     D = np.empty((d, n - m + 1))
     for i in range(d):
         D[i, :] = core.mass(
-            Q[i], T[i], M_T[i], Σ_T[i], T_subseq_isconstant=T_subseq_isconstant[i]
+            Q[i],
+            T[i],
+            M_T[i],
+            Σ_T[i],
+            T_subseq_isconstant=T_subseq_isconstant[i],
+            Q_subseq_isconstant=Q_subseq_isconstant[i],
+            query_idx=query_idx,
         )
     D = np.mean(D, axis=0)
 
