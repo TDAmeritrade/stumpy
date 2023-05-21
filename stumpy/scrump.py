@@ -442,12 +442,6 @@ def _prescrump(
         The sampling interval that defaults to
         `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
 
-    P_squared : numpy.ndarray
-        The squared matrix profile
-
-    I : numpy.ndarray
-        The matrix profile indices
-
     excl_zone : int
         The half width for the exclusion zone relative to the `i`.
 
@@ -1016,6 +1010,14 @@ class scrump:
         Update the (top-k) matrix profile and the (top-k) matrix profile indices by
         computing additional new distances (limited by `percentage`) that make up
         the full distance matrix.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
         """
         if self._chunk_idx < self._n_chunks:
             start_idx, stop_idx = self._chunk_diags_ranges[self._chunk_idx]
@@ -1061,6 +1063,14 @@ class scrump:
         is a 1D array consisting of the updated matrix profile. When `k > 1`, the
         output is a 2D array that has exactly `k` columns consisting of the updated
         top-k matrix profile.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
         """
         if self._k == 1:
             return self._P.flatten().astype(np.float64)
@@ -1074,6 +1084,14 @@ class scrump:
         output is a 1D array consisting of the updated matrix profile indices. When
         `k > 1`, the output is a 2D array that has exactly `k` columns consisting
         of the updated top-k matrix profile indices.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
         """
         if self._k == 1:
             return self._I.flatten().astype(np.int64)
@@ -1084,6 +1102,14 @@ class scrump:
     def left_I_(self):
         """
         Get the updated left (top-1) matrix profile indices
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
         """
         return self._IL.astype(np.int64)
 
@@ -1091,5 +1117,13 @@ class scrump:
     def right_I_(self):
         """
         Get the updated right (top-1) matrix profile indices
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
         """
         return self._IR.astype(np.int64)

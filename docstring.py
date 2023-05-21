@@ -5,13 +5,34 @@ import pathlib
 import re
 
 
-def get_docstring_args(fd):
+def get_docstring_args(fd, file_name, func_name, class_name=None):
     """
     Extract docstring parameters from function definition
     """
     docstring = ast.get_docstring(fd)
-    args = re.findall(r"(\w+)\s+\:", docstring)
-    args = set([a for a in args])
+    if len(re.findall(r"Parameters", docstring)) != 1:
+        msg = "Missing required 'Parameters' section in docstring in \n"
+        msg += f"file: {file_name}\n"
+        if class_name is not None:
+            msg += f"class: {class_name}\n"
+        msg += f"function/method: {func_name}\n"
+        raise RuntimeError(msg)
+    if class_name is None and len(re.findall(r"Returns", docstring)) != 1:
+        msg = "Missing required 'Returns' section in docstring in \n"
+        msg += f"file: {file_name}\n"
+        msg += f"function/method: {func_name}\n"
+        raise RuntimeError(msg)
+
+    if class_name is None:
+        params_section = re.findall(
+            r"(?<=Parameters)(.*)(?=Returns)", docstring, re.DOTALL
+        )[0]
+    else:
+        params_section = re.findall(r"(?<=Parameters)(.*)", docstring, re.DOTALL)[0]
+
+    args = re.findall(r"(\w+)\s+\:", params_section)
+    args = set([a for a in args if a != "i"])  # `i` should never be a parameter
+
     return args
 
 
@@ -36,6 +57,16 @@ def check_args(doc_args, sig_args, file_name, func_name, class_name=None):
         msg += f"parameter(s): {diff_args}\n"
         raise RuntimeError(msg)
 
+    diff_args = docstring_args.difference(signature_args)
+    if len(diff_args) > 0:
+        msg = "Found one or more unsupported arguments/parameters with docstring in \n"
+        msg += f"file: {file_name}\n"
+        if class_name is not None:
+            msg += f"class: {class_name}\n"
+        msg += f"function/method: {func_name}\n"
+        msg += f"parameter(s): {diff_args}\n"
+        raise RuntimeError(msg)
+
 
 ignore = ["__init__.py", "__pycache__"]
 
@@ -53,7 +84,7 @@ for filepath in filepaths:
             node for node in module.body if isinstance(node, ast.FunctionDef)
         ]
         for fd in function_definitions:
-            docstring_args = get_docstring_args(fd)
+            docstring_args = get_docstring_args(fd, filepath.name, fd.name)
             signature_args = get_signature_args(fd)
             check_args(docstring_args, signature_args, filepath.name, fd.name)
 
@@ -64,7 +95,7 @@ for filepath in filepaths:
         for cd in class_definitions:
             methods = [node for node in cd.body if isinstance(node, ast.FunctionDef)]
             for fd in methods:
-                docstring_args = get_docstring_args(fd)
+                docstring_args = get_docstring_args(fd, filepath.name, fd.name, cd.name)
                 signature_args = get_signature_args(fd)
                 check_args(
                     docstring_args, signature_args, filepath.name, fd.name, cd.name

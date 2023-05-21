@@ -357,6 +357,10 @@ class aampi:
         a 1D array consisting of the matrix profile. When `k > 1`, the
         output is a 2D array that has exactly `k` columns and it consists of the
         top-k matrix profile.
+
+        Parameters
+        ----------
+        None
         """
         if self._k == 1:
             return self._P.flatten().astype(np.float64)
@@ -370,6 +374,10 @@ class aampi:
         a 1D array consisting of the matrix profile indices. When `k > 1`, the
         output is a 2D array that has exactly `k` columns and it consists of the
         top-k matrix profile indices.
+
+        Parameters
+        ----------
+        None
         """
         if self._k == 1:
             return self._I.flatten().astype(np.int64)
@@ -380,6 +388,10 @@ class aampi:
     def left_P_(self):
         """
         Get the (top-1) left matrix profile
+
+        Parameters
+        ----------
+        None
         """
         return self._left_P.astype(np.float64)
 
@@ -387,6 +399,10 @@ class aampi:
     def left_I_(self):
         """
         Get the (top-1) left matrix profile indices
+
+        Parameters
+        ----------
+        None
         """
         return self._left_I.astype(np.int64)
 
@@ -394,5 +410,9 @@ class aampi:
     def T_(self):
         """
         Get the time series
+
+        Parameters
+        ----------
+        None
         """
         return self._T

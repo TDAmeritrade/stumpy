@@ -786,6 +786,10 @@ def _compute_multi_D(
         A boolean array that indicates whether a subsequence in `T`
         is constant (True)
 
+    Returns
+    -------
+    None
+
     Notes
     -----
     `DOI: 10.1109/ICDM.2017.66 \

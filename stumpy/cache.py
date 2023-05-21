@@ -21,6 +21,7 @@ def get_njit_funcs():
 
     Parameters
     ----------
+    None
 
     Returns
     -------
@@ -57,6 +58,7 @@ def _enable():
 
     Parameters
     ----------
+    None
 
     Returns
     -------
@@ -76,6 +78,7 @@ def _clear():
 
     Parameters
     ----------
+    None
 
     Returns
     -------
@@ -93,6 +96,7 @@ def _get_cache():
 
     Parameters
     ----------
+    None
 
     Returns
     -------

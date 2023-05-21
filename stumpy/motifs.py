@@ -78,8 +78,8 @@ def _motifs(
         The absolute tolerance parameter. This value will be added to `max_distance`
         when comparing distances between subsequences.
 
-    Return
-    ------
+    Returns
+    -------
     motif_distances : numpy.ndarray
         The distances corresponding to a set of subsequence matches for each motif.
         Note that the first column always corresponds to the distance for the
@@ -259,8 +259,8 @@ def motifs(
         subsequence with at least one np.nan/np.inf will automatically have its
         corresponding value set to False in this boolean array.
 
-    Return
-    ------
+    Returns
+    -------
     motif_distances : numpy.ndarray
         The distances corresponding to a set of subsequence matches for each motif.
         Note that the first column always corresponds to the distance for the

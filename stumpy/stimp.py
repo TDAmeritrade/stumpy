@@ -198,6 +198,14 @@ class _stimp:
         Update the pan matrix profile by computing a single matrix profile using the
         next available subsequence window size
 
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+
         Notes
         -----
         `DOI: 10.1109/ICBK.2019.00031 \
@@ -296,6 +304,14 @@ class _stimp:
         """
         Get the transformed (i.e., normalized, contrasted, binarized, and repeated) pan
         matrix profile
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
         """
         return self.pan().astype(np.float64)
 
@@ -303,6 +319,14 @@ class _stimp:
     def M_(self):
         """
         Get all of the (breadth first searched (level) ordered) subsequence window sizes
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
         """
         return self._M.astype(np.int64)
 

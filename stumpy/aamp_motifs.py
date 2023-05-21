@@ -75,8 +75,8 @@ def _aamp_motifs(
         The absolute tolerance parameter. This value will be added to `max_distance`
         when comparing distances between subsequences.
 
-    Return
-    ------
+    Returns
+    -------
     motif_distances : numpy.ndarray
         The distances corresponding to a set of subsequence matches for each motif.
         Note that the first column always corresponds to the distance for the
@@ -229,8 +229,8 @@ def aamp_motifs(
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance.
 
-    Return
-    ------
+    Returns
+    -------
     motif_distances : numpy.ndarray
         The distances corresponding to a set of subsequence matches for each motif.
         Note that the first column always corresponds to the distance for the

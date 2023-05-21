@@ -17,7 +17,7 @@ from . import config, core
     "i8[:], i8, i8)"
 )
 def _compute_and_update_PI_kernel(
-    i,
+    idx,
     T_A,
     T_B,
     m,
@@ -47,8 +47,8 @@ def _compute_and_update_PI_kernel(
 
     Parameters
     ----------
-    i : int
-        sliding window `i`
+    idx : int
+        The index for sliding window `i`
 
     T_A : numpy.ndarray
         The time series or sequence for which to compute the dot product
@@ -145,6 +145,8 @@ def _compute_and_update_PI_kernel(
     """
     start = cuda.grid(1)
     stride = cuda.gridsize(1)
+
+    i = idx
 
     if i % 2 == 0:
         p_norm_out = p_norm_even
