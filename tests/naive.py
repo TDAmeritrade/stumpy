@@ -1063,9 +1063,7 @@ class stumpi_egress(object):
         return self._left_I.astype(np.int64)
 
 
-def across_series_nearest_neighbors(
-    Ts, Ts_idx, subseq_idx, m, Ts_subseq_isconstant=None
-):
+def across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, Ts_subseq_isconstant):
     """
     For multiple time series find, per individual time series, the subsequences closest
     to a query.
@@ -1087,7 +1085,7 @@ def across_series_nearest_neighbors(
     m : int
         Subsequence window size
 
-    Ts_subseq_isconstant : list, default None
+    Ts_subseq_isconstant : list
         A list of `T_subseq_isconstant`, where the i-th item corresponds to `Ts[i]`
 
     Returns
@@ -1101,12 +1099,6 @@ def across_series_nearest_neighbors(
         `Ts[Ts_idx][subseq_idx : subseq_idx + m]`
     """
     k = len(Ts)
-    if Ts_subseq_isconstant is None:
-        Ts_subseq_isconstant = [None] * k
-
-    Ts_subseq_isconstant = [
-        rolling_isconstant(Ts[i], m, Ts_subseq_isconstant[i]) for i in range(k)
-    ]
 
     Q = Ts[Ts_idx][subseq_idx : subseq_idx + m]
     Q_subseq_isconstant = Ts_subseq_isconstant[Ts_idx][subseq_idx]
@@ -1172,7 +1164,7 @@ def get_central_motif(
         series `bsf_Ts_idx` that contains it
     """
     bsf_nns_radii, bsf_nns_subseq_idx = across_series_nearest_neighbors(
-        Ts, bsf_Ts_idx, bsf_subseq_idx, m, Ts_subseq_isconstant=Ts_subseq_isconstant
+        Ts, bsf_Ts_idx, bsf_subseq_idx, m, Ts_subseq_isconstant
     )
     bsf_nns_mean_radii = bsf_nns_radii.mean()
 
@@ -1181,7 +1173,7 @@ def get_central_motif(
 
     for Ts_idx, subseq_idx in zip(candidate_nns_Ts_idx, candidate_nns_subseq_idx):
         candidate_nns_radii, _ = across_series_nearest_neighbors(
-            Ts, Ts_idx, subseq_idx, m, Ts_subseq_isconstant=Ts_subseq_isconstant
+            Ts, Ts_idx, subseq_idx, m, Ts_subseq_isconstant
         )
         if (
             np.isclose(candidate_nns_radii.max(), bsf_radius)
