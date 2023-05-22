@@ -1134,7 +1134,7 @@ def across_series_nearest_neighbors(
 
 
 def get_central_motif(
-    Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, Ts_subseq_isconstant=None
+    Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, Ts_subseq_isconstant
 ):
     """
     Compare subsequences with the same radius and return the most central motif
@@ -1156,8 +1156,8 @@ def get_central_motif(
     m : int
         Window size
 
-    Ts_subseq_isconstant : list, default None
-        List of T_subseq_isconstant, where the i-th item corresponds to `Ts[i]`
+    Ts_subseq_isconstant : list
+        A list of boolean arrays, each corresponds to a time series in `Ts`
 
     Returns
     -------
@@ -1171,9 +1171,6 @@ def get_central_motif(
         The update subsequence index of most central consensus motif within the time
         series `bsf_Ts_idx` that contains it
     """
-    if Ts_subseq_isconstant is None:
-        Ts_subseq_isconstant = [None] * len(Ts)
-
     bsf_nns_radii, bsf_nns_subseq_idx = across_series_nearest_neighbors(
         Ts, bsf_Ts_idx, bsf_subseq_idx, m, Ts_subseq_isconstant=Ts_subseq_isconstant
     )
@@ -1197,7 +1194,7 @@ def get_central_motif(
     return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
 
 
-def consensus_search(Ts, m, Ts_subseq_isconstant=None):
+def consensus_search(Ts, m, Ts_subseq_isconstant):
     """
     Brute force consensus motif from
     <https://www.cs.ucr.edu/~eamonn/consensus_Motif_ICDM_Long_version.pdf>
@@ -1208,8 +1205,6 @@ def consensus_search(Ts, m, Ts_subseq_isconstant=None):
     This implementation fixes it.
     """
     k = len(Ts)
-    if Ts_subseq_isconstant is None:
-        Ts_subseq_isconstant = [None] * k
 
     bsf_radius = np.inf
     bsf_Ts_idx = 0
@@ -1241,8 +1236,12 @@ def ostinato(Ts, m, Ts_subseq_isconstant=None):
     if Ts_subseq_isconstant is None:
         Ts_subseq_isconstant = [None] * len(Ts)
 
+    Ts_subseq_isconstant = [
+        rolling_isconstant(Ts[i], m, Ts_subseq_isconstant[i]) for i in range(len(Ts))
+    ]
+
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = consensus_search(
-        Ts, m, Ts_subseq_isconstant=Ts_subseq_isconstant
+        Ts, m, Ts_subseq_isconstant
     )
     radius, Ts_idx, subseq_idx = get_central_motif(
         Ts,
@@ -1250,7 +1249,7 @@ def ostinato(Ts, m, Ts_subseq_isconstant=None):
         bsf_Ts_idx,
         bsf_subseq_idx,
         m,
-        Ts_subseq_isconstant=Ts_subseq_isconstant,
+        Ts_subseq_isconstant,
     )
     return radius, Ts_idx, subseq_idx
 

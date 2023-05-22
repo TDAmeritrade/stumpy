@@ -236,7 +236,14 @@ def _ostinato(
         else:
             h = 0
 
-        mp = partial_mp_func(Ts[j], m, Ts[h], ignore_trivial=False, T_A_subseq_isconstant=Ts_subseq_isconstant[j], T_B_subseq_isconstant=Ts_subseq_isconstant[h])
+        mp = partial_mp_func(
+            Ts[j],
+            m,
+            Ts[h],
+            ignore_trivial=False,
+            T_A_subseq_isconstant=Ts_subseq_isconstant[j],
+            T_B_subseq_isconstant=Ts_subseq_isconstant[h],
+        )
         si = np.argsort(mp[:, 0])
         for q in si:
             radius = mp[q, 0]
@@ -298,17 +305,7 @@ def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
         ignored when `normalize == True`.
 
     Ts_subseq_isconstant : list, default None
-        A list of length `len(Ts)`, where the i-th item represents `Ts[i]`. Hence,
-        `Ts_subseq_isconstant[i]` is a boolean array that indicates whether a
-        subsequence in `Ts[i]` is constant (True). Alternatively, a custom,
-        user-defined function that returns a boolean array that indicates
-        whether a subsequence in `Ts[i]` is constant (True). The function must
-        only take two arguments, `a`, a 1-D array, and `w`, the window size,
-        while additional arguments may be specified by currying the user-defined
-        function using `functools.partial`. Any subsequence with at least one
-        np.nan/np.inf will automatically have its corresponding value set to False
-        in this boolean array. When `None`, this will be defaulted to a list of None,
-        with length `len(Ts)`.
+        A list of rolling window isconstant for each time series in `Ts`.
 
     Returns
     -------
