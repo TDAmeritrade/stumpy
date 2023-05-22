@@ -1109,15 +1109,13 @@ def across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, Ts_subseq_isconst
     for i in range(k):
         dist_profile = distance_profile(Q, Ts[i], len(Q))
         for j in range(len(dist_profile)):
-            if not np.isfinite(dist_profile[j]):
-                continue
-
-            if Q_subseq_isconstant and Ts_subseq_isconstant[i][j]:
-                dist_profile[j] = 0
-            elif Q_subseq_isconstant or Ts_subseq_isconstant[i][j]:
-                dist_profile[j] = np.sqrt(m)
-            else:  # pragma: no cover
-                pass
+            if np.isfinite(dist_profile[j]):
+                if Q_subseq_isconstant and Ts_subseq_isconstant[i][j]:
+                    dist_profile[j] = 0
+                elif Q_subseq_isconstant or Ts_subseq_isconstant[i][j]:
+                    dist_profile[j] = np.sqrt(m)
+                else:  # pragma: no cover
+                    pass
 
         nns_subseq_idx[i] = np.argmin(dist_profile)
         nns_radii[i] = dist_profile[nns_subseq_idx[i]]
