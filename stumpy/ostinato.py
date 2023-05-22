@@ -278,7 +278,10 @@ def _ostinato(
     return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
 
 
-@core.non_normalized(aamp_ostinato)
+@core.non_normalized(
+    aamp_ostinato,
+    exclude=["normalize", "p", "Ts_subseq_isconstant"],
+)
 def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     """
     Find the z-normalized consensus motif of multiple time series
@@ -384,7 +387,10 @@ def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     return central_radius, central_Ts_idx, central_subseq_idx
 
 
-@core.non_normalized(aamp_ostinatoed)
+@core.non_normalized(
+    aamp_ostinatoed,
+    exclude=["normalize", "p", "Ts_subseq_isconstant"],
+)
 def ostinatoed(client, Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     """
     Find the z-normalized consensus motif of multiple time series with a distributed
