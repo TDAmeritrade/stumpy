@@ -236,7 +236,7 @@ def _ostinato(
         else:
             h = 0
 
-        mp = partial_mp_func(Ts[j], m, Ts[h], ignore_trivial=False)
+        mp = partial_mp_func(Ts[j], m, Ts[h], ignore_trivial=False, T_A_subseq_isconstant=Ts_subseq_isconstant[j], T_B_subseq_isconstant=Ts_subseq_isconstant[h])
         si = np.argsort(mp[:, 0])
         for q in si:
             radius = mp[q, 0]
@@ -272,7 +272,7 @@ def _ostinato(
 
 
 @core.non_normalized(aamp_ostinato)
-def ostinato(Ts, m, normalize=True, p=2.0):
+def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     """
     Find the z-normalized consensus motif of multiple time series
 
@@ -296,6 +296,19 @@ def ostinato(Ts, m, normalize=True, p=2.0):
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
+
+    Ts_subseq_isconstant : list, default None
+        A list of length `len(Ts)`, where the i-th item represents `Ts[i]`. Hence,
+        `Ts_subseq_isconstant[i]` is a boolean array that indicates whether a
+        subsequence in `Ts[i]` is constant (True). Alternatively, a custom,
+        user-defined function that returns a boolean array that indicates
+        whether a subsequence in `Ts[i]` is constant (True). The function must
+        only take two arguments, `a`, a 1-D array, and `w`, the window size,
+        while additional arguments may be specified by currying the user-defined
+        function using `functools.partial`. Any subsequence with at least one
+        np.nan/np.inf will automatically have its corresponding value set to False
+        in this boolean array. When `None`, this will be defaulted to a list of None,
+        with length `len(Ts)`.
 
     Returns
     -------
@@ -352,9 +365,12 @@ def ostinato(Ts, m, normalize=True, p=2.0):
 
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
-    Ts_subseq_isconstant = [None] * len(Ts)
+    if Ts_subseq_isconstant is None:
+        Ts_subseq_isconstant = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(T, m)
+        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
+            T, m, T_subseq_isconstant=Ts_subseq_isconstant[i]
+        )
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
         Ts, m, M_Ts, Σ_Ts, Ts_subseq_isconstant

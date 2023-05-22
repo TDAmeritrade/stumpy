@@ -98,7 +98,9 @@ def test_random_ostinato_with_isconstant(seed):
     ref_radius, ref_Ts_idx, ref_subseq_idx = naive.ostinato(
         Ts, m, Ts_subseq_isconstant=Ts_subseq_isconstant
     )
-    comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.ostinato(Ts, m)
+    comp_radius, comp_Ts_idx, comp_subseq_idx = stumpy.ostinato(
+        Ts, m, Ts_subseq_isconstant=Ts_subseq_isconstant
+    )
 
     npt.assert_almost_equal(ref_radius, comp_radius)
     npt.assert_almost_equal(ref_Ts_idx, comp_Ts_idx)
