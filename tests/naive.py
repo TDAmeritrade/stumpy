@@ -1063,7 +1063,7 @@ class stumpi_egress(object):
         return self._left_I.astype(np.int64)
 
 
-def across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m):
+def across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m, Ts_subseq_isconstant):
     """
     For multiple time series find, per individual time series, the subsequences closest
     to a query.
@@ -1085,6 +1085,9 @@ def across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m):
     m : int
         Subsequence window size
 
+    Ts_subseq_isconstant : list
+        A list of `T_subseq_isconstant`, where the i-th item corresponds to `Ts[i]`
+
     Returns
     -------
     nns_radii : ndarray
@@ -1096,19 +1099,33 @@ def across_series_nearest_neighbors(Ts, Ts_idx, subseq_idx, m):
         `Ts[Ts_idx][subseq_idx : subseq_idx + m]`
     """
     k = len(Ts)
+
     Q = Ts[Ts_idx][subseq_idx : subseq_idx + m]
+    Q_subseq_isconstant = Ts_subseq_isconstant[Ts_idx][subseq_idx]
+
     nns_radii = np.zeros(k, dtype=np.float64)
     nns_subseq_idx = np.zeros(k, dtype=np.int64)
 
     for i in range(k):
         dist_profile = distance_profile(Q, Ts[i], len(Q))
+        for j in range(len(dist_profile)):
+            if np.isfinite(dist_profile[j]):
+                if Q_subseq_isconstant and Ts_subseq_isconstant[i][j]:
+                    dist_profile[j] = 0
+                elif Q_subseq_isconstant or Ts_subseq_isconstant[i][j]:
+                    dist_profile[j] = np.sqrt(m)
+                else:  # pragma: no cover
+                    pass
+
         nns_subseq_idx[i] = np.argmin(dist_profile)
         nns_radii[i] = dist_profile[nns_subseq_idx[i]]
 
     return nns_radii, nns_subseq_idx
 
 
-def get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m):
+def get_central_motif(
+    Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, Ts_subseq_isconstant
+):
     """
     Compare subsequences with the same radius and return the most central motif
 
@@ -1129,6 +1146,9 @@ def get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m):
     m : int
         Window size
 
+    Ts_subseq_isconstant : list
+        A list of boolean arrays, each corresponds to a time series in `Ts`
+
     Returns
     -------
     bsf_radius : float
@@ -1142,7 +1162,7 @@ def get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m):
         series `bsf_Ts_idx` that contains it
     """
     bsf_nns_radii, bsf_nns_subseq_idx = across_series_nearest_neighbors(
-        Ts, bsf_Ts_idx, bsf_subseq_idx, m
+        Ts, bsf_Ts_idx, bsf_subseq_idx, m, Ts_subseq_isconstant
     )
     bsf_nns_mean_radii = bsf_nns_radii.mean()
 
@@ -1151,7 +1171,7 @@ def get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m):
 
     for Ts_idx, subseq_idx in zip(candidate_nns_Ts_idx, candidate_nns_subseq_idx):
         candidate_nns_radii, _ = across_series_nearest_neighbors(
-            Ts, Ts_idx, subseq_idx, m
+            Ts, Ts_idx, subseq_idx, m, Ts_subseq_isconstant
         )
         if (
             np.isclose(candidate_nns_radii.max(), bsf_radius)
@@ -1164,7 +1184,7 @@ def get_central_motif(Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m):
     return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
 
 
-def consensus_search(Ts, m):
+def consensus_search(Ts, m, Ts_subseq_isconstant):
     """
     Brute force consensus motif from
     <https://www.cs.ucr.edu/~eamonn/consensus_Motif_ICDM_Long_version.pdf>
@@ -1184,7 +1204,13 @@ def consensus_search(Ts, m):
         radii = np.zeros(len(Ts[j]) - m + 1)
         for i in range(k):
             if i != j:
-                mp = stump(Ts[j], m, Ts[i])
+                mp = stump(
+                    Ts[j],
+                    m,
+                    Ts[i],
+                    T_A_subseq_isconstant=Ts_subseq_isconstant[j],
+                    T_B_subseq_isconstant=Ts_subseq_isconstant[i],
+                )
                 radii = np.maximum(radii, mp[:, 0])
         min_radius_idx = np.argmin(radii)
         min_radius = radii[min_radius_idx]
@@ -1196,10 +1222,24 @@ def consensus_search(Ts, m):
     return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
 
 
-def ostinato(Ts, m):
-    bsf_radius, bsf_Ts_idx, bsf_subseq_idx = consensus_search(Ts, m)
+def ostinato(Ts, m, Ts_subseq_isconstant=None):
+    if Ts_subseq_isconstant is None:
+        Ts_subseq_isconstant = [None] * len(Ts)
+
+    Ts_subseq_isconstant = [
+        rolling_isconstant(Ts[i], m, Ts_subseq_isconstant[i]) for i in range(len(Ts))
+    ]
+
+    bsf_radius, bsf_Ts_idx, bsf_subseq_idx = consensus_search(
+        Ts, m, Ts_subseq_isconstant
+    )
     radius, Ts_idx, subseq_idx = get_central_motif(
-        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m
+        Ts,
+        bsf_radius,
+        bsf_Ts_idx,
+        bsf_subseq_idx,
+        m,
+        Ts_subseq_isconstant,
     )
     return radius, Ts_idx, subseq_idx
 

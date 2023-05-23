@@ -236,7 +236,14 @@ def _ostinato(
         else:
             h = 0
 
-        mp = partial_mp_func(Ts[j], m, Ts[h], ignore_trivial=False)
+        mp = partial_mp_func(
+            Ts[j],
+            m,
+            Ts[h],
+            ignore_trivial=False,
+            T_A_subseq_isconstant=Ts_subseq_isconstant[j],
+            T_B_subseq_isconstant=Ts_subseq_isconstant[h],
+        )
         si = np.argsort(mp[:, 0])
         for q in si:
             radius = mp[q, 0]
@@ -271,8 +278,11 @@ def _ostinato(
     return bsf_radius, bsf_Ts_idx, bsf_subseq_idx
 
 
-@core.non_normalized(aamp_ostinato)
-def ostinato(Ts, m, normalize=True, p=2.0):
+@core.non_normalized(
+    aamp_ostinato,
+    exclude=["normalize", "p", "Ts_subseq_isconstant"],
+)
+def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     """
     Find the z-normalized consensus motif of multiple time series
 
@@ -296,6 +306,9 @@ def ostinato(Ts, m, normalize=True, p=2.0):
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
+
+    Ts_subseq_isconstant : list, default None
+        A list of rolling window isconstant for each time series in `Ts`.
 
     Returns
     -------
@@ -352,9 +365,12 @@ def ostinato(Ts, m, normalize=True, p=2.0):
 
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
-    Ts_subseq_isconstant = [None] * len(Ts)
+    if Ts_subseq_isconstant is None:
+        Ts_subseq_isconstant = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(T, m)
+        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
+            T, m, T_subseq_isconstant=Ts_subseq_isconstant[i]
+        )
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
         Ts, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
@@ -371,8 +387,11 @@ def ostinato(Ts, m, normalize=True, p=2.0):
     return central_radius, central_Ts_idx, central_subseq_idx
 
 
-@core.non_normalized(aamp_ostinatoed)
-def ostinatoed(client, Ts, m, normalize=True, p=2.0):
+@core.non_normalized(
+    aamp_ostinatoed,
+    exclude=["normalize", "p", "Ts_subseq_isconstant"],
+)
+def ostinatoed(client, Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     """
     Find the z-normalized consensus motif of multiple time series with a distributed
     cluster
@@ -402,6 +421,9 @@ def ostinatoed(client, Ts, m, normalize=True, p=2.0):
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
+
+    Ts_subseq_isconstant : list, default None
+        A list of rolling window isconstant for each time series in `Ts`.
 
     Returns
     -------
@@ -461,9 +483,13 @@ def ostinatoed(client, Ts, m, normalize=True, p=2.0):
 
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
-    Ts_subseq_isconstant = [None] * len(Ts)
+
+    if Ts_subseq_isconstant is None:
+        Ts_subseq_isconstant = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(T, m)
+        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
+            T, m, T_subseq_isconstant=Ts_subseq_isconstant[i]
+        )
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
         Ts,
