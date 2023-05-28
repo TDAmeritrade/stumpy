@@ -3968,7 +3968,7 @@ def _compute_multi_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
         The total number of dimensions in `T`
 
     idx : int
-        The row index in `T`
+        The subsequence index for the i-th time series, `T[i]`
 
     D : numpy.ndarray
         The distance profile
