@@ -454,7 +454,26 @@ def replace_inf(x, value=0):
     return
 
 
-def multi_mass(Q, T, m, include=None, discords=False):
+def multi_mass(
+    Q,
+    T,
+    m,
+    include=None,
+    discords=False,
+    Ts_subseq_isconstant=None,
+    Qs_subseq_isconstant=None,
+):
+    d, n = T.shape
+    if Ts_subseq_isconstant is None:
+        Ts_subseq_isconstant = [None] * d
+    for i in range(d):
+        Ts_subseq_isconstant[i] = rolling_isconstant(T[i], m, Ts_subseq_isconstant[i])
+
+    if Qs_subseq_isconstant is None:
+        Qs_subseq_isconstant = [None] * Q.shape[0]
+    for i in range(Q.shape[0]):
+        Qs_subseq_isconstant[i] = rolling_isconstant(Q[i], m, Qs_subseq_isconstant[i])
+
     T_inf = np.isinf(T)
     if np.any(T_inf):
         T = T.copy()
@@ -465,11 +484,17 @@ def multi_mass(Q, T, m, include=None, discords=False):
         Q = Q.copy()
         Q[Q_inf] = np.nan
 
-    d, n = T.shape
-
     D = np.empty((d, n - m + 1))
     for i in range(d):
         D[i] = distance_profile(Q[i], T[i], m)
+        for j in range(len(D[i])):
+            if np.isfinite(D[i, j]):
+                if Qs_subseq_isconstant[i] and Ts_subseq_isconstant[i][j]:
+                    D[i, j] = 0
+                elif Qs_subseq_isconstant[i] or Ts_subseq_isconstant[i][j]:
+                    D[i, j] = np.sqrt(m)
+                else:  # pragma: no cover
+                    pass
 
     D[np.isnan(D)] = np.inf
 
@@ -532,11 +557,29 @@ def apply_include(D, include):
     D[unrestricted_indices] = tmp_swap[mask]
 
 
-def multi_distance_profile(query_idx, T, m, include=None, discords=False):
+def multi_distance_profile(
+    query_idx, T, m, include=None, discords=False, Ts_subseq_isconstant=None
+):
+    if Ts_subseq_isconstant is None:
+        Ts_subseq_isconstant = [None] * T.shape[0]
+    for i in range(T.shape[0]):
+        Ts_subseq_isconstant[i] = rolling_isconstant(T[i], m, Ts_subseq_isconstant[i])
+
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     d, n = T.shape
     Q = T[:, query_idx : query_idx + m]
-    D = multi_mass(Q, T, m, include, discords)
+    Qs_subseq_isconstant = [
+        np.atleast_1d(Ts_subseq_isconstant[i][query_idx]) for i in range(d)
+    ]
+    D = multi_mass(
+        Q,
+        T,
+        m,
+        include,
+        discords,
+        Ts_subseq_isconstant=Ts_subseq_isconstant,
+        Qs_subseq_isconstant=Qs_subseq_isconstant,
+    )
 
     start_row_idx = 0
     if include is not None:
@@ -559,17 +602,25 @@ def multi_distance_profile(query_idx, T, m, include=None, discords=False):
     return D_prime_prime
 
 
-def mstump(T, m, excl_zone, include=None, discords=False):
+def mstump(T, m, excl_zone, include=None, discords=False, Ts_subseq_isconstant=None):
+    # Ts_subseq_isconstant is None, or list
     T = T.copy()
 
     d, n = T.shape
     k = n - m + 1
 
+    if Ts_subseq_isconstant is None:
+        Ts_subseq_isconstant = [None] * d
+    for i in range(d):
+        Ts_subseq_isconstant[i] = rolling_isconstant(T[i], m, Ts_subseq_isconstant[i])
+
     P = np.full((d, k), np.inf)
     I = np.ones((d, k), dtype="int64") * -1
 
     for i in range(k):
-        D = multi_distance_profile(i, T, m, include, discords)
+        D = multi_distance_profile(
+            i, T, m, include, discords, Ts_subseq_isconstant=Ts_subseq_isconstant
+        )
         P_i, I_i = PI(D, i, excl_zone)
 
         for dim in range(T.shape[0]):
