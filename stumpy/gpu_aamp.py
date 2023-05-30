@@ -61,7 +61,9 @@ def _compute_and_update_PI_kernel(
         Window size
 
     p : float
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     p_norm_even : numpy.ndarray
         The input p-norm array to use when `i` is even
@@ -247,7 +249,9 @@ def _gpu_aamp(
         `T_B` contains a `np.nan`/`np.inf` value (False)
 
     p : float
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     p_norm_fname : str
         The file name for the p-norm between some query sequence,`Q`,
@@ -470,7 +474,9 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     k : int, default 1
         The number of top `k` smallest distances used to construct the matrix profile.

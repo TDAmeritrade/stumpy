@@ -150,8 +150,10 @@ class stumpi:
             non-normalized equivalent set in the `@core.non_normalized` class decorator.
 
         p : float, default 2.0
-            The p-norm to apply for computing the Minkowski distance. This parameter is
-            ignored when `normalize == True`.
+            The p-norm to apply for computing the Minkowski distance. Minkowski distance
+            is  typically used with `p` being 1 or 2, which correspond to the Manhattan
+            distance and the Euclidean distance, respectively.This parameter is ignored
+            when `normalize == True`.
 
         k : int, default 1
             The number of top `k` smallest distances used to construct the matrix

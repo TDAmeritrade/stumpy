@@ -36,7 +36,9 @@ def _multi_mass_absolute(Q, T, m, Q_subseq_isfinite, T_subseq_isfinite, p=2.0):
         `np.nan`/`np.inf` value (False)
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------
@@ -125,7 +127,9 @@ def maamp_subspace(
         <https://www.cs.ucr.edu/~eamonn/ICDM_mdl.pdf>`__
 
     p : float
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------
@@ -252,7 +256,9 @@ def maamp_mdl(
         <https://www.cs.ucr.edu/~eamonn/ICDM_mdl.pdf>`__
 
     p : float
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------
@@ -332,7 +338,9 @@ def _maamp_multi_distance_profile(
         `np.nan`/`np.inf` value (False)
 
     p : float
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
@@ -418,7 +426,9 @@ def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False, 
         than motifs. Note that indices in `include` are still maintained and respected.
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------
@@ -493,7 +503,9 @@ def _get_first_maamp_profile(
         `np.nan`/`np.inf` value (False)
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
@@ -553,7 +565,9 @@ def _get_multi_p_norm(start, T, m, p=2.0):
         Window size
 
     p : float
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------
@@ -633,7 +647,9 @@ def _compute_multi_p_norm(
         `np.nan`/`np.inf` value (False)
 
     p : float
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     p_norm_even : numpy.ndarray
         The even input p-norm array between some query sequence,`Q`, and
@@ -747,7 +763,9 @@ def _maamp(
         `np.nan`/`np.inf` value (False)
 
     p : float
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     p_norm : numpy.ndarray
         The input p-norm array between some query sequence,`Q`, and time series, `T`
@@ -884,7 +902,9 @@ def maamp(T, m, include=None, discords=False, p=2.0):
         in `include` are still maintained and respected.
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------

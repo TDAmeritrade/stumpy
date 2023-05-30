@@ -348,8 +348,10 @@ class floss:
         When set to `True`, this z-normalizes subsequences prior to computing distances
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == True`.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively. This parameter is ignored when
+        `normalize == True`.
 
     T_subseq_isconstant_func : function, default None
         A custom, user-defined function that returns a boolean array that indicates
@@ -476,8 +478,10 @@ class floss:
             distances
 
         p : float, default 2.0
-            The p-norm to apply for computing the Minkowski distance. This parameter is
-            ignored when `normalize == True`.
+            The p-norm to apply for computing the Minkowski distance. Minkowski distance
+            is typically used with `p` being 1 or 2, which correspond to the Manhattan
+            distance and the Euclidean distance, respectively.This parameter is ignored
+            when `normalize == True`.
 
         T_subseq_isconstant_func : function, default None
             A custom, user-defined function that returns a boolean array that indicates

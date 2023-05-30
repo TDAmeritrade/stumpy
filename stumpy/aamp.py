@@ -59,7 +59,9 @@ def _compute_diagonal(
         `np.nan`/`np.inf` value (False)
 
     p : float
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     diags : numpy.ndarray
         The diag of diagonals to process and compute
@@ -221,7 +223,9 @@ def _aamp(
         `np.nan`/`np.inf` value (False)
 
     p : float
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     diags : numpy.ndarray
         The diag of diagonals to process and compute
@@ -352,7 +356,9 @@ def aamp(T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
         to `False`. Default is `True`.
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     k : int, default 1
         The number of top `k` smallest distances used to construct the matrix profile.

@@ -246,8 +246,10 @@ def motifs(
         equivalent set in the `@core.non_normalized` function decorator.
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == True`.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively. This parameter is ignored when
+        `normalize == True`.
 
     T_subseq_isconstant : numpy.ndarray or function, default None
         A boolean array that indicates whether a subsequence in `T` is constant
@@ -447,8 +449,10 @@ def match(
         equivalent set in the `@core.non_normalized` function decorator.
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == True`.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively. This parameter is ignored when
+        `normalize == True`.
 
     T_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` contains a

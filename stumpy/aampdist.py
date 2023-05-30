@@ -54,7 +54,9 @@ def _aampdist_vect(
         `custom_func` is not None.
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------
@@ -119,7 +121,9 @@ def aampdist(T_A, T_B, m, percentage=0.05, k=None, p=2.0):
         is not `None`, then the `percentage` parameter is ignored.
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------
@@ -176,7 +180,9 @@ def aampdisted(client, T_A, T_B, m, percentage=0.05, k=None, p=2.0):
         is not `None`, then the `percentage` parameter is ignored.
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------

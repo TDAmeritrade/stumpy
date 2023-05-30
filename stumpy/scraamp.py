@@ -126,7 +126,9 @@ def _compute_PI(
         `np.nan`/`np.inf` value (False)
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     indices : numpy.ndarray
         The subsequence indices to compute `prescrump` for
@@ -325,7 +327,9 @@ def _prescraamp(
         `np.nan`/`np.inf` value (False)
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     indices : int
         The subsequence index in `T_B` that corresponds to `Q`
@@ -416,7 +420,9 @@ def prescraamp(T_A, m, T_B=None, s=None, p=2.0, k=1):
         `int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     k : int, default 1
         The number of top `k` smallest distances used to construct the matrix profile.
@@ -511,7 +517,9 @@ class scraamp:
         zone.
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     k : int, default 1
         The number of top `k` smallest distances used to construct the matrix profile.
@@ -601,7 +609,9 @@ class scraamp:
             size of the exclusion zone.
 
         p : float, default 2.0
-            The p-norm to apply for computing the Minkowski distance.
+            The p-norm to apply for computing the Minkowski distance. Minkowski distance
+            is typically used with `p` being 1 or 2, which correspond to the Manhattan
+            distance and the Euclidean distance, respectively.
 
         k : int, default 1
             The number of top `k` smallest distances used to construct the matrix

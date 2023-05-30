@@ -37,7 +37,9 @@ def _normalize_pan(pan, ms, bfs_indices, n_processed, T_min, T_max, p=2.0):
         The max value in `T`
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------
@@ -97,7 +99,9 @@ class _aamp_stimp:
         The matrix profile function to use when `percentage = 1.0`
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Attributes
     ----------
@@ -182,7 +186,9 @@ class _aamp_stimp:
             The matrix profile function to use when `percentage = 1.0`
 
         p : float, default 2.0
-            The p-norm to apply for computing the Minkowski distance.
+            The p-norm to apply for computing the Minkowski distance. Minkowski distance
+            is typically used with `p` being 1 or 2, which correspond to the Manhattan
+            distance and the Euclidean distance, respectively.
         """
         self._T = T.copy()
         self._T_min = np.min(self._T[np.isfinite(self._T)])
@@ -392,7 +398,9 @@ class aamp_stimp(_aamp_stimp):
         SCRIMP++. This parameter is ignored when `percentage = 1.0`.
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Attributes
     ----------
@@ -460,7 +468,9 @@ class aamp_stimp(_aamp_stimp):
             SCRIMP++. This parameter is ignored when `percentage = 1.0`.
 
         p : float, default 2.0
-            The p-norm to apply for computing the Minkowski distance.
+            The p-norm to apply for computing the Minkowski distance. Minkowski distance
+            is typically used with `p` being 1 or 2, which correspond to the Manhattan
+            distance and the Euclidean distance, respectively.
         """
         super().__init__(
             T,
@@ -503,7 +513,9 @@ class aamp_stimped(_aamp_stimp):
         The step between subsequence window sizes
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Attributes
     ----------
@@ -564,7 +576,9 @@ class aamp_stimped(_aamp_stimp):
             The step between subsequence window sizes
 
         p : float, default 2.0
-            The p-norm to apply for computing the Minkowski distance.
+            The p-norm to apply for computing the Minkowski distance. Minkowski distance
+            is typically used with `p` being 1 or 2, which correspond to the Manhattan
+            distance and the Euclidean distance, respectively.
         """
         super().__init__(
             T,
