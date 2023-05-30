@@ -747,7 +747,7 @@ def _compute_multi_D(
         The total number of sliding windows to iterate over
 
     idx : int
-        The row index in `T`
+        The subsequence index for the i-th time series, `T[i]`
 
     D : numpy.ndarray
         The output distance profile
