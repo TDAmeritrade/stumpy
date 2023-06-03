@@ -460,19 +460,23 @@ def multi_mass(
     m,
     include=None,
     discords=False,
-    Ts_subseq_isconstant=None,
-    Qs_subseq_isconstant=None,
+    T_subseq_isconstant=None,
+    Q_subseq_isconstant=None,
 ):
     d, n = T.shape
-    if Ts_subseq_isconstant is None:
-        Ts_subseq_isconstant = [None] * d
-    for i in range(d):
-        Ts_subseq_isconstant[i] = rolling_isconstant(T[i], m, Ts_subseq_isconstant[i])
+    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
+        T_subseq_isconstant = [T_subseq_isconstant] * d
 
-    if Qs_subseq_isconstant is None:
-        Qs_subseq_isconstant = [None] * Q.shape[0]
-    for i in range(Q.shape[0]):
-        Qs_subseq_isconstant[i] = rolling_isconstant(Q[i], m, Qs_subseq_isconstant[i])
+    T_subseq_isconstant = np.array(
+        [rolling_isconstant(T[i], m, T_subseq_isconstant[i]) for i in range(d)]
+    )
+
+    if Q_subseq_isconstant is None or callable(Q_subseq_isconstant):
+        Q_subseq_isconstant = [None] * Q.shape[0]
+
+    Q_subseq_isconstant = np.array(
+        [rolling_isconstant(Q[i], m, Q_subseq_isconstant[i]) for i in range(Q.shape[0])]
+    )
 
     T_inf = np.isinf(T)
     if np.any(T_inf):
@@ -489,9 +493,9 @@ def multi_mass(
         D[i] = distance_profile(Q[i], T[i], m)
         for j in range(len(D[i])):
             if np.isfinite(D[i, j]):
-                if Qs_subseq_isconstant[i] and Ts_subseq_isconstant[i][j]:
+                if Q_subseq_isconstant[i] and T_subseq_isconstant[i, j]:
                     D[i, j] = 0
-                elif Qs_subseq_isconstant[i] or Ts_subseq_isconstant[i][j]:
+                elif Q_subseq_isconstant[i] or T_subseq_isconstant[i, j]:
                     D[i, j] = np.sqrt(m)
                 else:  # pragma: no cover
                     pass
@@ -558,27 +562,29 @@ def apply_include(D, include):
 
 
 def multi_distance_profile(
-    query_idx, T, m, include=None, discords=False, Ts_subseq_isconstant=None
+    query_idx, T, m, include=None, discords=False, T_subseq_isconstant=None
 ):
-    if Ts_subseq_isconstant is None:
-        Ts_subseq_isconstant = [None] * T.shape[0]
-    for i in range(T.shape[0]):
-        Ts_subseq_isconstant[i] = rolling_isconstant(T[i], m, Ts_subseq_isconstant[i])
-
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     d, n = T.shape
+
+    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
+        T_subseq_isconstant = [T_subseq_isconstant] * d
+
+    T_subseq_isconstant = np.array(
+        [rolling_isconstant(T[i], m, T_subseq_isconstant[i]) for i in range(d)]
+    )
+
     Q = T[:, query_idx : query_idx + m]
-    Qs_subseq_isconstant = [
-        np.atleast_1d(Ts_subseq_isconstant[i][query_idx]) for i in range(d)
-    ]
+    Q_subseq_isconstant = T_subseq_isconstant[:, query_idx].reshape(-1, 1)
+
     D = multi_mass(
         Q,
         T,
         m,
         include,
         discords,
-        Ts_subseq_isconstant=Ts_subseq_isconstant,
-        Qs_subseq_isconstant=Qs_subseq_isconstant,
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
     )
 
     start_row_idx = 0
@@ -602,24 +608,26 @@ def multi_distance_profile(
     return D_prime_prime
 
 
-def mstump(T, m, excl_zone, include=None, discords=False, Ts_subseq_isconstant=None):
-    # Ts_subseq_isconstant is None, or list
+def mstump(T, m, excl_zone, include=None, discords=False, T_subseq_isconstant=None):
     T = T.copy()
 
     d, n = T.shape
     k = n - m + 1
 
-    if Ts_subseq_isconstant is None:
-        Ts_subseq_isconstant = [None] * d
-    for i in range(d):
-        Ts_subseq_isconstant[i] = rolling_isconstant(T[i], m, Ts_subseq_isconstant[i])
+    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
+        T_subseq_isconstant = [T_subseq_isconstant] * d
+    # else means T_subseq_isconstant is list or a numpy 2D array
+
+    T_subseq_isconstant = np.array(
+        [rolling_isconstant(T[i], m, T_subseq_isconstant[i]) for i in range(d)]
+    )
 
     P = np.full((d, k), np.inf)
     I = np.ones((d, k), dtype="int64") * -1
 
     for i in range(k):
         D = multi_distance_profile(
-            i, T, m, include, discords, Ts_subseq_isconstant=Ts_subseq_isconstant
+            i, T, m, include, discords, T_subseq_isconstant=T_subseq_isconstant
         )
         P_i, I_i = PI(D, i, excl_zone)
 
