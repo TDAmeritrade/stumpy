@@ -62,7 +62,9 @@ def _dask_maamped(
         `np.nan`/`np.inf` value (False)
 
     p : float
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     include : numpy.ndarray
         A list of (zero-based) indices corresponding to the dimensions in `T` that
@@ -203,7 +205,9 @@ def maamped(client, T, m, include=None, discords=False, p=2.0):
         in `include` are still maintained and respected.
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------

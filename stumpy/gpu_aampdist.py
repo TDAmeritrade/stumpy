@@ -47,7 +47,9 @@ def gpu_aampdist(T_A, T_B, m, percentage=0.05, k=None, device_id=0, p=2.0):
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------

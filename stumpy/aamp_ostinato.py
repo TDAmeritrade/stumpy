@@ -36,7 +36,9 @@ def _aamp_across_series_nearest_neighbors(
         A list of rolling window `T_subseq_isfinite` for each time series in `Ts`
 
     p : float
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------
@@ -93,7 +95,9 @@ def _get_aamp_central_motif(
         A list of rolling window `T_subseq_isfinite` for each time series in `Ts`
 
     p : float
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------
@@ -155,7 +159,9 @@ def _aamp_ostinato(
         A list of rolling window `T_subseq_isfinite` for each time series in `Ts`
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     client : client, default None
         A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
@@ -260,7 +266,9 @@ def aamp_ostinato(Ts, m, p=2.0):
         Window size
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------
@@ -342,7 +350,9 @@ def aamp_ostinatoed(client, Ts, m, p=2.0):
         Window size
 
     p : float, default 2.0
-        The p-norm to apply for computing the Minkowski distance.
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     Returns
     -------
