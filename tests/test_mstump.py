@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -360,3 +362,53 @@ def test_mstump_nan_self_join_all_dimensions(T, m, substitute, substitution_loca
 
         npt.assert_almost_equal(ref_P, comp_P)
         npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_multi_mass_with_isconstant():
+    d = 3
+    n = 64
+    m = 8
+
+    T = np.random.uniform(-1000, 1000, size=[d, n])
+
+    T_subseq_isconstant = [
+        None,
+        np.random.choice([True, False], n - m + 1, replace=True),
+        functools.partial(
+            naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+        ),
+    ]
+
+    # Q is random and not a part of T
+    Q = np.random.uniform(-1000, 1000, size=[d, m])
+    Q_subseq_isconstant = None
+
+    ref = naive.multi_mass(
+        Q,
+        T,
+        m,
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
+    )
+
+    T_subseq_isconstant = np.array(
+        [core.rolling_isconstant(T[i], m, T_subseq_isconstant[i]) for i in range(d)]
+    )
+    M_T, Σ_T = core.compute_mean_std(T, m)
+
+    Q_subseq_isconstant = core.rolling_isconstant(Q, m, Q_subseq_isconstant)
+    μ_Q, σ_Q = core.compute_mean_std(T, m)
+
+    comp = _multi_mass(
+        Q,
+        T,
+        m,
+        M_T,
+        Σ_T,
+        μ_Q,
+        σ_Q,
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
+    )
+
+    npt.assert_almost_equal(ref, comp, decimal=config.STUMPY_TEST_PRECISION)
