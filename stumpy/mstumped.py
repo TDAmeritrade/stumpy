@@ -121,6 +121,7 @@ def _dask_mstumped(
             μ_Q,
             σ_Q,
             T_subseq_isconstant,
+            Q_subseq_isconstant,
             include,
             discords,
         )
