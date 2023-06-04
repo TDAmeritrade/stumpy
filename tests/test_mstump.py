@@ -552,3 +552,49 @@ def test_multi_distance_profile_with_isconstant_case3():
     )
 
     npt.assert_almost_equal(ref_D, comp_D)
+
+
+def test_mstump_with_isconstant_with_isconstant_case1():
+    d = 3
+    n = 64
+    m = 8
+
+    T = np.random.uniform(-1000, 1000, size=[d, n])
+    T_subseq_isconstant = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    excl_zone = int(np.ceil(m / 4))
+
+    ref_P, ref_I = naive.mstump(
+        T, m, excl_zone, T_subseq_isconstant=T_subseq_isconstant
+    )
+    comp_P, comp_I = mstump(T, m, T_subseq_isconstant=T_subseq_isconstant)
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
+
+
+def test_mstump_with_isconstant_with_isconstant_case2():
+    d = 3
+    n = 64
+    m = 8
+
+    T = np.random.uniform(-1000, 1000, size=[d, n])
+    T_subseq_isconstant = [
+        None,
+        np.random.choice([True, False], n - m + 1, replace=True),
+        functools.partial(
+            naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+        ),
+    ]
+
+    excl_zone = int(np.ceil(m / 4))
+
+    ref_P, ref_I = naive.mstump(
+        T, m, excl_zone, T_subseq_isconstant=T_subseq_isconstant
+    )
+    comp_P, comp_I = mstump(T, m, T_subseq_isconstant=T_subseq_isconstant)
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
