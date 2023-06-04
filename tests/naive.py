@@ -555,7 +555,14 @@ def multi_distance_profile(
 ):
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
+    d = T.shape[0]
+    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
+        T_subseq_isconstant = [T_subseq_isconstant] * d
+
+    T_subseq_isconstant = np.array(
+        [rolling_isconstant(T[i], m, T_subseq_isconstant[i]) for i in range(d)]
+    )
+
     Q = T[:, query_idx : query_idx + m]
     Q_subseq_isconstant = T_subseq_isconstant[:, query_idx].reshape(-1, 1)
     D = multi_mass(

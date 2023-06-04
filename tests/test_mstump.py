@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -478,7 +480,8 @@ def test_multi_mass_with_isconstant():
     npt.assert_almost_equal(ref, comp, decimal=config.STUMPY_TEST_PRECISION)
 
 
-def test_multi_distance_profile_with_isconstant():
+def test_multi_distance_profile_with_isconstant_case1():
+    # case1: `T_subseq_isconstant` is of type `np.ndarray`
     d = 3
     n = 64
     m = 8
@@ -493,9 +496,59 @@ def test_multi_distance_profile_with_isconstant():
             query_idx, T, m, T_subseq_isconstant=T_subseq_isconstant
         )
 
-        M_T, Σ_T = core.compute_mean_std(T, m)
         comp_D = multi_distance_profile(
             query_idx, T, m, T_subseq_isconstant=T_subseq_isconstant
         )
 
         npt.assert_almost_equal(ref_D, comp_D)
+
+
+def test_multi_distance_profile_with_isconstant_case2():
+    # case2: `T_subseq_isconstant` is of type `callable`
+    d = 3
+    n = 64
+    m = 8
+
+    T = np.random.uniform(-1000, 1000, size=[d, n])
+    T_subseq_isconstant = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    query_idx = np.random.randint(0, n - m + 1)
+
+    ref_D = naive.multi_distance_profile(
+        query_idx, T, m, T_subseq_isconstant=T_subseq_isconstant
+    )
+
+    comp_D = multi_distance_profile(
+        query_idx, T, m, T_subseq_isconstant=T_subseq_isconstant
+    )
+
+    npt.assert_almost_equal(ref_D, comp_D)
+
+
+def test_multi_distance_profile_with_isconstant_case3():
+    # case3: `T_subseq_isconstant` is of type `list`
+    d = 3
+    n = 64
+    m = 8
+
+    T = np.random.uniform(-1000, 1000, size=[d, n])
+    T_subseq_isconstant = [
+        None,
+        np.random.choice([True, False], n - m + 1, replace=True),
+        functools.partial(
+            naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+        ),
+    ]
+
+    query_idx = np.random.randint(0, n - m + 1)
+
+    ref_D = naive.multi_distance_profile(
+        query_idx, T, m, T_subseq_isconstant=T_subseq_isconstant
+    )
+    comp_D = multi_distance_profile(
+        query_idx, T, m, T_subseq_isconstant=T_subseq_isconstant
+    )
+
+    npt.assert_almost_equal(ref_D, comp_D)
