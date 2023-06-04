@@ -1,5 +1,3 @@
-import functools
-
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -369,19 +367,14 @@ def test_multi_mass_with_isconstant():
     n = 64
     m = 8
 
+    # case 1: Q is not multi-subseq of T
     T = np.random.uniform(-1000, 1000, size=[d, n])
+    T_subseq_isconstant = np.random.choice(
+        [True, False], size=(d, n - m + 1), replace=True
+    )
 
-    T_subseq_isconstant = [
-        None,
-        np.random.choice([True, False], n - m + 1, replace=True),
-        functools.partial(
-            naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
-        ),
-    ]
-
-    # Q is random and not a part of T
     Q = np.random.uniform(-1000, 1000, size=[d, m])
-    Q_subseq_isconstant = None
+    Q_subseq_isconstant = np.random.choice([True, False], size=(d, 1), replace=True)
 
     ref = naive.multi_mass(
         Q,
@@ -391,9 +384,45 @@ def test_multi_mass_with_isconstant():
         Q_subseq_isconstant=Q_subseq_isconstant,
     )
 
-    T_subseq_isconstant = np.array(
-        [core.rolling_isconstant(T[i], m, T_subseq_isconstant[i]) for i in range(d)]
+    T_subseq_isconstant = core.rolling_isconstant(T, m, T_subseq_isconstant)
+    M_T, Σ_T = core.compute_mean_std(T, m)
+
+    Q_subseq_isconstant = core.rolling_isconstant(Q, m, Q_subseq_isconstant)
+    μ_Q, σ_Q = core.compute_mean_std(T, m)
+
+    comp = _multi_mass(
+        Q,
+        T,
+        m,
+        M_T,
+        Σ_T,
+        μ_Q,
+        σ_Q,
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
     )
+
+    npt.assert_almost_equal(ref, comp, decimal=config.STUMPY_TEST_PRECISION)
+
+    # case 2: Q is a multi-subseq of T
+    T = np.random.uniform(-1000, 1000, size=[d, n])
+    T_subseq_isconstant = np.random.choice(
+        [True, False], size=(d, n - m + 1), replace=True
+    )
+
+    query_idx = np.random.randint(0, n - m + 1)
+    Q = T[:, query_idx : query_idx + m]
+    Q_subseq_isconstant = T_subseq_isconstant[:, query_idx].reshape(-1, 1)
+
+    ref = naive.multi_mass(
+        Q,
+        T,
+        m,
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
+    )
+
+    T_subseq_isconstant = core.rolling_isconstant(T, m, T_subseq_isconstant)
     M_T, Σ_T = core.compute_mean_std(T, m)
 
     Q_subseq_isconstant = core.rolling_isconstant(Q, m, Q_subseq_isconstant)

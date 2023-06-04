@@ -463,21 +463,6 @@ def multi_mass(
     T_subseq_isconstant=None,
     Q_subseq_isconstant=None,
 ):
-    d, n = T.shape
-    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
-        T_subseq_isconstant = [T_subseq_isconstant] * d
-
-    T_subseq_isconstant = np.array(
-        [rolling_isconstant(T[i], m, T_subseq_isconstant[i]) for i in range(d)]
-    )
-
-    if Q_subseq_isconstant is None or callable(Q_subseq_isconstant):
-        Q_subseq_isconstant = [None] * Q.shape[0]
-
-    Q_subseq_isconstant = np.array(
-        [rolling_isconstant(Q[i], m, Q_subseq_isconstant[i]) for i in range(Q.shape[0])]
-    )
-
     T_inf = np.isinf(T)
     if np.any(T_inf):
         T = T.copy()
@@ -488,6 +473,10 @@ def multi_mass(
         Q = Q.copy()
         Q[Q_inf] = np.nan
 
+    T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
+    Q_subseq_isconstant = rolling_isconstant(Q, m, Q_subseq_isconstant)
+
+    d, n = T.shape
     D = np.empty((d, n - m + 1))
     for i in range(d):
         D[i] = distance_profile(Q[i], T[i], m)
@@ -565,18 +554,10 @@ def multi_distance_profile(
     query_idx, T, m, include=None, discords=False, T_subseq_isconstant=None
 ):
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-    d, n = T.shape
 
-    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
-        T_subseq_isconstant = [T_subseq_isconstant] * d
-
-    T_subseq_isconstant = np.array(
-        [rolling_isconstant(T[i], m, T_subseq_isconstant[i]) for i in range(d)]
-    )
-
+    T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
     Q = T[:, query_idx : query_idx + m]
     Q_subseq_isconstant = T_subseq_isconstant[:, query_idx].reshape(-1, 1)
-
     D = multi_mass(
         Q,
         T,
@@ -597,6 +578,7 @@ def multi_distance_profile(
     else:
         D[start_row_idx:].sort(axis=0)
 
+    d, n = T.shape
     D_prime = np.zeros(n - m + 1)
     D_prime_prime = np.zeros((d, n - m + 1))
     for j in range(d):
