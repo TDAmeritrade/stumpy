@@ -12,7 +12,18 @@ from . import config, core
 from .maamp import maamp, maamp_mdl, maamp_multi_distance_profile, maamp_subspace
 
 
-def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, T_subseq_isconstant):
+def _multi_mass(
+    Q,
+    T,
+    m,
+    M_T,
+    Σ_T,
+    μ_Q,
+    σ_Q,
+    T_subseq_isconstant,
+    Q_subseq_isconstant,
+    query_idx=None,
+):
     """
     A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
     (MASS) to compute multi-dimensional distance profile.
@@ -43,6 +54,16 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, T_subseq_isconstant):
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` is constant (True)
 
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
+
+    query_idx : int, default None
+        This is the index position along each of the time series in `T`, where
+        the query subsequence, `Q`, is located. `query_idx` should be set to None
+        if `Q` is not a subsequence of `T`. If `Q` is a subsequence of `T`, provding
+        this argument is optional. If query_idx is provided, the distance between Q
+        and `T[:, query_idx : query_idx + m]` will automatically be set to zero.
+
     Returns
     -------
     D : numpy.ndarray
@@ -58,7 +79,13 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, T_subseq_isconstant):
             D[i, :] = np.inf
         else:
             D[i, :] = core.mass(
-                Q[i], T[i], M_T[i], Σ_T[i], T_subseq_isconstant=T_subseq_isconstant[i]
+                Q[i],
+                T[i],
+                M_T[i],
+                Σ_T[i],
+                T_subseq_isconstant=T_subseq_isconstant[i],
+                Q_subseq_isconstant=Q_subseq_isconstant[i],
+                query_idx=query_idx,
             )
 
     return D
@@ -450,6 +477,8 @@ def _multi_distance_profile(
     d, n = T_A.shape
     k = n - m + 1
     start_row_idx = 0
+
+    Q_subseq_isconstant = T_subseq_isconstant[:, query_idx].reshape(-1, 1)
     D = _multi_mass(
         T_B[:, query_idx : query_idx + m],
         T_A,
@@ -459,6 +488,8 @@ def _multi_distance_profile(
         μ_Q[:, query_idx],
         σ_Q[:, query_idx],
         T_subseq_isconstant,
+        Q_subseq_isconstant,
+        query_idx=query_idx,
     )
 
     if include is not None:

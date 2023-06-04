@@ -43,8 +43,20 @@ def test_multi_mass_seeded():
 
     T_subseq_isconstant = core.rolling_isconstant(T, m)
     M_T, Σ_T = core.compute_mean_std(T, m)
+
+    Q_subseq_isconstant = T_subseq_isconstant[:, trivial_idx].reshape(-1, 1)
+
     comp = _multi_mass(
-        Q, T, m, M_T, Σ_T, M_T[:, trivial_idx], Σ_T[:, trivial_idx], T_subseq_isconstant
+        Q,
+        T,
+        m,
+        M_T,
+        Σ_T,
+        M_T[:, trivial_idx],
+        Σ_T[:, trivial_idx],
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
+        query_idx=trivial_idx,
     )
 
     npt.assert_almost_equal(ref, comp, decimal=config.STUMPY_TEST_PRECISION)
@@ -60,8 +72,20 @@ def test_multi_mass(T, m):
 
     T_subseq_isconstant = core.rolling_isconstant(T, m)
     M_T, Σ_T = core.compute_mean_std(T, m)
+
+    Q_subseq_isconstant = T_subseq_isconstant[:, trivial_idx].reshape(-1, 1)
+
     comp = _multi_mass(
-        Q, T, m, M_T, Σ_T, M_T[:, trivial_idx], Σ_T[:, trivial_idx], T_subseq_isconstant
+        Q,
+        T,
+        m,
+        M_T,
+        Σ_T,
+        M_T[:, trivial_idx],
+        Σ_T[:, trivial_idx],
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
+        query_idx=trivial_idx,
     )
 
     npt.assert_almost_equal(ref, comp, decimal=config.STUMPY_TEST_PRECISION)
@@ -388,7 +412,7 @@ def test_multi_mass_with_isconstant():
     M_T, Σ_T = core.compute_mean_std(T, m)
 
     Q_subseq_isconstant = core.rolling_isconstant(Q, m, Q_subseq_isconstant)
-    μ_Q, σ_Q = core.compute_mean_std(T, m)
+    μ_Q, σ_Q = core.compute_mean_std(Q, m)
 
     comp = _multi_mass(
         Q,
@@ -426,7 +450,7 @@ def test_multi_mass_with_isconstant():
     M_T, Σ_T = core.compute_mean_std(T, m)
 
     Q_subseq_isconstant = core.rolling_isconstant(Q, m, Q_subseq_isconstant)
-    μ_Q, σ_Q = core.compute_mean_std(T, m)
+    μ_Q, σ_Q = core.compute_mean_std(Q, m)
 
     comp = _multi_mass(
         Q,
@@ -438,6 +462,7 @@ def test_multi_mass_with_isconstant():
         σ_Q,
         T_subseq_isconstant=T_subseq_isconstant,
         Q_subseq_isconstant=Q_subseq_isconstant,
+        query_idx=query_idx,
     )
 
     npt.assert_almost_equal(ref, comp, decimal=config.STUMPY_TEST_PRECISION)
