@@ -466,3 +466,24 @@ def test_multi_mass_with_isconstant():
     )
 
     npt.assert_almost_equal(ref, comp, decimal=config.STUMPY_TEST_PRECISION)
+
+
+def test_multi_distance_profile_with_isconstant():
+    d = 3
+    n = 64
+    m = 8
+
+    T = np.random.uniform(-1000, 1000, size=[d, n])
+    T_subseq_isconstant = np.random.choice(
+        [True, False], size=(d, n - m + 1), replace=True
+    )
+
+    for query_idx in range(n - m + 1):
+        ref_D = naive.multi_distance_profile(
+            query_idx, T, m, T_subseq_isconstant=T_subseq_isconstant
+        )
+
+        M_T, Σ_T = core.compute_mean_std(T, m)
+        comp_D = multi_distance_profile(query_idx, T, m)
+
+        npt.assert_almost_equal(ref_D, comp_D)
