@@ -55,7 +55,7 @@ def _multi_mass(
         A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     Q_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `T` is constant (True)
+        A boolean array that indicates whether a subsequence in `Q` is constant (True)
 
     query_idx : int, default None
         This is the index position along each of the time series in `T`, where
@@ -414,6 +414,7 @@ def _multi_distance_profile(
     μ_Q,
     σ_Q,
     T_subseq_isconstant,
+    Q_subseq_isconstant,
     include=None,
     discords=False,
     excl_zone=None,
@@ -453,6 +454,10 @@ def _multi_distance_profile(
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` is constant (True)
 
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether the query subsequence `T_B` is
+        constant (True)
+
     include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
@@ -478,7 +483,6 @@ def _multi_distance_profile(
     k = n - m + 1
     start_row_idx = 0
 
-    Q_subseq_isconstant = T_subseq_isconstant[:, query_idx].reshape(-1, 1)
     D = _multi_mass(
         T_B[:, query_idx : query_idx + m],
         T_A,
@@ -488,7 +492,7 @@ def _multi_distance_profile(
         μ_Q[:, query_idx],
         σ_Q[:, query_idx],
         T_subseq_isconstant,
-        Q_subseq_isconstant,
+        Q_subseq_isconstant[:, query_idx].reshape(-1, 1),
         query_idx=query_idx,
     )
 
@@ -514,7 +518,14 @@ def _multi_distance_profile(
 
 @core.non_normalized(maamp_multi_distance_profile)
 def multi_distance_profile(
-    query_idx, T, m, include=None, discords=False, normalize=True, p=2.0
+    query_idx,
+    T,
+    m,
+    include=None,
+    discords=False,
+    normalize=True,
+    p=2.0,
+    T_subseq_isconstant=None,
 ):
     """
     Multi-dimensional wrapper to compute the multi-dimensional distance profile for a
@@ -556,13 +567,32 @@ def multi_distance_profile(
         and the Euclidean distance, respectively. This parameter is ignored when
         `normalize == True`.
 
+    T_subseq_isconstant : numpy.ndarray or callable or list, default None
+        A parameter that is used to show whether a subsequence of a time series in `T`
+        is constant(True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
+        or it be a callable function, which will be applied to each time series in `T`.
+        It can also be list of length `T.shape[0]`, i.e. dimension size of `T`. In this
+        case, T_subseq_isconstant[i] corresponds to the i-th time series `T[i]`. Each
+        element of list can be a 1D boolean np.ndarray, a callable function, or None.
+
     Returns
     -------
     D : numpy.ndarray
         Multi-dimensional distance profile for the window with index equal to
         `query_idx`
     """
-    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T, m)
+    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
+        T_subseq_isconstant = [T_subseq_isconstant] * T.shape[0]
+    T_subseq_isconstant = np.array(
+        [
+            core.rolling_isconstant(T[i], m, T_subseq_isconstant[i])
+            for i in range(T.shape[0])
+        ]
+    )
+
+    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
+        T, m, T_subseq_isconstant=T_subseq_isconstant
+    )
 
     if T.ndim <= 1:  # pragma: no cover
         err = f"T is {T.ndim}-dimensional and must be at least 1-dimensional"
@@ -587,6 +617,7 @@ def multi_distance_profile(
         M_T,
         Σ_T,
         T_subseq_isconstant,
+        T_subseq_isconstant,
         include,
         discords,
         excl_zone,
@@ -606,6 +637,7 @@ def _get_first_mstump_profile(
     μ_Q,
     σ_Q,
     T_subseq_isconstant,
+    Q_subseq_isconstant,
     include=None,
     discords=False,
 ):
@@ -652,6 +684,10 @@ def _get_first_mstump_profile(
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` is constant (True)
 
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether the query subsequence `T_B` is
+        constant (True)
+
     include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
@@ -684,6 +720,7 @@ def _get_first_mstump_profile(
         μ_Q,
         σ_Q,
         T_subseq_isconstant,
+        Q_subseq_isconstant,
         include,
         discords,
         excl_zone,
@@ -1166,6 +1203,7 @@ def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
         μ_Q,
         σ_Q,
         T_subseq_isconstant,
+        Q_subseq_isconstant,
         include,
         discords,
     )

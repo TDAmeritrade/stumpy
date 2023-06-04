@@ -114,7 +114,17 @@ def test_get_first_mstump_profile(T, m):
     T_subseq_isconstant = core.rolling_isconstant(T, m)
     M_T, Σ_T = core.compute_mean_std(T, m)
     comp_P, comp_I = _get_first_mstump_profile(
-        start, T, T, m, excl_zone, M_T, Σ_T, M_T, Σ_T, T_subseq_isconstant
+        start,
+        T,
+        T,
+        m,
+        excl_zone,
+        M_T,
+        Σ_T,
+        M_T,
+        Σ_T,
+        T_subseq_isconstant,
+        T_subseq_isconstant,
     )
 
     npt.assert_almost_equal(ref_P, comp_P)
@@ -484,6 +494,8 @@ def test_multi_distance_profile_with_isconstant():
         )
 
         M_T, Σ_T = core.compute_mean_std(T, m)
-        comp_D = multi_distance_profile(query_idx, T, m)
+        comp_D = multi_distance_profile(
+            query_idx, T, m, T_subseq_isconstant=T_subseq_isconstant
+        )
 
         npt.assert_almost_equal(ref_D, comp_D)
