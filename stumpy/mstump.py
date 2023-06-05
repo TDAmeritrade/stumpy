@@ -1083,8 +1083,10 @@ def _mstump(
     return P, I
 
 
-@core.non_normalized(maamp)
-def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
+@core.non_normalized(maamp, exclude=["normalize", "T_subseq_isconstant"])
+def mstump(
+    T, m, include=None, discords=False, normalize=True, p=2.0, T_subseq_isconstant=None
+):
     """
     Compute the multi-dimensional z-normalized matrix profile
 
@@ -1129,6 +1131,14 @@ def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
         and the Euclidean distance, respectively. This parameter is ignored when
         `normalize == True`.
 
+    T_subseq_isconstant : numpy.ndarray or callable or list, default None
+        A parameter that is used to show whether a subsequence of a time series in `T`
+        is constant(True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
+        or it be a callable function, which will be applied to each time series in `T`.
+        It can also be list of length `T.shape[0]`, i.e. dimension size of `T`. In this
+        case, T_subseq_isconstant[i] corresponds to the i-th time series `T[i]`. Each
+        element of list can be a 1D boolean np.ndarray, a callable function, or None.
+
     Returns
     -------
     P : numpy.ndarray
@@ -1170,8 +1180,27 @@ def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
     T_A = T
     T_B = T_A
 
-    T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T_A, m)
-    T_B, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(T_B, m)
+    T_A = core._preprocess(T_A)
+    T_B = core._preprocess(T_B)
+
+    T_A_subseq_isconstant = T_subseq_isconstant
+    if T_A_subseq_isconstant is None or callable(T_A_subseq_isconstant):
+        T_A_subseq_isconstant = [T_A_subseq_isconstant] * T_A.shape[0]
+
+    T_A_subseq_isconstant = np.array(
+        [
+            core.rolling_isconstant(T_A[i], m, T_A_subseq_isconstant[i])
+            for i in range(T_A.shape[0])
+        ]
+    )
+    T_B_subseq_isconstant = T_A_subseq_isconstant
+
+    T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
+        T_A, m, T_subseq_isconstant=T_A_subseq_isconstant
+    )
+    T_B, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(
+        T_B, m, T_subseq_isconstant=T_B_subseq_isconstant
+    )
 
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
