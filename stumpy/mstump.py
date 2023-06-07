@@ -583,6 +583,7 @@ def multi_distance_profile(
         Multi-dimensional distance profile for the window with index equal to
         `query_idx`
     """
+    T = core._preprocess(T)
     if T_subseq_isconstant is None or callable(T_subseq_isconstant):
         T_subseq_isconstant = [T_subseq_isconstant] * T.shape[0]
     T_subseq_isconstant = np.array(
