@@ -104,6 +104,7 @@ def subspace(
     n_bit=8,
     normalize=True,
     p=2.0,
+    T_subseq_isconstant=None,
 ):
     """
     Compute the k-dimensional matrix profile subspace for a given subsequence index and
@@ -168,6 +169,15 @@ def subspace(
         and the Euclidean distance, respectively. This parameter is ignored when
         `normalize == True`.
 
+    T_subseq_isconstant : numpy.ndarray or callable or list, default None
+        A parameter that is used to show whether a subsequence of a time series in `T`
+        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
+        or a function that can be applied to each time series in `T`. Alternatively, for
+        maximum flexibility, a list (with length equal to the total number of time
+        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
+        the i-th time series T[i] and each element in the list can either be 1D boolean
+        np.ndarray, a function, or None.
+
     Returns
     -------
     S : numpy.ndarray
@@ -205,13 +215,26 @@ def subspace(
     T = core._preprocess(T)
     core.check_window_size(m, max_size=T.shape[-1])
 
+    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
+        T_subseq_isconstant = [T_subseq_isconstant] * T.shape[0]
+
+    T_subseq_isconstant = np.array(
+        [
+            core.rolling_isconstant(T[i], m, T_subseq_isconstant[i])
+            for i in range(T.shape[0])
+        ]
+    )
+
     if discretize_func is None:
         bins = _inverse_norm(n_bit)
         discretize_func = partial(_discretize, bins=bins)
 
     subseqs, _, _, _ = core.preprocess(T[:, subseq_idx : subseq_idx + m], m)
+    subseqs[T_subseq_isconstant[:, subseq_idx]] = 0.0
     subseqs = core.z_norm(subseqs, axis=1)
+
     neighbors, _, _, _ = core.preprocess(T[:, nn_idx : nn_idx + m], m)
+    neighbors[T_subseq_isconstant[:, nn_idx]] = 0.0
     neighbors = core.z_norm(neighbors, axis=1)
 
     disc_subseqs = discretize_func(subseqs)
@@ -282,6 +305,7 @@ def mdl(
     n_bit=8,
     normalize=True,
     p=2.0,
+    T_subseq_isconstant=None,
 ):
     """
     Compute the multi-dimensional number of bits needed to compress one
@@ -343,6 +367,15 @@ def mdl(
         and the Euclidean distance, respectively. This parameter is ignored when
         `normalize == True`.
 
+    T_subseq_isconstant : numpy.ndarray or callable or list, default None
+        A parameter that is used to show whether a subsequence of a time series in `T`
+        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
+        or a function that can be applied to each time series in `T`. Alternatively, for
+        maximum flexibility, a list (with length equal to the total number of time
+        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
+        the i-th time series T[i] and each element in the list can either be 1D boolean
+        np.ndarray, a function, or None.
+
     Returns
     -------
     bit_sizes : numpy.ndarray
@@ -380,6 +413,16 @@ def mdl(
     T = core._preprocess(T)
     core.check_window_size(m, max_size=T.shape[-1])
 
+    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
+        T_subseq_isconstant = [T_subseq_isconstant] * T.shape[0]
+
+    T_subseq_isconstant = np.array(
+        [
+            core.rolling_isconstant(T[i], m, T_subseq_isconstant[i])
+            for i in range(T.shape[0])
+        ]
+    )
+
     if discretize_func is None:
         bins = _inverse_norm(n_bit)
         discretize_func = partial(_discretize, bins=bins)
@@ -388,8 +431,11 @@ def mdl(
     S = [None] * T.shape[0]
     for k in range(T.shape[0]):
         subseqs, _, _, _ = core.preprocess(T[:, subseq_idx[k] : subseq_idx[k] + m], m)
+        subseqs[T_subseq_isconstant[:, subseq_idx]] = 0.0
         subseqs = core.z_norm(subseqs, axis=1)
+
         neighbors, _, _, _ = core.preprocess(T[:, nn_idx[k] : nn_idx[k] + m], m)
+        neighbors[T_subseq_isconstant[:, nn_idx]] = 0.0
         neighbors = core.z_norm(neighbors, axis=1)
 
         disc_subseqs = discretize_func(subseqs)
