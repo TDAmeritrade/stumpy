@@ -492,7 +492,7 @@ def _multi_distance_profile(
         μ_Q[:, query_idx],
         σ_Q[:, query_idx],
         T_subseq_isconstant,
-        Q_subseq_isconstant[:, query_idx].reshape(-1, 1),
+        np.expand_dims(Q_subseq_isconstant[:, query_idx], 1),
         query_idx=query_idx,
     )
 
@@ -571,11 +571,12 @@ def multi_distance_profile(
 
     T_subseq_isconstant : numpy.ndarray or callable or list, default None
         A parameter that is used to show whether a subsequence of a time series in `T`
-        is constant(True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
-        or it be a callable function, which will be applied to each time series in `T`.
-        It can also be list of length `T.shape[0]`, i.e. dimension size of `T`. In this
-        case, T_subseq_isconstant[i] corresponds to the i-th time series `T[i]`. Each
-        element of list can be a 1D boolean np.ndarray, a callable function, or None.
+        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
+        or a function that can be applied to each time series in `T`. Alternatively, for
+        maximum flexibility, a list (with length equal to the total number of time
+        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
+        the i-th time series T[i] and each element in the list can either be 1D boolean
+        np.ndarray, a function, or None.
 
     Returns
     -------
@@ -1134,11 +1135,12 @@ def mstump(
 
     T_subseq_isconstant : numpy.ndarray or callable or list, default None
         A parameter that is used to show whether a subsequence of a time series in `T`
-        is constant(True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
-        or it be a callable function, which will be applied to each time series in `T`.
-        It can also be list of length `T.shape[0]`, i.e. dimension size of `T`. In this
-        case, T_subseq_isconstant[i] corresponds to the i-th time series `T[i]`. Each
-        element of list can be a 1D boolean np.ndarray, a callable function, or None.
+        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
+        or a function that can be applied to each time series in `T`. Alternatively, for
+        maximum flexibility, a list (with length equal to the total number of time
+        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
+        the i-th time series T[i] and each element in the list can either be 1D boolean
+        np.ndarray, a function, or None.
 
     Returns
     -------
