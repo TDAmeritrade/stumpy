@@ -91,7 +91,7 @@ def _multi_mass(
     return D
 
 
-@core.non_normalized(maamp_subspace)
+@core.non_normalized(maamp_subspace, exclude=["normalize", "T_subseq_isconstant"])
 def subspace(
     T,
     m,
@@ -293,7 +293,7 @@ def _discretize(a, bins, right=True):  # pragma: no cover
     return np.digitize(a, bins, right=right)
 
 
-@core.non_normalized(maamp_mdl)
+@core.non_normalized(maamp_mdl, exclude=["normalize", "T_subseq_isconstant"])
 def mdl(
     T,
     m,
