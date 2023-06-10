@@ -46,7 +46,7 @@ def test_multi_mass_seeded():
     T_subseq_isconstant = core.rolling_isconstant(T, m)
     M_T, Σ_T = core.compute_mean_std(T, m)
 
-    Q_subseq_isconstant = T_subseq_isconstant[:, trivial_idx].reshape(-1, 1)
+    Q_subseq_isconstant = np.expand_dims(T_subseq_isconstant[:, trivial_idx], 1)
 
     comp = _multi_mass(
         Q,
@@ -75,7 +75,7 @@ def test_multi_mass(T, m):
     T_subseq_isconstant = core.rolling_isconstant(T, m)
     M_T, Σ_T = core.compute_mean_std(T, m)
 
-    Q_subseq_isconstant = T_subseq_isconstant[:, trivial_idx].reshape(-1, 1)
+    Q_subseq_isconstant = np.expand_dims(T_subseq_isconstant[:, trivial_idx], 1)
 
     comp = _multi_mass(
         Q,
@@ -448,7 +448,7 @@ def test_multi_mass_with_isconstant():
 
     query_idx = np.random.randint(0, n - m + 1)
     Q = T[:, query_idx : query_idx + m]
-    Q_subseq_isconstant = T_subseq_isconstant[:, query_idx].reshape(-1, 1)
+    Q_subseq_isconstant = np.expand_dims(T_subseq_isconstant[:, query_idx], 1)
 
     ref = naive.multi_mass(
         Q,
