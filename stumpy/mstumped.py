@@ -190,7 +190,14 @@ def _dask_mstumped(
     exclude=["normalize", "T_subseq_isconstant"],
 )
 def mstumped(
-    client, T, m, include=None, discords=False, normalize=True, T_subseq_isconstant=None
+    client,
+    T,
+    m,
+    include=None,
+    discords=False,
+    p=2.0,
+    normalize=True,
+    T_subseq_isconstant=None,
 ):
     """
     Compute the multi-dimensional z-normalized matrix profile with a distributed
@@ -230,6 +237,11 @@ def mstumped(
         multi-dimensional matrix profile that favors larger matrix profile values
         (i.e., discords) rather than smaller values (i.e., motifs). Note that indices
         in `include` are still maintained and respected.
+
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
 
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
