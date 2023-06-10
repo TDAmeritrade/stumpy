@@ -231,11 +231,11 @@ def subspace(
 
     subseqs, _, _, _ = core.preprocess(T[:, subseq_idx : subseq_idx + m], m)
     subseqs = core.z_norm(subseqs, axis=1)
-    subseqs[T_subseq_isconstant[:, subseq_idx], :] = 0.0
+    subseqs[T_subseq_isconstant[:, subseq_idx]] = 0.0
 
     neighbors, _, _, _ = core.preprocess(T[:, nn_idx : nn_idx + m], m)
     neighbors = core.z_norm(neighbors, axis=1)
-    neighbors[T_subseq_isconstant[:, nn_idx], :] = 0.0
+    neighbors[T_subseq_isconstant[:, nn_idx]] = 0.0
 
     disc_subseqs = discretize_func(subseqs)
     disc_neighbors = discretize_func(neighbors)
@@ -432,11 +432,11 @@ def mdl(
     for k in range(T.shape[0]):
         subseqs, _, _, _ = core.preprocess(T[:, subseq_idx[k] : subseq_idx[k] + m], m)
         subseqs = core.z_norm(subseqs, axis=1)
-        subseqs[T_subseq_isconstant[:, subseq_idx[k]], :] = 0.0
+        subseqs[T_subseq_isconstant[:, subseq_idx[k]]] = 0.0
 
         neighbors, _, _, _ = core.preprocess(T[:, nn_idx[k] : nn_idx[k] + m], m)
         neighbors = core.z_norm(neighbors, axis=1)
-        neighbors[T_subseq_isconstant[:, nn_idx[k]], :] = 0.0
+        neighbors[T_subseq_isconstant[:, nn_idx[k]]] = 0.0
 
         disc_subseqs = discretize_func(subseqs)
         disc_neighbors = discretize_func(neighbors)
