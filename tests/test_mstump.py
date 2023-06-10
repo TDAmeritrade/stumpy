@@ -481,7 +481,7 @@ def test_multi_mass_with_isconstant():
 
 
 def test_multi_distance_profile_with_isconstant_case1():
-    # case1: `T_subseq_isconstant` is of type `np.ndarray`
+    # case1: `T_subseq_isconstant` is `np.ndarray`
     d = 3
     n = 64
     m = 8
@@ -504,7 +504,7 @@ def test_multi_distance_profile_with_isconstant_case1():
 
 
 def test_multi_distance_profile_with_isconstant_case2():
-    # case2: `T_subseq_isconstant` is of type `callable`
+    # case2: `T_subseq_isconstant` is `function`
     d = 3
     n = 64
     m = 8
@@ -554,7 +554,8 @@ def test_multi_distance_profile_with_isconstant_case3():
     npt.assert_almost_equal(ref_D, comp_D)
 
 
-def test_mstump_with_isconstant_with_isconstant_case1():
+def test_mstump_with_isconstant_case1():
+    # case1: `T_subseq_isconstant` is a (partial) function
     d = 3
     n = 64
     m = 8
@@ -575,7 +576,8 @@ def test_mstump_with_isconstant_with_isconstant_case1():
     npt.assert_almost_equal(ref_I, comp_I)
 
 
-def test_mstump_with_isconstant_with_isconstant_case2():
+def test_mstump_with_isconstant_case2():
+    # case2: `T_subseq_isconstant` is a list
     d = 3
     n = 64
     m = 8
