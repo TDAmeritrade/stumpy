@@ -563,7 +563,7 @@ def _multi_distance_profile(
 
 
 @core.non_normalized(
-    maamp_multi_distance_profile, exclude=["T_subseq_isconstant", "normalize"]
+    maamp_multi_distance_profile, exclude=["normalize", "T_subseq_isconstant"]
 )
 def multi_distance_profile(
     query_idx,
