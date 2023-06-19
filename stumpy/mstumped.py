@@ -248,14 +248,14 @@ def mstumped(
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
 
-    T_subseq_isconstant : numpy.ndarray or callable or list, default None
+    T_subseq_isconstant : numpy.ndarray, function, or list, default None
         A parameter that is used to show whether a subsequence of a time series in `T`
         is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
         or a function that can be applied to each time series in `T`. Alternatively, for
         maximum flexibility, a list (with length equal to the total number of time
         series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
-        the i-th time series T[i] and each element in the list can either be 1D boolean
-        np.ndarray, a function, or None.
+        the i-th time series T[i] and each element in the list can either be a 1D
+        boolean np.ndarray, a function, or None.
 
     Returns
     -------
