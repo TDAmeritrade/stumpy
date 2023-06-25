@@ -4246,14 +4246,14 @@ def process_isconstant(T, m, T_subseq_isconstant, T_subseq_isfinite=None):
         Rolling window isconstant
     """
     if isinstance(T_subseq_isconstant, list):
-        if T.ndim != 2:
+        if T.ndim != 2:  # pragma: no cover
             msg = (
                 "When `T_subseq_isconstant` is provided as a list, the `T` "
                 + f"must be a 2D array. Got {T.ndim} dimension instead."
             )
             raise ValueError(msg)
 
-        if len(T_subseq_isconstant) != T.shape[0]:
+        if len(T_subseq_isconstant) != T.shape[0]:  # pragma: no cover
             msg = (
                 "The lenght of the list `T_subseq_isconstant` must be "
                 + "equal to the number of time series in `T`."
