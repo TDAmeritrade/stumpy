@@ -2803,7 +2803,7 @@ def _idx_to_mp(
             warnings.warn(msg)
 
     if normalize:
-        T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
+        T_subseq_isconstant = process_isconstant(T, m, T_subseq_isconstant)
 
     T_isfinite = np.isfinite(T)
     T_subseq_isfinite = np.all(rolling_window(T_isfinite, m), axis=1)
