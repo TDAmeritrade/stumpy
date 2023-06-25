@@ -4210,3 +4210,63 @@ def _mpdist(
     MPdist = _select_P_ABBA_value(P_ABBA, k, custom_func)
 
     return MPdist
+
+
+def process_isconstant(T, m, T_subseq_isconstant):
+    """
+    Compute the rolling isconstant for 1-D and 2-D arrays.
+    This is accomplished by comparing the min and max within each window and
+    assigning `True` when the min and max are equal and `False` otherwise. If
+    a subsequence contains at least one NaN, then the subsequence is not constant.
+
+    If `T_subseq_isconstant` is provided as boolean array, its element will be set
+    to False if their corresponding value in `T_subseq_isfinite` is False.
+
+    Parameters
+    ----------
+    T : numpy.ndarray
+        The input 1D or 2D array
+
+    m : numpy.ndarray
+        The rolling window size
+
+    T_subseq_isconstant : np.ndarray, function, or list, default None
+        A parameter that is used to show whether a subsequence of a time series in `T`
+        is constant (True) or not. T_subseq_isconstant can be a 1D or 2D boolean
+        numpy.ndarry (depending on the dimension of `T`) or a function that can be
+        applied to each time series in `T`. Alternatively, for  maximum flexibility, a
+        list (with length equal to the total number of time series) may also be used.
+        In this case, T_subseq_isconstant[i] corresponds to the i-th time series T[i]
+        and each element in the list can either be 1D boolean np.ndarray, a function,
+        or None.
+
+    Returns
+    -------
+    T_subseq_isconstant : numpy.ndarray
+        Rolling window isconstant
+    """
+    if isinstance(T_subseq_isconstant, list):
+        ndim = T.ndim
+        T = np.atleast_2d(T)
+        if len(T_subseq_isconstant) != T.shape[0]:
+            msg = (
+                "The lenght of the list `T_subseq_isconstant` must be "
+                + "equal to the number of time series in `T`."
+            )
+            raise ValueError(msg)
+
+        T_subseq_isconstant = np.array(
+            [
+                rolling_isconstant(T[i], m, T_subseq_isconstant[i])
+                for i in range(T.shape[0])
+            ]
+        )
+        if ndim == 1:
+            T_subseq_isconstant = T_subseq_isconstant.flatten()
+
+    T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
+    T_subseq_isconstant[...] = fix_isconstant_isfinite_conflicts(
+        T, m, T_subseq_isconstant
+    )
+
+    return T_subseq_isconstant
