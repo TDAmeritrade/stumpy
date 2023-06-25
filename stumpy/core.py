@@ -4246,8 +4246,12 @@ def process_isconstant(T, m, T_subseq_isconstant, T_subseq_isfinite=None):
         Rolling window isconstant
     """
     if isinstance(T_subseq_isconstant, list):
-        ndim = T.ndim
-        T = np.atleast_2d(T)
+        if T.ndim != 2:
+            msg = (
+                "When `T_subseq_isconstant` is provided as a list, the `T` "
+                + f"must be a 2D array. Got {T.ndim} dimension instead."
+            )
+            raise ValueError(msg)
 
         if len(T_subseq_isconstant) != T.shape[0]:
             msg = (
@@ -4262,9 +4266,6 @@ def process_isconstant(T, m, T_subseq_isconstant, T_subseq_isfinite=None):
                 for i in range(T.shape[0])
             ]
         )
-
-        if ndim == 1:
-            T_subseq_isconstant = T_subseq_isconstant.flatten()
 
     T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
     T_subseq_isconstant[...] = fix_isconstant_isfinite_conflicts(
