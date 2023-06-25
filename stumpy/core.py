@@ -2133,8 +2133,7 @@ def preprocess(
 
     T[np.isinf(T)] = np.nan
 
-    T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
-    T_subseq_isconstant = fix_isconstant_isfinite_conflicts(T, m, T_subseq_isconstant)
+    T_subseq_isconstant = process_isconstant(T, m, T_subseq_isconstant)
     if M_T is None or Σ_T is None:
         M_T, Σ_T = compute_mean_std(T, m)
     T[np.isnan(T)] = 0
@@ -2236,10 +2235,7 @@ def preprocess_diagonal(T, m, T_subseq_isconstant=None):
     check_window_size(m, max_size=T.shape[-1])
     T_subseq_isfinite = rolling_isfinite(T, m)
     T[~np.isfinite(T)] = np.nan
-    T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
-    T_subseq_isconstant = fix_isconstant_isfinite_conflicts(
-        T, m, T_subseq_isconstant, T_subseq_isfinite
-    )
+    T_subseq_isconstant = process_isconstant(T, m, T_subseq_isconstant)
     T[np.isnan(T)] = 0
 
     M_T, Σ_T = compute_mean_std(T, m)
@@ -2622,7 +2618,7 @@ def fix_isconstant_isfinite_conflicts(
         A numpy array `dtype` of boolean that indicates whether a subsequence
         is constant (True)  or not (False).
 
-        T_subseq_isfinite : numpy.ndarray, default None
+    T_subseq_isfinite : numpy.ndarray, default None
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
 
@@ -4212,7 +4208,7 @@ def _mpdist(
     return MPdist
 
 
-def process_isconstant(T, m, T_subseq_isconstant):
+def process_isconstant(T, m, T_subseq_isconstant, T_subseq_isfinite=None):
     """
     Compute the rolling isconstant for 1-D and 2-D arrays.
     This is accomplished by comparing the min and max within each window and
@@ -4240,6 +4236,10 @@ def process_isconstant(T, m, T_subseq_isconstant):
         and each element in the list can either be 1D boolean np.ndarray, a function,
         or None.
 
+    T_subseq_isfinite : numpy.ndarray, default None
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False)
+
     Returns
     -------
     T_subseq_isconstant : numpy.ndarray
@@ -4248,6 +4248,7 @@ def process_isconstant(T, m, T_subseq_isconstant):
     if isinstance(T_subseq_isconstant, list):
         ndim = T.ndim
         T = np.atleast_2d(T)
+
         if len(T_subseq_isconstant) != T.shape[0]:
             msg = (
                 "The lenght of the list `T_subseq_isconstant` must be "
@@ -4261,12 +4262,13 @@ def process_isconstant(T, m, T_subseq_isconstant):
                 for i in range(T.shape[0])
             ]
         )
+
         if ndim == 1:
             T_subseq_isconstant = T_subseq_isconstant.flatten()
 
     T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
     T_subseq_isconstant[...] = fix_isconstant_isfinite_conflicts(
-        T, m, T_subseq_isconstant
+        T, m, T_subseq_isconstant, T_subseq_isfinite
     )
 
     return T_subseq_isconstant
