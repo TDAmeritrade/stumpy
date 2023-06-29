@@ -85,6 +85,8 @@ jobs:
                   brew link --force libomp
                   echo "Checking /usr/local/lib for OpenMP"
                   ls /usr/local/lib | grep lib*omp*.dylib
+                  echo "Checking miniconda/lib for OpenMP"
+                  echo "$(python -c 'import site; print(site.getsitepackages()[0])')" | grep -o '^.*lib' | ls lib*omp*dylib
                   # echo "Changing  @rpath for the omppool.cpython-x-darwin.so shared object to look in /usr/local/lib"
                   # ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib /usr/local/lib/libomp.dylib
                   # ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libiomp5.dylib /usr/local/lib/libiomp5.dylib
