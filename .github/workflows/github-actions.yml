@@ -15,6 +15,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Fix Broken Python 3.7.17 (no _bz2 module)
         run: rm -rf $RUNNER_TOOL_CACHE/Python/3.7.17
+        shell: bash
       - name: Set Up Python
         uses: actions/setup-python@v4
         with:
@@ -59,6 +60,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Fix Broken Python 3.7.17 (no _bz2 module)
         run: rm -rf $RUNNER_TOOL_CACHE/Python/3.7.17
+        shell: bash
       - name: Set Up Python
         uses: actions/setup-python@v4
         with:
@@ -104,6 +106,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Fix Broken Python 3.7.17 (no _bz2 module)
         run: rm -rf $RUNNER_TOOL_CACHE/Python/3.7.17
+        shell: bash
       - name: Set Up Python
         uses: actions/setup-python@v4
         with:
