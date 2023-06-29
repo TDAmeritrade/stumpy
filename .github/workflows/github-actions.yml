@@ -80,6 +80,8 @@ jobs:
       - name: Link OpenMP
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
+                  echo "Install LLVM"
+                  brew install llvm
                   echo "Linking OpenMP into /usr/local/lib"
                   brew link --force libomp
                   echo "Checking /usr/local/lib for OpenMP"
