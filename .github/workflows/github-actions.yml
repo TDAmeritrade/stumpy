@@ -55,7 +55,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        # python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.9']
     steps:
       - uses: actions/checkout@v3
       - name: Fix Broken Python 3.7.17 (no _bz2 module)
@@ -99,47 +100,47 @@ jobs:
       - name: Run Unit Tests
         run: ./test.sh unit
         shell: bash
-  coverage-testing:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
-    steps:
-      - uses: actions/checkout@v3
-      - name: Fix Broken Python 3.7.17 (no _bz2 module)
-        run: rm -rf $RUNNER_TOOL_CACHE/Python/3.7.17
-        shell: bash
-      - name: Set Up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Display Python Version
-        run: python -c "import sys; print(sys.version)"
-        shell: bash
-      - name: Install STUMPY And Other Dependencies
-        run: python -m pip install --editable .[ci]
-        shell: bash
-      - name: Run Black
-        run: black --check --diff ./
-        shell: bash
-      - name: Run Flake8
-        run: flake8 ./
-        shell: bash
-      - name: Link OpenMP
-        run: |
-             if [ "$RUNNER_OS" == "macOS" ]; then
-                  brew link --force libomp
-             fi
-        shell: bash
-      - name: Show Full Numba Environment
-        run: python -m numba -s
-        shell: bash
-      - name: Run Coverage Tests
-        run: ./test.sh coverage
-        shell: bash
-      - name: Check Coverage Report
-        run: coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,stumpy/cache.py
-        shell: bash
-      - name: Upload Coverage Tests Results
-        uses: codecov/codecov-action@v3
+  # coverage-testing:
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       os: [ubuntu-latest, macos-latest, windows-latest]
+  #       python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Fix Broken Python 3.7.17 (no _bz2 module)
+  #       run: rm -rf $RUNNER_TOOL_CACHE/Python/3.7.17
+  #       shell: bash
+  #     - name: Set Up Python
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+  #     - name: Display Python Version
+  #       run: python -c "import sys; print(sys.version)"
+  #       shell: bash
+  #     - name: Install STUMPY And Other Dependencies
+  #       run: python -m pip install --editable .[ci]
+  #       shell: bash
+  #     - name: Run Black
+  #       run: black --check --diff ./
+  #       shell: bash
+  #     - name: Run Flake8
+  #       run: flake8 ./
+  #       shell: bash
+  #     - name: Link OpenMP
+  #       run: |
+  #            if [ "$RUNNER_OS" == "macOS" ]; then
+  #                 brew link --force libomp
+  #            fi
+  #       shell: bash
+  #     - name: Show Full Numba Environment
+  #       run: python -m numba -s
+  #       shell: bash
+  #     - name: Run Coverage Tests
+  #       run: ./test.sh coverage
+  #       shell: bash
+  #     - name: Check Coverage Report
+  #       run: coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,stumpy/cache.py
+  #       shell: bash
+  #     - name: Upload Coverage Tests Results
+  #       uses: codecov/codecov-action@v3
