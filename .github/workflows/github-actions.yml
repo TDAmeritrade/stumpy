@@ -13,6 +13,9 @@ jobs:
         python-version: ['3.7']
     steps:
       - uses: actions/checkout@v3
+      - name: Fix Broken Python 3.7.17 (no _bz2 module)
+        run: rm -rf $RUNNER_TOOL_CACHE/Python/3.7.17
+        shell: bash
       - name: Set Up Python
         uses: actions/setup-python@v4
         with:
@@ -55,6 +58,9 @@ jobs:
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
       - uses: actions/checkout@v3
+      - name: Fix Broken Python 3.7.17 (no _bz2 module)
+        run: rm -rf $RUNNER_TOOL_CACHE/Python/3.7.17
+        shell: bash
       - name: Set Up Python
         uses: actions/setup-python@v4
         with:
@@ -74,12 +80,20 @@ jobs:
       - name: Link OpenMP
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
+                  # Fix libiomp5.dylib
+                  echo "Install OpenMP via Conda"
+                  conda install -c intel -y openmp
+                  echo "Checking $CONDA/lib for OpenMP"
+                  ls $CONDA/lib/libiomp5.dylib
+                  echo "Changing  @rpath for the omppool.cpython-x-darwin.so shared object to look in $CONDA/lib"
+                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libiomp5.dylib $CONDA/lib/libiomp5.dylib
+                  # Fix libomp.dylib
                   echo "Linking OpenMP into /usr/local/lib"
                   brew link --force libomp
                   echo "Checking /usr/local/lib for OpenMP"
-                  ls /usr/local/lib | grep libomp.dylib
+                  ls /usr/local/lib/libomp.dylib
                   echo "Changing  @rpath for the omppool.cpython-x-darwin.so shared object to look in /usr/local/lib"
-                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib /usr/local/lib/libomp.dylib 
+                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib /usr/local/lib/libomp.dylib
                   echo "Checking Numba OpenMP Access"
                   python -c "from numba.np.ufunc import omppool" 
              fi
@@ -98,6 +112,9 @@ jobs:
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
       - uses: actions/checkout@v3
+      - name: Fix Broken Python 3.7.17 (no _bz2 module)
+        run: rm -rf $RUNNER_TOOL_CACHE/Python/3.7.17
+        shell: bash
       - name: Set Up Python
         uses: actions/setup-python@v4
         with:
