@@ -4210,13 +4210,15 @@ def _mpdist(
 
 def process_isconstant(T, m, T_subseq_isconstant, T_subseq_isfinite=None):
     """
-    Compute the rolling isconstant for 1-D and 2-D arrays.
-    This is accomplished by comparing the min and max within each window and
-    assigning `True` when the min and max are equal and `False` otherwise. If
-    a subsequence contains at least one NaN, then the subsequence is not constant.
+    This is a convenience wrapper around the `rolling_isconstant` and
+    `fix_isconstant_isfinite_conflicts`.
 
-    If `T_subseq_isconstant` is provided as boolean array, its element will be set
-    to False if their corresponding value in `T_subseq_isfinite` is False.
+    It computes the rolling isconstant for 1-D and 2-D arrays. This is accomplished by
+    comparing the min and max within each window and assigning `True` when the min and
+    max are equal and `False` otherwise. If a subsequence contains at least one NaN,
+    then the subsequence is not constant. If `T_subseq_isconstant` is provided as
+    boolean array, its element will be set to False if their corresponding value in
+    `T_subseq_isfinite` is False.
 
     Parameters
     ----------
