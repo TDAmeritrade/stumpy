@@ -4210,7 +4210,7 @@ def _mpdist(
 
 def process_isconstant(T, m, T_subseq_isconstant, T_subseq_isfinite=None):
     """
-    This is a convenience wrapper around the `rolling_isconstant` and
+    A convenience wrapper around the `rolling_isconstant` and
     `fix_isconstant_isfinite_conflicts`.
 
     It computes the rolling isconstant for 1-D and 2-D arrays. This is accomplished by
