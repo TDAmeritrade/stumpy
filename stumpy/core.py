@@ -4266,8 +4266,9 @@ def process_isconstant(T, m, T_subseq_isconstant, T_subseq_isfinite=None):
                 for i in range(T.shape[0])
             ]
         )
+    else:
+        T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
 
-    T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
     T_subseq_isconstant[...] = fix_isconstant_isfinite_conflicts(
         T, m, T_subseq_isconstant, T_subseq_isfinite
     )
