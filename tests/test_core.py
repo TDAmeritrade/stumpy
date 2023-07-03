@@ -1728,15 +1728,22 @@ def test_process_isconstant_2d():
 
     # case 2: with nan
     T = np.random.rand(d, n)
-    row = np.random.randint(d)
-    col = np.random.randint(n)
-    T[row, col] = np.nan
+    i, j = np.random.choice(np.arange(n - m + 1), size=2, replace=False)
+    T[-1, i : i + m] = 0.0
+    T[-1, j : j + m] = 0.0
+    T[-1, j] = np.nan
 
     T_subseq_isconstant = [
         None,
         isconstant_custom_func,
-        np.random.choice([True, False], n - m + 1, replace=True),
+        np.full(n - m + 1, 0, dtype=bool),
     ]
+    T_subseq_isconstant[-1][i] = True
+    T_subseq_isconstant[-1][j] = True
+    # Although T_subseq_isconstant[-1, j] should be set to False (since...
+    # the subquence `T[-1, j:j+m]` is not finte), it is intentially set
+    # to True to test the functionality of `process_isconstant` in handling
+    # such conflict.
 
     T_subseq_isconstant_ref = np.array(
         [naive.rolling_isconstant(T[i], m, T_subseq_isconstant[i]) for i in range(d)]
