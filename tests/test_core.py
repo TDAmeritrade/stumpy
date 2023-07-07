@@ -1669,3 +1669,87 @@ def test_compute_P_ABBA_with_isconstant(T_A, T_B):
     )
 
     npt.assert_almost_equal(ref_P_ABBA, comp_P_ABBA)
+
+
+def test_process_isconstant_1d():
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    n = 64
+    m = 8
+
+    # case 1: without nan
+    T = np.random.rand(n)
+
+    T_subseq_isconstant_ref = naive.rolling_isconstant(T, m, isconstant_custom_func)
+    T_subseq_isconstant_comp = core.process_isconstant(T, m, isconstant_custom_func)
+
+    npt.assert_array_equal(T_subseq_isconstant_ref, T_subseq_isconstant_comp)
+
+    # case 2: with nan
+    T = np.random.rand(n)
+    idx = np.random.randint(n)
+    T[idx] = np.nan
+    T_subseq_isconstant = np.random.choice([True, False], n - m + 1, replace=True)
+
+    T_subseq_isfinite = core.rolling_isfinite(T, m)
+
+    T_subseq_isconstant_ref = T_subseq_isconstant & T_subseq_isfinite
+    T_subseq_isconstant_comp = core.process_isconstant(T, m, T_subseq_isconstant)
+
+    npt.assert_array_equal(T_subseq_isconstant_ref, T_subseq_isconstant_comp)
+
+
+def test_process_isconstant_2d():
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+
+    n = 64
+    m = 8
+    d = 3
+
+    # case 1: without nan
+    T = np.random.rand(d, n)
+    T_subseq_isconstant = [
+        None,
+        isconstant_custom_func,
+        np.random.choice([True, False], n - m + 1, replace=True),
+    ]
+
+    T_subseq_isconstant_ref = np.array(
+        [naive.rolling_isconstant(T[i], m, T_subseq_isconstant[i]) for i in range(d)]
+    )
+
+    T_subseq_isconstant_comp = core.process_isconstant(T, m, T_subseq_isconstant)
+
+    npt.assert_array_equal(T_subseq_isconstant_ref, T_subseq_isconstant_comp)
+
+    # case 2: with nan
+    T = np.random.rand(d, n)
+    i, j = np.random.choice(np.arange(n - m + 1), size=2, replace=False)
+    T[-1, i : i + m] = 0.0
+    T[-1, j : j + m] = 0.0
+    T[-1, j] = np.nan
+
+    T_subseq_isconstant = [
+        None,
+        isconstant_custom_func,
+        np.full(n - m + 1, 0, dtype=bool),
+    ]
+    T_subseq_isconstant[-1][i] = True
+    T_subseq_isconstant[-1][j] = True
+    # Although T_subseq_isconstant[-1, j] should be set to False (since...
+    # the subquence `T[-1, j:j+m]` is not finte), it is intentially set
+    # to True to test the functionality of `process_isconstant` in handling
+    # such conflict.
+
+    T_subseq_isconstant_ref = np.array(
+        [naive.rolling_isconstant(T[i], m, T_subseq_isconstant[i]) for i in range(d)]
+    )
+    T_subseq_isconstant_ref = T_subseq_isconstant_ref & core.rolling_isfinite(T, m)
+
+    T_subseq_isconstant_comp = core.process_isconstant(T, m, T_subseq_isconstant)
+
+    npt.assert_array_equal(T_subseq_isconstant_ref, T_subseq_isconstant_comp)

@@ -335,7 +335,7 @@ def motifs(
         msg += f"(e.g., cutoff={suggested_cutoff})."
         warnings.warn(msg)
 
-    T_subseq_isconstant = core.rolling_isconstant(T, m, T_subseq_isconstant)
+    T_subseq_isconstant = core.process_isconstant(T, m, T_subseq_isconstant)
     T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
         np.expand_dims(T, 0),
         m,
@@ -516,8 +516,8 @@ def match(
     m = Q.shape[-1]
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    Q_subseq_isconstant = core.rolling_isconstant(Q, m, Q_subseq_isconstant)
-    T_subseq_isconstant = core.rolling_isconstant(T, m, T_subseq_isconstant)
+    Q_subseq_isconstant = core.process_isconstant(Q, m, Q_subseq_isconstant)
+    T_subseq_isconstant = core.process_isconstant(T, m, T_subseq_isconstant)
 
     if Q.ndim == 1:
         Q = np.expand_dims(Q, 0)
