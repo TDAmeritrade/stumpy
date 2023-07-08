@@ -306,15 +306,7 @@ def mstumped(
     T_B = core._preprocess(T_B)
 
     T_A_subseq_isconstant = T_subseq_isconstant
-    if T_A_subseq_isconstant is None or callable(T_A_subseq_isconstant):
-        T_A_subseq_isconstant = [T_A_subseq_isconstant] * T_A.shape[0]
-
-    T_A_subseq_isconstant = np.array(
-        [
-            core.rolling_isconstant(T_A[i], m, T_A_subseq_isconstant[i])
-            for i in range(T_A.shape[0])
-        ]
-    )
+    T_A_subseq_isconstant = core.process_isconstant(T_A, m, T_A_subseq_isconstant)
     T_B_subseq_isconstant = T_A_subseq_isconstant
 
     T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(

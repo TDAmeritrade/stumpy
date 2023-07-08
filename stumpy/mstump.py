@@ -214,16 +214,7 @@ def subspace(
     """
     T = core._preprocess(T)
     core.check_window_size(m, max_size=T.shape[-1])
-
-    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
-        T_subseq_isconstant = [T_subseq_isconstant] * T.shape[0]
-
-    T_subseq_isconstant = np.array(
-        [
-            core.rolling_isconstant(T[i], m, T_subseq_isconstant[i])
-            for i in range(T.shape[0])
-        ]
-    )
+    T_subseq_isconstant = core.process_isconstant(T, m, T_subseq_isconstant)
 
     if discretize_func is None:
         bins = _inverse_norm(n_bit)
@@ -412,16 +403,7 @@ def mdl(
     """
     T = core._preprocess(T)
     core.check_window_size(m, max_size=T.shape[-1])
-
-    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
-        T_subseq_isconstant = [T_subseq_isconstant] * T.shape[0]
-
-    T_subseq_isconstant = np.array(
-        [
-            core.rolling_isconstant(T[i], m, T_subseq_isconstant[i])
-            for i in range(T.shape[0])
-        ]
-    )
+    T_subseq_isconstant = core.process_isconstant(T, m, T_subseq_isconstant)
 
     if discretize_func is None:
         bins = _inverse_norm(n_bit)
@@ -630,16 +612,6 @@ def multi_distance_profile(
         Multi-dimensional distance profile for the window with index equal to
         `query_idx`
     """
-    T = core._preprocess(T)
-    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
-        T_subseq_isconstant = [T_subseq_isconstant] * T.shape[0]
-    T_subseq_isconstant = np.array(
-        [
-            core.rolling_isconstant(T[i], m, T_subseq_isconstant[i])
-            for i in range(T.shape[0])
-        ]
-    )
-
     T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
         T, m, T_subseq_isconstant=T_subseq_isconstant
     )
@@ -1233,15 +1205,7 @@ def mstump(
     T_B = core._preprocess(T_B)
 
     T_A_subseq_isconstant = T_subseq_isconstant
-    if T_A_subseq_isconstant is None or callable(T_A_subseq_isconstant):
-        T_A_subseq_isconstant = [T_A_subseq_isconstant] * T_A.shape[0]
-
-    T_A_subseq_isconstant = np.array(
-        [
-            core.rolling_isconstant(T_A[i], m, T_A_subseq_isconstant[i])
-            for i in range(T_A.shape[0])
-        ]
-    )
+    T_A_subseq_isconstant = core.process_isconstant(T_A, m, T_A_subseq_isconstant)
     T_B_subseq_isconstant = T_A_subseq_isconstant
 
     T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
