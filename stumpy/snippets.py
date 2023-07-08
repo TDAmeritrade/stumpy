@@ -101,7 +101,7 @@ def _get_all_profiles(
         s = min(math.ceil(percentage * m), m)
 
     right_pad = 0
-    T_subseq_isconstant = core.rolling_isconstant(T, s, mpdist_T_subseq_isconstant)
+    T_subseq_isconstant = core.process_isconstant(T, s, mpdist_T_subseq_isconstant)
     if T.shape[0] % m != 0:
         right_pad = int(m * np.ceil(T.shape[0] / m) - T.shape[0])
         pad_width = (0, right_pad)
