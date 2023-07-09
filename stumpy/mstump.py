@@ -455,7 +455,7 @@ def _multi_distance_profile(
     Parameters
     ----------
     query_idx : int
-        The window index to calculate the multi-dimensional distance profile for
+        The start index of the (multi-dimensional) query subsequence in `T_B`
 
     T_A : numpy.ndarray
         The time series or sequence for which the multi-dimensional distance profile
@@ -483,7 +483,7 @@ def _multi_distance_profile(
         A boolean array that indicates whether a subsequence in `T_A` is constant (True)
 
     Q_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether the query subsequence `T_B` is
+        A boolean array that indicates whether a subsequence in `T_B` is
         constant (True)
 
     include : numpy.ndarray, default None
