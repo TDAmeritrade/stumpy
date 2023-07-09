@@ -707,7 +707,7 @@ def _get_first_mstump_profile(
         A boolean array that indicates whether a subsequence in `T_A` is constant (True)
 
     Q_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether the query subsequence `T_B` is
+        A boolean array that indicates whether a (query) subsequence in `T_B` is
         constant (True)
 
     include : numpy.ndarray, default None
