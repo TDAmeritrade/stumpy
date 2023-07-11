@@ -87,6 +87,14 @@ class _stimp:
     mp_func : function, default stump
         The matrix profile function to use when `percentage = 1.0`
 
+    T_subseq_isconstant_func : function, default None
+        A custom, user-defined function that returns a boolean array that indicates
+        whether a subsequence in `T` is constant (True). The function must only take
+        two arguments, `a`, a 1-D array, and `w`, the window size, while additional
+        arguments may be specified by currying the user-defined function using
+        `functools.partial`. Any subsequence with at least one np.nan/np.inf will
+        automatically have its corresponding value set to False in this boolean array.
+
     Attributes
     ----------
     PAN_ : numpy.ndarray
@@ -122,6 +130,7 @@ class _stimp:
         client=None,
         device_id=None,
         mp_func=stump,
+        T_subseq_isconstant_func=None,
     ):
         """
         Initialize the `stimp` object and compute the Pan Matrix Profile
@@ -167,6 +176,15 @@ class _stimp:
 
         mp_func : function, default stump
             The matrix profile function to use when `percentage = 1.0`
+
+        T_subseq_isconstant_func : function, default None
+            A custom, user-defined function that returns a boolean array that indicates
+            whether a subsequence in `T` is constant (True). The function must only take
+            two arguments, `a`, a 1-D array, and `w`, the window size, while additional
+            arguments may be specified by currying the user-defined function using
+            `functools.partial`. Any subsequence with at least one np.nan/np.inf will
+            automatically have its corresponding value set to False in this boolean
+            array.
         """
         self._T = T.copy()
         if max_m is None:
@@ -188,6 +206,16 @@ class _stimp:
         self._partial_mp_func = core._get_partial_mp_func(
             mp_func, client=client, device_id=device_id
         )
+
+        if T_subseq_isconstant_func is None:
+            T_subseq_isconstant_func = core._rolling_isconstant
+        if not callable(T_subseq_isconstant_func):  # pragma: no cover
+            msg = (
+                "`T_subseq_isconstant_func` was expected to be a callable function "
+                + f"but {type(T_subseq_isconstant_func)} was found."
+            )
+            raise ValueError(msg)
+        self._T_subseq_isconstant_func = T_subseq_isconstant_func
 
         self._PAN = np.full(
             (self._M.shape[0], self._T.shape[0]), fill_value=np.inf, dtype=np.float64
@@ -223,6 +251,7 @@ class _stimp:
                     percentage=self._percentage,
                     pre_scrump=self._pre_scrump,
                     k=1,
+                    T_A_subseq_isconstant=self._T_subseq_isconstant_func,
                 )
                 approx.update()
                 self._PAN[
@@ -233,6 +262,7 @@ class _stimp:
                     self._T,
                     m,
                     ignore_trivial=True,
+                    T_A_subseq_isconstant=self._T_subseq_isconstant_func,
                 )
                 self._PAN[
                     self._bfs_indices[self._n_processed], : out[:, 0].shape[0]
@@ -393,6 +423,14 @@ class stimp(_stimp):
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
 
+    T_subseq_isconstant_func : function, default None
+        A custom, user-defined function that returns a boolean array that indicates
+        whether a subsequence in `T` is constant (True). The function must only take
+        two arguments, `a`, a 1-D array, and `w`, the window size, while additional
+        arguments may be specified by currying the user-defined function using
+        `functools.partial`. Any subsequence with at least one np.nan/np.inf will
+        automatically have its corresponding value set to False in this boolean array.
+
     Attributes
     ----------
     PAN_ : numpy.ndarray
@@ -442,6 +480,7 @@ class stimp(_stimp):
         pre_scrump=True,
         normalize=True,
         p=2.0,
+        T_subseq_isconstant_func=None,
     ):
         """
         Initialize the `stimp` object and compute the Pan Matrix Profile
@@ -483,6 +522,15 @@ class stimp(_stimp):
         p : float, default 2.0
             The p-norm to apply for computing the Minkowski distance. This parameter is
             ignored when `normalize == True`.
+
+        T_subseq_isconstant_func : function, default None
+            A custom, user-defined function that returns a boolean array that indicates
+            whether a subsequence in `T` is constant (True). The function must only take
+            two arguments, `a`, a 1-D array, and `w`, the window size, while additional
+            arguments may be specified by currying the user-defined function using
+            `functools.partial`. Any subsequence with at least one np.nan/np.inf will
+            automatically have its corresponding value set to False in this boolean
+            array.
         """
         super().__init__(
             T,
@@ -492,6 +540,7 @@ class stimp(_stimp):
             percentage=percentage,
             pre_scrump=pre_scrump,
             mp_func=stump,
+            T_subseq_isconstant_func=T_subseq_isconstant_func,
         )
 
 
@@ -536,6 +585,15 @@ class stimped(_stimp):
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
         ignored when `normalize == True`.
+
+    T_subseq_isconstant_func : function, default None
+            A custom, user-defined function that returns a boolean array that indicates
+            whether a subsequence in `T` is constant (True). The function must only take
+            two arguments, `a`, a 1-D array, and `w`, the window size, while additional
+            arguments may be specified by currying the user-defined function using
+            `functools.partial`. Any subsequence with at least one np.nan/np.inf will
+            automatically have its corresponding value set to False in this boolean
+            array.
 
     Attributes
     ----------
@@ -590,6 +648,7 @@ class stimped(_stimp):
         step=1,
         normalize=True,
         p=2.0,
+        T_subseq_isconstant_func=None,
     ):
         """
         Initialize the `stimp` object and compute the Pan Matrix Profile
@@ -625,6 +684,15 @@ class stimped(_stimp):
         p : float, default 2.0
             The p-norm to apply for computing the Minkowski distance. This parameter is
             ignored when `normalize == True`.
+
+        T_subseq_isconstant_func : function, default None
+            A custom, user-defined function that returns a boolean array that indicates
+            whether a subsequence in `T` is constant (True). The function must only take
+            two arguments, `a`, a 1-D array, and `w`, the window size, while additional
+            arguments may be specified by currying the user-defined function using
+            `functools.partial`. Any subsequence with at least one np.nan/np.inf will
+            automatically have its corresponding value set to False in this boolean
+            array.
         """
         super().__init__(
             T,
@@ -635,4 +703,5 @@ class stimped(_stimp):
             pre_scrump=False,
             client=client,
             mp_func=stumped,
+            T_subseq_isconstant_func=T_subseq_isconstant_func,
         )
