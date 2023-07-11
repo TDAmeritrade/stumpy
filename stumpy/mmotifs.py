@@ -214,6 +214,9 @@ def mmotifs(
             normalize=normalize,
             p=p,
             T_subseq_isconstant=T_subseq_isconstant[subspace_k],
+            Q_subseq_isconstant=np.expand_dims(
+                T_subseq_isconstant[subspace_k, motif_idx], axis=1
+            ),
         )
 
         if len(query_matches) > min_neighbors:
