@@ -193,3 +193,37 @@ def test_mmotifs_two_motif_pairs_max_motifs_2(T):
     npt.assert_array_almost_equal(motif_indices_ref, motif_indices_cmp)
     npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces_cmp)
     npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
+
+
+@pytest.mark.parametrize("T", test_data)
+def test_mmotifs_with_default_parameters_with_isconstant(T):
+    motif_distances_ref = np.array([[0.0000000e00, 1.1151008e-07]])
+    motif_indices_ref = np.array([[2, 9]])
+    motif_subspaces_ref = [np.array([1])]
+    motif_mdls_ref = [np.array([232.0, 250.57542476, 260.0, 271.3509059])]
+
+    m = 4
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+    # The following `T_subseq_isconstant` is basically equivalent to
+    # `T_subseq_isconstant=None` (default). The goal is to test its
+    # functionality.
+    T_subseq_isconstant = [
+        None,
+        naive.rolling_isconstant(T[1], m),
+        None,
+        naive.is_ptp_zero_1d,
+    ]
+
+    P, I = naive.mstump(T, m, excl_zone)
+    (
+        motif_distances_cmp,
+        motif_indices_cmp,
+        motif_subspaces_cmp,
+        motif_mdls_cmp,
+    ) = mmotifs(T, P, I, T_subseq_isconstant=T_subseq_isconstant)
+
+    npt.assert_array_almost_equal(motif_distances_ref, motif_distances_cmp)
+    npt.assert_array_almost_equal(motif_indices_ref, motif_indices_cmp)
+    npt.assert_array_almost_equal(motif_subspaces_ref, motif_subspaces_cmp)
+    npt.assert_array_almost_equal(motif_mdls_ref, motif_mdls_cmp)
