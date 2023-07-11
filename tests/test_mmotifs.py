@@ -215,7 +215,7 @@ def test_mmotifs_with_default_parameters_with_isconstant(T):
         naive.is_ptp_zero_1d,
     ]
 
-    P, I = naive.mstump(T, m, excl_zone)
+    P, I = naive.mstump(T, m, excl_zone, T_subseq_isconstant=T_subseq_isconstant)
     (
         motif_distances_cmp,
         motif_indices_cmp,
