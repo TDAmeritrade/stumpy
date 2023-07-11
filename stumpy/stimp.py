@@ -50,16 +50,16 @@ class _stimp:
     T : numpy.ndarray
         The time series or sequence for which to compute the pan matrix profile
 
-    m_start : int, default 3
+    min_m : int, default 3
         The starting (or minimum) subsequence window size for which a matrix profile
         may be computed
 
-    m_stop : int, default None
+    max_m : int, default None
         The stopping (or maximum) subsequence window size for which a matrix profile
-        may be computed. When `m_stop = Non`, this is set to the maximum allowable
+        may be computed. When `max_m = Non`, this is set to the maximum allowable
         subsequence window size
 
-    m_step : int, default 1
+    step : int, default 1
         The step between subsequence window sizes
 
     percentage : float, default 0.01
@@ -391,16 +391,16 @@ class stimp(_stimp):
     T : numpy.ndarray
         The time series or sequence for which to compute the pan matrix profile
 
-    m_start : int, default 3
+    min_m : int, default 3
         The starting (or minimum) subsequence window size for which a matrix profile
         may be computed
 
-    m_stop : int, default None
+    max_m : int, default None
         The stopping (or maximum) subsequence window size for which a matrix profile
-        may be computed. When `m_stop = Non`, this is set to the maximum allowable
+        may be computed. When `max_m = Non`, this is set to the maximum allowable
         subsequence window size
 
-    m_step : int, default 1
+    step : int, default 1
         The step between subsequence window sizes
 
     percentage : float, default 0.01
@@ -565,16 +565,16 @@ class stimped(_stimp):
     T : numpy.ndarray
         The time series or sequence for which to compute the pan matrix profile
 
-    m_start : int, default 3
+    min_m : int, default 3
         The starting (or minimum) subsequence window size for which a matrix profile
         may be computed
 
-    m_stop : int, default None
+    max_m : int, default None
         The stopping (or maximum) subsequence window size for which a matrix profile
-        may be computed. When `m_stop = Non`, this is set to the maximum allowable
+        may be computed. When `max_m = Non`, this is set to the maximum allowable
         subsequence window size
 
-    m_step : int, default 1
+    step : int, default 1
         The step between subsequence window sizes
 
     normalize : bool, default True
