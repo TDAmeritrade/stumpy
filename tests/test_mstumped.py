@@ -1,3 +1,5 @@
+import functools
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -211,6 +213,34 @@ def test_mstumped_one_subsequence_nan_self_join_all_dimensions(
 
         ref_P, ref_I = naive.mstump(T_sub, m, excl_zone)
         comp_P, comp_I = mstumped(dask_client, T_sub, m)
+
+        npt.assert_almost_equal(ref_P, comp_P)
+        npt.assert_almost_equal(ref_I, comp_I)
+
+
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+def test_mstumped_with_isconstant(dask_cluster):
+    d = 3
+    n = 64
+    m = 8
+
+    T = np.random.uniform(-1000, 1000, size=[d, n])
+    T_subseq_isconstant = [
+        None,
+        np.random.choice([True, False], n - m + 1, replace=True),
+        functools.partial(
+            naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+        ),
+    ]
+
+    excl_zone = int(np.ceil(m / 4))
+    with Client(dask_cluster) as dask_client:
+        ref_P, ref_I = naive.mstump(
+            T, m, excl_zone, T_subseq_isconstant=T_subseq_isconstant
+        )
+        comp_P, comp_I = mstumped(
+            dask_client, T, m, T_subseq_isconstant=T_subseq_isconstant
+        )
 
         npt.assert_almost_equal(ref_P, comp_P)
         npt.assert_almost_equal(ref_I, comp_I)

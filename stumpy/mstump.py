@@ -12,7 +12,18 @@ from . import config, core
 from .maamp import maamp, maamp_mdl, maamp_multi_distance_profile, maamp_subspace
 
 
-def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, T_subseq_isconstant):
+def _multi_mass(
+    Q,
+    T,
+    m,
+    M_T,
+    Σ_T,
+    μ_Q,
+    σ_Q,
+    T_subseq_isconstant,
+    Q_subseq_isconstant,
+    query_idx=None,
+):
     """
     A multi-dimensional wrapper around "Mueen's Algorithm for Similarity Search"
     (MASS) to compute multi-dimensional distance profile.
@@ -43,6 +54,16 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, T_subseq_isconstant):
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` is constant (True)
 
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `Q` is constant (True)
+
+    query_idx : int, default None
+        This is the index position along each of the time series in `T`, where
+        the query subsequence, `Q`, is located. `query_idx` should be set to None
+        if `Q` is not a subsequence of `T`. If `Q` is a subsequence of `T`, provding
+        this argument is optional. If query_idx is provided, the distance between Q
+        and `T[:, query_idx : query_idx + m]` will automatically be set to zero.
+
     Returns
     -------
     D : numpy.ndarray
@@ -58,13 +79,19 @@ def _multi_mass(Q, T, m, M_T, Σ_T, μ_Q, σ_Q, T_subseq_isconstant):
             D[i, :] = np.inf
         else:
             D[i, :] = core.mass(
-                Q[i], T[i], M_T[i], Σ_T[i], T_subseq_isconstant=T_subseq_isconstant[i]
+                Q[i],
+                T[i],
+                M_T[i],
+                Σ_T[i],
+                T_subseq_isconstant=T_subseq_isconstant[i],
+                Q_subseq_isconstant=Q_subseq_isconstant[i],
+                query_idx=query_idx,
             )
 
     return D
 
 
-@core.non_normalized(maamp_subspace)
+@core.non_normalized(maamp_subspace, exclude=["normalize", "T_subseq_isconstant"])
 def subspace(
     T,
     m,
@@ -77,6 +104,7 @@ def subspace(
     n_bit=8,
     normalize=True,
     p=2.0,
+    T_subseq_isconstant=None,
 ):
     """
     Compute the k-dimensional matrix profile subspace for a given subsequence index and
@@ -141,6 +169,15 @@ def subspace(
         and the Euclidean distance, respectively. This parameter is ignored when
         `normalize == True`.
 
+    T_subseq_isconstant : numpy.ndarray, function, or list, default None
+        A parameter that is used to show whether a subsequence of a time series in `T`
+        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
+        or a function that can be applied to each time series in `T`. Alternatively, for
+        maximum flexibility, a list (with length equal to the total number of time
+        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
+        the i-th time series T[i] and each element in the list can either be a 1D
+        boolean np.ndarray, a function, or None.
+
     Returns
     -------
     S : numpy.ndarray
@@ -177,6 +214,7 @@ def subspace(
     """
     T = core._preprocess(T)
     core.check_window_size(m, max_size=T.shape[-1])
+    T_subseq_isconstant = core.process_isconstant(T, m, T_subseq_isconstant)
 
     if discretize_func is None:
         bins = _inverse_norm(n_bit)
@@ -184,8 +222,11 @@ def subspace(
 
     subseqs, _, _, _ = core.preprocess(T[:, subseq_idx : subseq_idx + m], m)
     subseqs = core.z_norm(subseqs, axis=1)
+    subseqs[T_subseq_isconstant[:, subseq_idx]] = 0.0
+
     neighbors, _, _, _ = core.preprocess(T[:, nn_idx : nn_idx + m], m)
     neighbors = core.z_norm(neighbors, axis=1)
+    neighbors[T_subseq_isconstant[:, nn_idx]] = 0.0
 
     disc_subseqs = discretize_func(subseqs)
     disc_neighbors = discretize_func(neighbors)
@@ -243,7 +284,7 @@ def _discretize(a, bins, right=True):  # pragma: no cover
     return np.digitize(a, bins, right=right)
 
 
-@core.non_normalized(maamp_mdl)
+@core.non_normalized(maamp_mdl, exclude=["normalize", "T_subseq_isconstant"])
 def mdl(
     T,
     m,
@@ -255,6 +296,7 @@ def mdl(
     n_bit=8,
     normalize=True,
     p=2.0,
+    T_subseq_isconstant=None,
 ):
     """
     Compute the multi-dimensional number of bits needed to compress one
@@ -316,6 +358,15 @@ def mdl(
         and the Euclidean distance, respectively. This parameter is ignored when
         `normalize == True`.
 
+    T_subseq_isconstant : numpy.ndarray, function, or list, default None
+        A parameter that is used to show whether a subsequence of a time series in `T`
+        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
+        or a function that can be applied to each time series in `T`. Alternatively, for
+        maximum flexibility, a list (with length equal to the total number of time
+        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
+        the i-th time series T[i] and each element in the list can either be a 1D
+        boolean np.ndarray, a function, or None.
+
     Returns
     -------
     bit_sizes : numpy.ndarray
@@ -352,6 +403,7 @@ def mdl(
     """
     T = core._preprocess(T)
     core.check_window_size(m, max_size=T.shape[-1])
+    T_subseq_isconstant = core.process_isconstant(T, m, T_subseq_isconstant)
 
     if discretize_func is None:
         bins = _inverse_norm(n_bit)
@@ -362,8 +414,11 @@ def mdl(
     for k in range(T.shape[0]):
         subseqs, _, _, _ = core.preprocess(T[:, subseq_idx[k] : subseq_idx[k] + m], m)
         subseqs = core.z_norm(subseqs, axis=1)
+        subseqs[T_subseq_isconstant[:, subseq_idx[k]]] = 0.0
+
         neighbors, _, _, _ = core.preprocess(T[:, nn_idx[k] : nn_idx[k] + m], m)
         neighbors = core.z_norm(neighbors, axis=1)
+        neighbors[T_subseq_isconstant[:, nn_idx[k]]] = 0.0
 
         disc_subseqs = discretize_func(subseqs)
         disc_neighbors = discretize_func(neighbors)
@@ -387,6 +442,7 @@ def _multi_distance_profile(
     μ_Q,
     σ_Q,
     T_subseq_isconstant,
+    Q_subseq_isconstant,
     include=None,
     discords=False,
     excl_zone=None,
@@ -399,7 +455,7 @@ def _multi_distance_profile(
     Parameters
     ----------
     query_idx : int
-        The window index to calculate the multi-dimensional distance profile for
+        The start index of the (multi-dimensional) query subsequence in `T_B`
 
     T_A : numpy.ndarray
         The time series or sequence for which the multi-dimensional distance profile
@@ -426,6 +482,10 @@ def _multi_distance_profile(
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` is constant (True)
 
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_B` is
+        constant (True)
+
     include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
@@ -450,6 +510,7 @@ def _multi_distance_profile(
     d, n = T_A.shape
     k = n - m + 1
     start_row_idx = 0
+
     D = _multi_mass(
         T_B[:, query_idx : query_idx + m],
         T_A,
@@ -459,6 +520,8 @@ def _multi_distance_profile(
         μ_Q[:, query_idx],
         σ_Q[:, query_idx],
         T_subseq_isconstant,
+        np.expand_dims(Q_subseq_isconstant[:, query_idx], 1),
+        query_idx=query_idx,
     )
 
     if include is not None:
@@ -481,9 +544,18 @@ def _multi_distance_profile(
     return D
 
 
-@core.non_normalized(maamp_multi_distance_profile)
+@core.non_normalized(
+    maamp_multi_distance_profile, exclude=["normalize", "T_subseq_isconstant"]
+)
 def multi_distance_profile(
-    query_idx, T, m, include=None, discords=False, normalize=True, p=2.0
+    query_idx,
+    T,
+    m,
+    include=None,
+    discords=False,
+    normalize=True,
+    p=2.0,
+    T_subseq_isconstant=None,
 ):
     """
     Multi-dimensional wrapper to compute the multi-dimensional distance profile for a
@@ -525,13 +597,24 @@ def multi_distance_profile(
         and the Euclidean distance, respectively. This parameter is ignored when
         `normalize == True`.
 
+    T_subseq_isconstant : numpy.ndarray, function, or list, default None
+        A parameter that is used to show whether a subsequence of a time series in `T`
+        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
+        or a function that can be applied to each time series in `T`. Alternatively, for
+        maximum flexibility, a list (with length equal to the total number of time
+        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
+        the i-th time series T[i] and each element in the list can either be a 1D
+        boolean np.ndarray, a function, or None.
+
     Returns
     -------
     D : numpy.ndarray
         Multi-dimensional distance profile for the window with index equal to
         `query_idx`
     """
-    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T, m)
+    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
+        T, m, T_subseq_isconstant=T_subseq_isconstant
+    )
 
     if T.ndim <= 1:  # pragma: no cover
         err = f"T is {T.ndim}-dimensional and must be at least 1-dimensional"
@@ -556,6 +639,7 @@ def multi_distance_profile(
         M_T,
         Σ_T,
         T_subseq_isconstant,
+        T_subseq_isconstant,
         include,
         discords,
         excl_zone,
@@ -575,6 +659,7 @@ def _get_first_mstump_profile(
     μ_Q,
     σ_Q,
     T_subseq_isconstant,
+    Q_subseq_isconstant,
     include=None,
     discords=False,
 ):
@@ -621,6 +706,10 @@ def _get_first_mstump_profile(
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` is constant (True)
 
+    Q_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a (query) subsequence in `T_B` is
+        constant (True)
+
     include : numpy.ndarray, default None
         A list of (zero-based) indices corresponding to the dimensions in `T` that
         must be included in the constrained multidimensional motif search.
@@ -653,6 +742,7 @@ def _get_first_mstump_profile(
         μ_Q,
         σ_Q,
         T_subseq_isconstant,
+        Q_subseq_isconstant,
         include,
         discords,
         excl_zone,
@@ -1013,8 +1103,10 @@ def _mstump(
     return P, I
 
 
-@core.non_normalized(maamp)
-def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
+@core.non_normalized(maamp, exclude=["normalize", "T_subseq_isconstant"])
+def mstump(
+    T, m, include=None, discords=False, normalize=True, p=2.0, T_subseq_isconstant=None
+):
     """
     Compute the multi-dimensional z-normalized matrix profile
 
@@ -1059,6 +1151,15 @@ def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
         and the Euclidean distance, respectively. This parameter is ignored when
         `normalize == True`.
 
+    T_subseq_isconstant : numpy.ndarray, function, or list, default None
+        A parameter that is used to show whether a subsequence of a time series in `T`
+        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
+        or a function that can be applied to each time series in `T`. Alternatively, for
+        maximum flexibility, a list (with length equal to the total number of time
+        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
+        the i-th time series T[i] and each element in the list can either be a 1D
+        boolean np.ndarray, a function, or None.
+
     Returns
     -------
     P : numpy.ndarray
@@ -1100,8 +1201,19 @@ def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
     T_A = T
     T_B = T_A
 
-    T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T_A, m)
-    T_B, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(T_B, m)
+    T_A = core._preprocess(T_A)
+    T_B = core._preprocess(T_B)
+
+    T_A_subseq_isconstant = T_subseq_isconstant
+    T_A_subseq_isconstant = core.process_isconstant(T_A, m, T_A_subseq_isconstant)
+    T_B_subseq_isconstant = T_A_subseq_isconstant
+
+    T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
+        T_A, m, T_subseq_isconstant=T_A_subseq_isconstant
+    )
+    T_B, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(
+        T_B, m, T_subseq_isconstant=T_B_subseq_isconstant
+    )
 
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
@@ -1135,6 +1247,7 @@ def mstump(T, m, include=None, discords=False, normalize=True, p=2.0):
         μ_Q,
         σ_Q,
         T_subseq_isconstant,
+        Q_subseq_isconstant,
         include,
         discords,
     )

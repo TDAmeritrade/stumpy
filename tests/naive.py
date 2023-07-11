@@ -454,7 +454,15 @@ def replace_inf(x, value=0):
     return
 
 
-def multi_mass(Q, T, m, include=None, discords=False):
+def multi_mass(
+    Q,
+    T,
+    m,
+    include=None,
+    discords=False,
+    T_subseq_isconstant=None,
+    Q_subseq_isconstant=None,
+):
     T_inf = np.isinf(T)
     if np.any(T_inf):
         T = T.copy()
@@ -465,11 +473,21 @@ def multi_mass(Q, T, m, include=None, discords=False):
         Q = Q.copy()
         Q[Q_inf] = np.nan
 
-    d, n = T.shape
+    T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
+    Q_subseq_isconstant = rolling_isconstant(Q, m, Q_subseq_isconstant)
 
+    d, n = T.shape
     D = np.empty((d, n - m + 1))
     for i in range(d):
         D[i] = distance_profile(Q[i], T[i], m)
+        for j in range(len(D[i])):
+            if np.isfinite(D[i, j]):
+                if Q_subseq_isconstant[i] and T_subseq_isconstant[i, j]:
+                    D[i, j] = 0
+                elif Q_subseq_isconstant[i] or T_subseq_isconstant[i, j]:
+                    D[i, j] = np.sqrt(m)
+                else:  # pragma: no cover
+                    pass
 
     D[np.isnan(D)] = np.inf
 
@@ -532,11 +550,30 @@ def apply_include(D, include):
     D[unrestricted_indices] = tmp_swap[mask]
 
 
-def multi_distance_profile(query_idx, T, m, include=None, discords=False):
+def multi_distance_profile(
+    query_idx, T, m, include=None, discords=False, T_subseq_isconstant=None
+):
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-    d, n = T.shape
+
+    d = T.shape[0]
+    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
+        T_subseq_isconstant = [T_subseq_isconstant] * d
+
+    T_subseq_isconstant = np.array(
+        [rolling_isconstant(T[i], m, T_subseq_isconstant[i]) for i in range(d)]
+    )
+
     Q = T[:, query_idx : query_idx + m]
-    D = multi_mass(Q, T, m, include, discords)
+    Q_subseq_isconstant = np.expand_dims(T_subseq_isconstant[:, query_idx], axis=1)
+    D = multi_mass(
+        Q,
+        T,
+        m,
+        include,
+        discords,
+        T_subseq_isconstant=T_subseq_isconstant,
+        Q_subseq_isconstant=Q_subseq_isconstant,
+    )
 
     start_row_idx = 0
     if include is not None:
@@ -548,6 +585,7 @@ def multi_distance_profile(query_idx, T, m, include=None, discords=False):
     else:
         D[start_row_idx:].sort(axis=0)
 
+    d, n = T.shape
     D_prime = np.zeros(n - m + 1)
     D_prime_prime = np.zeros((d, n - m + 1))
     for j in range(d):
@@ -559,17 +597,27 @@ def multi_distance_profile(query_idx, T, m, include=None, discords=False):
     return D_prime_prime
 
 
-def mstump(T, m, excl_zone, include=None, discords=False):
+def mstump(T, m, excl_zone, include=None, discords=False, T_subseq_isconstant=None):
     T = T.copy()
 
     d, n = T.shape
     k = n - m + 1
 
+    if T_subseq_isconstant is None or callable(T_subseq_isconstant):
+        T_subseq_isconstant = [T_subseq_isconstant] * d
+    # else means T_subseq_isconstant is list or a numpy 2D array
+
+    T_subseq_isconstant = np.array(
+        [rolling_isconstant(T[i], m, T_subseq_isconstant[i]) for i in range(d)]
+    )
+
     P = np.full((d, k), np.inf)
     I = np.ones((d, k), dtype="int64") * -1
 
     for i in range(k):
-        D = multi_distance_profile(i, T, m, include, discords)
+        D = multi_distance_profile(
+            i, T, m, include, discords, T_subseq_isconstant=T_subseq_isconstant
+        )
         P_i, I_i = PI(D, i, excl_zone)
 
         for dim in range(T.shape[0]):
