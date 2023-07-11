@@ -12,7 +12,13 @@ from .motifs import match
 from .mstump import mdl
 
 
-@core.non_normalized(aamp_mmotifs)
+@core.non_normalized(
+    aamp_mmotifs,
+    exclude=[
+        "normalize",
+        "T_subseq_isconstant",
+    ],
+)
 def mmotifs(
     T,
     P,
@@ -27,6 +33,7 @@ def mmotifs(
     include=None,
     normalize=True,
     p=2.0,
+    T_subseq_isconstant=None,
 ):
     """
     Discover the top motifs for the multi-dimensional time series `T`
@@ -92,6 +99,15 @@ def mmotifs(
         and the Euclidean distance, respectively. This parameter is ignored when
         `normalize == True`.
 
+    T_subseq_isconstant : numpy.ndarray, function, or list, default None
+        A parameter that is used to show whether a subsequence of a time series in `T`
+        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
+        or a function that can be applied to each time series in `T`. Alternatively, for
+        maximum flexibility, a list (with length equal to the total number of time
+        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
+        the i-th time series T[i] and each element in the list can either be a 1D
+        boolean np.ndarray, a function, or None.
+
     Returns
     -------
     motif_distances: numpy.ndarray
@@ -154,7 +170,9 @@ def mmotifs(
         warnings.warn(msg)
         max_motifs = 1
 
-    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T, m)
+    T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
+        T, m, T_subseq_isconstant=T_subseq_isconstant
+    )
     P = P.copy()
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
