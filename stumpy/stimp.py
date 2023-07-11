@@ -377,7 +377,7 @@ class _stimp:
 
 @core.non_normalized(
     aamp_stimp,
-    exclude=["pre_scrump", "normalize", "p", "pre_scraamp"],
+    exclude=["pre_scrump", "normalize", "p", "T_subseq_isconstant_func", "pre_scraamp"],
     replace={"pre_scrump": "pre_scraamp"},
 )
 class stimp(_stimp):
@@ -546,7 +546,7 @@ class stimp(_stimp):
 
 @core.non_normalized(
     aamp_stimped,
-    exclude=["pre_scrump", "normalize", "p", "pre_scraamp"],
+    exclude=["pre_scrump", "normalize", "p", "T_subseq_isconstant_func", "pre_scraamp"],
     replace={"pre_scrump": "pre_scraamp"},
 )
 class stimped(_stimp):
