@@ -564,7 +564,7 @@ def multi_distance_profile(
     )
 
     Q = T[:, query_idx : query_idx + m]
-    Q_subseq_isconstant = T_subseq_isconstant[:, query_idx].reshape(-1, 1)
+    Q_subseq_isconstant = np.expand_dims(T_subseq_isconstant[:, query_idx], axis=1)
     D = multi_mass(
         Q,
         T,
