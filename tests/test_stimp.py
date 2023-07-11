@@ -302,3 +302,61 @@ def test_stimp_1_percent_with_isconstant():
     naive.replace_inf(cmp_pan)
 
     npt.assert_almost_equal(ref_pan, cmp_pan)
+
+
+@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+def test_stimped_with_isconstant(dask_cluster):
+    T = np.random.uniform(-1, 1, [64])
+    isconstant_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, stddev_threshold=0.5
+    )
+
+    with Client(dask_cluster) as dask_client:
+        threshold = 0.2
+        min_m = 3
+        n = T.shape[0] - min_m + 1
+
+        pan = stimped(
+            dask_client,
+            T,
+            min_m=min_m,
+            max_m=None,
+            step=1,
+            # normalize=True,
+            T_subseq_isconstant_func=isconstant_func,
+        )
+
+        for i in range(n):
+            pan.update()
+
+        ref_PAN = np.full((pan.M_.shape[0], T.shape[0]), fill_value=np.inf)
+
+        for idx, m in enumerate(pan.M_[:n]):
+            zone = int(np.ceil(m / 4))
+            ref_mp = naive.stump(
+                T,
+                m,
+                T_B=None,
+                exclusion_zone=zone,
+                T_A_subseq_isconstant=isconstant_func,
+            )
+            ref_PAN[pan._bfs_indices[idx], : ref_mp.shape[0]] = ref_mp[:, 0]
+
+        # Compare raw pan
+        cmp_PAN = pan._PAN
+
+        naive.replace_inf(ref_PAN)
+        naive.replace_inf(cmp_PAN)
+
+        npt.assert_almost_equal(ref_PAN, cmp_PAN)
+
+        # Compare transformed pan
+        cmp_pan = pan.PAN_
+        ref_pan = naive.transform_pan(
+            pan._PAN, pan._M, threshold, pan._bfs_indices, pan._n_processed
+        )
+
+        naive.replace_inf(ref_pan)
+        naive.replace_inf(cmp_pan)
+
+        npt.assert_almost_equal(ref_pan, cmp_pan)
