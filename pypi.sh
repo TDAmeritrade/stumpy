@@ -6,7 +6,7 @@
 # 4. Determine minimum dependencies
 #    a) Find the minimum Python and NumPy version you want to support: https://numpy.org/neps/nep-0029-deprecation_policy.html#support-table
 #    b) Then find the SciPy version that has a "Python" version and "Minimum NumPy version" that is supported: https://docs.scipy.org/doc/scipy/dev/toolchain.html#numpyy
-#    c) Check Numba release notes for mimumum Python and NumPy versions supported: https://numba.readthedocs.io/en/stable/release-notes.html
+#    c) Check Numba for mimumum Python and NumPy versions supported: https://numba.readthedocs.io/en/stable/user/installing.html#version-support-information
 # 5. Bump minimum dependencies
 #    a) setup.py
 #    b) requirements.txt
