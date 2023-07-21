@@ -8,8 +8,11 @@ from .gpu_stump import gpu_stump
 from .ostinato import _get_central_motif, _ostinato
 
 
-@core.non_normalized(gpu_aamp_ostinato)
-def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0):
+@core.non_normalized(
+    gpu_aamp_ostinato,
+    exclude=["normalize", "p", "Ts_subseq_isconstant"],
+)
+def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     """
     Find the z-normalized consensus motif of multiple time series with one or more GPU
     devices
@@ -42,6 +45,9 @@ def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0):
         typically used with `p` being 1 or 2, which correspond to the Manhattan distance
         and the Euclidean distance, respectively. This parameter is ignored when
         `normalize == True`.
+
+    Ts_subseq_isconstant : list, default None
+        A list of rolling window isconstant for each time series in `Ts`.
 
     Returns
     -------
@@ -99,11 +105,15 @@ def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0):
     if not isinstance(Ts, list):  # pragma: no cover
         raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
 
-    Ts_subseq_isconstant = [None] * len(Ts)
+    if Ts_subseq_isconstant is None:
+        Ts_subseq_isconstant = [None] * len(Ts)
+
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(T, m)
+        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
+            T, m, T_subseq_isconstant=Ts_subseq_isconstant[i]
+        )
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
         Ts, m, M_Ts, Σ_Ts, Ts_subseq_isconstant, device_id=device_id, mp_func=gpu_stump
