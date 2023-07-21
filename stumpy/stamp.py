@@ -64,7 +64,7 @@ def _mass_PI(
         corresponding value set to False in this boolean array.
 
     Q_subseq_isconstant : numpy.ndarray or function, default None
-        A boolean array that indicates whether a subsequence in `Q` is constant
+        A boolean array that indicates whether the subsequence in `Q` is constant
         (True). Alternatively, a custom, user-defined function that returns a
         boolean array that indicates whether a subsequence in `Q` is constant
         (True). The function must only take two arguments, `a`, a 1-D array,

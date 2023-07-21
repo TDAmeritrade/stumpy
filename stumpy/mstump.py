@@ -55,7 +55,7 @@ def _multi_mass(
         A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     Q_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `Q` is constant (True)
+        A boolean array that indicates whether the subsequence in `Q` is constant (True)
 
     query_idx : int, default None
         This is the index position along each of the time series in `T`, where
@@ -483,7 +483,7 @@ def _multi_distance_profile(
         A boolean array that indicates whether a subsequence in `T_A` is constant (True)
 
     Q_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `T_B` is
+        A boolean array that indicates whether the subsequence in `T_B` is
         constant (True)
 
     include : numpy.ndarray, default None
@@ -875,7 +875,7 @@ def _compute_multi_D(
         sliding window
 
     Q_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a query subsequence in `Q`
+        A boolean array that indicates whether the query subsequence in `Q`
         is constant (True)
 
     T_subseq_isconstant : numpy.ndarray
@@ -1009,7 +1009,7 @@ def _mstump(
         is constant (True)
 
     Q_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a query subsequence in `Q`
+        A boolean array that indicates whether the query subsequence in `Q`
         is constant (True)
 
     k : int

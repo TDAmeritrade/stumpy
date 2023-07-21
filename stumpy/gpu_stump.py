@@ -90,7 +90,7 @@ def _compute_and_update_PI_kernel(
         A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     Q_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `Q` is constant (True)
+        A boolean array that indicates whether the subsequence in `Q` is constant (True)
 
     w : int
         The total number of sliding windows to iterate over
