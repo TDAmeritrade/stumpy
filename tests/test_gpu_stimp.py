@@ -74,6 +74,8 @@ def test_gpu_stimp(T):
     npt.assert_almost_equal(ref_pan, cmp_pan)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def test_gpu_stimp_1_percent_with_isconstant():
     T = np.random.uniform(-1, 1, [64])
     isconstant_func = functools.partial(
@@ -151,7 +153,8 @@ def test_gpu_stimp_1_percent_with_isconstant():
     npt.assert_almost_equal(ref_pan, cmp_pan)
 
 
-@pytest.mark.filterwarnings("ignore:\\s+Port 8787 is already in use:UserWarning")
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def test_gpu_stimp_with_isconstant():
     T = np.random.uniform(-1, 1, [64])
     isconstant_func = functools.partial(

@@ -56,10 +56,11 @@ def test_deterministic_gpu_ostinato(seed):
     npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize(
     "seed", np.random.choice(np.arange(10000), size=25, replace=False)
 )
-def test_random_ostinato_with_isconstant(seed):
+def test_random_gpu_ostinato_with_isconstant(seed):
     isconstant_custom_func = functools.partial(
         naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
     )
@@ -81,8 +82,9 @@ def test_random_ostinato_with_isconstant(seed):
     npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
 @pytest.mark.parametrize("seed", [79, 109, 112, 133, 151, 161, 251, 275, 309, 355])
-def test_deterministic_ostinato_with_isconstant(seed):
+def test_deterministic_gpu_ostinato_with_isconstant(seed):
     isconstant_custom_func = functools.partial(
         naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
     )
