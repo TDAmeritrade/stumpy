@@ -10,7 +10,7 @@ from .stimp import _stimp
 
 @core.non_normalized(
     gpu_aamp_stimp,
-    exclude=["pre_scrump", "normalize", "p", "pre_scraamp"],
+    exclude=["pre_scrump", "normalize", "p", "pre_scraamp", "T_subseq_isconstant_func"],
     replace={"pre_scrump": "pre_scraamp"},
 )
 class gpu_stimp(_stimp):
@@ -24,16 +24,16 @@ class gpu_stimp(_stimp):
     T : numpy.ndarray
         The time series or sequence for which to compute the pan matrix profile
 
-    m_start : int, default 3
+    min_m : int, default 3
         The starting (or minimum) subsequence window size for which a matrix profile
         may be computed
 
-    m_stop : int, default None
+    max_m : int, default None
         The stopping (or maximum) subsequence window size for which a matrix profile
         may be computed. When `m_stop = Non`, this is set to the maximum allowable
         subsequence window size
 
-    m_step : int, default 1
+    step : int, default 1
         The step between subsequence window sizes
 
     device_id : int or list, default 0
@@ -52,6 +52,14 @@ class gpu_stimp(_stimp):
         typically used with `p` being 1 or 2, which correspond to the Manhattan distance
         and the Euclidean distance, respectively. This parameter is ignored when
         `normalize == True`.
+
+    T_subseq_isconstant_func : function, default None
+        A custom, user-defined function that returns a boolean array that indicates
+        whether a subsequence in `T` is constant (True). The function must only take
+        two arguments, `a`, a 1-D array, and `w`, the window size, while additional
+        arguments may be specified by currying the user-defined function using
+        `functools.partial`. Any subsequence with at least one np.nan/np.inf will
+        automatically have its corresponding value set to False in this boolean array.
 
     Attributes
     ----------
@@ -106,6 +114,7 @@ class gpu_stimp(_stimp):
         device_id=0,
         normalize=True,
         p=2.0,
+        T_subseq_isconstant_func=None,
     ):
         """
         Initialize the `stimp` object and compute the Pan Matrix Profile
@@ -144,6 +153,15 @@ class gpu_stimp(_stimp):
             is typically used with `p` being 1 or 2, which correspond to the Manhattan
             distance and the Euclidean distance, respectively. This parameter is ignored
             when `normalize == True`.
+
+        T_subseq_isconstant_func : function, default None
+            A custom, user-defined function that returns a boolean array that indicates
+            whether a subsequence in `T` is constant (True). The function must only take
+            two arguments, `a`, a 1-D array, and `w`, the window size, while additional
+            arguments may be specified by currying the user-defined function using
+            `functools.partial`. Any subsequence with at least one np.nan/np.inf will
+            automatically have its corresponding value set to False in this boolean
+            array.
         """
         super().__init__(
             T,
@@ -153,5 +171,6 @@ class gpu_stimp(_stimp):
             percentage=1.0,
             pre_scrump=False,
             device_id=device_id,
+            T_subseq_isconstant_func=T_subseq_isconstant_func,
             mp_func=gpu_stump,
         )
