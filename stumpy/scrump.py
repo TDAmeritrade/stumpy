@@ -251,6 +251,9 @@ def _compute_PI(
             core._apply_exclusion_zone(squared_distance_profile, i, excl_zone, np.inf)
 
         nn_i = np.argmin(squared_distance_profile)
+        if squared_distance_profile[nn_i] == np.inf:
+            continue
+
         if (
             squared_distance_profile[nn_i] < P_squared[thread_idx, i, -1]
             and nn_i not in I[thread_idx, i]
@@ -264,10 +267,6 @@ def _compute_PI(
                 P_squared[thread_idx, i], idx, squared_distance_profile[nn_i]
             )
             core._shift_insert_at_index(I[thread_idx, i], idx, nn_i)
-
-        if P_squared[thread_idx, i, 0] == np.inf:  # pragma: no cover
-            I[thread_idx, i, 0] = -1
-            continue
 
         j = nn_i
         QT_j = QT[j]
