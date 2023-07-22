@@ -146,7 +146,6 @@ def mass_PI(
 
     D = distance_profile(Q, T, m)
     D[np.isnan(D)] = np.inf
-
     for i in range(len(T) - m + 1):
         if np.isfinite(D[i]):
             if Q_subseq_isconstant and T_subseq_isconstant[i]:
