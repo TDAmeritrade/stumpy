@@ -175,6 +175,9 @@ def _compute_PI(
             core._apply_exclusion_zone(p_norm_profile, i, excl_zone, np.inf)
 
         nn_i = np.argmin(p_norm_profile)
+        if p_norm_profile[nn_i] == np.inf:
+            continue
+
         if (
             p_norm_profile[nn_i] < P_NORM[thread_idx, i, -1]
             and nn_i not in I[thread_idx, i]
@@ -188,11 +191,6 @@ def _compute_PI(
                 P_NORM[thread_idx, i], idx, p_norm_profile[nn_i]
             )
             core._shift_insert_at_index(I[thread_idx, i], idx, nn_i)
-
-        # this if is not needed as it is probably never executed
-        if P_NORM[thread_idx, i, 0] == np.inf:  # pragma: no cover
-            I[thread_idx, i, 0] = -1
-            continue
 
         j = nn_i
         p_norm_j = P_NORM[thread_idx, i, 0]
