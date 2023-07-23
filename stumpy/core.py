@@ -3998,7 +3998,7 @@ def _compute_multi_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
     """
     D_prime[:] = 0.0
     for i in range(d):
-        D_prime = D_prime + np.power(D[i], 1.0 / p)
+        D_prime[:] = D_prime + np.power(D[i], 1.0 / p)
 
         min_index = np.argmin(D_prime)
         pos = idx - range_start
