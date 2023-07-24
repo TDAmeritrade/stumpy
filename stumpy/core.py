@@ -3956,7 +3956,6 @@ def _mdl(disc_subseqs, disc_neighbors, S, n_bit=8):
 
 @njit(
     # "(i8, i8, f8[:, :], f8[:], i8, f8[:, :], i8[:, :], f8)",
-    parallel=True,
     fastmath={"nsz", "arcp", "contract", "afn", "reassoc"},
 )
 def _compute_multi_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
@@ -3999,7 +3998,7 @@ def _compute_multi_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
     """
     D_prime[:] = 0.0
     for i in range(d):
-        D_prime = D_prime + np.power(D[i], 1.0 / p)
+        D_prime[:] = D_prime + np.power(D[i], 1.0 / p)
 
         min_index = np.argmin(D_prime)
         pos = idx - range_start
