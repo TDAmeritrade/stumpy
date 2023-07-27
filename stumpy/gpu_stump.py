@@ -170,16 +170,16 @@ def _compute_and_update_PI_kernel(
             )
 
             QT_out[0] = QT_first[i]
-        if math.isinf(M_T[j]) or math.isinf(μ_Q[i]):
+        if math.isinf(μ_Q[j]) or math.isinf(M_T[i]):
             p_norm = np.inf
-        elif T_subseq_isconstant[j] and Q_subseq_isconstant[i]:
+        elif Q_subseq_isconstant[j] and T_subseq_isconstant[i]:
             p_norm = 0
-        elif T_subseq_isconstant[j] or Q_subseq_isconstant[i]:
+        elif Q_subseq_isconstant[j] or T_subseq_isconstant[i]:
             p_norm = m
         else:
-            denom = m * σ_Q[i] * Σ_T[j]
+            denom = m * σ_Q[j] * Σ_T[i]
             denom = max(denom, config.STUMPY_DENOM_THRESHOLD)
-            ρ = (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom
+            ρ = (QT_out[j] - m * μ_Q[j] * M_T[i]) / denom
             ρ = min(ρ, 1.0)
             p_norm = 2 * m * (1.0 - ρ)
 
