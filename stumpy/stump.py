@@ -56,7 +56,7 @@ def _compute_diagonal(
 
     T_B : numpy.ndarray
         The time series or sequence that will be used to annotate `T_A`. For every
-        subsequence in `T_B`, its nearest neighbor in `T_A` will be recorded.
+        subsequence in `T_A`, its nearest neighbor in `T_B` will be recorded.
 
     m : int
         Window size
@@ -87,18 +87,18 @@ def _compute_diagonal(
         The fourth covariance term relating T_B[i - 1] and μ_Q_m_1[i]
 
     T_A_subseq_isfinite : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `Q` contains a
+        A boolean array that indicates whether a subsequence in `T_A` contains a
         `np.nan`/`np.inf` value (False)
 
     T_B_subseq_isfinite : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `T` contains a
+        A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
     T_A_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `Q` is constant (True)
+        A boolean array that indicates whether a subsequence in `T_A` is constant (True)
 
     T_B_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `T` is constant (True)
+        A boolean array that indicates whether a subsequence in `T_B` is constant (True)
 
     diags : numpy.ndarray
         The diagonal indices
@@ -285,13 +285,14 @@ def _stump(
         Window size
 
     μ_Q : numpy.ndarray
-        Sliding Mean of `Q`
+        Mean of the query sequence, `Q`, relative to the current sliding window
 
     M_T : numpy.ndarray
         Sliding mean of `T`
 
     σ_Q_inverse : numpy.ndarray
-        Inverse sliding standard deviation of `Q`
+        Inverse standard deviation of the query sequence, `Q`, relative to the current
+        sliding window
 
     Σ_T_inverse : numpy.ndarray
         Inverse sliding standard deviation of time series, `T`
@@ -414,14 +415,14 @@ def _stump(
     cov_a = T_B[m - 1 :] - M_T_m_1[:-1]
     cov_b = T_A[m - 1 :] - μ_Q_m_1[:-1]
     # The next lines are equivalent and left for reference
-    # cov_c = np.roll(Q, 1)
+    # cov_c = np.roll(T_A, 1)
     # cov_ = cov_c[:M_T_m_1.shape[0]] - M_T_m_1[:]
     cov_c = np.empty(M_T_m_1.shape[0], dtype=np.float64)
     cov_c[1:] = T_B[: M_T_m_1.shape[0] - 1]
     cov_c[0] = T_B[-1]
     cov_c[:] = cov_c - M_T_m_1
     # The next lines are equivalent and left for reference
-    # cov_d = np.roll(T, 1)
+    # cov_d = np.roll(T_B, 1)
     # cov_d = cov_d[:μ_Q_m_1.shape[0]] - μ_Q_m_1[:]
     cov_d = np.empty(μ_Q_m_1.shape[0], dtype=np.float64)
     cov_d[1:] = T_A[: μ_Q_m_1.shape[0] - 1]
