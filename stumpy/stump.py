@@ -288,7 +288,7 @@ def _stump(
         Mean of the query sequence, `Q`, relative to the current sliding window
 
     M_T : numpy.ndarray
-        Sliding mean of `T`
+        Sliding mean of time series, `T`
 
     σ_Q_inverse : numpy.ndarray
         Inverse standard deviation of the query sequence, `Q`, relative to the current
