@@ -17,8 +17,8 @@ from .aamp import aamp
     fastmath=True,
 )
 def _compute_diagonal(
-    Q,
-    T,
+    T_A,
+    T_B,
     m,
     μ_Q,
     M_T,
@@ -28,10 +28,10 @@ def _compute_diagonal(
     cov_b,
     cov_c,
     cov_d,
-    Q_subseq_isfinite,
-    T_subseq_isfinite,
-    Q_subseq_isconstant,
-    T_subseq_isconstant,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
+    T_A_subseq_isconstant,
+    T_B_subseq_isconstant,
     diags,
     diags_start_idx,
     diags_stop_idx,
@@ -51,12 +51,12 @@ def _compute_diagonal(
 
     Parameters
     ----------
-    Q : numpy.ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
-    T : numpy.ndarray
-        The time series or sequence that will be used to annotate `Q`. For every
-        subsequence in `T`, its nearest neighbor in T_B will be recorded.
+    T_B : numpy.ndarray
+        The time series or sequence that will be used to annotate `T_A`. For every
+        subsequence in `T_B`, its nearest neighbor in `T_A` will be recorded.
 
     m : int
         Window size
@@ -86,18 +86,18 @@ def _compute_diagonal(
     cov_d : numpy.ndarray
         The fourth covariance term relating T_B[i - 1] and μ_Q_m_1[i]
 
-    Q_subseq_isfinite : numpy.ndarray
+    T_A_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `Q` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_subseq_isfinite : numpy.ndarray
+    T_B_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
 
-    Q_subseq_isconstant : numpy.ndarray
+    T_A_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `Q` is constant (True)
 
-    T_subseq_isconstant : numpy.ndarray
+    T_B_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     diags : numpy.ndarray
@@ -157,8 +157,8 @@ def _compute_diagonal(
     centered sum-of-products along each diagonal of the distance matrix in place of the
     sliding window dot product found in the original STOMP method.
     """
-    n_Q = Q.shape[0]
-    n_T = T.shape[0]
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
     m_inverse = 1.0 / m
     constant = (m - 1) * m_inverse * m_inverse  # (m - 1)/(m * m)
     uint64_m = np.uint64(m)
@@ -167,9 +167,9 @@ def _compute_diagonal(
         g = diags[diag_idx]
 
         if g >= 0:
-            iter_range = range(0, min(n_Q - m + 1, n_T - m + 1 - g))
+            iter_range = range(0, min(n_A - m + 1, n_B - m + 1 - g))
         else:
-            iter_range = range(-g, min(n_Q - m + 1, n_T - m + 1 - g))
+            iter_range = range(-g, min(n_A - m + 1, n_B - m + 1 - g))
 
         for i in iter_range:
             uint64_i = np.uint64(i)
@@ -178,8 +178,8 @@ def _compute_diagonal(
             if uint64_i == 0 or uint64_j == 0:
                 cov = (
                     np.dot(
-                        (T[uint64_j : uint64_j + uint64_m] - M_T[uint64_j]),
-                        (Q[uint64_i : uint64_i + uint64_m] - μ_Q[uint64_i]),
+                        (T_B[uint64_j : uint64_j + uint64_m] - M_T[uint64_j]),
+                        (T_A[uint64_i : uint64_i + uint64_m] - μ_Q[uint64_i]),
                     )
                     * m_inverse
                 )
@@ -195,11 +195,11 @@ def _compute_diagonal(
                     - cov_c[uint64_j] * cov_d[uint64_i]
                 )
 
-            if T_subseq_isfinite[uint64_j] and Q_subseq_isfinite[uint64_i]:
+            if T_B_subseq_isfinite[uint64_j] and T_A_subseq_isfinite[uint64_i]:
                 # Neither subsequence contains NaNs
-                if T_subseq_isconstant[uint64_j] and Q_subseq_isconstant[uint64_i]:
+                if T_B_subseq_isconstant[uint64_j] and T_A_subseq_isconstant[uint64_i]:
                     pearson = 1.0
-                elif T_subseq_isconstant[uint64_j] or Q_subseq_isconstant[uint64_i]:
+                elif T_B_subseq_isconstant[uint64_j] or T_A_subseq_isconstant[uint64_i]:
                     pearson = 0.5
                 else:
                     pearson = cov * Σ_T_inverse[uint64_j] * σ_Q_inverse[uint64_i]
@@ -249,8 +249,8 @@ def _compute_diagonal(
     fastmath=True,
 )
 def _stump(
-    Q,
-    T,
+    T_A,
+    T_B,
     m,
     μ_Q,
     M_T,
@@ -258,10 +258,10 @@ def _stump(
     Σ_T_inverse,
     μ_Q_m_1,
     M_T_m_1,
-    Q_subseq_isfinite,
-    T_subseq_isfinite,
-    Q_subseq_isconstant,
-    T_subseq_isconstant,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
+    T_A_subseq_isconstant,
+    T_B_subseq_isconstant,
     diags,
     ignore_trivial,
     k,
@@ -274,12 +274,12 @@ def _stump(
 
     Parameters
     ----------
-    Q : numpy.ndarray
+    T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
 
-    T : numpy.ndarray
-        The time series or sequence that will be used to annotate Q. For every
-        subsequence in Q, its nearest neighbor in T will be recorded.
+    T_B : numpy.ndarray
+        The time series or sequence that will be used to annotate `T_A`. For every
+        subsequence in `T_A`, its nearest neighbor in `T_B` will be recorded.
 
     m : int
         Window size
@@ -303,19 +303,19 @@ def _stump(
     M_T_m_1 : numpy.ndarray
         Sliding mean of time series, `T`, using a window size of `m-1`
 
-    Q_subseq_isfinite : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `Q` contains a
+    T_A_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_A` contains a
         `np.nan`/`np.inf` value (False)
 
-    T_subseq_isfinite : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `T` contains a
+    T_B_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
-    Q_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `Q` is constant (True)
+    T_A_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_A` is constant (True)
 
-    T_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `T` is constant (True)
+    T_B_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_B` is constant (True)
 
     diags : numpy.ndarray
         The diagonal indices
@@ -394,9 +394,9 @@ def _stump(
 
     Note that left and right matrix profiles are only available for self-joins.
     """
-    n_Q = Q.shape[0]
-    n_T = T.shape[0]
-    l = n_Q - m + 1
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_A - m + 1
     n_threads = numba.config.NUMBA_NUM_THREADS
 
     ρ = np.full((n_threads, l, k), np.NINF, dtype=np.float64)
@@ -408,32 +408,32 @@ def _stump(
     ρR = np.full((n_threads, l), np.NINF, dtype=np.float64)
     IR = np.full((n_threads, l), -1, dtype=np.int64)
 
-    ndist_counts = core._count_diagonal_ndist(diags, m, n_Q, n_T)
+    ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
     diags_ranges = core._get_array_ranges(ndist_counts, n_threads, False)
 
-    cov_a = T[m - 1 :] - M_T_m_1[:-1]
-    cov_b = Q[m - 1 :] - μ_Q_m_1[:-1]
+    cov_a = T_B[m - 1 :] - M_T_m_1[:-1]
+    cov_b = T_A[m - 1 :] - μ_Q_m_1[:-1]
     # The next lines are equivalent and left for reference
     # cov_c = np.roll(Q, 1)
     # cov_ = cov_c[:M_T_m_1.shape[0]] - M_T_m_1[:]
     cov_c = np.empty(M_T_m_1.shape[0], dtype=np.float64)
-    cov_c[1:] = T[: M_T_m_1.shape[0] - 1]
-    cov_c[0] = T[-1]
+    cov_c[1:] = T_B[: M_T_m_1.shape[0] - 1]
+    cov_c[0] = T_B[-1]
     cov_c[:] = cov_c - M_T_m_1
     # The next lines are equivalent and left for reference
     # cov_d = np.roll(T, 1)
     # cov_d = cov_d[:μ_Q_m_1.shape[0]] - μ_Q_m_1[:]
     cov_d = np.empty(μ_Q_m_1.shape[0], dtype=np.float64)
-    cov_d[1:] = Q[: μ_Q_m_1.shape[0] - 1]
-    cov_d[0] = Q[-1]
+    cov_d[1:] = T_A[: μ_Q_m_1.shape[0] - 1]
+    cov_d[0] = T_A[-1]
     cov_d[:] = cov_d - μ_Q_m_1
 
     for thread_idx in prange(n_threads):
         # Compute and update pearson correlations and matrix profile indices
         # within a single thread and avoiding race conditions
         _compute_diagonal(
-            Q,
-            T,
+            T_A,
+            T_B,
             m,
             μ_Q,
             M_T,
@@ -443,10 +443,10 @@ def _stump(
             cov_b,
             cov_c,
             cov_d,
-            Q_subseq_isfinite,
-            T_subseq_isfinite,
-            Q_subseq_isconstant,
-            T_subseq_isconstant,
+            T_A_subseq_isfinite,
+            T_B_subseq_isfinite,
+            T_A_subseq_isconstant,
+            T_B_subseq_isconstant,
             diags,
             diags_ranges[thread_idx, 0],
             diags_ranges[thread_idx, 1],
@@ -664,52 +664,52 @@ def stump(
         T_B_subseq_isconstant = T_A_subseq_isconstant
 
     (
-        Q,
+        T_A,
         μ_Q,
         σ_Q_inverse,
         μ_Q_m_1,
-        Q_subseq_isfinite,
-        Q_subseq_isconstant,
+        T_A_subseq_isfinite,
+        T_A_subseq_isconstant,
     ) = core.preprocess_diagonal(T_A, m, T_subseq_isconstant=T_A_subseq_isconstant)
 
     (
-        T,
+        T_B,
         M_T,
         Σ_T_inverse,
         M_T_m_1,
-        T_subseq_isfinite,
-        T_subseq_isconstant,
+        T_B_subseq_isfinite,
+        T_B_subseq_isconstant,
     ) = core.preprocess_diagonal(T_B, m, T_subseq_isconstant=T_B_subseq_isconstant)
 
     if T_A.ndim != 1:  # pragma: no cover
         raise ValueError(
-            f"T_A is {Q.ndim}-dimensional and must be 1-dimensional. "
+            f"T_A is {T_A.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
 
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(
-            f"T_B is {T.ndim}-dimensional and must be 1-dimensional. "
+            f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. "
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
 
-    core.check_window_size(m, max_size=min(Q.shape[0], T.shape[0]))
-    ignore_trivial = core.check_ignore_trivial(Q, T, ignore_trivial)
+    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
+    ignore_trivial = core.check_ignore_trivial(T_A, T_B, ignore_trivial)
 
-    n_Q = Q.shape[0]
-    n_T = T.shape[0]
-    l = n_Q - m + 1
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_A - m + 1
 
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
     if ignore_trivial:
-        diags = np.arange(excl_zone + 1, n_Q - m + 1, dtype=np.int64)
+        diags = np.arange(excl_zone + 1, n_A - m + 1, dtype=np.int64)
     else:
-        diags = np.arange(-(n_Q - m + 1) + 1, n_T - m + 1, dtype=np.int64)
+        diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
     P, PL, PR, I, IL, IR = _stump(
-        Q,
-        T,
+        T_A,
+        T_B,
         m,
         μ_Q,
         M_T,
@@ -717,10 +717,10 @@ def stump(
         Σ_T_inverse,
         μ_Q_m_1,
         M_T_m_1,
-        Q_subseq_isfinite,
-        T_subseq_isfinite,
-        Q_subseq_isconstant,
-        T_subseq_isconstant,
+        T_A_subseq_isfinite,
+        T_B_subseq_isfinite,
+        T_A_subseq_isconstant,
+        T_B_subseq_isconstant,
         diags,
         ignore_trivial,
         k,
