@@ -167,7 +167,7 @@ def _compute_and_update_PI_kernel(
 
         if compute_QT:
             QT_out[i] = (
-                QT_in[i - 1] - T_B[j - 1] * T_A[i - 1] + T_B[j + m - 1] * T_A[i + m - 1]
+                QT_in[i - 1] - T_A[i - 1] * T_B[j - 1] + T_A[i + m - 1] * T_B[j + m - 1]
             )
 
             QT_out[0] = QT_first[j]
