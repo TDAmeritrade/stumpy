@@ -51,7 +51,7 @@ def _compute_and_update_PI_kernel(
     Parameters
     ----------
     idx : int
-        The index for sliding window `i`
+        The index for sliding window `j` (in  `T_B`)
 
     T_A : numpy.ndarray
         The time series or sequence for which to compute the dot product
@@ -151,56 +151,57 @@ def _compute_and_update_PI_kernel(
     start = cuda.grid(1)
     stride = cuda.gridsize(1)
 
-    i = idx
+    j = idx 
+    # The name `i` is reserved to be used as an index for `T_A`
 
-    if i % 2 == 0:
+    if j % 2 == 0:
         QT_out = QT_even
         QT_in = QT_odd
     else:
         QT_out = QT_odd
         QT_in = QT_even
 
-    for j in range(start, QT_out.shape[0], stride):
-        zone_start = max(0, j - excl_zone)
-        zone_stop = min(w, j + excl_zone)
+    for i in range(start, QT_out.shape[0], stride):
+        zone_start = max(0, i - excl_zone)
+        zone_stop = min(w, i + excl_zone)
 
         if compute_QT:
-            QT_out[j] = (
-                QT_in[j - 1] - T_B[i - 1] * T_A[j - 1] + T_B[i + m - 1] * T_A[j + m - 1]
+            QT_out[i] = (
+                QT_in[i - 1] - T_B[j - 1] * T_A[i - 1] + T_B[j + m - 1] * T_A[i + m - 1]
             )
 
-            QT_out[0] = QT_first[i]
-        if math.isinf(μ_Q[j]) or math.isinf(M_T[i]):
+            QT_out[0] = QT_first[j]
+        if math.isinf(μ_Q[i]) or math.isinf(M_T[j]):
             p_norm = np.inf
-        elif Q_subseq_isconstant[j] and T_subseq_isconstant[i]:
+        elif Q_subseq_isconstant[i] and T_subseq_isconstant[j]:
             p_norm = 0
-        elif Q_subseq_isconstant[j] or T_subseq_isconstant[i]:
+        elif Q_subseq_isconstant[i] or T_subseq_isconstant[j]:
             p_norm = m
         else:
-            denom = m * σ_Q[j] * Σ_T[i]
+            denom = m * σ_Q[i] * Σ_T[j]
             denom = max(denom, config.STUMPY_DENOM_THRESHOLD)
-            ρ = (QT_out[j] - m * μ_Q[j] * M_T[i]) / denom
+            ρ = (QT_out[i] - m * μ_Q[i] * M_T[j]) / denom
             ρ = min(ρ, 1.0)
             p_norm = 2 * m * (1.0 - ρ)
 
         if ignore_trivial:
-            if i <= zone_stop and i >= zone_start:
+            if j <= zone_stop and j >= zone_start:
                 p_norm = np.inf
-            if p_norm < profile_L[j] and i < j:
-                profile_L[j] = p_norm
-                indices_L[j] = i
-            if p_norm < profile_R[j] and i > j:
-                profile_R[j] = p_norm
-                indices_R[j] = i
+            if p_norm < profile_L[i] and j < i:
+                profile_L[i] = p_norm
+                indices_L[i] = j
+            if p_norm < profile_R[i] and j > i:
+                profile_R[i] = p_norm
+                indices_R[i] = j
 
-        if p_norm < profile[j, -1]:
-            idx = core._gpu_searchsorted_right(profile[j], p_norm, bfs, nlevel)
+        if p_norm < profile[i, -1]:
+            idx = core._gpu_searchsorted_right(profile[i], p_norm, bfs, nlevel)
             for g in range(k - 1, idx, -1):
-                profile[j, g] = profile[j, g - 1]
-                indices[j, g] = indices[j, g - 1]
+                profile[i, g] = profile[i, g - 1]
+                indices[i, g] = indices[i, g - 1]
 
-            profile[j, idx] = p_norm
-            indices[j, idx] = i
+            profile[i, idx] = p_norm
+            indices[i, idx] = j
 
 
 def _gpu_stump(
