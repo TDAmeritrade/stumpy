@@ -151,7 +151,7 @@ def _compute_and_update_PI_kernel(
     start = cuda.grid(1)
     stride = cuda.gridsize(1)
 
-    j = idx 
+    j = idx
     # The name `i` is reserved to be used as an index for `T_A`
 
     if j % 2 == 0:
