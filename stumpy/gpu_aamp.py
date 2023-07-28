@@ -48,7 +48,7 @@ def _compute_and_update_PI_kernel(
     Parameters
     ----------
     idx : int
-        The index for sliding window `i`
+        The index for sliding window `j` (in `T_B`)
 
     T_A : numpy.ndarray
         The time series or sequence for which to compute the dot product
@@ -148,52 +148,53 @@ def _compute_and_update_PI_kernel(
     start = cuda.grid(1)
     stride = cuda.gridsize(1)
 
-    i = idx
+    j = idx
+    # The name `i` is reserved to be used as an index for `T_A`
 
-    if i % 2 == 0:
+    if j % 2 == 0:
         p_norm_out = p_norm_even
         p_norm_in = p_norm_odd
     else:
         p_norm_out = p_norm_odd
         p_norm_in = p_norm_even
 
-    for j in range(start, p_norm_out.shape[0], stride):
-        zone_start = max(0, j - excl_zone)
-        zone_stop = min(w, j + excl_zone)
+    for i in range(start, p_norm_out.shape[0], stride):
+        zone_start = max(0, i - excl_zone)
+        zone_stop = min(w, i + excl_zone)
 
         if compute_p_norm:
-            p_norm_out[j] = (
-                p_norm_in[j - 1]
-                - abs(T_B[i - 1] - T_A[j - 1]) ** p
-                + abs(T_B[i + m - 1] - T_A[j + m - 1]) ** p
+            p_norm_out[i] = (
+                p_norm_in[i - 1]
+                - abs(T_A[i - 1] - T_B[j - 1]) ** p
+                + abs(T_A[i + m - 1] - T_B[j + m - 1]) ** p
             )
-            p_norm_out[0] = p_norm_first[i]
-        if not T_B_subseq_isfinite[i] or not T_A_subseq_isfinite[j]:
+            p_norm_out[0] = p_norm_first[j]
+        if not T_B_subseq_isfinite[j] or not T_A_subseq_isfinite[i]:
             p_norm = np.inf
         else:
-            p_norm = p_norm_out[j]
+            p_norm = p_norm_out[i]
 
         if p_norm < config.STUMPY_P_NORM_THRESHOLD:
             p_norm = 0
 
         if ignore_trivial:
-            if i <= zone_stop and i >= zone_start:
+            if j <= zone_stop and j >= zone_start:
                 p_norm = np.inf
-            if p_norm < profile_L[j] and i < j:
-                profile_L[j] = p_norm
-                indices_L[j] = i
-            if p_norm < profile_R[j] and i > j:
-                profile_R[j] = p_norm
-                indices_R[j] = i
+            if p_norm < profile_L[i] and j < i:
+                profile_L[i] = p_norm
+                indices_L[i] = j
+            if p_norm < profile_R[i] and j > i:
+                profile_R[i] = p_norm
+                indices_R[i] = j
 
-        if p_norm < profile[j, -1]:
-            idx = core._gpu_searchsorted_right(profile[j], p_norm, bfs, nlevel)
+        if p_norm < profile[i, -1]:
+            idx = core._gpu_searchsorted_right(profile[i], p_norm, bfs, nlevel)
             for g in range(k - 1, idx, -1):
-                profile[j, g] = profile[j, g - 1]
-                indices[j, g] = indices[j, g - 1]
+                profile[i, g] = profile[i, g - 1]
+                indices[i, g] = indices[i, g - 1]
 
-            profile[j, idx] = p_norm
-            indices[j, idx] = i
+            profile[i, idx] = p_norm
+            indices[i, idx] = j
 
 
 def _gpu_aamp(
