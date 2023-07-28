@@ -571,7 +571,7 @@ class scraamp:
         pre_scraamp=False,
         s=None,
         p=2.0,
-        k=1,  # this function needs to be modified for top-k
+        k=1,
     ):
         """
         Initialize the `scraamp` object
