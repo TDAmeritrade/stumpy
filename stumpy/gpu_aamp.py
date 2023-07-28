@@ -439,8 +439,6 @@ def _gpu_aamp(
 
 
 def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
-    # function needs to be revised to return (top-k) matrix profile and
-    # matrix profile indices
     """
     Compute the non-normalized (i.e., without z-normalization) matrix profile with
     one or more GPU devices
