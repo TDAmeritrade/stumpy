@@ -2678,7 +2678,7 @@ def _get_partial_mp_func(mp_func, client=None, device_id=None):
         partial_mp_func = functools.partial(mp_func, client)
     elif device_id is not None:
         partial_mp_func = functools.partial(mp_func, device_id=device_id)
-    elif type(mp_func) != functools.partial:
+    elif isinstance(mp_func, functools.partial):
         partial_mp_func = functools.partial(mp_func)
     else:
         partial_mp_func = mp_func
