@@ -208,7 +208,7 @@ def motifs(
         The (1-dimensional) matrix profile of `T`. In the case where the matrix
         profile was computed with `k > 1` (i.e., top-k nearest neighbors), you
         must summarize the top-k nearest-neighbor distances for each subsequence
-        into a single value (e.g., `np.mean`, `np.min`, etc) and that use that
+        into a single value (e.g., `np.mean`, `np.min`, etc) and then use that
         derived value as your `P`.
 
     min_neighbors : int, default 1
