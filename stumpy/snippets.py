@@ -136,10 +136,6 @@ def _get_all_profiles(
             query_idx=start,
         )
 
-        # post-processing `D` to avoid loss of precision
-        for j in range(0, i * m, m):
-            D[i, j] = D[j // m, i * m]
-
     stop_idx = n_padded - m + 1 - right_pad
     D = D[:, :stop_idx]
 
