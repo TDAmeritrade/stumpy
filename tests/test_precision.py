@@ -103,3 +103,49 @@ def test_snippets():
     )
     npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
     npt.assert_almost_equal(ref_regimes, cmp_regimes)
+
+
+def test_calculate_squared_distance():
+    # This test function raises an error if the distance between a subsequence
+    # and another does not satisfy the symmetry property
+    seed = 332
+    np.random.seed(seed)
+    T = np.random.uniform(-1000.0, 1000.0, [64])
+    m = 3
+
+    T_subseq_isconstant = core.rolling_isconstant(T, m)
+    M_T, Σ_T = core.compute_mean_std(T, m)
+
+    i, j = 2, 10
+    # testing the distance between query `Q_i = T[i : i + m]`, and the
+    # subsequence T[j : j + m] should be the same as the distance between
+    # the query `Q_j = T[j : j + m]` and the subsequence T[i : i + m]
+
+    QT_i = core.sliding_dot_product(T[i : i + m], T)
+    dist_ij = core._calculate_squared_distance(
+        m,
+        QT_i[j],
+        M_T[i],
+        Σ_T[i],
+        M_T[j],
+        Σ_T[j],
+        T_subseq_isconstant[i],
+        T_subseq_isconstant[j],
+    )
+
+    QT_j = core.sliding_dot_product(T[j : j + m], T)
+    dist_ji = core._calculate_squared_distance(
+        m,
+        QT_j[i],
+        M_T[j],
+        Σ_T[j],
+        M_T[i],
+        Σ_T[i],
+        T_subseq_isconstant[j],
+        T_subseq_isconstant[i],
+    )
+
+    comp = dist_ij - dist_ji
+    ref = 0.0
+
+    npt.assert_almost_equal(ref, comp)
