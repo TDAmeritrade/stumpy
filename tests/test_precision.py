@@ -107,7 +107,7 @@ def test_snippets():
 
 def test_calculate_squared_distance():
     # This test function raises an error if the distance between a subsequence
-    # and another does not satisfy the symmetry property
+    # and another does not satisfy the symmetry property.
     seed = 332
     np.random.seed(seed)
     T = np.random.uniform(-1000.0, 1000.0, [64])
