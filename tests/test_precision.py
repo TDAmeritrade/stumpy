@@ -59,52 +59,6 @@ def test_distace_profile():
         npt.assert_almost_equal(D_ref, D_comp)
 
 
-def test_snippets():
-    m = 10
-    k = 3
-    s = 3
-    seed = 332
-    np.random.seed(seed)
-    T = np.random.uniform(-1000.0, 1000.0, [64])
-
-    isconstant_custom_func = functools.partial(
-        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
-    )
-    (
-        ref_snippets,
-        ref_indices,
-        ref_profiles,
-        ref_fractions,
-        ref_areas,
-        ref_regimes,
-    ) = naive.mpdist_snippets(
-        T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
-    )
-    (
-        cmp_snippets,
-        cmp_indices,
-        cmp_profiles,
-        cmp_fractions,
-        cmp_areas,
-        cmp_regimes,
-    ) = stumpy.snippets(T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func)
-
-    npt.assert_almost_equal(
-        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
-    )
-    npt.assert_almost_equal(
-        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
-    )
-    npt.assert_almost_equal(
-        ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
-    )
-    npt.assert_almost_equal(
-        ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
-    )
-    npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
-    npt.assert_almost_equal(ref_regimes, cmp_regimes)
-
-
 def test_calculate_squared_distance():
     # This test function raises an error if the distance between a subsequence
     # and another does not satisfy the symmetry property.
@@ -149,3 +103,49 @@ def test_calculate_squared_distance():
     ref = 0.0
 
     npt.assert_almost_equal(ref, comp)
+
+
+def test_snippets():
+    m = 10
+    k = 3
+    s = 3
+    seed = 332
+    np.random.seed(seed)
+    T = np.random.uniform(-1000.0, 1000.0, [64])
+
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+    (
+        ref_snippets,
+        ref_indices,
+        ref_profiles,
+        ref_fractions,
+        ref_areas,
+        ref_regimes,
+    ) = naive.mpdist_snippets(
+        T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
+    )
+    (
+        cmp_snippets,
+        cmp_indices,
+        cmp_profiles,
+        cmp_fractions,
+        cmp_areas,
+        cmp_regimes,
+    ) = stumpy.snippets(T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func)
+
+    npt.assert_almost_equal(
+        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
+    npt.assert_almost_equal(ref_regimes, cmp_regimes)
