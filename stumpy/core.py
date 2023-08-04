@@ -1100,10 +1100,10 @@ def _calculate_squared_distance(
         denom = σ_Q * Σ_T
         denom = max(denom, config.STUMPY_DENOM_THRESHOLD)
 
-        mρ = (QT - m * μ_Q * M_T) / denom
-        mρ = min(mρ, m)
+        ρ = (QT / m - μ_Q * M_T) / denom
+        ρ = min(ρ, 1.0)
 
-        D_squared = np.abs(2 * (m - mρ))
+        D_squared = np.abs(2 * m * (1.0 - ρ))
 
     return D_squared
 
