@@ -149,3 +149,37 @@ def test_snippets():
     )
     npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
     npt.assert_almost_equal(ref_regimes, cmp_regimes)
+
+
+def test_distance_symmetry_property_in_gpu():
+    # This test function raises an error if the distance between a subsequence
+    # and another does not satisfy the symmetry property.
+
+    seed = 332
+    np.random.seed(seed)
+    T = np.random.uniform(-1000.0, 1000.0, [64])
+    m = 3
+
+    i, j = 2, 10
+    # M_T, Σ_T = core.compute_mean_std(T, m)
+    # Σ_T[i] is `650.912209452633`
+    # Σ_T[j] is `722.0717285148525`
+
+    # This test raises an error if arithmetic operation in ...
+    # ... `gpu_stump._compute_and_update_PI_kernel` does not
+    # generates the same result if values of variable for mean and std
+    # are swapped.
+
+    T_A = T[i : i + m]
+    T_B = T[j : j + m]
+
+    mp_AB = stumpy.gpu_stump(T_A, m, T_B)
+    mp_BA = stumpy.gpu_stump(T_B, m, T_A)
+
+    d_ij = mp_AB[0, 0]
+    d_ji = mp_BA[0, 0]
+
+    comp = d_ij - d_ji
+    ref = 0.0
+
+    npt.assert_almost_equal(comp, ref, decimal=15)
