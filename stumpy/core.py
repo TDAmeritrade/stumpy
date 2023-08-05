@@ -1042,7 +1042,7 @@ def compute_mean_std(T, m):
 
 @njit(
     # "f8(i8, f8, f8, f8, f8, f8)",
-    fastmath={"nnan", "nsz", "arcp", "contract", "afn"}
+    fastmath={"nnan", "nsz", "arcp", "contract", "afn", "reassoc"}
 )
 def _calculate_squared_distance(
     m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
