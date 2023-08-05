@@ -178,9 +178,9 @@ def _compute_and_update_PI_kernel(
         elif Q_subseq_isconstant[i] or T_subseq_isconstant[j]:
             p_norm = m
         else:
-            denom = m * σ_Q[i] * Σ_T[j]
+            denom = (σ_Q[i] * Σ_T[j]) * m
             denom = max(denom, config.STUMPY_DENOM_THRESHOLD)
-            ρ = (QT_out[i] - m * μ_Q[i] * M_T[j]) / denom
+            ρ = (QT_out[i] - (μ_Q[i] * M_T[j]) * m) / denom
             ρ = min(ρ, 1.0)
             p_norm = 2 * m * (1.0 - ρ)
 
