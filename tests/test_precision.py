@@ -1,11 +1,21 @@
 import functools
+from unittest.mock import patch
 
 import naive
 import numpy as np
 import numpy.testing as npt
+import pytest
+from numba import cuda
 
 import stumpy
 from stumpy import config, core
+
+try:
+    from numba.errors import NumbaPerformanceWarning
+except ModuleNotFoundError:
+    from numba.core.errors import NumbaPerformanceWarning
+
+TEST_THREADS_PER_BLOCK = 10
 
 
 def test_mpdist_snippets_s():
@@ -151,10 +161,14 @@ def test_snippets():
     npt.assert_almost_equal(ref_regimes, cmp_regimes)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def test_distance_symmetry_property_in_gpu():
+    if not cuda.is_available():  # pragma: no cover
+        pytest.skip("Skipping Tests No GPUs Available")
+
     # This test function raises an error if the distance between a subsequence
     # and another does not satisfy the symmetry property.
-
     seed = 332
     np.random.seed(seed)
     T = np.random.uniform(-1000.0, 1000.0, [64])
