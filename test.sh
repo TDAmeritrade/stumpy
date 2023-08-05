@@ -200,6 +200,8 @@ test_unit()
     check_errs $?
     pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_non_normalized_decorator.py
     check_errs $?
+    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_precision.py
+    check_errs $?
 }
 
 test_coverage()
