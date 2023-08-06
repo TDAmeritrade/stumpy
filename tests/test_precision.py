@@ -111,8 +111,7 @@ def test_calculate_squared_distance():
             comp = dist_ij - dist_ji
             ref = 0.0
 
-            assert ref == comp
-            # npt.assert_almost_equal(ref, comp, decimal=15)
+            npt.assert_almost_equal(ref, comp, decimal=15)
 
 
 def test_snippets():
