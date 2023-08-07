@@ -3,11 +3,12 @@
 # 1. Update version number in setup.py
 # 2. Update CHANGELOG
 # 3. Update README with new features/functions/tutorials
-# 4. Determine minimum dependencies with ./min.py
-# 5. Bump minimum dependencies
+# 4. Determine minimum versions and dependencies with ./min.py
+# 5. Bump minimum versions and dependencies
 #    a) setup.py
 #    b) requirements.txt
-#    d) environment.yml
+#    c) environment.yml
+#    d) .github/worflows/github-actions.yml
 #    e) recipes/meta.yaml in conda-feedstock
 # 6. Commit all above changes as the latest version number and push
 #
