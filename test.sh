@@ -107,7 +107,7 @@ test_custom()
     # ./test.sh custom 5 tests/test_stump.py
     # ./test.sh custom 5 tests/test_stump.py::test_stump_self_join
     #
-    # You may mimic coverag testing conditions by disable `numba` JIT
+    # You may mimic coverage testing conditions by disabling `numba` JIT
     # and enabling the `cuda` simulator by setting two environment
     # variables prior to calling `test.sh`:
     #
@@ -137,69 +137,11 @@ test_custom()
 test_unit()
 {
     echo "Testing Numba JIT Compiled Functions"
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_gpu_stump.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_core.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_config.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_stump.py tests/test_mstump.py tests/test_stumpi.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_scrump.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_stumped.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_mstumped.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_ostinato.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_gpu_ostinato.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_mpdist.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_motifs.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_mmotifs.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_gpu_mpdist.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_snippets.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_gpu_stimp.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_stimp.py
-    check_errs $?
-    # aamp
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_gpu_aamp.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_aamp.py tests/test_maamp.py tests/test_scraamp.py tests/test_aampi.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_scraamp.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_aamped.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_maamped.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_aamp_ostinato.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_gpu_aamp_ostinato.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_aampdist.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_aamp_motifs.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_aamp_mmotifs.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_gpu_aampdist.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_aampdist_snippets.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_gpu_aamp_stimp.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_aamp_stimp.py
-    check_errs $?
-    pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning tests/test_non_normalized_decorator.py
-    check_errs $?
+    for testfile in tests/test_*.py
+    do
+        pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
+        check_errs $?
+    done
 }
 
 test_coverage()
@@ -219,7 +161,7 @@ test_coverage()
         coverage run --append --source=. -m pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
         check_errs $?
     done
-    coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,stumpy/cache.py
+    coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min.py,stumpy/cache.py
 }
 
 check_links()
