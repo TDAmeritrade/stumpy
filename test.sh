@@ -107,7 +107,7 @@ test_custom()
     # ./test.sh custom 5 tests/test_stump.py
     # ./test.sh custom 5 tests/test_stump.py::test_stump_self_join
     #
-    # You may mimic coverag testing conditions by disable `numba` JIT
+    # You may mimic coverage testing conditions by disabling `numba` JIT
     # and enabling the `cuda` simulator by setting two environment
     # variables prior to calling `test.sh`:
     #
@@ -161,7 +161,7 @@ test_coverage()
         coverage run --append --source=. -m pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
         check_errs $?
     done
-    coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,stumpy/cache.py
+    coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min.py,stumpy/cache.py
 }
 
 check_links()
