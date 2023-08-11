@@ -115,6 +115,8 @@ def test_calculate_squared_distance():
 
 
 def test_snippets():
+    # This test function raises an error if there is a considerable loss of precision
+    # that violates the symmetry property of a distance measure.
     m = 10
     k = 3
     s = 3
@@ -167,7 +169,7 @@ def test_distance_symmetry_property_in_gpu():
         pytest.skip("Skipping Tests No GPUs Available")
 
     # This test function raises an error if the distance between a subsequence
-    # and another does not satisfy the symmetry property.
+    # and another one does not satisfy the symmetry property.
     seed = 332
     np.random.seed(seed)
     T = np.random.uniform(-1000.0, 1000.0, [64])
