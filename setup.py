@@ -29,7 +29,7 @@ def get_extras_require():
 
 configuration = {
     "version": "1.11.1",
-    "python_requires=": ">=3.7",
+    "python_requires=": ">=3.8",
     "author": "Sean M. Law",
     "author_email": "seanmylaw@gmail.com",
     "description": (
@@ -50,7 +50,7 @@ configuration = {
         "Operating System :: POSIX",
         "Operating System :: Unix",
         "Operating System :: MacOS",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
     ],
     "keywords": "time series matrix profile motif discord",
     "url": "https://github.com/TDAmeritrade/stumpy",
@@ -58,7 +58,7 @@ configuration = {
     "maintainer_email": "seanmylaw@gmail.com",
     "license": "3-clause BSD License",
     "packages": ["stumpy"],
-    "install_requires": ["numpy >= 1.17", "scipy >= 1.5", "numba >= 0.54"],
+    "install_requires": ["numpy >= 1.18", "scipy >= 1.5", "numba >= 0.55.2"],
     "ext_modules": [],
     "cmdclass": {},
     "tests_require": ["pytest"],
