@@ -102,6 +102,7 @@ def _get_all_profiles(
 
     right_pad = 0
     T_subseq_isconstant = core.process_isconstant(T, s, mpdist_T_subseq_isconstant)
+    n_contiguous_windows = int(T.shape[0] // m)
     if T.shape[0] % m != 0:
         right_pad = int(m * np.ceil(T.shape[0] / m) - T.shape[0])
         pad_width = (0, right_pad)
@@ -111,12 +112,12 @@ def _get_all_profiles(
         )
 
     n_padded = T.shape[0]
-    D = np.empty(((n_padded // m) - 1, n_padded - m + 1), dtype=np.float64)
+    D = np.empty((n_contiguous_windows, n_padded - m + 1), dtype=np.float64)
 
     M_T, Σ_T = core.compute_mean_std(T, s)
 
     # Iterate over non-overlapping subsequences, see Definition 3
-    for i in range((n_padded // m) - 1):
+    for i in range(n_contiguous_windows):
         start = i * m
         stop = (i + 1) * m
         S_i = T[start:stop]
@@ -290,17 +291,13 @@ def snippets(
         mpdist_T_subseq_isconstant=mpdist_T_subseq_isconstant,
     )
 
-    pad_width = (0, int(m * np.ceil(T.shape[0] / m) - T.shape[0]))
-    T_padded = np.pad(T, pad_width, mode="constant", constant_values=np.nan)
-    n_padded = T_padded.shape[0]
-
     snippets = np.empty((k, m), dtype=np.float64)
     snippets_indices = np.empty(k, dtype=np.int64)
     snippets_profiles = np.empty((k, D.shape[-1]), dtype=np.float64)
     snippets_fractions = np.empty(k, dtype=np.float64)
     snippets_areas = np.empty(k, dtype=np.float64)
     Q = np.full(D.shape[-1], np.inf, dtype=np.float64)
-    indices = np.arange(0, n_padded - m, m, dtype=np.int64)
+    indices = np.arange(D.shape[0], dtype=np.int64) * m
     snippets_regimes_list = []
 
     for i in range(k):
