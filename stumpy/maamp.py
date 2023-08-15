@@ -28,7 +28,7 @@ def _multi_mass_absolute(Q, T, m, Q_subseq_isfinite, T_subseq_isfinite, p=2.0):
         Window size
 
     Q_subseq_isfinite : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `Q` contains a
+        A boolean array that indicates whether the subsequence in `Q` contains a
         `np.nan`/`np.inf` value (False)
 
     T_subseq_isfinite : numpy.ndarray
@@ -499,7 +499,7 @@ def _get_first_maamp_profile(
         The half width for the exclusion zone relative to the `start`.
 
     T_B_subseq_isfinite : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `Q` contains a
+        A boolean array that indicates whether a subsequence in `T_B` contains a
         `np.nan`/`np.inf` value (False)
 
     p : float, default 2.0

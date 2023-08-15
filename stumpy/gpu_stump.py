@@ -25,12 +25,12 @@ def _compute_and_update_PI_kernel(
     QT_even,
     QT_odd,
     QT_first,
-    M_T,
-    Σ_T,
     μ_Q,
     σ_Q,
-    T_subseq_isconstant,
+    M_T,
+    Σ_T,
     Q_subseq_isconstant,
+    T_subseq_isconstant,
     w,
     ignore_trivial,
     excl_zone,
@@ -51,7 +51,7 @@ def _compute_and_update_PI_kernel(
     Parameters
     ----------
     idx : int
-        The index for sliding window `i`
+        The index for sliding window `j` (in  `T_B`)
 
     T_A : numpy.ndarray
         The time series or sequence for which to compute the dot product
@@ -74,23 +74,23 @@ def _compute_and_update_PI_kernel(
     QT_first : numpy.ndarray
         Dot product between the first query sequence,`Q`, and time series, `T`
 
-    M_T : numpy.ndarray
-        Sliding mean of time series, `T`
-
-    Σ_T : numpy.ndarray
-        Sliding standard deviation of time series, `T`
-
     μ_Q : numpy.ndarray
         Mean of the query sequence, `Q`
 
     σ_Q : numpy.ndarray
         Standard deviation of the query sequence, `Q`
 
-    T_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `T` is constant (True)
+    M_T : numpy.ndarray
+        Sliding mean of time series, `T`
+
+    Σ_T : numpy.ndarray
+        Sliding standard deviation of time series, `T`
 
     Q_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `Q` is constant (True)
+        A boolean array that indicates whether the subsequence in `Q` is constant (True)
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T` is constant (True)
 
     w : int
         The total number of sliding windows to iterate over
@@ -151,56 +151,57 @@ def _compute_and_update_PI_kernel(
     start = cuda.grid(1)
     stride = cuda.gridsize(1)
 
-    i = idx
+    j = idx
+    # The name `i` is reserved to be used as an index for `T_A`
 
-    if i % 2 == 0:
+    if j % 2 == 0:
         QT_out = QT_even
         QT_in = QT_odd
     else:
         QT_out = QT_odd
         QT_in = QT_even
 
-    for j in range(start, QT_out.shape[0], stride):
-        zone_start = max(0, j - excl_zone)
-        zone_stop = min(w, j + excl_zone)
+    for i in range(start, QT_out.shape[0], stride):
+        zone_start = max(0, i - excl_zone)
+        zone_stop = min(w, i + excl_zone)
 
         if compute_QT:
-            QT_out[j] = (
-                QT_in[j - 1] - T_B[i - 1] * T_A[j - 1] + T_B[i + m - 1] * T_A[j + m - 1]
+            QT_out[i] = (
+                QT_in[i - 1] - T_A[i - 1] * T_B[j - 1] + T_A[i + m - 1] * T_B[j + m - 1]
             )
 
-            QT_out[0] = QT_first[i]
-        if math.isinf(M_T[j]) or math.isinf(μ_Q[i]):
+            QT_out[0] = QT_first[j]
+        if math.isinf(μ_Q[i]) or math.isinf(M_T[j]):
             p_norm = np.inf
-        elif T_subseq_isconstant[j] and Q_subseq_isconstant[i]:
+        elif Q_subseq_isconstant[i] and T_subseq_isconstant[j]:
             p_norm = 0
-        elif T_subseq_isconstant[j] or Q_subseq_isconstant[i]:
+        elif Q_subseq_isconstant[i] or T_subseq_isconstant[j]:
             p_norm = m
         else:
-            denom = m * σ_Q[i] * Σ_T[j]
+            denom = (σ_Q[i] * Σ_T[j]) * m
             denom = max(denom, config.STUMPY_DENOM_THRESHOLD)
-            ρ = (QT_out[j] - m * μ_Q[i] * M_T[j]) / denom
+            ρ = (QT_out[i] - (μ_Q[i] * M_T[j]) * m) / denom
             ρ = min(ρ, 1.0)
             p_norm = 2 * m * (1.0 - ρ)
 
         if ignore_trivial:
-            if i <= zone_stop and i >= zone_start:
+            if j <= zone_stop and j >= zone_start:
                 p_norm = np.inf
-            if p_norm < profile_L[j] and i < j:
-                profile_L[j] = p_norm
-                indices_L[j] = i
-            if p_norm < profile_R[j] and i > j:
-                profile_R[j] = p_norm
-                indices_R[j] = i
+            if p_norm < profile_L[i] and j < i:
+                profile_L[i] = p_norm
+                indices_L[i] = j
+            if p_norm < profile_R[i] and j > i:
+                profile_R[i] = p_norm
+                indices_R[i] = j
 
-        if p_norm < profile[j, -1]:
-            idx = core._gpu_searchsorted_right(profile[j], p_norm, bfs, nlevel)
+        if p_norm < profile[i, -1]:
+            idx = core._gpu_searchsorted_right(profile[i], p_norm, bfs, nlevel)
             for g in range(k - 1, idx, -1):
-                profile[j, g] = profile[j, g - 1]
-                indices[j, g] = indices[j, g - 1]
+                profile[i, g] = profile[i, g - 1]
+                indices[i, g] = indices[i, g - 1]
 
-            profile[j, idx] = p_norm
-            indices[j, idx] = i
+            profile[i, idx] = p_norm
+            indices[i, idx] = j
 
 
 def _gpu_stump(
@@ -209,14 +210,14 @@ def _gpu_stump(
     m,
     range_stop,
     excl_zone,
-    M_T_fname,
-    Σ_T_fname,
-    QT_fname,
-    QT_first_fname,
     μ_Q_fname,
     σ_Q_fname,
-    T_subseq_isconstant_fname,
+    QT_fname,
+    QT_first_fname,
+    M_T_fname,
+    Σ_T_fname,
     Q_subseq_isconstant_fname,
+    T_subseq_isconstant_fname,
     w,
     ignore_trivial=True,
     range_start=1,
@@ -250,11 +251,13 @@ def _gpu_stump(
         The half width for the exclusion zone relative to the current
         sliding window
 
-    M_T_fname : str
-        The file name for the sliding mean of time series, `T`
+    μ_Q_fname : str
+        The file name for the mean of the query sequence, `Q`, relative to
+        the current sliding window
 
-    Σ_T_fname : str
-        The file name for the sliding standard deviation of time series, `T`
+    σ_Q_fname : str
+        The file name for the standard deviation of the query sequence, `Q`,
+        relative to the current sliding window
 
     QT_fname : str
         The file name for the dot product between some query sequence,`Q`,
@@ -264,19 +267,17 @@ def _gpu_stump(
         The file name for the QT for the first window relative to the current
         sliding window
 
-    μ_Q_fname : str
-        The file name for the mean of the query sequence, `Q`, relative to
-        the current sliding window
+    M_T_fname : str
+        The file name for the sliding mean of time series, `T`
 
-    σ_Q_fname : str
-        The file name for the standard deviation of the query sequence, `Q`,
-        relative to the current sliding window
-
-    T_subseq_isconstant_fname : str
-        The file name for the rolling isconstant in `T`
+    Σ_T_fname : str
+        The file name for the sliding standard deviation of time series, `T`
 
     Q_subseq_isconstant_fname : str
         The file name for the rolling isconstant in `Q`
+
+    T_subseq_isconstant_fname : str
+        The file name for the rolling isconstant in `T`
 
     w : int
         The total number of sliding windows to iterate over
@@ -343,12 +344,12 @@ def _gpu_stump(
     T_B = np.load(T_B_fname, allow_pickle=False)
     QT = np.load(QT_fname, allow_pickle=False)
     QT_first = np.load(QT_first_fname, allow_pickle=False)
-    M_T = np.load(M_T_fname, allow_pickle=False)
-    Σ_T = np.load(Σ_T_fname, allow_pickle=False)
     μ_Q = np.load(μ_Q_fname, allow_pickle=False)
     σ_Q = np.load(σ_Q_fname, allow_pickle=False)
-    T_subseq_isconstant = np.load(T_subseq_isconstant_fname, allow_pickle=False)
+    M_T = np.load(M_T_fname, allow_pickle=False)
+    Σ_T = np.load(Σ_T_fname, allow_pickle=False)
     Q_subseq_isconstant = np.load(Q_subseq_isconstant_fname, allow_pickle=False)
+    T_subseq_isconstant = np.load(T_subseq_isconstant_fname, allow_pickle=False)
 
     nlevel = np.floor(np.log2(k) + 1).astype(np.int64)
     # number of levels in binary search tree from which `bfs` is constructed.
@@ -358,20 +359,20 @@ def _gpu_stump(
         device_QT_odd = cuda.to_device(QT)
         device_QT_even = cuda.to_device(QT)
         device_QT_first = cuda.to_device(QT_first)
-        device_M_T = cuda.to_device(M_T)
-        device_Σ_T = cuda.to_device(Σ_T)
-        device_T_subseq_isconstant = cuda.to_device(T_subseq_isconstant)
+        device_μ_Q = cuda.to_device(μ_Q)
+        device_σ_Q = cuda.to_device(σ_Q)
+        device_Q_subseq_isconstant = cuda.to_device(Q_subseq_isconstant)
 
         if ignore_trivial:
             device_T_B = device_T_A
-            device_μ_Q = device_M_T
-            device_σ_Q = device_Σ_T
-            device_Q_subseq_isconstant = device_T_subseq_isconstant
+            device_M_T = device_μ_Q
+            device_Σ_T = device_σ_Q
+            device_T_subseq_isconstant = device_Q_subseq_isconstant
         else:
             device_T_B = cuda.to_device(T_B)
-            device_μ_Q = cuda.to_device(μ_Q)
-            device_σ_Q = cuda.to_device(σ_Q)
-            device_Q_subseq_isconstant = cuda.to_device(Q_subseq_isconstant)
+            device_M_T = cuda.to_device(M_T)
+            device_Σ_T = cuda.to_device(Σ_T)
+            device_T_subseq_isconstant = cuda.to_device(T_subseq_isconstant)
 
         profile = np.full((w, k), np.inf, dtype=np.float64)
         indices = np.full((w, k), -1, dtype=np.int64)
@@ -398,12 +399,12 @@ def _gpu_stump(
             device_QT_even,
             device_QT_odd,
             device_QT_first,
-            device_M_T,
-            device_Σ_T,
             device_μ_Q,
             device_σ_Q,
-            device_T_subseq_isconstant,
+            device_M_T,
+            device_Σ_T,
             device_Q_subseq_isconstant,
+            device_T_subseq_isconstant,
             w,
             ignore_trivial,
             excl_zone,
@@ -428,12 +429,12 @@ def _gpu_stump(
                 device_QT_even,
                 device_QT_odd,
                 device_QT_first,
-                device_M_T,
-                device_Σ_T,
                 device_μ_Q,
                 device_σ_Q,
-                device_T_subseq_isconstant,
+                device_M_T,
+                device_Σ_T,
                 device_Q_subseq_isconstant,
+                device_T_subseq_isconstant,
                 w,
                 ignore_trivial,
                 excl_zone,
@@ -629,10 +630,10 @@ def gpu_stump(
         ignore_trivial = True
         T_B_subseq_isconstant = T_A_subseq_isconstant
 
-    T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
+    T_A, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(
         T_A, m, T_subseq_isconstant=T_A_subseq_isconstant
     )
-    T_B, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(
+    T_B, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
         T_B, m, T_subseq_isconstant=T_B_subseq_isconstant
     )
 
@@ -660,12 +661,12 @@ def gpu_stump(
 
     T_A_fname = core.array_to_temp_file(T_A)
     T_B_fname = core.array_to_temp_file(T_B)
-    M_T_fname = core.array_to_temp_file(M_T)
-    Σ_T_fname = core.array_to_temp_file(Σ_T)
     μ_Q_fname = core.array_to_temp_file(μ_Q)
     σ_Q_fname = core.array_to_temp_file(σ_Q)
-    T_subseq_isconstant_fname = core.array_to_temp_file(T_subseq_isconstant)
+    M_T_fname = core.array_to_temp_file(M_T)
+    Σ_T_fname = core.array_to_temp_file(Σ_T)
     Q_subseq_isconstant_fname = core.array_to_temp_file(Q_subseq_isconstant)
+    T_subseq_isconstant_fname = core.array_to_temp_file(T_subseq_isconstant)
 
     if isinstance(device_id, int):
         device_ids = [device_id]
@@ -718,14 +719,14 @@ def gpu_stump(
                     m,
                     stop,
                     excl_zone,
-                    M_T_fname,
-                    Σ_T_fname,
-                    QT_fname,
-                    QT_first_fname,
                     μ_Q_fname,
                     σ_Q_fname,
-                    T_subseq_isconstant_fname,
+                    QT_fname,
+                    QT_first_fname,
+                    M_T_fname,
+                    Σ_T_fname,
                     Q_subseq_isconstant_fname,
+                    T_subseq_isconstant_fname,
                     w,
                     ignore_trivial,
                     start + 1,
@@ -749,14 +750,14 @@ def gpu_stump(
                 m,
                 stop,
                 excl_zone,
-                M_T_fname,
-                Σ_T_fname,
-                QT_fname,
-                QT_first_fname,
                 μ_Q_fname,
                 σ_Q_fname,
-                T_subseq_isconstant_fname,
+                QT_fname,
+                QT_first_fname,
+                M_T_fname,
+                Σ_T_fname,
                 Q_subseq_isconstant_fname,
+                T_subseq_isconstant_fname,
                 w,
                 ignore_trivial,
                 start + 1,
@@ -783,12 +784,12 @@ def gpu_stump(
 
     os.remove(T_A_fname)
     os.remove(T_B_fname)
-    os.remove(M_T_fname)
-    os.remove(Σ_T_fname)
     os.remove(μ_Q_fname)
     os.remove(σ_Q_fname)
-    os.remove(T_subseq_isconstant_fname)
+    os.remove(M_T_fname)
+    os.remove(Σ_T_fname)
     os.remove(Q_subseq_isconstant_fname)
+    os.remove(T_subseq_isconstant_fname)
     for QT_fname in QT_fnames:
         os.remove(QT_fname)
     for QT_first_fname in QT_first_fnames:

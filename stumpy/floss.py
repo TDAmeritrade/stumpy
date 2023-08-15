@@ -109,7 +109,7 @@ def _iac(
     b_mean = np.round(np.mean(params[:, 1]), 2)
 
     IAC = scipy.stats.beta.pdf(np.arange(width), a_mean, b_mean, loc=0, scale=width)
-    slope, _, _, _ = np.linalg.lstsq(IAC.reshape(-1, 1), target_AC, rcond=None)
+    slope, _, _, _ = np.linalg.lstsq(np.expand_dims(IAC, axis=1), target_AC, rcond=None)
 
     IAC *= slope
 
@@ -526,7 +526,7 @@ class floss:
         self._finite_Q = self._finite_T[-self._m :].copy()
 
         if self._normalize:
-            self._T_subseq_isconstant = core.rolling_isconstant(
+            self._T_subseq_isconstant = core.process_isconstant(
                 self._T, self._m, self._T_subseq_isconstant_func
             )
             self._M_T, self._Σ_T = core.compute_mean_std(self._T, self._m)
@@ -636,7 +636,7 @@ class floss:
         # Ingress
         if self._normalize:
             self._T_subseq_isconstant[:-1] = self._T_subseq_isconstant[1:]
-            self._Q_subseq_isconstant = core.rolling_isconstant(
+            self._Q_subseq_isconstant = core.process_isconstant(
                 self._T[-self._m :], self._m, self._T_subseq_isconstant_func
             )
             self._T_subseq_isconstant[-1] = self._Q_subseq_isconstant

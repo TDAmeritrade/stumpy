@@ -121,6 +121,7 @@ def _dask_mstumped(
             μ_Q,
             σ_Q,
             T_subseq_isconstant,
+            Q_subseq_isconstant,
             include,
             discords,
         )
@@ -184,8 +185,20 @@ def _dask_mstumped(
     return P, I
 
 
-@core.non_normalized(maamped)
-def mstumped(client, T, m, include=None, discords=False, normalize=True):
+@core.non_normalized(
+    maamped,
+    exclude=["normalize", "T_subseq_isconstant"],
+)
+def mstumped(
+    client,
+    T,
+    m,
+    include=None,
+    discords=False,
+    p=2.0,
+    normalize=True,
+    T_subseq_isconstant=None,
+):
     """
     Compute the multi-dimensional z-normalized matrix profile with a distributed
     dask/ray cluster
@@ -225,10 +238,24 @@ def mstumped(client, T, m, include=None, discords=False, normalize=True):
         (i.e., discords) rather than smaller values (i.e., motifs). Note that indices
         in `include` are still maintained and respected.
 
+    p : float, default 2.0
+        The p-norm to apply for computing the Minkowski distance. Minkowski distance is
+        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
+        and the Euclidean distance, respectively.
+
     normalize : bool, default True
         When set to `True`, this z-normalizes subsequences prior to computing distances.
         Otherwise, this function gets re-routed to its complementary non-normalized
         equivalent set in the `@core.non_normalized` function decorator.
+
+    T_subseq_isconstant : numpy.ndarray, function, or list, default None
+        A parameter that is used to show whether a subsequence of a time series in `T`
+        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
+        or a function that can be applied to each time series in `T`. Alternatively, for
+        maximum flexibility, a list (with length equal to the total number of time
+        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
+        the i-th time series T[i] and each element in the list can either be a 1D
+        boolean np.ndarray, a function, or None.
 
     Returns
     -------
@@ -275,8 +302,19 @@ def mstumped(client, T, m, include=None, discords=False, normalize=True):
     T_A = T
     T_B = T_A
 
-    T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(T_A, m)
-    T_B, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(T_B, m)
+    T_A = core._preprocess(T_A)
+    T_B = core._preprocess(T_B)
+
+    T_A_subseq_isconstant = T_subseq_isconstant
+    T_A_subseq_isconstant = core.process_isconstant(T_A, m, T_A_subseq_isconstant)
+    T_B_subseq_isconstant = T_A_subseq_isconstant
+
+    T_A, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
+        T_A, m, T_subseq_isconstant=T_A_subseq_isconstant
+    )
+    T_B, μ_Q, σ_Q, Q_subseq_isconstant = core.preprocess(
+        T_B, m, T_subseq_isconstant=T_B_subseq_isconstant
+    )
 
     if T_A.ndim <= 1:  # pragma: no cover
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"

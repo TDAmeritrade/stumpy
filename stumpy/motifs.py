@@ -205,7 +205,11 @@ def motifs(
         The time series or sequence
 
     P : numpy.ndarray
-        Matrix Profile of `T`
+        The (1-dimensional) matrix profile of `T`. In the case where the matrix
+        profile was computed with `k > 1` (i.e., top-k nearest neighbors), you
+        must summarize the top-k nearest-neighbor distances for each subsequence
+        into a single value (e.g., `np.mean`, `np.min`, etc) and then use that
+        derived value as your `P`.
 
     min_neighbors : int, default 1
         The minimum number of similar matches a subsequence needs to have in order
@@ -335,7 +339,7 @@ def motifs(
         msg += f"(e.g., cutoff={suggested_cutoff})."
         warnings.warn(msg)
 
-    T_subseq_isconstant = core.rolling_isconstant(T, m, T_subseq_isconstant)
+    T_subseq_isconstant = core.process_isconstant(T, m, T_subseq_isconstant)
     T, M_T, Σ_T, T_subseq_isconstant = core.preprocess(
         np.expand_dims(T, 0),
         m,
@@ -516,8 +520,8 @@ def match(
     m = Q.shape[-1]
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    Q_subseq_isconstant = core.rolling_isconstant(Q, m, Q_subseq_isconstant)
-    T_subseq_isconstant = core.rolling_isconstant(T, m, T_subseq_isconstant)
+    Q_subseq_isconstant = core.process_isconstant(Q, m, Q_subseq_isconstant)
+    T_subseq_isconstant = core.process_isconstant(T, m, T_subseq_isconstant)
 
     if Q.ndim == 1:
         Q = np.expand_dims(Q, 0)

@@ -1042,7 +1042,7 @@ def compute_mean_std(T, m):
 
 @njit(
     # "f8(i8, f8, f8, f8, f8, f8)",
-    fastmath=True
+    fastmath={"nsz", "arcp", "contract", "afn", "reassoc"}
 )
 def _calculate_squared_distance(
     m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
@@ -1097,10 +1097,10 @@ def _calculate_squared_distance(
     elif Q_subseq_isconstant or T_subseq_isconstant:
         D_squared = m
     else:
-        denom = m * σ_Q * Σ_T
+        denom = (σ_Q * Σ_T) * m
         denom = max(denom, config.STUMPY_DENOM_THRESHOLD)
 
-        ρ = (QT - m * μ_Q * M_T) / denom
+        ρ = (QT - (μ_Q * M_T) * m) / denom
         ρ = min(ρ, 1.0)
 
         D_squared = np.abs(2 * m * (1.0 - ρ))
@@ -1640,9 +1640,9 @@ def mass(
         corresponding value set to False in this boolean array.
 
     Q_subseq_isconstant : numpy.ndarray or function, default None
-        A boolean array that indicates whether a subsequence in `Q` is constant
+        A boolean array that indicates whether the subsequence in `Q` is constant
         (True). Alternatively, a custom, user-defined function that returns a
-        boolean array that indicates whether a subsequence in `Q` is constant
+        boolean array that indicates whether the subsequence in `Q` is constant
         (True). The function must only take two arguments, `a`, a 1-D array,
         and `w`, the window size, while additional arguments may be specified
         by currying the user-defined function using `functools.partial`. Any
@@ -1812,7 +1812,7 @@ def _mass_distance_matrix(
         Sliding standard deviation of `T`
 
     Q_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `Q` is constant (True)
+        A boolean array that indicates whether the subsequence in `Q` is constant (True)
 
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` is constant (True)
@@ -1898,9 +1898,9 @@ def mass_distance_matrix(
         corresponding value set to False in this boolean array.
 
     Q_subseq_isconstant : numpy.ndarray, function, default None
-        A boolean array that indicates whether a subsequence in `Q` is constant
+        A boolean array that indicates whether the subsequence in `Q` is constant
         (True). Alternatively, a custom, user-defined function that returns a
-        boolean array that indicates whether a subsequence in `Q` is constant
+        boolean array that indicates whether the subsequence in `Q` is constant
         (True). The function must only take two arguments, `a`, a 1-D array,
         and `w`, the window size, while additional arguments may be specified
         by currying the user-defined function using `functools.partial`. Any
@@ -2133,8 +2133,7 @@ def preprocess(
 
     T[np.isinf(T)] = np.nan
 
-    T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
-    T_subseq_isconstant = fix_isconstant_isfinite_conflicts(T, m, T_subseq_isconstant)
+    T_subseq_isconstant = process_isconstant(T, m, T_subseq_isconstant)
     if M_T is None or Σ_T is None:
         M_T, Σ_T = compute_mean_std(T, m)
     T[np.isnan(T)] = 0
@@ -2236,10 +2235,7 @@ def preprocess_diagonal(T, m, T_subseq_isconstant=None):
     check_window_size(m, max_size=T.shape[-1])
     T_subseq_isfinite = rolling_isfinite(T, m)
     T[~np.isfinite(T)] = np.nan
-    T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
-    T_subseq_isconstant = fix_isconstant_isfinite_conflicts(
-        T, m, T_subseq_isconstant, T_subseq_isfinite
-    )
+    T_subseq_isconstant = process_isconstant(T, m, T_subseq_isconstant)
     T[np.isnan(T)] = 0
 
     M_T, Σ_T = compute_mean_std(T, m)
@@ -2622,7 +2618,7 @@ def fix_isconstant_isfinite_conflicts(
         A numpy array `dtype` of boolean that indicates whether a subsequence
         is constant (True)  or not (False).
 
-        T_subseq_isfinite : numpy.ndarray, default None
+    T_subseq_isfinite : numpy.ndarray, default None
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
 
@@ -2682,7 +2678,7 @@ def _get_partial_mp_func(mp_func, client=None, device_id=None):
         partial_mp_func = functools.partial(mp_func, client)
     elif device_id is not None:
         partial_mp_func = functools.partial(mp_func, device_id=device_id)
-    elif type(mp_func) != functools.partial:
+    elif isinstance(mp_func, functools.partial):
         partial_mp_func = functools.partial(mp_func)
     else:
         partial_mp_func = mp_func
@@ -2807,7 +2803,7 @@ def _idx_to_mp(
             warnings.warn(msg)
 
     if normalize:
-        T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
+        T_subseq_isconstant = process_isconstant(T, m, T_subseq_isconstant)
 
     T_isfinite = np.isfinite(T)
     T_subseq_isfinite = np.all(rolling_window(T_isfinite, m), axis=1)
@@ -3960,7 +3956,6 @@ def _mdl(disc_subseqs, disc_neighbors, S, n_bit=8):
 
 @njit(
     # "(i8, i8, f8[:, :], f8[:], i8, f8[:, :], i8[:, :], f8)",
-    parallel=True,
     fastmath={"nsz", "arcp", "contract", "afn", "reassoc"},
 )
 def _compute_multi_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
@@ -4003,7 +3998,7 @@ def _compute_multi_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
     """
     D_prime[:] = 0.0
     for i in range(d):
-        D_prime = D_prime + np.power(D[i], 1.0 / p)
+        D_prime[:] = D_prime + np.power(D[i], 1.0 / p)
 
         min_index = np.argmin(D_prime)
         pos = idx - range_start
@@ -4210,3 +4205,73 @@ def _mpdist(
     MPdist = _select_P_ABBA_value(P_ABBA, k, custom_func)
 
     return MPdist
+
+
+def process_isconstant(T, m, T_subseq_isconstant, T_subseq_isfinite=None):
+    """
+    A convenience wrapper around the `rolling_isconstant` and
+    `fix_isconstant_isfinite_conflicts`.
+
+    It computes the rolling isconstant for 1-D and 2-D arrays. This is accomplished by
+    comparing the min and max within each window and assigning `True` when the min and
+    max are equal and `False` otherwise. If a subsequence contains at least one NaN,
+    then the subsequence is not constant. If `T_subseq_isconstant` is provided as
+    boolean array, its element will be set to False if their corresponding value in
+    `T_subseq_isfinite` is False.
+
+    Parameters
+    ----------
+    T : numpy.ndarray
+        The input 1D or 2D array
+
+    m : numpy.ndarray
+        The rolling window size
+
+    T_subseq_isconstant : np.ndarray, function, or list, default None
+        A parameter that is used to show whether a subsequence of a time series in `T`
+        is constant (True) or not. T_subseq_isconstant can be a 1D or 2D boolean
+        numpy.ndarry (depending on the dimension of `T`) or a function that can be
+        applied to each time series in `T`. Alternatively, for  maximum flexibility, a
+        list (with length equal to the total number of time series) may also be used.
+        In this case, T_subseq_isconstant[i] corresponds to the i-th time series T[i]
+        and each element in the list can either be 1D boolean np.ndarray, a function,
+        or None.
+
+    T_subseq_isfinite : numpy.ndarray, default None
+        A boolean array that indicates whether a subsequence in `T` contains a
+        `np.nan`/`np.inf` value (False)
+
+    Returns
+    -------
+    T_subseq_isconstant : numpy.ndarray
+        Rolling window isconstant
+    """
+    if isinstance(T_subseq_isconstant, list):
+        if T.ndim != 2:  # pragma: no cover
+            msg = (
+                "When `T_subseq_isconstant` is provided as a list, `T` "
+                + f"must be a 2D array. Found {T.ndim} dimension instead."
+            )
+            raise ValueError(msg)
+
+        if len(T_subseq_isconstant) != T.shape[0]:  # pragma: no cover
+            msg = (
+                "The lenght of the list `T_subseq_isconstant` must be "
+                + "equal to the number of time series in `T`."
+            )
+            raise ValueError(msg)
+
+        T_subseq_isconstant = np.array(
+            [
+                rolling_isconstant(T[i], m, T_subseq_isconstant[i])
+                for i in range(T.shape[0])
+            ]
+        )
+    else:
+        T_subseq_isconstant = rolling_isconstant(T, m, T_subseq_isconstant)
+
+    T_subseq_isconstant[...] = fix_isconstant_isfinite_conflicts(
+        T, m, T_subseq_isconstant, T_subseq_isfinite
+    )
+
+    return T_subseq_isconstant

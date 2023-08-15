@@ -20,10 +20,10 @@ def _compute_diagonal(
     T_A,
     T_B,
     m,
-    M_T,
     μ_Q,
-    Σ_T_inverse,
+    M_T,
     σ_Q_inverse,
+    Σ_T_inverse,
     cov_a,
     cov_b,
     cov_c,
@@ -55,24 +55,24 @@ def _compute_diagonal(
         The time series or sequence for which to compute the matrix profile
 
     T_B : numpy.ndarray
-        The time series or sequence that will be used to annotate T_A. For every
-        subsequence in T_A, its nearest neighbor in T_B will be recorded.
+        The time series or sequence that will be used to annotate `T_A`. For every
+        subsequence in `T_A`, its nearest neighbor in `T_B` will be recorded.
 
     m : int
         Window size
 
-    M_T : numpy.ndarray
-        Sliding mean of time series, `T`
-
     μ_Q : numpy.ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window
 
-    Σ_T_inverse : numpy.ndarray
-        Inverse sliding standard deviation of time series, `T`
+    M_T : numpy.ndarray
+        Sliding mean of time series, `T`
 
     σ_Q_inverse : numpy.ndarray
         Inverse standard deviation of the query sequence, `Q`, relative to the current
         sliding window
+
+    Σ_T_inverse : numpy.ndarray
+        Inverse sliding standard deviation of time series, `T`
 
     cov_a : numpy.ndarray
         The first covariance term relating T_A[i + g + m - 1] and M_T_m_1[i + g]
@@ -252,12 +252,12 @@ def _stump(
     T_A,
     T_B,
     m,
-    M_T,
     μ_Q,
-    Σ_T_inverse,
+    M_T,
     σ_Q_inverse,
-    M_T_m_1,
+    Σ_T_inverse,
     μ_Q_m_1,
+    M_T_m_1,
     T_A_subseq_isfinite,
     T_B_subseq_isfinite,
     T_A_subseq_isconstant,
@@ -278,31 +278,31 @@ def _stump(
         The time series or sequence for which to compute the matrix profile
 
     T_B : numpy.ndarray
-        The time series or sequence that will be used to annotate T_A. For every
-        subsequence in T_A, its nearest neighbor in T_B will be recorded.
+        The time series or sequence that will be used to annotate `T_A`. For every
+        subsequence in `T_A`, its nearest neighbor in `T_B` will be recorded.
 
     m : int
         Window size
 
-    M_T : numpy.ndarray
-        Sliding mean of time series, `T`
-
     μ_Q : numpy.ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window
 
-    Σ_T_inverse : numpy.ndarray
-        Inverse sliding standard deviation of time series, `T`
+    M_T : numpy.ndarray
+        Sliding mean of time series, `T`
 
     σ_Q_inverse : numpy.ndarray
         Inverse standard deviation of the query sequence, `Q`, relative to the current
         sliding window
 
-    M_T_m_1 : numpy.ndarray
-        Sliding mean of time series, `T`, using a window size of `m-1`
+    Σ_T_inverse : numpy.ndarray
+        Inverse sliding standard deviation of time series, `T`
 
     μ_Q_m_1 : numpy.ndarray
         Mean of the query sequence, `Q`, relative to the current sliding window and
         using a window size of `m-1`
+
+    M_T_m_1 : numpy.ndarray
+        Sliding mean of time series, `T`, using a window size of `m-1`
 
     T_A_subseq_isfinite : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T_A` contains a
@@ -436,10 +436,10 @@ def _stump(
             T_A,
             T_B,
             m,
-            M_T,
             μ_Q,
-            Σ_T_inverse,
+            M_T,
             σ_Q_inverse,
+            Σ_T_inverse,
             cov_a,
             cov_b,
             cov_c,
@@ -712,12 +712,12 @@ def stump(
         T_A,
         T_B,
         m,
-        M_T,
         μ_Q,
-        Σ_T_inverse,
+        M_T,
         σ_Q_inverse,
-        M_T_m_1,
+        Σ_T_inverse,
         μ_Q_m_1,
+        M_T_m_1,
         T_A_subseq_isfinite,
         T_B_subseq_isfinite,
         T_A_subseq_isconstant,

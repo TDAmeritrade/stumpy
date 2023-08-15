@@ -197,7 +197,7 @@ class stumpi:
         self._T_isfinite = np.isfinite(self._T)
         self._egress = egress
 
-        self._T_subseq_isconstant = core.rolling_isconstant(
+        self._T_subseq_isconstant = core.process_isconstant(
             self._T, self._m, self._T_subseq_isconstant_func
         )
 
@@ -324,7 +324,7 @@ class stumpi:
             σ_Q = np.nan
             Q_subseq_isconstant = False
         else:
-            Q_subseq_isconstant = core.rolling_isconstant(
+            Q_subseq_isconstant = core.process_isconstant(
                 S, self._m, self._T_subseq_isconstant_func
             )[0]
             μ_Q, σ_Q = [arr[0] for arr in core.compute_mean_std(S, self._m)]
@@ -412,7 +412,7 @@ class stumpi:
             σ_Q = np.nan
             Q_subseq_isconstant = False
         else:
-            Q_subseq_isconstant = core.rolling_isconstant(
+            Q_subseq_isconstant = core.process_isconstant(
                 S, self._m, self._T_subseq_isconstant_func
             )[0]
             μ_Q, σ_Q = [arr[0] for arr in core.compute_mean_std(S, self._m)]

@@ -78,7 +78,7 @@ def _preprocess_prescrump(
         Sliding window standard deviation for `T_B`
 
     Q_subseq_isconstant : numpy.ndarray
-        A boolean array that indicates whether a subsequence in `Q` is constant (True)
+        A boolean array that indicates whether the subsequence in `Q` is constant (True)
 
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` is constant (True)
@@ -251,6 +251,9 @@ def _compute_PI(
             core._apply_exclusion_zone(squared_distance_profile, i, excl_zone, np.inf)
 
         nn_i = np.argmin(squared_distance_profile)
+        if squared_distance_profile[nn_i] == np.inf:
+            continue
+
         if (
             squared_distance_profile[nn_i] < P_squared[thread_idx, i, -1]
             and nn_i not in I[thread_idx, i]
@@ -264,10 +267,6 @@ def _compute_PI(
                 P_squared[thread_idx, i], idx, squared_distance_profile[nn_i]
             )
             core._shift_insert_at_index(I[thread_idx, i], idx, nn_i)
-
-        if P_squared[thread_idx, i, 0] == np.inf:  # pragma: no cover
-            I[thread_idx, i, 0] = -1
-            continue
 
         j = nn_i
         QT_j = QT[j]
@@ -1032,12 +1031,12 @@ class scrump:
                 self._T_A,
                 self._T_B,
                 self._m,
-                self._M_T,
                 self._μ_Q,
-                self._Σ_T_inverse,
+                self._M_T,
                 self._σ_Q_inverse,
-                self._M_T_m_1,
+                self._Σ_T_inverse,
                 self._μ_Q_m_1,
+                self._M_T_m_1,
                 self._Q_subseq_isfinite,
                 self._T_subseq_isfinite,
                 self._Q_subseq_isconstant,
