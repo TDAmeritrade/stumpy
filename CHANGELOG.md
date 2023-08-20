@@ -1,3 +1,116 @@
+# 2023-08-20    [ 1.12.0 ]:
+---------------------------
+* bugfixes
+  - Fixed prescrump, scrump, and scraamp miscalculation of AB-joins
+  - Fixed bug in `is False` by converting to `bool` type
+  - Fixed bug in `snippet` that caused loss in precision, add unit tests
+  - Fixed RTD incompatibility with urllib3
+  - Fixed loss of precision in distances computed for self-matches
+  - Fixed libiomp5.dylib Github Actions location
+  - Fixed incorrect post-processing in naive.mass_PI
+  - Fixed incorrect number of contiguous windows in snippets
+* features
+  - Improved matrix profile performance (15-20%) with uint64 indexing
+  - Added top-k nearest neighbor feature
+  - Added rolling_isconstant function
+  - Added `subseq_isconstant` to API for transparent handling of constant time series subsequences
+  - Added parallelized rolling_nanstd
+  - Added abstraction layer for distributed client functions (e.g., Dask, Ray, etc)
+  - Added initial support for `numba` function caching
+  - Added Python 3.11 support
+  - Added `query_idx` to improve distances computed for self-matches in `motifs` function
+  - Added `mmotifs` for multi-dimensional motif discovery
+  - Added function `process_isconstant`
+* tasks
+  - Refactored mpdist
+  - Added MERLIN notebook reproducer
+  - Added negative index checks to mmotifs
+  - Fixed mybinder badge and links
+  - Renamed nave.mass to naive.mass_PI
+  - Added `row_wise` parameter to naive.stump
+  - Added input type (list) check to ostinato
+  - Added ability to return fully filled bfs indices
+  - Updated setup.py to enable Github dependency graph tracking
+  - Improved stability of prescrimp
+  - Split coverage tests for more verbosity
+  - Added more features to custom test function
+  - Removed explicit cancellation of dask futures
+  - Removed max `dask`/`distributed` version requirement
+  - Optimized stumpi and aampi class init
+  - Improve aampi update behavior with constant sequences returning nan
+  - Added pytest notebook link checking
+  - Refactored `match` function
+  - Added warnings to motifs and aamp_motifs
+  - Added `numba -s` step in Github Actions workflow
+  - Added explicit link to OpenMP for MacOS Github Actions workflow
+  - Moved to Actions/Checkout V3 in Github Actions
+  - Improved numba function signatures
+  - Added '--editable' install mode to setup.sh
+  - Updated Github Action codecov/codecov-action@v1 to v3
+  - Maintained 100% code coverage
+  - Used unittest.mock.patch to prevent overwriting of config variables during testing
+  - Added Python 3.11 to test matrix
+  - Added ability to detect missing parameter definitions in docstrings (docstring.py)
+  - Updated pytest flags to report skips and added additional summary
+  - Replaced logging.warning with warnings.warn
+  - Improved multi-line warnings
+  - Ensured `bfs_indices` are sent to correct GPU device
+  - Refactored window size check in mass/mass_absolute functions
+  - Added animated GIF to README
+  - Updated minimum black version
+  - Removed `_parallel_rolling_func` as it conflicted with `numba` caching
+  - Removed mamba timeout
+  - Improved warnings
+  - Added missing p-norm param to idx_to_mp and floss functions
+  - Added test failure when coverage is below 100%
+  - Added boolean array test for rolling_isfinite
+  - Added isort, resolved circular dependencies, updated examples
+  - Only build HTML for RTD
+  - Added `mp` param to stumpi to allow pre-computed matrix profile as input
+  - Added various unit tests
+  - Removed codecov as dependency
+  - Added ability to test the execution of tutorial notebooks
+  - Added check for negative matrix profile indices
+  - Added `test_precision.py` for all issues related to loss-of-precision
+  - Fixed tls deprecation warning
+  - Replaced np.int with np.int64
+  - Specified fastmath flags to include nan/inf values in inputs/outputs
+  - Replaced bool dtype with np.bool_
+  - Replaced np.newaxis with np.expand_dims
+  - Added check for docstring and parameter mismatch
+  - Update URLs for minimum version references
+  - Added explicit shell declaration in Github Actions workflow
+  - Show OpenMP libraries in Github Actions workflow
+  - Added `pip.sh` script for setting up dev environment using `pip`
+  - Removed parallel=True in `core._compute_multi_PI`
+  - Updated coverage testing to include all modules
+  - Improved code consistency for `T_A` and `T_A` definitions
+  - Refactored `test.sh` and include missing test files in unit tests
+  - Added minimum dependency compatibility script (min.py)
+  - Updated minimum dependency bumping instructions
+  - Bumped minimum Python version to 3.8
+  - Update PyPI downloads badge
+* documentation
+  - Improved/updated various docstrings
+  - Added shapelet discovery tutorial
+  - Clarified unanchored chain description
+  - Fixed typos
+  - Improved `core._get_QT docstring`
+  - Fixed imbalanced tree representation in docstring
+  - Improved scrump documentation
+  - Made light mode default and remove theme switcher from header nav bar
+  - Improved dataframe layout display in tutorials
+  - Added multi-dimensional motif and match tutorial
+  = Added T_subseq_isfinite to docstring
+  - Added tutorial for "Discovering motifs under uniform scaling"
+  - Updated docs for using a dask client
+  - Fixed malformed link in floss docstring
+  - Added missing parameter section in various docstrings
+  - Added Minkowski docstring for Euclidean distance
+  - Added missing parameters for GPU functions in docstrings
+  - Improved documentation for `P` in motifs function
+
+
 # 2022-03-31    [ 1.11.1 ]:
 ---------------------------
 * bugfixes
