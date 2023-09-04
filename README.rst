@@ -4,7 +4,7 @@
 .. image:: https://anaconda.org/conda-forge/stumpy/badges/version.svg
     :target: https://anaconda.org/conda-forge/stumpy
     :alt: Conda-forge Version
-.. image:: https://pepy.tech/badge/stumpy/month
+.. image:: https://static.pepy.tech/badge/stumpy/month
     :target: https://pepy.tech/project/stumpy
     :alt: PyPI Downloads
 .. image:: https://img.shields.io/pypi/l/stumpy.svg

@@ -28,7 +28,7 @@ def get_extras_require():
 
 
 configuration = {
-    "version": "1.11.1",
+    "version": "1.12.0",
     "python_requires=": ">=3.8",
     "author": "Sean M. Law",
     "author_email": "seanmylaw@gmail.com",

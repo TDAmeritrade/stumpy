@@ -62,7 +62,9 @@
 
 
 rm -rf dist
-python3 -m build --sdist --wheel 
+python3 -m build --sdist --wheel
+# Use API Token instead of username+password
+# https://pypi.org/help/#apitoken
 twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
 # twine upload dist/*
 rm -rf build dist stumpy.egg-info
