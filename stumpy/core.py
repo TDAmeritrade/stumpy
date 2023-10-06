@@ -2390,7 +2390,7 @@ def _get_ranges(size, n_chunks, truncate):
     This function is different from `_get_array_ranges` in that it does not take into
     account the contents of the array and, instead, assumes that we are chunking up
     `np.ones(size, dtype=np.int64)`. Additionally, the non-truncated sections may not
-    all appear at the end of the returned away (i.e., they may be scattered throughout
+    all appear at the end of the returned array (i.e., they may be scattered throughout
     different rows of the array) but may be identified as having the same start and
     stop indices.
 
