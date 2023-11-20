@@ -136,10 +136,10 @@ def _stomp(T_A, m, T_B=None, ignore_trivial=True):
     QT = core.sliding_dot_product(T_A[:m], T_B)
     QT_first = core.sliding_dot_product(T_B[:m], T_A)
 
-    k = T_B.shape[0] - m + 1
+    w = T_B.shape[0] - m + 1
     for i in range(1, l):
         QT[1:] = (
-            QT[: k - 1] - T_A[i - 1] * T_B[: k - 1] + T_A[i - 1 + m] * T_B[-(k - 1) :]
+            QT[: w - 1] - T_A[i - 1] * T_B[: w - 1] + T_A[i - 1 + m] * T_B[-(w - 1) :]
         )
         QT[0] = QT_first[i]
 

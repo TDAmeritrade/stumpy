@@ -47,9 +47,9 @@ def _multi_mass_absolute(Q, T, m, Q_subseq_isfinite, T_subseq_isfinite, p=2.0):
         profile
     """
     d, n = T.shape
-    k = n - m + 1
+    l = n - m + 1
 
-    D = np.empty((d, k), dtype=np.float64)
+    D = np.empty((d, l), dtype=np.float64)
 
     for i in range(d):
         if np.any(~Q_subseq_isfinite[i]):
@@ -364,7 +364,7 @@ def _maamp_multi_distance_profile(
         `query_idx`
     """
     d, n = T_A.shape
-    k = n - m + 1
+    l = n - m + 1
     start_row_idx = 0
     D = _multi_mass_absolute(
         T_B[:, query_idx : query_idx + m],
@@ -384,7 +384,7 @@ def _maamp_multi_distance_profile(
     else:
         D[start_row_idx:].sort(axis=0, kind="mergesort")
 
-    D_prime = np.zeros(k, dtype=np.float64)
+    D_prime = np.zeros(l, dtype=np.float64)
     for i in range(d):
         D_prime[:] = D_prime + D[i]
         D[i, :] = D_prime / (i + 1)
@@ -578,10 +578,10 @@ def _get_multi_p_norm(start, T, m, p=2.0):
         Multi-dimensional p-norm for the first window
     """
     d = T.shape[0]
-    k = T.shape[1] - m + 1
+    l = T.shape[1] - m + 1
 
-    p_norm = np.empty((d, k), dtype=np.float64)
-    p_norm_first = np.empty((d, k), dtype=np.float64)
+    p_norm = np.empty((d, l), dtype=np.float64)
+    p_norm_first = np.empty((d, l), dtype=np.float64)
     for i in range(d):
         p_norm[i] = np.power(core.mass_absolute(T[i, start : start + m], T[i], p=p), p)
         p_norm_first[i] = np.power(core.mass_absolute(T[i, :m], T[i], p=p), p)
@@ -940,16 +940,16 @@ def maamp(T, m, include=None, discords=False, p=2.0):
         include = core._preprocess_include(include)
 
     d, n = T_B.shape
-    k = n - m + 1
+    l = n - m + 1
     excl_zone = int(
         np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
     )  # See Definition 3 and Figure 3
 
-    P = np.empty((d, k), dtype=np.float64)
-    I = np.empty((d, k), dtype=np.int64)
+    P = np.empty((d, l), dtype=np.float64)
+    I = np.empty((d, l), dtype=np.int64)
 
     start = 0
-    stop = k
+    stop = l
 
     P[:, start], I[:, start] = _get_first_maamp_profile(
         start,
@@ -975,7 +975,7 @@ def maamp(T, m, include=None, discords=False, p=2.0):
         p,
         p_norm,
         p_norm_first,
-        k,
+        l,
         start + 1,
         include,
         discords,

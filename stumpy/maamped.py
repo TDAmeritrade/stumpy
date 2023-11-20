@@ -90,16 +90,16 @@ def _dask_maamped(
         corresponds to each matrix profile index for a given dimension.
     """
     d, n = T_B.shape
-    k = n - m + 1
-    P = np.empty((d, k), dtype=np.float64)
-    I = np.empty((d, k), dtype=np.int64)
+    l = n - m + 1
+    P = np.empty((d, l), dtype=np.float64)
+    I = np.empty((d, l), dtype=np.int64)
 
     hosts = list(dask_client.ncores().keys())
     nworkers = len(hosts)
 
-    step = 1 + k // nworkers
+    step = 1 + l // nworkers
 
-    for i, start in enumerate(range(0, k, step)):
+    for i, start in enumerate(range(0, l, step)):
         P[:, start], I[:, start] = _get_first_maamp_profile(
             start,
             T_A,
@@ -123,7 +123,7 @@ def _dask_maamped(
     p_norm_futures = []
     p_norm_first_futures = []
 
-    for i, start in enumerate(range(0, k, step)):
+    for i, start in enumerate(range(0, l, step)):
         p_norm, p_norm_first = _get_multi_p_norm(start, T_A, m)
 
         p_norm_future = dask_client.scatter(p_norm, workers=[hosts[i]], hash=False)
@@ -135,8 +135,8 @@ def _dask_maamped(
         p_norm_first_futures.append(p_norm_first_future)
 
     futures = []
-    for i, start in enumerate(range(0, k, step)):
-        stop = min(k, start + step)
+    for i, start in enumerate(range(0, l, step)):
+        stop = min(l, start + step)
 
         futures.append(
             dask_client.submit(
@@ -150,7 +150,7 @@ def _dask_maamped(
                 p,
                 p_norm_futures[i],
                 p_norm_first_futures[i],
-                k,
+                l,
                 start + 1,
                 include,
                 discords,
@@ -158,8 +158,8 @@ def _dask_maamped(
         )
 
     results = dask_client.gather(futures)
-    for i, start in enumerate(range(0, k, step)):
-        stop = min(k, start + step)
+    for i, start in enumerate(range(0, l, step)):
+        stop = min(l, start + step)
         P[:, start + 1 : stop], I[:, start + 1 : stop] = results[i]
 
     return P, I

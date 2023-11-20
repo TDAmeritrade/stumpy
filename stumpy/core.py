@@ -608,9 +608,9 @@ def _sliding_dot_product(Q, T):
         Sliding dot product between `Q` and `T`.
     """
     m = Q.shape[0]
-    k = T.shape[0] - m + 1
-    out = np.empty(k)
-    for i in range(k):
+    l = T.shape[0] - m + 1
+    out = np.empty(l)
+    for i in range(l):
         out[i] = np.dot(Q, T[i : i + m])
 
     return out
@@ -1252,22 +1252,22 @@ def _p_norm_distance_profile(Q, T, p=2.0):
         p-normalized distance profile between `Q` and `T`
     """
     m = Q.shape[0]
-    k = T.shape[0] - m + 1
-    p_norm_profile = np.empty(k, dtype=np.float64)
+    l = T.shape[0] - m + 1
+    p_norm_profile = np.empty(l, dtype=np.float64)
 
     if p == 2.0:
         Q_squared = np.sum(Q * Q)
-        T_squared = np.empty(k, dtype=np.float64)
+        T_squared = np.empty(l, dtype=np.float64)
         T_squared[0] = np.sum(T[:m] * T[:m])
-        for i in range(1, k):
+        for i in range(1, l):
             T_squared[i] = (
                 T_squared[i - 1] - T[i - 1] * T[i - 1] + T[i + m - 1] * T[i + m - 1]
             )
         QT = _sliding_dot_product(Q, T)
-        for i in range(k):
+        for i in range(l):
             p_norm_profile[i] = Q_squared + T_squared[i] - 2.0 * QT[i]
     else:
-        for i in range(k):
+        for i in range(l):
             p_norm_profile[i] = np.sum(np.power(np.abs(Q - T[i : i + m]), p))
 
     return p_norm_profile

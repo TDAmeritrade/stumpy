@@ -70,9 +70,9 @@ def _multi_mass(
         Multi-dimensional distance profile
     """
     d, n = T.shape
-    k = n - m + 1
+    l = n - m + 1
 
-    D = np.empty((d, k), dtype=np.float64)
+    D = np.empty((d, l), dtype=np.float64)
 
     for i in range(d):
         if np.isinf(μ_Q[i]):
@@ -508,7 +508,7 @@ def _multi_distance_profile(
         `query_idx`
     """
     d, n = T_A.shape
-    k = n - m + 1
+    l = n - m + 1
     start_row_idx = 0
 
     D = _multi_mass(
@@ -533,7 +533,7 @@ def _multi_distance_profile(
     else:
         D[start_row_idx:].sort(axis=0, kind="mergesort")
 
-    D_prime = np.zeros(k, dtype=np.float64)
+    D_prime = np.zeros(l, dtype=np.float64)
     for i in range(d):
         D_prime[:] = D_prime + D[i]
         D[i, :] = D_prime / (i + 1)
@@ -788,10 +788,10 @@ def _get_multi_QT(start, T, m):
         Multi-dimensional QT for the first window
     """
     d = T.shape[0]
-    k = T.shape[1] - m + 1
+    l = T.shape[1] - m + 1
 
-    QT = np.empty((d, k), dtype=np.float64)
-    QT_first = np.empty((d, k), dtype=np.float64)
+    QT = np.empty((d, l), dtype=np.float64)
+    QT_first = np.empty((d, l), dtype=np.float64)
 
     for i in range(d):
         QT[i] = core.sliding_dot_product(T[i, start : start + m], T[i])
@@ -1225,16 +1225,16 @@ def mstump(
         include = core._preprocess_include(include)
 
     d, n = T_B.shape
-    k = n - m + 1
+    l = n - m + 1
     excl_zone = int(
         np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM)
     )  # See Definition 3 and Figure 3
 
-    P = np.empty((d, k), dtype=np.float64)
-    I = np.empty((d, k), dtype=np.int64)
+    P = np.empty((d, l), dtype=np.float64)
+    I = np.empty((d, l), dtype=np.int64)
 
     start = 0
-    stop = k
+    stop = l
 
     P[:, start], I[:, start] = _get_first_mstump_profile(
         start,
@@ -1267,7 +1267,7 @@ def mstump(
         σ_Q,
         T_subseq_isconstant,
         Q_subseq_isconstant,
-        k,
+        l,
         start + 1,
         include,
         discords,
