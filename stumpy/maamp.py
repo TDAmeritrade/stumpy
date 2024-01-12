@@ -166,7 +166,7 @@ def _maamp_discretize(a, a_min, a_max, n_bit=8):  # pragma: no cover
     """
     Discretize each row of the input array
 
-    This distribution is best suited for non-normalized time seris data
+    This distribution is best suited for non-normalized time series data
 
     Parameters
     ----------
