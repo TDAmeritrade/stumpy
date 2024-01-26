@@ -40,7 +40,7 @@ def test_gpu_stimp(T):
         min_m=min_m,
         max_m=None,
         step=1,
-        device_id=0
+        device_id=0,
         # normalize=True,
     )
 
