@@ -1,7 +1,8 @@
 import os.path
+from importlib.metadata import distribution
+from site import getsitepackages
 
 from numba import cuda
-from pkg_resources import DistributionNotFound, get_distribution
 
 from .aamp import aamp  # noqa: F401
 from .aamp_mmotifs import aamp_mmotifs  # noqa: F401
@@ -182,14 +183,15 @@ else:  # pragma: no cover
             gpu_aamp_stimp.__doc__ = ast.get_docstring(cd)
 
 try:
-    _dist = get_distribution("stumpy")
+    # _dist = get_distribution("stumpy")
+    _dist = distribution("stumpy")
     # Normalize case for Windows systems
-    dist_loc = os.path.normcase(_dist.location)
+    dist_loc = os.path.normcase(getsitepackages()[0])
     here = os.path.normcase(__file__)
     if not here.startswith(os.path.join(dist_loc, "stumpy")):
         # not installed, but there is another version that *is*
-        raise DistributionNotFound  # pragma: no cover
-except DistributionNotFound:  # pragma: no cover
+        raise ModuleNotFoundError  # pragma: no cover
+except ModuleNotFoundError:  # pragma: no cover
     __version__ = "Please install this project with setup.py"
 else:  # pragma: no cover
     __version__ = _dist.version
