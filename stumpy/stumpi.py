@@ -216,7 +216,7 @@ class stumpi:
             2 * self._k + 2,
         ):  # pragma: no cover
             msg = (
-                f"The shape of `mp` must match ({len(T)-m+1}, {2 * k + 2}) but "
+                f"The shape of `mp` must match ({len(T) - m + 1}, {2 * k + 2}) but "
                 + f"found {mp.shape} instead."
             )
             raise ValueError(msg)
