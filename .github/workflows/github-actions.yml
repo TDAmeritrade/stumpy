@@ -138,4 +138,4 @@ jobs:
         run: coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min.py,stumpy/cache.py
         shell: bash
       - name: Upload Coverage Tests Results
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
