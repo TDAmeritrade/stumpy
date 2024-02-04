@@ -1,6 +1,7 @@
 #!/bin/sh
 
 mode=""
+extra=""
 
 echo "y" |  python -m pip uninstall stumpy
 
@@ -16,13 +17,17 @@ do
     elif [[ $var == "-e" ]]; then
         echo 'Installing stumpy locally in "--editable" mode'
         mode="--editable"
+    elif [[ $var == "ci" ]]; then
+        echo 'Installing stumpy locally with extra "ci" requirement'
+        mode=""
+        extra="[ci]"
     else
         echo "Installing stumpy in site-packages"
     fi
 done
 
-python -m pip install $mode .
-rm -rf stumpy.egg-info build dist __pycache__
+python -m pip install $mode .$extra
+rm -rf build dist stumpy.egg-info __pycache__
 
 site_pkgs=$(python -c 'import site; print(site.getsitepackages()[0])')
 if [ -d "$site_pkgs/stumpy/__pycache__" ]; then
