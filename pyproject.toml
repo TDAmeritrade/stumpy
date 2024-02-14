@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stumpy"
+version = "1.12.0"
+requires-python = ">=3.8"
+authors = [
+    {name = "Sean M. Law", email = "seanmylaw@gmail.com"}
+]
+description = "A powerful and scalable library that can be used for a variety of time series data mining tasks"
+readme = "README.rst"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python",
+    "Topic :: Software Development",
+    "Topic :: Scientific/Engineering",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3.8",
+]
+keywords = ["time series", "matrix profile", "motif", "discord"]
+maintainers = [
+    {name = "Sean M. Law", email = "seanmylaw@gmail.com"},
+    {name = "Nima Sarajpoor", email = "nimasarajpoor@gmail.com"}
+]
+license = {text = "3-clause BSD License"}
+dependencies = [
+    "numpy >= 1.18",
+    "scipy >= 1.5",
+    "numba >= 0.55.2"
+]
+
+[tool.setuptools]
+packages = ["stumpy"]
+license-files = ["LICENSE.txt"]
+
+[project.optional-dependencies]
+ci = [
+    "pandas >= 0.20.0",
+    "dask >= 1.2.2",
+    "distributed >= 1.28.1",
+    "coverage >= 4.5.3",
+    "flake8 >= 3.7.7",
+    "flake8-docstrings >= 1.5.0",
+    "black >= 22.1.0",
+    "pytest >= 4.4.1",
+    "isort >= 5.11.0",
+    'tbb >= 2019.5 ; platform_system == "Linux"'
+]
+
+[project.urls]
+Homepage = "https://github.com/TDAmeritrade/stumpy"
+Documentation = "https://stumpy.readthedocs.io/en/latest/"
+Repository = "https://github.com/TDAmeritrade/stumpy"
+

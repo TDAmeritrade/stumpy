@@ -16,6 +16,6 @@ exclude =
     setup.py
 per-file-ignores =
     stumpy/__init__.py:D104
-    stumpy/stumpi.py:E743
+    build/lib/stumpy/__init__.py:D104
     tests/*:D101,D102,D103
     stumpy/cache.py:D414
