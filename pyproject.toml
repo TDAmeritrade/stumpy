@@ -27,7 +27,8 @@ classifiers = [
 ]
 keywords = ["time series", "matrix profile", "motif", "discord"]
 maintainers = [
-    {name = "Sean M. Law", email = "seanmylaw@gmail.com"}
+    {name = "Sean M. Law", email = "seanmylaw@gmail.com"},
+    {name = "Nima Sarajpoor", email = "nimasarajpoor@gmail.com"}
 ]
 license = {text = "3-clause BSD License"}
 dependencies = [
