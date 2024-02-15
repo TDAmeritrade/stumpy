@@ -56,7 +56,7 @@ class _stimp:
 
     max_m : int, default None
         The stopping (or maximum) subsequence window size for which a matrix profile
-        may be computed. When `max_m = Non`, this is set to the maximum allowable
+        may be computed. When `max_m = None`, this is set to the maximum allowable
         subsequence window size
 
     step : int, default 1
@@ -397,7 +397,7 @@ class stimp(_stimp):
 
     max_m : int, default None
         The stopping (or maximum) subsequence window size for which a matrix profile
-        may be computed. When `max_m = Non`, this is set to the maximum allowable
+        may be computed. When `max_m = None`, this is set to the maximum allowable
         subsequence window size
 
     step : int, default 1
@@ -571,7 +571,7 @@ class stimped(_stimp):
 
     max_m : int, default None
         The stopping (or maximum) subsequence window size for which a matrix profile
-        may be computed. When `max_m = Non`, this is set to the maximum allowable
+        may be computed. When `max_m = None`, this is set to the maximum allowable
         subsequence window size
 
     step : int, default 1
