@@ -6,7 +6,7 @@ on:
     branches: main
 jobs:
   minimum-version-testing:
-    uses: ./.github/workflows/reusable-workflow.yml@main
+    uses: ./.github/workflows/reusable-workflow.yml
     with:
       python-version: '3.8'
       test-type: 'unit'
@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-    uses: ./.github/workflows/reusable-workflow.yml@main
+    uses: ./.github/workflows/reusable-workflow.yml
     with:
       python-version: ${{ matrix.python-version }}
       test-type: 'unit'
@@ -22,7 +22,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-    uses: ./.github/workflows/reusable-workflow.yml@main
+    uses: ./.github/workflows/reusable-workflow.yml
     with:
       python-version: ${{ matrix.python-version }}
       test-type: 'coverage'
