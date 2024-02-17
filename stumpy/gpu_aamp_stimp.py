@@ -23,7 +23,7 @@ class gpu_aamp_stimp(_aamp_stimp):
 
     m_stop : int, default None
         The stopping (or maximum) subsequence window size for which a matrix profile
-        may be computed. When `m_stop = Non`, this is set to the maximum allowable
+        may be computed. When `m_stop = None`, this is set to the maximum allowable
         subsequence window size
 
     m_step : int, default 1
