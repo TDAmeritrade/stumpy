@@ -2,12 +2,11 @@
 STUMPY API
 ==========
 
-.. rubric:: Overview
-
 Have A Question?
 ================
-
 `Ask Here <https://github.com/TDAmeritrade/stumpy/discussions>`_
+
+.. rubric:: Overview
 
 .. autosummary::
     :nosignatures:
