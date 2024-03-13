@@ -4,6 +4,11 @@ STUMPY API
 
 .. rubric:: Overview
 
+Have A Question?
+================
+
+`Ask Here <https://github.com/TDAmeritrade/stumpy/discussions>`_
+
 .. autosummary::
     :nosignatures:
 
