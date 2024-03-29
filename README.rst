@@ -28,6 +28,9 @@
 .. image:: https://zenodo.org/badge/184809315.svg
     :target: https://zenodo.org/badge/latestdoi/184809315
     :alt: DOI
+.. image:: https://img.shields.io/badge/NumFOCUS-Affiliated%20Project-orange.svg?style=flat&colorA=E1523D&colorB=007D8A
+    :target: https://numfocus.org/sponsored-projects/affiliated-projects
+    :alt: NumFOCUS Affiliated Project
 .. image:: https://app.fossa.com/api/projects/custom%2B9056%2Fgithub.com%2FTDAmeritrade%2Fstumpy.svg?type=shield
     :target: https://app.fossa.io/projects/custom%2B9056%2Fgithub.com%2FTDAmeritrade%2Fstumpy?ref=badge_shield
     :alt: FOSSA
