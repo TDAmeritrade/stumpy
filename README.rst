@@ -1,40 +1,44 @@
-.. image:: https://img.shields.io/pypi/v/stumpy.svg
+|PyPI Version| |Conda Forge Version| |PyPI Downloads| |License| |Test Status| |Code Coverage| |RTD Status|
+
+|Binder| |JOSS| |NumFOCUS| |FOSSA| |Twitter|
+
+.. |PyPI Version| image:: https://img.shields.io/pypi/v/stumpy.svg
     :target: https://pypi.org/project/stumpy/
     :alt: PyPI Version
-.. image:: https://anaconda.org/conda-forge/stumpy/badges/version.svg
+.. |Conda Forge Version| image:: https://anaconda.org/conda-forge/stumpy/badges/version.svg
     :target: https://anaconda.org/conda-forge/stumpy
-    :alt: Conda-forge Version
-.. image:: https://static.pepy.tech/badge/stumpy/month
+    :alt: Conda-Forge Version
+.. |PyPI Downloads| image:: https://static.pepy.tech/badge/stumpy/month
     :target: https://pepy.tech/project/stumpy
     :alt: PyPI Downloads
-.. image:: https://img.shields.io/pypi/l/stumpy.svg
+.. |License| image:: https://img.shields.io/pypi/l/stumpy.svg
     :target: https://github.com/TDAmeritrade/stumpy/blob/master/LICENSE.txt
     :alt: License
-.. image:: https://github.com/TDAmeritrade/stumpy/workflows/Tests/badge.svg
+.. |Test Status| image:: https://github.com/TDAmeritrade/stumpy/workflows/Tests/badge.svg
     :target: https://github.com/TDAmeritrade/stumpy/actions?query=workflow%3ATests+branch%3Amain
     :alt: Test Status
-.. image:: https://codecov.io/gh/TDAmeritrade/stumpy/branch/master/graph/badge.svg
+.. |Code Coverage| image:: https://codecov.io/gh/TDAmeritrade/stumpy/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/TDAmeritrade/stumpy
     :alt: Code Coverage
-.. image:: https://readthedocs.org/projects/stumpy/badge/?version=latest
+.. |RTD Status| image:: https://readthedocs.org/projects/stumpy/badge/?version=latest
     :target: https://stumpy.readthedocs.io/
     :alt: ReadTheDocs Status
-.. image:: https://mybinder.org/badge_logo.svg
+.. |Binder| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/TDAmeritrade/stumpy/main?filepath=notebooks
     :alt: Binder
-.. image:: http://joss.theoj.org/papers/10.21105/joss.01504/status.svg
+.. |JOSS| image:: http://joss.theoj.org/papers/10.21105/joss.01504/status.svg
     :target: https://doi.org/10.21105/joss.01504
     :alt: JOSS
-.. image:: https://zenodo.org/badge/184809315.svg
+.. |DOI| image:: https://zenodo.org/badge/184809315.svg
     :target: https://zenodo.org/badge/latestdoi/184809315
     :alt: DOI
-.. image:: https://img.shields.io/badge/NumFOCUS-Affiliated%20Project-orange.svg?style=flat&colorA=E1523D&colorB=007D8A
+.. |NumFOCUS| image:: https://img.shields.io/badge/NumFOCUS-Affiliated%20Project-orange.svg?style=flat&colorA=E1523D&colorB=007D8A
     :target: https://numfocus.org/sponsored-projects/affiliated-projects
     :alt: NumFOCUS Affiliated Project
-.. image:: https://app.fossa.com/api/projects/custom%2B9056%2Fgithub.com%2FTDAmeritrade%2Fstumpy.svg?type=shield
+.. |FOSSA| image:: https://app.fossa.com/api/projects/custom%2B9056%2Fgithub.com%2FTDAmeritrade%2Fstumpy.svg?type=shield
     :target: https://app.fossa.io/projects/custom%2B9056%2Fgithub.com%2FTDAmeritrade%2Fstumpy?ref=badge_shield
     :alt: FOSSA
-.. image:: https://img.shields.io/twitter/follow/stumpy_dev.svg?style=social
+.. |Twitter| image:: https://img.shields.io/twitter/follow/stumpy_dev.svg?style=social
     :target: https://twitter.com/stumpy_dev
     :alt: Twitter
 
