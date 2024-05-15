@@ -80,7 +80,7 @@ jobs:
         shell: bash
       - name: Which Conda
         run: |
-             $CONDA/bin/conda install -c intel -y openmp
+             conda install -c intel -y openmp
         shell: bash -l {0}
       - name: Link OpenMP
         run: |
