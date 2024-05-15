@@ -79,8 +79,8 @@ jobs:
         run: flake8 ./
         shell: bash
       - name: Which Conda
-        run: which conda
-        shell: /bin/bash -e {0}
+        run: echo $CONDA
+        shell: bash
       - name: Link OpenMP
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
