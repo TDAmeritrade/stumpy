@@ -34,7 +34,7 @@ license = {text = "3-clause BSD License"}
 dependencies = [
     "numpy >= 1.21",
     "scipy >= 1.10",
-    "numba >= 0.55.2"
+    "numba >= 0.57.1"
 ]
 
 [tool.setuptools]
