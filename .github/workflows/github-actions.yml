@@ -99,6 +99,9 @@ jobs:
       - name: Run Unit Tests
         run: ./test.sh unit
         shell: bash
+      - name: Check Conda
+        run: which conda
+        shell: bash
   # coverage-testing:
   #   runs-on: ${{ matrix.os }}
   #   strategy:
