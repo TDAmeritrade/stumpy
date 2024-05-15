@@ -38,11 +38,17 @@ jobs:
       - name: Run Flake8
         run: flake8 ./
         shell: bash
-      - name: Link OpenMP
+      - name: Install and Link OpenMP
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
+                  echo "Installing OpenMP"
                   brew install libomp
+                  echo "Linking OpenMP into /usr/local/lib"
                   brew link --force libomp
+                  echo "Checking /usr/local/lib for OpenMP"
+                  ls /usr/local/lib | grep libomp.dylib
+                  echo "Changing  @rpath for the omppool.cpython-x-darwin.so shared object to look in /usr/local/lib"
+                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib /usr/local/lib/libomp.dylib
              fi
         shell: bash
       - name: Show Full Numba Environment
@@ -81,8 +87,14 @@ jobs:
       - name: Install OpenMP
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
+                  echo "Installing OpenMP"
                   brew install libomp
+                  echo "Linking OpenMP into /usr/local/lib"
                   brew link --force libomp
+                  echo "Checking /usr/local/lib for OpenMP"
+                  ls /usr/local/lib | grep libomp.dylib
+                  echo "Changing  @rpath for the omppool.cpython-x-darwin.so shared object to look in /usr/local/lib"
+                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib /usr/local/lib/libomp.dylib
              fi        
         shell: bash
       - name: Show Full Numba Environment
@@ -121,8 +133,14 @@ jobs:
       - name: Link OpenMP
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
+                  echo "Installing OpenMP"
                   brew install libomp
+                  echo "Linking OpenMP into /usr/local/lib"
                   brew link --force libomp
+                  echo "Checking /usr/local/lib for OpenMP"
+                  ls /usr/local/lib | grep libomp.dylib
+                  echo "Changing  @rpath for the omppool.cpython-x-darwin.so shared object to look in /usr/local/lib"
+                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib /usr/local/lib/libomp.dylib
              fi
         shell: bash
       - name: Show Full Numba Environment
