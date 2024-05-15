@@ -20,6 +20,9 @@ jobs:
       - name: Display Python Version
         run: python -c "import sys; print(sys.version)"
         shell: bash
+      - name: Upgrade Pip
+        run: python -m pip install --upgrade pip
+        shell: bash
       - name: Generate Minimum Requirements File
         run: sed 's/>/=/g' requirements.txt | sed 's/$/\.*/g' > requirements.min.txt
         shell: bash
@@ -61,6 +64,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Display Python Version
         run: python -c "import sys; print(sys.version)"
+        shell: bash
+      - name: Upgrade Pip
+        run: python -m pip install --upgrade pip
         shell: bash
       - name: Install STUMPY And Other Dependencies
         run: python -m pip install --editable .[ci]
@@ -112,6 +118,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Display Python Version
         run: python -c "import sys; print(sys.version)"
+        shell: bash
+      - name: Upgrade Pip
+        run: python -m pip install --upgrade pip
         shell: bash
       - name: Install STUMPY And Other Dependencies
         run: python -m pip install --editable .[ci]
