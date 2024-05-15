@@ -5,51 +5,52 @@ on:
   pull_request:
     branches: main
 jobs:
-  # minimum-version-testing:
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       os: [ubuntu-latest, macos-latest, windows-latest]
-  #       python-version: ['3.8']
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Set Up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-  #     - name: Display Python Version
-  #       run: python -c "import sys; print(sys.version)"
-  #       shell: bash
-  #     - name: Upgrade Pip
-  #       run: python -m pip install --upgrade pip
-  #       shell: bash
-  #     - name: Generate Minimum Requirements File
-  #       run: sed 's/>/=/g' requirements.txt | sed 's/$/\.*/g'  > requirements.min.txt
-  #       shell: bash
-  #     - name: Install Minimum Requirements
-  #       run: python -m pip install --upgrade -r requirements.min.txt
-  #       shell: bash
-  #     - name: Install STUMPY And Other Dependencies
-  #       run: python -m pip install --editable .[ci]
-  #       shell: bash
-  #     - name: Run Black
-  #       run: black --check --diff ./
-  #       shell: bash
-  #     - name: Run Flake8
-  #       run: flake8 ./
-  #       shell: bash
-  #     - name: Link OpenMP
-  #       run: |
-  #            if [ "$RUNNER_OS" == "macOS" ]; then
-  #                 brew link --force libomp
-  #            fi
-  #       shell: bash
-  #     - name: Show Full Numba Environment
-  #       run: python -m numba -s
-  #       shell: bash
-  #     - name: Run Unit Tests
-  #       run: ./test.sh unit
-  #       shell: bash
+  minimum-version-testing:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.8']
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set Up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Display Python Version
+        run: python -c "import sys; print(sys.version)"
+        shell: bash
+      - name: Upgrade Pip
+        run: python -m pip install --upgrade pip
+        shell: bash
+      - name: Generate Minimum Requirements File
+        run: sed 's/>/=/g' requirements.txt | sed 's/$/\.*/g'  > requirements.min.txt
+        shell: bash
+      - name: Install Minimum Requirements
+        run: python -m pip install --upgrade -r requirements.min.txt
+        shell: bash
+      - name: Install STUMPY And Other Dependencies
+        run: python -m pip install --editable .[ci]
+        shell: bash
+      - name: Run Black
+        run: black --check --diff ./
+        shell: bash
+      - name: Run Flake8
+        run: flake8 ./
+        shell: bash
+      - name: Link OpenMP
+        run: |
+             if [ "$RUNNER_OS" == "macOS" ]; then
+                  brew install libomp
+                  brew link --force libomp
+             fi
+        shell: bash
+      - name: Show Full Numba Environment
+        run: python -m numba -s
+        shell: bash
+      - name: Run Unit Tests
+        run: ./test.sh unit
+        shell: bash
   unit-testing:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -85,74 +86,54 @@ jobs:
                   brew link --force libomp
              fi        
         shell: bash
-      # - name: Link OpenMP
-      #   run: |
-      #        if [ "$RUNNER_OS" == "macOS" ]; then
-      #             # Fix libiomp5.dylib
-      #             echo "Install OpenMP via Conda"
-      #             conda install -c intel -y openmp
-      #             echo "Checking $CONDA/lib for OpenMP"
-      #             ls $CONDA/lib/libiomp5.dylib
-      #             echo "Changing  @rpath for the omppool.cpython-x-darwin.so shared object to look in $CONDA/lib"
-      #             ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libiomp5.dylib $CONDA/lib/libiomp5.dylib
-      #             # Fix libomp.dylib
-      #             echo "Linking OpenMP into /usr/local/lib"
-      #             brew link --force libomp
-      #             echo "Checking /usr/local/lib for OpenMP"
-      #             ls /usr/local/lib/libomp.dylib
-      #             echo "Changing  @rpath for the omppool.cpython-x-darwin.so shared object to look in /usr/local/lib"
-      #             ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib /usr/local/lib/libomp.dylib
-      #             echo "Checking Numba OpenMP Access"
-      #             python -c "from numba.np.ufunc import omppool" 
-      #        fi
-      #   shell: bash
       - name: Show Full Numba Environment
         run: python -m numba -s
         shell: bash
       - name: Run Unit Tests
         run: ./test.sh unit
         shell: bash
-  # coverage-testing:
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       os: [ubuntu-latest, macos-latest, windows-latest]
-  #       python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Set Up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-  #     - name: Display Python Version
-  #       run: python -c "import sys; print(sys.version)"
-  #       shell: bash
-  #     - name: Upgrade Pip
-  #       run: python -m pip install --upgrade pip
-  #       shell: bash
-  #     - name: Install STUMPY And Other Dependencies
-  #       run: python -m pip install --editable .[ci]
-  #       shell: bash
-  #     - name: Run Black
-  #       run: black --check --diff ./
-  #       shell: bash
-  #     - name: Run Flake8
-  #       run: flake8 ./
-  #       shell: bash
-  #     - name: Link OpenMP
-  #       run: |
-  #            if [ "$RUNNER_OS" == "macOS" ]; then
-  #                 brew link --force libomp
-  #            fi
-  #       shell: bash
-  #     - name: Show Full Numba Environment
-  #       run: python -m numba -s
-  #       shell: bash
-  #     - name: Run Coverage Tests
-  #       run: ./test.sh coverage
-  #       shell: bash
-  #     - name: Check Coverage Report
-  #       run: coverage report -m --fail-under=100 --skip-covered --omit=docstring.py,min.py,stumpy/cache.py
-  #       shell: bash
-  #     - name: Upload Coverage Tests Results
-  #       uses: codecov/codecov-action@v4
+  coverage-testing:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set Up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Display Python Version
+        run: python -c "import sys; print(sys.version)"
+        shell: bash
+      - name: Upgrade Pip
+        run: python -m pip install --upgrade pip
+        shell: bash
+      - name: Install STUMPY And Other Dependencies
+        run: python -m pip install --editable .[ci]
+        shell: bash
+      - name: Run Black
+        run: black --check --diff ./
+        shell: bash
+      - name: Run Flake8
+        run: flake8 ./
+        shell: bash
+      - name: Link OpenMP
+        run: |
+             if [ "$RUNNER_OS" == "macOS" ]; then
+                  brew install libomp
+                  brew link --force libomp
+             fi
+        shell: bash
+      - name: Show Full Numba Environment
+        run: python -m numba -s
+        shell: bash
+      - name: Run Coverage Tests
+        run: ./test.sh coverage
+        shell: bash
+      - name: Check Coverage Report
+        run: coverage report -m --fail-under=100 --skip-covered --omit=docstring.py,min.py,stumpy/cache.py
+        shell: bash
+      - name: Upload Coverage Tests Results
+        uses: codecov/codecov-action@v4
