@@ -35,11 +35,11 @@ jobs:
       - name: Run Flake8
         run: flake8 ./
         shell: bash
-      - name: Link OpenMP
-        run: |
-             if [ "$RUNNER_OS" == "macOS" ]; then
-                  brew link --force libomp
-             fi
+#      - name: Link OpenMP
+#        run: |
+#             if [ "$RUNNER_OS" == "macOS" ]; then
+#                  brew link --force libomp
+#             fi
         shell: bash
       - name: Show Full Numba Environment
         run: python -m numba -s
@@ -122,11 +122,11 @@ jobs:
       - name: Run Flake8
         run: flake8 ./
         shell: bash
-      - name: Link OpenMP
-        run: |
-             if [ "$RUNNER_OS" == "macOS" ]; then
-                  brew link --force libomp
-             fi
+#      - name: Link OpenMP
+#        run: |
+#             if [ "$RUNNER_OS" == "macOS" ]; then
+#                  brew link --force libomp
+#             fi
         shell: bash
       - name: Show Full Numba Environment
         run: python -m numba -s
