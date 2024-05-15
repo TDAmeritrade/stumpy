@@ -81,7 +81,7 @@ jobs:
       - name: Which Conda
         run: |
              $CONDA/bin/conda install -c intel -y openmp
-        shell: bash
+        shell: bash -l {0}
       - name: Link OpenMP
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
