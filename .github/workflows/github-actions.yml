@@ -79,7 +79,8 @@ jobs:
         run: flake8 ./
         shell: bash
       - name: Which Conda
-        run: echo $CONDA
+        run: |
+             $CONDA/bin/conda install -c intel -y openmp
         shell: bash
       - name: Link OpenMP
         run: |
