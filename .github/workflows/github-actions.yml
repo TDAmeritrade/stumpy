@@ -81,7 +81,7 @@ jobs:
       - name: Install OpenMP
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
-                  brew install openmp
+                  brew install libomp
                   brew link --force libomp
              fi        
         shell: bash
