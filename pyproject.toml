@@ -32,8 +32,8 @@ maintainers = [
 ]
 license = {text = "3-clause BSD License"}
 dependencies = [
-    "numpy >= 1.18",
-    "scipy >= 1.5",
+    "numpy >= 1.21",
+    "scipy >= 1.10",
     "numba >= 0.55.2"
 ]
 
