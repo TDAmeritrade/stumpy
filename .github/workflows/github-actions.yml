@@ -80,7 +80,7 @@ jobs:
         shell: bash
       - name: Which Conda
         run: which conda
-        shell: bash
+        shell: /bin/bash -e {0}
       - name: Link OpenMP
         run: |
              if [ "$RUNNER_OS" == "macOS" ]; then
