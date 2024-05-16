@@ -7,6 +7,7 @@ import numpy as np
 
 from . import config, core
 from .aamped import aamped
+from .mparray import mparray
 from .stump import _stump
 
 
@@ -444,4 +445,4 @@ def stumped(
 
     core._check_P(out[:, 0])
 
-    return out
+    return mparray(out, m=m, k=k)

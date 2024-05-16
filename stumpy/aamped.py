@@ -7,6 +7,7 @@ import numpy as np
 
 from . import config, core
 from .aamp import _aamp
+from .mparray import mparray
 
 
 def _dask_aamped(
@@ -264,4 +265,4 @@ def aamped(client, T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
 
     core._check_P(out[:, 0])
 
-    return out
+    return mparray(out, m=m, k=k)

@@ -10,6 +10,7 @@ from numba import cuda
 
 from . import config, core
 from .gpu_aamp import gpu_aamp
+from .mparray import mparray
 
 
 @cuda.jit(
@@ -838,4 +839,4 @@ def gpu_stump(
 
     core._check_P(out[:, 0])
 
-    return out
+    return mparray(out, m=m, k=k)

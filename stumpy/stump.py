@@ -8,6 +8,7 @@ from numba import njit, prange
 
 from . import config, core
 from .aamp import aamp
+from .mparray import mparray
 
 
 @njit(
@@ -734,4 +735,4 @@ def stump(
 
     core._check_P(out[:, 0])
 
-    return out
+    return mparray(out, m=m, k=k)
