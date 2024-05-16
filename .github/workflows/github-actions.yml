@@ -9,7 +9,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [macos-latest]
         python-version: ['3.8']
     steps:
       - uses: actions/checkout@v4
@@ -47,10 +48,10 @@ jobs:
                   brew link --force libomp
                   echo "Find OpenMP Linking Location"
                   brew list libomp --verbose
-                  echo "Checking /usr/local/lib for OpenMP"
-                  ls /usr/local/lib | grep libomp.dylib
-                  echo "Changing  @rpath for the omppool.cpython-x-darwin.so shared object to look in /usr/local/lib"
-                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib /usr/local/lib/libomp.dylib
+                  echo "Checking /opt/homebrew/Cellar/libomp/18.1.4/lib for OpenMP"
+                  ls /opt/homebrew/Cellar/libomp/18.1.4/lib | grep libomp.dylib
+                  echo "Changing  @rpath for the omppool.cpython-x-darwin.so shared object to look in /opt/homebrew/Cellar/libomp/18.1.4/lib"
+                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib /opt/homebrew/Cellar/libomp/18.1.4/lib/libomp.dylib
              fi
         shell: bash
       - name: Show Full Numba Environment
