@@ -47,11 +47,10 @@ jobs:
                   echo "Linking OpenMP"
                   brew link --force libomp
                   echo "Find OpenMP Linking Location"
-                  brew list libomp --verbose
-                  echo "Checking /opt/homebrew/Cellar/libomp/18.1.4/lib for OpenMP"
-                  ls /opt/homebrew/Cellar/libomp/18.1.4/lib | grep libomp.dylib
-                  echo "Changing  @rpath for the omppool.cpython-x-darwin.so shared object to look in /opt/homebrew/Cellar/libomp/18.1.4/lib"
-                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib /opt/homebrew/Cellar/libomp/18.1.4/lib/libomp.dylib
+                  libfile=`brew list libomp --verbose | grep libomp.dylib`
+                  echo $libfile
+                  echo "Changing  @rpath for the omppool.cpython-x-darwin.so shared object to look in $libfile"
+                  ls "$(python -c 'import site; print(site.getsitepackages()[0])')"/numba/np/ufunc/omppool.*.so | xargs install_name_tool -change @rpath/libomp.dylib $libfile
              fi
         shell: bash
       - name: Show Full Numba Environment
