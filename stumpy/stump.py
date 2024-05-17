@@ -596,6 +596,12 @@ def stump(
         equivalently, out[:, -2] and out[:, -1]) correspond to the top-1 left
         matrix profile indices and the top-1 right matrix profile indices, respectively.
 
+        For convenience, the matrix profile (distances) and matrix profile indices can
+        also be accessed via their corresponding named array attributes, `.P_` and
+        `.I_`,respectively. Similarly, the corresponding left matrix profile indices
+        and right matrix profile indices may also be accessed via the `.left_I_` and
+        `.right_I_` array attributes.
+
     See Also
     --------
     stumpy.stumped : Compute the z-normalized matrix profile with a distributed dask
