@@ -4,19 +4,54 @@ import numpy as np
 class mparray(np.ndarray):
     """
     A matrix profile convenience class that subclasses the numpy ndarray
+
+    Parameters
+    ----------
+    cls : class
+        The base class
+
+    input_array : ndarray
+        The input `numpy` array to be sublcassed
+
+    m : int
+        Window size
+
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the
+        matrix profile.
+
+    Attributes
+    ----------
+    P_ : numpy.ndarray
+        The (top-k) matrix profile for `T`. When `k=1` (default), the first
+        (and only) column in this 2D array, which consists of the matrix profile,
+        is returned. When `k > 1`, the output has exactly `k` columns consisting of
+        the top-k matrix profile.
+
+    I_ : numpy.ndarray
+        The(top-k) matrix profile indices for `T`. When `k=1` (default), the first
+        (and only) column in this 2D array, which consists of the matrix profile,
+        indices is returned. When `k > 1`, the output has exactly `k` columns
+        consisting of the top-k matrix profile indices.
+
+    left_P_ : numpy.ndarray
+        The left (top-1) matrix profile for `T`
+
+    left_I_ : numpy.ndarray
+        The updated left (top-1) matrix profile indices for `T`
     """
 
-    def __new__(cls, input_array, m, k=1):
+    def __new__(cls, input_array, m, k):
         """
         Create the ndarray instance of our type, given the usual
         ndarray input arguments.  This will call the standard
         ndarray constructor, but return an object of our type.
-        It also triggers a call mparrau.__array_finalize__
+        It also triggers a call mparray.__array_finalize__
 
         Parameters
         ----------
         cls : class
-            THe base class
+            The base class
 
         input_array : ndarray
             The input `numpy` array to be sublcassed
@@ -24,15 +59,16 @@ class mparray(np.ndarray):
         m : int
             Window size
 
-        k : int, default 1
+        k : int
             The number of top `k` smallest distances used to construct the
             matrix profile.
         """
         obj = np.asarray(input_array).view(cls)
-        obj.m = m
-        obj.k = k
-        # All additional attributes need to also be
-        # appended in the `__array_finalize` method
+        obj._m = m
+        obj._k = k
+        # All new attributes will also needed to be added to the `__array_finalize__`
+        # function below so that "new-from-template" objects (e.g., an array slice)
+        # will also contain the same new attributes
         return obj
 
     def __array_finalize__(self, obj):
@@ -44,10 +80,12 @@ class mparray(np.ndarray):
         obj : object
             This is the class object
         """
-        if obj is None:
+        if obj is None:  # pragma: no cover
             return
-        self._m = getattr(obj, "m", None)
-        self._k = getattr(obj, "k", None)
+        # The lines below ensure that child objects that are created from a slice
+        # of an `mparray` will also inherit the attributes from the parent `mparray`
+        self._m = getattr(obj, "_m", None)
+        self._k = getattr(obj, "_k", None)
 
     def _P(self):
         """
@@ -57,7 +95,10 @@ class mparray(np.ndarray):
         ----------
         None
         """
-        return self[:, : self._k]
+        if self._k == 1:
+            return self[:, : self._k].flatten().astype(np.float64)
+        else:
+            return self[:, : self._k].astype(np.float64)
 
     def _I(self):
         """
@@ -67,7 +108,10 @@ class mparray(np.ndarray):
         ----------
         None
         """
-        return self[:, self._k : 2 * self._k]
+        if self._k == 1:
+            return self[:, self._k : 2 * self._k].flatten().astype(np.int64)
+        else:
+            return self[:, self._k : 2 * self._k].astype(np.int64)
 
     def _left_I(self):
         """
@@ -77,7 +121,10 @@ class mparray(np.ndarray):
         ----------
         None
         """
-        return self[:, 2 * self._k]
+        if self._k == 1:
+            return self[:, 2 * self._k].flatten().astype(np.int64)
+        else:
+            return self[:, 2 * self._k].astype(np.int64)
 
     def _right_I(self):
         """
@@ -87,7 +134,10 @@ class mparray(np.ndarray):
         ----------
         None
         """
-        return self[:, 2 * self._k + 1]
+        if self._k == 1:
+            return self[:, 2 * self._k + 1].flatten().astype(np.int64)
+        else:
+            return self[:, 2 * self._k + 1].astype(np.int64)
 
     @property
     def P_(self):
@@ -120,7 +170,7 @@ class mparray(np.ndarray):
         ----------
         None
         """
-        return self._IL()
+        return self._left_I()
 
     @property
     def right_I_(self):
@@ -131,4 +181,4 @@ class mparray(np.ndarray):
         ----------
         None
         """
-        return self._IR()
+        return self._right_I()
