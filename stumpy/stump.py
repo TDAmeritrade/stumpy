@@ -600,7 +600,7 @@ def stump(
         also be accessed via their corresponding named array attributes, `.P_` and
         `.I_`,respectively. Similarly, the corresponding left matrix profile indices
         and right matrix profile indices may also be accessed via the `.left_I_` and
-        `.right_I_` array attributes.
+        `.right_I_` array attributes.  See examples below.
 
     See Also
     --------
@@ -659,12 +659,17 @@ def stump(
     --------
     >>> import stumpy
     >>> import numpy as np
-    >>> stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
-    array([[0.11633857113691416, 4, -1, 4],
-           [2.694073918063438, 3, -1, 3],
-           [3.0000926340485923, 0, 0, 4],
-           [2.694073918063438, 1, 1, -1],
-           [0.11633857113691416, 0, 0, -1]], dtype=object)
+    >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
+    >>> mp
+    mparray([[0.11633857113691416, 4, -1, 4],
+             [2.694073918063438, 3, -1, 3],
+             [3.0000926340485923, 0, 0, 4],
+             [2.694073918063438, 1, 1, -1],
+             [0.11633857113691416, 0, 0, -1]], dtype=object)
+    >>> mp.P_
+    mparray([0.11633857, 2.69407392, 3.00009263, 2.69407392, 0.11633857])
+    >>> mp.I_
+    mparray([4, 3, 0, 1, 0])
     """
     if T_B is None:
         ignore_trivial = True

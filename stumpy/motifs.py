@@ -298,6 +298,14 @@ def motifs(
     ...     mp[:, 0],
     ...     max_distance=2.0)
     (array([[0.        , 0.11633857]]), array([[0, 4]]))
+
+    # Alternative example using named attributes
+    >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
+    >>> stumpy.motifs(
+    ...     np.array([584., -11., 23., 79., 1001., 0., -19.]),
+    ...     mp.P_,
+    ...     max_distance=2.0)
+    (array([[0.        , 0.11633857]]), array([[0, 4]]))
     """
     T = core._preprocess(T)
 
