@@ -15,6 +15,8 @@ do
         test_mode="coverage"
     elif [[ $var == "notebooks" ]]; then
         test_mode="notebooks"
+    elif [[ $var == "gpu" ]] || [[ $var == "gpus" ]]; then
+        test_mode="gpu"
     elif [[ $var == "custom" ]]; then
         test_mode="custom"
     elif [[ $var == "silent" || $var == "print" ]]; then
@@ -164,6 +166,17 @@ test_coverage()
     coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min.py,stumpy/cache.py
 }
 
+test_gpu()
+{
+    echo "Testing Numba JIT CUDA GPU Compiled Functions"
+    #for testfile in tests/test_*gpu*.py tests/test_core.py tests/test_precision.py tests/test_non_normalized_decorator.py
+    for testfile in $(grep gpu tests/* | awk -v FS=':' '{print $1}' | uniq);
+    do
+        pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
+        check_errs $?
+    done
+}
+
 check_links()
 {
     echo "Checking notebook links"
@@ -221,6 +234,9 @@ elif [[ $test_mode == "custom" ]]; then
     # export NUMBA_DISABLE_JIT=1
     # export NUMBA_ENABLE_CUDASIM=1
     test_custom
+elif [[ $test_mode == "gpu" ]]; then
+    echo "Executing GPU Unit Tests Only"
+    test_gpu
 elif [[ $test_mode == "links" ]]; then
     echo "Check Notebook Links  Only"
     check_links
