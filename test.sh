@@ -49,7 +49,7 @@ check_errs()
 check_black()
 {
     echo "Checking Black Code Formatting"
-    black --check --exclude=".*\.ipynb"  --diff ./
+    black --check --exclude=".*\.ipynb" --diff ./
     check_errs $?
 }
 
