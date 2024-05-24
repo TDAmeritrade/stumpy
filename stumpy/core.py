@@ -2814,9 +2814,9 @@ def _idx_to_mp(
     if normalize:
         P = linalg.norm(z_norm(T_subseqs, axis=1) - z_norm(nn_subseqs, axis=1), axis=1)
         nn_subseq_isconstant = T_subseq_isconstant[I]
-        P[T_subseq_isconstant & nn_subseq_isconstant] = (
-            0  # both subsequences are constant
-        )
+        P[
+            T_subseq_isconstant & nn_subseq_isconstant
+        ] = 0  # both subsequences are constant
         P[np.logical_xor(T_subseq_isconstant, nn_subseq_isconstant)] = np.sqrt(
             m
         )  # only one subsequence is constant
