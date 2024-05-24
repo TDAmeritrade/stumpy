@@ -17,6 +17,8 @@ do
         test_mode="notebooks"
     elif [[ $var == "gpu" ]] || [[ $var == "gpus" ]]; then
         test_mode="gpu"
+    elif [[ $var == "show" ]]; then
+        test_mode="show"
     elif [[ $var == "custom" ]]; then
         test_mode="custom"
     elif [[ $var == "silent" || $var == "print" ]]; then
@@ -177,6 +179,18 @@ test_gpu()
     done
 }
 
+show()
+{
+    echo "Current working directory: " `pwd`
+    echo "Black version: " `python -c "import black; print(black.__version__)"`
+    echo "Flake8 versoin: " `python -c "import flake8; print(flake8.__version__)"`
+    echo "Python version: " `python -c "import platform; print(platform.python_version())"`
+    echo "NumPy version: " `python -c "import numpy; print(numpy.__version__)"`
+    echo "SciPy version: " `python -c "import scipy; print(scipy.__version__)"`
+    echo "Numba version: " `python -c "import numba; print(numba.__version__)"` 
+    exit 0
+}
+
 check_links()
 {
     echo "Checking notebook links"
@@ -209,6 +223,11 @@ convert_notebooks()
 ###########
 #   Main  #
 ###########
+
+if [[ $test_mode == "show" ]]; then
+    echo "Show development/test environment"
+    show
+fi
 
 clean_up
 check_black
