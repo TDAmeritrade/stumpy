@@ -22,7 +22,7 @@ kNN = [1, 2, 3, 4]
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
-def test_mparray_init(T_A, T_B):
+def test_mparray_init(T_B):
     # Test different `mparray` initialization approaches
     m = 3
     k = 2
@@ -38,7 +38,7 @@ def test_mparray_init(T_A, T_B):
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 @pytest.mark.parametrize("k", kNN)
-def test_mparray_self_join(T_A, T_B, k):
+def test_mparray_self_join(T_B, k):
     m = 3
     zone = int(np.ceil(m / 4))
 
@@ -77,7 +77,7 @@ def test_mparray_self_join(T_A, T_B, k):
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 @pytest.mark.parametrize("k", kNN)
-def test_mparrau_A_B_join(T_A, T_B, k):
+def test_mparray_A_B_join(T_A, T_B, k):
     m = 3
     ref_mp = naive.stump(T_A, m, T_B=T_B, k=k)
     comp_mp = stump(T_A, m, T_B, ignore_trivial=False, k=k)

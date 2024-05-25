@@ -11,7 +11,7 @@ class mparray(np.ndarray):
         The base class
 
     input_array : ndarray
-        The input `numpy` array to be sublcassed
+        The input `numpy` array to be subclassed
 
     m : int
         Window size
@@ -34,11 +34,11 @@ class mparray(np.ndarray):
         indices is returned. When `k > 1`, the output has exactly `k` columns
         consisting of the top-k matrix profile indices.
 
-    left_P_ : numpy.ndarray
-        The left (top-1) matrix profile for `T`
-
     left_I_ : numpy.ndarray
-        The updated left (top-1) matrix profile indices for `T`
+        The left (top-1) matrix profile indicesfor `T`
+
+    right_I_ : numpy.ndarray
+        The right (top-1) matrix profile indices for `T`
     """
 
     def __new__(cls, input_array, m, k):
@@ -54,7 +54,7 @@ class mparray(np.ndarray):
             The base class
 
         input_array : ndarray
-            The input `numpy` array to be sublcassed
+            The input `numpy` array to be subclassed
 
         m : int
             Window size
@@ -66,7 +66,7 @@ class mparray(np.ndarray):
         obj = np.asarray(input_array).view(cls)
         obj._m = m
         obj._k = k
-        # All new attributes will also needed to be added to the `__array_finalize__`
+        # All new attributes will also need to be added to the `__array_finalize__`
         # function below so that "new-from-template" objects (e.g., an array slice)
         # will also contain the same new attributes
         return obj
