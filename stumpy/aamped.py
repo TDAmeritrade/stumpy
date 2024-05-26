@@ -271,4 +271,4 @@ def aamped(client, T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
 
     core._check_P(out[:, 0])
 
-    return mparray(out, m=m, k=k)
+    return mparray(out, m, k, config.STUMPY_EXCL_ZONE_DENOM)

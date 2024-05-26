@@ -455,4 +455,4 @@ def stumped(
 
     core._check_P(out[:, 0])
 
-    return mparray(out, m=m, k=k)
+    return mparray(out, m, k, config.STUMPY_EXCL_ZONE_DENOM)

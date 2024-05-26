@@ -41,7 +41,7 @@ class mparray(np.ndarray):
         The right (top-1) matrix profile indices for `T`
     """
 
-    def __new__(cls, input_array, m, k):
+    def __new__(cls, input_array, m, k, excl_zone_denom):
         """
         Create the ndarray instance of our type, given the usual
         ndarray input arguments.  This will call the standard
@@ -62,10 +62,14 @@ class mparray(np.ndarray):
         k : int
             The number of top `k` smallest distances used to construct the
             matrix profile.
+
+        excl_zone_denom : int
+            The denominator used in computing the exclusion zone
         """
         obj = np.asarray(input_array).view(cls)
         obj._m = m
         obj._k = k
+        obj._excl_zone_denom = excl_zone_denom
         # All new attributes will also need to be added to the `__array_finalize__`
         # function below so that "new-from-template" objects (e.g., an array slice)
         # will also contain the same new attributes
@@ -86,6 +90,7 @@ class mparray(np.ndarray):
         # of an `mparray` will also inherit the attributes from the parent `mparray`
         self._m = getattr(obj, "_m", None)
         self._k = getattr(obj, "_k", None)
+        self._excl_zone_denom = getattr(obj, "_excl_zone_denom", None)
 
     def _P(self):
         """

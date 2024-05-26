@@ -4,7 +4,7 @@ import numpy.testing as npt
 import pandas as pd
 import pytest
 
-from stumpy import aamp, stump
+from stumpy import aamp, config, stump
 from stumpy.mparray import mparray
 
 test_data = [
@@ -27,13 +27,15 @@ def test_mparray_init(T_A, T_B):
     m = 3
     k = 2
     arr = stump(T_B, m, ignore_trivial=True, k=k)
-    mp = mparray(arr, m, k)
+    mp = mparray(arr, m, k, config.STUMPY_EXCL_ZONE_DENOM)
     assert mp._m == m
     assert mp._k == k
+    assert mp._excl_zone_denom == config.STUMPY_EXCL_ZONE_DENOM
 
     slice_mp = mp[1:, :]  # Initialize "new-from-template"
     assert slice_mp._m == m
     assert slice_mp._k == k
+    assert mp._excl_zone_denom == config.STUMPY_EXCL_ZONE_DENOM
 
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
