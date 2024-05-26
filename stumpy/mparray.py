@@ -35,7 +35,7 @@ class mparray(np.ndarray):
         consisting of the top-k matrix profile indices.
 
     left_I_ : numpy.ndarray
-        The left (top-1) matrix profile indicesfor `T`
+        The left (top-1) matrix profile indices for `T`
 
     right_I_ : numpy.ndarray
         The right (top-1) matrix profile indices for `T`
