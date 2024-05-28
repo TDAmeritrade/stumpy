@@ -5,11 +5,12 @@
 # 3. Update README with new features/functions/tutorials
 # 4. Determine minimum versions and dependencies with ./min.py
 # 5. Bump minimum versions and dependencies
-#    a) setup.py
+#    a) pyproject.toml
 #    b) requirements.txt
 #    c) environment.yml
 #    d) .github/worflows/github-actions.yml
 #    e) recipes/meta.yaml in conda-feedstock
+#    f) README.md
 # 6. Commit all above changes as the latest version number and push
 #
 # For conda-forge
