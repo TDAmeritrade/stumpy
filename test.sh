@@ -202,6 +202,7 @@ clean_up()
     echo "Cleaning Up"
     rm -rf "dask-worker-space"
     rm -rf "stumpy/__pycache__/"
+    rm -rf "tests/__pycache__/"
     rm -rf build dist stumpy.egg-info __pycache__
     rm -f docs/*.nbconvert.ipynb
     if [ -d "$site_pkgs/stumpy/__pycache__" ]; then
