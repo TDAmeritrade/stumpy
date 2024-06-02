@@ -20,6 +20,9 @@ class mparray(np.ndarray):
         The number of top `k` smallest distances used to construct the
         matrix profile.
 
+    excl_zone_denom : int
+        The denominator used in computing the exclusion zone
+
     Attributes
     ----------
     P_ : numpy.ndarray
