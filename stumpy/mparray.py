@@ -16,20 +16,20 @@ class mparray(np.ndarray):
     m : int
         Window size
 
-    k : int, default 1
+    k : int
         The number of top `k` smallest distances used to construct the
         matrix profile.
 
     Attributes
     ----------
     P_ : numpy.ndarray
-        The (top-k) matrix profile for `T`. When `k=1` (default), the first
+        The (top-k) matrix profile for `T`. When `k=1`, the first
         (and only) column in this 2D array, which consists of the matrix profile,
         is returned. When `k > 1`, the output has exactly `k` columns consisting of
         the top-k matrix profile.
 
     I_ : numpy.ndarray
-        The(top-k) matrix profile indices for `T`. When `k=1` (default), the first
+        The(top-k) matrix profile indices for `T`. When `k=1`, the first
         (and only) column in this 2D array, which consists of the matrix profile,
         indices is returned. When `k > 1`, the output has exactly `k` columns
         consisting of the top-k matrix profile indices.
@@ -61,7 +61,7 @@ class mparray(np.ndarray):
 
         k : int
             The number of top `k` smallest distances used to construct the
-            matrix profile.
+            matrix profile
 
         excl_zone_denom : int
             The denominator used in computing the exclusion zone
