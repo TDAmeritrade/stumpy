@@ -218,7 +218,7 @@ epub_exclude_files = ["search.html"]
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'python': ("https://docs.python.org/3", None)}
+intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
 
 # Napoleon settings (see https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#configuration)  # noqa: E501
 napoleon_numpy_docstring = True
