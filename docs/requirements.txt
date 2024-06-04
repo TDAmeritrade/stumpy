@@ -1,5 +1,5 @@
 sphinx>=3.5.3
-nbsphinx
 pydata-sphinx-theme
 ipython
 numpydoc
+myst-nb
