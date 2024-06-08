@@ -167,3 +167,46 @@ def test_input_not_overwritten(seed):
         T_ref = Ts_ref[i]
         T_comp = Ts_comp[i]
         npt.assert_almost_equal(T_ref[np.isfinite(T_ref)], T_comp[np.isfinite(T_comp)])
+
+
+@pytest.mark.parametrize(
+    "seed", np.random.choice(np.arange(10000), size=25, replace=False)
+)
+def test_extract_second_consensus(seed):
+    m = 50
+    np.random.seed(seed)
+    Ts = [np.random.rand(n) for n in [256, 512, 1024]]
+    Ts_ref = [T.copy() for T in Ts]
+    Ts_comp = [T.copy() for T in Ts]
+
+    # obtain first consensus motif
+    central_radius, central_Ts_idx, central_subseq_idx = stumpy.ostinato(Ts_comp, m)
+
+    consensus_motif = Ts_comp[central_Ts_idx][
+        central_subseq_idx : central_subseq_idx + m
+    ].copy()
+    Ts_comp[central_Ts_idx][central_subseq_idx : central_subseq_idx + m] = np.nan
+    Ts_ref[central_Ts_idx][
+        central_subseq_idx : central_subseq_idx + m
+    ] = np.nan  # apply same changes to Ts_ref
+    for i in range(len(Ts)):
+        if i != central_Ts_idx:
+            D = stumpy.core.mass(consensus_motif, Ts_comp[i])
+            idx = np.argmin(D)
+            Ts_comp[i][idx : idx + m] = np.nan
+            Ts_ref[i][idx : idx + m] = np.nan  # apply same changes to Ts_ref
+
+    # obtain second consensus motif
+    consensus_radius_comp, consensus_Ts_idx_comp, consensus_subseq_idx_comp = (
+        stumpy.ostinato(Ts_comp, m)
+    )
+
+    # obtain first consensus motif from Ts_ref where some subsequences
+    # are removed based on the first consensus motif
+    consensus_radius_ref, consensus_Ts_idx_ref, consensus_subseq_idx_ref = (
+        stumpy.ostinato(Ts_ref, m)
+    )
+
+    np.testing.assert_almost_equal(consensus_radius_ref, consensus_radius_comp)
+    np.testing.assert_almost_equal(consensus_Ts_idx_ref, consensus_Ts_idx_comp)
+    np.testing.assert_almost_equal(consensus_subseq_idx_ref, consensus_subseq_idx_comp)
