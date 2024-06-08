@@ -52,6 +52,11 @@ def atsc(IL, IR, j):
     >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
     >>> stumpy.atsc(mp[:, 2], mp[:, 3], 1)
     array([1, 3])
+
+    # Alternative example using named attributes
+    >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
+    >>> stumpy.atsc(mp.left_I_, mp.right_I_, 1)
+    array([1, 3])
     """
     C = deque([j])
     for i in range(IL.size):
@@ -117,6 +122,11 @@ def allc(IL, IR):
     >>> import numpy as np
     >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
     >>> stumpy.allc(mp[:, 2], mp[:, 3])
+    ([array([1, 3]), array([2]), array([0, 4])], array([0, 4]))
+
+    # Alternative example using named attributes
+    >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
+    >>> stumpy.allc(mp.left_I_, mp.right_I_)
     ([array([1, 3]), array([2]), array([0, 4])], array([0, 4]))
     """
     L = np.ones(IL.size, dtype=np.int64)

@@ -290,6 +290,11 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
     >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
     >>> stumpy.fluss(mp[:, 0], 3, 2)
     (array([1., 1., 1., 1., 1.]), array([0]))
+
+    # Alternative example using named attributes
+    >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
+    >>> stumpy.fluss(mp.P_, 3, 2)
+    (array([1., 1., 1., 1., 1.]), array([0]))
     """
     cac = _cac(I, L, bidirectional=True, excl_factor=excl_factor, custom_iac=custom_iac)
     regime_locs = _rea(cac, n_regimes, L, excl_factor=excl_factor)

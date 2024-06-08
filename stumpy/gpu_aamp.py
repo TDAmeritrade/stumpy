@@ -9,6 +9,7 @@ import numpy as np
 from numba import cuda
 
 from . import config, core
+from .mparray import mparray
 
 
 @cuda.jit(
@@ -496,6 +497,12 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
         equivalently, out[:, -2] and out[:, -1]) correspond to the top-1 left
         matrix profile indices and the top-1 right matrix profile indices, respectively.
 
+        For convenience, the matrix profile (distances) and matrix profile indices can
+        also be accessed via their corresponding named array attributes, `.P_` and
+        `.I_`,respectively. Similarly, the corresponding left matrix profile indices
+        and right matrix profile indices may also be accessed via the `.left_I_` and
+        `.right_I_` array attributes.
+
     Notes
     -----
     `arXiv:1901.05708 \
@@ -706,4 +713,4 @@ def gpu_aamp(T_A, m, T_B=None, ignore_trivial=True, device_id=0, p=2.0, k=1):
 
     core._check_P(out[:, 0])
 
-    return out
+    return mparray(out, m, k, config.STUMPY_EXCL_ZONE_DENOM)
