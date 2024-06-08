@@ -137,3 +137,33 @@ def test_deterministic_ostinatoed_with_isconstant(seed, dask_cluster):
         npt.assert_almost_equal(ref_radius, comp_radius)
         npt.assert_almost_equal(ref_Ts_idx, comp_Ts_idx)
         npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)
+
+
+@pytest.mark.parametrize(
+    "seed", np.random.choice(np.arange(10000), size=25, replace=False)
+)
+def test_input_not_overwritten(seed):
+    m = 50
+    np.random.seed(seed)
+    Ts = [np.random.rand(n) for n in [64, 128, 256]]
+
+    # without nan values
+    Ts_ref = Ts.copy()
+    Ts_comp = Ts.copy()
+    stumpy.ostinato(Ts_comp, m)
+    for i in range(len(Ts)):
+        npt.assert_almost_equal(Ts_ref[i], Ts_comp[i])
+
+    # with nan values
+    nan_size = [np.random.choice(np.arange(1, len(T) + 1)) for T in Ts]
+    for i in range(len(Ts_ref)):
+        IDX = np.random.choice(np.arange(len(Ts[i])), size=nan_size[i], replace=False)
+        Ts[i][IDX] = np.nan
+
+    Ts_ref = Ts.copy()
+    Ts_comp = Ts.copy()
+    stumpy.ostinato(Ts_comp, m)
+    for i in range(len(Ts)):
+        T_ref = Ts_ref[i]
+        T_comp = Ts_comp[i]
+        npt.assert_almost_equal(T_ref[np.isfinite(T_ref)], T_comp[np.isfinite(T_comp)])
