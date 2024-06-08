@@ -176,6 +176,13 @@ def test_extract_second_consensus(seed):
     m = 50
     np.random.seed(seed)
     Ts = [np.random.rand(n) for n in [256, 512, 1024]]
+
+    # insert nan values
+    nan_size = [np.random.choice(np.arange(1, len(T) + 1)) for T in Ts]
+    for i in range(len(Ts)):
+        IDX = np.random.choice(np.arange(len(Ts[i])), size=nan_size[i], replace=False)
+        Ts[i][IDX] = np.nan
+
     Ts_ref = [T.copy() for T in Ts]
     Ts_comp = [T.copy() for T in Ts]
 
