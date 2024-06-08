@@ -156,7 +156,7 @@ def test_input_not_overwritten(seed):
 
     # with nan values
     nan_size = [np.random.choice(np.arange(1, len(T) + 1)) for T in Ts]
-    for i in range(len(Ts_ref)):
+    for i in range(len(Ts)):
         IDX = np.random.choice(np.arange(len(Ts[i])), size=nan_size[i], replace=False)
         Ts[i][IDX] = np.nan
 
