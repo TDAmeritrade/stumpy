@@ -108,6 +108,7 @@ def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0, Ts_subseq_isconstant
     if Ts_subseq_isconstant is None:
         Ts_subseq_isconstant = [None] * len(Ts)
 
+    Ts = [T.copy() for T in Ts]
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
     for i, T in enumerate(Ts):
