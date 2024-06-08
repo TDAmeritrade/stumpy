@@ -148,8 +148,8 @@ def test_input_not_overwritten(seed):
     Ts = [np.random.rand(n) for n in [64, 128, 256]]
 
     # without nan values
-    Ts_ref = Ts.copy()
-    Ts_comp = Ts.copy()
+    Ts_ref = [T.copy() for T in Ts]
+    Ts_comp = [T.copy() for T in Ts]
     stumpy.ostinato(Ts_comp, m)
     for i in range(len(Ts)):
         npt.assert_almost_equal(Ts_ref[i], Ts_comp[i])
@@ -160,8 +160,8 @@ def test_input_not_overwritten(seed):
         IDX = np.random.choice(np.arange(len(Ts[i])), size=nan_size[i], replace=False)
         Ts[i][IDX] = np.nan
 
-    Ts_ref = Ts.copy()
-    Ts_comp = Ts.copy()
+    Ts_ref = [T.copy() for T in Ts]
+    Ts_comp = [T.copy() for T in Ts]
     stumpy.ostinato(Ts_comp, m)
     for i in range(len(Ts)):
         T_ref = Ts_ref[i]
