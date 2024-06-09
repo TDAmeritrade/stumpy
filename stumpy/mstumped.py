@@ -25,8 +25,7 @@ def _dask_mstumped(
     discords,
 ):
     """
-    Compute the multi-dimensional z-normalized matrix profile with a distributed
-    dask cluster
+    Compute the multi-dimensional z-normalized matrix profile with a `dask` cluster
 
     This is a highly distributed implementation around the Numba JIT-compiled
     parallelized `_mstump` function which computes the multi-dimensional matrix
@@ -35,9 +34,8 @@ def _dask_mstumped(
     Parameters
     ----------
     dask_client : client
-        A Dask Distributed client. Setting up a distributed cluster is beyond
-        the scope of this library. Please refer to the Dask Distributed
-        documentation.
+        A `dask` client. Setting up a cluster is beyond the scope of this library.
+        Please refer to the `dask` documentation.
 
     T_A : numpy.ndarray
         The time series or sequence for which to compute the multi-dimensional
@@ -185,6 +183,178 @@ def _dask_mstumped(
     return P, I
 
 
+def _ray_mstumped(
+    ray_client,
+    T_A,
+    T_B,
+    m,
+    excl_zone,
+    M_T,
+    Σ_T,
+    μ_Q,
+    σ_Q,
+    T_subseq_isconstant,
+    Q_subseq_isconstant,
+    include,
+    discords,
+):
+    """
+    Compute the multi-dimensional z-normalized matrix profile with a `ray` cluster
+
+    This is a highly distributed implementation around the Numba JIT-compiled
+    parallelized `_mstump` function which computes the multi-dimensional matrix
+    profile according to STOMP. Note that only self-joins are supported.
+
+    Parameters
+    ----------
+    ray_client : client
+        A `ray` client. Setting up a cluster is beyond the scope of this library.
+        Please refer to the `ray` documentation.
+
+    T_A : numpy.ndarray
+        The time series or sequence for which to compute the multi-dimensional
+        matrix profile. Each row in `T_A` represents data from a different
+        dimension while each column in `T_A` represents data from the same
+        dimension.
+
+    T_B : numpy.ndarray
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
+        `None` which corresponds to a self-join.
+
+    m : int
+        Window size
+
+    excl_zone : int
+        The half width for the exclusion zone relative to the current
+        sliding window
+
+    M_T : numpy.ndarray
+        Sliding mean of time series, `T`
+
+    Σ_T : numpy.ndarray
+        Sliding standard deviation of time series, `T`
+
+    μ_Q : numpy.ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window
+
+    σ_Q : numpy.ndarray
+        Standard deviation of the query sequence, `Q`, relative to the current
+        sliding window
+
+    T_subseq_isconstant : numpy.ndarray
+        A boolearn array representing Rolling isconstant for `T`
+
+    Q_subseq_isconstant : numpy.ndarray
+        A boolearn array representing Rolling isconstant for `Q`
+
+    include : numpy.ndarray
+        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        must be included in the constrained multidimensional motif search.
+        For more information, see Section IV D in:
+
+        `DOI: 10.1109/ICDM.2017.66 \
+        <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
+
+    discords : bool
+        When set to `True`, this reverses the distance profile to favor discords rather
+        than motifs. Note that indices in `include` are still maintained and respected.
+
+    Returns
+    -------
+    P : numpy.ndarray
+        The multi-dimensional matrix profile. Each row of the array corresponds
+        to each matrix profile for a given dimension (i.e., the first row is
+        the 1-D matrix profile and the second row is the 2-D matrix profile).
+
+    I : numpy.ndarray
+        The multi-dimensional matrix profile index where each row of the array
+        corresponds to each matrix profile index for a given dimension.
+    """
+    core.check_ray(ray_client)
+
+    d, n = T_B.shape
+    l = n - m + 1
+    P = np.empty((d, l), dtype=np.float64)
+    I = np.empty((d, l), dtype=np.int64)
+
+    nworkers = core.get_ray_nworkers(ray_client)
+
+    step = 1 + l // nworkers
+
+    for i, start in enumerate(range(0, l, step)):
+        P[:, start], I[:, start] = _get_first_mstump_profile(
+            start,
+            T_A,
+            T_B,
+            m,
+            excl_zone,
+            M_T,
+            Σ_T,
+            μ_Q,
+            σ_Q,
+            T_subseq_isconstant,
+            Q_subseq_isconstant,
+            include,
+            discords,
+        )
+
+    # Put data into Ray object storage
+    T_A_ref = ray_client.put(T_A)
+    M_T_ref = ray_client.put(M_T)
+    Σ_T_ref = ray_client.put(Σ_T)
+    μ_Q_ref = ray_client.put(μ_Q)
+    σ_Q_ref = ray_client.put(σ_Q)
+    T_subseq_isconstant_ref = ray_client.put(T_subseq_isconstant)
+    Q_subseq_isconstant_ref = ray_client.put(Q_subseq_isconstant)
+
+    QT_refs = []
+    QT_first_refs = []
+
+    for i, start in enumerate(range(0, l, step)):
+        QT, QT_first = _get_multi_QT(start, T_A, m)
+
+        QT_ref = ray_client.put(QT)
+        QT_first_ref = ray_client.put(QT_first)
+
+        QT_refs.append(QT_ref)
+        QT_first_refs.append(QT_first_ref)
+
+    ray_mstump_func = ray_client.remote(core.deco_ray_tor(_mstump))
+
+    refs = []
+    for i, start in enumerate(range(0, l, step)):
+        stop = min(l, start + step)
+
+        refs.append(
+            ray_mstump_func.remote(
+                T_A_ref,
+                m,
+                stop,
+                excl_zone,
+                M_T_ref,
+                Σ_T_ref,
+                QT_refs[i],
+                QT_first_refs[i],
+                μ_Q_ref,
+                σ_Q_ref,
+                T_subseq_isconstant_ref,
+                Q_subseq_isconstant_ref,
+                l,
+                start + 1,
+                include,
+                discords,
+            )
+        )
+
+    results = ray_client.get(refs)
+    for i, start in enumerate(range(0, l, step)):
+        stop = min(l, start + step)
+        P[:, start + 1 : stop], I[:, start + 1 : stop] = results[i]
+
+    return P, I
+
+
 @core.non_normalized(
     maamped,
     exclude=["normalize", "T_subseq_isconstant"],
@@ -201,7 +371,7 @@ def mstumped(
 ):
     """
     Compute the multi-dimensional z-normalized matrix profile with a distributed
-    dask/ray cluster
+    `dask`/`ray` cluster
 
     This is a highly distributed implementation around the Numba JIT-compiled
     parallelized `_mstump` function which computes the multi-dimensional matrix
@@ -210,9 +380,8 @@ def mstumped(
     Parameters
     ----------
     client : client
-        A Dask Distributed client that is connected to a Dask scheduler and
-        Dask workers. Setting up a Dask distributed cluster is beyond the
-        scope of this library. Please refer to the Dask Distributed
+        A `dask`/`ray` client. Setting up a cluster is beyond the
+        scope of this library. Please refer to the `dask`/`ray`
         documentation.
 
     T : numpy.ndarray

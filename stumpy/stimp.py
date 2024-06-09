@@ -551,16 +551,15 @@ class stimp(_stimp):
 )
 class stimped(_stimp):
     """
-    Compute the Pan Matrix Profile with a distributed dask/ray cluster
+    Compute the Pan Matrix Profile with a `dask`/`ray` cluster
 
     This is based on the SKIMP algorithm.
 
     Parameters
     ----------
     client : client
-        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
-        the scope of this library. Please refer to the Dask or Ray Distributed
-        documentation.
+        A `dask`/`ray` client. Setting up a cluster is beyond the scope of this library.
+        Please refer to the `dask`/`ray` documentation.
 
     T : numpy.ndarray
         The time series or sequence for which to compute the pan matrix profile
@@ -656,9 +655,8 @@ class stimped(_stimp):
         Parameters
         ----------
         client : client
-            A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
-            the scope of this library. Please refer to the Dask or Ray Distributed
-            documentation.
+            A dask/ray client. Setting up a cluster is beyond the scope of this
+            library. Please refer to the dask/ray documentation.
 
         T : numpy.ndarray
             The time series or sequence for which to compute the pan matrix profile

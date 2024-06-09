@@ -6,7 +6,6 @@ import numpy as np
 
 from . import config, core
 from .aamped import aamped
-from .mparray import mparray
 from .stump import _stump
 
 
@@ -30,7 +29,7 @@ def _dask_stumped(
     k,
 ):
     """
-    Compute the z-normalized (top-k) matrix profile with a distributed dask cluster
+    Compute the z-normalized (top-k) matrix profile with a `dask` cluster
 
     This is a highly distributed implementation around the Numba JIT-compiled
     parallelized `_stump` function which computes the (top-k) matrix profile according
@@ -39,9 +38,8 @@ def _dask_stumped(
     Parameters
     ----------
     dask_client : client
-        A Dask Distributed client. Setting up a distributed cluster is beyond
-        the scope of this library. Please refer to the Dask Distributed
-        documentation.
+        A `dask` client. Setting up a cluster is beyond the scope of this library.
+        Please refer to the `dask` documentation.
 
     T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
@@ -157,7 +155,7 @@ def _dask_stumped(
         diags_futures.append(diags_future)
 
     futures = []
-    for i in range(len(hosts)):
+    for i in range(nworkers):
         futures.append(
             dask_client.submit(
                 _stump,
@@ -183,8 +181,208 @@ def _dask_stumped(
     results = dask_client.gather(futures)
     profile, profile_L, profile_R, indices, indices_L, indices_R = results[0]
 
-    for i in range(1, len(hosts)):
+    for i in range(1, nworkers):
         P, PL, PR, I, IL, IR = results[i]
+        # Update top-k matrix profile and matrix profile indices
+        core._merge_topk_PI(profile, P, indices, I)
+
+        # Update top-1 left matrix profile and matrix profile index
+        mask = PL < profile_L
+        profile_L[mask] = PL[mask]
+        indices_L[mask] = IL[mask]
+
+        # Update top-1 right matrix profile and matrix profile index
+        mask = PR < profile_R
+        profile_R[mask] = PR[mask]
+        indices_R[mask] = IR[mask]
+
+    out = np.empty((l, 2 * k + 2), dtype=object)
+    out[:, :k] = profile
+    out[:, k:] = np.column_stack((indices, indices_L, indices_R))
+
+    return out
+
+
+def _ray_stumped(
+    ray_client,
+    T_A,
+    T_B,
+    m,
+    M_T,
+    μ_Q,
+    Σ_T_inverse,
+    σ_Q_inverse,
+    M_T_m_1,
+    μ_Q_m_1,
+    T_A_subseq_isfinite,
+    T_B_subseq_isfinite,
+    T_A_subseq_isconstant,
+    T_B_subseq_isconstant,
+    diags,
+    ignore_trivial,
+    k,
+):
+    """
+    Compute the z-normalized (top-k) matrix profile with a `ray` cluster
+
+    This is a highly distributed implementation around the Numba JIT-compiled
+    parallelized `_stump` function which computes the (top-k) matrix profile according
+    to STOMPopt with Pearson correlations.
+
+    Parameters
+    ----------
+    ray_client : client
+        A `ray` client. Setting up a cluster is beyond the scope of this library.
+        Please refer to the `ray` documentation.
+
+    T_A : numpy.ndarray
+        The time series or sequence for which to compute the matrix profile
+
+    T_B : numpy.ndarray
+        The time series or sequence that will be used to annotate T_A. For every
+        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
+        `None` which corresponds to a self-join.
+
+    m : int
+        Window size
+
+    M_T : numpy.ndarray
+        Sliding mean of time series, `T`
+
+    μ_Q : numpy.ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window
+
+    Σ_T_inverse : numpy.ndarray
+        Inverse sliding standard deviation of time series, `T`
+
+    σ_Q_inverse : numpy.ndarray
+        Inverse standard deviation of the query sequence, `Q`, relative to the current
+
+    M_T_m_1 : numpy.ndarray
+        Sliding mean of time series, `T`, using a window size of `m-1`
+
+    μ_Q_m_1 : numpy.ndarray
+        Mean of the query sequence, `Q`, relative to the current sliding window and
+        using a window size of `m-1`
+
+    T_A_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_A` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_B_subseq_isfinite : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_B` contains a
+        `np.nan`/`np.inf` value (False)
+
+    T_A_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_A` is constant (True)
+
+    T_B_subseq_isconstant : numpy.ndarray
+        A boolean array that indicates whether a subsequence in `T_B` is constant (True)
+
+    diags : numpy.ndarray
+        The diagonal indices
+
+    ignore_trivial : bool, default True
+        Set to `True` if this is a self-join. Otherwise, for AB-join, set this
+        to `False`. Default is `True`.
+
+    k : int, default 1
+        The number of top `k` smallest distances used to construct the matrix profile.
+        Note that this will increase the total computational time and memory usage
+        when k > 1. If you have access to a GPU device, then you may be able to
+        leverage `gpu_stump` for better performance and scalability.
+
+    Returns
+    -------
+    out : numpy.ndarray
+        When k = 1 (default), the first column consists of the matrix profile,
+        the second column consists of the matrix profile indices, the third column
+        consists of the left matrix profile indices, and the fourth column consists
+        of the right matrix profile indices. However, when k > 1, the output array
+        will contain exactly 2 * k + 2 columns. The first k columns (i.e., out[:, :k])
+        consists of the top-k matrix profile, the next set of k columns
+        (i.e., out[:, k:2k]) consists of the corresponding top-k matrix profile
+        indices, and the last two columns (i.e., out[:, 2k] and out[:, 2k+1] or,
+        equivalently, out[:, -2] and out[:, -1]) correspond to the top-1 left
+        matrix profile indices and the top-1 right matrix profile indices, respectively.
+    """
+    core.check_ray(ray_client)
+
+    n_A = T_A.shape[0]
+    n_B = T_B.shape[0]
+    l = n_A - m + 1
+
+    nworkers = core.get_ray_nworkers(ray_client)
+
+    ndist_counts = core._count_diagonal_ndist(diags, m, n_A, n_B)
+    diags_ranges = core._get_array_ranges(ndist_counts, nworkers, False)
+    diags_ranges += diags[0]
+
+    # Put data in the Ray object store
+    T_A_ref = ray_client.put(T_A)
+    T_B_ref = ray_client.put(T_B)
+    M_T_ref = ray_client.put(M_T)
+    μ_Q_ref = ray_client.put(μ_Q)
+    Σ_T_inverse_ref = ray_client.put(Σ_T_inverse)
+    σ_Q_inverse_ref = ray_client.put(σ_Q_inverse)
+    M_T_m_1_ref = ray_client.put(M_T_m_1)
+    μ_Q_m_1_ref = ray_client.put(μ_Q_m_1)
+    T_A_subseq_isfinite_ref = ray_client.put(T_A_subseq_isfinite)
+    T_B_subseq_isfinite_ref = ray_client.put(T_B_subseq_isfinite)
+    T_A_subseq_isconstant_ref = ray_client.put(T_A_subseq_isconstant)
+    T_B_subseq_isconstant_ref = ray_client.put(T_B_subseq_isconstant)
+
+    diags_refs = []
+    for i in range(nworkers):
+        diags_ref = ray_client.put(
+            np.arange(diags_ranges[i, 0], diags_ranges[i, 1], dtype=np.int64),
+        )
+        diags_refs.append(diags_ref)
+
+    ray_stump_func = ray_client.remote(core.deco_ray_tor(_stump))
+
+    refs = []
+    for i in range(nworkers):
+        refs.append(
+            ray_stump_func.remote(
+                T_A_ref,
+                T_B_ref,
+                m,
+                μ_Q_ref,
+                M_T_ref,
+                σ_Q_inverse_ref,
+                Σ_T_inverse_ref,
+                μ_Q_m_1_ref,
+                M_T_m_1_ref,
+                T_A_subseq_isfinite_ref,
+                T_B_subseq_isfinite_ref,
+                T_A_subseq_isconstant_ref,
+                T_B_subseq_isconstant_ref,
+                diags_refs[i],
+                ignore_trivial,
+                k,
+            )
+        )
+
+    results = ray_client.get(refs)
+    profile, profile_L, profile_R, indices, indices_L, indices_R = results[0]
+    # Must make a mutable copy from Ray's object store (ndarrays are immutable)
+    profile = profile.copy()
+    profile_L = profile_L.copy()
+    profile_R = profile_R.copy()
+    indices = indices.copy()
+    indices_L = indices_L.copy()
+    indices_R = indices_R.copy()
+
+    for i in range(1, nworkers):
+        P, PL, PR, I, IL, IR = results[i]
+        # Must make a mutable copy from Ray object store (ndarrays are immutable)
+        P = P.copy()
+        PL = PL.copy()
+        PR = PR.copy()
+        I = I.copy()
+        IL = IL.copy()
+        IR = IR.copy()
         # Update top-k matrix profile and matrix profile indices
         core._merge_topk_PI(profile, P, indices, I)
 
@@ -219,7 +417,7 @@ def stumped(
     T_B_subseq_isconstant=None,
 ):
     """
-    Compute the z-normalized matrix profile with a distributed dask/ray cluster
+    Compute the z-normalized matrix profile with a distributed `dask`/`ray` cluster
 
     This is a highly distributed implementation around the Numba JIT-compiled
     parallelized `_stump` function which computes the (top-k) matrix profile according
@@ -228,9 +426,8 @@ def stumped(
     Parameters
     ----------
     client : client
-        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
-        the scope of this library. Please refer to the Dask or Ray Distributed
-        documentation.
+        A `dask`/`ray` client. Setting up a cluster is beyond the scope of this library.
+        Please refer to the `dask`/`ray` documentation.
 
     T_A : numpy.ndarray
         The time series or sequence for which to compute the matrix profile
@@ -298,12 +495,6 @@ def stumped(
         equivalently, out[:, -2] and out[:, -1]) correspond to the top-1 left
         matrix profile indices and the top-1 right matrix profile indices, respectively.
 
-        For convenience, the matrix profile (distances) and matrix profile indices can
-        also be accessed via their corresponding named array attributes, `.P_` and
-        `.I_`,respectively. Similarly, the corresponding left matrix profile indices
-        and right matrix profile indices may also be accessed via the `.left_I_` and
-        `.right_I_` array attributes. See examples below.
-
     See Also
     --------
     stumpy.stump : Compute the z-normalized matrix profile
@@ -368,7 +559,7 @@ def stumped(
     >>> from dask.distributed import Client
     >>> if __name__ == "__main__":
     ...     with Client() as dask_client:
-    ...         mp = stumpy.stumped(
+    ...         stumpy.stumped(
     ...             dask_client,
     ...             np.array([584., -11., 23., 79., 1001., 0., -19.]),
     ...             m=3)

@@ -3719,10 +3719,10 @@ def _client_to_func(client):
     """
     if client.__class__.__name__.startswith("Client"):
         prefix = "_dask_"
-    # elif inspect.ismodule(client) and str(client).startswith(
-    #     "<module 'ray'"
-    # ):  # pragma: no cover
-    #     prefix = "_ray_"
+    elif inspect.ismodule(client) and str(client).startswith(
+        "<module 'ray'"
+    ):  # pragma: no cover
+        prefix = "_ray_"
     else:
         msg = f"Distributed client `{client}` is unrecognized or "
         msg += "has yet to be implemented"
@@ -4275,3 +4275,82 @@ def process_isconstant(T, m, T_subseq_isconstant, T_subseq_isfinite=None):
     )
 
     return T_subseq_isconstant
+
+
+def deco_ray_tor(f):
+    """
+    Wraps a `numba` JIT-compiled function as a Python function.
+
+    This "indirection" is required for Ray serialization to work.
+
+    Parameters
+    ----------
+    f : function
+        A `numba` JIT-compiled function
+
+    Returns
+    -------
+    wrapper : function
+        A Python function
+    """
+
+    def wrapper(*args):  # pragma: no cover
+        return f(*args)
+
+    return wrapper
+
+
+def check_ray(ray_client):  # pragma: no cover
+    """
+    Check if Ray is initialized and, otherwise, raise an exception
+
+    Due to the experimental nature of Ray support, a warning is
+    also displayed.
+
+    Parameters
+    ----------
+    ray_client : client
+        A Ray client
+
+    Returns
+    -------
+    None
+    """
+    if not ray_client.is_initialized():
+        raise Exception("A Ray cluster could not be found!")
+
+    ray_warning()
+
+
+def ray_warning():
+    """
+    A generic warning for Ray support
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    msg = "Ray support is experimental and may be removed in the future.\n"
+    msg += "Use at your own risk!"
+    warnings.warn(msg)
+
+
+def get_ray_nworkers(ray_client):
+    """
+    Return the total number of Ray workers in the cluster
+
+    Parameters
+    ----------
+    ray_client : client
+        A Ray client
+
+    Returns
+    -------
+    nworkers : int
+        Total number of Ray workers
+    """
+    return int(ray_client.cluster_resources().get("CPU"))

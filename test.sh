@@ -101,6 +101,18 @@ check_naive()
     done
 }
 
+gen_ray_coveragerc()
+{
+    # Generate a .coveragerc_ray file that excludes Ray functions and tests
+    echo "[report]" > .coveragerc_ray
+    echo "; Regexes for lines to exclude from consideration" >> .coveragerc_ray
+    echo "exclude_also =" >> .coveragerc_ray
+    echo "    def .*_ray_*" >> .coveragerc_ray
+    echo "    def ,*_ray\(*" >> .coveragerc_ray
+    echo "    def ray_.*" >> .coveragerc_ray
+    echo "    def test_.*_ray*" >> .coveragerc_ray
+}
+
 test_custom()
 {
     # export NUMBA_DISABLE_JIT=1
@@ -160,12 +172,24 @@ test_coverage()
 
     echo "Testing Code Coverage"
     coverage erase
+
+    # If `ray` command is not found then generate a .coveragerc_ray file
+    if ! command -v ray &> /dev/null
+    then
+        echo "Ray Not Installed"
+        gen_ray_coveragerc
+        fcoverage="--rcfile=.coveragerc_ray"
+    else
+        echo "Ray Installed"
+        fcoverage=""
+    fi
+
     for testfile in tests/test_*.py
     do
         coverage run --append --source=. -m pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
         check_errs $?
     done
-    coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min.py,stumpy/cache.py
+    coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min.py,ray_python_version.py,stumpy/cache.py $fcoverage
 }
 
 test_gpu()
@@ -205,6 +229,7 @@ clean_up()
     rm -rf "tests/__pycache__/"
     rm -rf build dist stumpy.egg-info __pycache__
     rm -f docs/*.nbconvert.ipynb
+    rm -rf ".coveragerc_ray"
     if [ -d "$site_pkgs/stumpy/__pycache__" ]; then
         rm -rf $site_pkgs/stumpy/__pycache__/*nb*
     fi
