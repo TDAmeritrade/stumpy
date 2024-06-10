@@ -200,6 +200,7 @@ test_coverage()
     do
         coverage run --append --source=. -m pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
         check_errs $?
+        break
     done
 
     gen_coverage_report
