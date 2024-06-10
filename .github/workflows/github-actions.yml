@@ -153,7 +153,7 @@ jobs:
         run: ./test.sh coverage
         shell: bash
       - name: Check Coverage Report
-        run: coverage report -m --fail-under=100 --skip-covered --omit=docstring.py,min.py,stumpy/cache.py
+        run: ./test.sh report
         shell: bash
       - name: Upload Coverage Tests Results
         uses: codecov/codecov-action@v4

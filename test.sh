@@ -21,6 +21,8 @@ do
         test_mode="show"
     elif [[ $var == "custom" ]]; then
         test_mode="custom"
+    elif [[ $var == "report" ]]; then
+        test_mode="report"
     elif [[ $var == "silent" || $var == "print" ]]; then
         print_mode="silent"
     elif [[ "$var" == *"test_"*".py"* ]]; then
@@ -113,6 +115,22 @@ gen_ray_coveragerc()
     echo "    def test_.*_ray*" >> .coveragerc_ray
 }
 
+gen_coverage_report()
+{
+    # If `ray` command is not found then generate a .coveragerc_ray file
+    if ! command -v ray &> /dev/null
+    then
+        echo "Ray Not Installed"
+        gen_ray_coveragerc
+        fcoverage="--rcfile=.coveragerc_ray"
+    else
+        echo "Ray Installed"
+        fcoverage=""
+    fi
+
+    coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoverage
+}
+
 test_custom()
 {
     # export NUMBA_DISABLE_JIT=1
@@ -173,23 +191,15 @@ test_coverage()
     echo "Testing Code Coverage"
     coverage erase
 
-    # If `ray` command is not found then generate a .coveragerc_ray file
-    if ! command -v ray &> /dev/null
-    then
-        echo "Ray Not Installed"
-        gen_ray_coveragerc
-        fcoverage="--rcfile=.coveragerc_ray"
-    else
-        echo "Ray Installed"
-        fcoverage=""
-    fi
+    # We always attempt to test everything but we may ignore things (ray, helper scripts) when we generate the coverage report
 
     for testfile in tests/test_*.py
     do
         coverage run --append --source=. -m pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
         check_errs $?
     done
-    coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoverage
+
+    gen_coverage_report
 }
 
 test_gpu()
@@ -279,6 +289,11 @@ elif [[ $test_mode == "custom" ]]; then
     # export NUMBA_DISABLE_JIT=1
     # export NUMBA_ENABLE_CUDASIM=1
     test_custom
+elif [[ $test_mode == "report" ]]; then
+    echo "Generate Coverage Report Only"
+    # Assume coverage tests have already been executed
+    # and a coverage file exists
+    gen_coverage_report
 elif [[ $test_mode == "gpu" ]]; then
     echo "Executing GPU Unit Tests Only"
     test_gpu
