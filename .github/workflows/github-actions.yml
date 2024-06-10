@@ -164,8 +164,7 @@ jobs:
         shell: bash
       - name: Upload Coverage Tests Results
         uses: codecov/codecov-action@v4
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           file: ./coverage.xml
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
