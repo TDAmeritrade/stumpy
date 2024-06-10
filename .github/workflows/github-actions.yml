@@ -157,11 +157,6 @@ jobs:
       - name: Check Coverage Report
         run: ./test.sh report
         shell: bash
-      - name: Check Stuff
-        run: |
-             pwd
-             ls
-        shell: bash
       - name: Upload Coverage Tests Results
         uses: codecov/codecov-action@v4
         with:
