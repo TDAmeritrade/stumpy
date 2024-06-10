@@ -7,6 +7,7 @@ import numpy as np
 
 from . import config, core
 from .aamp import _aamp
+from .mparray import mparray
 
 
 def _dask_aamped(

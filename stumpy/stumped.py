@@ -6,6 +6,7 @@ import numpy as np
 
 from . import config, core
 from .aamped import aamped
+from .mparray import mparray
 from .stump import _stump
 
 
