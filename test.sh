@@ -131,7 +131,7 @@ gen_coverage_report()
     # This prints a coverage report to screen
     coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoverage
     # This saves the coverage report in Cobertura XML format, which is compatible with codecov
-    coverage xml --fail-under=100 --omit=setup.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoverage
+    coverage xml -o stumpy.coverage.xml --fail-under=100 --omit=setup.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoverage
 }
 
 test_custom()

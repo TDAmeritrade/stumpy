@@ -165,6 +165,6 @@ jobs:
       - name: Upload Coverage Tests Results
         uses: codecov/codecov-action@v4
         with:
-          file: ./coverage.xml
+          file: ./stumpy.coverage.xml
           verbose: true
           token: ${{ secrets.CODECOV_TOKEN }}
