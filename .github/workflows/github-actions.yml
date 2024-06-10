@@ -157,3 +157,5 @@ jobs:
         shell: bash
       - name: Upload Coverage Tests Results
         uses: codecov/codecov-action@v4
+        with:
+          file: coverage.xml
