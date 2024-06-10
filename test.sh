@@ -189,7 +189,7 @@ test_coverage()
         coverage run --append --source=. -m pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
         check_errs $?
     done
-    coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min.py,ray_python_version.py,stumpy/cache.py $fcoverage
+    coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoverage
 }
 
 test_gpu()
