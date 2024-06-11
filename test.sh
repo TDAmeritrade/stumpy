@@ -117,7 +117,7 @@ gen_ray_coveragerc()
     echo "    def test_.*_ray*" >> .coveragerc_ray
 }
 
-gen_coverage_report()
+set_ray_coveragerc()
 {
     # If `ray` command is not found then generate a .coveragerc_ray file
     if ! command -v ray &> /dev/null
@@ -129,10 +129,18 @@ gen_coverage_report()
         echo "Ray Installed"
         fcoveragerc=""
     fi
+}
 
-    # This prints a coverage report to screen
+show_coverage_report()
+{
+    set_ray_coveragerx
     coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
-    # This saves the coverage report in Cobertura XML format, which is compatible with codecov
+}
+
+gen_coverage_xml_report()
+{
+    # This function saves the coverage report in Cobertura XML format, which is compatible with codecov
+    set_ray_coveragerc
     coverage xml -o $fcoveragexml --fail-under=100 --omit=setup.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
 }
 
@@ -221,7 +229,7 @@ test_coverage()
             check_errs $?
         done
     fi
-    gen_coverage_report
+    show_coverage_report
 }
 
 test_gpu()
@@ -262,7 +270,6 @@ clean_up()
     rm -rf build dist stumpy.egg-info __pycache__
     rm -f docs/*.nbconvert.ipynb
     rm -rf ".coveragerc_ray"
-    rm -rf "stumpy.coverage.xml"
     if [ -d "$site_pkgs/stumpy/__pycache__" ]; then
         rm -rf $site_pkgs/stumpy/__pycache__/*nb*
     fi
@@ -316,7 +323,7 @@ elif [[ $test_mode == "report" ]]; then
     echo "Generate Coverage Report Only"
     # Assume coverage tests have already been executed
     # and a coverage file exists
-    gen_coverage_report
+    gen_coverage_xml_report
 elif [[ $test_mode == "gpu" ]]; then
     echo "Executing GPU Unit Tests Only"
     test_gpu
