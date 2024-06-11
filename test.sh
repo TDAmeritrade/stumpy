@@ -5,7 +5,7 @@ print_mode="verbose"
 custom_testfiles=()
 max_iter=10
 site_pkgs=$(python -c 'import site; print(site.getsitepackages()[0])')
-
+fcoveragexml="stumpy.coverage.xml"
 # Parse command line arguments
 for var in "$@"
 do
@@ -29,6 +29,8 @@ do
         custom_testfiles+=("$var")
     elif [[ $var =~ ^[\-0-9]+$ ]]; then
         max_iter=$var
+    elif [[ "$var" == *".xml" ]]; then
+        fcoveragexml=$var
     elif [[ "$var" == "links" ]]; then
         test_mode="links"
     else
@@ -122,16 +124,16 @@ gen_coverage_report()
     then
         echo "Ray Not Installed"
         gen_ray_coveragerc
-        fcoverage="--rcfile=.coveragerc_ray"
+        fcoveragerc="--rcfile=.coveragerc_ray"
     else
         echo "Ray Installed"
-        fcoverage=""
+        fcoveragerc=""
     fi
 
     # This prints a coverage report to screen
-    coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoverage
+    coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
     # This saves the coverage report in Cobertura XML format, which is compatible with codecov
-    coverage xml -o stumpy.coverage.xml --fail-under=100 --omit=setup.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoverage
+    coverage xml -o $fcoveragexml --fail-under=100 --omit=setup.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
 }
 
 test_custom()
@@ -160,7 +162,7 @@ test_custom()
         for i in $(seq $max_iter)
         do
             echo "Custom Test: $i / $max_iter"
-            for testfile in "${custom_testfiles[@]}"
+            for testfile in "${custom_testfiles[@]}";
             do
                 pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
                 check_errs $?
@@ -174,11 +176,19 @@ test_custom()
 test_unit()
 {
     echo "Testing Numba JIT Compiled Functions"
-    for testfile in tests/test_*.py
-    do
-        pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
-        check_errs $?
-    done
+    if [[ ${#custom_testfiles[@]}  -eq "0" ]]; then
+        for testfile in tests/test_*.py
+        do
+            pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
+            check_errs $?
+        done
+    else
+        for testfile in "${custom_testfiles[@]}";
+        do
+            pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
+            check_errs $?
+        done
+    fi
 }
 
 test_coverage()
@@ -196,12 +206,21 @@ test_coverage()
 
     # We always attempt to test everything but we may ignore things (ray, helper scripts) when we generate the coverage report
 
-    for testfile in tests/test_*.py
-    do
-        coverage run --append --source=. -m pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
-        check_errs $?
-    done
-
+    if [[ ${#custom_testfiles[@]}  -eq "0" ]]; then
+        # Execute all tests
+        for testfile in tests/test_*.py;
+        do
+            coverage run --append --source=. -m pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
+            check_errs $?
+        done
+    else
+        # Execute custom tests
+        for testfile in "${custom_testfiles[@]}";
+        do
+            coverage run --append --source=. -m pytest -rsx -W ignore::RuntimeWarning -W ignore::DeprecationWarning -W ignore::UserWarning $testfile
+            check_errs $?
+        done
+    fi
     gen_coverage_report
 }
 
