@@ -568,7 +568,9 @@ def stumped(
     mparray([4, 3, 0, 1, 0])
 
     Alternatively, you can also use `ray`
-    >>>     import ray
+
+    >>> import ray
+    >>> if __name__ == "__main__":
     >>>     ray.init()
     >>>     stumpy.stumped(
     ...             ray,

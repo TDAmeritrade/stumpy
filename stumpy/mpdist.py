@@ -263,7 +263,7 @@ def mpdisted(
 ):
     """
     Compute the z-normalized matrix profile distance (MPdist) measure between any two
-    time series with a distributed dask/ray cluster
+    time series with a `dask`/`ray` cluster
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
@@ -275,9 +275,8 @@ def mpdisted(
     Parameters
     ----------
     client : client
-        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
-        the scope of this library. Please refer to the Dask or Ray Distributed
-        documentation.
+        A `dask`/`ray` client. Setting up a cluster is beyond the scope of this library.
+        Please refer to the `dask`/`ray` documentation.
 
     T_A : numpy.ndarray
         The first time series or sequence for which to compute the matrix profile
@@ -357,6 +356,16 @@ def mpdisted(
     ...             np.array([584., -11., 23., 79., 1001., 0., -19.]),
     ...             m=3)
     0.00019935236191097894
+
+    Alternatively, you can also use `ray`
+
+    >>> import ray
+    >>> if __name__ == "__main__":
+    ...     stumpy.mpdisted(
+    ...         dask_client,
+    ...         np.array([-11.1, 23.4, 79.5, 1001.0]),
+    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]),
+    ...         m=3)
     """
     partial_mp_func = functools.partial(
         stumped,

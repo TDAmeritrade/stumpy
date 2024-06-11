@@ -460,6 +460,7 @@ def mstumped(
     >>> if __name__ == "__main__":
     ...     with Client() as dask_client:
     ...         stumpy.mstumped(
+    ...             dask_client,
     ...             np.array([[584., -11., 23., 79., 1001., 0., -19.],
     ...                       [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
     ...             m=3)
@@ -469,12 +470,15 @@ def mstumped(
             [4, 4, 0, 1, 0]]))
 
     Alternatively, you can also use `ray`
+
     >>> import ray
-    >>> ray.init()
-    >>> stumpy.mstumped(
-    ...     np.array([[584., -11., 23., 79., 1001., 0., -19.],
-    ...               [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
-    ...              m=3)
+    >>> if __name__ == "__main__":
+    >>>     ray.init()
+    >>>     stumpy.mstumped(
+    ...         ray,
+    ...         np.array([[584., -11., 23., 79., 1001., 0., -19.],
+    ...                   [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
+    ...         m=3)
     """
     T_A = T
     T_B = T_A

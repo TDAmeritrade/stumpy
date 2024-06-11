@@ -638,11 +638,13 @@ class stimped(_stimp):
            [0., 1., 1., 1., 1., 1., 1.]])
 
     Alternatively, you can also use `ray`
+
     >>> import ray
-    >>> ray.init()
-    >>> pmp = stumpy.stimped(
-    ...     dask_client,
-    ...     np.array([584., -11., 23., 79., 1001., 0., -19.]))
+    >>> if __name__ == "__main__":
+    >>>     ray.init()
+    >>>     pmp = stumpy.stimped(
+    ...         ray,
+    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]))
     """
 
     def __init__(
