@@ -5,7 +5,7 @@ print_mode="verbose"
 custom_testfiles=()
 max_iter=10
 site_pkgs=$(python -c 'import site; print(site.getsitepackages()[0])')
-fcoveragexml="stumpy.coverage.xml"
+fcoveragexml="coverage.stumpy.xml"
 # Parse command line arguments
 for var in "$@"
 do

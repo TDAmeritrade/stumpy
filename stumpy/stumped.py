@@ -566,7 +566,7 @@ def stumped(
     mparray([0.11633857, 2.69407392, 3.00009263, 2.69407392, 0.11633857])
     >>>         mp.I_
     mparray([4, 3, 0, 1, 0])
-    
+
     Alternatively, you can also use `ray`
     >>>     import ray
     >>>     ray.init()
