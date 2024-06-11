@@ -243,6 +243,7 @@ clean_up()
     rm -rf build dist stumpy.egg-info __pycache__
     rm -f docs/*.nbconvert.ipynb
     rm -rf ".coveragerc_ray"
+    rm -rf "stumpy.coverage.xml"
     if [ -d "$site_pkgs/stumpy/__pycache__" ]; then
         rm -rf $site_pkgs/stumpy/__pycache__/*nb*
     fi
