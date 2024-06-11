@@ -288,14 +288,7 @@ def _ray_aamped(
     indices_L = indices_L.copy()
     indices_R = indices_R.copy()
     for i in range(1, nworkers):
-        P, PL, PR, I, IL, IR = results[i]
-        # Must make a mutable copy from Ray object store (ndarrays are immutable)
-        # P = P.copy()
-        # PL = PL.copy()
-        # PR = PR.copy()
-        # I = I.copy()
-        # IL = IL.copy()
-        # IR = IR.copy()
+        P, PL, PR, I, IL, IR = results[i]  # Read-only variables
         # Update top-k matrix profile and matrix profile indices
         core._merge_topk_PI(profile, P, indices, I)
 
