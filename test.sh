@@ -133,7 +133,7 @@ set_ray_coveragerc()
 
 show_coverage_report()
 {
-    set_ray_coveragerx
+    set_ray_coveragerc
     coverage report -m --fail-under=100 --skip-covered --omit=setup.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
 }
 
