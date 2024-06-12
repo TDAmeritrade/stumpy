@@ -1,5 +1,6 @@
 sphinx>=3.5.3
 pydata-sphinx-theme
-ipython
+jupyterlab
+matplotlib
 numpydoc
 myst-nb
