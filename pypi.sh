@@ -10,7 +10,7 @@
 #    c) environment.yml
 #    d) .github/worflows/github-actions.yml
 #    e) recipes/meta.yaml in conda-feedstock
-#    f) README.md
+#    f) README.rst
 # 6. Commit all above changes as the latest version number and push
 #
 # For conda-forge
