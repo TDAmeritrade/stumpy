@@ -493,7 +493,7 @@ def stumped(
         also be accessed via their corresponding named array attributes, `.P_` and
         `.I_`,respectively. Similarly, the corresponding left matrix profile indices
         and right matrix profile indices may also be accessed via the `.left_I_` and
-        `.right_I_` array attributes.
+        `.right_I_` array attributes. See examples below.
 
     See Also
     --------
