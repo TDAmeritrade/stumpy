@@ -6,3 +6,4 @@ pandas
 scikit-learn
 numpydoc
 myst-nb
+jupyterlab-myst
