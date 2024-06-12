@@ -105,6 +105,16 @@ check_naive()
     done
 }
 
+check_ray()
+{
+    if ! command -v ray &> /dev/null
+    then
+        echo "Ray Not Installed"
+    else
+        echo "Ray Installed"
+    fi
+}
+
 gen_ray_coveragerc()
 {
     # Generate a .coveragerc_ray file that excludes Ray functions and tests
@@ -302,6 +312,7 @@ check_flake
 check_docstrings
 check_print
 check_naive
+check_ray
 
 if [[ $test_mode == "notebooks" ]]; then
     echo "Executing Tutorial Notebooks Only"

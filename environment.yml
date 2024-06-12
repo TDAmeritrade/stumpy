@@ -23,6 +23,5 @@ dependencies:
   - build>=0.7.0
   - pytest-check-links>=0.7.1
   - isort>=5.11.0
-  - tbb>=2019.5
   - jupyterlab-myst>=2.0.0
   - myst-nb>=1.0.0

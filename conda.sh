@@ -15,7 +15,7 @@ if [[ $# -gt 0 ]]; then
         echo "Installing minimum dependencies with install_mode=\"min\""
     elif [[ $1 == "ray" ]]; then
         install_mode="ray"
-        echo "Installing ray  dependencies with install_mode=\"ray\""
+        echo "Installing ray dependencies with install_mode=\"ray\""
     elif [[ $1 == "numba" ]] && [[ "${arch_name}" != "arm64" ]]; then
         install_mode="numba"
         echo "Installing numba release candidate dependencies with install_mode=\"numba\""
