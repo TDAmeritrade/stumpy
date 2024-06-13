@@ -52,8 +52,8 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
-    "nbsphinx",
     "numpydoc",
+    "myst_nb",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -63,7 +63,11 @@ templates_path = ["_templates"]
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
+source_suffix = [
+    ".rst",
+    ".md",
+    ".ipynb",
+]
 
 # The master toctree document.
 master_doc = "index"
@@ -214,7 +218,11 @@ epub_exclude_files = ["search.html"]
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"https://docs.python.org/": None}
+intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
 
 # Napoleon settings (see https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#configuration)  # noqa: E501
 napoleon_numpy_docstring = True
+
+myst_enable_extensions = [
+    "colon_fence",
+]

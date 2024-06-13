@@ -8,6 +8,7 @@ from numba import njit, prange
 
 from . import config, core
 from .aamp import aamp
+from .mparray import mparray
 
 
 @njit(
@@ -595,6 +596,12 @@ def stump(
         equivalently, out[:, -2] and out[:, -1]) correspond to the top-1 left
         matrix profile indices and the top-1 right matrix profile indices, respectively.
 
+        For convenience, the matrix profile (distances) and matrix profile indices can
+        also be accessed via their corresponding named array attributes, `.P_` and
+        `.I_`,respectively. Similarly, the corresponding left matrix profile indices
+        and right matrix profile indices may also be accessed via the `.left_I_` and
+        `.right_I_` array attributes.  See examples below.
+
     See Also
     --------
     stumpy.stumped : Compute the z-normalized matrix profile with a distributed dask
@@ -652,12 +659,17 @@ def stump(
     --------
     >>> import stumpy
     >>> import numpy as np
-    >>> stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
-    array([[0.11633857113691416, 4, -1, 4],
-           [2.694073918063438, 3, -1, 3],
-           [3.0000926340485923, 0, 0, 4],
-           [2.694073918063438, 1, 1, -1],
-           [0.11633857113691416, 0, 0, -1]], dtype=object)
+    >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
+    >>> mp
+    mparray([[0.11633857113691416, 4, -1, 4],
+             [2.694073918063438, 3, -1, 3],
+             [3.0000926340485923, 0, 0, 4],
+             [2.694073918063438, 1, 1, -1],
+             [0.11633857113691416, 0, 0, -1]], dtype=object)
+    >>> mp.P_
+    mparray([0.11633857, 2.69407392, 3.00009263, 2.69407392, 0.11633857])
+    >>> mp.I_
+    mparray([4, 3, 0, 1, 0])
     """
     if T_B is None:
         ignore_trivial = True
@@ -734,4 +746,4 @@ def stump(
 
     core._check_P(out[:, 0])
 
-    return out
+    return mparray(out, m, k, config.STUMPY_EXCL_ZONE_DENOM)
