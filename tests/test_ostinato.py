@@ -186,9 +186,15 @@ def test_extract_seversl_consensus(seed):
         radius, Ts_idx, subseq_idx = stumpy.ostinato(Ts_comp, m)
         consensus_motif = Ts_comp[Ts_idx][subseq_idx : subseq_idx + m].copy()
         for i in range(len(Ts_comp)):
-            nn_idx = np.argmin(stumpy.core.mass(consensus_motif, Ts_comp[i]))
-            Ts_comp[i][nn_idx : nn_idx + m] = np.nan
-            Ts_ref[i][nn_idx : nn_idx + m] = np.nan
+            if i == Ts_idx:
+                # The consensus motif is in the same time series
+                idx = Ts_idx
+            else:
+                # Find the nearest neighbor of the consensus motif in Ts_comp[i]
+                idx = np.argmin(stumpy.core.mass(consensus_motif, Ts_comp[i]))
+
+            Ts_comp[i][idx : idx + m] = np.nan
+            Ts_ref[i][idx : idx + m] = np.nan
 
             npt.assert_almost_equal(
                 Ts_ref[i][np.isfinite(Ts_ref[i])], Ts_comp[i][np.isfinite(Ts_comp[i])]
