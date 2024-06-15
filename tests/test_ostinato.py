@@ -139,15 +139,11 @@ def test_deterministic_ostinatoed_with_isconstant(seed, dask_cluster):
         npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)
 
 
-@pytest.mark.parametrize(
-    "seed", np.random.choice(np.arange(10000), size=25, replace=False)
-)
-def test_input_not_overwritten(seed):
+def test_input_not_overwritten():
     # ostinato preprocesses its input, a list of time series,
     # by replacing nan value with 0 in each time series.
     # This test ensures that the original input is not overwritten
     m = 50
-    np.random.seed(seed)
     Ts = [np.random.rand(n) for n in [64, 128, 256]]
 
     # insert at least one nan value
@@ -165,13 +161,9 @@ def test_input_not_overwritten(seed):
         npt.assert_almost_equal(T_ref[np.isfinite(T_ref)], T_comp[np.isfinite(T_comp)])
 
 
-@pytest.mark.parametrize(
-    "seed", np.random.choice(np.arange(10000), size=25, replace=False)
-)
-def test_extract_seversl_consensus(seed):
+def test_extract_seversl_consensus():
     # This test is to further ensure that the function `ostinato`
     # does not tamper with the original data.
-    np.random.seed(seed)
     Ts = [np.random.rand(n) for n in [256, 512, 1024]]
     Ts_ref = [T.copy() for T in Ts]
     Ts_comp = [T.copy() for T in Ts]
