@@ -161,7 +161,7 @@ def test_input_not_overwritten():
         npt.assert_almost_equal(T_ref[np.isfinite(T_ref)], T_comp[np.isfinite(T_comp)])
 
 
-def test_extract_seversl_consensus():
+def test_extract_several_consensus():
     # This test is to further ensure that the function `ostinato`
     # does not tamper with the original data.
     Ts = [np.random.rand(n) for n in [256, 512, 1024]]
@@ -173,7 +173,7 @@ def test_extract_seversl_consensus():
     k = 5  # Get the first `k` consensus motifs
     for _ in range(k):
         # Find consensus motif and its NN in each time series in Ts_comp
-        # Rmove them from Ts_comp as well as Ts_ref, and assert that the
+        # Remove them from Ts_comp as well as Ts_ref, and assert that the
         # the two time series are the same
         radius, Ts_idx, subseq_idx = stumpy.ostinato(Ts_comp, m)
         consensus_motif = Ts_comp[Ts_idx][subseq_idx : subseq_idx + m].copy()
