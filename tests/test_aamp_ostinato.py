@@ -117,7 +117,7 @@ def test_extract_several_consensus():
     for _ in range(k):
         # Find consensus motif and its NN in each time series in Ts_comp
         # Remove them from Ts_comp as well as Ts_ref, and assert that the
-        # the two time series are the same
+        # two time series are the same
         radius, Ts_idx, subseq_idx = stumpy.aamp_ostinato(Ts_comp, m)
         consensus_motif = Ts_comp[Ts_idx][subseq_idx : subseq_idx + m].copy()
         for i in range(len(Ts_comp)):
