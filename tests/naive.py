@@ -2319,7 +2319,7 @@ def merge_topk_ρI(ρA, ρB, IA, IB):
         k = ρA.shape[1]
         for i in range(ρA.shape[0]):
             _, _, overlap_idx_B = np.intersect1d(IA[i], IB[i], return_indices=True)
-            ρB[i, overlap_idx_B] = np.NINF
+            ρB[i, overlap_idx_B] = -np.inf
             IB[i, overlap_idx_B] = -1
 
         profile = np.column_stack((ρB, ρA))

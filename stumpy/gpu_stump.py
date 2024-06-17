@@ -10,6 +10,7 @@ from numba import cuda
 
 from . import config, core
 from .gpu_aamp import gpu_aamp
+from .mparray import mparray
 
 
 @cuda.jit(
@@ -573,6 +574,12 @@ def gpu_stump(
         equivalently, out[:, -2] and out[:, -1]) correspond to the top-1 left
         matrix profile indices and the top-1 right matrix profile indices, respectively.
 
+        For convenience, the matrix profile (distances) and matrix profile indices can
+        also be accessed via their corresponding named array attributes, `.P_` and
+        `.I_`,respectively. Similarly, the corresponding left matrix profile indices
+        and right matrix profile indices may also be accessed via the `.left_I_` and
+        `.right_I_` array attributes. See examples below.
+
     See Also
     --------
     stumpy.stump : Compute the z-normalized matrix profile
@@ -615,15 +622,20 @@ def gpu_stump(
     >>> from numba import cuda
     >>> if __name__ == "__main__":
     ...     all_gpu_devices = [device.id for device in cuda.list_devices()]
-    ...     stumpy.gpu_stump(
+    ...     mp = stumpy.gpu_stump(
     ...         np.array([584., -11., 23., 79., 1001., 0., -19.]),
     ...         m=3,
     ...         device_id=all_gpu_devices)
-    array([[0.11633857113691416, 4, -1, 4],
-           [2.694073918063438, 3, -1, 3],
-           [3.0000926340485923, 0, 0, 4],
-           [2.694073918063438, 1, 1, -1],
-           [0.11633857113691416, 0, 0, -1]], dtype=object)
+    >>>     mp
+    mparray([[0.11633857113691416, 4, -1, 4],
+             [2.694073918063438, 3, -1, 3],
+             [3.0000926340485923, 0, 0, 4],
+             [2.694073918063438, 1, 1, -1],
+             [0.11633857113691416, 0, 0, -1]], dtype=object)
+    >>>     mp.P_
+    mparray([0.11633857, 2.69407392, 3.00009263, 2.69407392, 0.11633857])
+    >>>     mp.I_
+    mparray([4, 3, 0, 1, 0])
     """
     if T_B is None:  # Self join!
         T_B = T_A
@@ -838,4 +850,4 @@ def gpu_stump(
 
     core._check_P(out[:, 0])
 
-    return out
+    return mparray(out, m, k, config.STUMPY_EXCL_ZONE_DENOM)
