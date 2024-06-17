@@ -115,6 +115,8 @@ def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0, Ts_subseq_isconstant
         Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
             T, m, T_subseq_isconstant=Ts_subseq_isconstant[i]
         )
+        # Setting `copy=False` is also fine here if performance becomes an issue
+        # since a copy of the original data is made earlier in this function
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
         Ts, m, M_Ts, Σ_Ts, Ts_subseq_isconstant, device_id=device_id, mp_func=gpu_stump
