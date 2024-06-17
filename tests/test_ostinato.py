@@ -162,6 +162,9 @@ def test_input_not_overwritten_ostinato():
 
 
 def test_input_not_overwritten_ostinatoed(dask_cluster):
+    # ostinatoed preprocesses its input, a list of time series,
+    # by replacing nan value with 0 in each time series.
+    # This test ensures that the original input is not overwritten
     with Client(dask_cluster) as dask_client:
         m = 50
         Ts = [np.random.rand(n) for n in [64, 128, 256]]
@@ -219,7 +222,7 @@ def test_extract_several_consensus_ostinato():
 
 
 def test_extract_several_consensus_ostinatoed(dask_cluster):
-    # This test is to further ensure that the function `ostinato`
+    # This test is to further ensure that the function `ostinatoed`
     # does not tamper with the original data.
     Ts = [np.random.rand(n) for n in [256, 512, 1024]]
     Ts_ref = [T.copy() for T in Ts]
