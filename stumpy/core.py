@@ -2141,7 +2141,7 @@ def preprocess(
     return T, M_T, Σ_T, T_subseq_isconstant
 
 
-def preprocess_non_normalized(T, m):
+def preprocess_non_normalized(T, m, copy=True):
     """
     Preprocess a time series that is to be used when computing a non-normalized (i.e.,
     without z-normalization) distance matrix.
@@ -2159,6 +2159,10 @@ def preprocess_non_normalized(T, m):
     m : int
         Window size
 
+    copy : bool, default True
+        A boolean value that indicates whether the process should be done on
+        input `T` (False) or its copy (True).
+
     Returns
     -------
     T : numpy.ndarray
@@ -2168,7 +2172,7 @@ def preprocess_non_normalized(T, m):
         A boolean array that indicates whether a subsequence in `T` contains a
         `np.nan`/`np.inf` value (False)
     """
-    T = _preprocess(T)
+    T = _preprocess(T, copy)
     check_window_size(m, max_size=T.shape[-1])
     T_subseq_isfinite = rolling_isfinite(T, m)
     T[~np.isfinite(T)] = np.nan
@@ -2177,7 +2181,7 @@ def preprocess_non_normalized(T, m):
     return T, T_subseq_isfinite
 
 
-def preprocess_diagonal(T, m, T_subseq_isconstant=None):
+def preprocess_diagonal(T, m, copy=True, T_subseq_isconstant=None):
     """
     Preprocess a time series that is to be used when traversing the diagonals of a
     distance matrix.
@@ -2199,6 +2203,10 @@ def preprocess_diagonal(T, m, T_subseq_isconstant=None):
 
     m : int
         Window size
+
+    copy : bool, default True
+        A boolean value that indicates whether the process should be done on
+        input `T` (False) or its copy (True).
 
     T_subseq_isconstant : numpy.ndarray or function, default None
         A boolean array that indicates whether a subsequence in `T` is constant
@@ -2231,7 +2239,7 @@ def preprocess_diagonal(T, m, T_subseq_isconstant=None):
     T_subseq_isconstant : numpy.ndarray
         A boolean array that indicates whether a subsequence in `T` is constant (True)
     """
-    T = _preprocess(T)
+    T = _preprocess(T, copy)
     check_window_size(m, max_size=T.shape[-1])
     T_subseq_isfinite = rolling_isfinite(T, m)
     T[~np.isfinite(T)] = np.nan
