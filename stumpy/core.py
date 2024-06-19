@@ -2181,7 +2181,12 @@ def preprocess_non_normalized(T, m, copy=True):
     return T, T_subseq_isfinite
 
 
-def preprocess_diagonal(T, m, T_subseq_isconstant=None, copy=True,):
+def preprocess_diagonal(
+    T,
+    m,
+    T_subseq_isconstant=None,
+    copy=True,
+):
     """
     Preprocess a time series that is to be used when traversing the diagonals of a
     distance matrix.
