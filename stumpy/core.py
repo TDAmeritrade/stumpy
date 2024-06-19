@@ -2181,7 +2181,7 @@ def preprocess_non_normalized(T, m, copy=True):
     return T, T_subseq_isfinite
 
 
-def preprocess_diagonal(T, m, copy=True, T_subseq_isconstant=None):
+def preprocess_diagonal(T, m, T_subseq_isconstant=None, copy=True,):
     """
     Preprocess a time series that is to be used when traversing the diagonals of a
     distance matrix.
@@ -2204,10 +2204,6 @@ def preprocess_diagonal(T, m, copy=True, T_subseq_isconstant=None):
     m : int
         Window size
 
-    copy : bool, default True
-        A boolean value that indicates whether the process should be done on
-        input `T` (False) or its copy (True).
-
     T_subseq_isconstant : numpy.ndarray or function, default None
         A boolean array that indicates whether a subsequence in `T` is constant
         (True). Alternatively, a custom, user-defined function that returns a
@@ -2217,6 +2213,10 @@ def preprocess_diagonal(T, m, copy=True, T_subseq_isconstant=None):
         by currying the user-defined function using `functools.partial`. Any
         subsequence with at least one np.nan/np.inf will automatically have its
         corresponding value set to False in this boolean array.
+
+    copy : bool, default True
+        A boolean value that indicates whether the process should be done on
+        input `T` (False) or its copy (True).
 
     Returns
     -------
