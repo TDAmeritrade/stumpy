@@ -305,16 +305,17 @@ def aamp_ostinato(Ts, m, p=2.0):
     if not isinstance(Ts, list):  # pragma: no cover
         raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
 
-    Ts = [T.copy() for T in Ts]
+    # Avoid overwriting `Ts` during preprocessing
+    Ts_copy = [None] * len(Ts)
     Ts_subseq_isfinite = [None] * len(Ts)
     for i, T in enumerate(Ts):
         (
-            Ts[i],
+            Ts_copy[i],
             Ts_subseq_isfinite[i],
-        ) = core.preprocess_non_normalized(T, m)
+        ) = core.preprocess_non_normalized(T, m, copy=True)
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _aamp_ostinato(
-        Ts, m, Ts_subseq_isfinite, p
+        Ts_copy, m, Ts_subseq_isfinite, p
     )
 
     (
@@ -322,7 +323,7 @@ def aamp_ostinato(Ts, m, p=2.0):
         central_Ts_idx,
         central_subseq_idx,
     ) = _get_aamp_central_motif(
-        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, Ts_subseq_isfinite, p
+        Ts_copy, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, Ts_subseq_isfinite, p
     )
 
     return central_radius, central_Ts_idx, central_subseq_idx
@@ -390,16 +391,17 @@ def aamp_ostinatoed(client, Ts, m, p=2.0):
     if not isinstance(Ts, list):  # pragma: no cover
         raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
 
-    Ts = [T.copy() for T in Ts]
+    # Avoid overwriting `Ts` during preprocessing
+    Ts_copy = [None] * len(Ts)
     Ts_subseq_isfinite = [None] * len(Ts)
     for i, T in enumerate(Ts):
         (
-            Ts[i],
+            Ts_copy[i],
             Ts_subseq_isfinite[i],
-        ) = core.preprocess_non_normalized(T, m)
+        ) = core.preprocess_non_normalized(T, m, copy=True)
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _aamp_ostinato(
-        Ts,
+        Ts_copy,
         m,
         Ts_subseq_isfinite,
         p=p,
@@ -412,7 +414,7 @@ def aamp_ostinatoed(client, Ts, m, p=2.0):
         central_Ts_idx,
         central_subseq_idx,
     ) = _get_aamp_central_motif(
-        Ts,
+        Ts_copy,
         bsf_radius,
         bsf_Ts_idx,
         bsf_subseq_idx,
