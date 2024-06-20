@@ -318,11 +318,11 @@ def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
         Radius of the most central consensus motif
 
     central_Ts_idx : int
-        The time series index in `Ts` which contains the most central consensus motif
+        The time series index in `Ts` that contains the most central consensus motif
 
     central_subseq_idx : int
-        The subsequence index within time series `Ts[central_motif_Ts_idx]` the contains
-        most central consensus motif
+        The subsequence index within time series `Ts[central_motif_Ts_idx]` that
+        contains the most central consensus motif
 
     See Also
     --------
@@ -445,11 +445,11 @@ def ostinatoed(client, Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
         Radius of the most central consensus motif
 
     central_Ts_idx : int
-        The time series index in `Ts` which contains the most central consensus motif
+        The time series index in `Ts` that contains the most central consensus motif
 
     central_subseq_idx : int
-        The subsequence index within time series `Ts[central_motif_Ts_idx]` the contains
-        most central consensus motif
+        The subsequence index within time series `Ts[central_motif_Ts_idx]` that
+        contains the most central consensus motif
 
     See Also
     --------

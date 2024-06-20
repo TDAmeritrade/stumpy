@@ -10,7 +10,12 @@ from stumpy import aamped, config
 
 @pytest.fixture(scope="module")
 def dask_cluster():
-    cluster = LocalCluster(n_workers=2, threads_per_worker=2)
+    cluster = LocalCluster(
+        n_workers=2,
+        threads_per_worker=2,
+        dashboard_address=None,
+        worker_dashboard_address=None,
+    )
     yield cluster
     cluster.close()
 
