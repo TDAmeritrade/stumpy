@@ -116,6 +116,8 @@ def test_deterministic_gpu_ostinato_with_isconstant(seed):
     npt.assert_almost_equal(ref_subseq_idx, comp_subseq_idx)
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def test_input_not_overwritten():
     # gpu_ostinato preprocesses its input, a list of time series,
     # by replacing nan value with 0 in each time series.
@@ -138,6 +140,8 @@ def test_input_not_overwritten():
         npt.assert_almost_equal(T_ref[np.isfinite(T_ref)], T_comp[np.isfinite(T_comp)])
 
 
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
 def test_extract_several_consensus():
     # This test is to further ensure that the function `gpu_ostinato`
     # does not tamper with the original data.
