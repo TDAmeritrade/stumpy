@@ -136,101 +136,6 @@ def get_min_scipy_version(min_python, min_numpy):
     return df.SciPy_version
 
 
-def find_pkg_mismatches(
-    fnames=[
-        "pyproject.toml",
-        "requirements.txt",
-        "environment.yml",
-        ".github/workflows/github-actions.yml",
-        "README.rst",
-    ],
-    pkg="python",
-    version=get_min_python_version(),
-):
-
-    # Forcing pkg to lower
-    pkg = pkg.lower()
-
-    # Instantiating a dictionary of lists for storing
-    # any hits on minimum version mismatches while scanning
-    pkg_mismatches = []
-
-    # Iteratively scanning files for minimum version mismatches
-    for fname in fnames:
-        with open(fname, "r") as file:
-
-            # Iteratively capturing the line number
-            # associated with each minimum version mismatch
-            for line_num, line in enumerate(file, start=1):
-
-                # Handling different version listing formats
-                if (
-                    f"{pkg}-version: [" in line
-                    or re.search(
-                        rf"({pkg}|{pkg})\s*==?\s*['\"]?(\d+\.\d+(\.\d+)?)['\"]?",
-                        line,
-                        re.IGNORECASE,
-                    )
-                    or re.search(
-                        rf"({pkg})\s*>=\s*['\"]?(\d+\.\d+(\.\d+)?)['\"]?",
-                        line,
-                        re.IGNORECASE,
-                    )
-                    or re.search(
-                        rf"::\s*{pkg}\s*::\s*['\"]?(\d+\.\d+(\.\d+)?)['\"]?",
-                        line,
-                        re.IGNORECASE,
-                    )
-                    or re.search(
-                        rf"{pkg}\s+[a-z]+\s+(\d+\.\d+(\.\d+)?)", line, re.IGNORECASE
-                    )
-                ):
-                    # Extracting version information
-                    versions = re.findall(r"'([\d.]+)'|(\d+\.\d+(\.\d+)?)", line)
-                    for version_tuple in versions:
-                        version_listed = next((v for v in version_tuple if v), None)
-                        version_tuple = tuple(map(int, version_listed.split(".")))
-                        min_version_tuple = tuple(map(int, version.split(".")))
-
-                        # If the version listed is less than the minimum
-                        # supported version then append to the mismatch
-                        # list of lists
-                        if version_tuple < min_version_tuple:
-                            pkg_mismatches.append(
-                                [pkg, fname, line_num, version_listed]
-                            )
-
-                # Handling if line structured as "STUMPY supports ..."
-                elif "STUMPY supports `Python" in line:
-                    # Extracting Python version from the line
-                    python_version = re.search(r"(\d+\.\d+(\.\d+)?)", line)
-                    if python_version:
-                        version_listed = tuple(
-                            map(int, python_version.group(1).split("."))
-                        )
-                        min_version = tuple(map(int, version.split(".")))
-
-                        # If the version listed is less than the minimum
-                        # supported version then append to the mismatch
-                        # list of lists
-                        if version_listed < min_version:
-                            pkg_mismatches.append(
-                                [pkg, fname, line_num, version_listed]
-                            )
-
-    return pkg_mismatches
-
-
-def scan_files_for_minimum_versions(package_versions):
-    pkg_mismatches = []
-
-    for pkg, version in package_versions.items():
-        mismatch_results = find_pkg_mismatches(pkg=pkg, version=version)
-        pkg_mismatches.extend(mismatch_results)
-
-    return pkg_mismatches
-
-
 def find_pkg_mismatches(pkgs, fnames):
     pkg_mismatches = []
 
@@ -281,3 +186,21 @@ if __name__ == "__main__":
         f"numpy: {MIN_NUMPY}\n"
         f"scipy: {MIN_SCIPY}"
     )
+
+    fnames = [
+        "pyproject.toml",
+        "requirements.txt",
+        "environment.yml",
+        ".github/workflows/github-actions.yml",
+        "README.rst",
+    ]
+
+    pkgs = {
+        "numpy": MIN_NUMPY,
+        "scipy": MIN_SCIPY,
+        "numba": MIN_NUMBA,
+        "python": MIN_PYTHON,
+        "python-version": MIN_PYTHON,
+    }
+
+    print(find_pkg_mismatches(pkgs, fnames))
