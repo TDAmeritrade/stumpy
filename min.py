@@ -231,6 +231,38 @@ def scan_files_for_minimum_versions(package_versions):
     return pkg_mismatches
 
 
+def find_pkg_mismatches(pkgs, fnames):
+    pkg_mismatches = []
+
+    for pkg_name, pkg_version in pkgs.items():
+        for fname in fnames:
+            with open(fname, "r") as file:
+                for line_num, line in enumerate(file, start=1):
+                    l = line.strip().replace(" ", "").lower()
+                    matches = re.search(
+                        rf"""
+                            {pkg_name}  # Package name
+                            [=><:"\'\[\]]+  # Zero or more special characters
+                            (\d+\.\d+[\.0-9]*)  # Capture "version" in `matches`
+                          """,
+                        l,
+                        re.VERBOSE,  # Ignores all whitespace in pattern
+                    )
+                    if matches is not None:
+                        version = matches.groups()[0]
+                        if version != pkg_version:
+                            pkg_mismatches.append(
+                                f"""
+                                    Package Mismatch Found:
+                                    "{pkg_name}"
+                                    "{version}" in
+                                    {fname}:
+                                    {line_num}
+                                 """
+                            )
+
+    return pkg_mismatches
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("min_python", nargs="?", default=None)
@@ -249,25 +281,3 @@ if __name__ == "__main__":
         f"numpy: {MIN_NUMPY}\n"
         f"scipy: {MIN_SCIPY}"
     )
-
-    # Instantiating a list of files to scan for minimum version mismatches
-    fnames = [
-        "pyproject.toml",
-        "requirements.txt",
-        "environment.yml",
-        ".github/workflows/github-actions.yml",
-        "README.rst",
-    ]
-
-    # Instantiating a dictionary of minimum versions to
-    # scan the list 'files_to_scan' for
-    package_versions = {
-        "python": MIN_PYTHON,
-        "numba": MIN_NUMBA,
-        "numpy": MIN_NUMPY,
-        "scipy": MIN_SCIPY,
-    }
-
-    # Printing a dictionary of lists containing
-    # any minimum version mismatches identified
-    print(scan_files_for_minimum_versions(package_versions))
