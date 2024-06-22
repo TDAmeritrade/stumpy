@@ -88,7 +88,7 @@ def test_deterministic_ostinatoed(seed, dask_cluster):
 
 
 def test_input_not_overwritten():
-    # ostinato preprocesses its input, a list of time series,
+    # aamp_ostinato preprocesses its input, a list of time series,
     # by replacing nan value with 0 in each time series.
     # This test ensures that the original input is not overwritten
     m = 50
@@ -100,7 +100,7 @@ def test_input_not_overwritten():
         IDX = np.random.choice(np.arange(len(Ts[i])), size=nan_size[i], replace=False)
         Ts[i][IDX] = np.nan
 
-    # raise error if ostinato overwrite its input
+    # raise error if aamp_ostinato overwrite its input
     Ts_input = [T.copy() for T in Ts]
     stumpy.aamp_ostinato(Ts_input, m)
     for i in range(len(Ts)):
@@ -110,7 +110,7 @@ def test_input_not_overwritten():
 
 
 def test_extract_several_consensus():
-    # This test is to further ensure that the function `ostinato`
+    # This test is to further ensure that the function `aamp_ostinato`
     # does not tamper with the original data.
     Ts = [np.random.rand(n) for n in [256, 512, 1024]]
     Ts_ref = [T.copy() for T in Ts]

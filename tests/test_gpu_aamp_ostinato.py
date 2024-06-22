@@ -70,7 +70,7 @@ def test_input_not_overwritten():
         IDX = np.random.choice(np.arange(len(Ts[i])), size=nan_size[i], replace=False)
         Ts[i][IDX] = np.nan
 
-    # raise error if gpu_ostinato overwrite its input
+    # raise error if gpu_aamp_ostinato overwrite its input
     Ts_input = [T.copy() for T in Ts]
     gpu_aamp_ostinato(Ts_input, m)
     for i in range(len(Ts)):
@@ -103,7 +103,11 @@ def test_extract_several_consensus():
             else:
                 query_idx = None
 
-            idx = np.argmin(core.mass(consensus_motif, Ts_comp[i], query_idx=query_idx))
+            idx = np.argmin(
+                core.mass(
+                    consensus_motif, Ts_comp[i], normalize=False, query_idx=query_idx
+                )
+            )
             Ts_comp[i][idx : idx + m] = np.nan
             Ts_ref[i][idx : idx + m] = np.nan
 
