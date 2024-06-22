@@ -161,10 +161,11 @@ def find_pkg_mismatches(pkgs, fnames):
                         if version != pkg_version:
                             pkg_mismatches.append(
                                 f'Package Mismatch Found: "{pkg_name}" "{version}" '
-                                f'in {fname}:{line_num}'
+                                f"in {fname}:{line_num}"
                             )
 
     return pkg_mismatches
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
