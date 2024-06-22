@@ -166,33 +166,6 @@ def test_input_not_overwritten_ostinato():
         npt.assert_almost_equal(T_ref[np.isfinite(T_ref)], T_comp[np.isfinite(T_comp)])
 
 
-def test_input_not_overwritten_ostinatoed(dask_cluster):
-    # ostinatoed preprocesses its input, a list of time series,
-    # by replacing nan value with 0 in each time series.
-    # This test ensures that the original input is not overwritten
-    with Client(dask_cluster) as dask_client:
-        m = 50
-        Ts = [np.random.rand(n) for n in [64, 128, 256]]
-
-        # insert at least one nan value
-        nan_size = [np.random.choice(np.arange(1, len(T) + 1)) for T in Ts]
-        for i in range(len(Ts)):
-            IDX = np.random.choice(
-                np.arange(len(Ts[i])), size=nan_size[i], replace=False
-            )
-            Ts[i][IDX] = np.nan
-
-        # raise error if ostinato overwrite its input
-        Ts_input = [T.copy() for T in Ts]
-        stumpy.ostinatoed(dask_client, Ts_input, m)
-        for i in range(len(Ts)):
-            T_ref = Ts[i]
-            T_comp = Ts_input[i]
-            npt.assert_almost_equal(
-                T_ref[np.isfinite(T_ref)], T_comp[np.isfinite(T_comp)]
-            )
-
-
 def test_extract_several_consensus_ostinato():
     # This test is to further ensure that the function `ostinato`
     # does not tamper with the original data.
@@ -223,6 +196,33 @@ def test_extract_several_consensus_ostinato():
 
             npt.assert_almost_equal(
                 Ts_ref[i][np.isfinite(Ts_ref[i])], Ts_comp[i][np.isfinite(Ts_comp[i])]
+            )
+
+
+def test_input_not_overwritten_ostinatoed(dask_cluster):
+    # ostinatoed preprocesses its input, a list of time series,
+    # by replacing nan value with 0 in each time series.
+    # This test ensures that the original input is not overwritten
+    with Client(dask_cluster) as dask_client:
+        m = 50
+        Ts = [np.random.rand(n) for n in [64, 128, 256]]
+
+        # insert at least one nan value
+        nan_size = [np.random.choice(np.arange(1, len(T) + 1)) for T in Ts]
+        for i in range(len(Ts)):
+            IDX = np.random.choice(
+                np.arange(len(Ts[i])), size=nan_size[i], replace=False
+            )
+            Ts[i][IDX] = np.nan
+
+        # raise error if ostinato overwrite its input
+        Ts_input = [T.copy() for T in Ts]
+        stumpy.ostinatoed(dask_client, Ts_input, m)
+        for i in range(len(Ts)):
+            T_ref = Ts[i]
+            T_comp = Ts_input[i]
+            npt.assert_almost_equal(
+                T_ref[np.isfinite(T_ref)], T_comp[np.isfinite(T_comp)]
             )
 
 
