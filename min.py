@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import re
 
 import pandas as pd
 from packaging.specifiers import SpecifierSet
@@ -135,6 +136,36 @@ def get_min_scipy_version(min_python, min_numpy):
     return df.SciPy_version
 
 
+def find_pkg_mismatches(pkgs, fnames):
+    """
+    Determine if any package version mismatches
+    """
+    pkg_mismatches = []
+
+    for pkg_name, pkg_version in pkgs.items():
+        for fname in fnames:
+            with open(fname, "r") as file:
+                for line_num, line in enumerate(file, start=1):
+                    l = line.strip().replace(" ", "").lower()
+                    matches = re.search(
+                        rf"""
+                            {pkg_name}  # Package name
+                            [=><:"\'\[\]]+  # Zero or more special characters
+                            (\d+\.\d+[\.0-9]*)  # Capture "version" in `matches`
+                          """,
+                        l,
+                        re.VERBOSE,  # Ignores all whitespace in pattern
+                    )
+                    if matches is not None:
+                        version = matches.groups()[0]
+                        if version != pkg_version:
+                            pkg_mismatches.append(
+                                f'Package Mismatch Found: "{pkg_name}" "{version}" '
+                                f'in {fname}:{line_num}'
+                            )
+
+    return pkg_mismatches
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("min_python", nargs="?", default=None)
@@ -146,9 +177,28 @@ if __name__ == "__main__":
         MIN_PYTHON = get_min_python_version()
     MIN_NUMBA, MIN_NUMPY = get_min_numba_numpy_version(MIN_PYTHON)
     MIN_SCIPY = get_min_scipy_version(MIN_PYTHON, MIN_NUMPY)
+
     print(
         f"python: {MIN_PYTHON}\n"
         f"numba: {MIN_NUMBA}\n"
         f"numpy: {MIN_NUMPY}\n"
         f"scipy: {MIN_SCIPY}"
     )
+
+    pkgs = {
+        "numpy": "1.19",
+        "scipy": MIN_SCIPY,
+        "numba": MIN_NUMBA,
+        "python": MIN_PYTHON,
+        "python-version": MIN_PYTHON,
+    }
+
+    fnames = [
+        "pyproject.toml",
+        "requirements.txt",
+        "environment.yml",
+        ".github/workflows/github-actions.yml",
+        "README.rst",
+    ]
+
+    print(find_pkg_mismatches(pkgs, fnames))
