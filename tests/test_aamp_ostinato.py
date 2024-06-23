@@ -185,7 +185,12 @@ def test_extract_several_consensus_ostinatoed(dask_cluster):
                     query_idx = None
 
                 idx = np.argmin(
-                    stumpy.core.mass(consensus_motif, Ts_comp[i], normalize=False, query_idx=query_idx)
+                    stumpy.core.mass(
+                        consensus_motif,
+                        Ts_comp[i],
+                        normalize=False,
+                        query_idx=query_idx,
+                    )
                 )
                 Ts_comp[i][idx : idx + m] = np.nan
                 Ts_ref[i][idx : idx + m] = np.nan

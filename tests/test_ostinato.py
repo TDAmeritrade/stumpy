@@ -152,7 +152,6 @@ def test_input_not_overwritten_ostinato():
     Ts = [np.random.rand(n) for n in [64, 128, 256]]
     for T in Ts:
         T[0] = np.nan
-    
 
     # raise error if ostinato overwrite its input
     Ts_input = [T.copy() for T in Ts]
