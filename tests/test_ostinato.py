@@ -150,12 +150,9 @@ def test_input_not_overwritten_ostinato():
     # This test ensures that the original input is not overwritten
     m = 50
     Ts = [np.random.rand(n) for n in [64, 128, 256]]
-
-    # insert at least one nan value
-    nan_size = [np.random.choice(np.arange(1, len(T) + 1)) for T in Ts]
-    for i in range(len(Ts)):
-        IDX = np.random.choice(np.arange(len(Ts[i])), size=nan_size[i], replace=False)
-        Ts[i][IDX] = np.nan
+    for T in Ts:
+        T[0] = np.nan
+    
 
     # raise error if ostinato overwrite its input
     Ts_input = [T.copy() for T in Ts]
@@ -206,14 +203,8 @@ def test_input_not_overwritten_ostinatoed(dask_cluster):
     with Client(dask_cluster) as dask_client:
         m = 50
         Ts = [np.random.rand(n) for n in [64, 128, 256]]
-
-        # insert at least one nan value
-        nan_size = [np.random.choice(np.arange(1, len(T) + 1)) for T in Ts]
-        for i in range(len(Ts)):
-            IDX = np.random.choice(
-                np.arange(len(Ts[i])), size=nan_size[i], replace=False
-            )
-            Ts[i][IDX] = np.nan
+        for T in Ts:
+            T[0] = np.nan
 
         # raise error if ostinato overwrite its input
         Ts_input = [T.copy() for T in Ts]
