@@ -69,7 +69,6 @@ def gpu_aamp_ostinato(Ts, m, device_id=0, p=2.0):
     if not isinstance(Ts, list):  # pragma: no cover
         raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
 
-    # Avoid overwriting `Ts` during preprocessing
     Ts_copy = [None] * len(Ts)
     Ts_subseq_isfinite = [None] * len(Ts)
     for i, T in enumerate(Ts):

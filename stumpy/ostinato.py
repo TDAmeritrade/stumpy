@@ -365,7 +365,6 @@ def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     if not isinstance(Ts, list):  # pragma: no cover
         raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
 
-    # Avoid overwriting `Ts` during preprocessing
     Ts_copy = [None] * len(Ts)
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
@@ -495,7 +494,6 @@ def ostinatoed(client, Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     if not isinstance(Ts, list):  # pragma: no cover
         raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
 
-    # Avoid overwriting `Ts` during preprocessing
     Ts_copy = [None] * len(Ts)
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)

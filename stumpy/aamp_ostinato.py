@@ -305,7 +305,6 @@ def aamp_ostinato(Ts, m, p=2.0):
     if not isinstance(Ts, list):  # pragma: no cover
         raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
 
-    # Avoid overwriting `Ts` during preprocessing
     Ts_copy = [None] * len(Ts)
     Ts_subseq_isfinite = [None] * len(Ts)
     for i, T in enumerate(Ts):
@@ -391,7 +390,6 @@ def aamp_ostinatoed(client, Ts, m, p=2.0):
     if not isinstance(Ts, list):  # pragma: no cover
         raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
 
-    # Avoid overwriting `Ts` during preprocessing
     Ts_copy = [None] * len(Ts)
     Ts_subseq_isfinite = [None] * len(Ts)
     for i, T in enumerate(Ts):
