@@ -136,33 +136,32 @@ def get_min_scipy_version(min_python, min_numpy):
     return df.SciPy_version
 
 
-def find_pkg_mismatches(pkgs, fnames):
+def find_pkg_mismatches(pkg_name, pkg_version, fnames):
     """
-    Determine if any package version mismatches
+    Determine if any package version has mismatches
     """
     pkg_mismatches = []
-
-    for pkg_name, pkg_version in pkgs.items():
-        for fname in fnames:
-            with open(fname, "r") as file:
-                for line_num, line in enumerate(file, start=1):
-                    l = line.strip().replace(" ", "").lower()
-                    matches = re.search(
-                        rf"""
-                            {pkg_name}  # Package name
-                            [=><:"\'\[\]]+  # Zero or more special characters
-                            (\d+\.\d+[\.0-9]*)  # Capture "version" in `matches`
-                          """,
-                        l,
-                        re.VERBOSE,  # Ignores all whitespace in pattern
-                    )
-                    if matches is not None:
-                        version = matches.groups()[0]
-                        if version != pkg_version:
-                            pkg_mismatches.append(
-                                f'Package Mismatch Found: "{pkg_name}" "{version}" '
-                                f"in {fname}:{line_num}"
-                            )
+    
+    for fname in fnames:
+        with open(fname, "r") as file:
+            for line_num, line in enumerate(file, start=1):
+                l = line.strip().replace(" ", "").lower()
+                matches = re.search(
+                    rf"""
+                        {pkg_name}  # Package name
+                        [=><:"\'\[\]]+  # Zero or more special characters
+                        (\d+\.\d+[\.0-9]*)  # Capture "version" in `matches`
+                        """,
+                    l,
+                    re.VERBOSE,  # Ignores all whitespace in pattern
+                )
+                if matches is not None:
+                    version = matches.groups()[0]
+                    if version != pkg_version:
+                        pkg_mismatches.append(
+                            f'Package Mismatch Found: "{pkg_name}" "{version}" '
+                            f"in {fname}:{line_num}\n"
+                        )
 
     return pkg_mismatches
 
@@ -187,7 +186,7 @@ if __name__ == "__main__":
     )
 
     pkgs = {
-        "numpy": "1.19",
+        "numpy": MIN_NUMPY,
         "scipy": MIN_SCIPY,
         "numba": MIN_NUMBA,
         "python": MIN_PYTHON,
@@ -202,4 +201,5 @@ if __name__ == "__main__":
         "README.rst",
     ]
 
-    print(find_pkg_mismatches(pkgs, fnames))
+    for pkg_name, pkg_version in pkgs.items():
+        print(find_pkg_mismatches(pkg_name, pkg_version, fnames))
