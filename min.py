@@ -86,7 +86,7 @@ def get_min_scipy_version(min_python, min_numpy):
         .replace({".x": ""}, regex=True)
         .pipe(
             lambda df: df.assign(
-                SciPy_version=df.SciPy_version.str.replace(
+                SciPy_version=df.SciPy_version.astype("str").str.replace(
                     r"\d\/", "", regex=True  # noqa
                 )
             )
@@ -160,11 +160,10 @@ def find_pkg_mismatches(pkg_name, pkg_version, fnames):
                     if version != pkg_version:
                         pkg_mismatches.append(
                             f'Package Mismatch Found: "{pkg_name}" "{version}" '
-                            f"in {fname}:{line_num}\n"
+                            f"in {fname}:{line_num}"
                         )
 
-    return pkg_mismatches
-
+    return '\n'.join(pkg_mismatches)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
