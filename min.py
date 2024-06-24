@@ -141,7 +141,7 @@ def find_pkg_mismatches(pkg_name, pkg_version, fnames):
     Determine if any package version has mismatches
     """
     pkg_mismatches = []
-    
+
     for fname in fnames:
         with open(fname, "r") as file:
             for line_num, line in enumerate(file, start=1):
@@ -163,7 +163,8 @@ def find_pkg_mismatches(pkg_name, pkg_version, fnames):
                             f"in {fname}:{line_num}"
                         )
 
-    return '\n'.join(pkg_mismatches)
+    return "\n".join(pkg_mismatches)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
