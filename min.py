@@ -203,6 +203,6 @@ if __name__ == "__main__":
             pkg_name, pkg_version, fnames
         ):
             print(
-                f'Package Mismatch Found: "{pkg_name}" "{version}"'
-                f'in {fname}:{line_num}\n'
+                f"Package Mismatch Found: "{pkg_name}" "{version}""
+                f"in {fname}:{line_num}\n"
             )
