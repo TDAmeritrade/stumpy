@@ -158,12 +158,9 @@ def find_pkg_mismatches(pkg_name, pkg_version, fnames):
                 if matches is not None:
                     version = matches.groups()[0]
                     if version != pkg_version:
-                        pkg_mismatches.append(
-                            f'Package Mismatch Found: "{pkg_name}" "{version}" '
-                            f"in {fname}:{line_num}"
-                        )
+                        pkg_mismatches.append((pkg_name, version, fname, line_num))
 
-    return "\n".join(pkg_mismatches)
+    return pkg_mismatches
 
 
 if __name__ == "__main__":
@@ -202,4 +199,10 @@ if __name__ == "__main__":
     ]
 
     for pkg_name, pkg_version in pkgs.items():
-        print(find_pkg_mismatches(pkg_name, pkg_version, fnames))
+        for name, version, fname, line_num in find_pkg_mismatches(
+            pkg_name, pkg_version, fnames
+        ):
+            print(
+                f'Package Mismatch Found: "{pkg_name}" "{version}"'
+                f'in {fname}:{line_num}\n'
+            )
