@@ -25,7 +25,7 @@ def naive_motifs(T, m, max_motifs, max_matches, T_subseq_isconstant=None):
     T_subseq_isconstant = naive.rolling_isconstant(T, m, T_subseq_isconstant)
 
     output_shape = (max_motifs, max_matches)
-    motif_distances = np.full(output_shape, np.NINF, dtype=np.float64)
+    motif_distances = np.full(output_shape, -np.inf, dtype=np.float64)
     motif_indices = np.full(output_shape, -1, dtype=np.int64)
 
     D = naive.distance_matrix(T, T, m)

@@ -1,5 +1,9 @@
 sphinx>=3.5.3
 pydata-sphinx-theme
-ipython
+jupyterlab
+matplotlib
+pandas
+scikit-learn
 numpydoc
 myst-nb
+jupyterlab-myst

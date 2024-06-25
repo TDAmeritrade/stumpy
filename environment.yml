@@ -1,10 +1,11 @@
 channels:
+  - numba
   - conda-forge
 dependencies:
   - python>=3.8
-  - numpy>=1.18
-  - scipy>=1.5
-  - numba>=0.55.2
+  - numpy>=1.21
+  - scipy>=1.10
+  - numba>=0.57.1
   - pandas>=0.20.0
   - flake8>=3.7.7
   - flake8-docstrings>=1.5.0

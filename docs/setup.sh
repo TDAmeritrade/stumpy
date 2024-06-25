@@ -1,5 +1,5 @@
 #!/bin/bash
 
-make html
-#sphinx-build -nW --keep-going -b html . ./_build/html
+#rm -rf _build
+python -m sphinx -T -b html -d _build/doctrees -D language=en . _build/html
 python -m http.server

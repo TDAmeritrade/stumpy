@@ -318,11 +318,11 @@ def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
         Radius of the most central consensus motif
 
     central_Ts_idx : int
-        The time series index in `Ts` which contains the most central consensus motif
+        The time series index in `Ts` that contains the most central consensus motif
 
     central_subseq_idx : int
-        The subsequence index within time series `Ts[central_motif_Ts_idx]` the contains
-        most central consensus motif
+        The subsequence index within time series `Ts[central_motif_Ts_idx]` that
+        contains the most central consensus motif
 
     See Also
     --------
@@ -365,17 +365,19 @@ def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     if not isinstance(Ts, list):  # pragma: no cover
         raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
 
+    Ts_copy = [None] * len(Ts)
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
     if Ts_subseq_isconstant is None:
         Ts_subseq_isconstant = [None] * len(Ts)
+
     for i, T in enumerate(Ts):
-        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
-            T, m, T_subseq_isconstant=Ts_subseq_isconstant[i]
+        Ts_copy[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
+            T, m, copy=True, T_subseq_isconstant=Ts_subseq_isconstant[i]
         )
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
-        Ts, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
+        Ts_copy, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
     )
 
     (
@@ -383,7 +385,14 @@ def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
         central_Ts_idx,
         central_subseq_idx,
     ) = _get_central_motif(
-        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
+        Ts_copy,
+        bsf_radius,
+        bsf_Ts_idx,
+        bsf_subseq_idx,
+        m,
+        M_Ts,
+        Σ_Ts,
+        Ts_subseq_isconstant,
     )
 
     return central_radius, central_Ts_idx, central_subseq_idx
@@ -435,11 +444,11 @@ def ostinatoed(client, Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
         Radius of the most central consensus motif
 
     central_Ts_idx : int
-        The time series index in `Ts` which contains the most central consensus motif
+        The time series index in `Ts` that contains the most central consensus motif
 
     central_subseq_idx : int
-        The subsequence index within time series `Ts[central_motif_Ts_idx]` the contains
-        most central consensus motif
+        The subsequence index within time series `Ts[central_motif_Ts_idx]` that
+        contains the most central consensus motif
 
     See Also
     --------
@@ -497,18 +506,19 @@ def ostinatoed(client, Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     if not isinstance(Ts, list):  # pragma: no cover
         raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")
 
+    Ts_copy = [None] * len(Ts)
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
 
     if Ts_subseq_isconstant is None:
         Ts_subseq_isconstant = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
-            T, m, T_subseq_isconstant=Ts_subseq_isconstant[i]
+        Ts_copy[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
+            T, m, copy=True, T_subseq_isconstant=Ts_subseq_isconstant[i]
         )
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
-        Ts,
+        Ts_copy,
         m,
         M_Ts,
         Σ_Ts,
@@ -522,7 +532,14 @@ def ostinatoed(client, Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
         central_Ts_idx,
         central_subseq_idx,
     ) = _get_central_motif(
-        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
+        Ts_copy,
+        bsf_radius,
+        bsf_Ts_idx,
+        bsf_subseq_idx,
+        m,
+        M_Ts,
+        Σ_Ts,
+        Ts_subseq_isconstant,
     )
 
     return central_radius, central_Ts_idx, central_subseq_idx
