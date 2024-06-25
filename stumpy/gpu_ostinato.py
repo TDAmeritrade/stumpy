@@ -108,15 +108,22 @@ def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0, Ts_subseq_isconstant
     if Ts_subseq_isconstant is None:
         Ts_subseq_isconstant = [None] * len(Ts)
 
+    Ts_copy = [None] * len(Ts)
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
-            T, m, T_subseq_isconstant=Ts_subseq_isconstant[i]
+        Ts_copy[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
+            T, m, copy=True, T_subseq_isconstant=Ts_subseq_isconstant[i]
         )
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
-        Ts, m, M_Ts, Σ_Ts, Ts_subseq_isconstant, device_id=device_id, mp_func=gpu_stump
+        Ts_copy,
+        m,
+        M_Ts,
+        Σ_Ts,
+        Ts_subseq_isconstant,
+        device_id=device_id,
+        mp_func=gpu_stump,
     )
 
     (
@@ -124,7 +131,14 @@ def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0, Ts_subseq_isconstant
         central_Ts_idx,
         central_subseq_idx,
     ) = _get_central_motif(
-        Ts, bsf_radius, bsf_Ts_idx, bsf_subseq_idx, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
+        Ts_copy,
+        bsf_radius,
+        bsf_Ts_idx,
+        bsf_subseq_idx,
+        m,
+        M_Ts,
+        Σ_Ts,
+        Ts_subseq_isconstant,
     )
 
     return central_radius, central_Ts_idx, central_subseq_idx
