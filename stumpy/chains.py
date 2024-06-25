@@ -53,7 +53,8 @@ def atsc(IL, IR, j):
     >>> stumpy.atsc(mp[:, 2], mp[:, 3], 1)
     array([1, 3])
 
-    # Alternative example using named attributes
+    >>> # Alternative example using named attributes
+    >>>
     >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
     >>> stumpy.atsc(mp.left_I_, mp.right_I_, 1)
     array([1, 3])
@@ -124,7 +125,8 @@ def allc(IL, IR):
     >>> stumpy.allc(mp[:, 2], mp[:, 3])
     ([array([1, 3]), array([2]), array([0, 4])], array([0, 4]))
 
-    # Alternative example using named attributes
+    >>> # Alternative example using named attributes
+    >>>
     >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
     >>> stumpy.allc(mp.left_I_, mp.right_I_)
     ([array([1, 3]), array([2]), array([0, 4])], array([0, 4]))
