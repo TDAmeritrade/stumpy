@@ -305,7 +305,7 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
 
 class floss:
     """
-    Compute the Fast Low-cost Online Semantic Segmentation (FLOSS) for
+    A class to compute the Fast Low-cost Online Semantic Segmentation (FLOSS) for
     streaming data
 
     Parameters

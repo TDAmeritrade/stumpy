@@ -649,7 +649,7 @@ def prescrump(
 )
 class scrump:
     """
-    Compute an approximate z-normalized matrix profile
+    A class to ompute an approximate z-normalized matrix profile
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
     `_stump` function which computes the matrix profile according to SCRIMP.

@@ -15,7 +15,7 @@ from .stimp import _stimp
 )
 class gpu_stimp(_stimp):
     """
-    Compute the Pan Matrix Profile with with one or more GPU devices
+    A class to compute the Pan Matrix Profile with with one or more GPU devices
 
     This is based on the SKIMP algorithm.
 

@@ -17,7 +17,7 @@ from .aampi import aampi
 )
 class stumpi:
     """
-    Compute an incremental z-normalized matrix profile for streaming data
+    A class to compute an incremental z-normalized matrix profile for streaming data
 
     This is based on the on-line STOMPI and STAMPI algorithms.
 
