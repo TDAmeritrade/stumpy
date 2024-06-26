@@ -234,6 +234,5 @@ napoleon_numpy_docstring = True
 myst_enable_extensions = [
     "colon_fence",
     "amsmath",
-    'dollarmath',
+    "dollarmath",
 ]
-
