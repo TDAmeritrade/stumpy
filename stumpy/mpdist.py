@@ -148,10 +148,10 @@ def mpdist(
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
-    concatenates the output of an AB-join and a BA-join and returns the `k`th smallest
-    value as the reported distance. Note that MPdist is a measure and not a metric.
-    Therefore, it does not obey the triangular inequality but the method is highly
-    scalable.
+    concatenates the output of an AB-join and a BA-join and returns the ``k`` th
+    smallest value as the reported distance. Note that MPdist is a measure and not a
+    metric. Therefore, it does not obey the triangular inequality but the method is
+    highly scalable.
 
     Parameters
     ----------
@@ -165,39 +165,40 @@ def mpdist(
         Window size
 
     percentage : float, default 0.05
-        The percentage of distances that will be used to report `mpdist`. The value
+        The percentage of distances that will be used to report ``mpdist``. The value
         is between 0.0 and 1.0.
 
     k : int
-        Specify the `k`th value in the concatenated matrix profiles to return. When `k`
-        is not `None`, then the `percentage` parameter is ignored.
+        Specify the ``k`` th value in the concatenated matrix profiles to return. When
+        ``k`` is not ``None``, then the `percentage` parameter is ignored.
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances. Otherwise, this function gets re-routed to its complementary
+        non-normalized equivalent set in the ``@core.non_normalized`` function
+        decorator.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == True`.
+        ignored when ``normalize == True``.
 
     T_A_subseq_isconstant : numpy.ndarray or function, default None
-        A boolean array that indicates whether a subsequence in `T_A` is constant
+        A boolean array that indicates whether a subsequence in ``T_A`` is constant
         (True). Alternatively, a custom, user-defined function that returns a
-        boolean array that indicates whether a subsequence in `T_A` is constant
-        (True). The function must only take two arguments, `a`, a 1-D array,
-        and `w`, the window size, while additional arguments may be specified
-        by currying the user-defined function using `functools.partial`. Any
+        boolean array that indicates whether a subsequence in ``T_A`` is constant
+        (True). The function must only take two arguments, ``a``, a 1-D array,
+        and ``w``, the window size, while additional arguments may be specified
+        by currying the user-defined function using ``functools.partial``. Any
         subsequence with at least one np.nan/np.inf will automatically have its
         corresponding value set to False in this boolean array.
 
     T_B_subseq_isconstant : numpy.ndarray or function, default None
-        A boolean array that indicates whether a subsequence in `T_B` is constant
+        A boolean array that indicates whether a subsequence in ``T_B`` is constant
         (True). Alternatively, a custom, user-defined function that returns a
-        boolean array that indicates whether a subsequence in `T_B` is constant
+        boolean array that indicates whether a subsequence in ``T_B`` is constant
         (True). The function must only take two arguments, `a`, a 1-D array,
-        and `w`, the window size, while additional arguments may be specified
-        by currying the user-defined function using `functools.partial`. Any
+        and ``w``, the window size, while additional arguments may be specified
+        by currying the user-defined function using ``functools.partial``. Any
         subsequence with at least one np.nan/np.inf will automatically have its
         corresponding value set to False in this boolean array.
 
@@ -267,10 +268,10 @@ def mpdisted(
 
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
-    concatenates the output of an AB-join and a BA-join and returns the `k`th smallest
-    value as the reported distance. Note that MPdist is a measure and not a metric.
-    Therefore, it does not obey the triangular inequality but the method is highly
-    scalable.
+    concatenates the output of an AB-join and a BA-join and returns the ``k`` th
+    smallest value as the reported distance. Note that MPdist is a measure and not a
+    metric. Therefore, it does not obey the triangular inequality but the method is
+    highly scalable.
 
     Parameters
     ----------
@@ -289,39 +290,40 @@ def mpdisted(
         Window size
 
     percentage : float, default 0.05
-        The percentage of distances that will be used to report `mpdist`. The value
-        is between 0.0 and 1.0. This parameter is ignored when `k` is not `None`.
+        The percentage of distances that will be used to report ``mpdist``. The value
+        is between 0.0 and 1.0. This parameter is ignored when ``k`` is not ``None``.
 
     k : int
-        Specify the `k`th value in the concatenated matrix profiles to return. When `k`
-        is not `None`, then the `percentage` parameter is ignored.
+        Specify the ``k`` th value in the concatenated matrix profiles to return. When
+        ``k`` is not ``None``, then the ``percentage`` parameter is ignored.
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances. Otherwise, this function gets re-routed to its complementary
+        non-normalized equivalent set in the ``@core.non_normalized`` function
+        decorator.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == True`.
+        ignored when ``normalize == True``.
 
     T_A_subseq_isconstant : numpy.ndarray or function, default None
-        A boolean array that indicates whether a subsequence in `T_A` is constant
+        A boolean array that indicates whether a subsequence in ``T_A`` is constant
         (True). Alternatively, a custom, user-defined function that returns a
-        boolean array that indicates whether a subsequence in `T_A` is constant
-        (True). The function must only take two arguments, `a`, a 1-D array,
-        and `w`, the window size, while additional arguments may be specified
-        by currying the user-defined function using `functools.partial`. Any
+        boolean array that indicates whether a subsequence in ``T_A`` is constant
+        (True). The function must only take two arguments, ``a``, a 1-D array,
+        and ``w``, the window size, while additional arguments may be specified
+        by currying the user-defined function using ``functools.partial``. Any
         subsequence with at least one np.nan/np.inf will automatically have its
         corresponding value set to False in this boolean array.
 
     T_B_subseq_isconstant : numpy.ndarray or function, default None
-        A boolean array that indicates whether a subsequence in `T_B` is constant
+        A boolean array that indicates whether a subsequence in ``T_B`` is constant
         (True). Alternatively, a custom, user-defined function that returns a
-        boolean array that indicates whether a subsequence in `T_B` is constant
+        boolean array that indicates whether a subsequence in ``T_B`` is constant
         (True). The function must only take two arguments, `a`, a 1-D array,
-        and `w`, the window size, while additional arguments may be specified
-        by currying the user-defined function using `functools.partial`. Any
+        and ``w``, the window size, while additional arguments may be specified
+        by currying the user-defined function using ``functools.partial``. Any
         subsequence with at least one np.nan/np.inf will automatically have its
         corresponding value set to False in this boolean array.
 

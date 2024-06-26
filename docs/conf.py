@@ -82,7 +82,15 @@ language = "en"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "WIP/*.ipynb",
+    "REF/*.ipynb",
+    "images/*ipynb",
+    "pull_request_template.md",
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
@@ -226,3 +234,5 @@ napoleon_numpy_docstring = True
 myst_enable_extensions = [
     "colon_fence",
 ]
+
+nb_execution_timeout = -1

@@ -313,13 +313,13 @@ def mdl(
         Window size
 
     subseq_idx : numpy.ndarray
-        The multi-dimensional subsequence indices in T
+        The multi-dimensional subsequence indices in ``T``
 
     nn_idx : numpy.ndarray
-        The multi-dimensional nearest neighbor index in T
+        The multi-dimensional nearest neighbor index in ``T``
 
     include : numpy.ndarray, default None
-        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        A list of (zero-based) indices corresponding to the dimensions in ``T`` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
 
@@ -327,11 +327,12 @@ def mdl(
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
     discords : bool, default False
-        When set to `True`, this reverses the distance profile to favor discords rather
-        than motifs. Note that indices in `include` are still maintained and respected.
+        When set to ``True``, this reverses the distance profile to favor discords
+        rather than motifs. Note that indices in ``include`` are still maintained
+        and respected.
 
     discretize_func : func, default None
-        A function for discretizing each input array. When this is `None`, an
+        A function for discretizing each input array. When this is ``None``, an
         appropriate discretization function (based on the `normalization` parameter)
         will be applied.
 
@@ -348,21 +349,22 @@ def mdl(
         <https://www.cs.ucr.edu/~eamonn/ICDM_mdl.pdf>`__
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances. Otherwise, this function gets re-routed to its complementary
+        non-normalized equivalent set in the ``@core.non_normalized`` function
+        decorator.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. Minkowski distance is
-        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
-        and the Euclidean distance, respectively. This parameter is ignored when
-        `normalize == True`.
+        typically used with ``p`` being 1 or 2, which correspond to the Manhattan
+        distance and the Euclidean distance, respectively. This parameter is ignored
+        when ``normalize == True``.
 
     T_subseq_isconstant : numpy.ndarray, function, or list, default None
-        A parameter that is used to show whether a subsequence of a time series in `T`
+        A parameter that is used to show whether a subsequence of a time series in ``T``
         is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
-        or a function that can be applied to each time series in `T`. Alternatively, for
-        maximum flexibility, a list (with length equal to the total number of time
+        or a function that can be applied to each time series in ``T``. Alternatively,
+        for maximum flexibility, a list (with length equal to the total number of time
         series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
         the i-th time series T[i] and each element in the list can either be a 1D
         boolean np.ndarray, a function, or None.
@@ -374,7 +376,7 @@ def mdl(
         multidimensional subsequences.
 
     S : list
-        A list of numpy.ndarrays that contain the `k`th-dimensional subspaces
+        A list of numpy.ndarrays that contain the ``k`` th-dimensional subspaces.
 
     See Also
     --------
