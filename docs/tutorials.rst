@@ -6,6 +6,11 @@ Tutorials
     :target: https://mybinder.org/v2/gh/TDAmeritrade/stumpy/main?filepath=notebooks
     :alt: Binder
 
+..
+    The pipe, "|",below adds a line break and must be preceded and proceeded by a newline
+
+| 
+
 .. toctree::
     :maxdepth: 1
     :glob:

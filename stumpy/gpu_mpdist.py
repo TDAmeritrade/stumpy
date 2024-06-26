@@ -32,32 +32,33 @@ def gpu_mpdist(
     The MPdist distance measure considers two time series to be similar if they share
     many subsequences, regardless of the order of matching subsequences. MPdist
     concatenates and sorts the output of an AB-join and a BA-join and returns the value
-    of the ``k`` th smallest number as the reported distance. Note that MPdist is a
+    of the ``k``-th smallest number as the reported distance. Note that MPdist is a
     measure and not a metric. Therefore, it does not obey the triangular inequality but
     the method is highly scalable.
 
     Parameters
     ----------
     T_A : numpy.ndarray
-        The first time series or sequence for which to compute the matrix profile
+        The first time series or sequence for which to compute the matrix profile.
 
     T_B : numpy.ndarray
-        The second time series or sequence for which to compute the matrix profile
+        The second time series or sequence for which to compute the matrix profile.
 
     m : int
-        Window size
+        Window size.
 
     percentage : float, default 0.05
         The percentage of distances that will be used to report ``mpdist``. The value
-        is between 0.0 and 1.0. This parameter is ignored when `k` is not ``None``.
+        is between ``0.0`` and ``1.0``. This parameter is ignored when ``k`` is not
+        ``None``.
 
     k : int, default None
-        Specify the ``k`` th value in the concatenated matrix profiles to return. When
+        Specify the ``k``-th value in the concatenated matrix profiles to return. When
         ``k`` is not ``None``, then the `percentage` parameter is ignored.
 
     device_id : int or list, default 0
         The (GPU) device number to use. The default value is ``0``. A list of
-        valid device ids (int) may also be provided for parallel GPU-STUMP
+        valid device ids (``int``) may also be provided for parallel GPU-STUMP
         computation. A list of all valid device ids can be obtained by
         executing ``[device.id for device in numba.cuda.list_devices()]``.
 
@@ -69,34 +70,34 @@ def gpu_mpdist(
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. Minkowski distance is
-        typically used with ``p`` being 1 or 2, which correspond to the Manhattan
-        distance and the Euclidean distance, respectively. This parameter is ignored
-        when ``normalize == True``.
+        typically used with ``p`` being ``1`` or ``2``, which correspond to the
+        Manhattan distance and the Euclidean distance, respectively. This parameter is
+        ignored when ``normalize == True``.
 
     T_A_subseq_isconstant : numpy.ndarray or function, default None
         A boolean array that indicates whether a subsequence in ``T_A`` is constant
-        (True). Alternatively, a custom, user-defined function that returns a
+        (``True``). Alternatively, a custom, user-defined function that returns a
         boolean array that indicates whether a subsequence in ``T_A`` is constant
-        (True). The function must only take two arguments, ``a``, a 1-D array,
+        (``True``). The function must only take two arguments, ``a``, a 1-D array,
         and ``w``, the window size, while additional arguments may be specified
         by currying the user-defined function using ``functools.partial``. Any
-        subsequence with at least one np.nan/np.inf will automatically have its
-        corresponding value set to False in this boolean array.
+        subsequence with at least one ``np.nan``/``np.inf`` will automatically have its
+        corresponding value set to ``False`` in this boolean array.
 
     T_B_subseq_isconstant : numpy.ndarray or function, default None
         A boolean array that indicates whether a subsequence in `T_B` is constant
-        (True). Alternatively, a custom, user-defined function that returns a
+        (``True``). Alternatively, a custom, user-defined function that returns a
         boolean array that indicates whether a subsequence in ``T_B`` is constant
-        (True). The function must only take two arguments, ``a``, a 1-D array,
+        (``True``). The function must only take two arguments, ``a``, a 1-D array,
         and ``w``, the window size, while additional arguments may be specified
         by currying the user-defined function using ``functools.partial``. Any
-        subsequence with at least one np.nan/np.inf will automatically have its
-        corresponding value set to False in this boolean array.
+        subsequence with at least one ``np.nan``/``np.inf`` will automatically have its
+        corresponding value set to ``False`` in this boolean array.
 
     Returns
     -------
     MPdist : float
-        The matrix profile distance
+        The matrix profile distance.
 
     Notes
     -----

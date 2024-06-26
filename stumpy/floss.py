@@ -235,17 +235,17 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
     for static data (i.e., batch processing)
 
     Essentially, this is a wrapper to compute the corrected arc curve and
-    regime locations. Note that since the matrix profile indices, `I`, are pre-computed,
-    this function is agnostic to subsequence normalization.
+    regime locations. Note that since the matrix profile indices, ``I``, are
+    pre-computed, this function is agnostic to subsequence normalization.
 
     Parameters
     ----------
     I : numpy.ndarray
-        The matrix profile indices for the time series of interest
+        The matrix profile indices for the time series of interest.
 
     L : int
         The subsequence length that is set roughly to be one period length.
-        This is likely to be the same value as the window size, `m`, used
+        This is likely to be the same value as the window size, ``m``, used
         to compute the matrix profile and matrix profile index but it can
         be different since this is only used to manage edge effects
         and has no bearing on any of the IAC or CAC core calculations.
@@ -255,19 +255,19 @@ def fluss(I, L, n_regimes, excl_factor=5, custom_iac=None):
         number of regime changes as denoted in the original paper.
 
     excl_factor : int, default 5
-        The multiplying factor for the regime exclusion zone
+        The multiplying factor for the regime exclusion zone.
 
     custom_iac : numpy.ndarray, default None
         A custom idealized arc curve (IAC) that will used for correcting the
-        arc curve
+        arc curve.
 
     Returns
     -------
     cac : numpy.ndarray
-        A corrected arc curve (CAC)
+        A corrected arc curve (CAC).
 
     regime_locs : numpy.ndarray
-        The locations of the regimes
+        The locations of the regimes.
 
     See Also
     --------
@@ -318,54 +318,56 @@ class floss:
 
     T : numpy.ndarray
         A 1-D time series data used to generate the matrix profile and matrix profile
-        indices found in `mp`. Note that the the right matrix profile index is used and
-        the right matrix profile is intelligently recomputed on the fly from `T` instead
-        of using the bidirectional matrix profile.
+        indices found in ``mp``. Note that the the right matrix profile index is used
+        and the right matrix profile is intelligently recomputed on the fly from ``T``
+        instead of using the bidirectional matrix profile.
 
     m : int
         The window size for computing sliding window mass. This is identical
         to the window size used in the matrix profile calculation. For managing
-        edge effects, see the `L` parameter.
+        edge effects, see the ``L`` parameter.
 
     L : int
         The subsequence length that is set roughly to be one period length.
-        This is likely to be the same value as the window size, `m`, used
+        This is likely to be the same value as the window size, ``m``, used
         to compute the matrix profile and matrix profile index but it can
         be different since this is only used to manage edge effects
         and has no bearing on any of the IAC or CAC core calculations.
 
     excl_factor : int, default 5
         The multiplying factor for the regime exclusion zone. Note that this
-        is unrelated to the `excl_zone` used in to compute the matrix profile.
+        is unrelated to the ``excl_zone`` used in to compute the matrix profile.
 
     n_iter : int, default 1000
         Number of iterations to average over when determining the parameters for
-        the IAC beta distribution
+        the IAC beta distribution.
 
     n_samples : int, default 1000
         Number of distribution samples to draw during each iteration when
-        computing the IAC
+        computing the IAC.
 
     custom_iac : numpy.ndarray, default None
         A custom idealized arc curve (IAC) that will used for correcting the
-        arc curve
+        arc curve.
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. Minkowski distance is
-        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
-        and the Euclidean distance, respectively. This parameter is ignored when
-        `normalize == True`.
+        typically used with ``p`` being ``1`` or ``2``, which correspond to the
+        Manhattan distance and the Euclidean distance, respectively. This parameter is
+        ignored when ``normalize == True``.
 
     T_subseq_isconstant_func : function, default None
         A custom, user-defined function that returns a boolean array that indicates
-        whether a subsequence in `T` is constant (True). The function must only take
-        two arguments, `a`, a 1-D array, and `w`, the window size, while additional
-        arguments may be specified by currying the user-defined function using
-        `functools.partial`. Any subsequence with at least one np.nan/np.inf will
-        automatically have its corresponding value set to False in this boolean array.
+        whether a subsequence in ``T`` is constant (``True``). The function must only
+        take two arguments, ``a``, a 1-D array, and ``w``, the window size, while
+        additional arguments may be specified by currying the user-defined function
+        using ``functools.partial``. Any subsequence with at least one
+        ``np.nan``/``np.inf`` will automatically have its corresponding value set to
+        ``False`` in this boolean array.
 
     Attributes
     ----------
@@ -382,14 +384,14 @@ class floss:
         new data point and egressing a single old data point.
 
     T_ : numpy.ndarray
-        The updated time series, `T`
+        The updated time series, ``T``
 
     Methods
     -------
     update(t)
-        Ingress a new data point, `t`, onto the time series, `T`, followed by egressing
-        the oldest single data point from `T`. Then, update the 1-dimensional corrected
-        arc curve (CAC_1D) and the matrix profile.
+        Ingress a new data point, ``t``, onto the time series, ``T``, followed by
+        egressing the oldest single data point from ``T``. Then, update the
+        1-dimensional corrected arc curve (CAC_1D) and the matrix profile.
 
     See Also
     --------

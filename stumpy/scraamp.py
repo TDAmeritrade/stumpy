@@ -536,7 +536,7 @@ class scraamp:
         The updated (top-k) matrix profile indices. When `k=1` (default), this output is
         a 1D array consisting of the matrix profile indices. When `k > 1`, the output
         is a 2D array that has exactly `k` columns consisting of the top-k matrix
-        profile indiecs.
+        profile indices.
 
     left_I_ : numpy.ndarray
         The updated left (top-1) matrix profile indices

@@ -652,100 +652,100 @@ class scrump:
     A class to ompute an approximate z-normalized matrix profile
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
-    `_stump` function which computes the matrix profile according to SCRIMP.
+    ``_stump`` function which computes the matrix profile according to SCRIMP.
 
     Parameters
     ----------
     T_A : numpy.ndarray
-        The time series or sequence for which to compute the matrix profile
+        The time series or sequence for which to compute the matrix profile.
 
     T_B : numpy.ndarray
-        The time series or sequence that will be used to annotate T_A. For every
-        subsequence in T_A, its nearest neighbor in T_B will be recorded.
+        The time series or sequence that will be used to annotate ``T_A``. For every
+        subsequence in ``T_A``, its nearest neighbor in ``T_B`` will be recorded.
 
     m : int
-        Window size
+        Window size.
 
     ignore_trivial : bool
-        Set to `True` if this is a self-join. Otherwise, for AB-join, set this to
-        `False`. Default is `True`.
+        Set to ``True`` if this is a self-join. Otherwise, for AB-join, set this to
+        ``False``.
 
     percentage : float
-        Approximate percentage completed. The value is between 0.0 and 1.0.
+        Approximate percentage completed. The value is between ``0.0`` and ``1.0``.
 
     pre_scrump : bool
         A flag for whether or not to perform the PreSCRIMP calculation prior to
-        computing SCRIMP. If set to `True`, this is equivalent to computing
+        computing SCRIMP. If set to ``True``, this is equivalent to computing
         SCRIMP++ and may lead to faster convergence
 
     s : int
-        The size of the PreSCRIMP fixed interval. If `pre_scrump=True` and `s=None`,
-        then `s` will automatically be set to
-        `s=int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))`, the size of the exclusion
-        zone.
+        The size of the PreSCRIMP fixed interval. If ``pre_scrump = True`` and
+        ``s = None``, then ``s`` will automatically be set to
+        ``s = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))``, which is the size of
+        the exclusion zone.
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this class gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` class decorator.
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances. Otherwise, this class gets re-routed to its complementary
+        non-normalized equivalent set in the ``@core.non_normalized`` class decorator.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. Minkowski distance is
-        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
-        and the Euclidean distance, respectively. This parameter is ignored when
-        `normalize == True`.
+        typically used with ``p`` being ``1`` or ``2``, which correspond to the
+        Manhattan distance and the Euclidean distance, respectively. This parameter is
+        ignored when ``normalize == True``.
 
     k : int, default 1
-        The number of top `k` smallest distances used to construct the matrix profile.
+        The number of top ``k`` smallest distances used to construct the matrix profile.
         Note that this will increase the total computational time and memory usage
-        when k > 1.
+        when ``k > 1``.
 
     T_A_subseq_isconstant : numpy.ndarray or function, default None
-        A boolean array that indicates whether a subsequence in `T_A` is constant
-        (True). Alternatively, a custom, user-defined function that returns a
-        boolean array that indicates whether a subsequence in `T_A` is constant
-        (True). The function must only take two arguments, `a`, a 1-D array,
-        and `w`, the window size, while additional arguments may be specified
-        by currying the user-defined function using `functools.partial`. Any
-        subsequence with at least one np.nan/np.inf will automatically have its
-        corresponding value set to False in this boolean array.
+        A boolean array that indicates whether a subsequence in ``T_A`` is constant
+        (``True``). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in ``T_A`` is constant
+        (``True``). The function must only take two arguments, ``a``, a 1-D array,
+        and ``w``, the window size, while additional arguments may be specified
+        by currying the user-defined function using ``functools.partial``. Any
+        subsequence with at least one ``np.nan``/``np.inf`` will automatically have
+        its corresponding value set to ``False`` in this boolean array.
 
     T_B_subseq_isconstant : numpy.ndarray or function, default None
-        A boolean array that indicates whether a subsequence in `T_B` is constant
-        (True). Alternatively, a custom, user-defined function that returns a
-        boolean array that indicates whether a subsequence in `T_B` is constant
-        (True). The function must only take two arguments, `a`, a 1-D array,
-        and `w`, the window size, while additional arguments may be specified
-        by currying the user-defined function using `functools.partial`. Any
-        subsequence with at least one np.nan/np.inf will automatically have its
-        corresponding value set to False in this boolean array.
+        A boolean array that indicates whether a subsequence in ``T_B`` is constant
+        (``True``). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in ``T_B`` is constant
+        (``True``). The function must only take two arguments, ``a``, a 1-D array,
+        and ``w``, the window size, while additional arguments may be specified
+        by currying the user-defined function using ``functools.partial``. Any
+        subsequence with at least one ``np.nan``/``np.inf`` will automatically have
+        its corresponding value set to ``False`` in this boolean array.
 
     Attributes
     ----------
     P_ : numpy.ndarray
-        The updated (top-k) matrix profile. When `k=1` (default), this output is
-        a 1D array consisting of the matrix profile. When `k > 1`, the output
-        is a 2D array that has exactly `k` columns consisting of the top-k matrix
+        The updated (top-k) matrix profile. When ``k = 1`` (default), this output is
+        a 1D array consisting of the matrix profile. When ``k > 1``, the output
+        is a 2D array that has exactly ``k`` columns consisting of the top-k matrix
         profile.
 
     I_ : numpy.ndarray
-        The updated (top-k) matrix profile indices. When `k=1` (default), this output is
-        a 1D array consisting of the matrix profile indices. When `k > 1`, the output
-        is a 2D array that has exactly `k` columns consisting of the top-k matrix
-        profile indiecs.
+        The updated (top-k) matrix profile indices. When ``k = 1`` (default), this
+        output is a 1D array consisting of the matrix profile indices. When ``k > 1``,
+        the output is a 2D array that has exactly ``k`` columns consisting of the top-k
+        matrix profile indices.
 
     left_I_ : numpy.ndarray
-        The updated left (top-1) matrix profile indices
+        The updated left (top-1) matrix profile indices.
 
     right_I_ : numpy.ndarray
-        The updated right (top-1) matrix profile indices
+        The updated right (top-1) matrix profile indices.
 
 
     Methods
     -------
     update()
         Update the matrix profile and the matrix profile indices by computing
-        additional new distances (limited by `percentage`) that make up the full
+        additional new distances (limited by ``percentage``) that make up the full
         distance matrix. It updates the (top-k) matrix profile, (top-1) left
         matrix profile, (top-1) right matrix profile, (top-k) matrix profile indices,
         (top-1) left matrix profile indices, and (top-1) right matrix profile indices.
@@ -753,7 +753,7 @@ class scrump:
     See Also
     --------
     stumpy.stump : Compute the z-normalized matrix profile
-    stumpy.stumped : Compute the z-normalized matrix profile with a distributed dask
+    stumpy.stumped : Compute the z-normalized matrix profile with a ``dask``/``ray``
         cluster
     stumpy.gpu_stump : Compute the z-normalized matrix profile with one or more GPU
         devices
