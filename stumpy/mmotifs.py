@@ -36,35 +36,36 @@ def mmotifs(
     T_subseq_isconstant=None,
 ):
     """
-    Discover the top motifs for the multi-dimensional time series `T`
+    Discover the top motifs for the multi-dimensional time series ``T``.
 
     Parameters
     ----------
     T : numpy.ndarray
-        The multi-dimensional time series or sequence
+        The multi-dimensional time series or sequence.
 
     P : numpy.ndarray
-        Multi-dimensional Matrix Profile of T
+        Multi-dimensional Matrix Profile of ``T``.
 
     I : numpy.ndarray
-        Multi-dimensional Matrix Profile indices
+        Multi-dimensional Matrix Profile indices.
 
     min_neighbors : int, default 1
         The minimum number of similar matches a subsequence needs to have in order
-        to be considered a motif. This defaults to `1`, which means that a subsequence
-        must have at least one similar match in order to be considered a motif.
+        to be considered a motif. This defaults to ``1``, which means that a
+        subsequence must have at least one similar match in order to be considered a
+        motif.
 
     max_distance : flaot, default None
         Maximal distance that is allowed between a query subsequence
-        (a candidate motif) and all subsequences in T to be considered as a match.
-        If None, this defaults to
-        `np.nanmax([np.nanmean(D) - 2 * np.nanstd(D), np.nanmin(D)])`
+        (a candidate motif) and all subsequences in ``T`` to be considered as a
+        match. If ``None``, this defaults to
+        ``np.nanmax([np.nanmean(D) - 2 * np.nanstd(D), np.nanmin(D)])``
         (i.e. at least the closest match will be returned).
 
     cutoffs : numpy.ndarray or float, default None
         The largest matrix profile value (distance) for each dimension of the
         multidimensional matrix profile that a multidimenisonal candidate motif is
-        allowed to have. If `cutoffs` is a scalar value, then this value will be
+        allowed to have. If ``cutoffs`` is a scalar value, then this value will be
         applied to every dimension.
 
     max_matches : int, default 10
@@ -72,41 +73,43 @@ def mmotifs(
         motif. The first match is always the self/trivial-match for each motif.
 
     max_motifs : int, default 1
-        The maximum number of motifs to return
+        The maximum number of motifs to return.
 
     atol : float, default 1e-8
-        The absolute tolerance parameter. This value will be added to `max_distance`
+        The absolute tolerance parameter. This value will be added to ``max_distance``
         when comparing distances between subsequences.
 
     k : int, default None
-        The number of dimensions (`k + 1`) required for discovering all motifs. This
-        value is available for doing guided search or, together with `include`, for
-        constrained search. If `k is None`, then this will be automatically be computed
-        for each motif using MDL (unconstrained search).
+        The number of dimensions (``k + 1``) required for discovering all motifs. This
+        value is available for doing guided search or, together with ``include``, for
+        constrained search. If ``k is None``, then this will be automatically be
+        computed for each motif using MDL (unconstrained search).
 
     include : numpy.ndarray, default None
-        A list of (zero based) indices corresponding to the dimensions in T that must be
-        included in the constrained multidimensional motif search.
+        A list of (zero based) indices corresponding to the dimensions in ``T`` that
+        must be included in the constrained multidimensional motif search.
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances. Otherwise, this function gets re-routed to its complementary
+        non-normalized equivalent set in the ``@core.non_normalized`` function
+        decorator.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. Minkowski distance is
-        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
-        and the Euclidean distance, respectively. This parameter is ignored when
-        `normalize == True`.
+        typically used with ``p`` being ``1`` or ``2``, which correspond to the
+        Manhattan distance and the Euclidean distance, respectively. This parameter is
+        ignored when ``normalize == True``.
 
     T_subseq_isconstant : numpy.ndarray, function, or list, default None
-        A parameter that is used to show whether a subsequence of a time series in `T`
-        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
-        or a function that can be applied to each time series in `T`. Alternatively, for
-        maximum flexibility, a list (with length equal to the total number of time
-        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
-        the i-th time series T[i] and each element in the list can either be a 1D
-        boolean np.ndarray, a function, or None.
+        A parameter that is used to show whether a subsequence of a time series in ``T``
+        is constant (``True``) or not. ``T_subseq_isconstant`` can be a 2D boolean
+        ``numpy.ndarray`` or a function that can be applied to each time series in
+        ``T``. Alternatively, for maximum flexibility, a list (with length equal to the
+        total number of time series) may also be used. In this case,
+        ``T_subseq_isconstant[i]`` corresponds to the ``i``-th time series ``T[i]`` and
+        each element in the list can either be a 1D boolean ``numpy.ndarray``, a
+        function, or ``None``.
 
     Returns
     -------
@@ -117,21 +120,21 @@ def mmotifs(
         The indices corresponding to a set of subsequences matches for each motif.
 
     motif_subspaces: list
-        A list consisting of arrays that contain the `k`-dimensional
+        A list consisting of arrays that contain the ``k``-dimensional
         subspace for each motif.
 
     motif_mdls: list
         A list consisting of arrays that contain the mdl results for
-        finding the dimension of each motif
+        finding the dimension of each motif.
 
     See Also
     --------
-    stumpy.motifs : Find the top motifs for time series `T`
-    stumpy.match : Find all matches of a query `Q` in a time series `T`
+    stumpy.motifs : Find the top motifs for time series ``T``
+    stumpy.match : Find all matches of a query ``Q`` in a time series ``T``
     stumpy.mstump : Compute the multi-dimensional z-normalized matrix profile
     stumpy.mstumped : Compute the multi-dimensional z-normalized matrix profile with
-        a distributed dask cluster
-    stumpy.subspace : Compute the k-dimensional matrix profile subspace for a given
+        a ``dask``/``ray`` cluster
+    stumpy.subspace : Compute the ``k``-dimensional matrix profile subspace for a given
         subsequence index and its nearest neighbor index
     stumpy.mdl : Compute the number of bits needed to compress one array with another
         using the minimum description length (MDL)
@@ -141,7 +144,7 @@ def mmotifs(
     `DOI: 10.1109/ICDM.2017.66 \
     <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
-    For more information on `include` and search types, see Section IV D and IV E
+    For more information on ``include`` and search types, see Section IV D and IV E
 
     Examples
     --------

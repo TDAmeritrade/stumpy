@@ -34,8 +34,9 @@ def _dask_mstumped(
     Parameters
     ----------
     dask_client : client
-        A `dask` client. Setting up a cluster is beyond the scope of this library.
-        Please refer to the `dask` documentation.
+        A ``dask`` client. Setting up a ``dask`` cluster is beyond
+        the scope of this library. Please refer to the ``dask``
+        documentation.
 
     T_A : numpy.ndarray
         The time series or sequence for which to compute the multi-dimensional
@@ -370,31 +371,30 @@ def mstumped(
     T_subseq_isconstant=None,
 ):
     """
-    Compute the multi-dimensional z-normalized matrix profile with a distributed
-    `dask`/`ray` cluster
+    Compute the multi-dimensional z-normalized matrix profile with a
+    ``dask``/``ray`` cluster
 
     This is a highly distributed implementation around the Numba JIT-compiled
-    parallelized `_mstump` function which computes the multi-dimensional matrix
+    parallelized ``_mstump`` function which computes the multi-dimensional matrix
     profile according to STOMP. Note that only self-joins are supported.
 
     Parameters
     ----------
     client : client
-        A `dask`/`ray` client. Setting up a cluster is beyond the
-        scope of this library. Please refer to the `dask`/`ray`
-        documentation.
+        A ``dask``/``ray`` client. Setting up a cluster is beyond the scope of this
+        library. Please refer to the ``dask``/``ray`` documentation.
 
     T : numpy.ndarray
         The time series or sequence for which to compute the multi-dimensional
-        matrix profile. Each row in `T` represents data from a different
-        dimension while each column in `T` represents data from the same
+        matrix profile. Each row in ``T`` represents data from a different
+        dimension while each column in ``T`` represents data from the same
         dimension.
 
     m : int
-        Window size
+        Window size.
 
     include : list, numpy.ndarray, default None
-        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        A list of (zero-based) indices corresponding to the dimensions in ``T`` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
 
@@ -402,29 +402,31 @@ def mstumped(
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
     discords : bool, default False
-        When set to `True`, this reverses the distance matrix which results in a
+        When set to ``True``, this reverses the distance matrix which results in a
         multi-dimensional matrix profile that favors larger matrix profile values
         (i.e., discords) rather than smaller values (i.e., motifs). Note that indices
         in `include` are still maintained and respected.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. Minkowski distance is
-        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
-        and the Euclidean distance, respectively.
+        typically used with ``p`` being ``1`` or ``2``, which correspond to the
+        Manhattan distance and the Euclidean distance, respectively.
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances. Otherwise, this function gets re-routed to its complementary
+        non-normalized equivalent set in the ``@core.non_normalized`` function
+        decorator.
 
     T_subseq_isconstant : numpy.ndarray, function, or list, default None
-        A parameter that is used to show whether a subsequence of a time series in `T`
-        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
-        or a function that can be applied to each time series in `T`. Alternatively, for
-        maximum flexibility, a list (with length equal to the total number of time
-        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
-        the i-th time series T[i] and each element in the list can either be a 1D
-        boolean np.ndarray, a function, or None.
+        A parameter that is used to show whether a subsequence of a time series in ``T``
+        is constant (``True``) or not. ``T_subseq_isconstant`` can be a 2D boolean
+        ``numpy.ndarray`` or a function that can be applied to each time series in
+        ``T``. Alternatively, for maximum flexibility, a list (with length equal to the
+        total number of time series) may also be used. In this case,
+        ``T_subseq_isconstant[i]`` corresponds to the ``i``-th time series ``T[i]`` and
+        each element in the list can either be a 1D boolean ``numpy.ndarray``, a
+        function, or ``None``.
 
     Returns
     -------

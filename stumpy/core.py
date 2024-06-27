@@ -1604,68 +1604,69 @@ def mass(
     Parameters
     ----------
     Q : numpy.ndarray
-        Query array or subsequence
+        Query array or subsequence.
 
     T : numpy.ndarray
-        Time series or sequence
+        Time series or sequence.
 
     M_T : numpy.ndarray, default None
-        Sliding mean of `T`
+        Sliding mean of ``T``.
 
     Σ_T : numpy.ndarray, default None
-        Sliding standard deviation of `T`
+        Sliding standard deviation of ``T``.
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances. Otherwise, this function gets re-routed to its complementary
+        non-normalized equivalent set in the ``@core.non_normalized`` function
+        decorator.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. This parameter is
-        ignored when `normalize == True`.
+        ignored when ``normalize == True``.
 
     T_subseq_isfinite : numpy.ndarray, default None
-        A boolean array that indicates whether a subsequence in `T` contains a
-        `np.nan`/`np.inf` value (False). This parameter is ignored when
-        `normalize=True`.
+        A boolean array that indicates whether a subsequence in ``T`` contains a
+        ``np.nan``/``np.inf`` value (``False``). This parameter is ignored when
+        ``normalize == True``.
 
     T_subseq_isconstant : numpy.ndarray or function, default None
-        A boolean array that indicates whether a subsequence in `T` is constant
-        (True). Alternatively, a custom, user-defined function that returns a
-        boolean array that indicates whether a subsequence in `T` is constant
-        (True). The function must only take two arguments, `a`, a 1-D array,
-        and `w`, the window size, while additional arguments may be specified
-        by currying the user-defined function using `functools.partial`. Any
-        subsequence with at least one np.nan/np.inf will automatically have its
-        corresponding value set to False in this boolean array.
+        A boolean array that indicates whether a subsequence in ``T`` is constant
+        (``True``). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in ``T`` is constant
+        (``True``). The function must only take two arguments, ``a``, a 1-D array,
+        and ``w``, the window size, while additional arguments may be specified
+        by currying the user-defined function using ``functools.partial``. Any
+        subsequence with at least one ``np.nan``/``np.inf`` will automatically have
+        its corresponding value set to ``False`` in this boolean array.
 
     Q_subseq_isconstant : numpy.ndarray or function, default None
-        A boolean array that indicates whether the subsequence in `Q` is constant
-        (True). Alternatively, a custom, user-defined function that returns a
-        boolean array that indicates whether the subsequence in `Q` is constant
-        (True). The function must only take two arguments, `a`, a 1-D array,
-        and `w`, the window size, while additional arguments may be specified
-        by currying the user-defined function using `functools.partial`. Any
-        subsequence with at least one np.nan/np.inf will automatically have its
-        corresponding value set to False in this boolean array.
+        A boolean array that indicates whether the subsequence in ``Q`` is constant
+        (``True``). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether the subsequence in ``Q`` is constant
+        (``True``). The function must only take two arguments, ``a``, a 1-D array,
+        and ``w``, the window size, while additional arguments may be specified
+        by currying the user-defined function using ``functools.partial``. Any
+        subsequence with at least one ``np.nan``/``np.inf`` will automatically have
+        its corresponding value set to ``False`` in this boolean array.
 
     query_idx : int, default None
-        This is the index position along the time series, `T`, where the query
-        subsequence, `Q`, is located. `query_idx` should be set to None if `Q`
-        is not a subsequence of `T`. If `Q` is a subsequence of `T`, provding
-        this argument is optional. If query_idx is provided, the distance
-        between Q and `T[query_idx : query_idx + m]` will automatically be set to
+        This is the index position along the time series, ``T``, where the query
+        subsequence, ``Q``, is located. ``query_idx`` should be set to ``None`` if
+        ``Q`` is not a subsequence of ``T``. If ``Q`` is a subsequence of ``T``,
+        provding this argument is optional. If ``query_idx`` is provided, the distance
+        between ``Q`` and ``T[query_idx : query_idx + m]`` will automatically be set to
         zero.
 
     Returns
     -------
     distance_profile : numpy.ndarray
-        Distance profile
+        Distance profile.
 
     See Also
     --------
-    stumpy.motifs : Discover the top motifs for time series `T`
-    stumpy.match : Find all matches of a query `Q` in a time series `T```
+    stumpy.motifs : Discover the top motifs for time series ``T``
+    stumpy.match : Find all matches of a query ``Q`` in a time series ``T``
 
     Notes
     -----
@@ -1674,10 +1675,10 @@ def mass(
 
     See Table II
 
-    Note that Q, T are not directly required to calculate D
+    Note that ``Q``, ``T`` are not directly required to calculate ``D``
 
-    Note: Unlike the Matrix Profile I paper, here, M_T, Σ_T can be calculated
-    once for all subsequences of T and passed in so the redundancy is removed
+    Note: Unlike the Matrix Profile I paper, here, ``M_T``, ``Σ_T`` can be calculated
+    once for all subsequences of ``T`` and passed in so the redundancy is removed
 
     Examples
     --------
@@ -2550,7 +2551,7 @@ def rolling_isconstant(a, w, a_subseq_isconstant=None):
     w : numpy.ndarray
         The rolling window size
 
-    a_subseq_isconstant : np.ndarray or function, default None
+    a_subseq_isconstant : numpy.ndarray or function, default None
         A boolean array that indicates whether a subsequence in `a` is constant
         (True). Alternatively, a custom, user-defined function that returns a
         boolean array that indicates whether a subsequence in `a` is constant
@@ -2677,7 +2678,7 @@ def _get_partial_mp_func(mp_func, client=None, device_id=None):
 
     device_id : int or list, default None
         The (GPU) device number to use. The default value is `0`. A list of
-        valid device ids (int) may also be provided for parallel GPU-STUMP
+        valid device ids (``int``) may also be provided for parallel GPU-STUMP
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
@@ -4067,7 +4068,7 @@ def _compute_P_ABBA(
 
     device_id : int or list, default None
         The (GPU) device number to use. The default value is `0`. A list of
-        valid device ids (int) may also be provided for parallel GPU-STUMP
+        valid device ids (``int``) may also be provided for parallel GPU-STUMP
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
@@ -4172,7 +4173,7 @@ def _mpdist(
 
     device_id : int or list, default None
         The (GPU) device number to use. The default value is `0`. A list of
-        valid device ids (int) may also be provided for parallel GPU-STUMP
+        valid device ids (``int``) may also be provided for parallel GPU-STUMP
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
@@ -4240,15 +4241,15 @@ def process_isconstant(T, m, T_subseq_isconstant, T_subseq_isfinite=None):
     m : numpy.ndarray
         The rolling window size
 
-    T_subseq_isconstant : np.ndarray, function, or list, default None
-        A parameter that is used to show whether a subsequence of a time series in `T`
-        is constant (True) or not. T_subseq_isconstant can be a 1D or 2D boolean
-        numpy.ndarry (depending on the dimension of `T`) or a function that can be
-        applied to each time series in `T`. Alternatively, for  maximum flexibility, a
-        list (with length equal to the total number of time series) may also be used.
-        In this case, T_subseq_isconstant[i] corresponds to the i-th time series T[i]
-        and each element in the list can either be 1D boolean np.ndarray, a function,
-        or None.
+    T_subseq_isconstant : numpy.ndarray, function, or list, default None
+        A parameter that is used to show whether a subsequence of a time series in ``T``
+        is constant (``True``) or not. ``T_subseq_isconstant`` can be a 1D or 2D
+        boolean ``numpy.ndarray`` (depending on the dimension of ``T``) or a function
+        that can be applied to each time series in ``T``. Alternatively, for  maximum
+        flexibility, a list (with length equal to the total number of time series) may
+        also be used. In this case, ``T_subseq_isconstant[i]`` corresponds to the
+        ``i``-th time series ``T[i]`` and each element in the list can either be 1D
+        boolean ``numpy.ndarray``, a function, or ``None``.
 
     T_subseq_isfinite : numpy.ndarray, default None
         A boolean array that indicates whether a subsequence in `T` contains a

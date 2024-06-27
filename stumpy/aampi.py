@@ -35,7 +35,7 @@ class aampi:
         Note that this will increase the total computational time and memory usage
         when k > 1.
 
-    mp : numpy.ndarry, default None
+    mp : numpy.ndarray, default None
         A pre-computed matrix profile (and corresponding matrix profile indices).
         This is a 2D array of shape `(len(T) - m + 1, 2 * k + 2)`, where the first `k`
         columns are top-k matrix profile, and the next `k` columns are their
@@ -102,7 +102,7 @@ class aampi:
             profile. Note that this will increase the total computational time and
             memory usage when k > 1.
 
-        mp : numpy.ndarry, default None
+        mp : numpy.ndarray, default None
             A pre-computed matrix profile (and corresponding matrix profile indices).
             This is a 2D array of shape `(len(T) - m + 1, 2 * k + 2)`, where the first
             `k` columns are top-k matrix profile, and the next `k` columns are their

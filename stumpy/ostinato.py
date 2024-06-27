@@ -182,7 +182,7 @@ def _ostinato(
 
     device_id : int or list, default None
         The (GPU) device number to use. The default value is `0`. A list of
-        valid device ids (int) may also be provided for parallel GPU-STUMP
+        valid device ids (``int``) may also be provided for parallel GPU-STUMP
         computation. A list of all valid device ids can be obtained by
         executing `[device.id for device in numba.cuda.list_devices()]`.
 
@@ -293,41 +293,42 @@ def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     Parameters
     ----------
     Ts : list
-        A list of time series for which to find the most central consensus motif
+        A list of time series for which to find the most central consensus motif.
 
     m : int
-        Window size
+        Window size.
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances. Otherwise, this function gets re-routed to its complementary
+        non-normalized equivalent set in the ``@core.non_normalized`` function
+        decorator.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. Minkowski distance is
-        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
-        and the Euclidean distance, respectively. This parameter is ignored when
-        `normalize == True`.
+        typically used with ``p`` being ``1`` or ``2``, which correspond to the
+        Manhattan distance and the Euclidean distance, respectively. This parameter is
+        ignored when ``normalize == True``.
 
     Ts_subseq_isconstant : list, default None
-        A list of rolling window isconstant for each time series in `Ts`.
+        A list of rolling window isconstant for each time series in ``Ts``.
 
     Returns
     -------
     central_radius : float
-        Radius of the most central consensus motif
+        Radius of the most central consensus motif.
 
     central_Ts_idx : int
-        The time series index in `Ts` that contains the most central consensus motif
+        The time series index in ``Ts`` that contains the most central consensus motif.
 
     central_subseq_idx : int
-        The subsequence index within time series `Ts[central_motif_Ts_idx]` that
-        contains the most central consensus motif
+        The subsequence index within time series ``Ts[central_motif_Ts_idx]`` that
+        contains the most central consensus motif.
 
     See Also
     --------
     stumpy.ostinatoed : Find the z-normalized consensus motif of multiple time series
-        with a distributed cluster
+        with a ``dask``/``ray`` cluster
     stumpy.gpu_ostinato : Find the z-normalized consensus motif of multiple time series
         with one or more GPU devices
 
@@ -339,9 +340,9 @@ def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     See Table 2
 
     The ostinato algorithm proposed in the paper finds the best radius
-    in `Ts`. Intuitively, the radius is the minimum distance of a
+    in ``Ts``. Intuitively, the radius is the minimum distance of a
     subsequence to encompass at least one nearest neighbor subsequence
-    from all other time series. The best radius in `Ts` is the minimum
+    from all other time series. The best radius in ``Ts`` is the minimum
     radius amongst all radii. Some data sets might contain multiple
     subsequences which have the same optimal radius.
     The greedy Ostinato algorithm only finds one of them, which might
@@ -349,7 +350,7 @@ def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     subsequences with the best radius is the one with the smallest mean
     distance to nearest neighbors in all other time series. To find this
     central motif it is necessary to search the subsequences with the
-    best radius via `stumpy.ostinato._get_central_motif`
+    best radius via ``stumpy.ostinato._get_central_motif``.
 
     Examples
     --------
@@ -404,8 +405,8 @@ def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
 )
 def ostinatoed(client, Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     """
-    Find the z-normalized consensus motif of multiple time series with a distributed
-    cluster
+    Find the z-normalized consensus motif of multiple time series with a
+    ``dask``/``ray`` cluster
 
     This is a wrapper around the vanilla version of the ostinato algorithm
     which finds the best radius and a helper function that finds the most
@@ -414,41 +415,42 @@ def ostinatoed(client, Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     Parameters
     ----------
     client : client
-        A Dask or Ray Distributed client. Setting up a distributed cluster is beyond
-        the scope of this library. Please refer to the Dask or Ray Distributed
+        A ``dask``/``ray`` client. Setting up a ``dask``/``ray`` cluster is beyond
+        the scope of this library. Please refer to the ``dask``/``ray`` Distributed
         documentation.
 
     Ts : list
-        A list of time series for which to find the most central consensus motif
+        A list of time series for which to find the most central consensus motif.
 
     m : int
-        Window size
+        Window size.
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances. Otherwise, this function gets re-routed to its complementary
+        non-normalized equivalent set in the ``@core.non_normalized`` function
+        decorator.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. Minkowski distance is
-        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
-        and the Euclidean distance, respectively. This parameter is ignored when
-        `normalize == True`.
+        typically used with ``p`` being ``1`` or ``2``, which correspond to the
+        Manhattan distance and the Euclidean distance, respectively. This parameter is
+        ignored when ``normalize == True``.
 
     Ts_subseq_isconstant : list, default None
-        A list of rolling window isconstant for each time series in `Ts`.
+        A list of rolling window isconstant for each time series in ``Ts``.
 
     Returns
     -------
     central_radius : float
-        Radius of the most central consensus motif
+        Radius of the most central consensus motif.
 
     central_Ts_idx : int
-        The time series index in `Ts` that contains the most central consensus motif
+        The time series index in ``Ts`` that contains the most central consensus motif.
 
     central_subseq_idx : int
-        The subsequence index within time series `Ts[central_motif_Ts_idx]` that
-        contains the most central consensus motif
+        The subsequence index within time series ``Ts[central_motif_Ts_idx]`` that
+        contains the most central consensus motif.
 
     See Also
     --------
@@ -464,9 +466,9 @@ def ostinatoed(client, Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     See Table 2
 
     The ostinato algorithm proposed in the paper finds the best radius
-    in `Ts`. Intuitively, the radius is the minimum distance of a
+    in ``Ts``. Intuitively, the radius is the minimum distance of a
     subsequence to encompass at least one nearest neighbor subsequence
-    from all other time series. The best radius in `Ts` is the minimum
+    from all other time series. The best radius in ``Ts`` is the minimum
     radius amongst all radii. Some data sets might contain multiple
     subsequences which have the same optimal radius.
     The greedy Ostinato algorithm only finds one of them, which might
@@ -474,7 +476,7 @@ def ostinatoed(client, Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     subsequences with the best radius is the one with the smallest mean
     distance to nearest neighbors in all other time series. To find this
     central motif it is necessary to search the subsequences with the
-    best radius via `stumpy.ostinato._get_central_motif`
+    best radius via ``stumpy.ostinato._get_central_motif``.
 
     Examples
     --------

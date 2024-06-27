@@ -11,24 +11,24 @@ def atsc(IL, IR, j):
     """
     Compute the anchored time series chain (ATSC)
 
-    Note that since the matrix profile indices, `IL` and `IR`, are pre-computed,
+    Note that since the matrix profile indices, ``IL`` and ``IR``, are pre-computed,
     this function is agnostic to subsequence normalization.
 
     Parameters
     ----------
     IL : numpy.ndarray
-        Left matrix profile indices
+        Left matrix profile indices.
 
     IR : numpy.ndarray
-        Right matrix profile indices
+        Right matrix profile indices.
 
     j : int
-        The index value for which to compute the ATSC
+        The index value for which to compute the ATSC.
 
     Returns
     -------
     out : numpy.ndarray
-        Anchored time series chain for index, `j`
+        Anchored time series chain for index, ``j``
 
     See Also
     --------
@@ -53,7 +53,8 @@ def atsc(IL, IR, j):
     >>> stumpy.atsc(mp[:, 2], mp[:, 3], 1)
     array([1, 3])
 
-    # Alternative example using named attributes
+    >>> # Alternative example using named attributes
+    >>>
     >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
     >>> stumpy.atsc(mp.left_I_, mp.right_I_, 1)
     array([1, 3])
@@ -75,27 +76,28 @@ def allc(IL, IR):
     """
     Compute the all-chain set (ALLC)
 
-    Note that since the matrix profile indices, `IL` and `IR`, are pre-computed,
+    Note that since the matrix profile indices, ``IL`` and ``IR``, are pre-computed,
     this function is agnostic to subsequence normalization.
 
     Parameters
     ----------
     IL : numpy.ndarray
-        Left matrix profile indices
+        Left matrix profile indices.
 
     IR : numpy.ndarray
-        Right matrix profile indices
+        Right matrix profile indices.
 
     Returns
     -------
     S : list(numpy.ndarray)
-        All-chain set
+        All-chain set.
 
     C : numpy.ndarray
         Anchored time series chain for the longest chain (also known as the unanchored
         chain). Note that when there are multiple different chains with length equal to
-        `len(C)`, then only one chain from this set is returned. You may iterate over
-        the all-chain set, `S`, to find all other possible chains with length `len(C)`.
+        ``len(C)``, then only one chain from this set is returned. You may iterate over
+        the all-chain set, ``S``, to find all other possible chains with length
+        ``len(C)``.
 
     See Also
     --------
@@ -114,7 +116,7 @@ def allc(IL, IR):
     chain is simply the longest one among the all-chain set. Both the
     all-chain set and unanchored chain are returned.
 
-    The all-chain set, S, is returned as a list of unique numpy arrays.
+    The all-chain set, ``S``, is returned as a list of unique numpy arrays.
 
     Examples
     --------
@@ -124,7 +126,8 @@ def allc(IL, IR):
     >>> stumpy.allc(mp[:, 2], mp[:, 3])
     ([array([1, 3]), array([2]), array([0, 4])], array([0, 4]))
 
-    # Alternative example using named attributes
+    >>> # Alternative example using named attributes
+    >>>
     >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
     >>> stumpy.allc(mp.left_I_, mp.right_I_)
     ([array([1, 3]), array([2]), array([0, 4])], array([0, 4]))

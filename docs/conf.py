@@ -46,7 +46,6 @@ release = stumpy.__version__
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
@@ -82,7 +81,15 @@ language = "en"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "WIP/*.ipynb",
+    "REF/*.ipynb",
+    "images/*ipynb",
+    "pull_request_template.md",
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
@@ -225,4 +232,6 @@ napoleon_numpy_docstring = True
 
 myst_enable_extensions = [
     "colon_fence",
+    "amsmath",
+    "dollarmath",
 ]

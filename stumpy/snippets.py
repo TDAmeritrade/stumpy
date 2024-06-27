@@ -163,85 +163,89 @@ def snippets(
     mpdist_T_subseq_isconstant=None,
 ):
     """
-    Identify the top `k` snippets that best represent the time series, `T`
+    Identify the top ``k`` snippets that best represent the time series, ``T``
 
     Parameters
     ----------
     T : numpy.ndarray
-        The time series or sequence for which to find the snippets
+        The time series or sequence for which to find the snippets.
 
     m : int
-        The snippet window size
+        The snippet window size.
 
     k : int
-        The desired number of snippets
+        The desired number of snippets.
 
     percentage : float, default 1.0
-        With the length of each non-overlapping subsequence, `S[i]`, set to `m`, this
-        is the percentage of `S[i]` (i.e., `percentage * m`) to set `s` (the
-        sub-subsequence length) to. When `percentage == 1.0`, then the full length of
-        `S[i]` is used to compute the `mpdist_vect`. When `percentage < 1.0`, then
-        a shorter sub-subsequence length of `s = min(math.ceil(percentage * m), m)`
-        from each `S[i]` is used to compute `mpdist_vect`. When `s` is not `None`, then
-        the `percentage` parameter is ignored.
+        With the length of each non-overlapping subsequence, ``S[i]``, set to ``m``,
+        this is the percentage of ``S[i]`` (i.e., ``percentage * m``) to set ``s`` (the
+        sub-subsequence length) to. When ``percentage == 1.0``, then the full length of
+        ``S[i]`` is used to compute the ``mpdist_vect``. When ``percentage < 1.0``,
+        then a shorter sub-subsequence length of
+        ``s = min(math.ceil(percentage * m), m)`` from each ``S[i]`` is used to compute
+        ``mpdist_vect``. When ``s`` is not ``None``, then the ``percentage`` parameter
+        is ignored.
 
     s : int, default None
-        With the length of each non-overlapping subsequence, `S[i]`, set to `m`, this
-        is essentially the sub-subsequence length (i.e., a shorter part of `S[i]`).
-        When `s == m`, then the full length of `S[i]` is used to compute the
-        `mpdist_vect`. When `s < m`, then shorter subsequences with length `s` from
-        each `S[i]` is used to compute `mpdist_vect`. When `s` is not `None`, then
-        the `percentage` parameter is ignored.
+        With the length of each non-overlapping subsequence, ``S[i]``, set to ``m``,
+        this is essentially the sub-subsequence length (i.e., a shorter part of
+        ``S[i]``). When ``s == m``, then the full length of ``S[i]`` is used to compute
+        the ``mpdist_vect``. When ``s < m``, then shorter subsequences with length
+        ``s`` from each ``S[i]`` is used to compute ``mpdist_vect``. When ``s`` is not
+        ``None``, then the ``percentage`` parameter is ignored.
 
     mpdist_percentage : float, default 0.05
-        The percentage of distances that will be used to report `mpdist`. The value
-        is between 0.0 and 1.0.
+        The percentage of distances that will be used to report ``mpdist``. The value
+        is between ``0.0`` and ``1.0``.
 
     mpdist_k : int
-        Specify the `k`th value in the concatenated matrix profiles to return. When
-        `mpdist_k` is not `None`, then the `mpdist_percentage` parameter is ignored.
+        Specify the ``k``-th value in the concatenated matrix profiles to return. When
+        ``mpdist_k`` is not ``None``, then the ``mpdist_percentage`` parameter is
+        ignored.
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances. Otherwise, this function gets re-routed to its complementary
+        non-normalized equivalent set in the ``@core.non_normalized`` function
+        decorator.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. Minkowski distance is
-        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
-        and the Euclidean distance, respectively. This parameter is ignored when
-        `normalize == True`.
+        typically used with ``p`` being ``1`` or ``2``, which correspond to the
+        Manhattan distance and the Euclidean distance, respectively. This parameter is
+        ignored when ``normalize == True``.
 
     mpdist_T_subseq_isconstant : numpy.ndarray or function, default None
-        A boolean array that indicates whether a subsequence (of length `s`) in `T`
-        is constant (True). Alternatively, a custom, user-defined function that
-        returns a boolean array that indicates whether a subsequence in `T` is
-        constant (True). The function must only take two arguments, `a`, a 1-D array,
-        and `w`, the window size, while additional arguments may be specified
-        by currying the user-defined function using `functools.partial`. Any
-        subsequence with at least one np.nan/np.inf will automatically have its
-        corresponding value set to False in this boolean array.
+        A boolean array that indicates whether a subsequence (of length equal to
+        ``len(s)``) in ``T`` is constant (``True``). Alternatively, a custom,
+        user-defined function that returns a boolean array that indicates whether a
+        subsequence in ``T`` is constant (``True``). The function must only take two
+        arguments, ``a``, a 1-D array, and ``w``, the window size, while additional
+        arguments may be specified by currying the user-defined function using
+        ``functools.partial``. Any subsequence with at least one ``np.nan``/``np.inf``
+        will automatically have its corresponding value set to ``False`` in this
+        boolean array.
 
     Returns
     -------
     snippets : numpy.ndarray
-        The top `k` snippets
+        The top ``k`` snippets.
 
     snippets_indices : numpy.ndarray
-        The index locations for each of top `k` snippets
+        The index locations for each of top ``k`` snippets.
 
     snippets_profiles : numpy.ndarray
-        The MPdist profiles for each of the top  `k` snippets
+        The MPdist profiles for each of the top  ``k`` snippets.
 
     snippets_fractions : numpy.ndarray
-        The fraction of data that each of the top `k` snippets represents
+        The fraction of data that each of the top ``k`` snippets represents.
 
     snippets_areas : numpy.ndarray
-        The area under the curve corresponding to each profile for each of the top `k`
-        snippets
+        The area under the curve corresponding to each profile for each of the top
+        ``k`` snippets.
 
     snippets_regimes: numpy.ndarray
-        The index slices corresponding to the set of regimes for each of the top `k`
+        The index slices corresponding to the set of regimes for each of the top ``k``
         snippets. The first column is the (zero-based) snippet index while the second
         and third columns correspond to the (inclusive) regime start indices and the
         (exclusive) regime stop indices, respectively.

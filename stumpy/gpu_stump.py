@@ -495,95 +495,99 @@ def gpu_stump(
     """
     Compute the z-normalized matrix profile with one or more GPU devices
 
-    This is a convenience wrapper around the Numba `cuda.jit` `_gpu_stump` function
+    This is a convenience wrapper around the Numba ``cuda.jit`` ``_gpu_stump`` function
     which computes the matrix profile according to GPU-STOMP. The default number of
-    threads-per-block is set to `512` and may be changed by setting the global parameter
-    `config.STUMPY_THREADS_PER_BLOCK` to an appropriate number based on your GPU
-    hardware.
+    threads-per-block is set to ``512`` and may be changed by setting the global
+    parameter ``config.STUMPY_THREADS_PER_BLOCK`` to an appropriate number based on
+    your GPU hardware.
 
     Parameters
     ----------
     T_A : numpy.ndarray
-        The time series or sequence for which to compute the matrix profile
+        The time series or sequence for which to compute the matrix profile.
 
     m : int
-        Window size
+        Window size.
 
     T_B : numpy.ndarray, default None
-        The time series or sequence that will be used to annotate T_A. For every
-        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
-        `None` which corresponds to a self-join.
+        The time series or sequence that will be used to annotate ``T_A``. For every
+        subsequence in ``T_A``, its nearest neighbor in ``T_B`` will be recorded.
+        Default is  ``None`` which corresponds to a self-join.
 
     ignore_trivial : bool, default True
-        Set to `True` if this is a self-join. Otherwise, for AB-join, set this
-        to `False`. Default is `True`.
+        Set to ``True`` if this is a self-join. Otherwise, for AB-join, set this
+        to ``False``.
 
     device_id : int or list, default 0
-        The (GPU) device number to use. The default value is `0`. A list of
-        valid device ids (int) may also be provided for parallel GPU-STUMP
+        The (GPU) device number to use. The default value is ``0``. A list of
+        valid device ids (``int``) may also be provided for parallel GPU-STUMP
         computation. A list of all valid device ids can be obtained by
-        executing `[device.id for device in numba.cuda.list_devices()]`.
+        executing ``[device.id for device in numba.cuda.list_devices()]``.
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances. Otherwise, this function gets re-routed to its complementary
+        non-normalized equivalent set in the ``@core.non_normalized`` function
+        decorator.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. Minkowski distance is
-        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
-        and the Euclidean distance, respectively. This parameter is ignored when
-        `normalize == True`.
+        typically used with ``p`` being ``1`` or ``2``, which correspond to the
+        Manhattan distance and the Euclidean distance, respectively. This parameter is
+        ignored when ``normalize == True``.
 
     k : int, default 1
-        The number of top `k` smallest distances used to construct the matrix profile.
-        Note that this will increase the total computational time and memory usage
-        when k > 1.
+        The number of top ``k`` smallest distances used to construct the matrix
+        profile. Note that this will increase the total computational time and memory
+        usage when ``k > 1``.
 
     T_A_subseq_isconstant : numpy.ndarray or function, default None
-        A boolean array that indicates whether a subsequence in `T_A` is constant
-        (True). Alternatively, a custom, user-defined function that returns a
-        boolean array that indicates whether a subsequence in `T_A` is constant
-        (True). The function must only take two arguments, `a`, a 1-D array,
-        and `w`, the window size, while additional arguments may be specified
-        by currying the user-defined function using `functools.partial`. Any
-        subsequence with at least one np.nan/np.inf will automatically have its
-        corresponding value set to False in this boolean array.
+        A boolean array that indicates whether a subsequence in ``T_A`` is constant
+        (``True``). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in ``T_A`` is constant
+        (``True``). The function must only take two arguments, ``a``, a 1-D array,
+        and ``w``, the window size, while additional arguments may be specified
+        by currying the user-defined function using ``functools.partial``. Any
+        subsequence with at least one ``np.nan``/``np.inf`` will automatically have
+        its corresponding value set to ``False`` in this boolean array.
 
     T_B_subseq_isconstant : numpy.ndarray or function, default None
-        A boolean array that indicates whether a subsequence in `T_B` is constant
-        (True). Alternatively, a custom, user-defined function that returns a
-        boolean array that indicates whether a subsequence in `T_B` is constant
-        (True). The function must only take two arguments, `a`, a 1-D array,
-        and `w`, the window size, while additional arguments may be specified
-        by currying the user-defined function using `functools.partial`. Any
-        subsequence with at least one np.nan/np.inf will automatically have its
-        corresponding value set to False in this boolean array.
+        A boolean array that indicates whether a subsequence in ``T_B`` is constant
+        (``True``). Alternatively, a custom, user-defined function that returns a
+        boolean array that indicates whether a subsequence in ``T_B`` is constant
+        (``True``). The function must only take two arguments, ``a``, a 1-D array,
+        and ``w``, the window size, while additional arguments may be specified
+        by currying the user-defined function using ``functools.partial``. Any
+        subsequence with at least one ``np.nan``/``np.inf`` will automatically have
+        its corresponding value set to ``False`` in this boolean array.
 
     Returns
     -------
     out : numpy.ndarray
-        When k = 1 (default), the first column consists of the matrix profile,
+        When ``k = 1`` (default), the first column consists of the matrix profile,
         the second column consists of the matrix profile indices, the third column
         consists of the left matrix profile indices, and the fourth column consists
-        of the right matrix profile indices. However, when k > 1, the output array
-        will contain exactly 2 * k + 2 columns. The first k columns (i.e., out[:, :k])
-        consists of the top-k matrix profile, the next set of k columns
-        (i.e., out[:, k:2k]) consists of the corresponding top-k matrix profile
-        indices, and the last two columns (i.e., out[:, 2k] and out[:, 2k+1] or,
-        equivalently, out[:, -2] and out[:, -1]) correspond to the top-1 left
-        matrix profile indices and the top-1 right matrix profile indices, respectively.
+        of the right matrix profile indices. However, when ``k > 1``, the output array
+        will contain exactly ``2 * k + 2`` columns. The first ``k`` columns (i.e.,
+        ``out[:, :k]``) consists of the top-k matrix profile, the next set of ``k``
+        columns (i.e., ``out[:, k : 2 * k``]) consists of the corresponding top-k matrix
+        profile indices, and the last two columns (i.e., ``out[:, 2 * k]`` and
+        ``out[:, 2 * k + 1]`` or, equivalently, ``out[:, -2]`` and ``out[:, -1]``)
+        correspond to the top-1 left matrix profile indices and the top-1 right matrix
+        profile indices, respectively.
+
+        |
 
         For convenience, the matrix profile (distances) and matrix profile indices can
-        also be accessed via their corresponding named array attributes, `.P_` and
-        `.I_`,respectively. Similarly, the corresponding left matrix profile indices
-        and right matrix profile indices may also be accessed via the `.left_I_` and
-        `.right_I_` array attributes. See examples below.
+        also be accessed via their corresponding named array attributes, ``.P_`` and
+        ``.I_``,respectively. Similarly, the corresponding left matrix profile indices
+        and right matrix profile indices may also be accessed via the ``.left_I_`` and
+        ``.right_I_`` array attributes. See examples below.
 
     See Also
     --------
     stumpy.stump : Compute the z-normalized matrix profile
-    stumpy.stumped : Compute the z-normalized matrix profile with a distributed dask
+    stumpy.stumped : Compute the z-normalized matrix profile with a ``dask``/ ``ray``
         cluster
     stumpy.scrump : Compute an approximate z-normalized matrix profile
 
@@ -594,23 +598,23 @@ def gpu_stump(
 
     See Table II, Figure 5, and Figure 6
 
-    Timeseries, T_A, will be annotated with the distance location
-    (or index) of all its subsequences in another times series, T_B.
+    Timeseries, ``T_A``, will be annotated with the distance location
+    (or index) of all its subsequences in another times series, ``T_B``.
 
-    Return: For every subsequence, Q, in T_A, you will get a distance
-    and index for the closest subsequence in T_B. Thus, the array
-    returned will have length T_A.shape[0]-m+1. Additionally, the
+    Return: For every subsequence, ``Q``, in ``T_A``, you will get a distance
+    and index for the closest subsequence in ``T_B``. Thus, the array
+    returned will have length ``T_A.shape[0] - m + 1``. Additionally, the
     left and right matrix profiles are also returned.
 
-    Note: Unlike in the Table II where T_A.shape is expected to be equal
-    to T_B.shape, this implementation is generalized so that the shapes of
-    T_A and T_B can be different. In the case where T_A.shape == T_B.shape,
+    Note: Unlike in the Table II where ``T_A.shape`` is expected to be equal
+    to ``T_B.shape``, this implementation is generalized so that the shapes of
+    ``T_A`` and ``T_B`` can be different. In the case where ``T_A.shape == T_B.shape``,
     then our algorithm reduces down to the same algorithm found in Table II.
 
-    Additionally, unlike STAMP where the exclusion zone is m/2, the default
-    exclusion zone for STOMP is m/4 (See Definition 3 and Figure 3).
+    Additionally, unlike STAMP where the exclusion zone is ``m``/2, the default
+    exclusion zone for STOMP is ``m``/4 (See Definition 3 and Figure 3).
 
-    For self-joins, set `ignore_trivial = True` in order to avoid the
+    For self-joins, set ``ignore_trivial = True`` in order to avoid the
     trivial match.
 
     Note that left and right matrix profiles are only available for self-joins.
@@ -632,6 +636,7 @@ def gpu_stump(
              [3.0000926340485923, 0, 0, 4],
              [2.694073918063438, 1, 1, -1],
              [0.11633857113691416, 0, 0, -1]], dtype=object)
+    >>>
     >>>     mp.P_
     mparray([0.11633857, 2.69407392, 3.00009263, 2.69407392, 0.11633857])
     >>>     mp.I_

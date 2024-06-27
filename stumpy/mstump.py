@@ -107,30 +107,30 @@ def subspace(
     T_subseq_isconstant=None,
 ):
     """
-    Compute the k-dimensional matrix profile subspace for a given subsequence index and
-    its nearest neighbor index
+    Compute the ``k``-dimensional matrix profile subspace for a given subsequence index
+    and its nearest neighbor index
 
     Parameters
     ----------
     T : numpy.ndarray
         The time series or sequence for which the multi-dimensional matrix profile,
-        multi-dimensional matrix profile indices were computed
+        multi-dimensional matrix profile indices were computed.
 
     m : int
-        Window size
+        Window size.
 
     subseq_idx : int
-        The subsequence index in T
+        The subsequence index in ``T``.
 
     nn_idx : int
-        The nearest neighbor index in T
+        The nearest neighbor index in ``T``.
 
     k : int
-        The subset number of dimensions out of `D = T.shape[0]`-dimensions to return
+        The subset number of dimensions out of ``D = T.shape[0]``-dimensions to return
         the subspace for. Note that zero-based indexing is used.
 
     include : numpy.ndarray, default None
-        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        A list of (zero-based) indices corresponding to the dimensions in ``T`` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
 
@@ -138,12 +138,13 @@ def subspace(
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
     discords : bool, default False
-        When set to `True`, this reverses the distance profile to favor discords rather
-        than motifs. Note that indices in `include` are still maintained and respected.
+        When set to ``True``, this reverses the distance profile to favor discords
+        rather than motifs. Note that indices in ``include`` are still maintained and
+        respected.
 
     discretize_func : func, default None
-        A function for discretizing each input array. When this is `None`, an
-        appropriate discretization function (based on the `normalize` parameter) will
+        A function for discretizing each input array. When this is ``None``, an
+        appropriate discretization function (based on the ``normalize`` parameter) will
         be applied.
 
     n_bit : int, default 8
@@ -159,37 +160,39 @@ def subspace(
         <https://www.cs.ucr.edu/~eamonn/ICDM_mdl.pdf>`__
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances. Otherwise, this function gets re-routed to its complementary
+        non-normalized equivalent set in the ``@core.non_normalized`` function
+        decorator.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. Minkowski distance is
-        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
-        and the Euclidean distance, respectively. This parameter is ignored when
-        `normalize == True`.
+        typically used with ``p`` being ``1`` or ``2``, which correspond to the
+        Manhattan distance and the Euclidean distance, respectively. This parameter is
+        ignored when ``normalize == True``.
 
     T_subseq_isconstant : numpy.ndarray, function, or list, default None
-        A parameter that is used to show whether a subsequence of a time series in `T`
-        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
-        or a function that can be applied to each time series in `T`. Alternatively, for
-        maximum flexibility, a list (with length equal to the total number of time
-        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
-        the i-th time series T[i] and each element in the list can either be a 1D
-        boolean np.ndarray, a function, or None.
+        A parameter that is used to show whether a subsequence of a time series in ``T``
+        is constant (``True``) or not. ``T_subseq_isconstant`` can be a 2D boolean
+        ``numpy.ndarray`` or a function that can be applied to each time series in
+        ``T``. Alternatively, for maximum flexibility, a list (with length equal to the
+        total number of time series) may also be used. In this case,
+        ``T_subseq_isconstant[i]`` corresponds to the ``i``-th time series ``T[i]`` and
+        each element in the list can either be a 1D boolean ``numpy.ndarray``, a
+        function, or ``None``.
 
     Returns
     -------
     S : numpy.ndarray
-        An array that contains the (singular) `k`th-dimensional subspace for the
-        subsequence with index equal to `subseq_idx`. Note that `k+1` rows will be
+        An array that contains the (singular) ``k``-th-dimensional subspace for the
+        subsequence with index equal to ``subseq_idx``. Note that ``k + 1`` rows will be
         returned.
 
     See Also
     --------
     stumpy.mstump : Compute the multi-dimensional z-normalized matrix profile
     stumpy.mstumped : Compute the multi-dimensional z-normalized matrix profile with
-        a distributed dask cluster
+        a ``dask``/``ray`` cluster
     stumpy.mdl : Compute the number of bits needed to compress one array with another
         using the minimum description length (MDL)
 
@@ -300,26 +303,26 @@ def mdl(
 ):
     """
     Compute the multi-dimensional number of bits needed to compress one
-    multi-dimensional subsequence with another along each of the k-dimensions
+    multi-dimensional subsequence with another along each of the ``k``-dimensions
     using the minimum description length (MDL)
 
     Parameters
     ----------
     T : numpy.ndarray
         The time series or sequence for which the multi-dimensional matrix profile,
-        multi-dimensional matrix profile indices were computed
+        multi-dimensional matrix profile indices were computed.
 
     m : int
-        Window size
+        Window size.
 
     subseq_idx : numpy.ndarray
-        The multi-dimensional subsequence indices in T
+        The multi-dimensional subsequence indices in ``T``
 
     nn_idx : numpy.ndarray
-        The multi-dimensional nearest neighbor index in T
+        The multi-dimensional nearest neighbor index in ``T``
 
     include : numpy.ndarray, default None
-        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        A list of (zero-based) indices corresponding to the dimensions in ``T`` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
 
@@ -327,12 +330,13 @@ def mdl(
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
     discords : bool, default False
-        When set to `True`, this reverses the distance profile to favor discords rather
-        than motifs. Note that indices in `include` are still maintained and respected.
+        When set to ``True``, this reverses the distance profile to favor discords
+        rather than motifs. Note that indices in ``include`` are still maintained
+        and respected.
 
     discretize_func : func, default None
-        A function for discretizing each input array. When this is `None`, an
-        appropriate discretization function (based on the `normalization` parameter)
+        A function for discretizing each input array. When this is ``None``, an
+        appropriate discretization function (based on the ``normalization`` parameter)
         will be applied.
 
     n_bit : int, default 8
@@ -348,24 +352,26 @@ def mdl(
         <https://www.cs.ucr.edu/~eamonn/ICDM_mdl.pdf>`__
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances. Otherwise, this function gets re-routed to its complementary
+        non-normalized equivalent set in the ``@core.non_normalized`` function
+        decorator.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. Minkowski distance is
-        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
-        and the Euclidean distance, respectively. This parameter is ignored when
-        `normalize == True`.
+        typically used with ``p`` being ``1`` or ``2``, which correspond to the
+        Manhattan distance and the Euclidean distance, respectively. This parameter is
+        ignored when ``normalize == True``.
 
     T_subseq_isconstant : numpy.ndarray, function, or list, default None
-        A parameter that is used to show whether a subsequence of a time series in `T`
-        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
-        or a function that can be applied to each time series in `T`. Alternatively, for
-        maximum flexibility, a list (with length equal to the total number of time
-        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
-        the i-th time series T[i] and each element in the list can either be a 1D
-        boolean np.ndarray, a function, or None.
+        A parameter that is used to show whether a subsequence of a time series in ``T``
+        is constant (``True``) or not. ``T_subseq_isconstant`` can be a 2D boolean
+        ``numpy.ndarray`` or a function that can be applied to each time series in
+        ``T``. Alternatively, for maximum flexibility, a list (with length equal to the
+        total number of time series) may also be used. In this case,
+        ``T_subseq_isconstant[i]`` corresponds to the ``i``-th time series ``T[i]`` and
+        each element in the list can either be a 1D boolean ``numpy.ndarray``, a
+        function, or ``None``.
 
     Returns
     -------
@@ -374,13 +380,13 @@ def mdl(
         multidimensional subsequences.
 
     S : list
-        A list of numpy.ndarrays that contain the `k`th-dimensional subspaces
+        A list of numpy.ndarrays that contain the ``k``-th-dimensional subspaces.
 
     See Also
     --------
     stumpy.mstump : Compute the multi-dimensional z-normalized matrix profile
     stumpy.mstumped : Compute the multi-dimensional z-normalized matrix profile with
-        a distributed dask cluster
+        a ``dask``/``ray`` cluster
     stumpy.subspace : Compute the k-dimensional matrix profile subspace for a given
         subsequence index and its nearest neighbor index
 
@@ -599,12 +605,12 @@ def multi_distance_profile(
 
     T_subseq_isconstant : numpy.ndarray, function, or list, default None
         A parameter that is used to show whether a subsequence of a time series in `T`
-        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
+        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarray
         or a function that can be applied to each time series in `T`. Alternatively, for
         maximum flexibility, a list (with length equal to the total number of time
         series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
         the i-th time series T[i] and each element in the list can either be a 1D
-        boolean np.ndarray, a function, or None.
+        boolean ``numpy.ndarray``, a function, or None.
 
     Returns
     -------
@@ -1111,7 +1117,7 @@ def mstump(
     Compute the multi-dimensional z-normalized matrix profile
 
     This is a convenience wrapper around the Numba JIT-compiled parallelized
-    `_mstump` function which computes the multi-dimensional matrix profile and
+    ``_mstump`` function which computes the multi-dimensional matrix profile and
     multi-dimensional matrix profile index according to mSTOMP, a variant of
     mSTAMP. Note that only self-joins are supported.
 
@@ -1119,15 +1125,15 @@ def mstump(
     ----------
     T : numpy.ndarray
         The time series or sequence for which to compute the multi-dimensional
-        matrix profile. Each row in `T` represents data from a different
-        dimension while each column in `T` represents data from the same
+        matrix profile. Each row in ``T`` represents data from a different
+        dimension while each column in ``T`` represents data from the same
         dimension.
 
     m : int
-        Window size
+        Window size.
 
     include : list, numpy.ndarray, default None
-        A list of (zero-based) indices corresponding to the dimensions in `T` that
+        A list of (zero-based) indices corresponding to the dimensions in ``T`` that
         must be included in the constrained multidimensional motif search.
         For more information, see Section IV D in:
 
@@ -1135,30 +1141,32 @@ def mstump(
         <https://www.cs.ucr.edu/~eamonn/Motif_Discovery_ICDM.pdf>`__
 
     discords : bool, default False
-        When set to `True`, this reverses the distance matrix which results in a
+        When set to ``True``, this reverses the distance matrix which results in a
         multi-dimensional matrix profile that favors larger matrix profile values
         (i.e., discords) rather than smaller values (i.e., motifs). Note that indices
-        in `include` are still maintained and respected.
+        in ``include`` are still maintained and respected.
 
     normalize : bool, default True
-        When set to `True`, this z-normalizes subsequences prior to computing distances.
-        Otherwise, this function gets re-routed to its complementary non-normalized
-        equivalent set in the `@core.non_normalized` function decorator.
+        When set to ``True``, this z-normalizes subsequences prior to computing
+        distances. Otherwise, this function gets re-routed to its complementary
+        non-normalized equivalent set in the ``@core.non_normalized`` function
+        decorator.
 
     p : float, default 2.0
         The p-norm to apply for computing the Minkowski distance. Minkowski distance is
-        typically used with `p` being 1 or 2, which correspond to the Manhattan distance
-        and the Euclidean distance, respectively. This parameter is ignored when
-        `normalize == True`.
+        typically used with ``p`` being ``1`` or ``2``, which correspond to the
+        Manhattan distance and the Euclidean distance, respectively. This parameter is
+        ignored when ``normalize == True``.
 
     T_subseq_isconstant : numpy.ndarray, function, or list, default None
-        A parameter that is used to show whether a subsequence of a time series in `T`
-        is constant (True) or not. T_subseq_isconstant can be a 2D boolean numpy.ndarry
-        or a function that can be applied to each time series in `T`. Alternatively, for
-        maximum flexibility, a list (with length equal to the total number of time
-        series) may also be used. In this case, T_subseq_isconstant[i] corresponds to
-        the i-th time series T[i] and each element in the list can either be a 1D
-        boolean np.ndarray, a function, or None.
+        A parameter that is used to show whether a subsequence of a time series in ``T``
+        is constant (``True``) or not. ``T_subseq_isconstant`` can be a 2D boolean
+        ``numpy.ndarray`` or a function that can be applied to each time series in
+        ``T``. Alternatively, for maximum flexibility, a list (with length equal to the
+        total number of time series) may also be used. In this case,
+        ``T_subseq_isconstant[i]`` corresponds to the ``i``-th time series ``T[i]``
+        and each element in the list can either be a 1D boolean ``numpy.ndarray``, a
+        function, or ``None``.
 
     Returns
     -------
@@ -1174,7 +1182,7 @@ def mstump(
     See Also
     --------
     stumpy.mstumped : Compute the multi-dimensional z-normalized matrix profile with
-        a distributed dask cluster
+        a ``dask``/``ray`` cluster
     stumpy.subspace : Compute the k-dimensional matrix profile subspace for a given
         subsequence index and its nearest neighbor index
     stumpy.mdl : Compute the number of bits needed to compress one array with another
