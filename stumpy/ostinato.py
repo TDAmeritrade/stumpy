@@ -484,8 +484,8 @@ def ostinatoed(client, Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     >>> import numpy as np
     >>> from dask.distributed import Client
     >>> if __name__ == "__main__":
-    ...     with Client() as dask_client:
-    ...         stumpy.ostinatoed(
+    >>>     with Client() as dask_client:
+    >>>         stumpy.ostinatoed(
     ...             dask_client,
     ...             [np.array([584., -11., 23., 79., 1001., 0., 19.]),
     ...              np.array([600., -10., 23., 17.]),
@@ -497,8 +497,8 @@ def ostinatoed(client, Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
 
     >>> import ray
     >>> if __name__ == "__main__":
-    ...     ray.init()
-    ...     stumpy.ostinatoed(
+    >>>     ray.init()
+    >>>     stumpy.ostinatoed(
     ...         ray,
     ...         [np.array([584., -11., 23., 79., 1001., 0., 19.]),
     ...          np.array([600., -10., 23., 17.]),

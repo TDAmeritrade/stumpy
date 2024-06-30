@@ -42,8 +42,7 @@ def _dask_maamped(
 
     T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
-        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
-        `None` which corresponds to a self-join.
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -98,7 +97,7 @@ def _dask_maamped(
 
     step = 1 + l // nworkers
 
-    for i, start in enumerate(range(0, l, step)):
+    for start in range(0, l, step):
         P[:, start], I[:, start] = _get_first_maamp_profile(
             start,
             T_A,
@@ -198,8 +197,7 @@ def _ray_maamped(
 
     T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
-        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
-        `None` which corresponds to a self-join.
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -255,7 +253,7 @@ def _ray_maamped(
 
     step = 1 + l // nworkers
 
-    for i, start in enumerate(range(0, l, step)):
+    for start in range(0, l, step):
         P[:, start], I[:, start] = _get_first_maamp_profile(
             start,
             T_A,
@@ -276,7 +274,7 @@ def _ray_maamped(
     p_norm_refs = []
     p_norm_first_refs = []
 
-    for i, start in enumerate(range(0, l, step)):
+    for start in range(0, l, step):
         p_norm, p_norm_first = _get_multi_p_norm(start, T_A, m)
 
         p_norm_ref = ray_client.put(p_norm)

@@ -41,8 +41,7 @@ def _dask_aamped(
 
     T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
-        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
-        `None` which corresponds to a self-join.
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -189,8 +188,7 @@ def _ray_aamped(
 
     T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
-        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
-        `None` which corresponds to a self-join.
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -247,7 +245,7 @@ def _ray_aamped(
     diags_ranges = core._get_array_ranges(ndist_counts, nworkers, False)
     diags_ranges += diags[0]
 
-    # Scatter data to Dask cluster
+    # Scatter data to Ray cluster
     T_A_ref = ray_client.put(T_A)
     T_B_ref = ray_client.put(T_B)
     T_A_subseq_isfinite_ref = ray_client.put(T_A_subseq_isfinite)
@@ -279,14 +277,11 @@ def _ray_aamped(
         )
 
     results = ray_client.get(refs)
-    profile, profile_L, profile_R, indices, indices_L, indices_R = results[0]
     # Must make a mutable copy from Ray's object store (ndarrays are immutable)
-    profile = profile.copy()
-    profile_L = profile_L.copy()
-    profile_R = profile_R.copy()
-    indices = indices.copy()
-    indices_L = indices_L.copy()
-    indices_R = indices_R.copy()
+    profile, profile_L, profile_R, indices, indices_L, indices_R = [
+        arr.copy() for arr in results[0]
+    ]
+
     for i in range(1, nworkers):
         P, PL, PR, I, IL, IR = results[i]  # Read-only variables
         # Update top-k matrix profile and matrix profile indices

@@ -47,8 +47,7 @@ def _dask_stumped(
 
     T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
-        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
-        `None` which corresponds to a self-join.
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -241,8 +240,7 @@ def _ray_stumped(
 
     T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
-        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
-        `None` which corresponds to a self-join.
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -366,14 +364,10 @@ def _ray_stumped(
         )
 
     results = ray_client.get(refs)
-    profile, profile_L, profile_R, indices, indices_L, indices_R = results[0]
     # Must make a mutable copy from Ray's object store (ndarrays are immutable)
-    profile = profile.copy()
-    profile_L = profile_L.copy()
-    profile_R = profile_R.copy()
-    indices = indices.copy()
-    indices_L = indices_L.copy()
-    indices_R = indices_R.copy()
+    profile, profile_L, profile_R, indices, indices_L, indices_R = [
+        arr.copy() for arr in results[0]
+    ]
 
     for i in range(1, nworkers):
         P, PL, PR, I, IL, IR = results[i]  # Read-only variables

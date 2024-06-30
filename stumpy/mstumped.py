@@ -46,8 +46,7 @@ def _dask_mstumped(
 
     T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
-        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
-        `None` which corresponds to a self-join.
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
         Window size
@@ -108,7 +107,7 @@ def _dask_mstumped(
 
     step = 1 + l // nworkers
 
-    for i, start in enumerate(range(0, l, step)):
+    for start in range(0, l, step):
         P[:, start], I[:, start] = _get_first_mstump_profile(
             start,
             T_A,
@@ -220,11 +219,10 @@ def _ray_mstumped(
 
     T_B : numpy.ndarray
         The time series or sequence that will be used to annotate T_A. For every
-        subsequence in T_A, its nearest neighbor in T_B will be recorded. Default is
-        `None` which corresponds to a self-join.
+        subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
-        Window size
+        Window size:
 
     excl_zone : int
         The half width for the exclusion zone relative to the current
@@ -283,7 +281,7 @@ def _ray_mstumped(
 
     step = 1 + l // nworkers
 
-    for i, start in enumerate(range(0, l, step)):
+    for start in range(0, l, step):
         P[:, start], I[:, start] = _get_first_mstump_profile(
             start,
             T_A,
@@ -312,7 +310,7 @@ def _ray_mstumped(
     QT_refs = []
     QT_first_refs = []
 
-    for i, start in enumerate(range(0, l, step)):
+    for start in range(0, l, step):
         QT, QT_first = _get_multi_QT(start, T_A, m)
 
         QT_ref = ray_client.put(QT)
