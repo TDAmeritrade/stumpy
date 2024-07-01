@@ -222,7 +222,7 @@ def _ray_mstumped(
         subsequence in T_A, its nearest neighbor in T_B will be recorded.
 
     m : int
-        Window size:
+        Window size
 
     excl_zone : int
         The half width for the exclusion zone relative to the current
@@ -479,6 +479,7 @@ def mstumped(
     ...         np.array([[584., -11., 23., 79., 1001., 0., -19.],
     ...                   [  1.,   2.,  4.,  8.,   16., 0.,  32.]]),
     ...         m=3)
+    >>>     ray.shutdown()
     """
     T_A = T
     T_B = T_A

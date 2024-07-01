@@ -653,6 +653,7 @@ class stimped(_stimp):
     >>>     pmp = stumpy.stimped(
     ...         ray,
     ...         np.array([584., -11., 23., 79., 1001., 0., -19.]))
+    >>>     ray.shutdown()
     """
 
     def __init__(

@@ -504,6 +504,7 @@ def ostinatoed(client, Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
     ...          np.array([600., -10., 23., 17.]),
     ...          np.array([  1.,   9.,  6.,  0.])],
     ...         m=3)
+    >>>     ray.shutdown()
     """
     if not isinstance(Ts, list):  # pragma: no cover
         raise ValueError(f"`Ts` is of type `{type(Ts)}` but a `list` is expected")

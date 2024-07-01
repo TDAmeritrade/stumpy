@@ -374,6 +374,7 @@ def mpdisted(
     ...         np.array([-11.1, 23.4, 79.5, 1001.0]),
     ...         np.array([584., -11., 23., 79., 1001., 0., -19.]),
     ...         m=3)
+    >>>     ray.shutdown()
     """
     partial_mp_func = functools.partial(
         stumped,
