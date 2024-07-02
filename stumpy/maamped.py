@@ -2,6 +2,8 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
+import math
+
 import numpy as np
 
 from . import config, core
@@ -95,7 +97,7 @@ def _dask_maamped(
     hosts = list(dask_client.ncores().keys())
     nworkers = len(hosts)
 
-    step = 1 + l // nworkers
+    step = int(math.ceil(l / nworkers))
 
     for start in range(0, l, step):
         P[:, start], I[:, start] = _get_first_maamp_profile(
@@ -251,7 +253,7 @@ def _ray_maamped(
 
     nworkers = core.get_ray_nworkers(ray_client)
 
-    step = 1 + l // nworkers
+    step = int(math.ceil(l / nworkers))
 
     for start in range(0, l, step):
         P[:, start], I[:, start] = _get_first_maamp_profile(
