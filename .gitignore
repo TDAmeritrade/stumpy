@@ -9,6 +9,7 @@ LOG*
 PID
 .coverage*
 coverage.xml
+stumpy.coverage.xml
 dask-worker-space
 stumpy.egg-info
 build

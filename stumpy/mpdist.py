@@ -356,13 +356,25 @@ def mpdisted(
     >>> import numpy as np
     >>> from dask.distributed import Client
     >>> if __name__ == "__main__":
-    ...     with Client() as dask_client:
-    ...         stumpy.mpdisted(
+    >>>     with Client() as dask_client:
+    >>>         stumpy.mpdisted(
     ...             dask_client,
     ...             np.array([-11.1, 23.4, 79.5, 1001.0]),
     ...             np.array([584., -11., 23., 79., 1001., 0., -19.]),
     ...             m=3)
     0.00019935236191097894
+
+    Alternatively, you can also use `ray`
+
+    >>> import ray
+    >>> if __name__ == "__main__":
+    >>>     ray.init()
+    >>>     stumpy.mpdisted(
+    ...         ray,
+    ...         np.array([-11.1, 23.4, 79.5, 1001.0]),
+    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]),
+    ...         m=3)
+    >>>     ray.shutdown()
     """
     partial_mp_func = functools.partial(
         stumped,

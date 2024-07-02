@@ -644,6 +644,16 @@ class stimped(_stimp):
     ...         pmp.PAN_
     array([[0., 1., 1., 1., 1., 1., 1.],
            [0., 1., 1., 1., 1., 1., 1.]])
+
+    Alternatively, you can also use `ray`
+
+    >>> import ray
+    >>> if __name__ == "__main__":
+    >>>     ray.init()
+    >>>     pmp = stumpy.stimped(
+    ...         ray,
+    ...         np.array([584., -11., 23., 79., 1001., 0., -19.]))
+    >>>     ray.shutdown()
     """
 
     def __init__(
