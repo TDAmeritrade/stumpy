@@ -713,6 +713,7 @@ def _compute_multi_p_norm(
     core._apply_exclusion_zone(p_norm, idx, excl_zone, np.inf)
 
 
+@njit
 def _maamp(
     T,
     m,

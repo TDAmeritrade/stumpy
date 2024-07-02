@@ -950,6 +950,7 @@ def _compute_multi_D(
     core._apply_exclusion_zone(D, idx, excl_zone, np.inf)
 
 
+@njit
 def _mstump(
     T,
     m,
