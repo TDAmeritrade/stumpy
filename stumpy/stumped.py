@@ -581,7 +581,7 @@ def stumped(
     ...             ray,
     ...             np.array([584., -11., 23., 79., 1001., 0., -19.]),
     ...             m=3)
-    >>>     ray.shutdown)
+    >>>     ray.shutdown()
     """
     if T_B is None:
         T_B = T_A
