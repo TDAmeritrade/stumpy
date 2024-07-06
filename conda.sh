@@ -13,6 +13,9 @@ if [[ $# -gt 0 ]]; then
     if [ $1 == "min" ]; then
         install_mode="min"
         echo "Installing minimum dependencies with install_mode=\"min\""
+    elif [[ $1 == "ray" ]]; then
+        install_mode="ray"
+        echo "Installing ray dependencies with install_mode=\"ray\""
     elif [[ $1 == "numba" ]] && [[ "${arch_name}" != "arm64" ]]; then
         install_mode="numba"
         echo "Installing numba release candidate dependencies with install_mode=\"numba\""
@@ -57,6 +60,14 @@ generate_numba_environment_yaml()
     grep -Ev "numba|python" environment.yml > environment.numba.yml
 }
 
+generate_ray_environment_yaml()
+{
+    # Limit max Python version and append pip install ray
+    echo "Generating \"environment.ray.yml\" File"
+    ray_python=`./ray_python_version.py`
+    sed "/  - python/ s/$/,<=$ray_python/" environment.yml | cat - <(echo $'  - pip\n  - pip:\n    - ray>=2.23.0') > environment.ray.yml
+}
+
 fix_libopenblas()
 {
     if [ ! -f $CONDA_PREFIX/lib/libopenblas.dylib ]; then
@@ -71,6 +82,7 @@ clean_up()
     echo "Cleaning Up"
     rm -rf "environment.min.yml"
     rm -rf "environment.numba.yml"
+    rm -rf "environment.ray.yml"
 }
 
 ###########
@@ -92,6 +104,9 @@ fi
 if [[ $install_mode == "min" ]]; then
     generate_min_environment_yaml
     mamba env update --name $conda_env --file environment.min.yml || conda env update --name $conda_env --file environment.min.yml
+elif [[ $install_mode == "ray" ]]; then
+    generate_ray_environment_yaml
+    mamba env update --name $conda_env --file environment.ray.yml || conda env update --name $conda_env --file environment.ray.yml
 elif [[ $install_mode == "numba" ]]; then
     echo ""
     echo "Installing python=$python_version"
