@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# 1. Update version number in setup.py
+# 1. Update version number in pyproject.toml
 # 2. Update CHANGELOG
 # 3. Update README with new features/functions/tutorials
 # 4. Determine minimum versions and dependencies with ./min.py

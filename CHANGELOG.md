@@ -1,3 +1,41 @@
+# 2024-07-08    [ 1.13.0 ]:
+---------------------------
+* bugfixes
+  - Fixed Ostinato overwriting original time series
+* features
+  - Added Ray support
+  - Added `numpy` 2.0 support
+  - Added named attributes to matrix profile array
+  - Added Python 3.12 support
+  - Migrated setup.py, setuptools to pyproject.toml
+* tasks
+  - Added version mismatch checker
+  - Added `copy` param to `preprocess`-related functions
+  - Disabled bokeh dashboard in dask
+  - Added `numba` channel to environment.yml
+  - Replace `np.INF` with `-np.infg`
+  - Fixed inability to import packages in tutorials
+  - Added matplotlib to RTD requirements
+  - Removed unnecessary comments in code
+  - Added `tests/__pycache__` to `clean_up` process
+  - Added option to display current dev environment in `test.sh`
+  - Added keyword `test.sh` to only execute `gpu` containing tests
+  - Added "upgrade pip" to Github Actions workflow
+  - Removed Twitter and Zenodo badges, added NumFOCUS badge
+  - Added Github Discussions link
+  - Updated codecove version for Github Actions
+  - Removed `pkg_resources` as a dependency
+  - Added codeowners file
+* documentation
+  - Improved syntax highlighting
+  - Updated class docstrings
+  - Removed napoleon extension
+  - Switched to Myst
+  - Relocated notebooks/tutorials
+  - Fixed named attributes being displayed incorrectly
+  - Fixed typos
+
+
 # 2023-08-20    [ 1.12.0 ]:
 ---------------------------
 * bugfixes
