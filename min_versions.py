@@ -80,13 +80,20 @@ def get_min_scipy_version(min_python, min_numpy):
     """
     Determine the SciPy version compatibility
     """
+    colnames = pd.read_html(
+        "https://docs.scipy.org/doc/scipy/dev/toolchain.html#numpy"
+    )[1].columns
+    converter = {colname: str for colname in colnames}
     df = (
-        pd.read_html("https://docs.scipy.org/doc/scipy/dev/toolchain.html#numpy")[1]
+        pd.read_html(
+            "https://docs.scipy.org/doc/scipy/dev/toolchain.html#numpy",
+            converters=converter,
+        )[1]
         .rename(columns=lambda x: x.replace(" ", "_"))
         .replace({".x": ""}, regex=True)
         .pipe(
             lambda df: df.assign(
-                SciPy_version=df.SciPy_version.astype("str").str.replace(
+                SciPy_version=df.SciPy_version.str.replace(
                     r"\d\/", "", regex=True  # noqa
                 )
             )
