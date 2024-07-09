@@ -64,8 +64,31 @@
 
 rm -rf dist
 python3 -m build --sdist --wheel
+
 # Use API Token instead of username+password
 # https://pypi.org/help/#apitoken
-twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
-# twine upload dist/*
+# Place the API Token(s) in your $HOME/.pypirc
+# [distutils]
+# index-servers =
+#     pypi
+#     testpypi
+# 
+# [pypi]
+# repository = https://upload.pypi.org/legacy/
+# username = __token__
+# password = <PyPI API Token>
+# 
+# [testpypi]
+# repository = https://test.pypi.org/legacy/
+# username = __token__
+# password = <Test PyPI API Token>
+
+# Upload to Test PyPi
+# (OLD) twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
+twine upload --verbose -r testpypi dist/*
+
+# Upload to PyPI
+# (OLD) twine upload dist/*
+# twine upload -r pypi dist/*
+
 rm -rf build dist stumpy.egg-info
