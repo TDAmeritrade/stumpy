@@ -59,36 +59,62 @@
 #     GROUP BY DATE(timestamp)
 # )
 # ORDER BY date
-# 
 
+###############
+#  Functions  #
+###############
 
-rm -rf dist
-python3 -m build --sdist --wheel
+upload_test_pypi()
+{
+    # Upload to Test PyPi
+    if ! [ -f $HOME/.pypirc ]; then
+        # .pypirc file does not exist, prompt for API token
+        twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
+    else
+        # Get API token from .pypirc file
+        twine upload --verbose -r testpypi dist/*
+    fi
+}
+
+upload_pypi()
+{
+    # Upload to PyPi
+    if ! [ -f $HOME/.pypirc ]; then
+        # .pypirc file does not exist, prompt for API token
+        twine upload dist/*
+    else
+        # Get API token from .pypirc file
+        twine upload -r pypi dist/*
+    fi
+}
 
 # Use API Token instead of username+password
 # https://pypi.org/help/#apitoken
 # Place the API Token(s) in your $HOME/.pypirc
+#
+# # Example .pypirc file
+#
 # [distutils]
 # index-servers =
 #     pypi
 #     testpypi
-# 
+#
 # [pypi]
 # repository = https://upload.pypi.org/legacy/
 # username = __token__
 # password = <PyPI API Token>
-# 
+#
 # [testpypi]
 # repository = https://test.pypi.org/legacy/
 # username = __token__
 # password = <Test PyPI API Token>
 
-# Upload to Test PyPi
-# (OLD) twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
-twine upload --verbose -r testpypi dist/*
+###########
+#   Main  #
+###########
 
-# Upload to PyPI
-# (OLD) twine upload dist/*
-# twine upload -r pypi dist/*
-
+rm -rf dist
+python3 -m build --sdist --wheel
+upload_test_pypi
+# upload_pypi
 rm -rf build dist stumpy.egg-info
