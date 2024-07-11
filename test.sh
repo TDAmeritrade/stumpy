@@ -257,7 +257,7 @@ show()
 {
     echo "Current working directory: " `pwd`
     echo "Black version: " `python -c "import black; print(black.__version__)"`
-    echo "Flake8 versoin: " `python -c "import flake8; print(flake8.__version__)"`
+    echo "Flake8 version: " `python -c "import flake8; print(flake8.__version__)"`
     echo "Python version: " `python -c "import platform; print(platform.python_version())"`
     echo "NumPy version: " `python -c "import numpy; print(numpy.__version__)"`
     echo "SciPy version: " `python -c "import scipy; print(scipy.__version__)"`
