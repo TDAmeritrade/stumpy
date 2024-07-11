@@ -268,7 +268,9 @@ show()
 check_links()
 {
     echo "Checking notebook links"
-    pytest --check-links docs/Tutorial_*.ipynb
+    export JUPYTER_PLATFORM_DIRS=1
+    jupyter --paths
+    pytest --check-links docs/Tutorial_*.ipynb notebooks/Tutorial_*.ipynb docs/*.md docs/*.rst  ./*.md ./*.rst
 }
 
 clean_up()
