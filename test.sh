@@ -19,6 +19,8 @@ do
         test_mode="gpu"
     elif [[ $var == "show" ]]; then
         test_mode="show"
+    elif [[ $var == "count" ]]; then
+        test_mode="count"
     elif [[ $var == "custom" ]]; then
         test_mode="custom"
     elif [[ $var == "report" ]]; then
@@ -273,6 +275,12 @@ check_links()
     pytest --check-links docs/Tutorial_*.ipynb notebooks/Tutorial_*.ipynb docs/*.md docs/*.rst  ./*.md ./*.rst
 }
 
+count()
+{
+    test_count=$(pytest --collect-only -q | sed '$d' | sed '$d' | wc -l | sed 's/ //g')
+    echo "Found $test_count Unit Tests"
+}
+
 clean_up()
 {
     echo "Cleaning Up"
@@ -340,6 +348,9 @@ elif [[ $test_mode == "report" ]]; then
 elif [[ $test_mode == "gpu" ]]; then
     echo "Executing GPU Unit Tests Only"
     test_gpu
+elif [[ $test_mode == "count" ]]; then
+    echo "Counting Unit Tests"
+    count
 elif [[ $test_mode == "links" ]]; then
     echo "Check Notebook Links  Only"
     check_links

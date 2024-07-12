@@ -8,6 +8,7 @@ import numpy as np
 
 from . import config, core
 from .maamped import maamped
+from .mmparray import mparray
 from .mstump import _get_first_mstump_profile, _get_multi_QT, _mstump
 
 
@@ -531,4 +532,4 @@ def mstumped(
         discords,
     )
 
-    return P, I
+    return mparray(P_=P, I_=I)

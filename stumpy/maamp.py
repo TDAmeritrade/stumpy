@@ -8,6 +8,7 @@ import numpy as np
 from numba import njit, prange
 
 from . import config, core
+from .mmparray import mparray
 
 
 def _multi_mass_absolute(Q, T, m, Q_subseq_isfinite, T_subseq_isfinite, p=2.0):
@@ -979,4 +980,4 @@ def maamp(T, m, include=None, discords=False, p=2.0):
         discords,
     )
 
-    return P, I
+    return mparray(P_=P, I_=I)
