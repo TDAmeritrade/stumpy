@@ -258,12 +258,15 @@ test_gpu()
 show()
 {
     echo "Current working directory: " `pwd`
-    echo "Black version: " `python -c "import black; print(black.__version__)"`
-    echo "Flake8 version: " `python -c "import flake8; print(flake8.__version__)"`
+    echo "Black version: " `python -c 'exec("try:\n\timport black;\n\tprint(black.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
+    echo "Flake8 version: " `python -c 'exec("try:\n\timport flake8;\n\tprint(flake8.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
     echo "Python version: " `python -c "import platform; print(platform.python_version())"`
-    echo "NumPy version: " `python -c "import numpy; print(numpy.__version__)"`
-    echo "SciPy version: " `python -c "import scipy; print(scipy.__version__)"`
-    echo "Numba version: " `python -c "import numba; print(numba.__version__)"` 
+    echo "NumPy version: " `python -c 'exec("try:\n\timport numpy;\n\tprint(numpy.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
+    echo "SciPy version: " `python -c 'exec("try:\n\timport scipy;\n\tprint(scipy.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
+    echo "Numba version: " `python -c 'exec("try:\n\timport numba;\n\tprint(numba.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
+    echo "Dask version: " `python -c 'exec("try:\n\timport dask;\n\tprint(dask.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
+    echo "Distributed version: " `python -c 'exec("try:\n\timport distributed;\n\tprint(distributed.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
+    echo "PyTest version: " `python -c 'exec("try:\n\timport pytest;\n\tprint(pytest.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
     exit 0
 }
 
