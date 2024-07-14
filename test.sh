@@ -196,6 +196,7 @@ test_custom()
 test_unit()
 {
     echo "Testing Numba JIT Compiled Functions"
+    SECONDS=0
     if [[ ${#custom_testfiles[@]}  -eq "0" ]]; then
         for testfile in tests/test_*.py
         do
@@ -209,6 +210,8 @@ test_unit()
             check_errs $?
         done
     fi
+    duration=$SECONDS
+    echo "Elapsed Time: $((duration / 60)) minutes and $((duration % 60)) seconds" 
 }
 
 test_coverage()
@@ -226,6 +229,7 @@ test_coverage()
 
     # We always attempt to test everything but we may ignore things (ray, helper scripts) when we generate the coverage report
 
+    SECONDS=0
     if [[ ${#custom_testfiles[@]}  -eq "0" ]]; then
         # Execute all tests
         for testfile in tests/test_*.py;
@@ -241,6 +245,8 @@ test_coverage()
             check_errs $?
         done
     fi
+    duration=$SECONDS
+    echo "Elapsed Time: $((duration / 60)) minutes and $((duration % 60)) seconds"
     show_coverage_report
 }
 
