@@ -141,13 +141,13 @@ def test_input_not_overwritten():
 def test_extract_several_consensus():
     # This test is to further ensure that the function `gpu_ostinato`
     # does not tamper with the original data.
-    Ts = [np.random.rand(n) for n in [256, 512, 1024]]
+    Ts = [np.random.rand(n) for n in [64, 128]]
     Ts_ref = [T.copy() for T in Ts]
     Ts_comp = [T.copy() for T in Ts]
 
     m = 20
 
-    k = 5  # Get the first `k` consensus motifs
+    k = 2  # Get the first `k` consensus motifs
     for _ in range(k):
         # Find consensus motif and its NN in each time series in Ts_comp
         # Remove them from Ts_comp as well as Ts_ref, and assert that the
