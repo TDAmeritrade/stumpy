@@ -8,19 +8,16 @@ echo "y" |  python -m pip uninstall stumpy
 # Parse command line arguments
 for var in "$@"
 do
-    if [[ $var == "dev" ]]; then
-        echo 'Installing stumpy locally in "--editable" mode'
-        mode="--editable"
+    if [[ $var == "dev" ]] || [[ $var == "ci" ]]; then
+        echo 'Installing stumpy locally with extra "ci" requirement'
+        mode=""
+        extra="[ci]"
     elif [[ $var == "edit" ]]; then
         echo 'Installing stumpy locally in "--editable" mode'
         mode="--editable"
     elif [[ $var == "-e" ]]; then
         echo 'Installing stumpy locally in "--editable" mode'
         mode="--editable"
-    elif [[ $var == "ci" ]]; then
-        echo 'Installing stumpy locally with extra "ci" requirement'
-        mode=""
-        extra="[ci]"
     else
         echo "Installing stumpy in site-packages"
     fi

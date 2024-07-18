@@ -57,14 +57,14 @@ check_errs()
 check_black()
 {
     echo "Checking Black Code Formatting"
-    black --check --exclude=".*\.ipynb" --diff ./
+    black --check --exclude=".*\.ipynb" --extend-exclude=".venv" --diff ./
     check_errs $?
 }
 
 check_isort()
 {
     echo "Checking iSort Import Formatting"
-    isort --profile black --check-only ./
+    isort --profile black --skip .venv --check-only ./
     check_errs $?
 }
 
@@ -78,7 +78,7 @@ check_docstrings()
 check_flake()
 {
     echo "Checking Flake8 Style Guide Enforcement"
-    flake8 ./
+    flake8 --extend-exclude=.venv ./
     check_errs $?
 }
 
