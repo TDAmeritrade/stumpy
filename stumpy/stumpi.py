@@ -3,7 +3,6 @@
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
 import numpy as np
-from numba import njit
 
 from . import config, core, stump
 from .aampi import aampi
@@ -355,7 +354,7 @@ class stumpi:
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
 
-        self._update_egress_PI(D, self._P, self._I, self._excl_zone, self._n_appended)
+        core._update_egress_PI(D, self._P, self._I, self._excl_zone, self._n_appended)
 
         # All neighbors of the last subsequence are on its left. So, its (top-1)
         # matrix profile value/index and its left matrix profile value/index must
@@ -452,61 +451,6 @@ class stumpi:
         self._M_T = M_T_new
         self._Σ_T = Σ_T_new
         self._T_subseq_isconstant = T_subseq_isconstant_new
-
-    @staticmethod
-    @njit
-    def _update_egress_PI(D, P, I, excl_zone, n_appended=0):
-        """
-        Given the 1D array distance profile, `D`, of the last subsequence of T,
-        update (in-place) the (top-k) matrix profile, `P`, and the matrix profile
-        index, I, of T.
-
-        Parameters
-        ----------
-        D : numpy.ndarray
-            A 1D array (with dtype float) representing the distance profile of
-            the last subsequence of T
-
-        P : numpy.ndarray
-            A 2D array representing the matrix profile of T,
-            with shape (len(T) - m + 1, k), where `m` is the window size
-
-        I : numpy.ndarray
-            A 2D array representing the matrix profile index of T,
-            with shape (len(T) - m + 1, k), where `m` is the window size
-
-        excl_zone : int
-            Size of the exclusion zone. That is, after finding the next-best-match
-            located at index `idx`, we ignore subsequences with start index in range
-            (idx -  excl_zone, idx + excl_zone + 1).
-
-        n_appended : int
-            Number of times the timeseries start point is shifted one to the right
-
-        Returns
-        -------
-        None
-        """
-        core._apply_exclusion_zone(D, D.shape[0] - 1, excl_zone, np.inf)
-
-        update_idx = np.argwhere(D < P[:, -1]).flatten()
-        for i in update_idx:
-            idx = np.searchsorted(P[i], D[i], side="right")
-            core._shift_insert_at_index(P[i], idx, D[i])
-            core._shift_insert_at_index(I[i], idx, D.shape[0] + n_appended - 1)
-            # D.shape[0] is base-1
-
-        # Calculate the (top-k) matrix profile values/indices for the last subsequence
-        # by using its corresponding distance profile `D`
-        P[-1] = np.inf
-        I[-1] = -1
-        for i, d in enumerate(D):
-            if d < P[-1, -1]:
-                idx = np.searchsorted(P[-1], d, side="right")
-                core._shift_insert_at_index(P[-1], idx, d)
-                core._shift_insert_at_index(I[-1], idx, i + n_appended)
-
-        return
 
     @property
     def P_(self):
