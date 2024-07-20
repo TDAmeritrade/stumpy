@@ -469,11 +469,11 @@ class stumpi:
 
         P : numpy.ndarray
             A 2D array representing the matrix profile of T,
-            with shape (len(T) - m + 1, k)
+            with shape (len(T) - m + 1, k), where `m` is the window size
 
         I : numpy.ndarray
             A 2D array representing the matrix profile index of T,
-            with shape (len(T) - m + 1, k)
+            with shape (len(T) - m + 1, k), where `m` is the window size
 
         excl_zone : int
             Size of the exclusion zone. That is, after finding the next-best-match
