@@ -10,6 +10,7 @@ from scipy.stats import norm
 
 from . import config, core
 from .maamp import maamp, maamp_mdl, maamp_multi_distance_profile, maamp_subspace
+from .mmparray import mparray
 
 
 def _multi_mass(
@@ -1281,4 +1282,4 @@ def mstump(
         discords,
     )
 
-    return P, I
+    return mparray(P_=P, I_=I)

@@ -19,6 +19,8 @@ do
         test_mode="gpu"
     elif [[ $var == "show" ]]; then
         test_mode="show"
+    elif [[ $var == "count" ]]; then
+        test_mode="count"
     elif [[ $var == "custom" ]]; then
         test_mode="custom"
     elif [[ $var == "report" ]]; then
@@ -55,14 +57,14 @@ check_errs()
 check_black()
 {
     echo "Checking Black Code Formatting"
-    black --check --exclude=".*\.ipynb" --diff ./
+    black --check --exclude=".*\.ipynb" --extend-exclude=".venv" --diff ./
     check_errs $?
 }
 
 check_isort()
 {
     echo "Checking iSort Import Formatting"
-    isort --profile black --check-only ./
+    isort --profile black --skip .venv --check-only ./
     check_errs $?
 }
 
@@ -76,7 +78,7 @@ check_docstrings()
 check_flake()
 {
     echo "Checking Flake8 Style Guide Enforcement"
-    flake8 ./
+    flake8 --extend-exclude=.venv ./
     check_errs $?
 }
 
@@ -194,6 +196,7 @@ test_custom()
 test_unit()
 {
     echo "Testing Numba JIT Compiled Functions"
+    SECONDS=0
     if [[ ${#custom_testfiles[@]}  -eq "0" ]]; then
         for testfile in tests/test_*.py
         do
@@ -207,6 +210,8 @@ test_unit()
             check_errs $?
         done
     fi
+    duration=$SECONDS
+    echo "Elapsed Time: $((duration / 60)) minutes and $((duration % 60)) seconds" 
 }
 
 test_coverage()
@@ -224,6 +229,7 @@ test_coverage()
 
     # We always attempt to test everything but we may ignore things (ray, helper scripts) when we generate the coverage report
 
+    SECONDS=0
     if [[ ${#custom_testfiles[@]}  -eq "0" ]]; then
         # Execute all tests
         for testfile in tests/test_*.py;
@@ -239,6 +245,8 @@ test_coverage()
             check_errs $?
         done
     fi
+    duration=$SECONDS
+    echo "Elapsed Time: $((duration / 60)) minutes and $((duration % 60)) seconds"
     show_coverage_report
 }
 
@@ -256,19 +264,30 @@ test_gpu()
 show()
 {
     echo "Current working directory: " `pwd`
-    echo "Black version: " `python -c "import black; print(black.__version__)"`
-    echo "Flake8 versoin: " `python -c "import flake8; print(flake8.__version__)"`
+    echo "Black version: " `python -c 'exec("try:\n\timport black;\n\tprint(black.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
+    echo "Flake8 version: " `python -c 'exec("try:\n\timport flake8;\n\tprint(flake8.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
     echo "Python version: " `python -c "import platform; print(platform.python_version())"`
-    echo "NumPy version: " `python -c "import numpy; print(numpy.__version__)"`
-    echo "SciPy version: " `python -c "import scipy; print(scipy.__version__)"`
-    echo "Numba version: " `python -c "import numba; print(numba.__version__)"` 
+    echo "NumPy version: " `python -c 'exec("try:\n\timport numpy;\n\tprint(numpy.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
+    echo "SciPy version: " `python -c 'exec("try:\n\timport scipy;\n\tprint(scipy.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
+    echo "Numba version: " `python -c 'exec("try:\n\timport numba;\n\tprint(numba.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
+    echo "Dask version: " `python -c 'exec("try:\n\timport dask;\n\tprint(dask.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
+    echo "Distributed version: " `python -c 'exec("try:\n\timport distributed;\n\tprint(distributed.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
+    echo "PyTest version: " `python -c 'exec("try:\n\timport pytest;\n\tprint(pytest.__version__);\nexcept ModuleNotFoundError:\n\tprint(\"Module Not Found\");")'`
     exit 0
 }
 
 check_links()
 {
     echo "Checking notebook links"
-    pytest --check-links docs/Tutorial_*.ipynb
+    export JUPYTER_PLATFORM_DIRS=1
+    jupyter --paths
+    pytest --check-links docs/Tutorial_*.ipynb notebooks/Tutorial_*.ipynb docs/*.md docs/*.rst  ./*.md ./*.rst
+}
+
+count()
+{
+    test_count=$(pytest --collect-only -q | sed '$d' | sed '$d' | wc -l | sed 's/ //g')
+    echo "Found $test_count Unit Tests"
 }
 
 clean_up()
@@ -338,6 +357,9 @@ elif [[ $test_mode == "report" ]]; then
 elif [[ $test_mode == "gpu" ]]; then
     echo "Executing GPU Unit Tests Only"
     test_gpu
+elif [[ $test_mode == "count" ]]; then
+    echo "Counting Unit Tests"
+    count
 elif [[ $test_mode == "links" ]]; then
     echo "Check Notebook Links  Only"
     check_links
