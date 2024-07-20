@@ -1753,3 +1753,31 @@ def test_process_isconstant_2d():
     T_subseq_isconstant_comp = core.process_isconstant(T, m, T_subseq_isconstant)
 
     npt.assert_array_equal(T_subseq_isconstant_ref, T_subseq_isconstant_comp)
+
+
+def test_update_egress_PI():
+    T = np.random.rand(64)
+    m = 3
+    k = 1
+
+    # ref
+    mp_ref = stump(T, m, k=k)
+    P_ref = mp_ref[:, :k].astype(np.float64)
+    I_ref = mp_ref[:, k : 2 * k].astype(np.int64)
+
+    # comp
+    P_comp = np.full_like(P_ref, np.inf)
+    I_comp = np.full_like(I_ref, -1)
+
+    mp_comp = stump(T[:-1], m, k=k)
+    P_comp[:-1, :] = mp_comp[:, :k]
+    I_comp[:-1, :] = mp_comp[:, k : 2 * k]
+
+    D = core.mass(T[-m:], T)
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+    core._update_egress_PI(D, P_comp, I_comp, excl_zone, 0)
+
+    # check
+    npt.assert_almost_equal(P_ref, P_comp)
+    npt.assert_almost_equal(I_ref, I_comp)
