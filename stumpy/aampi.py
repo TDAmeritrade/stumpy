@@ -247,26 +247,7 @@ class aampi:
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
 
-        core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
-
-        update_idx = np.argwhere(D < self._P[:, -1]).flatten()
-        for i in update_idx:
-            idx = np.searchsorted(self._P[i], D[i], side="right")
-            core._shift_insert_at_index(self._P[i], idx, D[i])
-            core._shift_insert_at_index(
-                self._I[i], idx, D.shape[0] + self._n_appended - 1
-            )
-            # D.shape[0] is base-1
-
-        # Calculate the (top-k) matrix profile values/indices for the last subsequence
-        # by using its corresponding distance profile `D`
-        self._P[-1] = np.inf
-        self._I[-1] = -1
-        for i, d in enumerate(D):
-            if d < self._P[-1, -1]:
-                idx = np.searchsorted(self._P[-1], d, side="right")
-                core._shift_insert_at_index(self._P[-1], idx, d)
-                core._shift_insert_at_index(self._I[-1], idx, i + self._n_appended)
+        core._update_egress_PI(D, self._P, self._I, self._excl_zone, self._n_appended)
 
         # All neighbors of the last subsequence are on its left. So, its (top-1)
         # matrix profile value/index and its left matrix profile value/index must
