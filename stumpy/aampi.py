@@ -303,30 +303,17 @@ class aampi:
         if np.any(~self._T_isfinite[-self._m :]):
             D[:] = np.inf
 
-        core.apply_exclusion_zone(D, D.shape[0] - 1, self._excl_zone, np.inf)
-
-        update_idx = np.argwhere(D[:l] < self._P[:l, -1]).flatten()
-        for i in update_idx:
-            idx = np.searchsorted(self._P[i], D[i], side="right")
-            core._shift_insert_at_index(self._P[i], idx, D[i])
-            core._shift_insert_at_index(self._I[i], idx, l)
-
-        # Calculating top-k matrix profile and (top-1) left matrix profile (and their
-        # corresponding indices) for new subsequence whose distance profile is `D`
         P_new = np.full(self._k, np.inf, dtype=np.float64)
         I_new = np.full(self._k, -1, dtype=np.int64)
-        for i, d in enumerate(D):
-            if d < P_new[-1]:  # maximum value in sorted array P_new
-                idx = np.searchsorted(P_new, d, side="right")
-                core._shift_insert_at_index(P_new, idx, d)
-                core._shift_insert_at_index(I_new, idx, i)
-
-        left_I_new = I_new[0]
-        left_P_new = P_new[0]
-
-        self._T = T_new
         self._P = np.append(self._P, P_new.reshape(1, -1), axis=0)
         self._I = np.append(self._I, I_new.reshape(1, -1), axis=0)
+
+        core._update_egress_PI(D, self._P, self._I, self._excl_zone, 0)
+
+        left_I_new = self._I[-1, 0]
+        left_P_new = self._P[-1, 0]
+
+        self._T = T_new
         self._left_P = np.append(self._left_P, left_P_new)
         self._left_I = np.append(self._left_I, left_I_new)
         self._p_norm = p_norm_new
