@@ -126,8 +126,12 @@ def _aamp_motifs(
         )
 
         if len(query_matches) > min_neighbors:
-            motif_distances.append(query_matches[:max_matches, 0])
-            motif_indices.append(query_matches[:max_matches, 1])
+            if np.isinf(max_matches):
+                motif_distances.append(query_matches[:, 0])
+                motif_indices.append(query_matches[:, 1])
+            else:
+                motif_distances.append(query_matches[:max_matches, 0])
+                motif_indices.append(query_matches[:max_matches, 1])
 
         if len(query_matches) == 0:  # pragma: no cover
             query_matches = np.array([[np.nan, candidate_idx]])
