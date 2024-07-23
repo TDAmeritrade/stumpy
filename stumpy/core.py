@@ -2254,7 +2254,7 @@ def preprocess_diagonal(
 
     M_T, Σ_T = compute_mean_std(T, m)
     Σ_T[T_subseq_isconstant] = 1.0  # Avoid divide by zero in next inversion step
-    Σ_T[~T_subseq_isfinite] = 1.0
+    Σ_T[~T_subseq_isfinite] = np.nan
     Σ_T_inverse = 1.0 / Σ_T
     M_T_m_1, _ = compute_mean_std(T, m - 1)
 
