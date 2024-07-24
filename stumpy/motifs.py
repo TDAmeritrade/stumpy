@@ -131,12 +131,8 @@ def _motifs(
         )
 
         if len(query_matches) > min_neighbors:
-            if np.isinf(max_matches):
-                motif_distances.append(query_matches[:, 0])
-                motif_indices.append(query_matches[:, 1])
-            else:
-                motif_distances.append(query_matches[:max_matches, 0])
-                motif_indices.append(query_matches[:max_matches, 1])
+            motif_distances.append(query_matches[:max_matches, 0])
+            motif_indices.append(query_matches[:max_matches, 1])
 
         if len(query_matches) == 0:  # pragma: no cover
             query_matches = np.array([[np.nan, candidate_idx]])
@@ -338,7 +334,7 @@ def motifs(
     m = T.shape[-1] - P.shape[-1] + 1
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
     if max_matches is None:  # pragma: no cover
-        max_matches = np.inf
+        max_matches = P.shape[-1]
     if cutoff is None:  # pragma: no cover
         P_copy = P.copy().astype(np.float64)
         P_copy[np.isinf(P_copy)] = np.nan

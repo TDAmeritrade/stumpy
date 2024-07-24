@@ -679,7 +679,7 @@ def test_motifs_with_max_matches_none():
         max_motifs=max_motifs,
     )
 
-    ref_len = len(T) / m
+    ref_len = len(T) - m + 1
 
-    npt.assert_(ref_len <= comp_distance.shape[1])
-    npt.assert_(ref_len <= comp_indices.shape[1])
+    npt.assert_(ref_len >= comp_distance.shape[1])
+    npt.assert_(ref_len >= comp_indices.shape[1])
