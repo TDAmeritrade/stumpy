@@ -1,7 +1,6 @@
 import functools
 import math
 import os
-import warnings
 from unittest.mock import patch
 
 import naive
@@ -1758,14 +1757,11 @@ def test_process_isconstant_2d():
     npt.assert_array_equal(T_subseq_isconstant_ref, T_subseq_isconstant_comp)
 
 
-def test_preprocess_diagonal_std_inverse():
+@pytest.mark.filterwarnings(
+    "error:divide by zero encountered in divide", category=RuntimeWarning
+)
+def test_preprocess_diagonal_divide_by_zero():
     T = np.random.rand(64)
     m = 3
     T[:m] = np.nan
-
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        core.preprocess_diagonal(T, m)
-        for item in w:
-            if issubclass(item.category, RuntimeWarning):
-                assert "divide by zero encountered in divide" not in str(item.message)
+    core.preprocess_diagonal(T, m)
