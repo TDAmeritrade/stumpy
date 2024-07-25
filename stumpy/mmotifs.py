@@ -55,7 +55,7 @@ def mmotifs(
         subsequence must have at least one similar match in order to be considered a
         motif.
 
-    max_distance : flaot, default None
+    max_distance : float, default None
         Maximal distance that is allowed between a query subsequence
         (a candidate motif) and all subsequences in ``T`` to be considered as a
         match. If ``None``, this defaults to
