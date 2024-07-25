@@ -58,10 +58,9 @@ def _across_series_nearest_neighbors(
     nns_subseq_idx = np.zeros(k, dtype=np.int64)
 
     for i in range(k):
-        QT = core.sliding_dot_product(Ts[Ts_idx][subseq_idx : subseq_idx + m], Ts[i])
-        distance_profile = core._mass(
-            Q,
-            Ts[i],
+        QT = core.sliding_dot_product(Q, Ts[i])
+        distance_profile = core.calculate_distance_profile(
+            m,
             QT,
             M_Ts[Ts_idx][subseq_idx],
             Σ_Ts[Ts_idx][subseq_idx],
@@ -256,9 +255,8 @@ def _ostinato(
                         (
                             radius,
                             np.min(
-                                core._mass(
-                                    Ts[j][q : q + m],
-                                    Ts[i],
+                                core.calculate_distance_profile(
+                                    m,
                                     QT,
                                     M_Ts[j][q],
                                     Σ_Ts[j][q],
@@ -373,9 +371,10 @@ def ostinato(Ts, m, normalize=True, p=2.0, Ts_subseq_isconstant=None):
         Ts_subseq_isconstant = [None] * len(Ts)
 
     for i, T in enumerate(Ts):
-        Ts_copy[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
+        _, M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
             T, m, copy=True, T_subseq_isconstant=Ts_subseq_isconstant[i]
         )
+        Ts_copy[i] = T.copy()
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
         Ts_copy, m, M_Ts, Σ_Ts, Ts_subseq_isconstant
