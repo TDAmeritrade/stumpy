@@ -254,7 +254,7 @@ def test_extract_several_consensus_ostinatoed(dask_cluster):
 @pytest.mark.filterwarnings(
     "error:divide by zero encountered in divide", category=RuntimeWarning
 )
-def test_ostinato_divide_by_zero():
+def test_divide_by_zero_ostinato():
     Ts = [np.random.rand(n) for n in [64, 128, 256]]
     m = 5
     Ts[0][:m] = np.nan
@@ -264,7 +264,7 @@ def test_ostinato_divide_by_zero():
 @pytest.mark.filterwarnings(
     "error:divide by zero encountered in divide", category=RuntimeWarning
 )
-def test_ostinatoed_divide_by_zero(dask_cluster):
+def test_divide_by_zero_ostinatoed(dask_cluster):
     Ts = [np.random.rand(n) for n in [64, 128, 256]]
     m = 5
     Ts[0][:m] = np.nan
