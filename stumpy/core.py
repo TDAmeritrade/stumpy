@@ -4221,7 +4221,7 @@ def _mpdist(
     return MPdist
 
 
-def process_isconstant(T, m, T_subseq_isconstant, T_subseq_isfinite=None):
+def process_isconstant(T, m, T_subseq_isconstant=None, T_subseq_isfinite=None):
     """
     A convenience wrapper around the `rolling_isconstant` and
     `fix_isconstant_isfinite_conflicts`.
