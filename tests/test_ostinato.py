@@ -249,3 +249,13 @@ def test_extract_several_consensus_ostinatoed(dask_cluster):
                     Ts_ref[i][np.isfinite(Ts_ref[i])],
                     Ts_comp[i][np.isfinite(Ts_comp[i])],
                 )
+
+
+@pytest.mark.filterwarnings(
+    "error:divide by zero encountered in divide", category=RuntimeWarning
+)
+def test_ostinato_divide_by_zero():
+    Ts = [np.random.rand(n) for n in [64, 128, 256]]
+    m = 5
+    Ts[0][:m] = np.nan
+    stumpy.ostinato(Ts, m)
