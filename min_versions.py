@@ -199,9 +199,9 @@ def test_pkg_mismatch_regex():
         "numba>=0.55.2",
     ]
 
-    for line in lines: 
+    for line in lines:
         match_found = False
-        for pkg_name, pkg_version in pkgs.items():        
+        for pkg_name, pkg_version in pkgs.items():
             matches = match_pkg_version(line, pkg_name)
 
             if matches:
@@ -209,7 +209,7 @@ def test_pkg_mismatch_regex():
                 break
 
         if not match_found:
-            raise ValueError(f"Edge case {line} not matched by regex")       
+            raise ValueError(f"Edge case {line} not matched by regex")
 
 
 if __name__ == "__main__":
