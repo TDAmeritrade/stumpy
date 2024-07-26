@@ -209,7 +209,7 @@ def test_pkg_mismatch_regex():
                 break
 
         if not match_found:
-            raise ValueError(f"Edge case {line} not matched by regex")
+            raise ValueError(f'Package mismatch regex fails to cover/match "{line}"')
 
 
 if __name__ == "__main__":
