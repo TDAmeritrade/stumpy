@@ -113,9 +113,10 @@ def gpu_ostinato(Ts, m, device_id=0, normalize=True, p=2.0, Ts_subseq_isconstant
     M_Ts = [None] * len(Ts)
     Σ_Ts = [None] * len(Ts)
     for i, T in enumerate(Ts):
-        Ts_copy[i], M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
+        _, M_Ts[i], Σ_Ts[i], Ts_subseq_isconstant[i] = core.preprocess(
             T, m, copy=True, T_subseq_isconstant=Ts_subseq_isconstant[i]
         )
+        Ts_copy[i] = T.copy()
 
     bsf_radius, bsf_Ts_idx, bsf_subseq_idx = _ostinato(
         Ts_copy,

@@ -880,9 +880,11 @@ def test_preprocess_non_normalized():
 def test_preprocess_diagonal():
     T = np.array([0, np.nan, 2, 3, 4, 5, 6, 7, np.inf, 9])
     m = 3
+    T_subseq_isfinite = core.rolling_isfinite(T, m)
 
     ref_T = np.array([0, 0, 2, 3, 4, 5, 6, 7, 0, 9], dtype=float)
     ref_M, ref_Σ = naive.compute_mean_std(ref_T, m)
+    ref_Σ[~T_subseq_isfinite] = np.nan
     ref_Σ_inverse = 1.0 / ref_Σ
     ref_M_m_1, _ = naive.compute_mean_std(ref_T, m - 1)
 
@@ -1753,3 +1755,13 @@ def test_process_isconstant_2d():
     T_subseq_isconstant_comp = core.process_isconstant(T, m, T_subseq_isconstant)
 
     npt.assert_array_equal(T_subseq_isconstant_ref, T_subseq_isconstant_comp)
+
+
+@pytest.mark.filterwarnings(
+    "error:divide by zero encountered in divide", category=RuntimeWarning
+)
+def test_preprocess_diagonal_divide_by_zero():
+    T = np.random.rand(64)
+    m = 3
+    T[:m] = np.nan
+    core.preprocess_diagonal(T, m)
