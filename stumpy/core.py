@@ -4371,7 +4371,7 @@ def get_ray_nworkers(ray_client):
 
 
 @njit
-def _update_egress_PI(D, P, I, excl_zone, n_appended=0):
+def _update_incremental_PI(D, P, I, excl_zone, n_appended=0):
     """
     Given the 1D array distance profile, `D`, of the last subsequence of T,
     update (in-place) the (top-k) matrix profile, `P`, and the matrix profile

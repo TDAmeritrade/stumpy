@@ -1755,7 +1755,7 @@ def test_process_isconstant_2d():
     npt.assert_array_equal(T_subseq_isconstant_ref, T_subseq_isconstant_comp)
 
 
-def test_update_egress_PI():
+def test_update_incremental_PI():
     T = np.random.rand(64)
     m = 3
     k = 1
@@ -1776,7 +1776,7 @@ def test_update_egress_PI():
     D = core.mass(T[-m:], T)
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    core._update_egress_PI(D, P_comp, I_comp, excl_zone, 0)
+    core._update_incremental_PI(D, P_comp, I_comp, excl_zone, 0)
 
     # check
     npt.assert_almost_equal(P_ref, P_comp)
