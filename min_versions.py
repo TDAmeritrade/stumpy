@@ -143,7 +143,7 @@ def get_min_scipy_version(min_python, min_numpy):
     return df.SciPy_version
 
 
-def match_str_version(line, pkg_name):
+def match_pkg_version(line, pkg_name):
     """
     Regular expression to match package versions
     """
@@ -170,7 +170,7 @@ def find_pkg_mismatches(pkg_name, pkg_version, fnames):
         with open(fname, "r") as file:
             for line_num, line in enumerate(file, start=1):
                 l = line.strip().replace(" ", "").lower()
-                matches = match_str_version(l, pkg_name)
+                matches = match_pkg_version(l, pkg_name)
                 if matches is not None:
                     version = matches.groups()[0]
                     if version != pkg_version:
@@ -199,17 +199,17 @@ def test_pkg_mismatch_regex():
         "numba>=0.55.2",
     ]
 
-    matches_found = []
-    for pkg_name, pkg_version in pkgs.items():
-
-        for line in lines:
-            matches = match_str_version(line, pkg_name)
+    for line in lines: 
+        match_found = False
+        for pkg_name, pkg_version in pkgs.items():        
+            matches = match_pkg_version(line, pkg_name)
 
             if matches:
-                matches_found.append(matches.group(0))
+                match_found = True
+                break
 
-    if len(matches_found) != len(lines):
-        raise ValueError("Edge case not matched by regex")
+        if not match_found:
+            raise ValueError(f"Edge case {line} not matched by regex")       
 
 
 if __name__ == "__main__":
