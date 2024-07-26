@@ -1753,3 +1753,28 @@ def test_process_isconstant_2d():
     T_subseq_isconstant_comp = core.process_isconstant(T, m, T_subseq_isconstant)
 
     npt.assert_array_equal(T_subseq_isconstant_ref, T_subseq_isconstant_comp)
+
+
+def test_process_isconstant_1d_default():
+    # test the default value of `T_subseq_isconstant` in `process_isconstant`
+    n = 64
+    m = 8
+
+    # case 1: without nan
+    T = np.random.rand(n)
+    T[:m] = 0.5  # constant subsequence
+
+    T_subseq_isconstant_ref = naive.rolling_isconstant(T, m, a_subseq_isconstant=None)
+    T_subseq_isconstant_comp = core.process_isconstant(T, m, T_subseq_isconstant=None)
+
+    npt.assert_array_equal(T_subseq_isconstant_ref, T_subseq_isconstant_comp)
+
+    # case 2: with nan
+    T = np.random.rand(n)
+    T[:m] = 0.5  # constant subsequence
+    T[-m:] = np.nan  # non-finite subsequence
+
+    T_subseq_isconstant_ref = naive.rolling_isconstant(T, m, a_subseq_isconstant=None)
+    T_subseq_isconstant_comp = core.process_isconstant(T, m, T_subseq_isconstant=None)
+
+    npt.assert_array_equal(T_subseq_isconstant_ref, T_subseq_isconstant_comp)
