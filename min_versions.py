@@ -143,6 +143,23 @@ def get_min_scipy_version(min_python, min_numpy):
     return df.SciPy_version
 
 
+def match_pkg_version(line, pkg_name):
+    """
+    Regular expression to match package versions
+    """
+    matches = re.search(
+        rf"""
+                        {pkg_name}  # Package name
+                        [\s=><:"\'\[\]]*  # Zero or more spaces or special characters
+                        (\d+\.\d+[\.0-9]*)  # Capture "version" in `matches`
+                        """,
+        line,
+        re.VERBOSE | re.IGNORECASE,  # Ignores all whitespace and case in pattern
+    )
+
+    return matches
+
+
 def find_pkg_mismatches(pkg_name, pkg_version, fnames):
     """
     Determine if any package version has mismatches
@@ -153,21 +170,46 @@ def find_pkg_mismatches(pkg_name, pkg_version, fnames):
         with open(fname, "r") as file:
             for line_num, line in enumerate(file, start=1):
                 l = line.strip().replace(" ", "").lower()
-                matches = re.search(
-                    rf"""
-                        {pkg_name}  # Package name
-                        [=><:"\'\[\]]+  # Zero or more special characters
-                        (\d+\.\d+[\.0-9]*)  # Capture "version" in `matches`
-                        """,
-                    l,
-                    re.VERBOSE,  # Ignores all whitespace in pattern
-                )
+                matches = match_pkg_version(l, pkg_name)
                 if matches is not None:
                     version = matches.groups()[0]
                     if version != pkg_version:
                         pkg_mismatches.append((pkg_name, version, fname, line_num))
 
     return pkg_mismatches
+
+
+def test_pkg_mismatch_regex():
+    """
+    Validation function for the package mismatch regex
+    """
+    pkgs = {
+        "numpy": "0.0",
+        "scipy": "0.0",
+        "python": "2.7",
+        "python-version": "2.7",
+        "numba": "0.0",
+    }
+
+    lines = [
+        "Programming Language :: Python :: 3.8",
+        "STUMPY supports Python 3.8",
+        "python-version: ['3.8']",
+        'requires-python = ">=3.8"',
+        "numba>=0.55.2",
+    ]
+
+    for line in lines:
+        match_found = False
+        for pkg_name, pkg_version in pkgs.items():
+            matches = match_pkg_version(line, pkg_name)
+
+            if matches:
+                match_found = True
+                break
+
+        if not match_found:
+            raise ValueError(f'Package mismatch regex fails to cover/match "{line}"')
 
 
 if __name__ == "__main__":
@@ -204,6 +246,8 @@ if __name__ == "__main__":
         ".github/workflows/github-actions.yml",
         "README.rst",
     ]
+
+    test_pkg_mismatch_regex()
 
     for pkg_name, pkg_version in pkgs.items():
         for name, version, fname, line_num in find_pkg_mismatches(
