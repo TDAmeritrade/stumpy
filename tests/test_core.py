@@ -1776,7 +1776,7 @@ def test_update_incremental_PI():
         D = core.mass(T[-m:], T)
         excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-        core._update_incremental_PI(D, P_comp, I_comp, excl_zone, 0)
+        core._update_incremental_PI(D, P_comp, I_comp, excl_zone, n_appended=0)
 
         # check
         npt.assert_almost_equal(P_ref, P_comp)

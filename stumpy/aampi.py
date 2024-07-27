@@ -248,7 +248,7 @@ class aampi:
             D[:] = np.inf
 
         core._update_incremental_PI(
-            D, self._P, self._I, self._excl_zone, self._n_appended
+            D, self._P, self._I, self._excl_zone, n_appended=self._n_appended
         )
 
         # All neighbors of the last subsequence are on its left. So, its (top-1)
@@ -310,7 +310,7 @@ class aampi:
         self._P = np.append(self._P, P_new.reshape(1, -1), axis=0)
         self._I = np.append(self._I, I_new.reshape(1, -1), axis=0)
 
-        core._update_incremental_PI(D, self._P, self._I, self._excl_zone, 0)
+        core._update_incremental_PI(D, self._P, self._I, self._excl_zone, n_appended=0)
 
         left_I_new = self._I[-1, 0]
         left_P_new = self._P[-1, 0]
