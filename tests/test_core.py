@@ -1783,10 +1783,15 @@ def test_process_isconstant_1d_default():
 def test_update_incremental_PI():
     T = np.random.rand(64)
     m = 3
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
+    # case 1: For a given time series `T`, obtain its matrix profile `P` and
+    # matrix profile indices `I` based on the matrix profile and matrix profile
+    # indices of the time series `T[:-1]`.
+    # In the following test: n_appended = 0
     for k in range(1, 4):
         # ref
-        mp_ref = stump(T, m, k=k)
+        mp_ref = naive.stump(T, m, row_wise=True, k=k)
         P_ref = mp_ref[:, :k].astype(np.float64)
         I_ref = mp_ref[:, k : 2 * k].astype(np.int64)
 
@@ -1794,14 +1799,52 @@ def test_update_incremental_PI():
         P_comp = np.full_like(P_ref, np.inf)
         I_comp = np.full_like(I_ref, -1)
 
-        mp_comp = stump(T[:-1], m, k=k)
-        P_comp[:-1, :] = mp_comp[:, :k]
-        I_comp[:-1, :] = mp_comp[:, k : 2 * k]
+        mp_comp = naive.stump(T[:-1], m, row_wise=True, k=k)
+        P_comp[:-1, :] = mp_comp[:, :k].astype(np.float64)
+        I_comp[:-1, :] = mp_comp[:, k : 2 * k].astype(np.int64)
 
         D = core.mass(T[-m:], T)
-        excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-
         core._update_incremental_PI(D, P_comp, I_comp, excl_zone, n_appended=0)
+
+        # check
+        npt.assert_almost_equal(P_ref, P_comp)
+        npt.assert_almost_equal(I_ref, I_comp)
+
+    # case 2: For a given time series `T`, obtain the matrix profile `P` and
+    # matrix profile indices `I` of `T[1:]` based on the matrix profile and
+    # matrix profile indices of `T[:-1]`.
+    # In the following test: n_appended = 1
+    for k in range(1, 4):
+        # ref
+        T1 = T.copy()
+        T1[-1] = np.nan
+        mp_1 = naive.stump(T1, m, row_wise=True, k=k)
+        P_1 = mp_1[:, :k].astype(np.float64)
+        I_1 = mp_1[:, k : 2 * k].astype(np.int64)
+
+        T2 = T.copy()
+        T2[0] = np.nan
+        mp_2 = naive.stump(T2, m, row_wise=True, k=k)
+        P_2 = mp_2[:, :k].astype(np.float64)
+        I_2 = mp_2[:, k : 2 * k].astype(np.int64)
+
+        core._merge_topk_PI(P_1, P_2, I_1, I_2)
+        P_ref = P_1[1:]
+        I_ref = I_1[1:]
+
+        # comp
+        mp_comp = naive.stump(T[:-1], m, row_wise=True, k=k)
+        P_comp = mp_comp[:, :k].astype(np.float64)
+        I_comp = mp_comp[:, k : 2 * k].astype(np.int64)
+
+        P_comp[:-1] = P_comp[1:]
+        P_comp[-1] = np.inf
+
+        I_comp[:-1] = I_comp[1:]
+        I_comp[-1] = -1
+
+        D = core.mass(T[-m:], T[1:])
+        core._update_incremental_PI(D, P_comp, I_comp, excl_zone, n_appended=1)
 
         # check
         npt.assert_almost_equal(P_ref, P_comp)
