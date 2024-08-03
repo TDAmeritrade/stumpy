@@ -238,4 +238,4 @@ myst_enable_extensions = [
 ]
 
 # Notebook cell execution timeout; defaults to 30.
-nb_execution_timeout = None
+nb_execution_timeout = -1
