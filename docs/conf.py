@@ -236,3 +236,6 @@ myst_enable_extensions = [
     "dollarmath",
     "tasklist",
 ]
+
+# Notebook cell execution timeout; defaults to 30.
+nb_execution_timeout = None
