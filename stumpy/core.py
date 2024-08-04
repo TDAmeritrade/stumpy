@@ -4270,7 +4270,7 @@ def process_isconstant(T, m, T_subseq_isconstant=None, T_subseq_isfinite=None):
 
         if len(T_subseq_isconstant) != T.shape[0]:  # pragma: no cover
             msg = (
-                "The lenght of the list `T_subseq_isconstant` must be "
+                "The length of the list `T_subseq_isconstant` must be "
                 + "equal to the number of time series in `T`."
             )
             raise ValueError(msg)
