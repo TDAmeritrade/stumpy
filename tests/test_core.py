@@ -1,6 +1,7 @@
 import functools
 import math
 import os
+import random
 from unittest.mock import patch
 
 import naive
@@ -1781,71 +1782,93 @@ def test_process_isconstant_1d_default():
 
 
 def test_update_incremental_PI():
+    # This tests the function `core._update_incremental_PI`
+    # when `egress` is False, meaning new data point is being
+    # appended to the historical data.
     T = np.random.rand(64)
+    t = random.random()  # new datapoint
+    T_new = np.append(T, t)
+
     m = 3
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    # case 1: For a given time series `T`, obtain its matrix profile `P` and
-    # matrix profile indices `I` based on the matrix profile and matrix profile
-    # indices of the time series `T[:-1]`.
-    # In the following test: n_appended = 0
     for k in range(1, 4):
         # ref
-        mp_ref = naive.stump(T, m, row_wise=True, k=k)
+        mp_ref = naive.stump(T_new, m, row_wise=True, k=k)
         P_ref = mp_ref[:, :k].astype(np.float64)
         I_ref = mp_ref[:, k : 2 * k].astype(np.int64)
 
         # comp
-        P_comp = np.full_like(P_ref, np.inf)
-        I_comp = np.full_like(I_ref, -1)
+        mp = naive.stump(T, m, row_wise=True, k=k)
+        P_comp = mp[:, :k].astype(np.float64)
+        I_comp = mp[:, k : 2 * k].astype(np.int64)
 
-        mp_comp = naive.stump(T[:-1], m, row_wise=True, k=k)
-        P_comp[:-1, :] = mp_comp[:, :k].astype(np.float64)
-        I_comp[:-1, :] = mp_comp[:, k : 2 * k].astype(np.int64)
+        # Because of the new data point, the length of matrix profile
+        # and matrix profile indices should be increased by one.
+        P_comp = np.pad(
+            P_comp,
+            [(0, 1), (0, 0)],
+            mode="constant",
+            constant_values=np.inf,
+        )
+        I_comp = np.pad(
+            I_comp,
+            [(0, 1), (0, 0)],
+            mode="constant",
+            constant_values=-1,
+        )
 
-        D = core.mass(T[-m:], T)
+        D = core.mass(T_new[-m:], T_new)
         core._update_incremental_PI(D, P_comp, I_comp, excl_zone, n_appended=0)
 
-        # check
+        # assertion
         npt.assert_almost_equal(P_ref, P_comp)
         npt.assert_almost_equal(I_ref, I_comp)
 
-    # case 2: For a given time series `T`, obtain the matrix profile `P` and
-    # matrix profile indices `I` of `T[1:]` based on the matrix profile and
-    # matrix profile indices of `T[:-1]`.
-    # In the following test: n_appended = 1
+
+def test_update_incremental_PI_egressTrue():
+    T = np.random.rand(64)
+    t = random.random()  # new data point
+    m = 3
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+    T_with_t = np.append(T, t)
     for k in range(1, 4):
         # ref
-        T1 = T.copy()
-        T1[-1] = np.nan
-        mp_1 = naive.stump(T1, m, row_wise=True, k=k)
-        P_1 = mp_1[:, :k].astype(np.float64)
-        I_1 = mp_1[:, k : 2 * k].astype(np.int64)
+        # In egress=True mode, a new data point, t, is being appended
+        # to the historical data, T, while the oldest data point is
+        # being removed. Therefore, the first  subsequence in T
+        # and the last subsequence does not get a chance to meet each
+        # other. Therefore, we need to exclude that distance.
+        D = naive.distance_matrix(T_with_t, T_with_t, m)
+        D[0, -1] = np.inf
+        D[-1, 0] = np.inf
 
-        T2 = T.copy()
-        T2[0] = np.nan
-        mp_2 = naive.stump(T2, m, row_wise=True, k=k)
-        P_2 = mp_2[:, :k].astype(np.float64)
-        I_2 = mp_2[:, k : 2 * k].astype(np.int64)
+        l = len(D)
+        P = np.empty((l, k), dtype=np.float64)
+        I = np.empty((l, k), dtype=np.int64)
+        for i in range(l):
+            core.apply_exclusion_zone(D[i], i, excl_zone, np.inf)
+            IDX = np.argsort(D[i], kind="mergesort")[:k]
+            I[i] = IDX
+            P[i] = D[i, IDX]
 
-        core._merge_topk_PI(P_1, P_2, I_1, I_2)
-        P_ref = P_1[1:]
-        I_ref = I_1[1:]
+        P_ref = P[1:].copy()
+        I_ref = I[1:].copy()
 
         # comp
-        mp_comp = naive.stump(T[:-1], m, row_wise=True, k=k)
-        P_comp = mp_comp[:, :k].astype(np.float64)
-        I_comp = mp_comp[:, k : 2 * k].astype(np.int64)
+        mp = naive.stump(T, m, row_wise=True, k=k)
+        P_comp = mp[:, :k].astype(np.float64)
+        I_comp = mp[:, k : 2 * k].astype(np.int64)
 
         P_comp[:-1] = P_comp[1:]
         P_comp[-1] = np.inf
-
         I_comp[:-1] = I_comp[1:]
         I_comp[-1] = -1
 
-        D = core.mass(T[-m:], T[1:])
+        D = core.mass(T_with_t[-m:], T_with_t[1:])
         core._update_incremental_PI(D, P_comp, I_comp, excl_zone, n_appended=1)
 
-        # check
+        # assertion
         npt.assert_almost_equal(P_ref, P_comp)
         npt.assert_almost_equal(I_ref, I_comp)
