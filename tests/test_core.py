@@ -1832,7 +1832,6 @@ def test_update_incremental_PI_egressTrue():
     m = 3
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    T_with_t = np.append(T, t)
     for k in range(1, 4):
         # ref
         # In egress=True mode, a new data point, t, is being appended
@@ -1840,11 +1839,13 @@ def test_update_incremental_PI_egressTrue():
         # being removed. Therefore, the first  subsequence in T
         # and the last subsequence does not get a chance to meet each
         # other. Therefore, we need to exclude that distance.
-        D = naive.distance_matrix(T_with_t, T_with_t, m)
-        D[0, -1] = np.inf
-        D[-1, 0] = np.inf
 
-        l = len(D)
+        T_with_t = np.append(T, t)
+        D = naive.distance_matrix(T_with_t, T_with_t, m)
+        D[-1, 0] = np.inf
+        D[0, -1] = np.inf
+
+        l = len(T_with_t) - m + 1
         P = np.empty((l, k), dtype=np.float64)
         I = np.empty((l, k), dtype=np.int64)
         for i in range(l):
@@ -1866,7 +1867,8 @@ def test_update_incremental_PI_egressTrue():
         I_comp[:-1] = I_comp[1:]
         I_comp[-1] = -1
 
-        D = core.mass(T_with_t[-m:], T_with_t[1:])
+        T_new = np.append(T[1:], t)
+        D = core.mass(T_new[-m:], T_new)
         core._update_incremental_PI(D, P_comp, I_comp, excl_zone, n_appended=1)
 
         # assertion

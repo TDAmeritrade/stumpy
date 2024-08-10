@@ -4399,11 +4399,23 @@ def _update_incremental_PI(D, P, I, excl_zone, n_appended=0):
         (idx -  excl_zone, idx + excl_zone + 1).
 
     n_appended : int
-        Number of times the timeseries start point is shifted one to the right
+        Number of times the timeseries start point is shifted one to the right.
+        See note below for more details.
 
     Returns
     -------
     None
+
+    Note
+    -----
+    The `n_appended` parameter is used to indicate the number of times the timeseries
+    start point is shifted one to the right. When `egress=False` (see stumpy.stumpi),
+    the matrix profile and matrix profile index are updated in an incremental fashion
+    while considering all historical data. So, `n_appended` must be set to 0 in such
+    cases. However, when `egress=True`, the matrix profile and matrix profile index are
+    updated in an incremental fashion and they represent the matrix profile and matrix
+    profile index for the `l` most recent subsequences (where `l = len(T) - m + 1`)
+    while considering the all-so-far pairwise distances.
     """
     _apply_exclusion_zone(D, D.shape[0] - 1, excl_zone, np.inf)
 
