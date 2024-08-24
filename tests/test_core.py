@@ -1877,6 +1877,16 @@ def test_update_incremental_PI_egressTrue():
 
 
 def test_update_incremental_PI_egressTrue_MemoryCheck():
+    # This test function is to ensure that the function
+    # `core._update_incremental_PI` does not forget the
+    # nearest neighbors that were pointing to the old data
+    # points but removed in the `egress=True` mode.
+    # This can be tested by inserting the same subsequence, s, in the beginning,
+    # middle, and end of the time series. In the `egress=True` mode,
+    # the first element of the time series is removed and a new data point
+    # is appended. However, the updated matrix profile index for the middle
+    # subsequence `s` should still refer to  the first subsequence in the historical
+    # data.
     seed = 0
     np.random.seed(seed)
 
@@ -1884,33 +1894,30 @@ def test_update_incremental_PI_egressTrue_MemoryCheck():
     m = 3
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    T[:m] = 0.0
-    T[30 : 30 + m] = 0.0
-    T[-m:] = 0.0
+    subsequence = np.random.rand(m)
+    T[:m] = subsequence
+    T[30 : 30 + m] = subsequence
+    T[-m:] = subsequence
 
-    t = 0
+    t = random.random()  # new data point
     T_with_t = np.append(T, t)
 
-    D = naive.distance_matrix(T_with_t, T_with_t, m)
     # In egress=True mode, a new data point, t, is being appended
     # to the historical data, T, while the oldest data point is
     # being removed. Therefore, the first  subsequence in T
     # and the last subsequence does not get a chance to meet each
-    # other. Therefore, we need to exclude that distance.
+    # other. Therefore, their pairwise distances should be excluded
+    # from the distance matrix.
+    D = naive.distance_matrix(T_with_t, T_with_t, m)
     D[-1, 0] = np.inf
     D[0, -1] = np.inf
-    D[:] = np.round(D, decimals=7)  # to avoid floating point precision issues
 
     l = len(T_with_t) - m + 1
     for i in range(l):
         core.apply_exclusion_zone(D[i], i, excl_zone, np.inf)
 
-    # computing distance profile for the last subsequence
-    # while excluding the first subsequence in `T`
     T_new = np.append(T[1:], t)
     dist_profile = naive.distance_profile(T_new[-m:], T_new, m)
-    dist_profile[:] = np.round(dist_profile, decimals=7)
-
     core.apply_exclusion_zone(dist_profile, len(dist_profile) - 1, excl_zone, np.inf)
 
     for k in range(1, 4):
@@ -1922,8 +1929,6 @@ def test_update_incremental_PI_egressTrue_MemoryCheck():
             I[i] = IDX
             P[i] = D[i, IDX]
 
-        # after appending `t`, the updated matrix profile (index)
-        # corresponds to the subsequences in `np.append(T[1:], t)`
         P_ref = P[1:].copy()
         I_ref = I[1:].copy()
 
@@ -1936,7 +1941,6 @@ def test_update_incremental_PI_egressTrue_MemoryCheck():
         P_comp[-1] = np.inf
         I_comp[:-1] = I_comp[1:]
         I_comp[-1] = -1
-
         core._update_incremental_PI(
             dist_profile, P_comp, I_comp, excl_zone, n_appended=1
         )
