@@ -4375,7 +4375,7 @@ def _update_incremental_PI(D, P, I, excl_zone, n_appended=0):
     """
     Given the 1D array distance profile, `D`, of the last subsequence of T,
     update (in-place) the (top-k) matrix profile, `P`, and the matrix profile
-    index, I, of T.
+    index, I.
 
     Parameters
     ----------
@@ -4394,9 +4394,7 @@ def _update_incremental_PI(D, P, I, excl_zone, n_appended=0):
         I[-1, :] should be set to -1.
 
     excl_zone : int
-        Size of the exclusion zone. That is, after finding the next-best-match
-        located at index `idx`, we ignore subsequences with start index in range
-        (idx -  excl_zone, idx + excl_zone + 1).
+        Size of the exclusion zone.
 
     n_appended : int
         Number of times the timeseries start point is shifted one to the right.
@@ -4411,11 +4409,12 @@ def _update_incremental_PI(D, P, I, excl_zone, n_appended=0):
     The `n_appended` parameter is used to indicate the number of times the timeseries
     start point is shifted one to the right. When `egress=False` (see stumpy.stumpi),
     the matrix profile and matrix profile index are updated in an incremental fashion
-    while considering all historical data. So, `n_appended` must be set to 0 in such
+    while considering all historical data. `n_appended` must be set to 0 in such
     cases. However, when `egress=True`, the matrix profile and matrix profile index are
     updated in an incremental fashion and they represent the matrix profile and matrix
-    profile index for the `l` most recent subsequences (where `l = len(T) - m + 1`)
-    while considering the all-so-far pairwise distances.
+    profile index for the `l` most recent subsequences (where `l = len(T) - m + 1`).
+    In this case, each subsequence is only compared against `l-1` left neighbors and `l-1`
+    right neighbors.
     """
     _apply_exclusion_zone(D, D.shape[0] - 1, excl_zone, np.inf)
 
@@ -4424,10 +4423,9 @@ def _update_incremental_PI(D, P, I, excl_zone, n_appended=0):
         idx = np.searchsorted(P[i], D[i], side="right")
         _shift_insert_at_index(P[i], idx, D[i])
         _shift_insert_at_index(I[i], idx, D.shape[0] + n_appended - 1)
-        # D.shape[0] is base-1
 
-    # Calculate the (top-k) matrix profile values/indices for the last subsequence
-    # by using its corresponding distance profile `D`
+    # Calculate the (top-k) matrix profile values/indidces
+    # for the last subsequence
     P[-1] = np.inf
     I[-1] = -1
     for i, d in enumerate(D):
