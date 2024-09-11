@@ -1884,10 +1884,10 @@ def test_update_incremental_PI_egressTrue_MemoryCheck():
     # This can be tested by inserting the same subsequence, s, in the beginning,
     # middle, and end of the time series. This is to allow us to know which
     # neighbor is the nearest neighbor to each of those three subsequences.
-    
+
     # In the `egress=True` mode, the first element of the time series is removed and
     # a new data point is appended. However, the updated matrix profile index for the
-    # middle subsequence `s` should still refer to  the first subsequence in 
+    # middle subsequence `s` should still refer to  the first subsequence in
     # the historical data.
     seed = 0
     np.random.seed(seed)
