@@ -4413,8 +4413,8 @@ def _update_incremental_PI(D, P, I, excl_zone, n_appended=0):
     cases. However, when `egress=True`, the matrix profile and matrix profile index are
     updated in an incremental fashion and they represent the matrix profile and matrix
     profile index for the `l` most recent subsequences (where `l = len(T) - m + 1`).
-    In this case, each subsequence is only compared against `l-1` left neighbors and `l-1`
-    right neighbors.
+    In this case, each subsequence is only compared against upto `l-1` left neighbors
+    and upto `l-1` right neighbors.
     """
     _apply_exclusion_zone(D, D.shape[0] - 1, excl_zone, np.inf)
 
