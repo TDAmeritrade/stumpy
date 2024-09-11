@@ -1781,7 +1781,7 @@ def test_process_isconstant_1d_default():
     npt.assert_array_equal(T_subseq_isconstant_ref, T_subseq_isconstant_comp)
 
 
-def test_update_incremental_PI():
+def test_update_incremental_PI_egressFalse():
     # This tests the function `core._update_incremental_PI`
     # when `egress` is False, meaning new data point is being
     # appended to the historical data.
@@ -1879,14 +1879,16 @@ def test_update_incremental_PI_egressTrue():
 def test_update_incremental_PI_egressTrue_MemoryCheck():
     # This test function is to ensure that the function
     # `core._update_incremental_PI` does not forget the
-    # nearest neighbors that were pointing to the old data
-    # points but removed in the `egress=True` mode.
+    # nearest neighbors that were pointing to those old data
+    # points that are removed in the `egress=True` mode.
     # This can be tested by inserting the same subsequence, s, in the beginning,
-    # middle, and end of the time series. In the `egress=True` mode,
-    # the first element of the time series is removed and a new data point
-    # is appended. However, the updated matrix profile index for the middle
-    # subsequence `s` should still refer to  the first subsequence in the historical
-    # data.
+    # middle, and end of the time series. This is to allow us to know which
+    # neighbor is the nearest neighbor to each of those three subsequences.
+    
+    # In the `egress=True` mode, the first element of the time series is removed and
+    # a new data point is appended. However, the updated matrix profile index for the
+    # middle subsequence `s` should still refer to  the first subsequence in 
+    # the historical data.
     seed = 0
     np.random.seed(seed)
 
@@ -1894,10 +1896,10 @@ def test_update_incremental_PI_egressTrue_MemoryCheck():
     m = 3
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-    subsequence = np.random.rand(m)
-    T[:m] = subsequence
-    T[30 : 30 + m] = subsequence
-    T[-m:] = subsequence
+    s = np.random.rand(m)
+    T[:m] = s
+    T[30 : 30 + m] = s
+    T[-m:] = s
 
     t = random.random()  # new data point
     T_with_t = np.append(T, t)
