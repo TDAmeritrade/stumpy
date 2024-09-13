@@ -1,7 +1,6 @@
 import functools
 import math
 import os
-import random
 from unittest.mock import patch
 
 import naive
@@ -1786,7 +1785,7 @@ def test_update_incremental_PI_egressFalse():
     # when `egress` is False, meaning new data point is being
     # appended to the historical data.
     T = np.random.rand(64)
-    t = random.random()  # new datapoint
+    t = np.random.rand()  # new datapoint
     T_new = np.append(T, t)
 
     m = 3
@@ -1828,7 +1827,7 @@ def test_update_incremental_PI_egressFalse():
 
 def test_update_incremental_PI_egressTrue():
     T = np.random.rand(64)
-    t = random.random()  # new data point
+    t = np.random.rand()  # new data point
     m = 3
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
@@ -1901,7 +1900,7 @@ def test_update_incremental_PI_egressTrue_MemoryCheck():
     T[30 : 30 + m] = s
     T[-m:] = s
 
-    t = random.random()  # new data point
+    t = np.random.rand()  # new data point
     T_with_t = np.append(T, t)
 
     # In egress=True mode, a new data point, t, is being appended
