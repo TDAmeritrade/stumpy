@@ -1,4 +1,3 @@
-
 import pathlib
 
 from utils import check_callees, check_functions
@@ -26,9 +25,9 @@ for filepath in filepaths:
 stumpy_functions = set()
 for fname, func_data in all_functions.items():
     prefix = fname.replace(".py", "")
-    stumpy_functions.update([prefix + '.' + x for x  in func_data["func_names"]])
+    stumpy_functions.update([prefix + "." + x for x in func_data["func_names"]])
 stumpy_functions = list(stumpy_functions)
-stumpy_functions_no_prefix = [x.split('.')[1] for x in stumpy_functions]
+stumpy_functions_no_prefix = [x.split(".")[1] for x in stumpy_functions]
 
 
 # create  a dictionary where keys are function names in stumpy_functions, and the value
@@ -38,20 +37,20 @@ stumpy_functions_no_prefix = [x.split('.')[1] for x in stumpy_functions]
 callers_callees = {}
 for func_name in stumpy_functions:
     callers_callees[func_name] = None
-    
-    prefix, func = func_name.split('.')
-    fname = prefix + '.py'
+
+    prefix, func = func_name.split(".")
+    fname = prefix + ".py"
 
     idx = all_functions[fname]["func_names"].index(func)
     is_njit = all_functions[fname]["is_njit"][idx]
     fastmath_val = all_functions[fname]["fastmath_values"][idx]
 
     callees_functions = callees[fname][func]
-    
+
     pruned_callees_functions = []
     for callee in callees_functions:
         if callee in all_functions[fname]["func_names"]:
-            pruned_callees_functions.append(prefix + '.' + callee)
+            pruned_callees_functions.append(prefix + "." + callee)
         elif callee in stumpy_functions:
             idx = stumpy_functions_no_prefix.index(callee)
             pruned_callees_functions.append(stumpy_functions[idx])
@@ -59,11 +58,3 @@ for func_name in stumpy_functions:
             continue
 
     callers_callees[func_name] = (is_njit, fastmath_val, pruned_callees_functions)
-
-
-
-
-for k, v in callers_callees.items():
-    print('---------------------------------')
-    print('> func_name: ', k)
-    print('metadata: ', v)
