@@ -62,7 +62,7 @@ for func_name in stumpy_functions:
 
 # Create callees_callers dictionary using callers_callees dictionary
 callees_callers = {}
-for func_name, func_metadata in  callers_callees.items():
+for func_name, func_metadata in callers_callees.items():
     callees_callers[func_name] = [func_metadata[0], func_metadata[1], []]
 
 
@@ -74,5 +74,3 @@ for func_name, func_metadata in callers_callees.items():
 for func_name, func_metadata in callees_callers.items():
     callees_callers[func_name][2] = set(callees_callers[func_name][2])
     callees_callers[func_name] = tuple(callees_callers[func_name])
-
-
