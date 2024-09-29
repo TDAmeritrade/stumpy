@@ -58,3 +58,21 @@ for func_name in stumpy_functions:
             continue
 
     callers_callees[func_name] = (is_njit, fastmath_val, pruned_callees_functions)
+
+
+# Create callees_callers dictionary using callers_callees dictionary
+callees_callers = {}
+for func_name, func_metadata in  callers_callees.items():
+    callees_callers[func_name] = [func_metadata[0], func_metadata[1], []]
+
+
+for func_name, func_metadata in callers_callees.items():
+    for callee in func_metadata[2]:
+        callees_callers[callee][-1].append(func_name)
+
+
+for func_name, func_metadata in callees_callers.items():
+    callees_callers[func_name][2] = set(callees_callers[func_name][2])
+    callees_callers[func_name] = tuple(callees_callers[func_name])
+
+
