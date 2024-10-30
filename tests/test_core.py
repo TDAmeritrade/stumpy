@@ -1778,3 +1778,173 @@ def test_process_isconstant_1d_default():
     T_subseq_isconstant_comp = core.process_isconstant(T, m, T_subseq_isconstant=None)
 
     npt.assert_array_equal(T_subseq_isconstant_ref, T_subseq_isconstant_comp)
+
+
+def test_update_incremental_PI_egressFalse():
+    # This tests the function `core._update_incremental_PI`
+    # when `egress` is False, meaning new data point is being
+    # appended to the historical data.
+    T = np.random.rand(64)
+    t = np.random.rand()  # new datapoint
+    T_new = np.append(T, t)
+
+    m = 3
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+    for k in range(1, 4):
+        # ref
+        mp_ref = naive.stump(T_new, m, row_wise=True, k=k)
+        P_ref = mp_ref[:, :k].astype(np.float64)
+        I_ref = mp_ref[:, k : 2 * k].astype(np.int64)
+
+        # comp
+        mp = naive.stump(T, m, row_wise=True, k=k)
+        P_comp = mp[:, :k].astype(np.float64)
+        I_comp = mp[:, k : 2 * k].astype(np.int64)
+
+        # Because of the new data point, the length of matrix profile
+        # and matrix profile indices should be increased by one.
+        P_comp = np.pad(
+            P_comp,
+            [(0, 1), (0, 0)],
+            mode="constant",
+            constant_values=np.inf,
+        )
+        I_comp = np.pad(
+            I_comp,
+            [(0, 1), (0, 0)],
+            mode="constant",
+            constant_values=-1,
+        )
+
+        D = core.mass(T_new[-m:], T_new)
+        core._update_incremental_PI(D, P_comp, I_comp, excl_zone, n_appended=0)
+
+        # assertion
+        npt.assert_almost_equal(P_ref, P_comp)
+        npt.assert_almost_equal(I_ref, I_comp)
+
+
+def test_update_incremental_PI_egressTrue():
+    T = np.random.rand(64)
+    t = np.random.rand()  # new data point
+    m = 3
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+    for k in range(1, 4):
+        # ref
+        # In egress=True mode, a new data point, t, is being appended
+        # to the historical data, T, while the oldest data point is
+        # being removed. Therefore, the first  subsequence in T
+        # and the last subsequence does not get a chance to meet each
+        # other. Therefore, we need to exclude that distance.
+
+        T_with_t = np.append(T, t)
+        D = naive.distance_matrix(T_with_t, T_with_t, m)
+        D[-1, 0] = np.inf
+        D[0, -1] = np.inf
+
+        l = len(T_with_t) - m + 1
+        P = np.empty((l, k), dtype=np.float64)
+        I = np.empty((l, k), dtype=np.int64)
+        for i in range(l):
+            core.apply_exclusion_zone(D[i], i, excl_zone, np.inf)
+            IDX = np.argsort(D[i], kind="mergesort")[:k]
+            I[i] = IDX
+            P[i] = D[i, IDX]
+
+        P_ref = P[1:].copy()
+        I_ref = I[1:].copy()
+
+        # comp
+        mp = naive.stump(T, m, row_wise=True, k=k)
+        P_comp = mp[:, :k].astype(np.float64)
+        I_comp = mp[:, k : 2 * k].astype(np.int64)
+
+        P_comp[:-1] = P_comp[1:]
+        P_comp[-1] = np.inf
+        I_comp[:-1] = I_comp[1:]
+        I_comp[-1] = -1
+
+        T_new = np.append(T[1:], t)
+        D = core.mass(T_new[-m:], T_new)
+        core._update_incremental_PI(D, P_comp, I_comp, excl_zone, n_appended=1)
+
+        # assertion
+        npt.assert_almost_equal(P_ref, P_comp)
+        npt.assert_almost_equal(I_ref, I_comp)
+
+
+def test_update_incremental_PI_egressTrue_MemoryCheck():
+    # This test function is to ensure that the function
+    # `core._update_incremental_PI` does not forget the
+    # nearest neighbors that were pointing to those old data
+    # points that are removed in the `egress=True` mode.
+    # This can be tested by inserting the same subsequence, s, in the beginning,
+    # middle, and end of the time series. This is to allow us to know which
+    # neighbor is the nearest neighbor to each of those three subsequences.
+
+    # In the `egress=True` mode, the first element of the time series is removed and
+    # a new data point is appended. However, the updated matrix profile index for the
+    # middle subsequence `s` should still refer to  the first subsequence in
+    # the historical data.
+    seed = 0
+    np.random.seed(seed)
+
+    T = np.random.rand(64)
+    m = 3
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+    s = np.random.rand(m)
+    T[:m] = s
+    T[30 : 30 + m] = s
+    T[-m:] = s
+
+    t = np.random.rand()  # new data point
+    T_with_t = np.append(T, t)
+
+    # In egress=True mode, a new data point, t, is being appended
+    # to the historical data, T, while the oldest data point is
+    # being removed. Therefore, the first  subsequence in T
+    # and the last subsequence does not get a chance to meet each
+    # other. Therefore, their pairwise distances should be excluded
+    # from the distance matrix.
+    D = naive.distance_matrix(T_with_t, T_with_t, m)
+    D[-1, 0] = np.inf
+    D[0, -1] = np.inf
+
+    l = len(T_with_t) - m + 1
+    for i in range(l):
+        core.apply_exclusion_zone(D[i], i, excl_zone, np.inf)
+
+    T_new = np.append(T[1:], t)
+    dist_profile = naive.distance_profile(T_new[-m:], T_new, m)
+    core.apply_exclusion_zone(dist_profile, len(dist_profile) - 1, excl_zone, np.inf)
+
+    for k in range(1, 4):
+        # ref
+        P = np.empty((l, k), dtype=np.float64)
+        I = np.empty((l, k), dtype=np.int64)
+        for i in range(l):
+            IDX = np.argsort(D[i], kind="mergesort")[:k]
+            I[i] = IDX
+            P[i] = D[i, IDX]
+
+        P_ref = P[1:].copy()
+        I_ref = I[1:].copy()
+
+        # comp
+        mp = naive.stump(T, m, row_wise=True, k=k)
+        P_comp = mp[:, :k].astype(np.float64)
+        I_comp = mp[:, k : 2 * k].astype(np.int64)
+
+        P_comp[:-1] = P_comp[1:]
+        P_comp[-1] = np.inf
+        I_comp[:-1] = I_comp[1:]
+        I_comp[-1] = -1
+        core._update_incremental_PI(
+            dist_profile, P_comp, I_comp, excl_zone, n_appended=1
+        )
+
+        npt.assert_almost_equal(P_ref, P_comp)
+        npt.assert_almost_equal(I_ref, I_comp)

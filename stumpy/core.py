@@ -4368,3 +4368,70 @@ def get_ray_nworkers(ray_client):
         Total number of Ray workers
     """
     return int(ray_client.cluster_resources().get("CPU"))
+
+
+@njit
+def _update_incremental_PI(D, P, I, excl_zone, n_appended=0):
+    """
+    Given the 1D array distance profile, `D`, of the last subsequence of T,
+    update (in-place) the (top-k) matrix profile, `P`, and the matrix profile
+    index, I.
+
+    Parameters
+    ----------
+    D : numpy.ndarray
+        A 1D array (with dtype float) representing the distance profile of
+        the last subsequence of T
+
+    P : numpy.ndarray
+        A 2D array representing the matrix profile of T,
+        with shape (len(T) - m + 1, k), where `m` is the window size.
+        P[-1, :] should be set to np.inf
+
+    I : numpy.ndarray
+        A 2D array representing the matrix profile index of T,
+        with shape (len(T) - m + 1, k), where `m` is the window size
+        I[-1, :] should be set to -1.
+
+    excl_zone : int
+        Size of the exclusion zone.
+
+    n_appended : int
+        Number of times the timeseries start point is shifted one to the right.
+        See note below for more details.
+
+    Returns
+    -------
+    None
+
+    Note
+    -----
+    The `n_appended` parameter is used to indicate the number of times the timeseries
+    start point is shifted one to the right. When `egress=False` (see stumpy.stumpi),
+    the matrix profile and matrix profile index are updated in an incremental fashion
+    while considering all historical data. `n_appended` must be set to 0 in such
+    cases. However, when `egress=True`, the matrix profile and matrix profile index are
+    updated in an incremental fashion and they represent the matrix profile and matrix
+    profile index for the `l` most recent subsequences (where `l = len(T) - m + 1`).
+    In this case, each subsequence is only compared against upto `l-1` left neighbors
+    and upto `l-1` right neighbors.
+    """
+    _apply_exclusion_zone(D, D.shape[0] - 1, excl_zone, np.inf)
+
+    update_idx = np.argwhere(D < P[:, -1]).flatten()
+    for i in update_idx:
+        idx = np.searchsorted(P[i], D[i], side="right")
+        _shift_insert_at_index(P[i], idx, D[i])
+        _shift_insert_at_index(I[i], idx, D.shape[0] + n_appended - 1)
+
+    # Calculate the (top-k) matrix profile values/indidces
+    # for the last subsequence
+    P[-1] = np.inf
+    I[-1] = -1
+    for i, d in enumerate(D):
+        if d < P[-1, -1]:
+            idx = np.searchsorted(P[-1], d, side="right")
+            _shift_insert_at_index(P[-1], idx, d)
+            _shift_insert_at_index(I[-1], idx, i + n_appended)
+
+    return
