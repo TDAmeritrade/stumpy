@@ -34,8 +34,6 @@ Have A Question?
     stumpy.motifs
     stumpy.match
     stumpy.mmotifs
-    stumpy.mmatch
-    stumpy.mmatch
     stumpy.snippets
     stumpy.stimp
     stumpy.stimped
@@ -153,11 +151,6 @@ mmotifs
 =======
 
 .. autofunction:: stumpy.mmotifs
-
-mmatch
-======
-
-This function does not exist. See the :func:`stumpy.match` function, which natively supports multi-dimensional time series inputs.
 
 snippets
 ========
