@@ -47,7 +47,7 @@ def _reset(var=None):
         configuration variables are reset to their default values.
 
     Returns
-    ------
+    -------
     None
     """
     config_vars = [
