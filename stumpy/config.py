@@ -46,10 +46,9 @@ def _reset(var=None):
         it is a list of configuration variables to reset. If None, then all
         configuration variables are reset to their default values.
 
-    Raises
+    Returns
     ------
-    UserWarning
-        If the specified configuration variable is not recognized
+    None
     """
     config_vars = [
         k for k, _ in globals().items() if k.isupper() and k.startswith("STUMPY")
