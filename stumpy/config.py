@@ -2,8 +2,9 @@
 # Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
 # STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
 
-import numpy as np
 import warnings
+
+import numpy as np
 
 _STUMPY_DEFAULTS = {
     "STUMPY_THREADS_PER_BLOCK": 512,
@@ -63,7 +64,7 @@ def _reset(var=None):
 
     if not set(var).issubset(config_vars):
         msg = (
-            f"Could not reset the following unrecognized configuration variable(s): "
+            "Could not reset the following unrecognized configuration variable(s): "
             + f"{set(var) - set(config_vars)}"
         )
         warnings.warn(msg)
