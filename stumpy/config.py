@@ -17,7 +17,7 @@ _STUMPY_DEFAULTS = {
     "STUMPY_MAX_DISTANCE": np.sqrt(np.finfo(np.float64).max),
     "STUMPY_EXCL_ZONE_DENOM": 4,
     "STUMPY_FASTMATH": True,
-    "STUMPY_FASTMATH_FLAGS": {"nnan", "ninf", "nsz", "arcp", "contract", "afn", "reassoc"},
+    "STUMPY_FASTMATH_FLAGS": {"nsz", "arcp", "contract", "afn", "reassoc"},
 }
 
 STUMPY_THREADS_PER_BLOCK = _STUMPY_DEFAULTS["STUMPY_THREADS_PER_BLOCK"]
