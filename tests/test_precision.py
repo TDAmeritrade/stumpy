@@ -3,6 +3,7 @@ import importlib
 from unittest.mock import patch
 
 import naive
+import numba
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -138,6 +139,7 @@ def test_snippets():
     ) = naive.mpdist_snippets(
         T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
     )
+
     (
         cmp_snippets,
         cmp_indices,
@@ -147,37 +149,7 @@ def test_snippets():
         cmp_regimes,
     ) = stumpy.snippets(T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func)
 
-    # Revise fastmath flag, recompile, and re-calculate snippets,
-    # and then revert the changes
-    config.STUMPY_FASTMATH_FLAGS = {"nsz", "arcp", "contract", "afn"}
-    core._calculate_squared_distance.targetoptions["fastmath"] = (
-        config.STUMPY_FASTMATH_FLAGS
-    )
-    njit_funcs = cache.get_njit_funcs()
-    for module_name, func_name in njit_funcs:
-        module = importlib.import_module(f".{module_name}", package="stumpy")
-        func = getattr(module, func_name)
-        func.recompile()
-
-    (
-        cmp_snippets_NOreassoc,
-        cmp_indices_NOreassoc,
-        cmp_profiles_NOreassoc,
-        cmp_fractions_NOreassoc,
-        cmp_areas_NOreassoc,
-        cmp_regimes_NOreassoc,
-    ) = stumpy.snippets(T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func)
-
-    config._reset("STUMPY_FASTMATH_FLAGS")
-    core._calculate_squared_distance.targetoptions["fastmath"] = (
-        config.STUMPY_FASTMATH_FLAGS
-    )
-    for module_name, func_name in njit_funcs:
-        module = importlib.import_module(f".{module_name}", package="stumpy")
-        func = getattr(module, func_name)
-        func.recompile()
-
-    if np.allclose(ref_snippets, cmp_snippets):
+    if np.allclose(ref_snippets, cmp_snippets) or numba.config.DISABLE_JIT:
         npt.assert_almost_equal(
             ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
         )
@@ -195,6 +167,41 @@ def test_snippets():
         )
         npt.assert_almost_equal(ref_regimes, cmp_regimes)
     else:
+        # Revise fastmath flag, recompile, and re-calculate snippets,
+        # and then revert the changes
+
+        config.STUMPY_FASTMATH_FLAGS = {"nsz", "arcp", "contract", "afn"}
+        core._calculate_squared_distance.targetoptions["fastmath"] = (
+            config.STUMPY_FASTMATH_FLAGS
+        )
+
+        njit_funcs = cache.get_njit_funcs()
+        for module_name, func_name in njit_funcs:
+            module = importlib.import_module(f".{module_name}", package="stumpy")
+            func = getattr(module, func_name)
+            func.recompile()
+
+        (
+            cmp_snippets_NOreassoc,
+            cmp_indices_NOreassoc,
+            cmp_profiles_NOreassoc,
+            cmp_fractions_NOreassoc,
+            cmp_areas_NOreassoc,
+            cmp_regimes_NOreassoc,
+        ) = stumpy.snippets(
+            T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
+        )
+
+        config._reset("STUMPY_FASTMATH_FLAGS")
+
+        core._calculate_squared_distance.targetoptions["fastmath"] = (
+            config.STUMPY_FASTMATH_FLAGS
+        )
+        for module_name, func_name in njit_funcs:
+            module = importlib.import_module(f".{module_name}", package="stumpy")
+            func = getattr(module, func_name)
+            func.recompile()
+
         npt.assert_almost_equal(
             ref_snippets, cmp_snippets_NOreassoc, decimal=config.STUMPY_TEST_PRECISION
         )
