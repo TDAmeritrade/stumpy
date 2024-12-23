@@ -41,9 +41,8 @@ def _reset(var=None):
 
     Parameters
     ----------
-    var : str or list, default None
-        If str, it is the name of the configuration variable to reset. If lst,
-        it is a list of configuration variables to reset. If None, then all
+    var : str, default None
+        The name of the configuration variable. If None, then all
         configuration variables are reset to their default values.
 
     Returns
@@ -55,21 +54,12 @@ def _reset(var=None):
     ]
 
     if var is None:
-        var = config_vars
-    elif isinstance(var, str):
-        var = [var]
+        for v in config_vars:
+            globals()[v] = _STUMPY_DEFAULTS[v]
+    elif var in config_vars:
+        globals()[var] = _STUMPY_DEFAULTS[var]
     else:
-        pass
-
-    if not set(var).issubset(config_vars):
-        msg = (
-            "Could not reset the following unrecognized configuration variable(s): "
-            + f"{set(var) - set(config_vars)}"
-        )
+        msg = f'Could not reset unrecognized configuration variable "{var}"'
         warnings.warn(msg)
-
-    # Reset all config variables back to default values
-    for v in var:
-        globals()[v] = _STUMPY_DEFAULTS[v]
 
     return
