@@ -137,15 +137,12 @@ def _recompile(func=None, fastmath=None):
             module = importlib.import_module(f".{module_name}", package="stumpy")
             func = getattr(module, func_name)
             func.recompile()
-
     else:
         if not numba.extending.is_jitted(func):
             msg = "The function `func` must be a (n)jit function."
             raise ValueError(msg)
-
         if fastmath is not None:
             func.targetoptions["fastmath"] = fastmath
-
         func.recompile()
 
     return
