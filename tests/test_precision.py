@@ -1,5 +1,4 @@
 import functools
-import importlib
 from unittest.mock import patch
 
 import naive
@@ -149,75 +148,48 @@ def test_snippets():
         cmp_regimes,
     ) = stumpy.snippets(T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func)
 
-    if np.allclose(ref_snippets, cmp_snippets) or numba.config.DISABLE_JIT:
-        npt.assert_almost_equal(
-            ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
-        )
-        npt.assert_almost_equal(
-            ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
-        )
-        npt.assert_almost_equal(
-            ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
-        )
-        npt.assert_almost_equal(
-            ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
-        )
-        npt.assert_almost_equal(
-            ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION
-        )
-        npt.assert_almost_equal(ref_regimes, cmp_regimes)
-    else:
-        # Revise fastmath flag, recompile, and re-calculate snippets,
-        # and then revert the changes
-
+    if not np.allclose(ref_snippets, cmp_snippets) and not numba.config.DISABLE_JIT:
+        # Revise fastmath flags by removing reassoc (to improve precision),
+        # recompile njit functions, and re-compute snippets.
         config.STUMPY_FASTMATH_FLAGS = {"nsz", "arcp", "contract", "afn"}
-        core._calculate_squared_distance.targetoptions["fastmath"] = (
-            config.STUMPY_FASTMATH_FLAGS
+        cache._recompile(
+            core._calculate_squared_distance, fastmath=config.STUMPY_FASTMATH_FLAGS
         )
-
-        njit_funcs = cache.get_njit_funcs()
-        for module_name, func_name in njit_funcs:
-            module = importlib.import_module(f".{module_name}", package="stumpy")
-            func = getattr(module, func_name)
-            func.recompile()
+        cache._recompile()
 
         (
-            cmp_snippets_NOreassoc,
-            cmp_indices_NOreassoc,
-            cmp_profiles_NOreassoc,
-            cmp_fractions_NOreassoc,
-            cmp_areas_NOreassoc,
-            cmp_regimes_NOreassoc,
+            cmp_snippets,
+            cmp_indices,
+            cmp_profiles,
+            cmp_fractions,
+            cmp_areas,
+            cmp_regimes,
         ) = stumpy.snippets(
             T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
         )
 
+    npt.assert_almost_equal(
+        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
+    npt.assert_almost_equal(ref_regimes, cmp_regimes)
+
+    if not numba.config.DISABLE_JIT:
+        # Revert fastmath flag back to their default values
         config._reset("STUMPY_FASTMATH_FLAGS")
-
-        core._calculate_squared_distance.targetoptions["fastmath"] = (
-            config.STUMPY_FASTMATH_FLAGS
+        cache._recompile(
+            core._calculate_squared_distance, fastmath=config.STUMPY_FASTMATH_FLAGS
         )
-        for module_name, func_name in njit_funcs:
-            module = importlib.import_module(f".{module_name}", package="stumpy")
-            func = getattr(module, func_name)
-            func.recompile()
-
-        npt.assert_almost_equal(
-            ref_snippets, cmp_snippets_NOreassoc, decimal=config.STUMPY_TEST_PRECISION
-        )
-        npt.assert_almost_equal(
-            ref_indices, cmp_indices_NOreassoc, decimal=config.STUMPY_TEST_PRECISION
-        )
-        npt.assert_almost_equal(
-            ref_profiles, cmp_profiles_NOreassoc, decimal=config.STUMPY_TEST_PRECISION
-        )
-        npt.assert_almost_equal(
-            ref_fractions, cmp_fractions_NOreassoc, decimal=config.STUMPY_TEST_PRECISION
-        )
-        npt.assert_almost_equal(
-            ref_areas, cmp_areas_NOreassoc, decimal=config.STUMPY_TEST_PRECISION
-        )
-        npt.assert_almost_equal(ref_regimes, cmp_regimes_NOreassoc)
+        cache._recompile()
 
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)

@@ -9,6 +9,8 @@ import pkgutil
 import site
 import warnings
 
+import numba
+
 CACHE_WARNING = "Caching `numba` functions is purely for experimental purposes "
 CACHE_WARNING += "and should never be used or depended upon as it is not supported! "
 CACHE_WARNING += "All caching capabilities are not tested and may be removed/changed "
@@ -107,3 +109,43 @@ def _get_cache():
     site_pkg_dir = site.getsitepackages()[0]
     numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
     return [f.name for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
+
+
+def _recompile(func=None, fastmath=None):
+    """
+    Recompile a jit/njit decorated function. If `func` is None, then it wiil
+    recompile all njit functions of STUMPY.
+
+    Parameters
+    ----------
+    func : a njit function, default None
+        The numba function to recompile. If None, then all njit functions
+        of STUMPY will be recompiled.
+
+    fastmath : bool or set, default None
+        The fastmath flags to use. If None, then the func's fastmath flags
+        will not be changed. This is only used when `func` is provided.
+
+    Returns
+    -------
+    None
+    """
+    warnings.warn(CACHE_WARNING)
+    if func is None:
+        njit_funcs = get_njit_funcs()
+        for module_name, func_name in njit_funcs:
+            module = importlib.import_module(f".{module_name}", package="stumpy")
+            func = getattr(module, func_name)
+            func.recompile()
+
+    else:
+        if not numba.extending.is_jitted(func):
+            msg = "The function `func` must be a (n)jit function."
+            raise ValueError(msg)
+
+        if fastmath is not None:
+            func.targetoptions["fastmath"] = fastmath
+
+        func.recompile()
+
+    return
