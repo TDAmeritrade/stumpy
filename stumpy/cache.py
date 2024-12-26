@@ -113,7 +113,7 @@ def _get_cache():
 
 def _recompile(func=None, fastmath=None):
     """
-    Recompile a jit/njit decorated function. If `func` is None, then it wiil
+    Recompile a jit/njit decorated function. If `func` is None, then it will
     recompile all njit functions of STUMPY.
 
     Parameters
