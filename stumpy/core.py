@@ -589,7 +589,7 @@ def check_window_size(m, max_size=None):
         raise ValueError(f"The window size must be less than or equal to {max_size}")
 
 
-@njit(fastmath=True)
+@njit(fastmath=config.STUMPY_FASTMATH)
 def _sliding_dot_product(Q, T):
     """
     A Numba JIT-compiled implementation of the sliding window dot product.
@@ -657,7 +657,7 @@ def sliding_dot_product(Q, T):
 
 @njit(
     # "f8[:](f8[:], i8, b1[:])",
-    fastmath={"nsz", "arcp", "contract", "afn", "reassoc"}
+    fastmath=config.STUMPY_FASTMATH_FLAGS
 )
 def _welford_nanvar(a, w, a_subseq_isfinite):
     """
@@ -771,7 +771,7 @@ def welford_nanstd(a, w=None):
     return np.sqrt(np.clip(welford_nanvar(a, w), a_min=0, a_max=None))
 
 
-@njit(parallel=True, fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
+@njit(parallel=True, fastmath=config.STUMPY_FASTMATH_FLAGS)
 def _rolling_nanstd_1d(a, w):
     """
     A Numba JIT-compiled and parallelized function for computing the rolling standard
@@ -1110,7 +1110,7 @@ def _calculate_squared_distance(
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    fastmath=True,
+    fastmath=config.STUMPY_FASTMATH,
 )
 def _calculate_squared_distance_profile(
     m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
@@ -1176,7 +1176,7 @@ def _calculate_squared_distance_profile(
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    fastmath=True,
+    fastmath=config.STUMPY_FASTMATH,
 )
 def calculate_distance_profile(
     m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
@@ -1229,7 +1229,7 @@ def calculate_distance_profile(
     return np.sqrt(D_squared)
 
 
-@njit(fastmath=True)
+@njit(fastmath=config.STUMPY_FASTMATH)
 def _p_norm_distance_profile(Q, T, p=2.0):
     """
     A Numba JIT-compiled and parallelized function for computing the p-normalized
@@ -1505,7 +1505,7 @@ def mueen_calculate_distance_profile(Q, T):
 
 @njit(
     # "f8[:](f8[:], f8[:], f8[:], f8, f8, f8[:], f8[:])",
-    fastmath=True
+    fastmath=config.STUMPY_FASTMATH
 )
 def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant):
     """
@@ -1978,7 +1978,7 @@ def _get_QT(start, T_A, T_B, m):
 
 @njit(
     # ["(f8[:], i8, i8)", "(f8[:, :], i8, i8)"],
-    fastmath=True
+    fastmath=config.STUMPY_FASTMATH
 )
 def _apply_exclusion_zone(a, idx, excl_zone, val):
     """
@@ -2308,7 +2308,7 @@ def array_to_temp_file(a):
 
 @njit(
     # "i8[:](i8[:], i8, i8, i8)",
-    fastmath=True,
+    fastmath=config.STUMPY_FASTMATH,
 )
 def _count_diagonal_ndist(diags, m, n_A, n_B):
     """
@@ -2505,7 +2505,7 @@ def rolling_isfinite(a, w):
     )
 
 
-@njit(parallel=True, fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
+@njit(parallel=True, fastmath=config.STUMPY_FASTMATH_FLAGS)
 def _rolling_isconstant(a, w):
     """
     Compute the rolling isconstant for 1-D array.
@@ -2842,7 +2842,7 @@ def _idx_to_mp(
     return P
 
 
-@njit(fastmath=True)
+@njit(fastmath=config.STUMPY_FASTMATH)
 def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_width):
     """
     Count the total number of distances covered by a range of diagonals
@@ -3970,7 +3970,7 @@ def _mdl(disc_subseqs, disc_neighbors, S, n_bit=8):
 
 @njit(
     # "(i8, i8, f8[:, :], f8[:], i8, f8[:, :], i8[:, :], f8)",
-    fastmath={"nsz", "arcp", "contract", "afn", "reassoc"},
+    fastmath=config.STUMPY_FASTMATH_FLAGS,
 )
 def _compute_multi_PI(d, idx, D, D_prime, range_start, P, I, p=2.0):
     """

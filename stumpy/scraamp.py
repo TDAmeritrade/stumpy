@@ -83,7 +83,7 @@ def _preprocess_prescraamp(T_A, m, T_B=None, s=None):
     return (T_A, T_B, T_A_subseq_isfinite, T_B_subseq_isfinite, indices, s, excl_zone)
 
 
-@njit(fastmath=True)
+@njit(fastmath=config.STUMPY_FASTMATH)
 def _compute_PI(
     T_A,
     T_B,
@@ -286,7 +286,7 @@ def _compute_PI(
     # "(f8[:], f8[:], i8, b1[:], b1[:], f8, i8, i8, f8[:], f8[:],"
     # "i8[:], optional(i8))",
     parallel=True,
-    fastmath=True,
+    fastmath=config.STUMPY_FASTMATH,
 )
 def _prescraamp(
     T_A,

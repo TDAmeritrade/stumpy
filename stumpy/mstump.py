@@ -811,7 +811,7 @@ def _get_multi_QT(start, T, m):
     # "(i8, i8, i8, f8[:, :], f8[:, :], i8, i8, f8[:, :], f8[:, :], f8[:, :],"
     # "f8[:, :], f8[:, :], f8[:, :], f8[:, :])",
     parallel=True,
-    fastmath=True,
+    fastmath=config.STUMPY_FASTMATH,
 )
 def _compute_multi_D(
     d,
