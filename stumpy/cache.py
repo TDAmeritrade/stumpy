@@ -9,8 +9,6 @@ import pkgutil
 import site
 import warnings
 
-import numba
-
 CACHE_WARNING = "Caching `numba` functions is purely for experimental purposes "
 CACHE_WARNING += "and should never be used or depended upon as it is not supported! "
 CACHE_WARNING += "All caching capabilities are not tested and may be removed/changed "
@@ -131,16 +129,21 @@ def _recompile(func=None, fastmath=None):
     None
     """
     warnings.warn(CACHE_WARNING)
+    njit_funcs = get_njit_funcs()
+
+    recompile_funcs = []
     if func is None:
-        njit_funcs = get_njit_funcs()
         for module_name, func_name in njit_funcs:
             module = importlib.import_module(f".{module_name}", package="stumpy")
             func = getattr(module, func_name)
-            func.recompile()
+            recompile_funcs.append(func)
+    elif func in njit_funcs:
+        recompile_funcs.append(func)
     else:
-        if not numba.extending.is_jitted(func):
-            msg = "The function `func` must be a (n)jit function."
-            raise ValueError(msg)
+        msg = "The function `func` is not a njit function in STUMPY"
+        raise ValueError(msg)
+
+    for func in recompile_funcs:
         if fastmath is not None:
             func.targetoptions["fastmath"] = fastmath
         func.recompile()
