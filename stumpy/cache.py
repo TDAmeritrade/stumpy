@@ -129,14 +129,15 @@ def _recompile(func=None, fastmath=None):
     None
     """
     warnings.warn(CACHE_WARNING)
-    njit_funcs = get_njit_funcs()
+
+    njit_funcs = []
+    for module_name, func_name in get_njit_funcs():
+        module = importlib.import_module(f".{module_name}", package="stumpy")
+        njit_funcs.append(getattr(module, func_name))
 
     recompile_funcs = []
     if func is None:
-        for module_name, func_name in njit_funcs:
-            module = importlib.import_module(f".{module_name}", package="stumpy")
-            func = getattr(module, func_name)
-            recompile_funcs.append(func)
+        recompile_funcs = njit_funcs
     elif func in njit_funcs:
         recompile_funcs.append(func)
     else:
