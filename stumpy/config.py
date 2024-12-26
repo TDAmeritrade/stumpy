@@ -54,8 +54,8 @@ def _reset(var=None):
     ]
 
     if var is None:
-        for v in config_vars:
-            globals()[v] = _STUMPY_DEFAULTS[v]
+        for config_var in config_vars:
+            globals()[config_var] = _STUMPY_DEFAULTS[config_var]
     elif var in config_vars:
         globals()[var] = _STUMPY_DEFAULTS[var]
     else:
