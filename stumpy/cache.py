@@ -109,7 +109,7 @@ def _get_cache():
     return [f.name for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
 
 
-def _recompile(func=None, fastmath=None):
+def _recompile():
     """
     Recompile all njit functions
 
