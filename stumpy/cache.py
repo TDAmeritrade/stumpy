@@ -111,42 +111,20 @@ def _get_cache():
 
 def _recompile(func=None, fastmath=None):
     """
-    Recompile a jit/njit decorated function. If `func` is None, then it will
-    recompile all njit functions of STUMPY.
+    Recompile all njit functions
 
     Parameters
     ----------
-    func : a njit function, default None
-        The numba function to recompile. If None, then all njit functions
-        of STUMPY will be recompiled.
-
-    fastmath : bool or set, default None
-        The fastmath flags to use. If None, then the func's fastmath flags
-        will not be changed. This is only used when `func` is provided.
+    None
 
     Returns
     -------
     None
     """
     warnings.warn(CACHE_WARNING)
-
-    njit_funcs = []
     for module_name, func_name in get_njit_funcs():
         module = importlib.import_module(f".{module_name}", package="stumpy")
-        njit_funcs.append(getattr(module, func_name))
-
-    recompile_funcs = []
-    if func is None:
-        recompile_funcs = njit_funcs
-    elif func in njit_funcs:
-        recompile_funcs.append(func)
-    else:
-        msg = "The function `func` is not a njit function in STUMPY"
-        raise ValueError(msg)
-
-    for func in recompile_funcs:
-        if fastmath is not None:
-            func.targetoptions["fastmath"] = fastmath
+        func = getattr(module, func_name)
         func.recompile()
 
     return
