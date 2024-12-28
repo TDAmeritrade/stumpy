@@ -58,7 +58,7 @@ def _reset(var=None):
             globals()[config_var] = _STUMPY_DEFAULTS[config_var]
     elif var in config_vars:
         globals()[var] = _STUMPY_DEFAULTS[var]
-    else:
+    else:  # pragma: no cover
         msg = f'Could not reset unrecognized configuration variable "{var}"'
         warnings.warn(msg)
 
