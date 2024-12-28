@@ -13,7 +13,7 @@ from .mparray import mparray
 @njit(
     # "(f8[:], f8[:], i8, b1[:], b1[:], f8, i8[:], i8, i8, i8, f8[:, :, :],"
     # "f8[:, :], f8[:, :], i8[:, :, :], i8[:, :], i8[:, :], b1)",
-    fastmath=config.STUMPY_FASTMATH,
+    fastmath=config.STUMPY_FASTMATH_TRUE,
 )
 def _compute_diagonal(
     T_A,
@@ -186,7 +186,7 @@ def _compute_diagonal(
 @njit(
     # "(f8[:], f8[:], i8, b1[:], b1[:], i8[:], b1, i8)",
     parallel=True,
-    fastmath=config.STUMPY_FASTMATH,
+    fastmath=config.STUMPY_FASTMATH_TRUE,
 )
 def _aamp(
     T_A,

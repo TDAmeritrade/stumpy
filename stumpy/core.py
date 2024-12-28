@@ -589,7 +589,7 @@ def check_window_size(m, max_size=None):
         raise ValueError(f"The window size must be less than or equal to {max_size}")
 
 
-@njit(fastmath=config.STUMPY_FASTMATH)
+@njit(fastmath=config.STUMPY_FASTMATH_TRUE)
 def _sliding_dot_product(Q, T):
     """
     A Numba JIT-compiled implementation of the sliding window dot product.
@@ -1110,7 +1110,7 @@ def _calculate_squared_distance(
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    fastmath=config.STUMPY_FASTMATH,
+    fastmath=config.STUMPY_FASTMATH_TRUE,
 )
 def _calculate_squared_distance_profile(
     m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
@@ -1176,7 +1176,7 @@ def _calculate_squared_distance_profile(
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    fastmath=config.STUMPY_FASTMATH,
+    fastmath=config.STUMPY_FASTMATH_TRUE,
 )
 def calculate_distance_profile(
     m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
@@ -1229,7 +1229,7 @@ def calculate_distance_profile(
     return np.sqrt(D_squared)
 
 
-@njit(fastmath=config.STUMPY_FASTMATH)
+@njit(fastmath=config.STUMPY_FASTMATH_TRUE)
 def _p_norm_distance_profile(Q, T, p=2.0):
     """
     A Numba JIT-compiled and parallelized function for computing the p-normalized
@@ -1505,7 +1505,7 @@ def mueen_calculate_distance_profile(Q, T):
 
 @njit(
     # "f8[:](f8[:], f8[:], f8[:], f8, f8, f8[:], f8[:])",
-    fastmath=config.STUMPY_FASTMATH
+    fastmath=config.STUMPY_FASTMATH_TRUE
 )
 def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant):
     """
@@ -1978,7 +1978,7 @@ def _get_QT(start, T_A, T_B, m):
 
 @njit(
     # ["(f8[:], i8, i8)", "(f8[:, :], i8, i8)"],
-    fastmath=config.STUMPY_FASTMATH
+    fastmath=config.STUMPY_FASTMATH_TRUE
 )
 def _apply_exclusion_zone(a, idx, excl_zone, val):
     """
@@ -2308,7 +2308,7 @@ def array_to_temp_file(a):
 
 @njit(
     # "i8[:](i8[:], i8, i8, i8)",
-    fastmath=config.STUMPY_FASTMATH,
+    fastmath=config.STUMPY_FASTMATH_TRUE,
 )
 def _count_diagonal_ndist(diags, m, n_A, n_B):
     """
@@ -2842,7 +2842,7 @@ def _idx_to_mp(
     return P
 
 
-@njit(fastmath=config.STUMPY_FASTMATH)
+@njit(fastmath=config.STUMPY_FASTMATH_TRUE)
 def _total_diagonal_ndists(tile_lower_diag, tile_upper_diag, tile_height, tile_width):
     """
     Count the total number of distances covered by a range of diagonals

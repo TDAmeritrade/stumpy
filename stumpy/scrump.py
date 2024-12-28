@@ -133,7 +133,7 @@ def _preprocess_prescrump(
     )
 
 
-@njit(fastmath=config.STUMPY_FASTMATH)
+@njit(fastmath=config.STUMPY_FASTMATH_TRUE)
 def _compute_PI(
     T_A,
     T_B,
@@ -384,7 +384,7 @@ def _compute_PI(
     # "(f8[:], f8[:], i8, f8[:], f8[:], f8[:], f8[:], f8[:], i8, i8, f8[:], f8[:],"
     # "i8[:], optional(i8))",
     parallel=True,
-    fastmath=config.STUMPY_FASTMATH,
+    fastmath=config.STUMPY_FASTMATH_TRUE,
 )
 def _prescrump(
     T_A,
