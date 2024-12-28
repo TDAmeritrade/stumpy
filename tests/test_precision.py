@@ -148,7 +148,9 @@ def test_snippets():
         cmp_regimes,
     ) = stumpy.snippets(T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func)
 
-    if not np.allclose(ref_snippets, cmp_snippets) and not numba.config.DISABLE_JIT:
+    if (
+        not np.allclose(ref_snippets, cmp_snippets) and not numba.config.DISABLE_JIT
+    ):  # pragma: no cover
         # Revise fastmath flags by removing reassoc (to improve precision),
         # recompile njit functions, and re-compute snippets.
         core._calculate_squared_distance.targetoptions["fastmath"] = {
@@ -185,7 +187,7 @@ def test_snippets():
     npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
     npt.assert_almost_equal(ref_regimes, cmp_regimes)
 
-    if not numba.config.DISABLE_JIT:
+    if not numba.config.DISABLE_JIT:  # pragma: no cover
         # Revert fastmath flag back to their default values
         config._reset("STUMPY_FASTMATH_FLAGS")
         core._calculate_squared_distance.targetoptions["fastmath"] = (
