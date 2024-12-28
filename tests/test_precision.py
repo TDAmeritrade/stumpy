@@ -151,10 +151,12 @@ def test_snippets():
     if not np.allclose(ref_snippets, cmp_snippets) and not numba.config.DISABLE_JIT:
         # Revise fastmath flags by removing reassoc (to improve precision),
         # recompile njit functions, and re-compute snippets.
-        config.STUMPY_FASTMATH_FLAGS = {"nsz", "arcp", "contract", "afn"}
-        cache._recompile(
-            core._calculate_squared_distance, fastmath=config.STUMPY_FASTMATH_FLAGS
-        )
+        core._calculate_squared_distance.targetoptions["fastmath"] = {
+            "nsz",
+            "arcp",
+            "contract",
+            "afn",
+        }
         cache._recompile()
 
         (
@@ -186,8 +188,8 @@ def test_snippets():
     if not numba.config.DISABLE_JIT:
         # Revert fastmath flag back to their default values
         config._reset("STUMPY_FASTMATH_FLAGS")
-        cache._recompile(
-            core._calculate_squared_distance, fastmath=config.STUMPY_FASTMATH_FLAGS
+        core._calculate_squared_distance.targetoptions["fastmath"] = (
+            config.STUMPY_FASTMATH_FLAGS
         )
         cache._recompile()
 
