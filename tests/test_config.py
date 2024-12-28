@@ -9,3 +9,12 @@ def test_change_excl_zone_denom():
 
     config.STUMPY_EXCL_ZONE_DENOM = 4
     assert core.get_max_window_size(10) == 7
+
+
+def test_reset():
+    ref = config.STUMPY_EXCL_ZONE_DENOM
+
+    config.STUMPY_EXCL_ZONE_DENOM += 1
+    config._reset("STUMPY_EXCL_ZONE_DENOM")
+
+    assert config.STUMPY_EXCL_ZONE_DENOM == ref
