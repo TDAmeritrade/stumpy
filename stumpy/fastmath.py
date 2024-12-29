@@ -76,7 +76,7 @@ def set_flag(module_name, func_name, flag=None):
 
     funcs_flags = get_default_fastmath(module_name)
     if func_name not in funcs_flags.keys():
-        msg = "The module `{module_name}` does not have a njit function `{func_name}`"
+        msg = f"The module `{module_name}` does not have a njit function `{func_name}`"
         raise ValueError(msg)
     default_flag = funcs_flags[func_name]
 
