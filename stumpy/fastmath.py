@@ -71,9 +71,6 @@ def set_flag(module_name, func_name, flag=None):
     -------
     None
     """
-    module = importlib.import_module(f".{module_name}", package="stumpy")
-    func = getattr(module, func_name)
-
     funcs_flags = get_default_fastmath(module_name)
     if func_name not in funcs_flags.keys():
         msg = f"The module `{module_name}` does not have a njit function `{func_name}`"
@@ -84,6 +81,8 @@ def set_flag(module_name, func_name, flag=None):
         flag = default_flag
 
     if flag is not None:
+        module = importlib.import_module(f".{module_name}", package="stumpy")
+        func = getattr(module, func_name)
         func.targetoptions["fastmath"] = flag
         func.recompile()
 
