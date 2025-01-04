@@ -153,10 +153,11 @@ def test_snippets():
     ):  # pragma: no cover
         # Revise fastmath flags by removing reassoc (to improve precision),
         # recompile njit functions, and re-compute snippets.
-        fastmath.set_flag(
+        fastmath._set(
             "core", "_calculate_squared_distance", {"nsz", "arcp", "contract", "afn"}
         )
         cache._recompile()
+
         (
             cmp_snippets,
             cmp_indices,
@@ -185,7 +186,7 @@ def test_snippets():
 
     if not numba.config.DISABLE_JIT:  # pragma: no cover
         # Revert fastmath flag back to their default values
-        fastmath.set_flag("core", "_calculate_squared_distance")
+        fastmath._reset("core", "_calculate_squared_distance")
         cache._recompile()
 
 
