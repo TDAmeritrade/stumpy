@@ -38,7 +38,7 @@ from .stumpi import stumpi  # noqa: F401
 # Get the default fastmath flags for all njit functions
 # and update the _STUMPY_DEFAULTS dictionary
 
-if not numba.config.DISABLE_JIT:
+if not numba.config.DISABLE_JIT:  # pragma: no cover
     njit_funcs = cache.get_njit_funcs()
     for module_name, func_name in njit_funcs:
         module = importlib.import_module(f".{module_name}", package="stumpy")
