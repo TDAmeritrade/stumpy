@@ -1,5 +1,5 @@
-import os.path
 import importlib
+import os.path
 from importlib.metadata import distribution
 from site import getsitepackages
 
@@ -40,9 +40,9 @@ njit_funcs = cache.get_njit_funcs()
 for module_name, func_name in njit_funcs:
     module = importlib.import_module(f".{module_name}", package="stumpy")
     func = getattr(module, func_name)
-    key = module_name + '.' + func_name  # e.g., core._mass
-    key = 'STUMPY_FASTMATH_' + key.upper()  # e.g., STUMPY_FASTHMATH_CORE._MASS
-    config._STUMPY_DEFAULTS[key] = func.targetoptions['fastmath']
+    key = module_name + "." + func_name  # e.g., core._mass
+    key = "STUMPY_FASTMATH_" + key.upper()  # e.g., STUMPY_FASTHMATH_CORE._MASS
+    config._STUMPY_DEFAULTS[key] = func.targetoptions.get("fastmath", False)
 
 if cuda.is_available():
     from .gpu_aamp import gpu_aamp  # noqa: F401
