@@ -93,10 +93,10 @@ check_print()
     fi
 }
 
-check_fastmath()
+fastmath()
 {
     echo "Checking Missing fastmath flags in njit functions"
-    ./check_fastmath.py
+    ./fastmath.py --perform check
     check_errs $?
 }
 
@@ -342,7 +342,7 @@ check_ray
 
 
 if [[ ! -z $NUMBA_DISABLE_JIT && ${NUMBA_DISABLE_JIT} -eq "0" ]]; then
-  check_fastmath
+  fastmath
 fi
 
 
