@@ -445,17 +445,18 @@ def check_dtype(a, dtype=np.float64):  # pragma: no cover
 
 def transpose_dataframe(df):  # pragma: no cover
     """
-    Check if the input is a column-wise Pandas `DataFrame`. If `True`, return a
+    Check if the input is a column-wise pandas/polars `DataFrame`. If `True`, return a
     transpose dataframe since stumpy assumes that each row represents data from a
     different dimension while each column represents data from the same dimension.
-    If `False`, return `a` unchanged. Pandas `Series` do not need to be transposed.
+    If `False`, return `a` unchanged. Pandas/polars `Series` do not need to be
+    transposed.
 
     Note that this function has zero dependency on Pandas (not even a soft dependency).
 
     Parameters
     ----------
-    df : numpy.ndarray
-        Pandas dataframe
+    df : DataFrame
+        pandas/polars dataframe
 
     Returns
     -------
@@ -463,7 +464,7 @@ def transpose_dataframe(df):  # pragma: no cover
         If `df` is a Pandas `DataFrame` then return `df.T`. Otherwise, return `df`
     """
     if type(df).__name__ == "DataFrame":
-        return df.T
+        return df.transpose()
 
     return df
 
@@ -2062,8 +2063,16 @@ def _preprocess(T, copy=True):
         Modified time series
     """
     if copy:
-        T = T.copy()
+        try:
+            T = T.copy()
+        except AttributeError:  # Polars copy
+            T = T.clone()
+
     T = transpose_dataframe(T)
+
+    if "polars" in str(type(T)):
+        T = T.to_numpy(writable=True)
+
     T = np.asarray(T)
     check_dtype(T)
 

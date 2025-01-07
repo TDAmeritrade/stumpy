@@ -21,8 +21,9 @@ dependencies:
   - pydata-sphinx-theme>=0.5.2
   - scikit-learn>=0.21.3
   - numpydoc>=1.1.0
-  - build>=0.7.0
+  - python-build>=0.7.0
   - pytest-check-links>=0.7.1
   - isort>=5.11.0
   - jupyterlab-myst>=2.0.0
   - myst-nb>=1.0.0
+  - polars>=1.14.0

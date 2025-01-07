@@ -52,7 +52,8 @@ ci = [
     "black >= 22.1.0",
     "pytest >= 4.4.1",
     "isort >= 5.11.0",
-    'tbb >= 2019.5 ; platform_system == "Linux"'
+    'tbb >= 2019.5 ; platform_system == "Linux"',
+    "polars >= 1.14.0"
 ]
 
 [project.urls]

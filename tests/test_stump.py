@@ -4,6 +4,7 @@ import naive
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
+import polars as pl
 import pytest
 
 from stumpy import config, stump
@@ -42,6 +43,10 @@ def test_stump_self_join(T_A, T_B):
     naive.replace_inf(comp_mp)
     npt.assert_almost_equal(ref_mp, comp_mp)
 
+    comp_mp = stump(pl.Series(T_B), m, ignore_trivial=True)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
+
 
 @pytest.mark.parametrize("T_A, T_B", test_data)
 def test_stump_A_B_join(T_A, T_B):
@@ -53,6 +58,10 @@ def test_stump_A_B_join(T_A, T_B):
     npt.assert_almost_equal(ref_mp, comp_mp)
 
     comp_mp = stump(pd.Series(T_A), m, pd.Series(T_B), ignore_trivial=False)
+    naive.replace_inf(comp_mp)
+    npt.assert_almost_equal(ref_mp, comp_mp)
+
+    comp_mp = stump(pl.Series(T_A), m, pl.Series(T_B), ignore_trivial=False)
     naive.replace_inf(comp_mp)
     npt.assert_almost_equal(ref_mp, comp_mp)
 
