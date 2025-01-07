@@ -153,14 +153,14 @@ set_ray_coveragerc()
 show_coverage_report()
 {
     set_ray_coveragerc
-    coverage report -m --fail-under=100 --skip-covered --omit=check_fastmath.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
+    coverage report -m --fail-under=100 --skip-covered --omit=fastmath.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
 }
 
 gen_coverage_xml_report()
 {
     # This function saves the coverage report in Cobertura XML format, which is compatible with codecov
     set_ray_coveragerc
-    coverage xml -o $fcoveragexml --fail-under=100 --omit=check_fastmath.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
+    coverage xml -o $fcoveragexml --fail-under=100 --omit=fastmath.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
 }
 
 test_custom()
@@ -341,7 +341,7 @@ check_naive
 check_ray
 
 
-if [[ ! -z $NUMBA_DISABLE_JIT && ${NUMBA_DISABLE_JIT} -eq "0" ]]; then
+if [[ -z $NUMBA_DISABLE_JIT || $NUMBA_DISABLE_JIT -eq 0 ]]; then
   fastmath
 fi
 
