@@ -107,3 +107,24 @@ def _get_cache():
     site_pkg_dir = site.getsitepackages()[0]
     numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
     return [f.name for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
+
+
+def _recompile():
+    """
+    Recompile all njit functions
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    warnings.warn(CACHE_WARNING)
+    for module_name, func_name in get_njit_funcs():
+        module = importlib.import_module(f".{module_name}", package="stumpy")
+        func = getattr(module, func_name)
+        func.recompile()
+
+    return
