@@ -40,19 +40,17 @@ def get_njit_funcs():
             file_contents = f.read()
         module = ast.parse(file_contents)
         for node in module.body:
-            if isinstance(node, ast.FunctionDef):
-                func_name = node.name
-                for decorator in node.decorator_list:
-                    scenario_1 = isinstance(decorator, ast.Name) and (
-                        decorator.id == "njit"
-                    )
-                    scenario_2 = (
-                        isinstance(decorator, ast.Call)
-                        and isinstance(decorator.func, ast.Name)
-                        and decorator.func.id == "njit"
-                    )
-                    if scenario_1 or scenario_2:
-                        njit_funcs.append((module_name, func_name))
+            if not isinstance(node, ast.FunctionDef):
+                continue
+
+            func_name = node.name
+            for decorator in node.decorator_list:
+                if (isinstance(decorator, ast.Name) and (decorator.id == "njit")) or (
+                    isinstance(decorator, ast.Call)
+                    and isinstance(decorator.func, ast.Name)
+                    and decorator.func.id == "njit"
+                ):
+                    njit_funcs.append((module_name, func_name))
 
     return njit_funcs
 
