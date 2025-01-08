@@ -43,11 +43,16 @@ def get_njit_funcs():
             if isinstance(node, ast.FunctionDef):
                 func_name = node.name
                 for decorator in node.decorator_list:
-                    if isinstance(decorator, ast.Call) and isinstance(
-                        decorator.func, ast.Name
-                    ):
-                        if decorator.func.id == "njit":
-                            njit_funcs.append((module_name, func_name))
+                    scenario_1 = isinstance(decorator, ast.Name) and (
+                        decorator.id == "njit"
+                    )
+                    scenario_2 = (
+                        isinstance(decorator, ast.Call)
+                        and isinstance(decorator.func, ast.Name)
+                        and decorator.func.id == "njit"
+                    )
+                    if scenario_1 or scenario_2:
+                        njit_funcs.append((module_name, func_name))
 
     return njit_funcs
 
