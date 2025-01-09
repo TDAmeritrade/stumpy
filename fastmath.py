@@ -1,17 +1,9 @@
-# STUMPY
-# Copyright 2019 TD Ameritrade. Released under the terms of the 3-Clause BSD license.
-# STUMPY is a trademark of TD Ameritrade IP Company, Inc. All rights reserved.
+#!/usr/bin/env python
 
+import argparse
 import ast
 import importlib
 import pathlib
-import site
-import warnings
-
-CACHE_WARNING = "Caching `numba` functions is purely for experimental purposes "
-CACHE_WARNING += "and should never be used or depended upon as it is not supported! "
-CACHE_WARNING += "All caching capabilities are not tested and may be removed/changed "
-CACHE_WARNING += "without prior notice. Please proceed with caution!"
 
 
 def get_njit_funcs():
@@ -24,12 +16,13 @@ def get_njit_funcs():
 
     Returns
     -------
-    out : list
-        A list of (`module_name`, `func_name`) pairs
+    njit_funcs : list
+        A list of all njit functions, where each element is a tuple of the form
+        (module_name, func_name)
     """
     ignore_py_files = ["__init__", "__pycache__"]
 
-    pkg_dir = pathlib.Path(__file__).parent
+    pkg_dir = pathlib.Path(__file__).parent / "stumpy"
     module_names = []
     for fname in pkg_dir.iterdir():
         if fname.stem not in ignore_py_files and not fname.stem.startswith("."):
@@ -63,9 +56,9 @@ def get_njit_funcs():
     return njit_funcs
 
 
-def _enable():
+def check_fastmath():
     """
-    Enable numba caching
+    Check if all njit functions have the `fastmath` flag set
 
     Parameters
     ----------
@@ -75,46 +68,25 @@ def _enable():
     -------
     None
     """
-    warnings.warn(CACHE_WARNING)
-    njit_funcs = get_njit_funcs()
-    for module_name, func_name in njit_funcs:
+    missing_fastmath = []  # list of njit functions with missing fastmath flags
+    for module_name, func_name in get_njit_funcs():
         module = importlib.import_module(f".{module_name}", package="stumpy")
         func = getattr(module, func_name)
-        func.enable_caching()
+        if "fastmath" not in func.targetoptions.keys():
+            missing_fastmath.append(f"{module_name}.{func_name}")
+
+    if len(missing_fastmath) > 0:
+        msg = "Found one or more functions that are missing the `fastmath` flag. "
+        msg += f"The function(s) are:\n {missing_fastmath}\n"
+        raise ValueError(msg)
+
+    return
 
 
-def _clear():
-    """
-    Clear numba cache
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--check", action="store_true")
+    args = parser.parse_args()
 
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    None
-    """
-    warnings.warn(CACHE_WARNING)
-    site_pkg_dir = site.getsitepackages()[0]
-    numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
-    [f.unlink() for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
-
-
-def _get_cache():
-    """
-    Retrieve a list of cached numba functions
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    out : list
-        A list of cached numba functions
-    """
-    warnings.warn(CACHE_WARNING)
-    site_pkg_dir = site.getsitepackages()[0]
-    numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
-    return [f.name for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
+    if args.check:
+        check_fastmath()
