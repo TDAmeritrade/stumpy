@@ -20,12 +20,13 @@ def get_njit_funcs():
         A list of all njit functions, where each element is a tuple of the form
         (module_name, func_name)
     """
-    pkg_dir = pathlib.Path(__file__).parent / "stumpy"
-    module_names = [
-        fname.stem
-        for fname in pathlib.Path(pkg_dir).iterdir()
-        if not fname.stem.startswith(".")  # Avoid hidden files
-    ]
+    ignore_py_files = ["__init__", "__pycache__"]
+
+    pkg_dir = pathlib.Path(__file__).parent
+    module_names = []
+    for fname in pkg_dir.iterdir():
+        if fname.stem not in ignore_py_files and not fname.stem.startswith("."):
+            module_names.append(fname.stem)
 
     njit_funcs = []
     for module_name in module_names:
