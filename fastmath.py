@@ -22,7 +22,7 @@ def get_njit_funcs():
     """
     ignore_py_files = ["__init__", "__pycache__"]
 
-    pkg_dir = pathlib.Path(__file__).parent
+    pkg_dir = pathlib.Path(__file__).parent / "stumpy"
     module_names = []
     for fname in pkg_dir.iterdir():
         if fname.stem not in ignore_py_files and not fname.stem.startswith("."):
