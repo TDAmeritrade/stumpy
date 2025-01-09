@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 import argparse
+import ast
 import importlib
 import pathlib
-import re
 
 
 def get_njit_funcs():
     """
-    Retrieve a list of all njit functions
+    Identify all njit functions
 
     Parameters
     ----------
@@ -20,26 +20,39 @@ def get_njit_funcs():
         A list of all njit functions, where each element is a tuple of the form
         (module_name, func_name)
     """
-    pattern = r"@njit.*?def\s+\w+\("
+    pkg_dir = pathlib.Path(__file__).parent / "stumpy"
+    module_names = [
+        fname.stem
+        for fname in pathlib.Path(pkg_dir).iterdir()
+        if not fname.stem.startswith(".")  # Avoid hidden files
+    ]
 
-    stumpy_path = pathlib.Path(__file__).parent / "stumpy"
-    filepaths = sorted(f for f in pathlib.Path(stumpy_path).iterdir() if f.is_file())
+    njit_funcs = []
+    for module_name in module_names:
+        filepath = pkg_dir / f"{module_name}.py"
+        file_contents = ""
+        with open(filepath, encoding="utf8") as f:
+            file_contents = f.read()
+        module = ast.parse(file_contents)
+        for node in module.body:
+            if isinstance(node, ast.FunctionDef):
+                func_name = node.name
+                for decorator in node.decorator_list:
+                    decorator_name = None
 
-    out = []
-    ignore = ["__init__.py", "__pycache__"]
-    for filepath in filepaths:
-        fname = filepath.name
-        if fname not in ignore and fname.endswith(".py"):
-            file_contents = ""
-            with open(filepath, encoding="utf8") as f:
-                file_contents = f.read()
+                    if isinstance(decorator, ast.Name):
+                        # Bare decorator
+                        decorator_name = decorator.id
+                    if isinstance(decorator, ast.Call) and isinstance(
+                        decorator.func, ast.Name
+                    ):
+                        # Decorator is a function
+                        decorator_name = decorator.func.id
 
-            matches = re.findall(pattern, file_contents, re.DOTALL)
-            for match in matches:
-                func_name = match.split("def ")[-1].split("(")[0]
-                out.append((fname.removesuffix(".py"), func_name))
+                    if decorator_name == "njit":
+                        njit_funcs.append((module_name, func_name))
 
-    return out
+    return njit_funcs
 
 
 def check_fastmath():

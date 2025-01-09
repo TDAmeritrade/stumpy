@@ -5,7 +5,6 @@
 import ast
 import importlib
 import pathlib
-import pkgutil
 import site
 import warnings
 
@@ -28,29 +27,37 @@ def get_njit_funcs():
     out : list
         A list of (`module_name`, `func_name`) pairs
     """
-    pkg_dir = pathlib.Path(__file__).parent
-    module_names = [name for _, name, _ in pkgutil.iter_modules([str(pkg_dir)])]
+    pkg_dir = pathlib.Path(__file__).parent / "stumpy"
+    module_names = [
+        fname.stem
+        for fname in pathlib.Path(pkg_dir).iterdir()
+        if not fname.stem.startswith(".")  # Avoid hidden files
+    ]
 
     njit_funcs = []
-
     for module_name in module_names:
-        filepath = pathlib.Path(__file__).parent / f"{module_name}.py"
+        filepath = pkg_dir / f"{module_name}.py"
         file_contents = ""
         with open(filepath, encoding="utf8") as f:
             file_contents = f.read()
         module = ast.parse(file_contents)
         for node in module.body:
-            if not isinstance(node, ast.FunctionDef):
-                continue
+            if isinstance(node, ast.FunctionDef):
+                func_name = node.name
+                for decorator in node.decorator_list:
+                    decorator_name = None
 
-            func_name = node.name
-            for decorator in node.decorator_list:
-                if (isinstance(decorator, ast.Name) and (decorator.id == "njit")) or (
-                    isinstance(decorator, ast.Call)
-                    and isinstance(decorator.func, ast.Name)
-                    and decorator.func.id == "njit"
-                ):
-                    njit_funcs.append((module_name, func_name))
+                    if isinstance(decorator, ast.Name):
+                        # Bare decorator
+                        decorator_name = decorator.id
+                    if isinstance(decorator, ast.Call) and isinstance(
+                        decorator.func, ast.Name
+                    ):
+                        # Decorator is a function
+                        decorator_name = decorator.func.id
+
+                    if decorator_name == "njit":
+                        njit_funcs.append((module_name, func_name))
 
     return njit_funcs
 
