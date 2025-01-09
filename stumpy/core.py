@@ -2347,6 +2347,7 @@ def _count_diagonal_ndist(diags, m, n_A, n_B):
 
 @njit(
     # "i8[:, :](i8[:], i8, b1)"
+    fastmath={"nsz", "arcp", "contract", "afn", "reassoc"}
 )
 def _get_array_ranges(a, n_chunks, truncate):
     """
@@ -2395,6 +2396,7 @@ def _get_array_ranges(a, n_chunks, truncate):
 
 @njit(
     # "i8[:, :](i8, i8, b1)"
+    fastmath=True
 )
 def _get_ranges(size, n_chunks, truncate):
     """
@@ -3247,7 +3249,7 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
     return MPdist
 
 
-@njit()
+@njit(fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
 def _merge_topk_PI(PA, PB, IA, IB):
     """
     Merge two top-k matrix profiles `PA` and `PB`, and update `PA` (in place).
@@ -3320,7 +3322,7 @@ def _merge_topk_PI(PA, PB, IA, IB):
             IA[i] = tmp_I
 
 
-@njit()
+@njit(fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
 def _merge_topk_ρI(ρA, ρB, IA, IB):
     """
     Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place).
@@ -3394,7 +3396,7 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
             IA[i] = tmp_I
 
 
-@njit()
+@njit(fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
 def _shift_insert_at_index(a, idx, v, shift="right"):
     """
     If `shift=right` (default), all elements in `a[idx:]` are shifted to the right by
@@ -4370,7 +4372,7 @@ def get_ray_nworkers(ray_client):
     return int(ray_client.cluster_resources().get("CPU"))
 
 
-@njit
+@njit(fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
 def _update_incremental_PI(D, P, I, excl_zone, n_appended=0):
     """
     Given the 1D array distance profile, `D`, of the last subsequence of T,
