@@ -2347,7 +2347,7 @@ def _count_diagonal_ndist(diags, m, n_A, n_B):
 
 @njit(
     # "i8[:, :](i8[:], i8, b1)"
-    fastmath={"nsz", "arcp", "contract", "afn", "reassoc"}
+    fastmath=True
 )
 def _get_array_ranges(a, n_chunks, truncate):
     """
