@@ -6,13 +6,14 @@ import importlib
 import pathlib
 
 
-def get_njit_funcs():
+def get_njit_funcs(dir_path):
     """
     Identify all njit functions
 
     Parameters
     ----------
-    None
+    dir_path : str
+        The path to the directory containing some .py files
 
     Returns
     -------
@@ -22,15 +23,14 @@ def get_njit_funcs():
     """
     ignore_py_files = ["__init__", "__pycache__"]
 
-    pkg_dir = pathlib.Path(__file__).parent / "stumpy"
     module_names = []
-    for fname in pkg_dir.iterdir():
+    for fname in dir_path.iterdir():
         if fname.stem not in ignore_py_files and not fname.stem.startswith("."):
             module_names.append(fname.stem)
 
     njit_funcs = []
     for module_name in module_names:
-        filepath = pkg_dir / f"{module_name}.py"
+        filepath = dir_path / f"{module_name}.py"
         file_contents = ""
         with open(filepath, encoding="utf8") as f:
             file_contents = f.read()
@@ -56,21 +56,22 @@ def get_njit_funcs():
     return njit_funcs
 
 
-def check_fastmath():
+def check_fastmath(dir_path, package):
     """
     Check if all njit functions have the `fastmath` flag set
 
     Parameters
     ----------
-    None
+    dir_path : str
+        The path to the directory containing modules of package
 
     Returns
     -------
     None
     """
     missing_fastmath = []  # list of njit functions with missing fastmath flags
-    for module_name, func_name in get_njit_funcs():
-        module = importlib.import_module(f".{module_name}", package="stumpy")
+    for module_name, func_name in get_njit_funcs(dir_path):
+        module = importlib.import_module(f".{module_name}", package=package)
         func = getattr(module, func_name)
         if "fastmath" not in func.targetoptions.keys():
             missing_fastmath.append(f"{module_name}.{func_name}")
@@ -91,4 +92,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.check:
-        check_fastmath()
+        pkg_dir = pathlib.Path(__file__).parent / "stumpy"
+        check_fastmath(pkg_dir, package="stumpy")
