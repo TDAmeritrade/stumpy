@@ -76,7 +76,9 @@ def check_fastmath():
             missing_fastmath.append(f"{module_name}.{func_name}")
 
     if len(missing_fastmath) > 0:
-        msg = "Found one or more `@njit` functions that are missing the `fastmath` flag. "
+        msg = (
+            "Found one or more `@njit` functions that are missing the `fastmath` flag. "
+        )
         msg += f"The function(s) are:\n {missing_fastmath}\n"
         raise ValueError(msg)
 
