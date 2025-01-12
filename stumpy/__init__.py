@@ -45,7 +45,7 @@ if not numba.config.DISABLE_JIT:  # pragma: no cover
         func = getattr(module, func_name)
         key = module_name + "." + func_name  # e.g., core._mass
         key = "STUMPY_FASTMATH_" + key.upper()  # e.g., STUMPY_FASTHMATH_CORE._MASS
-        config._STUMPY_DEFAULTS[key] = func.targetoptions.get("fastmath", False)
+        config._STUMPY_DEFAULTS[key] = func.targetoptions["fastmath"]
 
 if cuda.is_available():
     from .gpu_aamp import gpu_aamp  # noqa: F401
