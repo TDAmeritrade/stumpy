@@ -5,7 +5,6 @@
 import ast
 import importlib
 import pathlib
-import pkgutil
 import site
 import warnings
 
@@ -28,13 +27,17 @@ def get_njit_funcs():
     out : list
         A list of (`module_name`, `func_name`) pairs
     """
+    ignore_py_files = ["__init__", "__pycache__"]
+
     pkg_dir = pathlib.Path(__file__).parent
-    module_names = [name for _, name, _ in pkgutil.iter_modules([str(pkg_dir)])]
+    module_names = []
+    for fname in pkg_dir.iterdir():
+        if fname.stem not in ignore_py_files and not fname.stem.startswith("."):
+            module_names.append(fname.stem)
 
     njit_funcs = []
-
     for module_name in module_names:
-        filepath = pathlib.Path(__file__).parent / f"{module_name}.py"
+        filepath = pkg_dir / f"{module_name}.py"
         file_contents = ""
         with open(filepath, encoding="utf8") as f:
             file_contents = f.read()
@@ -43,11 +46,18 @@ def get_njit_funcs():
             if isinstance(node, ast.FunctionDef):
                 func_name = node.name
                 for decorator in node.decorator_list:
+                    decorator_name = None
+                    if isinstance(decorator, ast.Name):
+                        # Bare decorator
+                        decorator_name = decorator.id
                     if isinstance(decorator, ast.Call) and isinstance(
                         decorator.func, ast.Name
                     ):
-                        if decorator.func.id == "njit":
-                            njit_funcs.append((module_name, func_name))
+                        # Decorator is a function
+                        decorator_name = decorator.func.id
+
+                    if decorator_name == "njit":
+                        njit_funcs.append((module_name, func_name))
 
     return njit_funcs
 
