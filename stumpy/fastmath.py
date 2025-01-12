@@ -30,7 +30,7 @@ def _set(module_name, func_name, flag):
 
 def _reset(module_name, func_name):
     """
-    Reset the value of fastmath its default value
+    Reset the value of fastmath to its default value
 
     Parameters
     ----------
