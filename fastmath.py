@@ -6,14 +6,15 @@ import importlib
 import pathlib
 
 
-def get_njit_funcs(dir_path):
+def get_njit_funcs(pkg_dir):
     """
     Identify all njit functions
 
     Parameters
     ----------
-    dir_path : str
-        The path to the directory containing some .py files
+    pkg_dir : An instance of pathlib.Path
+        An instance of pathlib.Path that points to the directory of interest.
+        It is either PosixPath or WindowsPath depending on the OS.
 
     Returns
     -------
@@ -24,13 +25,13 @@ def get_njit_funcs(dir_path):
     ignore_py_files = ["__init__", "__pycache__"]
 
     module_names = []
-    for fname in dir_path.iterdir():
+    for fname in pkg_dir.iterdir():
         if fname.stem not in ignore_py_files and not fname.stem.startswith("."):
             module_names.append(fname.stem)
 
     njit_funcs = []
     for module_name in module_names:
-        filepath = dir_path / f"{module_name}.py"
+        filepath = pkg_dir / f"{module_name}.py"
         file_contents = ""
         with open(filepath, encoding="utf8") as f:
             file_contents = f.read()
@@ -56,22 +57,26 @@ def get_njit_funcs(dir_path):
     return njit_funcs
 
 
-def check_fastmath(dir_path, package):
+def check_fastmath(pkg_dir, pkg_name):
     """
     Check if all njit functions have the `fastmath` flag set
 
     Parameters
     ----------
-    dir_path : str
-        The path to the directory containing modules of package
+    pkg_dir : an instance of pathlib.Path
+        An instance of pathlib.Path that points to the directory of interest.
+        It is either PosixPath or WindowsPath depending on the OS.
+
+    pkg_name : str
+        The name of the package
 
     Returns
     -------
     None
     """
     missing_fastmath = []  # list of njit functions with missing fastmath flags
-    for module_name, func_name in get_njit_funcs(dir_path):
-        module = importlib.import_module(f".{module_name}", package=package)
+    for module_name, func_name in get_njit_funcs(pkg_dir):
+        module = importlib.import_module(f".{module_name}", package=pkg_name)
         func = getattr(module, func_name)
         if "fastmath" not in func.targetoptions.keys():
             missing_fastmath.append(f"{module_name}.{func_name}")
@@ -88,9 +93,10 @@ def check_fastmath(dir_path, package):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--check", action="store_true")
+    parser.add_argument("--check", dest="pkg_dir")
     args = parser.parse_args()
 
-    if args.check:
-        pkg_dir = pathlib.Path(__file__).parent / "stumpy"
-        check_fastmath(pkg_dir, package="stumpy")
+    if args.pkg_dir:
+        pkg_dir = pathlib.Path(args.pkg_dir)
+        pkg_name = pkg_dir.name
+        check_fastmath(pkg_dir, pkg_name)
