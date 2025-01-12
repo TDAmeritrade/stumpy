@@ -12,9 +12,8 @@ def get_njit_funcs(pkg_dir):
 
     Parameters
     ----------
-    pkg_dir : An instance of pathlib.Path
-        An instance of pathlib.Path that points to the directory of interest.
-        It is either PosixPath or WindowsPath depending on the OS.
+    pkg_dir : str
+       The path to the directory containing some .py files
 
     Returns
     -------
@@ -23,6 +22,7 @@ def get_njit_funcs(pkg_dir):
         (module_name, func_name)
     """
     ignore_py_files = ["__init__", "__pycache__"]
+    pkg_dir = pathlib.Path(pkg_dir)
 
     module_names = []
     for fname in pkg_dir.iterdir():
@@ -63,9 +63,8 @@ def check_fastmath(pkg_dir, pkg_name):
 
     Parameters
     ----------
-    pkg_dir : an instance of pathlib.Path
-        An instance of pathlib.Path that points to the directory of interest.
-        It is either PosixPath or WindowsPath depending on the OS.
+    pkg_dir : str
+        The path to the directory containing some .py files
 
     pkg_name : str
         The name of the package
@@ -99,4 +98,4 @@ if __name__ == "__main__":
     if args.pkg_dir:
         pkg_dir = pathlib.Path(args.pkg_dir)
         pkg_name = pkg_dir.name
-        check_fastmath(pkg_dir, pkg_name)
+        check_fastmath(str(pkg_dir), pkg_name)
