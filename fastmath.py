@@ -41,7 +41,6 @@ def get_njit_funcs(pkg_dir):
                 func_name = node.name
                 for decorator in node.decorator_list:
                     decorator_name = None
-
                     if isinstance(decorator, ast.Name):
                         # Bare decorator
                         decorator_name = decorator.id
@@ -84,7 +83,7 @@ def check_fastmath(pkg_dir, pkg_name):
         msg = (
             "Found one or more `@njit` functions that are missing the `fastmath` flag. "
         )
-        msg += f"The function(s) are:\n {missing_fastmath}\n"
+        msg += f"The functions are:\n {missing_fastmath}\n"
         raise ValueError(msg)
 
     return

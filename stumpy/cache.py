@@ -47,7 +47,6 @@ def get_njit_funcs():
                 func_name = node.name
                 for decorator in node.decorator_list:
                     decorator_name = None
-
                     if isinstance(decorator, ast.Name):
                         # Bare decorator
                         decorator_name = decorator.id
