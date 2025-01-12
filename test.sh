@@ -96,7 +96,7 @@ check_print()
 check_fastmath()
 {
     echo "Checking Missing fastmath flags in njit functions"
-    ./fastmath.py --check
+    ./fastmath.py --check stumpy
     check_errs $?
 }
 
