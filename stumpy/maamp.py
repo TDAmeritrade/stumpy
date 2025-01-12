@@ -879,8 +879,8 @@ def maamp(T, m, include=None, discords=False, p=2.0):
     ----------
     T : numpy.ndarray
         The time series or sequence for which to compute the multi-dimensional
-        matrix profile. Each row in `T` represents data from a different
-        dimension while each column in `T` represents data from the same
+        matrix profile. Each row in `T` represents data from the same
+        dimension while each column in `T` represents data from a different
         dimension.
 
     m : int

@@ -93,6 +93,13 @@ check_print()
     fi
 }
 
+check_fastmath()
+{
+    echo "Checking Missing fastmath flags in njit functions"
+    ./fastmath.py --check stumpy
+    check_errs $?
+}
+
 check_naive()
 {
     # Check if there are any naive implementations not at start of test file
@@ -146,14 +153,14 @@ set_ray_coveragerc()
 show_coverage_report()
 {
     set_ray_coveragerc
-    coverage report -m --fail-under=100 --skip-covered --omit=docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
+    coverage report -m --fail-under=100 --skip-covered --omit=fastmath.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
 }
 
 gen_coverage_xml_report()
 {
     # This function saves the coverage report in Cobertura XML format, which is compatible with codecov
     set_ray_coveragerc
-    coverage xml -o $fcoveragexml --fail-under=100 --omit=docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
+    coverage xml -o $fcoveragexml --fail-under=100 --omit=fastmath.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
 }
 
 test_custom()
@@ -332,6 +339,12 @@ check_docstrings
 check_print
 check_naive
 check_ray
+
+
+if [[ -z $NUMBA_DISABLE_JIT || $NUMBA_DISABLE_JIT -eq 0 ]]; then
+  check_fastmath
+fi
+
 
 if [[ $test_mode == "notebooks" ]]; then
     echo "Executing Tutorial Notebooks Only"

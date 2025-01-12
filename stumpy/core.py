@@ -429,11 +429,11 @@ def check_dtype(a, dtype=np.float64):  # pragma: no cover
     TypeError
         If the array type does not match `dtype`
     """
-    if dtype == int:
+    if dtype is int:
         dtype = np.int64
-    if dtype == float:
+    if dtype is float:
         dtype = np.float64
-    if dtype == bool:
+    if dtype is bool:
         dtype = np.bool_
     if not np.issubdtype(a.dtype, dtype):
         msg = f"{dtype} dtype expected but found {a.dtype} in input array\n"
@@ -445,17 +445,18 @@ def check_dtype(a, dtype=np.float64):  # pragma: no cover
 
 def transpose_dataframe(df):  # pragma: no cover
     """
-    Check if the input is a column-wise Pandas `DataFrame`. If `True`, return a
+    Check if the input is a column-wise pandas/polars `DataFrame`. If `True`, return a
     transpose dataframe since stumpy assumes that each row represents data from a
     different dimension while each column represents data from the same dimension.
-    If `False`, return `a` unchanged. Pandas `Series` do not need to be transposed.
+    If `False`, return `a` unchanged. Pandas/polars `Series` do not need to be
+    transposed.
 
     Note that this function has zero dependency on Pandas (not even a soft dependency).
 
     Parameters
     ----------
-    df : numpy.ndarray
-        Pandas dataframe
+    df : DataFrame
+        pandas/polars dataframe
 
     Returns
     -------
@@ -463,7 +464,7 @@ def transpose_dataframe(df):  # pragma: no cover
         If `df` is a Pandas `DataFrame` then return `df.T`. Otherwise, return `df`
     """
     if type(df).__name__ == "DataFrame":
-        return df.T
+        return df.transpose()
 
     return df
 
@@ -2062,8 +2063,16 @@ def _preprocess(T, copy=True):
         Modified time series
     """
     if copy:
-        T = T.copy()
+        try:
+            T = T.copy()
+        except AttributeError:  # Polars copy
+            T = T.clone()
+
     T = transpose_dataframe(T)
+
+    if "polars" in str(type(T)):
+        T = T.to_numpy(writable=True)
+
     T = np.asarray(T)
     check_dtype(T)
 
@@ -2347,6 +2356,7 @@ def _count_diagonal_ndist(diags, m, n_A, n_B):
 
 @njit(
     # "i8[:, :](i8[:], i8, b1)"
+    fastmath=True
 )
 def _get_array_ranges(a, n_chunks, truncate):
     """
@@ -2395,6 +2405,7 @@ def _get_array_ranges(a, n_chunks, truncate):
 
 @njit(
     # "i8[:, :](i8, i8, b1)"
+    fastmath=True
 )
 def _get_ranges(size, n_chunks, truncate):
     """
@@ -3247,7 +3258,7 @@ def _select_P_ABBA_value(P_ABBA, k, custom_func=None):
     return MPdist
 
 
-@njit()
+@njit(fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
 def _merge_topk_PI(PA, PB, IA, IB):
     """
     Merge two top-k matrix profiles `PA` and `PB`, and update `PA` (in place).
@@ -3320,7 +3331,7 @@ def _merge_topk_PI(PA, PB, IA, IB):
             IA[i] = tmp_I
 
 
-@njit()
+@njit(fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
 def _merge_topk_ρI(ρA, ρB, IA, IB):
     """
     Merge two top-k pearson profiles `ρA` and `ρB`, and update `ρA` (in place).
@@ -3394,7 +3405,7 @@ def _merge_topk_ρI(ρA, ρB, IA, IB):
             IA[i] = tmp_I
 
 
-@njit()
+@njit(fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
 def _shift_insert_at_index(a, idx, v, shift="right"):
     """
     If `shift=right` (default), all elements in `a[idx:]` are shifted to the right by
@@ -4370,7 +4381,7 @@ def get_ray_nworkers(ray_client):
     return int(ray_client.cluster_resources().get("CPU"))
 
 
-@njit
+@njit(fastmath={"nsz", "arcp", "contract", "afn", "reassoc"})
 def _update_incremental_PI(D, P, I, excl_zone, n_appended=0):
     """
     Given the 1D array distance profile, `D`, of the last subsequence of T,

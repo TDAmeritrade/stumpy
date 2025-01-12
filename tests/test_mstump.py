@@ -4,6 +4,7 @@ import naive
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
+import polars as pl
 import pytest
 
 from stumpy import config, core, mdl, mstump, subspace
@@ -300,6 +301,12 @@ def test_mstump_wrapper(T, m):
     npt.assert_almost_equal(ref_I, comp_I)
 
     df = pd.DataFrame(T.T)
+    comp_P, comp_I = mstump(df, m)
+
+    npt.assert_almost_equal(ref_P, comp_P)
+    npt.assert_almost_equal(ref_I, comp_I)
+
+    df = pl.DataFrame(T.T)
     comp_P, comp_I = mstump(df, m)
 
     npt.assert_almost_equal(ref_P, comp_P)
