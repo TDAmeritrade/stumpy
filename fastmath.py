@@ -82,8 +82,8 @@ def check_fastmath(pkg_dir, pkg_name):
     if len(missing_fastmath) > 0:
         msg = (
             "Found one or more `@njit` functions that are missing the `fastmath` flag. "
+            + f"The functions are:\n {missing_fastmath}\n"
         )
-        msg += f"The functions are:\n {missing_fastmath}\n"
         raise ValueError(msg)
 
     return
