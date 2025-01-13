@@ -130,6 +130,11 @@ def _recompile():
     Returns
     -------
     None
+
+    Notes
+    -----
+    If the `numba` cache is enabled, this results in saving (and/or overwriting)
+    the cached numba functions to disk. 
     """
     warnings.warn(CACHE_WARNING)
     for module_name, func_name in get_njit_funcs():
