@@ -138,3 +138,25 @@ def _recompile():
         func.recompile()
 
     return
+
+
+def _save():
+    """
+    Save all njit functions
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    warnings.filterwarnings("once")
+    warnings.warn(CACHE_WARNING)
+    _enable()
+    _recompile()
+    warnings.filterwarnings("default")
+    
+
+    return
