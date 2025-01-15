@@ -1,6 +1,11 @@
+import numba
 import numpy as np
+import pytest
 
 from stumpy import cache, stump
+
+if numba.config.DISABLE_JIT:
+    pytest.skip("Skipping Tests JIT is disabled", allow_module_level=True)
 
 
 def test_cache_save():
@@ -35,7 +40,3 @@ def test_cache_save():
 
     assert sorted(ref_data) == sorted(comp_data)
     assert set(ref_index).issubset(comp_index)
-
-
-if __name__ == "__main__":
-    test_cache_save()
