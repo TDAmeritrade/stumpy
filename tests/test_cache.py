@@ -8,7 +8,7 @@ if numba.config.DISABLE_JIT:
     pytest.skip("Skipping Tests JIT is disabled", allow_module_level=True)
 
 
-def test_cache():
+def test_cache_save():
     def get_cache_fnames_ref():
         cache._clear()
         cache._enable()
@@ -40,3 +40,18 @@ def test_cache():
 
     assert sorted(ref_data) == sorted(comp_data)
     assert set(ref_index).issubset(comp_index)
+
+
+def test_cache_save_after_clear():
+    T = np.random.rand(10)
+    m = 3
+    stump(T, m)
+
+    cache._save()
+    ref_cache = cache._get_cache()
+
+    cache._clear()
+    cache._save()
+    comp_cache = cache._get_cache()
+
+    assert sorted(ref_cache) == sorted(comp_cache)
