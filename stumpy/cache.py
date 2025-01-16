@@ -4,6 +4,7 @@
 
 import ast
 import importlib
+import inspect
 import pathlib
 import site
 import warnings
@@ -74,6 +75,15 @@ def _enable():
     -------
     None
     """
+    frame = inspect.currentframe()
+    caller_name = inspect.getouterframes(frame)[1].function
+    if caller_name != "_save":
+        msg = (
+            "The 'cache._enable()' function is deprecated and no longer supported. "
+            + "Please use 'cache._save()' instead"
+        )
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
     warnings.warn(CACHE_WARNING)
     njit_funcs = get_njit_funcs()
     for module_name, func_name in njit_funcs:
