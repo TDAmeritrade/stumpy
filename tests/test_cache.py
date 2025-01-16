@@ -8,7 +8,7 @@ if numba.config.DISABLE_JIT:
     pytest.skip("Skipping Tests JIT is disabled", allow_module_level=True)
 
 
-def test_cache_save():
+def test_cache():
     def get_cache_fnames_ref():
         cache._clear()
         cache._enable()
