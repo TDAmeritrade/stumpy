@@ -51,7 +51,11 @@ def test_cache_save_after_clear():
     ref_cache = cache._get_cache()
 
     cache._clear()
+    # testing cache._clear()
+    assert len(cache._get_cache()) == 0
+
     cache._save()
     comp_cache = cache._get_cache()
 
+    # testing cache._save() after cache._clear()
     assert sorted(ref_cache) == sorted(comp_cache)
