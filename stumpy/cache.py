@@ -9,6 +9,8 @@ import pathlib
 import site
 import warnings
 
+import numba
+
 CACHE_WARNING = "Caching `numba` functions is purely for experimental purposes "
 CACHE_WARNING += "and should never be used or depended upon as it is not supported! "
 CACHE_WARNING += "All caching capabilities are not tested and may be removed/changed "
@@ -205,6 +207,10 @@ def save():
     -------
     None
     """
+    if numba.config.DISABLE_JIT:
+        msg = "Cannot save cache because NUMBA JIT is disabled"
+        raise OSError(msg)
+
     _save()
 
     return
