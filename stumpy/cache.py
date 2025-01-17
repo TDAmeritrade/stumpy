@@ -84,7 +84,6 @@ def _enable():
         )
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
-    warnings.warn(CACHE_WARNING)
     njit_funcs = get_njit_funcs()
     for module_name, func_name in njit_funcs:
         module = importlib.import_module(f".{module_name}", package="stumpy")
