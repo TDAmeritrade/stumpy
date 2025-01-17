@@ -105,7 +105,6 @@ def _clear():
     -------
     None
     """
-    warnings.warn(CACHE_WARNING)
     site_pkg_dir = site.getsitepackages()[0]
     numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
     [f.unlink() for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
@@ -123,6 +122,7 @@ def clear():
     -------
     None
     """
+    warnings.warn(CACHE_WARNING)
     _clear()
 
     return
@@ -164,7 +164,6 @@ def _recompile():
     If the `numba` cache is enabled, this results in saving (and/or overwriting)
     the cached numba functions to disk.
     """
-    warnings.warn(CACHE_WARNING)
     for module_name, func_name in get_njit_funcs():
         module = importlib.import_module(f".{module_name}", package="stumpy")
         func = getattr(module, func_name)
@@ -185,11 +184,8 @@ def _save():
     -------
     None
     """
-    warnings.filterwarnings("once")
-    warnings.warn(CACHE_WARNING)
     _enable()
     _recompile()
-    warnings.filterwarnings("default")
 
     return
 
@@ -211,6 +207,7 @@ def save():
         msg = "Cannot save cache because NUMBA JIT is disabled"
         raise OSError(msg)
 
+    warnings.warn(CACHE_WARNING)
     _save()
 
     return
