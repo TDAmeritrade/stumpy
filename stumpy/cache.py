@@ -82,7 +82,7 @@ def _enable():
     if caller_name != "_save":
         msg = (
             "The 'cache._enable()' function is deprecated and no longer supported. "
-            + "Please use 'cache._save()' instead"
+            + "Please use 'cache.save()' instead"
         )
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
