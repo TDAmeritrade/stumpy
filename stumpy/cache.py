@@ -109,6 +109,23 @@ def _clear():
     [f.unlink() for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
 
 
+def clear():
+    """
+    Clear numba cache directory
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    _clear()
+
+    return
+
+
 def _get_cache():
     """
     Retrieve a list of cached numba functions
@@ -171,5 +188,23 @@ def _save():
     _enable()
     _recompile()
     warnings.filterwarnings("default")
+
+    return
+
+
+def save():
+    """
+    Save/overwrite all the cache data files of
+    all-so-far compiled njit functions.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    _save()
 
     return
