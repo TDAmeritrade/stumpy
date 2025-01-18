@@ -21,6 +21,12 @@ _STUMPY_DEFAULTS = {
     "STUMPY_FASTMATH_FLAGS": {"nsz", "arcp", "contract", "afn", "reassoc"},
 }
 
+# In addition to these configuration variables, there exist config variables
+# that have the default value of the fastmath flag of the njit functions. The
+# name of this config variable has the following format:
+# STUMPY_FASTMATH_<module_name>.<function_name>
+# See __init__.py for more details
+
 STUMPY_THREADS_PER_BLOCK = _STUMPY_DEFAULTS["STUMPY_THREADS_PER_BLOCK"]
 STUMPY_MEAN_STD_NUM_CHUNKS = _STUMPY_DEFAULTS["STUMPY_MEAN_STD_NUM_CHUNKS"]
 STUMPY_MEAN_STD_MAX_ITER = _STUMPY_DEFAULTS["STUMPY_MEAN_STD_MAX_ITER"]
@@ -59,7 +65,9 @@ def _reset(var=None):
     elif var in config_vars:
         globals()[var] = _STUMPY_DEFAULTS[var]
     else:  # pragma: no cover
-        msg = f"Configuration reset was skipped for unrecognized '_STUMPY_DEFAULT[{var}]'"
+        msg = (
+            f"Configuration reset was skipped for unrecognized '_STUMPY_DEFAULT[{var}]'"
+        )
         warnings.warn(msg)
 
     return
