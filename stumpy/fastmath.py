@@ -1,6 +1,34 @@
 import importlib
 
+from numba import njit
+
 from stumpy import config
+
+
+@njit(fastmath=True)
+def _add_assoc(x, y):  # pragma: no cover
+    """
+    A dummy function to test the fastmath module
+
+    Parameters
+    ----------
+    x : float
+        A float value
+
+    y : floatf
+        A float value
+
+    Returns
+    -------
+    out : float
+        The ouput valus
+
+    Notes
+    -----
+    This is taken from the following link:
+    https://numba.pydata.org/numba-doc/dev/user/performance-tips.html#fastmath
+    """
+    return (x - y) + y
 
 
 def _set(module_name, func_name, flag):
