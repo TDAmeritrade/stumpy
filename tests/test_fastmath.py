@@ -1,7 +1,12 @@
+import numba
 import numpy as np
+import pytest
 from numba import njit
 
 from stumpy import fastmath
+
+if numba.config.DISABLE_JIT:
+    pytest.skip("Skipping Tests JIT is disabled", allow_module_level=True)
 
 
 def test_set():
