@@ -204,10 +204,10 @@ def save():
     None
     """
     if numba.config.DISABLE_JIT:
-        msg = "Cannot save cache because NUMBA JIT is disabled"
-        raise OSError(msg)
-
-    warnings.warn(CACHE_WARNING)
-    _save()
+        msg = "Could not save/cache function because NUMBA JIT is disabled"
+        warnings.warn(msg)
+    else:
+        warnings.warn(CACHE_WARNING)
+        _save()
 
     return
