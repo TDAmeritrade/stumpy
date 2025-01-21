@@ -1,7 +1,6 @@
 import numba
 import numpy as np
 import pytest
-from numba import njit
 
 from stumpy import fastmath
 
@@ -10,32 +9,36 @@ if numba.config.DISABLE_JIT:
 
 
 def test_set():
-    # Test the _set and _reset function in fastmath.py
     # The test is done by changing the value of fastmath flag for
     # the fastmath._add_assoc function, taken from the following link:
     # https://numba.pydata.org/numba-doc/dev/user/performance-tips.html#fastmath
-    py_func = fastmath._add_assoc.py_func
 
-    x = 0.0
-    y = np.inf
-    fastmath_flags = [False, {"reassoc", "nsz"}, {"reassoc"}, {"nsz"}]
-    for flag in fastmath_flags:
-        ref = njit(fastmath=flag)(py_func)(x, y)
+    # case1: flag=False
+    fastmath._set("fastmath", "_add_assoc", flag=False)
+    out = fastmath._add_assoc(0, np.inf)
+    assert np.isnan(out)
 
-        fastmath._set("fastmath", "_add_assoc", flag)
-        comp = fastmath._add_assoc(x, y)
+    # case2: flag={'reassoc', 'nsz'}
+    fastmath._set("fastmath", "_add_assoc", flag={"reassoc", "nsz"})
+    out = fastmath._add_assoc(0, np.inf)
+    assert out == 0.0
 
-        if np.isnan(ref) and np.isnan(comp):
-            assert True
-        else:
-            assert ref == comp
+    # case3: flag={'reassoc'}
+    fastmath._set("fastmath", "_add_assoc", flag={"reassoc"})
+    out = fastmath._add_assoc(0, np.inf)
+    assert np.isnan(out)
+
+    # case4: flag={'nsz'}
+    fastmath._set("fastmath", "_add_assoc", flag={"nsz"})
+    out = fastmath._add_assoc(0, np.inf)
+    assert np.isnan(out)
 
 
 def test_reset():
-    # Test the _set and _reset function in fastmath.py
     # The test is done by changing the value of fastmath flag for
     # the fastmath._add_assoc function, taken from the following link:
     # https://numba.pydata.org/numba-doc/dev/user/performance-tips.html#fastmath
+    # and then reset it to the default value, i.e. `True`
     fastmath._set("fastmath", "_add_assoc", False)
     fastmath._reset("fastmath", "_add_assoc")
     assert fastmath._add_assoc(0.0, np.inf) == 0.0
