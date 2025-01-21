@@ -2,7 +2,7 @@ import importlib
 
 from numba import njit
 
-from stumpy import config
+from . import config
 
 
 @njit(fastmath=True)
@@ -39,8 +39,10 @@ def _set(module_name, func_name, flag):
     ----------
     module_name : str
         The module name
+
     func_name : str
         The function name
+
     flag : set or bool
         The fastmath flag
 
@@ -64,6 +66,7 @@ def _reset(module_name, func_name):
     ----------
     module_name : str
         The module name
+
     func_name : str
         The function name
 
