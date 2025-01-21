@@ -3689,7 +3689,7 @@ def check_ignore_trivial(T_A, T_B, ignore_trivial):
 
     Notes
     -----
-    These warnings may be supresse by using a context manager
+    These warnings may be supressed by using a context manager
     ```
     import stumpy
     import numpy as np

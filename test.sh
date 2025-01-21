@@ -100,6 +100,16 @@ check_fastmath()
     check_errs $?
 }
 
+check_pkg_imports()
+{
+    echo "Checking Package Imports"
+    if [[ `grep '^from stumpy' stumpy/*py | wc -l` -gt "0" ]]; then
+        grep '^from stumpy' stumpy/*py
+        echo 'Error: please change "from stumpy" to "from ." '
+        exit 1
+    fi
+}
+
 check_naive()
 {
     # Check if there are any naive implementations not at start of test file
@@ -337,6 +347,7 @@ check_isort
 check_flake
 check_docstrings
 check_print
+check_pkg_imports
 check_naive
 check_ray
 
