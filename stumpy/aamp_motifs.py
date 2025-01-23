@@ -133,6 +133,8 @@ def _aamp_motifs(
             query_matches = np.array([[np.nan, candidate_idx]])
 
         for idx in query_matches[:, 1]:
+            # Since the query motif is also included as the first item in the list of
+            # `query_matches`, the exclusion zone is also applied to the query motif!
             core.apply_exclusion_zone(P, int(idx), excl_zone, np.inf)
 
         candidate_idx = np.argmin(P[-1])
