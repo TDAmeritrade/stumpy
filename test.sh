@@ -98,6 +98,13 @@ check_fastmath()
     echo "Checking Missing fastmath flags in njit functions"
     ./fastmath.py --check stumpy
     check_errs $?
+
+    echo "Checking hardcoded fastmath flags in njit functions"
+    if [[ $(grep -n fastmath= stumpy/*py | grep -vE 'fastmath=config' | wc -l) -gt "0" ]]; then
+        grep -n fastmath= stumpy/*py | grep -vE 'fastmath=config'
+        echo "Found one or more \`@njit()\` functions with a hardcoded \`fastmath\` flag."
+        exit 1
+    fi
 }
 
 check_naive()
