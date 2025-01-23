@@ -98,6 +98,13 @@ check_fastmath()
     echo "Checking Missing fastmath flags in njit functions"
     ./fastmath.py --check stumpy
     check_errs $?
+
+    echo "Checking hardcoded fastmath flags in njit functions"
+    if [[ $(grep -n fastmath= stumpy/*py | grep -vE 'fastmath=config' | wc -l) -gt "0" ]]; then
+        grep -n fastmath= stumpy/*py | grep -vE 'fastmath=config'
+        echo "Found one or more \`@njit()\` functions with a hardcoded \`fastmath\` flag."
+        exit 1
+    fi
 }
 
 check_pkg_imports()
@@ -163,14 +170,14 @@ set_ray_coveragerc()
 show_coverage_report()
 {
     set_ray_coveragerc
-    coverage report -m --fail-under=100 --skip-covered --omit=fastmath.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
+    coverage report -m --fail-under=100 --skip-covered --omit=fastmath.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py,tests/test_cache.py,tests/test_fastmath.py $fcoveragerc
 }
 
 gen_coverage_xml_report()
 {
     # This function saves the coverage report in Cobertura XML format, which is compatible with codecov
     set_ray_coveragerc
-    coverage xml -o $fcoveragexml --fail-under=100 --omit=fastmath.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py $fcoveragerc
+    coverage xml -o $fcoveragexml --fail-under=100 --omit=fastmath.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py,tests/test_cache.py,tests/test_fastmath.py $fcoveragerc
 }
 
 test_custom()

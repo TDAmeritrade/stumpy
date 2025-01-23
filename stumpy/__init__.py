@@ -1,9 +1,12 @@
+import importlib
 import os.path
 from importlib.metadata import distribution
 from site import getsitepackages
 
+import numba
 from numba import cuda
 
+from . import cache, config
 from .aamp import aamp  # noqa: F401
 from .aamp_mmotifs import aamp_mmotifs  # noqa: F401
 from .aamp_motifs import aamp_match, aamp_motifs  # noqa: F401
@@ -31,6 +34,18 @@ from .stimp import stimp, stimped  # noqa: F401
 from .stump import stump  # noqa: F401
 from .stumped import stumped  # noqa: F401
 from .stumpi import stumpi  # noqa: F401
+
+# Get the default fastmath flags for all njit functions
+# and update the _STUMPY_DEFAULTS dictionary
+
+if not numba.config.DISABLE_JIT:  # pragma: no cover
+    njit_funcs = cache.get_njit_funcs()
+    for module_name, func_name in njit_funcs:
+        module = importlib.import_module(f".{module_name}", package="stumpy")
+        func = getattr(module, func_name)
+        key = module_name + "." + func_name  # e.g., core._mass
+        key = "STUMPY_FASTMATH_" + key.upper()  # e.g., STUMPY_FASTHMATH_CORE._MASS
+        config._STUMPY_DEFAULTS[key] = func.targetoptions["fastmath"]
 
 if cuda.is_available():
     from .gpu_aamp import gpu_aamp  # noqa: F401

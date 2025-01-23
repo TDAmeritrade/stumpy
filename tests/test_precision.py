@@ -2,13 +2,14 @@ import functools
 from unittest.mock import patch
 
 import naive
+import numba
 import numpy as np
 import numpy.testing as npt
 import pytest
 from numba import cuda
 
 import stumpy
-from stumpy import config, core
+from stumpy import cache, config, core, fastmath
 
 try:
     from numba.errors import NumbaPerformanceWarning
@@ -137,6 +138,7 @@ def test_snippets():
     ) = naive.mpdist_snippets(
         T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
     )
+
     (
         cmp_snippets,
         cmp_indices,
@@ -145,6 +147,27 @@ def test_snippets():
         cmp_areas,
         cmp_regimes,
     ) = stumpy.snippets(T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func)
+
+    if (
+        not np.allclose(ref_snippets, cmp_snippets) and not numba.config.DISABLE_JIT
+    ):  # pragma: no cover
+        # Revise fastmath flags by removing reassoc (to improve precision),
+        # recompile njit functions, and re-compute snippets.
+        fastmath._set(
+            "core", "_calculate_squared_distance", {"nsz", "arcp", "contract", "afn"}
+        )
+        cache._recompile()
+
+        (
+            cmp_snippets,
+            cmp_indices,
+            cmp_profiles,
+            cmp_fractions,
+            cmp_areas,
+            cmp_regimes,
+        ) = stumpy.snippets(
+            T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
+        )
 
     npt.assert_almost_equal(
         ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
@@ -160,6 +183,11 @@ def test_snippets():
     )
     npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
     npt.assert_almost_equal(ref_regimes, cmp_regimes)
+
+    if not numba.config.DISABLE_JIT:  # pragma: no cover
+        # Revert fastmath flag back to their default values
+        fastmath._reset("core", "_calculate_squared_distance")
+        cache._recompile()
 
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)

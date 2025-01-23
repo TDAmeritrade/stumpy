@@ -13,7 +13,7 @@ def get_njit_funcs(pkg_dir):
     Parameters
     ----------
     pkg_dir : str
-       The path to the directory containing some .py files
+        The path to the directory containing some .py files
 
     Returns
     -------

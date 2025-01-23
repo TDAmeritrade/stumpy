@@ -4,9 +4,12 @@
 
 import ast
 import importlib
+import inspect
 import pathlib
 import site
 import warnings
+
+import numba
 
 CACHE_WARNING = "Caching `numba` functions is purely for experimental purposes "
 CACHE_WARNING += "and should never be used or depended upon as it is not supported! "
@@ -74,7 +77,15 @@ def _enable():
     -------
     None
     """
-    warnings.warn(CACHE_WARNING)
+    frame = inspect.currentframe()
+    caller_name = inspect.getouterframes(frame)[1].function
+    if caller_name != "_save":
+        msg = (
+            "The 'cache._enable()' function is deprecated and no longer supported. "
+            + "Please use 'cache.save()' instead"
+        )
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
     njit_funcs = get_njit_funcs()
     for module_name, func_name in njit_funcs:
         module = importlib.import_module(f".{module_name}", package="stumpy")
@@ -94,10 +105,27 @@ def _clear():
     -------
     None
     """
-    warnings.warn(CACHE_WARNING)
     site_pkg_dir = site.getsitepackages()[0]
     numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
     [f.unlink() for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
+
+
+def clear():
+    """
+    Clear numba cache directory
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    warnings.warn(CACHE_WARNING)
+    _clear()
+
+    return
 
 
 def _get_cache():
@@ -117,3 +145,69 @@ def _get_cache():
     site_pkg_dir = site.getsitepackages()[0]
     numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
     return [f.name for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
+
+
+def _recompile():
+    """
+    Recompile all njit functions
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    If the `numba` cache is enabled, this results in saving (and/or overwriting)
+    the cached numba functions to disk.
+    """
+    for module_name, func_name in get_njit_funcs():
+        module = importlib.import_module(f".{module_name}", package="stumpy")
+        func = getattr(module, func_name)
+        func.recompile()
+
+    return
+
+
+def _save():
+    """
+    Save all njit functions
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    _enable()
+    _recompile()
+
+    return
+
+
+def save():
+    """
+    Save/overwrite all the cache data files of
+    all-so-far compiled njit functions.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    if numba.config.DISABLE_JIT:
+        msg = "Could not save/cache function because NUMBA JIT is disabled"
+        warnings.warn(msg)
+    else:
+        warnings.warn(CACHE_WARNING)
+        _save()
+
+    return
