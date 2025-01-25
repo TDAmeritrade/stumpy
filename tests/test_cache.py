@@ -1,11 +1,11 @@
-import numba
 import numpy as np
-import pytest
 
 from stumpy import cache, stump
 
-if numba.config.DISABLE_JIT:
-    pytest.skip("Skipping Tests JIT is disabled", allow_module_level=True)
+
+def test_cache_get_njit_funcs():
+    njit_funcs = cache.get_njit_funcs()
+    assert len(njit_funcs) > 0
 
 
 def test_cache_save_after_clear():

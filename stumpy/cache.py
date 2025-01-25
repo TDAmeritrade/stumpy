@@ -50,7 +50,7 @@ def get_njit_funcs():
                 func_name = node.name
                 for decorator in node.decorator_list:
                     decorator_name = None
-                    if isinstance(decorator, ast.Name):
+                    if isinstance(decorator, ast.Name):  # pragma: no cover
                         # Bare decorator
                         decorator_name = decorator.id
                     if isinstance(decorator, ast.Call) and isinstance(
@@ -79,7 +79,7 @@ def _enable():
     """
     frame = inspect.currentframe()
     caller_name = inspect.getouterframes(frame)[1].function
-    if caller_name != "_save":
+    if caller_name != "_save":  # pragma: no cover
         msg = (
             "The 'cache._enable()' function is deprecated and no longer supported. "
             + "Please use 'cache.save()' instead"
@@ -90,7 +90,16 @@ def _enable():
     for module_name, func_name in njit_funcs:
         module = importlib.import_module(f".{module_name}", package="stumpy")
         func = getattr(module, func_name)
-        func.enable_caching()
+        try:
+            func.enable_caching()
+        except AttributeError as e:
+            if (
+                numba.config.DISABLE_JIT
+                and str(e) == "'function' object has no attribute 'enable_caching'"
+            ):
+                pass
+            else:  # pragma: no cover
+                raise
 
 
 def _clear():
@@ -167,7 +176,16 @@ def _recompile():
     for module_name, func_name in get_njit_funcs():
         module = importlib.import_module(f".{module_name}", package="stumpy")
         func = getattr(module, func_name)
-        func.recompile()
+        try:
+            func.recompile()
+        except AttributeError as e:
+            if (
+                numba.config.DISABLE_JIT
+                and str(e) == "'function' object has no attribute 'recompile'"
+            ):
+                pass
+            else:  # pragma: no cover
+                raise
 
     return
 
@@ -206,8 +224,9 @@ def save():
     if numba.config.DISABLE_JIT:
         msg = "Could not save/cache function because NUMBA JIT is disabled"
         warnings.warn(msg)
-    else:
+    else:  # pragma: no cover
         warnings.warn(CACHE_WARNING)
-        _save()
+
+    _save()
 
     return

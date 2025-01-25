@@ -170,14 +170,14 @@ set_ray_coveragerc()
 show_coverage_report()
 {
     set_ray_coveragerc
-    coverage report -m --fail-under=100 --skip-covered --omit=fastmath.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py,tests/test_cache.py,tests/test_fastmath.py $fcoveragerc
+    coverage report -m --fail-under=100 --skip-covered --omit=fastmath.py,docstring.py,min_versions.py,ray_python_version.py,tests/test_fastmath.py $fcoveragerc
 }
 
 gen_coverage_xml_report()
 {
     # This function saves the coverage report in Cobertura XML format, which is compatible with codecov
     set_ray_coveragerc
-    coverage xml -o $fcoveragexml --fail-under=100 --omit=fastmath.py,docstring.py,min_versions.py,ray_python_version.py,stumpy/cache.py,tests/test_cache.py,tests/test_fastmath.py $fcoveragerc
+    coverage xml -o $fcoveragexml --fail-under=100 --omit=fastmath.py,docstring.py,min_versions.py,ray_python_version.py,tests/test_fastmath.py $fcoveragerc
 }
 
 test_custom()
