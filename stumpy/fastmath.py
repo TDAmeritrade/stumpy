@@ -6,7 +6,7 @@ from numba import njit
 from . import config
 
 
-@njit(fastmath=config._STUMPY_DEFAULTS['STUMPY_FASTMATH_FASTMATH._ADD_ASSOC'])
+@njit(fastmath=config._STUMPY_DEFAULTS["STUMPY_FASTMATH_FASTMATH._ADD_ASSOC"])
 def _add_assoc(x, y):  # pragma: no cover
     """
     A dummy function to test the fastmath module
