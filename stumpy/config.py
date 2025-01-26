@@ -19,6 +19,7 @@ _STUMPY_DEFAULTS = {
     "STUMPY_EXCL_ZONE_DENOM": 4,
     "STUMPY_FASTMATH_TRUE": True,
     "STUMPY_FASTMATH_FLAGS": {"nsz", "arcp", "contract", "afn", "reassoc"},
+    "STUMPY_FASTMATH_FASTMATH._ADD_ASSOC": True,
 }
 
 # In addition to these configuration variables, there exist config variables

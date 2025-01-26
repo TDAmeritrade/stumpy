@@ -1,5 +1,6 @@
 import importlib
 
+import numba
 from numba import njit
 
 from . import config
@@ -52,8 +53,17 @@ def _set(module_name, func_name, flag):
     """
     module = importlib.import_module(f".{module_name}", package="stumpy")
     func = getattr(module, func_name)
-    func.targetoptions["fastmath"] = flag
-    func.recompile()
+    try:
+        func.targetoptions["fastmath"] = flag
+        func.recompile()
+    except AttributeError as e:
+        if numba.config.DISABLE_JIT and (
+            str(e) == "'function' object has no attribute 'targetoptions'"
+            or str(e) == "'function' object has no attribute 'recompile'"
+        ):
+            pass
+        else:  # pragma: no cover
+            raise
 
     return
 

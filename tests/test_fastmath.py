@@ -1,11 +1,7 @@
 import numba
 import numpy as np
-import pytest
 
 from stumpy import fastmath
-
-if numba.config.DISABLE_JIT:
-    pytest.skip("Skipping Tests JIT is disabled", allow_module_level=True)
 
 
 def test_set():
@@ -21,7 +17,10 @@ def test_set():
     # case2: flag={'reassoc', 'nsz'}
     fastmath._set("fastmath", "_add_assoc", flag={"reassoc", "nsz"})
     out = fastmath._add_assoc(0, np.inf)
-    assert out == 0.0
+    if numba.config.DISABLE_JIT:
+        assert np.isnan(out)
+    else:  # pragma: no cover
+        assert out == 0.0
 
     # case3: flag={'reassoc'}
     fastmath._set("fastmath", "_add_assoc", flag={"reassoc"})
@@ -41,4 +40,7 @@ def test_reset():
     # and then reset it to the default value, i.e. `True`
     fastmath._set("fastmath", "_add_assoc", False)
     fastmath._reset("fastmath", "_add_assoc")
-    assert fastmath._add_assoc(0.0, np.inf) == 0.0
+    if numba.config.DISABLE_JIT:
+        assert np.isnan(fastmath._add_assoc(0.0, np.inf))
+    else:  # pragma: no cover
+        assert fastmath._add_assoc(0.0, np.inf) == 0.0
