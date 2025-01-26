@@ -9,7 +9,7 @@ import pytest
 from numba import cuda
 
 import stumpy
-from stumpy import cache, config, core, fastmath
+from stumpy import config, core, fastmath
 
 try:
     from numba.errors import NumbaPerformanceWarning
@@ -156,7 +156,6 @@ def test_snippets():
         fastmath._set(
             "core", "_calculate_squared_distance", {"nsz", "arcp", "contract", "afn"}
         )
-        cache._recompile()
 
         (
             cmp_snippets,
@@ -187,7 +186,6 @@ def test_snippets():
     if not numba.config.DISABLE_JIT:  # pragma: no cover
         # Revert fastmath flag back to their default values
         fastmath._reset("core", "_calculate_squared_distance")
-        cache._recompile()
 
 
 @pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)

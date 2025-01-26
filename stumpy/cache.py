@@ -156,40 +156,6 @@ def _get_cache():
     return [f.name for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
 
 
-def _recompile():
-    """
-    Recompile all njit functions
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    None
-
-    Notes
-    -----
-    If the `numba` cache is enabled, this results in saving (and/or overwriting)
-    the cached numba functions to disk.
-    """
-    for module_name, func_name in get_njit_funcs():
-        module = importlib.import_module(f".{module_name}", package="stumpy")
-        func = getattr(module, func_name)
-        try:
-            func.recompile()
-        except AttributeError as e:
-            if (
-                numba.config.DISABLE_JIT
-                and str(e) == "'function' object has no attribute 'recompile'"
-            ):
-                pass
-            else:  # pragma: no cover
-                raise
-
-    return
-
-
 def _save():
     """
     Save all njit functions
@@ -203,7 +169,6 @@ def _save():
     None
     """
     _enable()
-    _recompile()
 
     return
 

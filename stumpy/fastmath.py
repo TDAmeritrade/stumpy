@@ -54,12 +54,15 @@ def _set(module_name, func_name, flag):
     module = importlib.import_module(f".{module_name}", package="stumpy")
     func = getattr(module, func_name)
     try:
-        func.targetoptions["fastmath"] = flag
-        func.recompile()
+        py_func = func.py_func  # Copy raw Python function (independent of `njit`)
+        njit_signature = func.targetoptions.copy()  # Copy the `njit` arguments
+        njit_signature.pop("nopython", None)  # Pop redundant `nopython` declaration
+        njit_signature["fastmath"] = flag  # Apply new `fastmath` flag
+        func = njit(py_func, **njit_signature)  # Assign `njit` function with new target
+        setattr(module, func_name, func)  # Monkey-patch `njit` into global space
     except AttributeError as e:
         if numba.config.DISABLE_JIT and (
-            str(e) == "'function' object has no attribute 'targetoptions'"
-            or str(e) == "'function' object has no attribute 'recompile'"
+            str(e) == "'function' object has no attribute 'py_func'"
         ):
             pass
         else:  # pragma: no cover
