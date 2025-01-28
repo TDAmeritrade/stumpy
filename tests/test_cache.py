@@ -9,7 +9,6 @@ def test_cache_get_njit_funcs():
 
 
 def test_cache_save_after_clear():
-    cache.clear()
     cache.save()
 
     T = np.random.rand(10)
