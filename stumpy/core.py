@@ -1979,7 +1979,7 @@ def _get_QT(start, T_A, T_B, m):
 
 @njit(
     # ["(f8[:], i8, i8)", "(f8[:, :], i8, i8)"],
-    fastmath=config.STUMPY_FASTMATH_TRUE
+    fastmath=config.STUMPY_FASTMATH_FLAGS
 )
 def _apply_exclusion_zone(a, idx, excl_zone, val):
     """
