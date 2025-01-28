@@ -5,6 +5,7 @@
 import ast
 import importlib
 import inspect
+import os
 import pathlib
 import site
 import warnings
@@ -102,48 +103,57 @@ def _enable():
                 raise
 
 
-def _clear():
+def _clear(cache_dir=None):
     """
     Clear numba cache
 
     Parameters
     ----------
-    None
+    cache_dir : str
+        The path to the numba cache directory
 
     Returns
     -------
     None
     """
-    site_pkg_dir = site.getsitepackages()[0]
-    numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
+    if cache_dir is not None:  # pragma: no cover
+        numba_cache_dir = str(cache_dir)
+    elif "PYTEST_CURRENT_TEST" in os.environ:
+        numba_cache_dir = "stumpy/__pycache__"
+    else:  # pragma: no cover
+        site_pkg_dir = site.getsitepackages()[0]
+        numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
+
     [f.unlink() for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
 
 
-def clear():
+def clear(cache_dir=None):
     """
     Clear numba cache directory
 
     Parameters
     ----------
-    None
+    cache_dir : str
+        The path to the numba cache directory
 
     Returns
     -------
     None
     """
     warnings.warn(CACHE_WARNING)
-    _clear()
+    _clear(cache_dir)
 
     return
 
 
-def _get_cache():
+def _get_cache(cache_dir=None):
     """
     Retrieve a list of cached numba functions
 
     Parameters
     ----------
-    None
+    cache_dir : str
+        The path to the numba cache directory
 
     Returns
     -------
@@ -151,8 +161,13 @@ def _get_cache():
         A list of cached numba functions
     """
     warnings.warn(CACHE_WARNING)
-    site_pkg_dir = site.getsitepackages()[0]
-    numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
+    if cache_dir is not None:  # pragma: no cover
+        numba_cache_dir = str(cache_dir)
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        numba_cache_dir = "stumpy/__pycache__"
+    else:  # pragma: no cover
+        site_pkg_dir = site.getsitepackages()[0]
+        numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
     return [f.name for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
 
 

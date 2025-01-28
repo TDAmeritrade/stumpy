@@ -9,11 +9,13 @@ def test_cache_get_njit_funcs():
 
 
 def test_cache_save_after_clear():
+    cache.clear()
+    cache.save()
+
     T = np.random.rand(10)
     m = 3
     stump(T, m)
 
-    cache.save()
     ref_cache = cache._get_cache()
 
     cache.clear()
@@ -21,7 +23,10 @@ def test_cache_save_after_clear():
     assert len(cache._get_cache()) == 0
 
     cache.save()
+    stump(T, m)
     comp_cache = cache._get_cache()
 
     # testing cache._save() after cache._clear()
     assert sorted(ref_cache) == sorted(comp_cache)
+
+    cache.clear()
