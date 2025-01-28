@@ -1111,7 +1111,7 @@ def _calculate_squared_distance(
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    fastmath=config.STUMPY_FASTMATH_TRUE,
+    fastmath=config.STUMPY_FASTMATH_FLAGS,
 )
 def _calculate_squared_distance_profile(
     m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
