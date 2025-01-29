@@ -92,7 +92,7 @@ def naive_rea(cac, n_regimes, L, excl_factor):
     return np.array(loc_regimes, dtype=np.int64)
 
 
-test_data = [(np.random.randint(0, 50, size=50, dtype=np.int64))]
+test_data = [np.random.randint(0, 50, size=50, dtype=np.int64)]
 
 substitution_locations = [(slice(0, 0), 0, -1, slice(1, 3), [0, 3])]
 substitution_values = [np.nan, np.inf]
