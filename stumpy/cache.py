@@ -133,7 +133,7 @@ def clear(cache_dir=None):
 
     Parameters
     ----------
-    cache_dir : str
+    cache_dir : str, default None
         The path to the numba cache directory
 
     Returns
@@ -163,7 +163,7 @@ def _get_cache(cache_dir=None):
     warnings.warn(CACHE_WARNING)
     if cache_dir is not None:  # pragma: no cover
         numba_cache_dir = str(cache_dir)
-    if "PYTEST_CURRENT_TEST" in os.environ:
+    elif "PYTEST_CURRENT_TEST" in os.environ:
         numba_cache_dir = "stumpy/__pycache__"
     else:  # pragma: no cover
         site_pkg_dir = site.getsitepackages()[0]
@@ -205,33 +205,35 @@ def _recompile():
     return
 
 
-def _save():
+def _save(cache_dir):
     """
     Save all njit functions
 
     Parameters
     ----------
-    None
+    cache_dir : str
+        The path to the numba cache directory
 
     Returns
     -------
     None
     """
     _enable()
-    _clear()
+    _clear(cache_dir)
     _recompile()
 
     return
 
 
-def save():
+def save(cache_dir=None):
     """
     Save/overwrite all the cache data files of
     all-so-far compiled njit functions.
 
     Parameters
     ----------
-    None
+    cache_dir : str, default None
+        The path to the numba cache directory
 
     Returns
     -------
@@ -243,6 +245,6 @@ def save():
     else:  # pragma: no cover
         warnings.warn(CACHE_WARNING)
 
-    _save()
+    _save(cache_dir)
 
     return
