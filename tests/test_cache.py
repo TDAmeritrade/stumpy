@@ -19,7 +19,7 @@ def test_cache_save_after_clear():
 
     if numba.config.DISABLE_JIT:
         assert len(ref_cache) == 0
-    else:
+    else:  # pragma: no cover
         assert len(ref_cache) > 0
 
     cache.clear()
