@@ -1,4 +1,5 @@
 import importlib
+import warnings
 
 import numba
 from numba import njit
@@ -55,11 +56,13 @@ def _set(module_name, func_name, flag):
     func = getattr(module, func_name)
     try:
         func.targetoptions["fastmath"] = flag
-        func.recompile()
+        msg = "One or more fastmath flags have been set/reset. "
+        msg += "Please call `cache._recompile()` to ensure that all njit functions "
+        msg += "are properly recompiled."
+        warnings.warn(msg)
     except AttributeError as e:
         if numba.config.DISABLE_JIT and (
             str(e) == "'function' object has no attribute 'targetoptions'"
-            or str(e) == "'function' object has no attribute 'recompile'"
         ):
             pass
         else:  # pragma: no cover

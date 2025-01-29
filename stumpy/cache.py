@@ -218,6 +218,7 @@ def _save():
     None
     """
     _enable()
+    _clear()
     _recompile()
 
     return
