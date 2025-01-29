@@ -250,9 +250,9 @@ def save(cache_dir=None):
     else:  # pragma: no cover
         warnings.warn(CACHE_WARNING)
 
-    if numba.config.CACHE_DIR != '':
+    if numba.config.CACHE_DIR != "":
         msg = "Found user specified `NUMBA_CACHE_DIR`/`numba.config.CACHE_DIR`. "
-        msg =+ "The `stumpy` cache files may not be saved/cleared correctly!"
+        msg += "The `stumpy` cache files may not be saved/cleared correctly!"
         warnings.warn(msg)
 
     _save(cache_dir)
