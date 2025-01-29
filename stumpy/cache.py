@@ -168,7 +168,12 @@ def _get_cache(cache_dir=None):
     else:  # pragma: no cover
         site_pkg_dir = site.getsitepackages()[0]
         numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
-    return [f.name for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
+
+    return [
+        f"{numba_cache_dir}/{f.name}"
+        for f in pathlib.Path(numba_cache_dir).glob("*nb*")
+        if f.is_file()
+    ]
 
 
 def _recompile():
