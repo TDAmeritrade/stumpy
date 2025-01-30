@@ -222,8 +222,17 @@ def _save():
     -------
     None
     """
+    global CACHE_CLEARED
+
+    if not CACHE_CLEARED:  # pragma: no cover
+        msg = "Numba njit cached files are  not cleared before saving/overwriting. "
+        msg = "You may need to call `cache.clear()` before calling `cache.save()`."
+        warnings.warn(msg)
+
     _enable()
     _recompile()
+
+    CACHE_CLEARED = False
 
     return
 
@@ -257,11 +266,6 @@ def save():
         msg = "Found user specified `NUMBA_CACHE_DIR`/`numba.config.CACHE_DIR`. "
         msg += "The `stumpy` cache files may not be saved/cleared correctly!"
         warnings.warn(msg)
-
-    if not CACHE_CLEARED:  # pragma: no cover
-        msg = "The cached files are  not cleared before saving/overwriting. "
-        msg = "You may need to call `cache.clear()` before calling `cache.save()`."
-        warnings.warn("msg")
 
     _save()
 
