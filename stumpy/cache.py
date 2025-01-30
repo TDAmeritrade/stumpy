@@ -5,7 +5,6 @@
 import ast
 import importlib
 import inspect
-import os
 import pathlib
 import site
 import warnings
@@ -118,8 +117,6 @@ def _clear(cache_dir=None):
     """
     if cache_dir is not None:  # pragma: no cover
         numba_cache_dir = str(cache_dir)
-    elif "PYTEST_CURRENT_TEST" in os.environ:
-        numba_cache_dir = "stumpy/__pycache__"
     else:  # pragma: no cover
         site_pkg_dir = site.getsitepackages()[0]
         numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
@@ -163,8 +160,6 @@ def _get_cache(cache_dir=None):
     warnings.warn(CACHE_WARNING)
     if cache_dir is not None:  # pragma: no cover
         numba_cache_dir = str(cache_dir)
-    elif "PYTEST_CURRENT_TEST" in os.environ:
-        numba_cache_dir = "stumpy/__pycache__"
     else:  # pragma: no cover
         site_pkg_dir = site.getsitepackages()[0]
         numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
@@ -250,7 +245,7 @@ def save(cache_dir=None):
     else:  # pragma: no cover
         warnings.warn(CACHE_WARNING)
 
-    if numba.config.CACHE_DIR != "":
+    if numba.config.CACHE_DIR != "":  # pragma: no cover
         msg = "Found user specified `NUMBA_CACHE_DIR`/`numba.config.CACHE_DIR`. "
         msg += "The `stumpy` cache files may not be saved/cleared correctly!"
         warnings.warn(msg)

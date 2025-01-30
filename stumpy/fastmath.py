@@ -64,6 +64,7 @@ def _set(module_name, func_name, flag):
         if numba.config.DISABLE_JIT and (
             str(e) == "'function' object has no attribute 'targetoptions'"
         ):
+            warnings.warn("Fastmath flags could not be set as Numba JIT is disabled")
             pass
         else:  # pragma: no cover
             raise
