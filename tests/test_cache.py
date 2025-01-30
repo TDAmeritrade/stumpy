@@ -1,3 +1,4 @@
+import numba
 import numpy as np
 
 from stumpy import cache, stump
@@ -14,14 +15,21 @@ def test_cache_save_after_clear():
 
     cache_dir = "stumpy/__pycache__"
 
-    cache.save(cache_dir)
+    cache.clear(cache_dir)
+    cache.save()
+
     stump(T, m)
     ref_cache = cache._get_cache(cache_dir)
 
+    if numba.config.DISABLE_JIT:
+        assert len(ref_cache) == 0
+    else:  # pragma: no cover
+        assert len(ref_cache) > 0
+
     cache.clear(cache_dir)
     assert len(cache._get_cache(cache_dir)) == 0
+    cache.save()
 
-    cache.save(cache_dir)
     stump(T, m)
     comp_cache = cache._get_cache(cache_dir)
 

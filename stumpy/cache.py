@@ -205,39 +205,40 @@ def _recompile():
     return
 
 
-def _save(cache_dir):
+def _save():
     """
     Save all njit functions
 
     Parameters
     ----------
-    cache_dir : str
-        The path to the numba cache directory
+    None
 
     Returns
     -------
     None
     """
     _enable()
-    _clear(cache_dir)
     _recompile()
 
     return
 
 
-def save(cache_dir=None):
+def save():
     """
-    Save/overwrite all the cache data files of
-    all-so-far compiled njit functions.
+    Save/overwrite all of the cached njit functions.
 
     Parameters
     ----------
-    cache_dir : str, default None
-        The path to the numba cache directory
+    None
 
     Returns
     -------
     None
+
+    Notes
+    -----
+    The cache is never cleared before saving/overwriting and may be explicitly
+    cleared by calling `cache.clear()` before saving.
     """
     if numba.config.DISABLE_JIT:
         msg = "Could not save/cache function because NUMBA JIT is disabled"
@@ -250,6 +251,6 @@ def save(cache_dir=None):
         msg += "The `stumpy` cache files may not be saved/cleared correctly!"
         warnings.warn(msg)
 
-    _save(cache_dir)
+    _save()
 
     return
