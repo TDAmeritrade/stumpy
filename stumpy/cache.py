@@ -15,6 +15,7 @@ CACHE_WARNING = "Caching `numba` functions is purely for experimental purposes "
 CACHE_WARNING += "and should never be used or depended upon as it is not supported! "
 CACHE_WARNING += "All caching capabilities are not tested and may be removed/changed "
 CACHE_WARNING += "without prior notice. Please proceed with caution!"
+CACHE_CLEARED = True
 
 
 def get_njit_funcs():
@@ -115,6 +116,8 @@ def _clear(cache_dir=None):
     -------
     None
     """
+    global CACHE_CLEARED
+
     if cache_dir is not None:  # pragma: no cover
         numba_cache_dir = str(cache_dir)
     else:  # pragma: no cover
@@ -122,6 +125,8 @@ def _clear(cache_dir=None):
         numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
 
     [f.unlink() for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
+
+    CACHE_CLEARED = True
 
 
 def clear(cache_dir=None):
@@ -240,6 +245,8 @@ def save():
     The cache is never cleared before saving/overwriting and may be explicitly
     cleared by calling `cache.clear()` before saving.
     """
+    global CACHE_CLEARED
+
     if numba.config.DISABLE_JIT:
         msg = "Could not save/cache function because NUMBA JIT is disabled"
         warnings.warn(msg)
@@ -250,6 +257,11 @@ def save():
         msg = "Found user specified `NUMBA_CACHE_DIR`/`numba.config.CACHE_DIR`. "
         msg += "The `stumpy` cache files may not be saved/cleared correctly!"
         warnings.warn(msg)
+
+    if not CACHE_CLEARED:  # pragma: no cover
+        msg = "The cached files are  not cleared before saving/overwriting. "
+        msg = "You may need to call `cache.clear()` before calling `cache.save()`."
+        warnings.warn("msg")
 
     _save()
 
