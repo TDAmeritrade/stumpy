@@ -384,7 +384,7 @@ def _compute_PI(
     # "(f8[:], f8[:], i8, f8[:], f8[:], f8[:], f8[:], f8[:], i8, i8, f8[:], f8[:],"
     # "i8[:], optional(i8))",
     parallel=True,
-    fastmath=config.STUMPY_FASTMATH_TRUE,
+    fastmath=config.STUMPY_FASTMATH_FLAGS,
 )
 def _prescrump(
     T_A,
