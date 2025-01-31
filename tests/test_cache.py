@@ -30,7 +30,7 @@ def test_cache_save_after_clear():
     assert len(cache._get_cache(cache_dir)) == 0
     cache.save()
 
-    stump(T, m)
+    # stump(T, m)
     comp_cache = cache._get_cache(cache_dir)
 
     assert sorted(ref_cache) == sorted(comp_cache)

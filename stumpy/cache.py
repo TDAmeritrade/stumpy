@@ -109,7 +109,7 @@ def _clear(cache_dir=None):
 
     Parameters
     ----------
-    cache_dir : str
+    cache_dir : str, default None
         The path to the numba cache directory
 
     Returns
@@ -118,7 +118,7 @@ def _clear(cache_dir=None):
     """
     global CACHE_CLEARED
 
-    if cache_dir is not None:  # pragma: no cover
+    if cache_dir is not None:
         numba_cache_dir = str(cache_dir)
     else:  # pragma: no cover
         site_pkg_dir = site.getsitepackages()[0]
@@ -136,7 +136,8 @@ def clear(cache_dir=None):
     Parameters
     ----------
     cache_dir : str, default None
-        The path to the numba cache directory
+        The path to the numba cache directory. When `cache_dir` is `None`, then this
+        defaults to `site-packages/stumpy/__pycache__`.
 
     Returns
     -------
@@ -163,7 +164,7 @@ def _get_cache(cache_dir=None):
         A list of cached numba functions
     """
     warnings.warn(CACHE_WARNING)
-    if cache_dir is not None:  # pragma: no cover
+    if cache_dir is not None:
         numba_cache_dir = str(cache_dir)
     else:  # pragma: no cover
         site_pkg_dir = site.getsitepackages()[0]
@@ -254,8 +255,6 @@ def save():
     The cache is never cleared before saving/overwriting and may be explicitly
     cleared by calling `cache.clear()` before saving.
     """
-    global CACHE_CLEARED
-
     if numba.config.DISABLE_JIT:
         msg = "Could not save/cache function because NUMBA JIT is disabled"
         warnings.warn(msg)
