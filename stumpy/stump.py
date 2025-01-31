@@ -15,7 +15,7 @@ from .mparray import mparray
     # "(f8[:], f8[:], i8, f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], f8[:],"
     # "b1[:], b1[:], b1[:], b1[:], i8[:], i8, i8, i8, f8[:, :, :], f8[:, :],"
     # "f8[:, :], i8[:, :, :], i8[:, :], i8[:, :], b1)",
-    fastmath=config.STUMPY_FASTMATH_TRUE,
+    fastmath=config.STUMPY_FASTMATH_FLAGS,
 )
 def _compute_diagonal(
     T_A,
