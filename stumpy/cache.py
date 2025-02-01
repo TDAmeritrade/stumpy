@@ -260,7 +260,7 @@ def save():
     is saved. Each `.nbc` file will only be saved after its `njit` function is called
     once. However, subsequent calls to `cache.save()` (after clearing the cache via
     `cache.clear()`) will automatically save BOTH the `.nbi` files as well as the `.nbc`
-    files as long as their `njit` function has been called at least once. 
+    files as long as their `njit` function has been called at least once.
     """
     if numba.config.DISABLE_JIT:
         msg = "Could not save/cache function because NUMBA JIT is disabled"
