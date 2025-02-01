@@ -253,14 +253,24 @@ def save():
     Notes
     -----
     The cache is never cleared before saving/overwriting and may be explicitly cleared
-    by calling `cache.clear()` before saving. If `cache.save()` is called for the first
-    time (before any `njit` function is called) then only the `.nbi` files (i.e., the
-    "cache index") for all `njit` functions are saved. As each `njit` function (and
+    by calling `cache.clear()` before saving. It is best practice to call `cache.save()`
+    only after calling all of your `njit` functions. If `cache.save()` is called for the
+    first time (before any `njit` function is called) then only the `.nbi` files (i.e.,
+    the "cache index") for all `njit` functions are saved. As each `njit` function (and
     sub-functions) is called then their corresponding `.nbc` file (i.e., "object code")
     is saved. Each `.nbc` file will only be saved after its `njit` function is called
-    once. However, subsequent calls to `cache.save()` (after clearing the cache via
-    `cache.clear()`) will automatically save BOTH the `.nbi` files as well as the `.nbc`
-    files as long as their `njit` function has been called at least once.
+    at least once. However, subsequent calls to `cache.save()` (after clearing the cache
+    via `cache.clear()`) will automatically save BOTH the `.nbi` files as well as the
+    `.nbc` files as long as their `njit` function has been called at least once.
+
+    Examples
+    --------
+    >>> import stumpy
+    >>> from stumpy import cache
+    >>> import numpy as np
+    >>> cache.clear()
+    >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
+    >>> cache.save()
     """
     if numba.config.DISABLE_JIT:
         msg = "Could not save/cache function because NUMBA JIT is disabled"
