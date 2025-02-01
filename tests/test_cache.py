@@ -1,3 +1,4 @@
+import numba
 import numpy as np
 
 from stumpy import cache, stump
@@ -11,17 +12,28 @@ def test_cache_get_njit_funcs():
 def test_cache_save_after_clear():
     T = np.random.rand(10)
     m = 3
+
+    cache_dir = "stumpy/__pycache__"
+
+    cache.clear(cache_dir)
     stump(T, m)
+    cache.save()  # Enable and save both `.nbi` and `.nbc` cache files
 
-    cache.save()
-    ref_cache = cache._get_cache()
+    ref_cache = cache._get_cache(cache_dir)
 
-    cache.clear()
-    # testing cache._clear()
-    assert len(cache._get_cache()) == 0
+    if numba.config.DISABLE_JIT:
+        assert len(ref_cache) == 0
+    else:  # pragma: no cover
+        assert len(ref_cache) > 0
 
-    cache.save()
-    comp_cache = cache._get_cache()
+    cache.clear(cache_dir)
+    assert len(cache._get_cache(cache_dir)) == 0
+    # Note that `stump(T, m)` has already been called once above and any subsequent
+    # calls to `cache.save()` will automatically save both `.nbi` and `.nbc` cache files
+    cache.save()  # Save both `.nbi` and `.nbc` cache files
 
-    # testing cache._save() after cache._clear()
+    comp_cache = cache._get_cache(cache_dir)
+
     assert sorted(ref_cache) == sorted(comp_cache)
+
+    cache.clear(cache_dir)

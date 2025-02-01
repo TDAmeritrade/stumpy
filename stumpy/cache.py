@@ -15,6 +15,7 @@ CACHE_WARNING = "Caching `numba` functions is purely for experimental purposes "
 CACHE_WARNING += "and should never be used or depended upon as it is not supported! "
 CACHE_WARNING += "All caching capabilities are not tested and may be removed/changed "
 CACHE_WARNING += "without prior notice. Please proceed with caution!"
+CACHE_CLEARED = True
 
 
 def get_njit_funcs():
@@ -102,48 +103,60 @@ def _enable():
                 raise
 
 
-def _clear():
+def _clear(cache_dir=None):
     """
     Clear numba cache
 
     Parameters
     ----------
-    None
+    cache_dir : str, default None
+        The path to the numba cache directory
 
     Returns
     -------
     None
     """
-    site_pkg_dir = site.getsitepackages()[0]
-    numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
+    global CACHE_CLEARED
+
+    if cache_dir is not None:
+        numba_cache_dir = str(cache_dir)
+    else:  # pragma: no cover
+        site_pkg_dir = site.getsitepackages()[0]
+        numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
+
     [f.unlink() for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
 
+    CACHE_CLEARED = True
 
-def clear():
+
+def clear(cache_dir=None):
     """
     Clear numba cache directory
 
     Parameters
     ----------
-    None
+    cache_dir : str, default None
+        The path to the numba cache directory. When `cache_dir` is `None`, then this
+        defaults to `site-packages/stumpy/__pycache__`.
 
     Returns
     -------
     None
     """
     warnings.warn(CACHE_WARNING)
-    _clear()
+    _clear(cache_dir)
 
     return
 
 
-def _get_cache():
+def _get_cache(cache_dir=None):
     """
     Retrieve a list of cached numba functions
 
     Parameters
     ----------
-    None
+    cache_dir : str
+        The path to the numba cache directory
 
     Returns
     -------
@@ -151,9 +164,17 @@ def _get_cache():
         A list of cached numba functions
     """
     warnings.warn(CACHE_WARNING)
-    site_pkg_dir = site.getsitepackages()[0]
-    numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
-    return [f.name for f in pathlib.Path(numba_cache_dir).glob("*nb*") if f.is_file()]
+    if cache_dir is not None:
+        numba_cache_dir = str(cache_dir)
+    else:  # pragma: no cover
+        site_pkg_dir = site.getsitepackages()[0]
+        numba_cache_dir = site_pkg_dir + "/stumpy/__pycache__"
+
+    return [
+        f"{numba_cache_dir}/{f.name}"
+        for f in pathlib.Path(numba_cache_dir).glob("*nb*")
+        if f.is_file()
+    ]
 
 
 def _recompile():
@@ -202,16 +223,24 @@ def _save():
     -------
     None
     """
+    global CACHE_CLEARED
+
+    if not CACHE_CLEARED:  # pragma: no cover
+        msg = "Numba njit cached files are  not cleared before saving/overwriting. "
+        msg = "You may need to call `cache.clear()` before calling `cache.save()`."
+        warnings.warn(msg)
+
     _enable()
     _recompile()
+
+    CACHE_CLEARED = False
 
     return
 
 
 def save():
     """
-    Save/overwrite all the cache data files of
-    all-so-far compiled njit functions.
+    Save/overwrite all of the cached njit functions.
 
     Parameters
     ----------
@@ -220,12 +249,39 @@ def save():
     Returns
     -------
     None
+
+    Notes
+    -----
+    The cache is never cleared before saving/overwriting and may be explicitly cleared
+    by calling `cache.clear()` before saving. It is best practice to call `cache.save()`
+    only after calling all of your `njit` functions. If `cache.save()` is called for the
+    first time (before any `njit` function is called) then only the `.nbi` files (i.e.,
+    the "cache index") for all `njit` functions are saved. As each `njit` function (and
+    sub-functions) is called then their corresponding `.nbc` file (i.e., "object code")
+    is saved. Each `.nbc` file will only be saved after its `njit` function is called
+    at least once. However, subsequent calls to `cache.save()` (after clearing the cache
+    via `cache.clear()`) will automatically save BOTH the `.nbi` files as well as the
+    `.nbc` files as long as their `njit` function has been called at least once.
+
+    Examples
+    --------
+    >>> import stumpy
+    >>> from stumpy import cache
+    >>> import numpy as np
+    >>> cache.clear()
+    >>> mp = stumpy.stump(np.array([584., -11., 23., 79., 1001., 0., -19.]), m=3)
+    >>> cache.save()
     """
     if numba.config.DISABLE_JIT:
         msg = "Could not save/cache function because NUMBA JIT is disabled"
         warnings.warn(msg)
     else:  # pragma: no cover
         warnings.warn(CACHE_WARNING)
+
+    if numba.config.CACHE_DIR != "":  # pragma: no cover
+        msg = "Found user specified `NUMBA_CACHE_DIR`/`numba.config.CACHE_DIR`. "
+        msg += "The `stumpy` cache files may not be saved/cleared correctly!"
+        warnings.warn(msg)
 
     _save()
 
