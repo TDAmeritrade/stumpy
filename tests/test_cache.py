@@ -16,9 +16,9 @@ def test_cache_save_after_clear():
     cache_dir = "stumpy/__pycache__"
 
     cache.clear(cache_dir)
-    cache.save()
+    cache.save()  # Saves nbi files only until njit funcs are called for the first time
 
-    stump(T, m)
+    stump(T, m)  # Saves nbc files, subsequent saves will write both nbi and nbc files
     ref_cache = cache._get_cache(cache_dir)
 
     if numba.config.DISABLE_JIT:
@@ -28,9 +28,8 @@ def test_cache_save_after_clear():
 
     cache.clear(cache_dir)
     assert len(cache._get_cache(cache_dir)) == 0
-    cache.save()
+    cache.save()  # Save both nbi and nbc files without needing to call `stump` function
 
-    # stump(T, m)
     comp_cache = cache._get_cache(cache_dir)
 
     assert sorted(ref_cache) == sorted(comp_cache)

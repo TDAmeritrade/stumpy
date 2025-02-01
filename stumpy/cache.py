@@ -252,8 +252,15 @@ def save():
 
     Notes
     -----
-    The cache is never cleared before saving/overwriting and may be explicitly
-    cleared by calling `cache.clear()` before saving.
+    The cache is never cleared before saving/overwriting and may be explicitly cleared
+    by calling `cache.clear()` before saving. If `cache.save()` is called for the first
+    time (before any `njit` function is called) then only the `.nbi` files (i.e., the
+    "cache index") for all `njit` functions are saved. As each `njit` function (and
+    sub-functions) is called then their corresponding `.nbc` file (i.e., "object code")
+    is saved. Each `.nbc` file will only be saved after its `njit` function is called
+    once. However, subsequent calls to `cache.save()` (after clearing the cache via
+    `cache.clear()`) will automatically save BOTH the `.nbi` files as well as the `.nbc`
+    files as long as their `njit` function has been called at least once. 
     """
     if numba.config.DISABLE_JIT:
         msg = "Could not save/cache function because NUMBA JIT is disabled"
