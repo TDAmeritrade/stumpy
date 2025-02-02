@@ -1251,6 +1251,10 @@ def _p_norm_distance_profile(Q, T, p=2.0):
     -------
     output : numpy.ndarray
         p-normalized distance profile between `Q` and `T`
+
+    Notes
+    -----
+    The special case `p==inf` is not supported.
     """
     m = Q.shape[0]
     l = T.shape[0] - m + 1
