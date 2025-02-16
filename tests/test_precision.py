@@ -226,3 +226,50 @@ def test_distance_symmetry_property_in_gpu():
     ref = 0.0
 
     npt.assert_almost_equal(comp, ref, decimal=15)
+
+
+def test_stump_identical_subsequence_self_join_rare_cases_1():
+    # This test function is designed to capture the errors that migtht be raised
+    # due the imprecision in the calculation of pearson values in the edge case
+    # where two subsequences are identical.
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    seed_values = [27343, 84451]
+    for seed in seed_values:
+        np.random.seed(seed)
+
+        identical = np.random.rand(8)
+        T_A = np.random.rand(20)
+        T_A[1 : 1 + identical.shape[0]] = identical
+        T_A[11 : 11 + identical.shape[0]] = identical
+
+        ref_mp = naive.stump(T_A, m, exclusion_zone=zone, row_wise=True)
+        comp_mp = stumpy.stump(T_A, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(
+            ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        )  # ignore indices
+
+
+def test_stump_identical_subsequence_self_join_rare_cases_2():
+    m = 3
+    zone = int(np.ceil(m / 4))
+
+    seed_values = [27343, 84451]
+    for seed in seed_values:
+        np.random.seed(seed)
+
+        identical = np.random.rand(8)
+        T_A = np.random.rand(20)
+        T_A[1 : 1 + identical.shape[0]] = identical * 0.001
+        T_A[11 : 11 + identical.shape[0]] = identical * 1000
+
+        ref_mp = naive.stump(T_A, m, exclusion_zone=zone, row_wise=True)
+        comp_mp = stumpy.stump(T_A, m, ignore_trivial=True)
+        naive.replace_inf(ref_mp)
+        naive.replace_inf(comp_mp)
+        npt.assert_almost_equal(
+            ref_mp[:, 0], comp_mp[:, 0], decimal=config.STUMPY_TEST_PRECISION
+        )  # ignore indices
