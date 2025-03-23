@@ -72,7 +72,9 @@ def _motifs(
         the first match is always the self-match/trivial-match for each motif.
 
     max_motifs : int
-        The maximum number of motifs to return.
+        The maximum number of motifs to return. To consider returning all possible
+        valid motifs, try setting `max_motifs` to the length of your input matrix
+        profile (i.e., ``max_motifs=len(P)``)
 
     atol : float, default 1e-8
         The absolute tolerance parameter. This value will be added to `max_distance`
@@ -241,7 +243,9 @@ def motifs(
         self-match/trivial-match for each motif.
 
     max_motifs : int, default 1
-        The maximum number of motifs to return.
+        The maximum number of motifs to return. To consider returning all possible
+        valid motifs, try setting `max_motifs` to the length of your input matrix
+        profile (i.e., ``max_motifs=len(P)``)
 
     atol : float, default 1e-8
         The absolute tolerance parameter. This value will be added to ``max_distance``
