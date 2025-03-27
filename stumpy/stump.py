@@ -711,19 +711,24 @@ def stump(
             "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
         )
 
-    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
-    ignore_trivial = core.check_ignore_trivial(T_A, T_B, ignore_trivial)
-
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
     l = n_A - m + 1
 
-    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-
+    ignore_trivial = core.check_ignore_trivial(T_A, T_B, ignore_trivial)
     if ignore_trivial:
+        excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
         diags = np.arange(excl_zone + 1, n_A - m + 1, dtype=np.int64)
     else:
+        excl_zone = None
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
+
+    core.check_window_size(
+        m,
+        max_size=min(T_A.shape[0], T_B.shape[0]),
+        excl_zone=excl_zone,
+        last_start_index=l - 1,
+    )
 
     P, PL, PR, I, IL, IR = _stump(
         T_A,
