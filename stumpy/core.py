@@ -554,11 +554,12 @@ def get_max_window_size(n):
     return max_m
 
 
-def check_window_size(m, max_size=None):
+def check_window_size(m, max_size=None, excl_zone=None, last_start_index=None):
     """
     Check the window size and ensure that it is greater than or equal to 3 and, if
     `max_size` is provided, ensure that the window size is less than or equal to the
-    `max_size`
+    `max_size`. Furthermore, if `excl_zone` is provided, then it will also check if the
+    window size is too large and could lead to meaningless results.
 
     Parameters
     ----------
@@ -567,6 +568,13 @@ def check_window_size(m, max_size=None):
 
     max_size : int, default None
         The maximum window size allowed
+
+    excl_zone : int, default None
+        The exclusion zone. If provided, then the `last_start_index` must also be
+        provided.
+
+    last_start_index : int, default None
+        The start index of last subsequence.
 
     Returns
     -------
@@ -588,6 +596,37 @@ def check_window_size(m, max_size=None):
 
     if max_size is not None and m > max_size:
         raise ValueError(f"The window size must be less than or equal to {max_size}")
+
+    if excl_zone is not None:
+        if last_start_index is None:
+            raise ValueError(
+                "last_start_index must be provided when excl_zone is not None"
+            )
+
+        # Check if subsequneces have non-trivial neighbours
+
+        # Case 1:
+        # There is at least one subsequence with non-trivial neighbour
+        # i.e. For AN `i`, there exists at least one `j` such that |i - j| > excl_zone
+        # In this case, we just need to consider the two subsequences that are furthest
+        # apart from each other.
+        # In other words: |0 - last_start_index| > excl_zone
+        cond_1 = last_start_index <= excl_zone
+
+        # Case 2:
+        # Check if each single subsequence has at least one non-trivial neighbor
+        # i. e. For ANY `i`, there exists at least one `j` such that |i - j| > excl_zone
+        # In this case, we need to consider the subseuqence whose furthest neighbour is
+        # the shortest compared to other subsequences.
+        # In other words: |0 - ceil(last_start_index / 2)| > excl_zone
+        cond_2 = math.ceil(last_start_index / 2) <= excl_zone
+
+        if cond_1 or cond_2:
+            msg = (
+                f"The window size, 'm = {m}', may be too large and could lead to "
+                + "meaningless results. Consider reducing 'm' where necessary"
+            )
+            warnings.warn(msg)
 
 
 @njit(fastmath=config.STUMPY_FASTMATH_TRUE)
