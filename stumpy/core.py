@@ -598,7 +598,7 @@ def check_window_size(m, max_size=None, excl_zone=None, last_start_index=None):
         raise ValueError(f"The window size must be less than or equal to {max_size}")
 
     if excl_zone is not None:
-        if last_start_index is None:
+        if last_start_index is None:  # pragma: no cover
             raise ValueError(
                 "last_start_index must be provided when excl_zone is not None"
             )
