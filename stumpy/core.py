@@ -570,8 +570,8 @@ def check_window_size(m, max_size=None, excl_zone=None, last_start_index=None):
         The maximum window size allowed
 
     excl_zone : int, default None
-        Size of the exclusion zone. If provided, then the `last_start_index` must also be
-        provided.
+        Size of the exclusion zone. If provided, then the `last_start_index`
+        must also be provided.
 
     last_start_index : int, default None
         Start index of the last subsequence
