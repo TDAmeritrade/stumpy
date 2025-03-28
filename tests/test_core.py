@@ -192,6 +192,36 @@ def test_check_max_window_size():
             core.check_window_size(m, max_size=3)
 
 
+def test_check_window_size_excl_zone_case1():
+    # To ensure warning is raised if there is no subsequence
+    # with non-trivial neighbor
+    T = np.random.rand(64)
+    m = 60
+    last_start_index = len(T) - m
+
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+    with pytest.warns(UserWarning):
+        core.check_window_size(
+            m, max_size=len(T), excl_zone=excl_zone, last_start_index=last_start_index
+        )
+
+
+def test_check_window_size_excl_zone_case2():
+    # To ensure warning is raised if there is at least one subsequence
+    # that has no non-trivial neighbor
+    T = np.random.rand(64)
+    m = 48
+    last_start_index = len(T) - m
+
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+    with pytest.warns(UserWarning):
+        core.check_window_size(
+            m, max_size=len(T), excl_zone=excl_zone, last_start_index=last_start_index
+        )
+
+
 @pytest.mark.parametrize("Q, T", test_data)
 def test_njit_sliding_dot_product(Q, T):
     ref_mp = naive_rolling_window_dot_product(Q, T)
