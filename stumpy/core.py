@@ -610,18 +610,18 @@ def check_window_size(m, max_size=None, excl_zone=None, last_start_index=None):
         # i.e. For AN `i`, there exists at least one `j` such that |i - j| > excl_zone
         # In this case, we just need to consider the two subsequences that are furthest
         # apart from each other.
-        # In other words: |0 - last_start_index| > excl_zone
-        cond_1 = last_start_index <= excl_zone
+        # In other words: |last_start_index - 0| > excl_zone
+        cond_1 = (last_start_index - 0) > excl_zone
 
         # Case 2:
         # Check if each single subsequence has at least one non-trivial neighbor
         # i. e. For ANY `i`, there exists at least one `j` such that |i - j| > excl_zone
         # In this case, we need to consider the subseuqence whose furthest neighbour is
         # the shortest compared to other subsequences.
-        # In other words: |0 - ceil(last_start_index / 2)| > excl_zone
-        cond_2 = math.ceil(last_start_index / 2) <= excl_zone
+        # In other words: |ceil(last_start_index / 2) - 0| > excl_zone
+        cond_2 = (math.ceil(last_start_index / 2) - 0) > excl_zone
 
-        if cond_1 or cond_2:
+        if not cond_1 or not cond_2:
             msg = (
                 f"The window size, 'm = {m}', may be too large and could lead to "
                 + "meaningless results. Consider reducing 'm' where necessary"
