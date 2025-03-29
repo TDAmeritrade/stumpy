@@ -199,9 +199,7 @@ def test_check_window_size_excl_zone_case1():
     m = 60
 
     with pytest.warns(UserWarning):
-        core.check_window_size(
-            m, max_size=len(T), n=len(T)
-        )
+        core.check_window_size(m, max_size=len(T), n=len(T))
 
 
 def test_check_window_size_excl_zone_case2():
@@ -211,9 +209,7 @@ def test_check_window_size_excl_zone_case2():
     m = 48
 
     with pytest.warns(UserWarning):
-        core.check_window_size(
-            m, max_size=len(T), n=len(T)
-        )
+        core.check_window_size(m, max_size=len(T), n=len(T))
 
 
 @pytest.mark.parametrize("Q, T", test_data)
