@@ -197,13 +197,10 @@ def test_check_window_size_excl_zone_case1():
     # with non-trivial neighbor
     T = np.random.rand(64)
     m = 60
-    last_start_index = len(T) - m
-
-    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
     with pytest.warns(UserWarning):
         core.check_window_size(
-            m, max_size=len(T), excl_zone=excl_zone, last_start_index=last_start_index
+            m, max_size=len(T), n=len(T)
         )
 
 
@@ -212,13 +209,10 @@ def test_check_window_size_excl_zone_case2():
     # that has no non-trivial neighbor
     T = np.random.rand(64)
     m = 48
-    last_start_index = len(T) - m
-
-    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
     with pytest.warns(UserWarning):
         core.check_window_size(
-            m, max_size=len(T), excl_zone=excl_zone, last_start_index=last_start_index
+            m, max_size=len(T), n=len(T)
         )
 
 
