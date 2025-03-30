@@ -716,19 +716,13 @@ def stump(
     l = n_A - m + 1
 
     ignore_trivial = core.check_ignore_trivial(T_A, T_B, ignore_trivial)
-    if ignore_trivial:
-        excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+    if ignore_trivial:  # self-join
+        core.check_window_size(m, max_size=n_A, n=n_A)
         diags = np.arange(excl_zone + 1, n_A - m + 1, dtype=np.int64)
-    else:
-        excl_zone = None
+    else:  # AB-join
+        core.check_window_size(m, max_size=min(n_A, n_B))
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
-
-    core.check_window_size(
-        m,
-        max_size=min(T_A.shape[0], T_B.shape[0]),
-        excl_zone=excl_zone,
-        last_start_index=l - 1,
-    )
 
     P, PL, PR, I, IL, IR = _stump(
         T_A,
