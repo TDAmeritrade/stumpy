@@ -570,7 +570,7 @@ def check_window_size(m, max_size=None, n=None):
         The maximum window size allowed
 
     n : int, default None
-        The length of the time series.
+        The length of the time series in a self-join case
 
     Returns
     -------
