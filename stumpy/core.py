@@ -611,7 +611,7 @@ def check_window_size(m, max_size=None, n=None):
         # For any `i` and its corresponding `jmax`, we have:
         # |i - jmax| >= d > excl_zone
 
-        # The minimum |i - jmax| is achieved when `S_i` is the middle ubsequence,
+        # The minimum |i - jmax| is achieved when `S_i` is the middle subsequence,
         # i.e. i == int(ceil((n - m) / 2)), and its corresponding jmax is 0. Hence,
         # we just need to make sure the following inequity is satisfied:
         # |int(ceil((n - m) / 2)) - 0| > excl_zone`
