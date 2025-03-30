@@ -594,33 +594,20 @@ def check_window_size(m, max_size=None, n=None):
         raise ValueError(f"The window size must be less than or equal to {max_size}")
 
     if n is not None:
-        # The following code raises warning if there is at least one subsequence
-        # with no non-trivial neighbor. The following logic does not check if
-        # a subsequence has a non-finite value.
-
-        # Logic: For each subsequnece `S_i = T[i : i + m]`, its neighbor `S_j`
-        # is non-trivial if |i - j| > excl_zone. Let's denote `S_jmax` as
-        # the neighbor that is furthest away from `S_i` (index-wise). So:
-        # |i - jmax| >= |i - j|
-        # Therefore, if `S_i` has at least one non-trivial neighbor, then `S_jmax` is
-        # definitely a non-trivial neighbor. Because:
-        # |i - jmax| >= |i - j| > excl_zone
-        # To ensure ALL subsequences have at least one non-trivial neighbor, we can just
-        # check the subsequence `S_i` that has the minimum |i - jmax|. Let's denote `d`
-        # as that minimum value. So, if d > excl_zone, then:
-        # For any `i` and its corresponding `jmax`, we have:
-        # |i - jmax| >= d > excl_zone
-
-        # Hence, as long as the `S_i` that corresponds to `d` has one non-trivial
-        # neighbour, any other subsequence has one non-trivial neighbour as well.
-
-        # The minimum |i - jmax| is achieved when `S_i` is the middle ubsequence,
-        # i.e. i == int(ceil((n - m) / 2)). Its corresponding `jmax` is 0. Hence,
-        # we just need to make sure the following inequality is satisfied:
-        # |int(ceil((n - m) / 2)) - 0| > excl_zone`
+        # Raise warning if there is at least one subsequence with no
+        # non-trivial neighbour in a self-join case
 
         excl_zone = int(math.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
-        if (int(math.ceil((n - m) / 2)) - 0) <= excl_zone:
+
+        l = n - m + 1
+        indices = np.arange(l)
+
+        # Compute the maximum index-wise gap between each subsequence
+        # and its neighbours. For any subsequence:
+        # The leftmost neighbor is at index `0`
+        # The rightmost neighbor is at index `l-1`
+        max_gaps = np.maximum(indices - 0, (l - 1) - indices)
+        if np.any(max_gaps <= excl_zone):
             msg = (
                 f"The window size, 'm = {m}', may be too large and could lead to "
                 + "meaningless results. Consider reducing 'm' where necessary"
