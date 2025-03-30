@@ -192,22 +192,15 @@ def test_check_max_window_size():
             core.check_window_size(m, max_size=3)
 
 
-def test_check_window_size_excl_zone_case1():
-    # To ensure warning is raised if there is no subsequence
-    # with non-trivial neighbor
-    T = np.random.rand(64)
-    m = 60
-
-    with pytest.warns(UserWarning):
-        core.check_window_size(m, max_size=len(T), n=len(T))
-
-
-def test_check_window_size_excl_zone_case2():
+def test_check_window_size_excl_zone():
     # To ensure warning is raised if there is at least one subsequence
     # that has no non-trivial neighbor
-    T = np.random.rand(64)
-    m = 48
+    T = np.random.rand(100)
+    m = 70
 
+    # For m==70, the `excl_zone` become ceil(m / 4) = 18. For len(T)==100,
+    # the subsequence that starts at index 15 has no non-trivial neighbor.
+    # The expectation is that `core.check_window_size` raises warning.
     with pytest.warns(UserWarning):
         core.check_window_size(m, max_size=len(T), n=len(T))
 
