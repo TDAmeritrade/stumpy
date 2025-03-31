@@ -152,7 +152,7 @@ class FunctionCallVisitor(ast.NodeVisitor):
 
     push_out()
         Push the current function call stack onto the output list if it is not
-        included in one of the existing call stacks in `self.out`.
+        included in one of the so-far-collected call stacks.
 
     visit_Call(node)
         Visit an AST node of type `ast.Call`. This method is called when the visitor
@@ -421,16 +421,16 @@ def get_njit_call_stacks(pkg_dir, pkg_name):
     return visitor.out
 
 
-def check_fastmath_callstack(pkg_dir, pkg_name):
+def check_call_stack_fastmath(pkg_dir, pkg_name):
     """
-    Check if all njit functions in a callstack have the same `fastmath` flag.
+    Check if all njit functions in a call stack have the same `fastmath` flag.
     This function raises a ValueError if it finds any inconsistencies in the
-    `fastmath` flags across the call stacks of njit functions.
+    `fastmath` flags in any call stack of njit functions.
 
     Parameters
     ----------
     pkg_dir : str
-        The path to the package directory containing some .py files
+        The path to the directory containing some .py files
 
     pkg_name : str
         The name of the package
@@ -441,26 +441,27 @@ def check_fastmath_callstack(pkg_dir, pkg_name):
     """
     out = get_njit_call_stacks(pkg_dir, pkg_name)
 
-    fastmath_is_inconsistent = []
+    inconsitent_call_stacks = []
     for cs in out:
+        # Set the fastmath flag of the first function in the call stack
+        # as the reference flag
         module_name, func_name = cs[0].split(".")
         module = importlib.import_module(f".{module_name}", package="stumpy")
         func = getattr(module, func_name)
-        flag = func.targetoptions["fastmath"]
+        flag_ref = func.targetoptions["fastmath"]
 
         for item in cs[1:]:
             module_name, func_name = cs[0].split(".")
             module = importlib.import_module(f".{module_name}", package="stumpy")
             func = getattr(module, func_name)
-            func_flag = func.targetoptions["fastmath"]
-            if func_flag != flag:
-                fastmath_is_inconsistent.append(cs)
+            if func.targetoptions["fastmath"] != flag_ref:
+                inconsitent_call_stacks.append(cs)
                 break
 
-    if len(fastmath_is_inconsistent) > 0:
+    if len(inconsitent_call_stacks) > 0:
         msg = (
             "Found at least one callstack that have inconsistent `fastmath` flags. "
-            + f"The functions are:\n {fastmath_is_inconsistent}\n"
+            + f"The functions are:\n {inconsitent_call_stacks}\n"
         )
         raise ValueError(msg)
 
@@ -476,4 +477,4 @@ if __name__ == "__main__":
         pkg_dir = pathlib.Path(args.pkg_dir)
         pkg_name = pkg_dir.name
         check_fastmath(str(pkg_dir), pkg_name)
-        check_fastmath_callstack(str(pkg_dir), pkg_name)
+        check_call_stack_fastmath(str(pkg_dir), pkg_name)
