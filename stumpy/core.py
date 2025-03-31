@@ -599,23 +599,19 @@ def check_window_size(m, max_size=None, n=None):
         # non-trivial neighbour in the case of a self-join.
 
         # For any time series `T`, an "eligible nearest neighbor" subsequence for
-        # the central-most subsequence must be located outside the `excl_zone`.
-        # The central-most subsequence will ALWAYS have the smallest gap
-        # to its furthest "eligible nearest neighbor" among all other subsequences.
-        # Therefore, we only need to check whether the `excl_zone` eliminates all
-        # "nearest neighbors" for the central-most subsequence in `T`.
-        # In fact, we just need to verify whether the `excl_zone` eliminates
-        # the "nearest neighbor" that is furthest away (index-wise) from
-        # the central-most subsequence. If it does not, this implies that
-        # all other subsequences in `T` will have at least one or more
-        # eligible nearest neighbors outside their respective `excl_zone
+        # the central-most subsequence must be located outside the `excl_zone`,
+        # and the central-most subsequence will ALWAYS have the smallest gap
+        # to its furthest neighbour. Therefore, we only need to check whether
+        # the `excl_zone` eliminates all "neighbors" for the central-most subsequence
+        # in `T`. In fact, we just need to verify whether the `excl_zone` eliminates
+        # the "neighbor" that is furthest away (index-wise) from the central-most
+        # subsequence. If it does not, this implies that all subsequences in `T`
+        # will have at least one or more "eligible nearest neighbors" outside
+        # their respective `excl_zone`
 
         excl_zone = int(math.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
         l = n - m + 1
-        max_gap = l // 2
-        # The index-wise gap between central-most subsequence
-        # and its furthest neighbor:
 
         # If `l` is odd (`l == 2k+1`):
         # The central subsequence is at index `k`, with furthest neighbors at `0`
@@ -625,6 +621,7 @@ def check_window_size(m, max_size=None, n=None):
         # The central subsequences are at `k-1` and `k`. The furthest neighbor is
         # at `2k-1` for `k-1`, and `0` for `k`. In both cases, the subsequence
         # and its furthest neighbor are `k == l // 2` indices away.
+        max_gap = l // 2
 
         if max_gap <= excl_zone:
             msg = (
