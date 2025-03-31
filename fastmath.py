@@ -89,6 +89,384 @@ def check_fastmath(pkg_dir, pkg_name):
     return
 
 
+class FunctionCallVisitor(ast.NodeVisitor):
+    """
+    A class to traverse the AST of modules of a package to collect the call stacks
+    of njit functions.
+
+    Parameters
+    ----------
+    pkg_dir : str
+        The path to the package directory containing some .py files.
+
+    pkg_name : str
+        The name of the package.
+
+    Attributes
+    ----------
+    module_names : list
+        A list of module names to track the modules as the visitor traverses their AST
+
+    call_stack : list
+        A list of function calls made in the current module
+
+    out : list
+        A list of unique function call stacks.
+
+    njit_funcs : list
+        A list of njit functions in STUMPY. Each element is a tuple of the form
+        (module_name, func_name).
+
+    njit_modules : set
+        A set of module names, where each contains at least one njit function.
+
+    njit_nodes : dict
+        A dictionary mapping njit function names to their corresponding AST nodes.
+        A key is of the form "module_name.func_name", and its corresponding value
+        is the AST node- with type ast.FunctionDef- of that njit function
+
+    ast_modules : dict
+        A dictionary mapping module names to their corresponding AST objects. A key
+        is of the form "module_name", and its corresponding value is the content of
+        the module as an AST object.
+
+    Methods
+    -------
+    push_module(module_name)
+        Push a module name onto the stack of module names.
+
+    pop_module()
+        Pop the last module name from the stack of module names.
+
+    push_call_stack(module_name, func_name)
+        Push a function call onto the stack of function calls.
+
+    pop_call_stack()
+        Pop the last function call from the stack of function calls.
+
+    goto_deeper_func(node)
+        Calls the visit method from class `ast.NodeVisitor` on all children of the node.
+
+    goto_next_func(node)
+        Calls the visit method from class `ast.NodeVisitor` on all children of the node.
+
+    push_out()
+        Push the current function call stack onto the output list if it is not
+        included in one of the existing call stacks in `self.out`.
+
+    visit_Call(node)
+        Visit an AST node of type `ast.Call`. This method is called when the visitor
+        encounters a function call in the AST. It checks if the called function is
+        a njit function and, if so, traverses its AST to collect its call stack.
+    """
+
+    def __init__(self, pkg_dir, pkg_name):
+        """
+        Initialize the FunctionCallVisitor class.  This method sets up the necessary
+        attributes and prepares the visitor for traversing the AST of STUMPY's modules.
+
+        Parameters
+        ----------
+        pkg_dir : str
+            The path to the package directory containing some .py files.
+
+        pkg_name : str
+            The name of the package.
+
+        Returns
+        -------
+        None
+        """
+        super().__init__()
+        self.module_names = []
+        self.call_stack = []
+        self.out = []
+
+        # Setup lists, dicts, and ast objects
+        self.njit_funcs = get_njit_funcs(pkg_dir)
+        self.njit_modules = set(mod_name for mod_name, func_name in self.njit_funcs)
+        self.njit_nodes = {}
+        self.ast_modules = {}
+
+        filepaths = sorted(f for f in pathlib.Path(pkg_dir).iterdir() if f.is_file())
+        ignore = ["__init__.py", "__pycache__"]
+
+        for filepath in filepaths:
+            file_name = filepath.name
+            if (
+                file_name not in ignore
+                and not file_name.startswith("gpu")
+                and str(filepath).endswith(".py")
+            ):
+                module_name = file_name.replace(".py", "")
+                file_contents = ""
+                with open(filepath, encoding="utf8") as f:
+                    file_contents = f.read()
+                self.ast_modules[module_name] = ast.parse(file_contents)
+
+                for node in self.ast_modules[module_name].body:
+                    if isinstance(node, ast.FunctionDef):
+                        func_name = node.name
+                        if (module_name, func_name) in self.njit_funcs:
+                            self.njit_nodes[f"{module_name}.{func_name}"] = node
+
+    def push_module(self, module_name):
+        """
+        Push a module name onto the stack of module names.
+
+        Parameters
+        ----------
+        module_name : str
+            The name of the module to be pushed onto the stack.
+
+        Returns
+        -------
+        None
+        """
+        self.module_names.append(module_name)
+
+        return
+
+    def pop_module(self):
+        """
+        Pop the last module name from the stack of module names.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
+        if self.module_names:
+            self.module_names.pop()
+
+        return
+
+    def push_call_stack(self, module_name, func_name):
+        """
+        Push a function call onto the stack of function calls.
+
+        Parameters
+        ----------
+        module_name : str
+            The name of the module containing the function being called.
+
+        func_name : str
+            The name of the function being called.
+
+        Returns
+        -------
+        None
+        """
+        self.call_stack.append(f"{module_name}.{func_name}")
+
+        return
+
+    def pop_call_stack(self):
+        """
+        Pop the last function call from the stack of function calls.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
+        if self.call_stack:
+            self.call_stack.pop()
+
+        return
+
+    def goto_deeper_func(self, node):
+        """
+        Calls the visit method from class `ast.NodeVisitor` on
+        all children of the node.
+
+        Parameters
+        ----------
+        node : ast.AST
+            The AST node to be visited.
+
+        Returns
+        -------
+        None
+        """
+        self.generic_visit(node)
+
+        return
+
+    def goto_next_func(self, node):
+        """
+        Calls the visit method from class `ast.NodeVisitor` on
+        all children of the node.
+
+        Parameters
+        ----------
+        node : ast.AST
+            The AST node to be visited.
+
+        Returns
+        -------
+        None
+        """
+        self.generic_visit(node)
+
+        return
+
+    def push_out(self):
+        """
+        Push the current function call stack onto the output list if it is not
+        included in one of the existing call stacks in `self.out`.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
+        unique = True
+        for cs in self.out:
+            if " ".join(self.call_stack) in " ".join(cs):
+                unique = False
+                break
+
+        if unique:
+            self.out.append(self.call_stack.copy())
+
+        return
+
+    def visit_Call(self, node):
+        """
+        Visit an AST node of type `ast.Call`.
+
+        Parameters
+        ----------
+        node : ast.Call
+            The AST node representing a function call.
+
+        Returns
+        -------
+        None
+        """
+        callee_name = ast.unparse(node.func)
+
+        module_changed = False
+        if "." in callee_name:
+            new_module_name, new_func_name = callee_name.split(".")[:2]
+
+            if new_module_name in self.njit_modules:
+                self.push_module(new_module_name)
+                module_changed = True
+        else:
+            if self.module_names:
+                new_module_name = self.module_names[-1]
+                new_func_name = callee_name
+                callee_name = f"{new_module_name}.{new_func_name}"
+
+        if callee_name in self.njit_nodes.keys():
+            callee_node = self.njit_nodes[callee_name]
+            self.push_call_stack(new_module_name, new_func_name)
+            self.goto_deeper_func(callee_node)
+            if module_changed:
+                self.pop_module()
+            self.push_out()
+            self.pop_call_stack()
+
+        self.goto_next_func(node)
+
+        return
+
+
+def get_njit_call_stacks(pkg_dir, pkg_name):
+    """
+    Get the call stacks of all njit functions in STUMPY.
+    This function traverses the AST of each module in STUMPY and returns
+    a list of unique function call stacks.
+
+    Parameters
+    ----------
+    pkg_dir : str
+        The path to the package directory containing some .py files
+
+    pkg_name : str
+        The name of the package
+
+    Returns
+    -------
+    out : list
+        A list of unique function call stacks. Each element is a list of strings,
+        where each string represents a function call in the stack.
+    """
+    visitor = FunctionCallVisitor(pkg_dir, pkg_name)
+
+    for module_name in visitor.njit_modules:
+        visitor.push_module(module_name)
+
+        for node in visitor.ast_modules[module_name].body:
+            if isinstance(node, ast.FunctionDef):
+                func_name = node.name
+                if (module_name, func_name) in visitor.njit_funcs:
+                    visitor.push_call_stack(module_name, func_name)
+                    visitor.visit(node)
+                    visitor.pop_call_stack()
+
+        visitor.pop_module()
+
+    return visitor.out
+
+
+def check_fastmath_callstack(pkg_dir, pkg_name):
+    """
+    Check if all njit functions in a callstack have the same `fastmath` flag.
+    This function raises a ValueError if it finds any inconsistencies in the
+    `fastmath` flags across the call stacks of njit functions.
+
+    Parameters
+    ----------
+    pkg_dir : str
+        The path to the package directory containing some .py files
+
+    pkg_name : str
+        The name of the package
+
+    Returns
+    -------
+    None
+    """
+    out = get_njit_call_stacks(pkg_dir, pkg_name)
+
+    fastmath_is_inconsistent = []
+    for cs in out:
+        module_name, func_name = cs[0].split(".")
+        module = importlib.import_module(f".{module_name}", package="stumpy")
+        func = getattr(module, func_name)
+        flag = func.targetoptions["fastmath"]
+
+        for item in cs[1:]:
+            module_name, func_name = cs[0].split(".")
+            module = importlib.import_module(f".{module_name}", package="stumpy")
+            func = getattr(module, func_name)
+            func_flag = func.targetoptions["fastmath"]
+            if func_flag != flag:
+                fastmath_is_inconsistent.append(cs)
+                break
+
+    if len(fastmath_is_inconsistent) > 0:
+        msg = (
+            "Found at least one callstack that have inconsistent `fastmath` flags. "
+            + f"The functions are:\n {fastmath_is_inconsistent}\n"
+        )
+        raise ValueError(msg)
+
+    return
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", dest="pkg_dir")
@@ -98,3 +476,4 @@ if __name__ == "__main__":
         pkg_dir = pathlib.Path(args.pkg_dir)
         pkg_name = pkg_dir.name
         check_fastmath(str(pkg_dir), pkg_name)
+        check_fastmath_callstack(str(pkg_dir), pkg_name)
