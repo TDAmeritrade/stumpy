@@ -570,7 +570,8 @@ def check_window_size(m, max_size=None, n=None):
         The maximum window size allowed
 
     n : int, default None
-        The length of the time series in a self-join case
+        The length of the time series in the case of a self-join.
+        `n` should be set to `None` in the case of an `AB-join`.
 
     Returns
     -------
@@ -595,19 +596,37 @@ def check_window_size(m, max_size=None, n=None):
 
     if n is not None:
         # Raise warning if there is at least one subsequence with no
-        # non-trivial neighbour in a self-join case
+        # non-trivial neighbour in the case of a self-join.
+
+        # For any time series `T`, an "eligible nearest neighbor" subsequence for
+        # the central-most subsequence must be located outside the `excl_zone`.
+        # The central-most subsequence will ALWAYS have the smallest gap
+        # to its furthest "eligible nearest neighbor" among all other subsequences.
+        # Therefore, we only need to check whether the `excl_zone` eliminates all
+        # "nearest neighbors" for the central-most subsequence in `T`.
+        # In fact, we just need to verify whether the `excl_zone` eliminates
+        # the "nearest neighbor" that is furthest away (index-wise) from
+        # the central-most subsequence. If it does not, this implies that
+        # all other subsequences in `T` will have at least one or more
+        # eligible nearest neighbors outside their respective `excl_zone
 
         excl_zone = int(math.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
         l = n - m + 1
-        indices = np.arange(l)
+        max_gap = l // 2
+        # The index-wise gap between central-most subsequence
+        # and its furthest neighbor:
 
-        # Compute the maximum index-wise gap between each subsequence
-        # and its neighbours. For any subsequence:
-        # The leftmost neighbor is at index `0`
-        # The rightmost neighbor is at index `l-1`
-        max_gaps = np.maximum(indices - 0, (l - 1) - indices)
-        if np.any(max_gaps <= excl_zone):
+        # If `l` is odd (`l == 2k+1`):
+        # The central subsequence is at index `k`, with furthest neighbors at `0`
+        # and `2k`, both `k == l // 2` indices away.
+
+        # If `l` is even (`l == 2k`):
+        # The central subsequences are at `k-1` and `k`. The furthest neighbor is
+        # at `2k-1` for `k-1`, and `0` for `k`. In both cases, the subsequence
+        # and its furthest neighbor are `k == l // 2` indices away.
+
+        if max_gap <= excl_zone:
             msg = (
                 f"The window size, 'm = {m}', may be too large and could lead to "
                 + "meaningless results. Consider reducing 'm' where necessary"
