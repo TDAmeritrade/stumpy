@@ -198,7 +198,7 @@ def test_check_window_size_excl_zone():
     T = np.random.rand(100)
     m = 70
 
-    # For m==70, the `excl_zone` become ceil(m / 4) = 18. For len(T)==100,
+    # For `m==70`, the `excl_zone` is ceil(m / 4) = 18. For `len(T)==100`,
     # the subsequence that starts at index 15 has no non-trivial neighbor.
     # The expectation is that `core.check_window_size` raises warning.
     with pytest.warns(UserWarning):
