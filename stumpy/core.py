@@ -615,14 +615,13 @@ def check_window_size(m, max_size=None, n=None):
 
         # If `l` is odd (`l == 2k+1`):
         # The central subsequence is at index `k`, with furthest neighbors at `0`
-        # and `2k`, both `k == l // 2` indices away.
+        # and `2k`, both `k == l // 2` indices away from the central-most subsequence.
 
         # If `l` is even (`l == 2k`):
         # The central subsequences are at `k-1` and `k`. The furthest neighbor is
         # at `2k-1` for `k-1`, and `0` for `k`. In both cases, the subsequence
         # and its furthest neighbor are `k == l // 2` indices away.
         max_gap = l // 2
-
         if max_gap <= excl_zone:
             msg = (
                 f"The window size, 'm = {m}', may be too large and could lead to "
