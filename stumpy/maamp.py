@@ -140,7 +140,7 @@ def maamp_subspace(
         returned.
     """
     T = core._preprocess(T)
-    core.check_window_size(m, max_size=T.shape[-1])
+    core.check_window_size(m, max_size=T.shape[-1], n=T.shape[0])
 
     subseqs, _ = core.preprocess_non_normalized(T[:, subseq_idx : subseq_idx + m], m)
     neighbors, _ = core.preprocess_non_normalized(T[:, nn_idx : nn_idx + m], m)
@@ -269,7 +269,7 @@ def maamp_mdl(
         A list of numpy.ndarrays that contains the `k`th-dimensional subspaces
     """
     T = core._preprocess(T)
-    core.check_window_size(m, max_size=T.shape[-1])
+    core.check_window_size(m, max_size=T.shape[-1], n=T.shape[-1])
 
     if discretize_func is None:
         T_isfinite = np.isfinite(T)
@@ -441,7 +441,7 @@ def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False, 
         err = f"T is {T.ndim}-dimensional and must be at least 1-dimensional"
         raise ValueError(f"{err}")
 
-    core.check_window_size(m, max_size=T.shape[1])
+    core.check_window_size(m, max_size=T.shape[1], n=T.shape[1])
 
     if include is not None:  # pragma: no cover
         include = core._preprocess_include(include)
@@ -933,7 +933,7 @@ def maamp(T, m, include=None, discords=False, p=2.0):
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
         raise ValueError(f"{err}")
 
-    core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]))
+    core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]), n=T_A.shape[1])
 
     if include is not None:
         include = core._preprocess_include(include)
