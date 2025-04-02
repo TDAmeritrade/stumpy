@@ -600,14 +600,14 @@ def check_window_size(m, max_size=None, n=None):
 
         # For any time series `T`, an "eligible nearest neighbor" subsequence for
         # the central-most subsequence must be located outside the `excl_zone`,
-        # and the central-most subsequence will ALWAYS have the smallest gap
-        # to its furthest neighbour. Therefore, we only need to check whether
-        # the `excl_zone` eliminates all "neighbors" for the central-most subsequence
-        # in `T`. In fact, we just need to verify whether the `excl_zone` eliminates
-        # the "neighbor" that is furthest away (index-wise) from the central-most
-        # subsequence. If it does not, this implies that all subsequences in `T`
-        # will have at least one or more "eligible nearest neighbors" outside
-        # their respective `excl_zone`
+        # and the central-most subsequence will ALWAYS have the smallest index-wise
+        # distance to its furthest neighbour amongs all other subsequences. Therefore,
+        # we only need to check whether the `excl_zone` eliminates all "neighbors" for
+        # the central-most subsequence in `T`. In fact, we just need to verify whether
+        # the `excl_zone` eliminates the "neighbor" that is furthest away (index-wise)
+        # from the central-most subsequence. If it does not, this implies that all
+        # subsequences in `T` will have at least one "eligible nearest neighbors"
+        # outside their respective `excl_zone`
 
         excl_zone = int(math.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
