@@ -595,34 +595,45 @@ def check_window_size(m, max_size=None, n=None):
         raise ValueError(f"The window size must be less than or equal to {max_size}")
 
     if n is not None:
-        # Raise warning if there is at least one subsequence with no
-        # non-trivial neighbour in the case of a self-join.
+        # Raise warning if there is at least one subsequence with no eligible
+        # (non-trivial) neighbor in the case of a self-join.
 
         # For any time series `T`, an "eligible nearest neighbor" subsequence for
         # the central-most subsequence must be located outside the `excl_zone`,
-        # and the central-most subsequence will ALWAYS have the smallest index-wise
-        # distance to its furthest neighbour amongs all other subsequences. Therefore,
-        # we only need to check whether the `excl_zone` eliminates all "neighbors" for
-        # the central-most subsequence in `T`. In fact, we just need to verify whether
-        # the `excl_zone` eliminates the "neighbor" that is furthest away (index-wise)
+        # and the central-most subsequence will ALWAYS have the smallest relative 
+        # (index-wise) distance to its farthest neighbor amongst all other subsequences. 
+        # Therefore, we only need to check whether the `excl_zone` eliminates all "neighbors"
+        # for the central-most subsequence in `T`. In fact, we just need to verify whether
+        # the `excl_zone` eliminates the "neighbor" that is farthest away (index-wise)
         # from the central-most subsequence. If it does not, this implies that all
         # subsequences in `T` will have at least one "eligible nearest neighbors"
         # outside their respective `excl_zone`
 
         excl_zone = int(math.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
-        l = n - m + 1
+        l = n - m + 1 
+        # The start index of subsequences are: 0, 1, ..., l-1
 
-        # If `l` is odd (`l == 2k+1`):
-        # The central subsequence is at index `k`, with furthest neighbors at `0`
-        # and `2k`, both `k == l // 2` indices away from the central-most subsequence.
+        # If `l` is odd (hence, `l == 2c+1`):
+        # The central subsequence is located at index `c == l // 2`, 
+        # with two farthest neighbors, one located at index `0`(to the left of `c`)
+        # and the other located at index `l - 1 == 2c` (to the right of `c`). 
+        # Both indices `0` and `2c` are exactly `c == l // 2` index positions away
+        # from the central subsequence located at index `c`.
 
-        # If `l` is even (`l == 2k`):
-        # The central subsequences are at `k-1` and `k`. The furthest neighbor is
-        # at `2k-1` for `k-1`, and `0` for `k`. In both cases, the subsequence
-        # and its furthest neighbor are `k == l // 2` indices away.
-        max_gap = l // 2
-        if max_gap <= excl_zone:
+        # If `l` is even (hence, `l == 2c`):
+        # There are two central-most subsequences located at index locations 
+        # `c` and `c-1`. For subsequence at `c`, its farthest neighbor will be
+        # located at index `0` (to the left of `c`) and, for `c-1`, its farthest
+        # neighbor is located at index `l - 1 == 2c - 1` (to the right of `c-1`).
+        # In both cases, each central subsequence and its farthest neighbor are 
+        # `c == l // 2` indices away.
+
+        # Therefore, regardless if `l` is even or odd, for the central
+        # subsequence for any time series, the index location of its 
+        # farthest neighbor will always be `l // 2` index positions away.
+        diff_to_farthest_idx = l // 2
+        if diff_to_farthest_idx <= excl_zone:
             msg = (
                 f"The window size, 'm = {m}', may be too large and could lead to "
                 + "meaningless results. Consider reducing 'm' where necessary"
