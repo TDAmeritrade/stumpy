@@ -558,8 +558,8 @@ def check_window_size(m, max_size=None, n=None):
     """
     Check the window size and ensure that it is greater than or equal to 3 and, if
     `max_size` is provided, ensure that the window size is less than or equal to the
-    `max_size`. Furthermore, if `excl_zone` is provided, then it will also check if the
-    window size is too large and could lead to meaningless results.
+    `max_size`. Furthermore, if `n` is provided, then it checks if there is
+    at least one subsequence with no non-trivial neighbour in a self-join.
 
     Parameters
     ----------
