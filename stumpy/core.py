@@ -614,14 +614,14 @@ def check_window_size(m, max_size=None, n=None):
         l = n - m + 1
         # The start index of subsequences are: 0, 1, ..., l-1
 
-        # If `l` is odd (hence, `l == 2c+1`):
+        # If `l` is odd (`l` can be expressed as `l == 2c+1`):
         # The central subsequence is located at index `c == l // 2`,
         # with two farthest neighbors, one located at index `0`(to the left of `c`)
         # and the other located at index `l - 1 == 2c` (to the right of `c`).
         # Both indices `0` and `2c` are exactly `c == l // 2` index positions away
         # from the central subsequence located at index `c`.
 
-        # If `l` is even (hence, `l == 2c`):
+        # If `l` is even (`l` can be expressed as `l == 2c`):
         # There are two central-most subsequences located at index locations
         # `c` and `c-1`. For subsequence at `c`, its farthest neighbor will be
         # located at index `0` (to the left of `c`) and, for `c-1`, its farthest
