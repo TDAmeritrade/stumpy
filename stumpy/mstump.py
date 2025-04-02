@@ -217,7 +217,7 @@ def subspace(
     array([0, 1])
     """
     T = core._preprocess(T)
-    core.check_window_size(m, max_size=T.shape[-1])
+    core.check_window_size(m, max_size=T.shape[-1], n=T.shape[-1])
     T_subseq_isconstant = core.process_isconstant(T, m, T_subseq_isconstant)
 
     if discretize_func is None:
@@ -409,7 +409,7 @@ def mdl(
     (array([ 80.      , 111.509775]), [array([1]), array([0, 1])])
     """
     T = core._preprocess(T)
-    core.check_window_size(m, max_size=T.shape[-1])
+    core.check_window_size(m, max_size=T.shape[-1], n=T.shape[-1])
     T_subseq_isconstant = core.process_isconstant(T, m, T_subseq_isconstant)
 
     if discretize_func is None:
@@ -1228,7 +1228,9 @@ def mstump(
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
         raise ValueError(f"{err}")
 
-    core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]))
+    # mstump currently supports self-join. Therefore, the argument `n` should be
+    # passed to the function `core.check_window_size`.
+    core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]), n=T_A.shape[1])
 
     if include is not None:
         include = core._preprocess_include(include)
