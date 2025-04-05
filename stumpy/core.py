@@ -1412,7 +1412,7 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0, query_idx=None):
         raise ValueError(f"`Q` is {Q.ndim}-dimensional and must be 1-dimensional. ")
     Q_isfinite = np.isfinite(Q)
 
-    check_window_size(m, max_size=Q.shape[-1])
+    check_window_size(m, max_size=Q.shape[0])
 
     if query_idx is not None:  # pragma: no cover
         query_idx = int(query_idx)
@@ -1759,7 +1759,7 @@ def mass(
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
     Q_isfinite = np.isfinite(Q)
 
-    check_window_size(m, max_size=Q.shape[-1])
+    check_window_size(m, max_size=Q.shape[0])
 
     if query_idx is not None:
         query_idx = int(query_idx)
@@ -1984,7 +1984,7 @@ def mass_distance_matrix(
         T_subseq_isconstant=T_subseq_isconstant,
     )
 
-    check_window_size(m, max_size=min(Q.shape[-1], T.shape[-1]))
+    check_window_size(m, max_size=min(Q.shape[0], T.shape[0]))
 
     return _mass_distance_matrix(
         Q,

@@ -140,7 +140,7 @@ def maamp_subspace(
         returned.
     """
     T = core._preprocess(T)
-    core.check_window_size(m, max_size=T.shape[-1], n=T.shape[-1])
+    core.check_window_size(m, max_size=T.shape[1], n=T.shape[1])
 
     subseqs, _ = core.preprocess_non_normalized(T[:, subseq_idx : subseq_idx + m], m)
     neighbors, _ = core.preprocess_non_normalized(T[:, nn_idx : nn_idx + m], m)
@@ -269,7 +269,7 @@ def maamp_mdl(
         A list of numpy.ndarrays that contains the `k`th-dimensional subspaces
     """
     T = core._preprocess(T)
-    core.check_window_size(m, max_size=T.shape[-1], n=T.shape[-1])
+    core.check_window_size(m, max_size=T.shape[1], n=T.shape[1])
 
     if discretize_func is None:
         T_isfinite = np.isfinite(T)

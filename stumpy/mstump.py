@@ -217,7 +217,7 @@ def subspace(
     array([0, 1])
     """
     T = core._preprocess(T)
-    core.check_window_size(m, max_size=T.shape[-1], n=T.shape[-1])
+    core.check_window_size(m, max_size=T.shape[1], n=T.shape[1])
     T_subseq_isconstant = core.process_isconstant(T, m, T_subseq_isconstant)
 
     if discretize_func is None:
@@ -409,7 +409,7 @@ def mdl(
     (array([ 80.      , 111.509775]), [array([1]), array([0, 1])])
     """
     T = core._preprocess(T)
-    core.check_window_size(m, max_size=T.shape[-1], n=T.shape[-1])
+    core.check_window_size(m, max_size=T.shape[1], n=T.shape[1])
     T_subseq_isconstant = core.process_isconstant(T, m, T_subseq_isconstant)
 
     if discretize_func is None:

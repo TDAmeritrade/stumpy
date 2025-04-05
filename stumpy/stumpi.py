@@ -179,7 +179,7 @@ class stumpi:
             array.
         """
         self._T = core._preprocess(T)
-        core.check_window_size(m, max_size=self._T.shape[-1])
+        core.check_window_size(m, max_size=self._T.shape[0])
         self._m = m
         self._k = k
 
