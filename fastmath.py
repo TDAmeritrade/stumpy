@@ -108,7 +108,7 @@ class FunctionCallVisitor(ast.NodeVisitor):
         A list of module names to track the modules as the visitor traverses their AST
 
     call_stack : list
-        A list of njit functions, representing a chain of function calls, 
+        A list of njit functions, representing a chain of function calls,
         where each element is a string of the form "module_name.func_name".
 
     out : list
@@ -148,10 +148,12 @@ class FunctionCallVisitor(ast.NodeVisitor):
         Pop the last function call from the stack of function calls, `call_stack`
 
     goto_deeper_func(node)
-        Calls the visit method from class `ast.NodeVisitor` on all children of the `node`.
+        Calls the visit method from class `ast.NodeVisitor` on all children of
+        the `node`.
 
     goto_next_func(node)
-        Calls the visit method from class `ast.NodeVisitor` on all children of the `node`.
+        Calls the visit method from class `ast.NodeVisitor` on all children of
+        the `node`.
 
     push_out()
         Push the current function call stack, `call_stack`, onto the output list, `out`,
