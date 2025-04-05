@@ -632,9 +632,10 @@ def check_window_size(m, max_size=None, n=None):
         # position c=2, its farthest neighbor will be located at index 5 (to the
         # right of c=2) and, for the central-most subsequence at index position
         # c=3, its farthest neighbor will be located at index 0 (to the left of
-        # c=3). In both cases, each central subsequence and its farthest neighbor
-        # are 3 indices away. In general, it can be shown that the (index-wise)
-        # distance from the central subsequence to its farthest neighbor is `l // 2`.
+        # c=3). In both cases, the relative (index-wise) distance is 3,
+        # which is simply `6 // 2`. In general, it can be shown that the
+        # (index-wise) distance from the central-most subsequence to its
+        # farthest neighbor is `l // 2`.
 
         # Therefore, regardless if `l` is even or odd, for the central
         # subsequence for any time series, the index location of its
