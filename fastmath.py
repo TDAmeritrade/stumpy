@@ -105,7 +105,7 @@ class FunctionCallVisitor(ast.NodeVisitor):
     Attributes
     ----------
     module_names : list
-        A list of module names to track the modules as the visitor traverses their AST
+        A list of module names to track the modules as the visitor traverses their AST.
 
     call_stack : list
         A list of njit functions, representing a chain of function calls,
@@ -289,7 +289,7 @@ class FunctionCallVisitor(ast.NodeVisitor):
     def goto_deeper_func(self, node):
         """
         Calls the visit method from class `ast.NodeVisitor` on
-        all children of the node.
+        all children of the `node`.
 
         Parameters
         ----------
@@ -324,8 +324,9 @@ class FunctionCallVisitor(ast.NodeVisitor):
 
     def push_out(self):
         """
-        Push the current function call stack onto the output list if it is not
-        included in one of the existing call stacks in `self.out`.
+        Push the current function call stack onto the output list unless it
+        is already included in one of the so-far-collected call stacks.
+
 
         Parameters
         ----------
@@ -348,7 +349,7 @@ class FunctionCallVisitor(ast.NodeVisitor):
 
     def visit_Call(self, node):
         """
-        Visit an AST node of type `ast.Call`.
+        Called when visiting an AST node of type `ast.Call`.
 
         Parameters
         ----------
@@ -378,10 +379,10 @@ class FunctionCallVisitor(ast.NodeVisitor):
             callee_node = self.njit_nodes[callee_name]
             self.push_call_stack(new_module_name, new_func_name)
             self.goto_deeper_func(callee_node)
-            if module_changed:
-                self.pop_module()
             self.push_out()
             self.pop_call_stack()
+            if module_changed:
+                self.pop_module()
 
         self.goto_next_func(node)
 
@@ -390,9 +391,9 @@ class FunctionCallVisitor(ast.NodeVisitor):
 
 def get_njit_call_stacks(pkg_dir, pkg_name):
     """
-    Get the call stacks of all njit functions in STUMPY.
-    This function traverses the AST of each module in STUMPY and returns
-    a list of unique function call stacks.
+    Get the call stacks of all njit functions in `pkg_dir`.
+    This function traverses the AST of each module in `pkg_dir`
+    and returns a list of unique function call stacks.
 
     Parameters
     ----------
@@ -405,8 +406,8 @@ def get_njit_call_stacks(pkg_dir, pkg_name):
     Returns
     -------
     out : list
-        A list of unique function call stacks. Each element is a list of strings,
-        where each string represents a function call in the stack.
+        A list of unique function call stacks. Each item is of type list,
+        representing a chain of function calls.
     """
     visitor = FunctionCallVisitor(pkg_dir, pkg_name)
 
@@ -430,7 +431,7 @@ def check_call_stack_fastmath(pkg_dir, pkg_name):
     """
     Check if all njit functions in a call stack have the same `fastmath` flag.
     This function raises a ValueError if it finds any inconsistencies in the
-    `fastmath` flags in any call stack of njit functions.
+    `fastmath` flags in at lease one call stack of njit functions.
 
     Parameters
     ----------
@@ -444,10 +445,10 @@ def check_call_stack_fastmath(pkg_dir, pkg_name):
     -------
     None
     """
-    out = get_njit_call_stacks(pkg_dir, pkg_name)
-
     inconsitent_call_stacks = []
-    for cs in out:
+
+    njit_call_stacks = get_njit_call_stacks(pkg_dir, pkg_name)
+    for cs in njit_call_stacks:
         # Set the fastmath flag of the first function in the call stack
         # as the reference flag
         module_name, func_name = cs[0].split(".")
@@ -459,14 +460,15 @@ def check_call_stack_fastmath(pkg_dir, pkg_name):
             module_name, func_name = cs[0].split(".")
             module = importlib.import_module(f".{module_name}", package="stumpy")
             func = getattr(module, func_name)
-            if func.targetoptions["fastmath"] != flag_ref:
+            flag = func.targetoptions["fastmath"]
+            if flag != flag_ref:
                 inconsitent_call_stacks.append(cs)
                 break
 
     if len(inconsitent_call_stacks) > 0:
         msg = (
             "Found at least one callstack that have inconsistent `fastmath` flags. "
-            + f"The functions are:\n {inconsitent_call_stacks}\n"
+            + f"Those call stacks are:\n {inconsitent_call_stacks}\n"
         )
         raise ValueError(msg)
 
