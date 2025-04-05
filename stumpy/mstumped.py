@@ -505,8 +505,8 @@ def mstumped(
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
         raise ValueError(f"{err}")
 
-    # mstump currently supports self-join. Therefore, the argument `n` should be
-    # passed to the function `core.check_window_size`.
+    # mstump currently only supports self-join. Therefore, the argument `n=T_A.shape[1]`
+    # must be passed to the function `core.check_window_size`.
     core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]), n=T_A.shape[1])
 
     if include is not None:
