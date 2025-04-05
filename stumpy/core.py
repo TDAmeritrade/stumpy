@@ -607,7 +607,7 @@ def check_window_size(m, max_size=None, n=None):
         # verify whether the `excl_zone` eliminates the "neighbor" that is farthest
         # away (index-wise) from the central-most subsequence. If it does not, this
         # implies that all subsequences in `T` will have at least one "eligible nearest
-        # neighbors" outside their respective `excl_zone`
+        # neighbor" that is located outside of their respective excl_zone.
 
         excl_zone = int(math.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
