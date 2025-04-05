@@ -91,8 +91,8 @@ def check_fastmath(pkg_dir, pkg_name):
 
 class FunctionCallVisitor(ast.NodeVisitor):
     """
-    A class to traverse the AST of modules of a package to collect the call stacks
-    of njit functions.
+    A class to traverse the AST of the modules of a package to collect
+    the call stacks of njit functions.
 
     Parameters
     ----------
@@ -108,51 +108,54 @@ class FunctionCallVisitor(ast.NodeVisitor):
         A list of module names to track the modules as the visitor traverses their AST
 
     call_stack : list
-        A list of function calls made in the current module
+        A list of njit functions, representing a chain of function calls, 
+        where each element is a string of the form "module_name.func_name".
 
     out : list
-        A list of unique function call stacks.
+        A list of unique function `call_stack`s.
 
     njit_funcs : list
-        A list of njit functions in STUMPY. Each element is a tuple of the form
-        (module_name, func_name).
+        A list of all njit functions in `pkg_dir`'s modules. Each element is a tuple
+        of the form `(module_name, func_name)`.
 
     njit_modules : set
-        A set of module names, where each contains at least one njit function.
+        A set that contains the names of all modules, each of which contains at least
+        one njit function.
 
     njit_nodes : dict
         A dictionary mapping njit function names to their corresponding AST nodes.
-        A key is of the form "module_name.func_name", and its corresponding value
-        is the AST node- with type ast.FunctionDef- of that njit function
+        A key is a string, and it is of the form "module_name.func_name", and its
+        corresponding value is the AST node- with type ast.FunctionDef- of that
+        function.
 
     ast_modules : dict
         A dictionary mapping module names to their corresponding AST objects. A key
-        is of the form "module_name", and its corresponding value is the content of
-        the module as an AST object.
+        is the name of a module, and its corresponding value is the content of that
+        module as an AST object.
 
     Methods
     -------
     push_module(module_name)
-        Push a module name onto the stack of module names.
+        Push the name of a module onto the stack `module_names`.
 
     pop_module()
-        Pop the last module name from the stack of module names.
+        Pop the last module name from the stack `module_names`.
 
     push_call_stack(module_name, func_name)
-        Push a function call onto the stack of function calls.
+        Push a function call onto the stack of function calls, `call_stack`.
 
     pop_call_stack()
-        Pop the last function call from the stack of function calls.
+        Pop the last function call from the stack of function calls, `call_stack`
 
     goto_deeper_func(node)
-        Calls the visit method from class `ast.NodeVisitor` on all children of the node.
+        Calls the visit method from class `ast.NodeVisitor` on all children of the `node`.
 
     goto_next_func(node)
-        Calls the visit method from class `ast.NodeVisitor` on all children of the node.
+        Calls the visit method from class `ast.NodeVisitor` on all children of the `node`.
 
     push_out()
-        Push the current function call stack onto the output list if it is not
-        included in one of the so-far-collected call stacks.
+        Push the current function call stack, `call_stack`, onto the output list, `out`,
+        unless it is already included in one of the so-far-collected call stacks.
 
     visit_Call(node)
         Visit an AST node of type `ast.Call`. This method is called when the visitor
