@@ -646,10 +646,15 @@ class scraamp:
                 "For multidimensional STUMP use `stumpy.mstump` or `stumpy.mstumped`"
             )
 
-        core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
         self._ignore_trivial = core.check_ignore_trivial(
             self._T_A, self._T_B, self._ignore_trivial
         )
+        if self._ignore_trivial:  # self-join
+            core.check_window_size(
+                m, max_size=min(T_A.shape[0], T_B.shape[0]), n=T_A.shape[0]
+            )
+        else:  # AB-join
+            core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
 
         self._n_A = self._T_A.shape[0]
         self._n_B = self._T_B.shape[0]

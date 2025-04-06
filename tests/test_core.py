@@ -192,6 +192,21 @@ def test_check_max_window_size():
             core.check_window_size(m, max_size=3)
 
 
+def test_check_window_size_excl_zone():
+    # To ensure warning is raised if there is at least one subsequence
+    # that has no non-trivial neighbor
+    T = np.random.rand(10)
+    m = 7
+
+    # For `len(T) == 10` and `m == 7`, the `excl_zone` is ceil(m / 4) = 2.
+    # In this case, there are `10 - 7 + 1 = 4` subsequences of length 7,
+    # starting at indices 0, 1, 2, and 3. For a subsequence that starts at
+    # index 1, there are no non-trivial neighbors. So, a warning should be
+    # raised.
+    with pytest.warns(UserWarning):
+        core.check_window_size(m, max_size=len(T), n=len(T))
+
+
 @pytest.mark.parametrize("Q, T", test_data)
 def test_njit_sliding_dot_product(Q, T):
     ref_mp = naive_rolling_window_dot_product(Q, T)

@@ -208,13 +208,14 @@ def stamp(
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
 
-    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
-
     subseq_T_A = core.rolling_window(T_A, m)
     excl_zone = int(np.ceil(m / 2))
 
     # Add exclusionary zone
     if ignore_trivial:
+        core.check_window_size(
+            m, max_size=min(T_A.shape[0], T_B.shape[0]), n=T_A.shape[0]
+        )
         out = [
             _mass_PI(
                 subseq,
@@ -229,6 +230,7 @@ def stamp(
             for i, subseq in enumerate(subseq_T_A)
         ]
     else:
+        core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
         out = [
             _mass_PI(
                 subseq,

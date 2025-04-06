@@ -554,11 +554,12 @@ def get_max_window_size(n):
     return max_m
 
 
-def check_window_size(m, max_size=None):
+def check_window_size(m, max_size=None, n=None):
     """
     Check the window size and ensure that it is greater than or equal to 3 and, if
-    `max_size` is provided, ensure that the window size is less than or equal to the
-    `max_size`
+    ``max_size`` is provided, ensure that the window size is less than or equal to
+    the ``max_size``. Furthermore, if ``n`` is provided, then a self-join is assumed
+    and it checks whether all subsequences have at least one non-trivial neighbor.
 
     Parameters
     ----------
@@ -567,6 +568,10 @@ def check_window_size(m, max_size=None):
 
     max_size : int, default None
         The maximum window size allowed
+
+    n : int, default None
+        The length of the time series in the case of a self-join.
+        ``n`` should not be supplied (or set to ``None``) in the case of an AB-join.
 
     Returns
     -------
@@ -588,6 +593,60 @@ def check_window_size(m, max_size=None):
 
     if max_size is not None and m > max_size:
         raise ValueError(f"The window size must be less than or equal to {max_size}")
+
+    if n is not None:
+        # Raise warning if there is at least one subsequence with no eligible
+        # (non-trivial) neighbor in the case of a self-join.
+
+        # For any time series `T`, an "eligible nearest neighbor" subsequence for
+        # the central-most subsequence must be located outside the `excl_zone`,
+        # and the central-most subsequence will ALWAYS have the smallest relative
+        # (index-wise) distance to its farthest neighbor amongst all other subsequences.
+        # Therefore, we only need to check whether the `excl_zone` eliminates all
+        # "neighbors" for the central-most subsequence in `T`. In fact, we just need to
+        # verify whether the `excl_zone` eliminates the "neighbor" that is farthest
+        # away (index-wise) from the central-most subsequence. If it does not, this
+        # implies that all subsequences in `T` will have at least one "eligible nearest
+        # neighbor" that is located outside of their respective excl_zone.
+
+        excl_zone = int(math.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
+
+        l = n - m + 1
+        # The start index of subsequences are: 0, 1, ..., l-1
+
+        # If `l` is odd
+        # Suppose `l == 5`. So, the start index of the subsequences
+        # are: 0, 1, 2, 3, 4
+        # The central subsequence is located at index position c=2, with two
+        # farthest neighbors, one located at index 0, and the other is located
+        # at index 4. In both cases, the relative (index-wise) distance is 2,
+        # which is simply `5 // 2`. In general, it can be shown that the
+        # (index-wise) distance from the central subsequence to its farthest
+        # neighbor is `l // 2`.
+
+        # If `l` is even
+        # Suppose `l == 6`. So, the start index of the subsequences
+        # are: 0, 1, 2, 3, 4, 5
+        # There are two central-most subsequences, located at the index
+        # positions c=2 and c=3. For the central-most subsequence at index
+        # position c=2, its farthest neighbor will be located at index 5 (to the
+        # right of c=2) and, for the central-most subsequence at index position
+        # c=3, its farthest neighbor will be located at index 0 (to the left of
+        # c=3). In both cases, the relative (index-wise) distance is 3,
+        # which is simply `6 // 2`. In general, it can be shown that the
+        # (index-wise) distance from the central-most subsequence to its
+        # farthest neighbor is `l // 2`.
+
+        # Therefore, regardless if `l` is even or odd, for the central
+        # subsequence for any time series, the index location of its
+        # farthest neighbor will always be `l // 2` index positions away.
+        diff_to_farthest_idx = l // 2
+        if diff_to_farthest_idx <= excl_zone:
+            msg = (
+                f"The window size, 'm = {m}', may be too large and could lead to "
+                + "meaningless results. Consider reducing 'm' where necessary"
+            )
+            warnings.warn(msg)
 
 
 @njit(fastmath=config.STUMPY_FASTMATH_TRUE)
@@ -1354,7 +1413,7 @@ def mass_absolute(Q, T, T_subseq_isfinite=None, p=2.0, query_idx=None):
         raise ValueError(f"`Q` is {Q.ndim}-dimensional and must be 1-dimensional. ")
     Q_isfinite = np.isfinite(Q)
 
-    check_window_size(m, max_size=Q.shape[-1])
+    check_window_size(m, max_size=Q.shape[0])
 
     if query_idx is not None:  # pragma: no cover
         query_idx = int(query_idx)
@@ -1701,7 +1760,7 @@ def mass(
         raise ValueError(f"Q is {Q.ndim}-dimensional and must be 1-dimensional. ")
     Q_isfinite = np.isfinite(Q)
 
-    check_window_size(m, max_size=Q.shape[-1])
+    check_window_size(m, max_size=Q.shape[0])
 
     if query_idx is not None:
         query_idx = int(query_idx)
@@ -1926,7 +1985,7 @@ def mass_distance_matrix(
         T_subseq_isconstant=T_subseq_isconstant,
     )
 
-    check_window_size(m, max_size=min(Q.shape[-1], T.shape[-1]))
+    check_window_size(m, max_size=min(Q.shape[0], T.shape[0]))
 
     return _mass_distance_matrix(
         Q,

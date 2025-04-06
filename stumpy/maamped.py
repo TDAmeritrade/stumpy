@@ -389,7 +389,7 @@ def maamped(client, T, m, include=None, discords=False, p=2.0):
         err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
         raise ValueError(f"{err}")
 
-    core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]))
+    core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]), n=T_A.shape[1])
 
     if include is not None:
         include = core._preprocess_include(include)

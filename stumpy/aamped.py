@@ -386,17 +386,17 @@ def aamped(client, T_A, m, T_B=None, ignore_trivial=True, p=2.0, k=1):
     if T_B.ndim != 1:  # pragma: no cover
         raise ValueError(f"T_B is {T_B.ndim}-dimensional and must be 1-dimensional. ")
 
-    core.check_window_size(m, max_size=min(T_A.shape[0], T_B.shape[0]))
-    ignore_trivial = core.check_ignore_trivial(T_A, T_B, ignore_trivial)
-
     n_A = T_A.shape[0]
     n_B = T_B.shape[0]
 
+    ignore_trivial = core.check_ignore_trivial(T_A, T_B, ignore_trivial)
     excl_zone = int(np.ceil(m / config.STUMPY_EXCL_ZONE_DENOM))
 
     if ignore_trivial:
+        core.check_window_size(m, max_size=min(n_A, n_B), n=n_A)
         diags = np.arange(excl_zone + 1, n_A - m + 1, dtype=np.int64)
     else:
+        core.check_window_size(m, max_size=min(n_A, n_B))
         diags = np.arange(-(n_A - m + 1) + 1, n_B - m + 1, dtype=np.int64)
 
     _aamped = core._client_to_func(client)

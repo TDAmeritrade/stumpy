@@ -111,7 +111,7 @@ class aampi:
             computed internally using `stumpy.aamp`.
         """
         self._T = core._preprocess(T)
-        core.check_window_size(m, max_size=self._T.shape[-1])
+        core.check_window_size(m, max_size=self._T.shape[0])
         self._m = m
         self._n = self._T.shape[0]
         self._excl_zone = int(np.ceil(self._m / config.STUMPY_EXCL_ZONE_DENOM))
