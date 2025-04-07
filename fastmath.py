@@ -445,7 +445,8 @@ def check_call_stack_fastmath(pkg_dir, pkg_name):
     -------
     None
     """
-    inconsitent_call_stacks = []
+    # List of call stacks with inconsistent fastmath flags
+    inconsistent_call_stacks = []
 
     njit_call_stacks = get_njit_call_stacks(pkg_dir, pkg_name)
     for cs in njit_call_stacks:
@@ -462,13 +463,13 @@ def check_call_stack_fastmath(pkg_dir, pkg_name):
             func = getattr(module, func_name)
             flag = func.targetoptions["fastmath"]
             if flag != flag_ref:
-                inconsitent_call_stacks.append(cs)
+                inconsistent_call_stacks.append(cs)
                 break
 
-    if len(inconsitent_call_stacks) > 0:
+    if len(inconsistent_call_stacks) > 0:
         msg = (
-            "Found at least one callstack that have inconsistent `fastmath` flags. "
-            + f"Those call stacks are:\n {inconsitent_call_stacks}\n"
+            "Found at least one call stack that has inconsistent `fastmath` flags. "
+            + f"Those call stacks are:\n {inconsistent_call_stacks}\n"
         )
         raise ValueError(msg)
 
