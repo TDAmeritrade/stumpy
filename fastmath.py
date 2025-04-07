@@ -105,14 +105,14 @@ class FunctionCallVisitor(ast.NodeVisitor):
     Attributes
     ----------
     module_names : list
-        A list of module names to track the modules as the visitor traverses their AST.
+        A list of module names to track the modules as the visitor traverses them.
 
     call_stack : list
         A list of njit functions, representing a chain of function calls,
         where each element is a string of the form "module_name.func_name".
 
     out : list
-        A list of unique function `call_stack`s.
+        A list of unique `call_stack`s.
 
     njit_funcs : list
         A list of all njit functions in `pkg_dir`'s modules. Each element is a tuple
@@ -160,9 +160,9 @@ class FunctionCallVisitor(ast.NodeVisitor):
         unless it is already included in one of the so-far-collected call stacks.
 
     visit_Call(node)
-        Visit an AST node of type `ast.Call`. This method is called when the visitor
-        encounters a function call in the AST. It checks if the called function is
-        a njit function and, if so, traverses its AST to collect its call stack.
+        This method is called when the visitor encounters a function call in the AST. It
+        checks if the called function is a njit function and, if so, traverses its AST
+        to collect its call stack.
     """
 
     def __init__(self, pkg_dir, pkg_name):
@@ -256,10 +256,10 @@ class FunctionCallVisitor(ast.NodeVisitor):
         Parameters
         ----------
         module_name : str
-            The name of the module containing the function being called.
+            A module's name
 
         func_name : str
-            The name of the function being called.
+            A function's name
 
         Returns
         -------
@@ -391,9 +391,7 @@ class FunctionCallVisitor(ast.NodeVisitor):
 
 def get_njit_call_stacks(pkg_dir, pkg_name):
     """
-    Get the call stacks of all njit functions in `pkg_dir`.
-    This function traverses the AST of each module in `pkg_dir`
-    and returns a list of unique function call stacks.
+    Get the call stacks of all njit functions in `pkg_dir`
 
     Parameters
     ----------
