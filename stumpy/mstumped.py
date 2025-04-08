@@ -502,7 +502,7 @@ def mstumped(
     )
 
     if T_A.ndim <= 1:  # pragma: no cover
-        err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
+        err = f"T is {T_A.ndim}-dimensional and must be at least 2-dimensional"
         raise ValueError(f"{err}")
 
     # mstump currently only supports self-join. Therefore, the argument `n=T_A.shape[1]`

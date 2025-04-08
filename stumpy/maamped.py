@@ -386,7 +386,7 @@ def maamped(client, T, m, include=None, discords=False, p=2.0):
     T_B, T_B_subseq_isfinite = core.preprocess_non_normalized(T_B, m)
 
     if T_A.ndim <= 1:  # pragma: no cover
-        err = f"T is {T_A.ndim}-dimensional and must be at least 1-dimensional"
+        err = f"T is {T_A.ndim}-dimensional and must be at least 2-dimensional"
         raise ValueError(f"{err}")
 
     core.check_window_size(m, max_size=min(T_A.shape[1], T_B.shape[1]), n=T_A.shape[1])

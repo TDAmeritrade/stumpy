@@ -438,7 +438,7 @@ def maamp_multi_distance_profile(query_idx, T, m, include=None, discords=False, 
     T, T_subseq_isfinite = core.preprocess_non_normalized(T, m)
 
     if T.ndim <= 1:  # pragma: no cover
-        err = f"T is {T.ndim}-dimensional and must be at least 1-dimensional"
+        err = f"T is {T.ndim}-dimensional and must be at least 2-dimensional"
         raise ValueError(f"{err}")
 
     core.check_window_size(m, max_size=T.shape[1], n=T.shape[1])

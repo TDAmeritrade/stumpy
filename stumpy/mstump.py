@@ -624,7 +624,7 @@ def multi_distance_profile(
     )
 
     if T.ndim <= 1:  # pragma: no cover
-        err = f"T is {T.ndim}-dimensional and must be at least 1-dimensional"
+        err = f"T is {T.ndim}-dimensional and must be at least 2-dimensional"
         raise ValueError(f"{err}")
 
     core.check_window_size(m, max_size=T.shape[1])
