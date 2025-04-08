@@ -1170,7 +1170,7 @@ def _calculate_squared_distance(
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    fastmath=config.STUMPY_FASTMATH_TRUE,
+    fastmath=config.STUMPY_FASTMATH_FLAGS,
 )
 def _calculate_squared_distance_profile(
     m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
@@ -1236,7 +1236,7 @@ def _calculate_squared_distance_profile(
 
 @njit(
     # "f8[:](i8, f8[:], f8, f8, f8[:], f8[:])",
-    fastmath=config.STUMPY_FASTMATH_TRUE,
+    fastmath=config.STUMPY_FASTMATH_FLAGS,
 )
 def calculate_distance_profile(
     m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
@@ -1310,6 +1310,10 @@ def _p_norm_distance_profile(Q, T, p=2.0):
     -------
     output : numpy.ndarray
         p-normalized distance profile between `Q` and `T`
+
+    Notes
+    -----
+    The special case `p==inf` is not supported.
     """
     m = Q.shape[0]
     l = T.shape[0] - m + 1
@@ -2038,7 +2042,7 @@ def _get_QT(start, T_A, T_B, m):
 
 @njit(
     # ["(f8[:], i8, i8)", "(f8[:, :], i8, i8)"],
-    fastmath=config.STUMPY_FASTMATH_TRUE
+    fastmath=config.STUMPY_FASTMATH_FLAGS
 )
 def _apply_exclusion_zone(a, idx, excl_zone, val):
     """
