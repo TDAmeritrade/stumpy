@@ -115,15 +115,54 @@ def test_calculate_squared_distance():
             npt.assert_almost_equal(ref, comp, decimal=14)
 
 
-def test_snippets():
-    # This test function raises an error if there is a considerable loss of precision
-    # that violates the symmetry property of a distance measure.
-    m = 10
-    k = 3
-    s = 3
+@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
+@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
+def test_distance_symmetry_property_in_gpu():
+    if not cuda.is_available():  # pragma: no cover
+        pytest.skip("Skipping Tests No GPUs Available")
+
+    # This test function raises an error if the distance between a subsequence
+    # and another one does not satisfy the symmetry property.
     seed = 332
     np.random.seed(seed)
     T = np.random.uniform(-1000.0, 1000.0, [64])
+    m = 3
+
+    i, j = 2, 10
+    # M_T, Σ_T = core.compute_mean_std(T, m)
+    # Σ_T[i] is `650.912209452633`
+    # Σ_T[j] is `722.0717285148525`
+
+    # This test raises an error if arithmetic operation in ...
+    # ... `gpu_stump._compute_and_update_PI_kernel` does not
+    # generates the same result if values of variable for mean and std
+    # are swapped.
+
+    T_A = T[i : i + m]
+    T_B = T[j : j + m]
+
+    mp_AB = stumpy.gpu_stump(T_A, m, T_B)
+    mp_BA = stumpy.gpu_stump(T_B, m, T_A)
+
+    d_ij = mp_AB[0, 0]
+    d_ji = mp_BA[0, 0]
+
+    comp = d_ij - d_ji
+    ref = 0.0
+
+    npt.assert_almost_equal(comp, ref, decimal=15)
+
+
+def test_snippets_rare_case_1():
+    # This test function raises an error if there is a considerable loss of precision
+    # that violates the symmetry property of a distance measure.
+    seed = 332
+    np.random.seed(seed)
+    T = np.random.uniform(-1000.0, 1000.0, 64)
+
+    m = 10
+    k = 3
+    s = 3
 
     isconstant_custom_func = functools.partial(
         naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
@@ -170,10 +209,10 @@ def test_snippets():
         )
 
     npt.assert_almost_equal(
-        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
+        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
     )
     npt.assert_almost_equal(
-        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
+        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
     )
     npt.assert_almost_equal(
         ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
@@ -190,39 +229,158 @@ def test_snippets():
         cache._recompile()
 
 
-@pytest.mark.filterwarnings("ignore", category=NumbaPerformanceWarning)
-@patch("stumpy.config.STUMPY_THREADS_PER_BLOCK", TEST_THREADS_PER_BLOCK)
-def test_distance_symmetry_property_in_gpu():
-    if not cuda.is_available():  # pragma: no cover
-        pytest.skip("Skipping Tests No GPUs Available")
+def test_snippets_rare_case_2():
+    # This test fails when the naive implementation of snippet,
+    # i.e. `naive.mpdist_snippets`, uses `np.sum` instead of
+    # math.fsum when calculating the sum of many small
+    # floating point numbers. For more details, see issue #1061
 
-    # This test function raises an error if the distance between a subsequence
-    # and another one does not satisfy the symmetry property.
-    seed = 332
+    seed = 1615
     np.random.seed(seed)
-    T = np.random.uniform(-1000.0, 1000.0, [64])
-    m = 3
+    T = np.random.uniform(-1000.0, 1000.0, 64)
 
-    i, j = 2, 10
-    # M_T, Σ_T = core.compute_mean_std(T, m)
-    # Σ_T[i] is `650.912209452633`
-    # Σ_T[j] is `722.0717285148525`
+    m = 10
+    s = 3
+    k = 3
 
-    # This test raises an error if arithmetic operation in ...
-    # ... `gpu_stump._compute_and_update_PI_kernel` does not
-    # generates the same result if values of variable for mean and std
-    # are swapped.
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+    (
+        ref_snippets,
+        ref_indices,
+        ref_profiles,
+        ref_fractions,
+        ref_areas,
+        ref_regimes,
+    ) = naive.mpdist_snippets(
+        T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
+    )
 
-    T_A = T[i : i + m]
-    T_B = T[j : j + m]
+    (
+        cmp_snippets,
+        cmp_indices,
+        cmp_profiles,
+        cmp_fractions,
+        cmp_areas,
+        cmp_regimes,
+    ) = stumpy.snippets(T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func)
 
-    mp_AB = stumpy.gpu_stump(T_A, m, T_B)
-    mp_BA = stumpy.gpu_stump(T_B, m, T_A)
+    if (
+        not np.allclose(ref_snippets, cmp_snippets) and not numba.config.DISABLE_JIT
+    ):  # pragma: no cover
+        # Revise fastmath flags by removing reassoc (to improve precision),
+        # recompile njit functions, and re-compute snippets.
+        fastmath._set(
+            "core", "_calculate_squared_distance", {"nsz", "arcp", "contract", "afn"}
+        )
+        cache._recompile()
 
-    d_ij = mp_AB[0, 0]
-    d_ji = mp_BA[0, 0]
+        (
+            cmp_snippets,
+            cmp_indices,
+            cmp_profiles,
+            cmp_fractions,
+            cmp_areas,
+            cmp_regimes,
+        ) = stumpy.snippets(
+            T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
+        )
 
-    comp = d_ij - d_ji
-    ref = 0.0
+    npt.assert_almost_equal(
+        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
+    npt.assert_almost_equal(ref_regimes, cmp_regimes)
 
-    npt.assert_almost_equal(comp, ref, decimal=15)
+    if not numba.config.DISABLE_JIT:  # pragma: no cover
+        # Revert fastmath flag back to their default values
+        fastmath._reset("core", "_calculate_squared_distance")
+        cache._recompile()
+
+
+def test_snippets_rare_case_3():
+    # This test fails when the naive implementation of snippet,
+    # i.e. `naive.mpdist_snippets`, uses `np.sum` instead of
+    # math.fsum when calculating the sum of many small
+    # floating point numbers. For more details, see issue #1061
+
+    seed = 2636
+    np.random.seed(seed)
+    T = np.random.uniform(-1000.0, 1000.0, 64)
+    m = 9
+    s = 3
+    k = 3
+
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+    (
+        ref_snippets,
+        ref_indices,
+        ref_profiles,
+        ref_fractions,
+        ref_areas,
+        ref_regimes,
+    ) = naive.mpdist_snippets(
+        T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
+    )
+
+    (
+        cmp_snippets,
+        cmp_indices,
+        cmp_profiles,
+        cmp_fractions,
+        cmp_areas,
+        cmp_regimes,
+    ) = stumpy.snippets(T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func)
+
+    if (
+        not np.allclose(ref_snippets, cmp_snippets) and not numba.config.DISABLE_JIT
+    ):  # pragma: no cover
+        # Revise fastmath flags by removing reassoc (to improve precision),
+        # recompile njit functions, and re-compute snippets.
+        fastmath._set(
+            "core", "_calculate_squared_distance", {"nsz", "arcp", "contract", "afn"}
+        )
+        cache._recompile()
+
+        (
+            cmp_snippets,
+            cmp_indices,
+            cmp_profiles,
+            cmp_fractions,
+            cmp_areas,
+            cmp_regimes,
+        ) = stumpy.snippets(
+            T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
+        )
+
+    npt.assert_almost_equal(
+        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
+    npt.assert_almost_equal(ref_regimes, cmp_regimes)
+
+    if not numba.config.DISABLE_JIT:  # pragma: no cover
+        # Revert fastmath flag back to their default values
+        fastmath._reset("core", "_calculate_squared_distance")
+        cache._recompile()

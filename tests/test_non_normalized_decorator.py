@@ -1,3 +1,5 @@
+import math
+
 import naive
 import numpy as np
 import numpy.testing as npt
@@ -44,7 +46,9 @@ def test_mass():
     Q = np.random.rand(10)
     T = np.random.rand(20)
     T, T_subseq_isfinite = stumpy.core.preprocess_non_normalized(T, 10)
-    T_squared = np.sum(stumpy.core.rolling_window(T * T, Q.shape[0]), axis=-1)
+
+    arr = stumpy.core.rolling_window(T * T, Q.shape[0])
+    T_squared = np.array([math.fsum(arr[i]) for i in range(arr.shape[0])])
     ref = stumpy.core.mass_absolute(Q, T)
     comp = stumpy.core.mass(Q, T, M_T=T_subseq_isfinite, normalize=False)
     npt.assert_almost_equal(ref, comp)

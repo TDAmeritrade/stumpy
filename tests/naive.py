@@ -854,7 +854,7 @@ def get_array_ranges(a, n_chunks, truncate):
     sum = 0
     for i in range(a.shape[0]):
         sum += a[i]
-        if sum > a.sum() / n_chunks:
+        if sum > math.fsum(a) / n_chunks:
             out[ranges_idx, 0] = range_start_idx
             out[ranges_idx, 1] = min(i + 1, a.shape[0])  # Exclusive stop index
             # Reset and Update
@@ -1614,7 +1614,7 @@ def mpdist_snippets(
     for snippet_idx in range(k):
         min_area = np.inf
         for i in range(D.shape[0]):
-            profile_area = np.sum(np.minimum(D[i], Q))
+            profile_area = math.fsum(np.minimum(D[i], Q))
             if min_area > profile_area:
                 min_area = profile_area
                 idx = i
@@ -1622,7 +1622,7 @@ def mpdist_snippets(
         snippets[snippet_idx] = T[indices[idx] : indices[idx] + m]
         snippets_indices[snippet_idx] = indices[idx]
         snippets_profiles[snippet_idx] = D[idx]
-        snippets_areas[snippet_idx] = np.sum(np.minimum(D[idx], Q))
+        snippets_areas[snippet_idx] = math.fsum(np.minimum(D[idx], Q))
 
         Q = np.minimum(D[idx], Q)
 
@@ -1737,7 +1737,7 @@ def aampdist_snippets(
     for snippet_idx in range(k):
         min_area = np.inf
         for i in range(D.shape[0]):
-            profile_area = np.sum(np.minimum(D[i], Q))
+            profile_area = math.fsum(np.minimum(D[i], Q))
             if min_area > profile_area:
                 min_area = profile_area
                 idx = i
@@ -1745,7 +1745,7 @@ def aampdist_snippets(
         snippets[snippet_idx] = T[indices[idx] : indices[idx] + m]
         snippets_indices[snippet_idx] = indices[idx]
         snippets_profiles[snippet_idx] = D[idx]
-        snippets_areas[snippet_idx] = np.sum(np.minimum(D[idx], Q))
+        snippets_areas[snippet_idx] = math.fsum(np.minimum(D[idx], Q))
 
         Q = np.minimum(D[idx], Q)
 
