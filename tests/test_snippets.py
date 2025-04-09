@@ -222,3 +222,105 @@ def test_mpdist_snippets_s_with_isconstant(T, m, k, s):
     )
     npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
     npt.assert_almost_equal(ref_regimes, cmp_regimes)
+
+
+def test_mpdist_snippets_s_with_isconstant_rare_case_1():
+    # This test fails when the naive implementation of snippet,
+    # i.e. `naive.mpdist_snippets`, uses `np.sum` instead of
+    # math.fsum when calculating the sum of many small
+    # floating point numbers. For more details, see issue #1061
+
+    seed = 1615
+    np.random.seed(seed)
+    T = np.random.uniform(-1000.0, 1000.0, 64)
+    m = 10
+    s = 3
+    k = 3
+
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+    (
+        ref_snippets,
+        ref_indices,
+        ref_profiles,
+        ref_fractions,
+        ref_areas,
+        ref_regimes,
+    ) = naive.mpdist_snippets(
+        T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
+    )
+    (
+        cmp_snippets,
+        cmp_indices,
+        cmp_profiles,
+        cmp_fractions,
+        cmp_areas,
+        cmp_regimes,
+    ) = snippets(T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func)
+
+    npt.assert_almost_equal(
+        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
+    npt.assert_almost_equal(ref_regimes, cmp_regimes)
+
+
+def test_mpdist_snippets_s_with_isconstant_rare_case_2():
+    # This test fails when the naive implementation of snippet,
+    # i.e. `naive.mpdist_snippets`, uses `np.sum` instead of
+    # math.fsum when calculating the sum of many small
+    # floating point numbers. For more details, see issue #1061
+
+    seed = 2636
+    np.random.seed(seed)
+    T = np.random.uniform(-1000.0, 1000.0, 64)
+    m = 9
+    s = 3
+    k = 3
+
+    isconstant_custom_func = functools.partial(
+        naive.isconstant_func_stddev_threshold, quantile_threshold=0.05
+    )
+    (
+        ref_snippets,
+        ref_indices,
+        ref_profiles,
+        ref_fractions,
+        ref_areas,
+        ref_regimes,
+    ) = naive.mpdist_snippets(
+        T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func
+    )
+    (
+        cmp_snippets,
+        cmp_indices,
+        cmp_profiles,
+        cmp_fractions,
+        cmp_areas,
+        cmp_regimes,
+    ) = snippets(T, m, k, s=s, mpdist_T_subseq_isconstant=isconstant_custom_func)
+
+    npt.assert_almost_equal(
+        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(
+        ref_fractions, cmp_fractions, decimal=config.STUMPY_TEST_PRECISION
+    )
+    npt.assert_almost_equal(ref_areas, cmp_areas, decimal=config.STUMPY_TEST_PRECISION)
+    npt.assert_almost_equal(ref_regimes, cmp_regimes)
