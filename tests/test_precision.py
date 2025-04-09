@@ -209,10 +209,10 @@ def test_snippets_rare_case_1():
         )
 
     npt.assert_almost_equal(
-        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
+        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
     )
     npt.assert_almost_equal(
-        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
+        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
     )
     npt.assert_almost_equal(
         ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
@@ -288,10 +288,10 @@ def test_snippets_rare_case_2():
         )
 
     npt.assert_almost_equal(
-        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
+        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
     )
     npt.assert_almost_equal(
-        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
+        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
     )
     npt.assert_almost_equal(
         ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
@@ -366,10 +366,10 @@ def test_snippets_rare_case_3():
         )
 
     npt.assert_almost_equal(
-        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
+        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
     )
     npt.assert_almost_equal(
-        ref_indices, cmp_indices, decimal=config.STUMPY_TEST_PRECISION
+        ref_snippets, cmp_snippets, decimal=config.STUMPY_TEST_PRECISION
     )
     npt.assert_almost_equal(
         ref_profiles, cmp_profiles, decimal=config.STUMPY_TEST_PRECISION
