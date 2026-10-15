@@ -7,6 +7,7 @@ from dask.distributed import Client, LocalCluster
 
 from stumpy import rng
 from stumpy.aamp_stimp import aamp_stimp, aamp_stimped
+from stumpy.stimp import stimp
 
 T = [
     np.array([584, -11, 23, 79, 1001, 0, -19], dtype=np.float64),
@@ -196,6 +197,24 @@ def test_aamp_stimp_100_percent(T):
     naive.replace_inf(cmp_pan)
 
     npt.assert_allclose(cmp_pan, ref_pan, atol=1.5e-07)
+
+
+@pytest.mark.parametrize("p", [1.0, 2.0, 3.0])
+@pytest.mark.parametrize("percentage", [0.01, 1.0])
+@pytest.mark.parametrize(
+    "pan_func, kwargs", [(aamp_stimp, {}), (stimp, {"normalize": False})]
+)
+def test_aamp_stimp_p_norm(p, percentage, pan_func, kwargs):
+    T = np.array([0.0, 0.0, 0.0, 1.0, 1.0, 1.0])
+    m = 3
+
+    with rng.fix_state():
+        pan = pan_func(T, min_m=m, max_m=m, percentage=percentage, p=p, **kwargs)
+        pan.update()
+
+    ref_P = naive.aamp(T, m, p=p)[:, 0].astype(np.float64)
+    cmp_P = pan.P_[0]
+    npt.assert_allclose(cmp_P, ref_P, atol=1.5e-07)
 
 
 @pytest.mark.parametrize("T", T)
