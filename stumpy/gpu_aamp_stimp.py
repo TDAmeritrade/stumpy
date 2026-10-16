@@ -116,5 +116,5 @@ class gpu_aamp_stimp(_aamp_stimp):
             pre_scraamp=False,
             device_id=device_id,
             mp_func=gpu_aamp,
-            p=2.0,
+            p=p,
         )

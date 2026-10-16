@@ -528,7 +528,7 @@ class aamp_stimp(_aamp_stimp):
             percentage=percentage,
             pre_scraamp=pre_scraamp,
             mp_func=aamp,
-            p=2.0,
+            p=p,
         )
 
 
@@ -639,5 +639,5 @@ class aamp_stimped(_aamp_stimp):
             pre_scraamp=False,
             client=client,
             mp_func=aamped,
-            p=2.0,
+            p=p,
         )
