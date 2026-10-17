@@ -208,6 +208,16 @@ def test_sliding_dot_product(Q, T):
     npt.assert_allclose(cmp_mp, ref_mp, atol=1.5e-07)
 
 
+def test_sliding_dot_product_large_Q():
+    # Set len(T) > len(Q) > config.STUMPY_NJIT_SDP_Q_LENGTH,
+    # so that it triggers a certain code flow
+    Q = rng.RNG.rand(config.STUMPY_NJIT_SDP_Q_LENGTH + 1)
+    T = rng.RNG.rand(config.STUMPY_NJIT_SDP_Q_LENGTH + 2)
+    ref_mp = naive.rolling_window_dot_product(Q, T)
+    cmp_mp = core.sliding_dot_product(Q, T)
+    npt.assert_allclose(cmp_mp, ref_mp, atol=1.5e-07)
+
+
 def test_welford_nanvar():
     T = rng.RNG.rand(64)
     m = 10
