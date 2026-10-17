@@ -122,3 +122,23 @@ docs = "cd docs && ./setup.sh"
 black = 'black --exclude=".*\.ipynb" --extend-exclude=".venv|.pixi" ./'
 isort = 'isort --profile black --skip .venv --skip .pixi ./'
 flake8 = 'flake8 --extend-exclude=.venv/,.pixi/ ./'
+
+[tool.pixi.feature.numba-cuda]
+platforms = ["linux-64", "linux-aarch64"]
+
+[tool.pixi.feature.numba-cuda-mlir]
+platforms = ["linux-64", "linux-aarch64"]
+
+[tool.pixi.feature.numba-cuda.dependencies]
+cuda-nvcc = "*"
+numba-cuda = "*"
+numpy = "<2.5"
+
+[tool.pixi.feature.numba-cuda-mlir.dependencies]
+cuda-nvcc = "*"
+numba-cuda-mlir = "*"
+
+[tool.pixi.environments]
+numba-cuda = ["numba-cuda"]
+numba-cuda-mlir = ["numba-cuda-mlir"]
+

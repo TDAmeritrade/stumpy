@@ -9,7 +9,11 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pytest
-from numba import cuda
+
+try:
+    from numba_cuda_mlir import cuda
+except ModuleNotFoundError:
+    from numba import cuda
 from scipy.spatial.distance import cdist
 
 from stumpy import config, core, rng

@@ -9,7 +9,12 @@ import tempfile
 import warnings
 
 import numpy as np
-from numba import cuda, njit, prange
+from numba import njit, prange
+
+try:
+    from numba_cuda_mlir import cuda
+except ModuleNotFoundError:
+    from numba import cuda
 from scipy import linalg
 from scipy.ndimage import maximum_filter1d, minimum_filter1d
 from scipy.spatial.distance import cdist

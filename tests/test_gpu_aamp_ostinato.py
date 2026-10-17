@@ -3,7 +3,11 @@ from unittest.mock import patch
 import mersenne
 import numpy as np
 import numpy.testing as npt
-from numba import cuda
+
+try:
+    from numba_cuda_mlir import cuda
+except ModuleNotFoundError:
+    from numba import cuda
 
 try:
     from numba.errors import NumbaPerformanceWarning

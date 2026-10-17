@@ -6,7 +6,11 @@ import multiprocessing as mp
 import os
 
 import numpy as np
-from numba import cuda
+
+try:
+    from numba_cuda_mlir import cuda
+except ModuleNotFoundError:
+    from numba import cuda
 
 from . import config, core
 from .gpu_aamp import gpu_aamp
