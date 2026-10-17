@@ -243,3 +243,24 @@ def test_extract_several_consensus_ostinatoed(dask_cluster):
                     Ts_ref[i][np.isfinite(Ts_ref[i])],
                     Ts_comp[i][np.isfinite(Ts_comp[i])],
                 )
+
+
+@pytest.mark.filterwarnings(
+    "error:divide by zero encountered in divide", category=RuntimeWarning
+)
+def test_divide_by_zero_ostinato():
+    Ts = [np.random.rand(n) for n in [64, 128, 256]]
+    m = 5
+    Ts[0][:m] = np.nan
+    ostinato(Ts, m)
+
+
+@pytest.mark.filterwarnings(
+    "error:divide by zero encountered in divide", category=RuntimeWarning
+)
+def test_divide_by_zero_ostinatoed(dask_cluster):
+    Ts = [np.random.rand(n) for n in [64, 128, 256]]
+    m = 5
+    Ts[0][:m] = np.nan
+    with Client(dask_cluster) as dask_client:
+        ostinatoed(dask_client, Ts, m)
