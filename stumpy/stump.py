@@ -206,6 +206,11 @@ def _compute_diagonal(
                     pearson = cov * Σ_T_inverse[uint64_j] * σ_Q_inverse[uint64_i]
                     pearson = min(1.0, pearson)
 
+                    if pearson > 1.0 - 1e-8 and np.array_equal(
+                        T_A[uint64_i : uint64_i + uint64_m],
+                        T_B[uint64_j : uint64_j + uint64_m],
+                    ):
+                        pearson = 1.0
                 # `ρ[thread_idx, i, :]` is sorted in ascending order and MUST be updated
                 # when the newly-calculated `pearson` value becomes greater than the
                 # first (i.e. smallest) element in this array. Note that a higher
