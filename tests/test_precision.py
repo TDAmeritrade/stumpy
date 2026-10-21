@@ -76,6 +76,41 @@ def test_distace_profile():
         npt.assert_almost_equal(D_ref, D_comp)
 
 
+def test_mass_near_perfect_correlation():
+    # Regression data from #1171 contains two nearly affine-equivalent subsequences.
+    Q = np.array(
+        [
+            0.93406220661832629,
+            0.94732544958491172,
+            0.94288413821602846,
+        ]
+    )
+    T = np.array(
+        [
+            0.25089093970715337,
+            0.44046885357649379,
+            0.37698714499372254,
+        ]
+    )
+    m = Q.shape[0]
+
+    ref = naive.distance_profile(Q, T, m)
+    comp = core.mass(Q, T)
+
+    npt.assert_allclose(ref, comp, rtol=1e-12, atol=1e-12)
+
+
+def test_mass_near_perfect_correlation_rounded_to_zero():
+    Q = np.array([1.0, 2.0, 4.0])
+    T = np.array([-4.0, -0.99999999, 5.0])
+    m = Q.shape[0]
+
+    ref = naive.distance_profile(Q, T, m)
+    comp = core.mass(Q, T)
+
+    npt.assert_allclose(ref, comp, rtol=1e-12, atol=1e-12)
+
+
 def test_calculate_squared_distance():
     # This test function raises an error if the distance between a subsequence
     # and another does not satisfy the symmetry property.

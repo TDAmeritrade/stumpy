@@ -1576,16 +1576,43 @@ def _mass(Q, T, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconst
 
     See Table II
 
-    Note that Q, T are not directly required to calculate D
-
     Note: Unlike the Matrix Profile I paper, here, M_T, Σ_T can be calculated
     once for all subsequences of T and passed in so the redundancy is removed
     """
     m = Q.shape[0]
+    k = M_T.shape[0]
+    distance_profile = np.empty(k, dtype=np.float64)
+    # When `1 - ρ` approaches machine precision, relative error from cancellation
+    # dominates. Recompute those rare distances from pointwise z-normalized
+    # differences once `1 - ρ` falls below `sqrt(eps)`.
+    threshold = 2.0 * m * np.sqrt(np.finfo(np.float64).eps)
 
-    return calculate_distance_profile(
-        m, QT, μ_Q, σ_Q, M_T, Σ_T, Q_subseq_isconstant, T_subseq_isconstant
-    )
+    for i in range(k):
+        D_squared = _calculate_squared_distance(
+            m,
+            QT[i],
+            μ_Q,
+            σ_Q,
+            M_T[i],
+            Σ_T[i],
+            Q_subseq_isconstant,
+            T_subseq_isconstant[i],
+        )
+
+        if (
+            D_squared < threshold
+            and not Q_subseq_isconstant
+            and not T_subseq_isconstant[i]
+        ):
+            D_squared = 0.0
+            for j in range(m):
+                Q_norm = (Q[j] - μ_Q) / σ_Q
+                T_norm = (T[i + j] - M_T[i]) / Σ_T[i]
+                D_squared += (Q_norm - T_norm) ** 2
+
+        distance_profile[i] = np.sqrt(D_squared)
+
+    return distance_profile
 
 
 @non_normalized(
